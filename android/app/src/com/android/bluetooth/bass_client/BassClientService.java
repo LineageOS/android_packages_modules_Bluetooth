@@ -561,16 +561,19 @@ public class BassClientService extends ConnectableProfile {
             int bId,
             PublicBroadcastData pbData,
             String broadcastName) {
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: device: " + device);
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: syncHandle: " + syncHandle);
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: advSid: " + advSid);
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: addressType: " + addressType);
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: advInterval: " + advInterval);
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: broadcastId: " + bId);
-        Log.d(TAG, "updatePeriodicAdvertisementResultMap: broadcastName: " + broadcastName);
-        Log.d(TAG, "mSyncHandleToDeviceMap" + mSyncHandleToDeviceMap);
-        Log.d(TAG, "mPeriodicAdvertisementResultMap" + mPeriodicAdvertisementResultMap);
-        HashMap<Integer, PeriodicAdvertisementResult> paResMap =
+        Log.d(
+                TAG,
+                "updatePeriodicAdvertisementResultMap:"
+                        + (" device: " + device)
+                        + (", syncHandle: " + syncHandle)
+                        + (", advSid: " + advSid)
+                        + (", addressType: " + addressType)
+                        + (", advInterval: " + advInterval)
+                        + (", broadcastId: " + bId)
+                        + (", broadcastName: " + broadcastName)
+                        + (", syncHandleToDeviceMap: " + mSyncHandleToDeviceMap)
+                        + (", periodicAdvertisementResultMap: " + mPeriodicAdvertisementResultMap));
+        Map<Integer, PeriodicAdvertisementResult> paResMap =
                 mPeriodicAdvertisementResultMap.get(device);
         if (paResMap == null
                 || (bId != BassConstants.INVALID_BROADCAST_ID && !paResMap.containsKey(bId))) {
@@ -607,11 +610,10 @@ public class BassClientService extends ConnectableProfile {
                 if (oldBroadcastId != BassConstants.INVALID_BROADCAST_ID && oldBroadcastId != bId) {
                     Log.d(
                             TAG,
-                            "updatePeriodicAdvertisementResultMap: SyncEstablished on the"
-                                    + " same syncHandle="
-                                    + syncHandle
-                                    + ", before syncLost");
-                    Log.d(TAG, "Notify broadcast source lost, broadcast id: " + oldBroadcastId);
+                            "updatePeriodicAdvertisementResultMap: SyncEstablished on the same"
+                                    + (" syncHandle=" + syncHandle)
+                                    + ", before syncLost. Notify broadcast source lost, broadcast"
+                                    + (" id: " + oldBroadcastId));
                     mCallbacks.notifySourceLost(oldBroadcastId);
                     clearAllDataForSyncHandle(syncHandle);
                     mCachedBroadcasts.remove(oldBroadcastId);
@@ -875,15 +877,12 @@ public class BassClientService extends ConnectableProfile {
             BluetoothDevice sink, int reason, int reqMsg, Object obj) {
         Log.d(
                 TAG,
-                "checkForPendingGroupOpRequest device: "
-                        + sink
-                        + ", reason: "
-                        + reason
-                        + ", reqMsg: "
-                        + reqMsg);
+                "checkForPendingGroupOpRequest:"
+                        + (" device: " + sink)
+                        + (" reason: " + reason)
+                        + (" reqMsg: " + reqMsg));
 
         AtomicBoolean shouldUpdateAssistantActive = new AtomicBoolean(false);
-
         mPendingGroupOp.computeIfPresent(
                 sink,
                 (key, opsToModify) -> {
@@ -1034,12 +1033,10 @@ public class BassClientService extends ConnectableProfile {
     void syncRequestForPast(BluetoothDevice sink, int broadcastId, int sourceId) {
         Log.d(
                 TAG,
-                "syncRequestForPast sink: "
-                        + sink
-                        + ", broadcastId: "
-                        + broadcastId
-                        + ", sourceId: "
-                        + sourceId);
+                "syncRequestForPast:"
+                        + (" device: " + sink)
+                        + (" broadcastId: " + broadcastId)
+                        + (" sourceId: " + sourceId));
 
         synchronized (mSinksWaitingForPast) {
             mSinksWaitingForPast.put(sink, new Pair<Integer, Integer>(broadcastId, sourceId));
@@ -1207,8 +1204,7 @@ public class BassClientService extends ConnectableProfile {
                         Log.w(
                                 TAG,
                                 "getGroupManagedDeviceSources: Failed to get state machine "
-                                        + "for device: "
-                                        + device);
+                                        + ("for device: " + device));
                         continue;
                     }
                     List<BluetoothLeBroadcastReceiveState> sources = sm.getAllSources();
@@ -1230,10 +1226,9 @@ public class BassClientService extends ConnectableProfile {
             } else {
                 Log.e(
                         TAG,
-                        "Couldn't find broadcast metadata for device: "
-                                + sink
-                                + ", and sourceId:"
-                                + sourceId);
+                        "Couldn't find broadcast metadata for"
+                                + (" device: " + sink)
+                                + (" sourceId: " + sourceId));
             }
         }
 
@@ -1424,9 +1419,7 @@ public class BassClientService extends ConnectableProfile {
         synchronized (mStateMachines) {
             BassClientStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
-                Log.w(
-                        TAG,
-                        "removeStateMachine: device " + device + " does not have a state machine");
+                Log.w(TAG, "removeStateMachine: No state machine for device: " + device);
                 return;
             }
             Log.d(TAG, "removeStateMachine: removing state machine for device: " + device);
@@ -1472,8 +1465,7 @@ public class BassClientService extends ConnectableProfile {
                     Log.w(
                             TAG,
                             "informConnectedDeviceAboutScanOffloadStop: Can't get state "
-                                    + "machine for device: "
-                                    + device);
+                                    + ("machine for device: " + device));
                     continue;
                 }
                 stateMachine.sendMessage(BassClientStateMachine.STOP_SCAN_OFFLOAD);
@@ -1580,23 +1572,19 @@ public class BassClientService extends ConnectableProfile {
         if ((device == null) || (fromState == toState)) {
             Log.e(
                     TAG,
-                    "connectionStateChanged: unexpected invocation. device="
-                            + device
-                            + " fromState="
-                            + fromState
-                            + " toState="
-                            + toState);
+                    "connectionStateChanged: unexpected invocation."
+                            + (" device: " + device)
+                            + (" fromState: " + BluetoothProfile.getConnectionStateName(fromState))
+                            + (" toState: " + BluetoothProfile.getConnectionStateName(toState)));
             return;
         }
 
         sEventLogger.logi(
                 TAG,
-                "connectionStateChanged: device: "
-                        + device
-                        + ", fromState= "
-                        + BluetoothProfile.getConnectionStateName(fromState)
-                        + ", toState= "
-                        + BluetoothProfile.getConnectionStateName(toState));
+                "connectionStateChanged:"
+                        + (" device: " + device)
+                        + (" fromState: " + BluetoothProfile.getConnectionStateName(fromState))
+                        + (" toState: " + BluetoothProfile.getConnectionStateName(toState)));
 
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
