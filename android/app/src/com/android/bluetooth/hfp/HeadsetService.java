@@ -1375,6 +1375,9 @@ public class HeadsetService extends ConnectableProfile {
      */
     public BluetoothDevice getActiveDevice() {
         synchronized (mStateMachines) {
+            if (mSystemInterface.isScoManagedByAudioEnabled()) {
+                return mExposedActiveDevice;
+            }
             return mActiveDevice;
         }
     }
