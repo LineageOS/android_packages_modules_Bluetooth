@@ -20,7 +20,6 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHE
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothProtoEnums;
-import android.bluetooth.le.ScanSettings;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils.TimeProvider;
@@ -29,14 +28,6 @@ import com.android.bluetooth.util.WorkSourceUtil;
 
 class ScanRadioStats {
     private static final String TAG = ScanRadioStats.class.getSimpleName();
-
-    // Weight is the duty cycle of the scan mode
-    static final int OPPORTUNISTIC_WEIGHT = 0;
-    static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
-    static final int LOW_POWER_WEIGHT = 10;
-    static final int AMBIENT_DISCOVERY_WEIGHT = 25;
-    static final int BALANCED_WEIGHT = 25;
-    static final int LOW_LATENCY_WEIGHT = 100;
 
     private final TimeProvider mTimeProvider;
 
@@ -146,7 +137,7 @@ class ScanRadioStats {
         }
         long currentTime = mTimeProvider.elapsedRealtime();
         long radioScanDuration = currentTime - mRadioStartTime;
-        double scanWeight = getScanWeight(mRadioScanMode) * 0.01;
+        double scanWeight = ScanUtil.weightForScanMode(mRadioScanMode) * 0.01;
         long weightedDuration = (long) (radioScanDuration * scanWeight);
 
         final var logger = MetricsLogger.getInstance();
@@ -200,19 +191,5 @@ class ScanRadioStats {
 
     private String getRadioScanAttributionTag() {
         return mRadioScanAttributionTag != null ? mRadioScanAttributionTag : "";
-    }
-
-    private static int getScanWeight(int scanMode) {
-        return switch (scanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> OPPORTUNISTIC_WEIGHT;
-            case ScanSettings.SCAN_MODE_SCREEN_OFF -> SCREEN_OFF_LOW_POWER_WEIGHT;
-            case ScanSettings.SCAN_MODE_LOW_POWER -> LOW_POWER_WEIGHT;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY -> LOW_LATENCY_WEIGHT;
-            case ScanSettings.SCAN_MODE_BALANCED,
-                    ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
-                    ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    BALANCED_WEIGHT;
-            default -> LOW_POWER_WEIGHT;
-        };
     }
 }
