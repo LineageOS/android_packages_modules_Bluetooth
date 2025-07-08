@@ -313,18 +313,18 @@ public class ScanManagerTest {
     }
 
     private void setAppImportance(boolean isForeground, int uid) {
+        final int importance =
+                isForeground
+                        ? ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
+                        : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1;
+        final var uidImportance = new ScanManager.UidImportance(uid, importance);
         if (Flags.scanControllerThread()) {
-            final int importance =
-                    isForeground
-                            ? ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                            : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                                    + 1;
-            executeOnScanThread(
-                    () ->
-                            mScanManager.handleImportanceChange(
-                                    new ScanManager.UidImportance(uid, importance)));
+            executeOnScanThread(() -> mScanManager.handleImportanceChange(uidImportance));
         } else {
-            sendMessageWaitForProcessed(createImportanceMessage(isForeground, uid));
+            Message message = new Message();
+            message.what = ScanManager.MSG_IMPORTANCE_CHANGE;
+            message.obj = uidImportance;
+            sendMessageWaitForProcessed(message);
         }
     }
 
@@ -496,17 +496,6 @@ public class ScanManagerTest {
         Message message = new Message();
         message.what = isLocationOn ? ScanManager.MSG_RESUME_SCANS : ScanManager.MSG_SUSPEND_SCANS;
         message.obj = null;
-        return message;
-    }
-
-    private static Message createImportanceMessage(boolean isForeground, int uid) {
-        final int importance =
-                isForeground
-                        ? ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                        : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1;
-        Message message = new Message();
-        message.what = ScanManager.MSG_IMPORTANCE_CHANGE;
-        message.obj = new ScanManager.UidImportance(uid, importance);
         return message;
     }
 
@@ -1123,7 +1112,7 @@ public class ScanManagerTest {
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getBatchScanQueue()).contains(client);
-            assertThat(mScanManager.getBatchScanParams().mScanMode).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
         }
     }
 
@@ -1153,13 +1142,13 @@ public class ScanManagerTest {
             startScan(client);
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
-            assertThat(mScanManager.getBatchScanParams().mScanMode).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
             // Turn on screen
             setScreenOn(true);
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getBatchScanQueue()).contains(client);
-            assertThat(mScanManager.getBatchScanParams().mScanMode).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
         }
     }
 
@@ -1230,7 +1219,7 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getBatchScanQueue()).contains(client);
-                    assertThat(mScanManager.getBatchScanParams().mScanMode)
+                    assertThat(mScanManager.getBatchScanParams().scanMode())
                             .isEqualTo(expectedScanMode);
                     // Turn on screen
                     setScreenOn(true);
@@ -1244,7 +1233,7 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getBatchScanQueue()).contains(client);
-                    assertThat(mScanManager.getBatchScanParams().mScanMode)
+                    assertThat(mScanManager.getBatchScanParams().scanMode())
                             .isEqualTo(expectedScanMode);
                 });
     }
