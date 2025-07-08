@@ -19,7 +19,10 @@
 #include <base/functional/bind.h>
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <future>
+#include <string>
+#include <thread>
 
 #include "bind_helpers.h"
 #include "message_loop_thread.h"

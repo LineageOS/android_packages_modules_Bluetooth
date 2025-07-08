@@ -19,6 +19,11 @@
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
 
+#include <chrono>
+#include <future>
+#include <mutex>
+#include <utility>
+
 #include "message_loop_thread.h"
 
 namespace bluetooth {

@@ -19,6 +19,12 @@
 #include <android/hardware/bluetooth/audio/2.1/IBluetoothAudioProvidersFactory.h>
 #include <android/hardware/bluetooth/audio/2.1/types.h>
 
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <tuple>
+
 namespace bluetooth {
 namespace audio {
 
