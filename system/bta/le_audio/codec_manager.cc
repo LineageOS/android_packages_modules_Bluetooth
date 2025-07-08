@@ -361,7 +361,12 @@ public:
       return;
     }
 
-    log::debug("");
+    log::debug("isMulticodecSupported: {}", codec_provider_info_->isMulticodecSupported);
+
+    if (!codec_provider_info_->isMulticodecSupported) {
+      log::debug("UpdateSelectedCodecConfig is not supported by the HAL");
+      return;
+    }
 
     if (!com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
       log::verbose("Skipped due to disabled `leaudio_add_opus_hi_res_codec_type` flag.");

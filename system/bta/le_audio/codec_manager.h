@@ -43,12 +43,14 @@ struct broadcast_offload_config {
 struct ProviderInfo {
   bool allowAsymmetric = false;
   bool lowLatency = false;
+  bool isMulticodecSupported = false;
 
   inline std::string toString() const {
     std::ostringstream _aidl_os;
     _aidl_os << "ProviderInfo{";
     _aidl_os << "allowAsymmetric: " << allowAsymmetric;
     _aidl_os << ", lowLatency: " << lowLatency;
+    _aidl_os << ", isMulticodecSupported: " << isMulticodecSupported;
     _aidl_os << "}";
     return _aidl_os.str();
   }

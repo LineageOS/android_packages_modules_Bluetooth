@@ -47,6 +47,8 @@ using bluetooth::le_audio::types::CodecLocation;
 using bluetooth::le_audio::types::kLeAudioDirectionSink;
 using bluetooth::le_audio::types::kLeAudioDirectionSource;
 
+std::optional<bluetooth::le_audio::ProviderInfo> provider_info = std::nullopt;
+
 static const std::vector<AudioSetConfiguration> offload_capabilities_none(0);
 
 const std::vector<AudioSetConfiguration>* offload_capabilities = &offload_capabilities_none;
@@ -94,7 +96,7 @@ OffloadCapabilities get_offload_capabilities() {
 }
 std::optional<bluetooth::le_audio::ProviderInfo> LeAudioClientInterface::GetCodecConfigProviderInfo(
         void) const {
-  return std::nullopt;
+  return provider_info;
 }
 LeAudioClientInterface* LeAudioClientInterface::Get() { return nullptr; }
 }  // namespace bluetooth::audio::le_audio
@@ -314,6 +316,7 @@ public:
             .WillByDefault(Return(true));
 
     codec_manager = CodecManager::GetInstance();
+    provider_info = std::nullopt;
 
     RegisterSourceHalClientMock();
     RegisterSinkHalClientMock();
@@ -1517,6 +1520,54 @@ TEST_F(CodecManagerTestAdsp, testStreamConfigurationVendor) {
     ASSERT_EQ(1, config.codec_frames_blocks_per_sdu);
     ASSERT_EQ(44, config.peer_delay_ms);
   }
+}
+
+TEST_F(CodecManagerTestAdsp, test_notify_hal_with_empty_cis_handles_unsupported) {
+  osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
+
+  // Set the offloader capabilities
+  std::vector<AudioSetConfiguration> offload_capabilities;
+  set_mock_offload_capabilities(offload_capabilities);
+
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference = {};
+  codec_manager->Start(offloading_preference);
+  codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                   mock_le_audio_sink_hal_client_, true);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, UpdateAudioConfigToHal(_)).Times(0);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, UpdateAudioConfigToHal(_)).Times(0);
+
+  auto lc3_config = types::AudioSetConfiguration({
+          .name = "Two-OneChan-SnkAse-Lc3_16_2-Two-OneChan-SrcAse-Lc3_16_2",
+          .confs = {.sink = {types::AseConfiguration(lc3_16_2), types::AseConfiguration(lc3_16_2)},
+                    .source = {types::AseConfiguration(lc3_16_2),
+                               types::AseConfiguration(lc3_16_2)}},
+  });
+  codec_manager->UpdateSelectedCodecConfig(lc3_config);
+}
+
+TEST_F(CodecManagerTestAdsp, test_notify_hal_with_empty_cis_handles) {
+  osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
+  provider_info->isMulticodecSupported = true;
+
+  // Set the offloader capabilities
+  std::vector<AudioSetConfiguration> offload_capabilities;
+  set_mock_offload_capabilities(offload_capabilities);
+
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference = {};
+  codec_manager->Start(offloading_preference);
+  codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                   mock_le_audio_sink_hal_client_, true);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, UpdateAudioConfigToHal(_)).Times(1);
+
+  auto lc3_config = types::AudioSetConfiguration({
+          .name = "Two-OneChan-SnkAse-Lc3_16_2-Two-OneChan-SrcAse-Lc3_16_2",
+          .confs = {.sink = {types::AseConfiguration(lc3_16_2), types::AseConfiguration(lc3_16_2)},
+                    .source = {types::AseConfiguration(lc3_16_2),
+                               types::AseConfiguration(lc3_16_2)}},
+  });
+  codec_manager->UpdateSelectedCodecConfig(lc3_config);
 }
 
 }  // namespace bluetooth::le_audio
