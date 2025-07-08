@@ -517,7 +517,7 @@ public class ScanController {
                 }
             }
 
-            boolean hasPermission = hasScanResultPermission(client);
+            var hasPermission = hasScanResultPermission(client);
             if (!hasPermission) {
                 for (String associatedDevice : client.mAssociatedDevices) {
                     if (associatedDevice.equalsIgnoreCase(address)) {
@@ -533,15 +533,16 @@ public class ScanController {
                     result = sanitized;
                 }
             }
-            boolean matchResult = matchesFilters(client, result, originalAddress);
-            if (!hasPermission || !matchResult) {
-                Log.v(
-                        TAG,
-                        "Skipping client: permission=" + hasPermission + " matches=" + matchResult);
+            if (!hasPermission) {
+                Log.v(TAG, "Skipping client: No permission");
+                continue;
+            }
+            if (!matchesFilters(client, result, originalAddress)) {
+                Log.v(TAG, "Skipping client: No filter match");
                 continue;
             }
 
-            int callbackType = settings.getCallbackType();
+            final int callbackType = settings.getCallbackType();
             if (!(callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                     || callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH)) {
                 Log.v(TAG, "Skipping client: Not CALLBACK_TYPE_ALL_MATCHES");
