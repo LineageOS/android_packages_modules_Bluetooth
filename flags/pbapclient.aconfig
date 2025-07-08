@@ -28,3 +28,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "pbap_client_check_access_permission"
+    namespace: "bluetooth"
+    description: "Check if phonebook access permission is allowed before connecting"
+    bug: "428758471"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
