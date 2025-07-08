@@ -3397,9 +3397,6 @@ public class LeAudioService extends ConnectableProfile {
                     TAG,
                     "transitionFromBroadcastToUnicast: No valid unicast device for group ID: "
                             + mUnicastGroupIdDeactivatedForBroadcastTransition);
-            if (!Flags.leaudioBroadcastPrimaryGroupSelection()) {
-                updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
-            }
             updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
             return;
         }
@@ -3415,10 +3412,6 @@ public class LeAudioService extends ConnectableProfile {
          * potential ringtone streaming device.
          */
         updateInbandRingtoneForTheGroup(mUnicastGroupIdDeactivatedForBroadcastTransition);
-
-        if (!Flags.leaudioBroadcastPrimaryGroupSelection()) {
-            updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
-        }
         setActiveDevice(unicastDevice);
     }
 
@@ -3888,16 +3881,8 @@ public class LeAudioService extends ConnectableProfile {
                     if (isBroadcastAllowedToBeActivateInCurrentAudioMode()) {
                         /* Check if broadcast was deactivated due to unicast */
                         if (mBroadcastIdDeactivatedForUnicastTransition.isPresent()) {
-                            if (!Flags.leaudioBroadcastPrimaryGroupSelection()) {
-                                updateFallbackUnicastGroupIdForBroadcast(groupId);
-                            }
                             startBroadcast(mBroadcastIdDeactivatedForUnicastTransition.get());
                             mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
-                        }
-
-                        if (mAwaitingBroadcastCreateResponse
-                                && !Flags.leaudioBroadcastPrimaryGroupSelection()) {
-                            updateFallbackUnicastGroupIdForBroadcast(groupId);
                         }
                     }
                 }
@@ -4328,8 +4313,7 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         /* Set by default earliest connected device */
-        if (Flags.leaudioBroadcastPrimaryGroupSelection()
-                && mUnicastGroupIdDeactivatedForBroadcastTransition == LE_AUDIO_GROUP_ID_INVALID) {
+        if (mUnicastGroupIdDeactivatedForBroadcastTransition == LE_AUDIO_GROUP_ID_INVALID) {
             setDefaultBroadcastToUnicastFallbackGroup();
         }
     }
@@ -4397,16 +4381,14 @@ public class LeAudioService extends ConnectableProfile {
                             hasFallbackDevice,
                             false);
                     /* Set by default earliest connected device */
-                    if (Flags.leaudioBroadcastPrimaryGroupSelection()
-                            && mUnicastGroupIdDeactivatedForBroadcastTransition == groupId) {
+                    if (mUnicastGroupIdDeactivatedForBroadcastTransition == groupId) {
                         setDefaultBroadcastToUnicastFallbackGroup();
                     }
                     return;
                 }
 
                 /* Set by default earliest connected device */
-                if (Flags.leaudioBroadcastPrimaryGroupSelection()
-                        && mUnicastGroupIdDeactivatedForBroadcastTransition == groupId) {
+                if (mUnicastGroupIdDeactivatedForBroadcastTransition == groupId) {
                     setDefaultBroadcastToUnicastFallbackGroup();
                 }
             }
@@ -5054,8 +5036,7 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         /* Set by default earliest connected device */
-        if (Flags.leaudioBroadcastPrimaryGroupSelection()
-                && mUnicastGroupIdDeactivatedForBroadcastTransition == LE_AUDIO_GROUP_ID_INVALID) {
+        if (mUnicastGroupIdDeactivatedForBroadcastTransition == LE_AUDIO_GROUP_ID_INVALID) {
             setDefaultBroadcastToUnicastFallbackGroup();
         }
 
@@ -5123,11 +5104,7 @@ public class LeAudioService extends ConnectableProfile {
                 }
 
                 if (mUnicastGroupIdDeactivatedForBroadcastTransition == groupId) {
-                    if (Flags.leaudioBroadcastPrimaryGroupSelection()) {
-                        setDefaultBroadcastToUnicastFallbackGroup();
-                    } else {
-                        updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
-                    }
+                    setDefaultBroadcastToUnicastFallbackGroup();
                 }
             }
             mHandler.post(() -> notifyGroupNodeRemoved(device, groupId));
