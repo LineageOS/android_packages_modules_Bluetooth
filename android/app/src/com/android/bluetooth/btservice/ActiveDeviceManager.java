@@ -705,6 +705,18 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 }
 
                 updateLeAudioActiveDeviceIfDualMode(mHfpActiveDevice, device);
+                /* mLeAudioActiveDevice may be updated due to next or previous device being
+                 * a dual mode one.
+                 */
+                if (Flags.admUnsetOthersOnHfpChanged()
+                        && mLeAudioActiveDevice != null
+                        && device != null
+                        && !mLeAudioActiveDevice.equals(device)) {
+                    /* HFP device becoming active is not dual mode and was not set as
+                     * active LE Audio device. Inactivate LE Audio device.
+                     */
+                    setLeAudioActiveDevice(null, true);
+                }
 
                 if ((!Utils.isDualModeAudioEnabled() && device == null)) {
                     Log.d(TAG, "HFP active device is null. Try to fallback to the active device.");
