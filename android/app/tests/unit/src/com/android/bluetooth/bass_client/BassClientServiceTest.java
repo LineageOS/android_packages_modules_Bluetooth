@@ -40,7 +40,6 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
@@ -74,11 +73,9 @@ import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.bluetooth.le.PeriodicAdvertisingReport;
-import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
@@ -191,7 +188,6 @@ public class BassClientServiceTest {
             createBroadcastMetadata(TEST_BROADCAST_ID_2);
 
     private BassClientService mBassClientService;
-    private ArgumentCaptor<ScanCallback> mCallbackCaptor;
     private ArgumentCaptor<IScannerCallback> mBassScanCallbackCaptor;
 
     private InOrder mInOrderPeriodicAdvertisingManager;
@@ -338,23 +334,21 @@ public class BassClientServiceTest {
             doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
         }
 
-        if (Flags.leaudioBassScanWithInternalScanController()) {
-            mBassScanCallbackCaptor = ArgumentCaptor.forClass(IScannerCallback.class);
-            doAnswer(
-                            invocation -> {
-                                try {
-                                    int scannerId = 1;
-                                    mBassScanCallbackCaptor
-                                            .getValue()
-                                            .onScannerRegistered(0, scannerId);
-                                } catch (RemoteException e) {
-                                    // the mocked onScannerRegistered doesn't throw RemoteException
-                                }
-                                return null;
-                            })
-                    .when(mScanController)
-                    .registerScannerInternal(mBassScanCallbackCaptor.capture(), any(), any());
-        }
+        mBassScanCallbackCaptor = ArgumentCaptor.forClass(IScannerCallback.class);
+        doAnswer(
+                        invocation -> {
+                            try {
+                                int scannerId = 1;
+                                mBassScanCallbackCaptor
+                                        .getValue()
+                                        .onScannerRegistered(0, scannerId);
+                            } catch (RemoteException e) {
+                                // the mocked onScannerRegistered doesn't throw RemoteException
+                            }
+                            return null;
+                        })
+                .when(mScanController)
+                .registerScannerInternal(mBassScanCallbackCaptor.capture(), any(), any());
 
         when(mCallback.asBinder()).thenReturn(mBinder);
         mBassClientService.registerCallback(mCallback);
@@ -507,31 +501,12 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.isSearchInProgress()).isFalse();
         mBassClientService.startSearchingForSources(scanFilters);
 
-        if (Flags.leaudioBassScanWithInternalScanController()) {
-            verify(mScanController).registerScannerInternal(any(), any(), any());
-            verify(mScanController).startScanInternal(eq(scannerId), any(), any());
-        } else {
-            verify(mBluetoothLeScannerWrapper).startScan(notNull(), notNull(), notNull());
-        }
+        verify(mScanController).registerScannerInternal(any(), any(), any());
+        verify(mScanController).startScanInternal(eq(scannerId), any(), any());
         assertThat(mBassClientService.isSearchInProgress()).isTrue();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm).sendMessage(BassClientStateMachine.START_SCAN_OFFLOAD);
         }
-    }
-
-    /**
-     * Test whether service.startSearchingForSources() does not call
-     * BluetoothLeScannerWrapper.startScan() when the scanner instance cannot be achieved.
-     */
-    @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BASS_SCAN_WITH_INTERNAL_SCAN_CONTROLLER)
-    public void testStartSearchingForSources_whenScannerIsNull() {
-        doReturn(null).when(mObjectsFactory).getBluetoothLeScannerWrapper(any());
-        List<ScanFilter> scanFilters = new ArrayList<>();
-
-        mBassClientService.startSearchingForSources(scanFilters);
-
-        verify(mBluetoothLeScannerWrapper, never()).startScan(any(), any(), any());
     }
 
     private void prepareConnectedDeviceGroup() {
@@ -591,14 +566,8 @@ public class BassClientServiceTest {
 
         mBassClientService.startSearchingForSources(scanFilters);
 
-        if (Flags.leaudioBassScanWithInternalScanController()) {
-            verify(mScanController).registerScannerInternal(any(), any(), any());
-            verify(mScanController).startScanInternal(eq(scannerId), any(), any());
-        } else {
-            mCallbackCaptor = ArgumentCaptor.forClass(ScanCallback.class);
-            verify(mBluetoothLeScannerWrapper)
-                    .startScan(notNull(), notNull(), mCallbackCaptor.capture());
-        }
+        verify(mScanController).registerScannerInternal(any(), any(), any());
+        verify(mScanController).startScanInternal(eq(scannerId), any(), any());
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm).sendMessage(BassClientStateMachine.START_SCAN_OFFLOAD);
         }
@@ -612,11 +581,8 @@ public class BassClientServiceTest {
 
         // Stop searching
         mBassClientService.stopSearchingForSources();
-        if (Flags.leaudioBassScanWithInternalScanController()) {
-            verify(mScanController).stopScan(anyInt());
-        } else {
-            verify(mBluetoothLeScannerWrapper).stopScan(mCallbackCaptor.getValue());
-        }
+        verify(mScanController).stopScan(anyInt());
+
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm).sendMessage(BassClientStateMachine.STOP_SCAN_OFFLOAD);
         }
@@ -639,11 +605,7 @@ public class BassClientServiceTest {
 
         // Stop
         mBassClientService.cleanup();
-        if (Flags.leaudioBassScanWithInternalScanController()) {
-            verify(mScanController).stopScan(anyInt());
-        } else {
-            verify(mBluetoothLeScannerWrapper).stopScan(mCallbackCaptor.getValue());
-        }
+        verify(mScanController).stopScan(anyInt());
 
         // Check if unsyced
         mInOrderPeriodicAdvertisingManager
@@ -1050,14 +1012,10 @@ public class BassClientServiceTest {
     }
 
     private void generateScanResult(ScanResult result) {
-        if (Flags.leaudioBassScanWithInternalScanController()) {
-            try {
-                mBassScanCallbackCaptor.getValue().onScanResult(result);
-            } catch (RemoteException e) {
-                // the mocked onScanResult doesn't throw RemoteException
-            }
-        } else {
-            mCallbackCaptor.getValue().onScanResult(ScanSettings.CALLBACK_TYPE_ALL_MATCHES, result);
+        try {
+            mBassScanCallbackCaptor.getValue().onScanResult(result);
+        } catch (RemoteException e) {
+            // the mocked onScanResult doesn't throw RemoteException
         }
     }
 
