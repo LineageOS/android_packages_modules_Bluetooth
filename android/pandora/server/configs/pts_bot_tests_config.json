@@ -2614,35 +2614,6 @@
         "AVRCP/TG/CA/BI-10-C",
         "AVRCP/TG/CA/BV-16-C"
       ]
-    },
-    {
-      "flags": [
-        "leaudio_add_aics_support"
-      ],
-      "tests": [
-        "VCP/VC/AICP/BV-01-C",
-        "VCP/VC/AICP/BV-02-C",
-        "VCP/VC/AICP/BV-03-C",
-        "VCP/VC/AICP/BV-04-C",
-        "VCP/VC/AICP/BV-05-C",
-        "VCP/VC/CGGIT/CHA/BV-08-C",
-        "VCP/VC/CGGIT/CHA/BV-09-C",
-        "VCP/VC/CGGIT/CHA/BV-10-C",
-        "VCP/VC/CGGIT/CHA/BV-11-C",
-        "VCP/VC/CGGIT/CHA/BV-12-C",
-        "VCP/VC/CGGIT/CHA/BV-13-C",
-        "VCP/VC/CGGIT/SER/BV-03-C",
-        "VCP/VC/SPE/BI-08-C",
-        "VCP/VC/SPE/BI-09-C",
-        "VCP/VC/SPE/BI-10-C",
-        "VCP/VC/SPE/BI-11-C",
-        "VCP/VC/SPE/BI-12-C",
-        "VCP/VC/SPE/BI-14-C",
-        "VCP/VC/SPE/BI-17-C",
-        "VCP/VC/SPE/BI-18-C",
-        "VCP/VC/SPE/BI-19-C",
-        "VCP/VC/SPE/BI-20-C"
-      ]
     }
   ],
   "system_properties": [
@@ -2712,6 +2683,13 @@
         "VCP/VC/AICP/BV-03-C",
         "VCP/VC/AICP/BV-04-C",
         "VCP/VC/AICP/BV-05-C",
+        "VCP/VC/CGGIT/CHA/BV-08-C",
+        "VCP/VC/CGGIT/CHA/BV-09-C",
+        "VCP/VC/CGGIT/CHA/BV-10-C",
+        "VCP/VC/CGGIT/CHA/BV-11-C",
+        "VCP/VC/CGGIT/CHA/BV-12-C",
+        "VCP/VC/CGGIT/CHA/BV-13-C",
+        "VCP/VC/CGGIT/SER/BV-03-C",
         "VCP/VC/SPE/BI-05-C",
         "VCP/VC/SPE/BI-08-C",
         "VCP/VC/SPE/BI-09-C",

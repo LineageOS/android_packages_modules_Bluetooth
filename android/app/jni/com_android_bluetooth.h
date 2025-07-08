@@ -124,6 +124,8 @@ private:
 
 const bt_interface_t* getBluetoothInterface();
 
+int register_com_android_bluetooth_scan(JNIEnv* env);
+
 int register_com_android_bluetooth_hfp(JNIEnv* env);
 
 int register_com_android_bluetooth_hfpclient(JNIEnv* env);

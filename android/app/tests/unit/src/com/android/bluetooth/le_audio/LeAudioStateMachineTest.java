@@ -230,7 +230,6 @@ public class LeAudioStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_SM_IGNORE_CONNECT_EVENTS_IN_CONNECTING_STATE)
     public void connectEventNeglectedWhileInConnectingState() {
         allowConnection(true);
         doReturn(true).when(mLeAudioNativeInterface).connectLeAudio(any(BluetoothDevice.class));

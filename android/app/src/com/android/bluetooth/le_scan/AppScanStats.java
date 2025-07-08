@@ -149,6 +149,7 @@ class AppScanStats {
     private int mAmbientDiscoveryScan = 0;
     private long startTime = 0;
     private int results = 0;
+    private int mScheduledBatchAlarmCount = 0;
 
     AppScanStats(
             String name,
@@ -576,6 +577,10 @@ class AppScanStats {
                 < LARGE_SCAN_TIME_GAP_MS);
     }
 
+    synchronized void recordBatchAlarmScheduled() {
+        mScheduledBatchAlarmCount++;
+    }
+
     String getAttributionTagFromScannerId(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         return scan == null ? "" : scan.getAttributionTag();
@@ -702,12 +707,11 @@ class AppScanStats {
         }
 
         final long score =
-                (oppScanTime * ScanRadioStats.OPPORTUNISTIC_WEIGHT
-                                + lowPowerScanTime * ScanRadioStats.LOW_POWER_WEIGHT
-                                + balancedScanTime * ScanRadioStats.BALANCED_WEIGHT
-                                + lowLatencyScanTime * ScanRadioStats.LOW_LATENCY_WEIGHT
-                                + ambientDiscoveryScanTime
-                                        * ScanRadioStats.AMBIENT_DISCOVERY_WEIGHT)
+                (oppScanTime * ScanUtil.WEIGHT_OPPORTUNISTIC
+                                + lowPowerScanTime * ScanUtil.WEIGHT_LOW_POWER
+                                + balancedScanTime * ScanUtil.WEIGHT_BALANCED
+                                + lowLatencyScanTime * ScanUtil.WEIGHT_LOW_LATENCY
+                                + ambientDiscoveryScanTime * ScanUtil.WEIGHT_AMBIENT_DISCOVERY)
                         / 100;
 
         sb.append("  ").append(mAppName);
@@ -765,6 +769,11 @@ class AppScanStats {
         sb.append("\n    Total number of results")
                 .append("                                                      : ")
                 .append(results);
+        if (mScheduledBatchAlarmCount > 0) {
+            sb.append("\n    Number of batch alarms scheduled")
+                    .append("                                             : ")
+                    .append(mScheduledBatchAlarmCount);
+        }
 
         if (!mLastScans.isEmpty()) {
             sb.append("\n    Last ").append(mLastScans.size()).append(" scans:");

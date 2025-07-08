@@ -21,6 +21,8 @@ import static android.bluetooth.BluetoothUtils.extractBytes;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -94,9 +96,6 @@ public class ScanController {
     private static final String TAG = ScanController.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
-
-    /** The default floor value for LE batch scan report delays greater than 0 */
-    static final long DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L;
 
     // Batch scan related constants.
     private static final int TRUNCATED_RESULT_SIZE = 11;
@@ -517,7 +516,7 @@ public class ScanController {
                 }
             }
 
-            boolean hasPermission = hasScanResultPermission(client);
+            var hasPermission = hasScanResultPermission(client);
             if (!hasPermission) {
                 for (String associatedDevice : client.mAssociatedDevices) {
                     if (associatedDevice.equalsIgnoreCase(address)) {
@@ -533,15 +532,16 @@ public class ScanController {
                     result = sanitized;
                 }
             }
-            boolean matchResult = matchesFilters(client, result, originalAddress);
-            if (!hasPermission || !matchResult) {
-                Log.v(
-                        TAG,
-                        "Skipping client: permission=" + hasPermission + " matches=" + matchResult);
+            if (!hasPermission) {
+                Log.v(TAG, "Skipping client: No permission");
+                continue;
+            }
+            if (!matchesFilters(client, result, originalAddress)) {
+                Log.v(TAG, "Skipping client: No filter match");
                 continue;
             }
 
-            int callbackType = settings.getCallbackType();
+            final int callbackType = settings.getCallbackType();
             if (!(callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                     || callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH)) {
                 Log.v(TAG, "Skipping client: Not CALLBACK_TYPE_ALL_MATCHES");
@@ -609,23 +609,24 @@ public class ScanController {
                         + (", status=" + status));
 
         // First check the callback map
-        ScannerMap.ScannerApp cbApp = mScannerMap.getByUuid(uuid);
-        if (cbApp != null) {
-            if (status == 0) {
-                cbApp.mId = scannerId;
-                // If app is callback based, setup a death recipient. App will initiate the start.
-                // Otherwise, if PendingIntent based, start the scan directly.
-                if (cbApp.mCallback != null) {
-                    cbApp.linkToDeath(new ScannerDeathRecipient(scannerId, cbApp.mName));
-                } else {
-                    continuePiStartScan(scannerId, cbApp);
-                }
-            } else {
-                mScannerMap.remove(uuid);
-            }
-            if (cbApp.mCallback != null) {
-                cbApp.mCallback.onScannerRegistered(status, scannerId);
-            }
+        ScannerMap.ScannerApp scannerApp = mScannerMap.getByUuid(uuid);
+        if (scannerApp == null) {
+            return;
+        }
+        if (scannerApp.mCallback != null) {
+            scannerApp.mCallback.onScannerRegistered(status, scannerId);
+        }
+        if (status != ScanCallback.NO_ERROR) {
+            mScannerMap.remove(uuid);
+            return;
+        }
+        scannerApp.mId = scannerId;
+        // If app is callback based, setup a death recipient. App will initiate the start.
+        // Otherwise, if PendingIntent based, start the scan directly.
+        if (scannerApp.mCallback != null) {
+            scannerApp.linkToDeath(new ScannerDeathRecipient(scannerId, scannerApp.mName));
+        } else {
+            continuePiStartScan(scannerId, scannerApp);
         }
     }
 
@@ -832,7 +833,7 @@ public class ScanController {
                         + (", numRecords=" + numRecords));
 
         Set<ScanResult> results = parseBatchScanResults(numRecords, reportType, recordData);
-        if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
+        if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             // We only support single client for truncated mode.
             ScannerMap.ScannerApp app = mScannerMap.getById(scannerId);
             if (app == null) {
@@ -892,7 +893,7 @@ public class ScanController {
         }
         try {
             if (app.mCallback != null) {
-                if (ScanManager.isAutoBatchScanClientEnabled(client)) {
+                if (ScanUtil.isAutoBatchScanClientEnabled(client)) {
                     Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
                     for (ScanResult result : results) {
                         app.mAppScanStats.addResult(client.mScannerId);
@@ -954,7 +955,7 @@ public class ScanController {
                         + " (elapsed: "
                         + SystemClock.elapsedRealtime()
                         + "ms)");
-        if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
+        if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             return parseTruncatedResults(numRecords, batchRecord);
         } else {
             return parseFullResults(numRecords, batchRecord);
@@ -1468,7 +1469,6 @@ public class ScanController {
             Log.e(TAG, "Unexpectedly cannot find batch scan client for scannerId=" + scannerId);
             return;
         }
-        Log.d(TAG, "flushPendingBatchResults for client: " + scanClient);
         doOnScanThread(
                 () -> {
                     mScanManager.flushBatchScanResults(scanClient);
@@ -1571,9 +1571,9 @@ public class ScanController {
     }
 
     /**
-     * Ensures the report delay is either 0 or at least the floor value ({@link
-     * #DEFAULT_REPORT_DELAY_FLOOR_MS}).
+     * Ensures the report delay is either 0 or at least the floor value.
      *
+     * @see ScanUtil#DEFAULT_REPORT_DELAY_FLOOR_MS
      * @param settings are the scan settings passed into a request to start le scanning
      * @return the passed in ScanSettings object if the report delay is 0 or above the floor value;
      *     a new ScanSettings object with the report delay being the floor value if the original

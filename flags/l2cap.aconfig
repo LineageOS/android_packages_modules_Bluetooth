@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "l2cap_fcs_option_fix"
-    namespace: "bluetooth"
-    description: "Use fcs_option for non BASIC mode "
-    bug: "372605959"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "delay_offload_le_coc_connection_ind"
     namespace: "bluetooth"
     description: "Delay LE CoC connection indication callback if controller Tx window is full"

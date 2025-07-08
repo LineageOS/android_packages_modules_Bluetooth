@@ -108,3 +108,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hogp_direct_connection_upgrade"
+    namespace: "bluetooth"
+    description: "Allow background connection requests to be upgraded to direct connections"
+    bug: "430179438"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

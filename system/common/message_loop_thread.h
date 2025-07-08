@@ -23,7 +23,10 @@
 #include <bluetooth/log.h>
 #include <unistd.h>
 
+#include <chrono>
 #include <future>
+#include <mutex>
+#include <ostream>
 #include <string>
 #include <thread>
 

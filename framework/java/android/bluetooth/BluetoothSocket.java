@@ -644,30 +644,26 @@ public final class BluetoothSocket implements Closeable {
             if (socketManager == null) {
                 throw new BluetoothSocketException(BluetoothSocketException.SOCKET_MANAGER_FAILURE);
             }
-            if (Flags.socketSettingsApi()) {
-                if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
-                    mPfd =
-                            socketManager.connectSocket(
+
+            if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
+                mPfd =
+                    socketManager.connectSocket(
                                     mDevice, mType, mUuid, mPort, getSecurityFlags());
-                } else {
-                    mPfd =
-                            socketManager.connectSocketWithOffload(
-                                    mDevice,
-                                    mType,
-                                    mUuid,
-                                    mPort,
-                                    getSecurityFlags(),
-                                    mDataPath,
-                                    mSocketName,
-                                    mHubId,
-                                    mEndpointId,
-                                    mMaximumPacketSize);
-                }
             } else {
                 mPfd =
-                        socketManager.connectSocket(
-                                mDevice, mType, mUuid, mPort, getSecurityFlags());
+                    socketManager.connectSocketWithOffload(
+                                mDevice,
+                                mType,
+                                mUuid,
+                                mPort,
+                                getSecurityFlags(),
+                                mDataPath,
+                                mSocketName,
+                                mHubId,
+                                mEndpointId,
+                                mMaximumPacketSize);
             }
+
             synchronized (this) {
                 Log.i(TAG, "connect(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
                 if (mSocketState == SocketState.CLOSED) {
@@ -1315,18 +1311,16 @@ public final class BluetoothSocket implements Closeable {
      * @hide
      */
     private void sendSocketAcceptSignal(OutputStream os, boolean isAccepting) throws IOException {
-        if (Flags.socketSettingsApi()) {
-            if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
-                return;
-            }
-            Log.d(TAG, "sendSocketAcceptSignal isAccepting " + isAccepting);
-            byte[] sig = new byte[SOCK_ACCEPT_SIGNAL_SIZE];
-            ByteBuffer bb = ByteBuffer.wrap(sig);
-            bb.order(ByteOrder.nativeOrder());
-            bb.putShort((short) SOCK_ACCEPT_SIGNAL_SIZE);
-            bb.putShort((short) (isAccepting ? 1 : 0));
-            os.write(sig, 0, SOCK_ACCEPT_SIGNAL_SIZE);
+        if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
+            return;
         }
+        Log.d(TAG, "sendSocketAcceptSignal isAccepting " + isAccepting);
+        byte[] sig = new byte[SOCK_ACCEPT_SIGNAL_SIZE];
+        ByteBuffer bb = ByteBuffer.wrap(sig);
+        bb.order(ByteOrder.nativeOrder());
+        bb.putShort((short) SOCK_ACCEPT_SIGNAL_SIZE);
+        bb.putShort((short) (isAccepting ? 1 : 0));
+        os.write(sig, 0, SOCK_ACCEPT_SIGNAL_SIZE);
     }
 
     private String waitSocketSignal(InputStream is) throws IOException {

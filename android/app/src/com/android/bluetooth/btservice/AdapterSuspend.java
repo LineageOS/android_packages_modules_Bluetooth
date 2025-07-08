@@ -83,14 +83,13 @@ public class AdapterSuspend {
 
     private final AdapterService mAdapterService;
     private final AdapterNativeInterface mAdapterNativeInterface;
-
     private final DeviceStateManager mDeviceStateManager;
     private final PowerManager mPowerManager;
     private final AdapterSuspendStateMachine mSuspendStateMachine;
     private final DisplayManager mDisplayManager;
 
-    private boolean mDisconnectAclOnSuspend;
-    private boolean mScanModeNoneOnSuspend;
+    private final boolean mDisconnectAclOnSuspend;
+    private final boolean mScanModeNoneOnSuspend;
     private int mScanModeOnLastSuspend;
     private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
 

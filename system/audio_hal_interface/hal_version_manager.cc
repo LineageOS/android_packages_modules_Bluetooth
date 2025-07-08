@@ -22,6 +22,8 @@
 #include <hidl/ServiceManagement.h>
 
 #include <memory>
+#include <mutex>
+#include <string>
 
 #include "aidl/audio_aidl_interfaces.h"
 

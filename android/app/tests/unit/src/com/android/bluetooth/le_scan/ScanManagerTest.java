@@ -39,14 +39,16 @@ import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListene
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT_MILLIS;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
 import static com.android.bluetooth.le_scan.ScanManager.MSFT_HCI_EXT_ENABLED;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_BALANCED_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_BALANCED_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_LOW_LATENCY_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanManager.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_INTERVAL_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -313,18 +315,18 @@ public class ScanManagerTest {
     }
 
     private void setAppImportance(boolean isForeground, int uid) {
+        final int importance =
+                isForeground
+                        ? ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
+                        : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1;
+        final var uidImportance = new ScanManager.UidImportance(uid, importance);
         if (Flags.scanControllerThread()) {
-            final int importance =
-                    isForeground
-                            ? ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                            : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                                    + 1;
-            executeOnScanThread(
-                    () ->
-                            mScanManager.handleImportanceChange(
-                                    new ScanManager.UidImportance(uid, importance)));
+            executeOnScanThread(() -> mScanManager.handleImportanceChange(uidImportance));
         } else {
-            sendMessageWaitForProcessed(createImportanceMessage(isForeground, uid));
+            Message message = new Message();
+            message.what = ScanManager.MSG_IMPORTANCE_CHANGE;
+            message.obj = uidImportance;
+            sendMessageWaitForProcessed(message);
         }
     }
 
@@ -496,17 +498,6 @@ public class ScanManagerTest {
         Message message = new Message();
         message.what = isLocationOn ? ScanManager.MSG_RESUME_SCANS : ScanManager.MSG_SUSPEND_SCANS;
         message.obj = null;
-        return message;
-    }
-
-    private static Message createImportanceMessage(boolean isForeground, int uid) {
-        final int importance =
-                isForeground
-                        ? ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                        : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1;
-        Message message = new Message();
-        message.what = ScanManager.MSG_IMPORTANCE_CHANGE;
-        message.obj = new ScanManager.UidImportance(uid, importance);
         return message;
     }
 
@@ -1123,7 +1114,7 @@ public class ScanManagerTest {
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getBatchScanQueue()).contains(client);
-            assertThat(mScanManager.getBatchScanParams().mScanMode).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
         }
     }
 
@@ -1153,13 +1144,13 @@ public class ScanManagerTest {
             startScan(client);
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
-            assertThat(mScanManager.getBatchScanParams().mScanMode).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
             // Turn on screen
             setScreenOn(true);
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getBatchScanQueue()).contains(client);
-            assertThat(mScanManager.getBatchScanParams().mScanMode).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
         }
     }
 
@@ -1230,7 +1221,7 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getBatchScanQueue()).contains(client);
-                    assertThat(mScanManager.getBatchScanParams().mScanMode)
+                    assertThat(mScanManager.getBatchScanParams().scanMode())
                             .isEqualTo(expectedScanMode);
                     // Turn on screen
                     setScreenOn(true);
@@ -1244,7 +1235,7 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getBatchScanQueue()).contains(client);
-                    assertThat(mScanManager.getBatchScanParams().mScanMode)
+                    assertThat(mScanManager.getBatchScanParams().scanMode())
                             .isEqualTo(expectedScanMode);
                 });
     }
@@ -1459,8 +1450,8 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_POWER),
-                        eq((long) ScanManager.SCAN_MODE_LOW_POWER_INTERVAL_MS),
-                        eq((long) ScanManager.SCAN_MODE_LOW_POWER_WINDOW_MS),
+                        eq((long) SCAN_MODE_LOW_POWER_INTERVAL_MS),
+                        eq((long) SCAN_MODE_LOW_POWER_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
                         eq(IMPORTANCE_FOREGROUND_SERVICE),
@@ -1502,8 +1493,8 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_BALANCED),
-                        eq((long) ScanManager.SCAN_MODE_BALANCED_INTERVAL_MS),
-                        eq((long) ScanManager.SCAN_MODE_BALANCED_WINDOW_MS),
+                        eq((long) SCAN_MODE_BALANCED_INTERVAL_MS),
+                        eq((long) SCAN_MODE_BALANCED_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
                         eq(IMPORTANCE_FOREGROUND_SERVICE),
@@ -1568,8 +1559,8 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_LATENCY),
-                        eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_INTERVAL_MS),
-                        eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS),
+                        eq((long) SCAN_MODE_LOW_LATENCY_INTERVAL_MS),
+                        eq((long) SCAN_MODE_LOW_LATENCY_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration * 2),
                         eq(IMPORTANCE_FOREGROUND_SERVICE),
@@ -1637,8 +1628,8 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_LATENCY),
-                        eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_INTERVAL_MS),
-                        eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS),
+                        eq((long) SCAN_MODE_LOW_LATENCY_INTERVAL_MS),
+                        eq((long) SCAN_MODE_LOW_LATENCY_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration * 2),
                         eq(IMPORTANCE_FOREGROUND_SERVICE),
@@ -1658,8 +1649,8 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_BALANCED),
-                        eq((long) ScanManager.SCAN_MODE_BALANCED_INTERVAL_MS),
-                        eq((long) ScanManager.SCAN_MODE_BALANCED_WINDOW_MS),
+                        eq((long) SCAN_MODE_BALANCED_INTERVAL_MS),
+                        eq((long) SCAN_MODE_BALANCED_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
                         eq(IMPORTANCE_FOREGROUND_SERVICE),
@@ -1679,8 +1670,8 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_POWER),
-                        eq((long) ScanManager.SCAN_MODE_LOW_POWER_INTERVAL_MS),
-                        eq((long) ScanManager.SCAN_MODE_LOW_POWER_WINDOW_MS),
+                        eq((long) SCAN_MODE_LOW_POWER_INTERVAL_MS),
+                        eq((long) SCAN_MODE_LOW_POWER_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
                         eq(IMPORTANCE_FOREGROUND_SERVICE),
@@ -1845,11 +1836,11 @@ public class ScanManagerTest {
         final long scanTestDuration = 100;
         // Set scan mode map {scan mode (ScanMode) : scan weight (ScanWeight)}
         SparseIntArray scanModeMap = new SparseIntArray();
-        scanModeMap.put(SCAN_MODE_SCREEN_OFF, ScanRadioStats.SCREEN_OFF_LOW_POWER_WEIGHT);
-        scanModeMap.put(SCAN_MODE_LOW_POWER, ScanRadioStats.LOW_POWER_WEIGHT);
-        scanModeMap.put(SCAN_MODE_BALANCED, ScanRadioStats.BALANCED_WEIGHT);
-        scanModeMap.put(SCAN_MODE_LOW_LATENCY, ScanRadioStats.LOW_LATENCY_WEIGHT);
-        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, ScanRadioStats.AMBIENT_DISCOVERY_WEIGHT);
+        scanModeMap.put(SCAN_MODE_SCREEN_OFF, ScanUtil.WEIGHT_SCREEN_OFF_LOW_POWER);
+        scanModeMap.put(SCAN_MODE_LOW_POWER, ScanUtil.WEIGHT_LOW_POWER);
+        scanModeMap.put(SCAN_MODE_BALANCED, ScanUtil.WEIGHT_BALANCED);
+        scanModeMap.put(SCAN_MODE_LOW_LATENCY, ScanUtil.WEIGHT_LOW_LATENCY);
+        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, ScanUtil.WEIGHT_AMBIENT_DISCOVERY);
 
         // Turn on screen
         setScreenOn(true);

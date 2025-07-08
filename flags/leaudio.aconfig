@@ -69,13 +69,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_add_aics_support"
-    namespace: "bluetooth"
-    description: "Add AICS support"
-    bug: "361263965"
-}
-
-flag {
     name: "metadata_api_microphone_for_call_enabled"
     is_exported: true
     namespace: "bluetooth"
@@ -169,16 +162,6 @@ flag {
     namespace: "bluetooth"
     description: "Use Audio Recording listener instead of monitoring sink session"
     bug: "381054654"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_sm_ignore_connect_events_in_connecting_state"
-    namespace: "bluetooth"
-    description: "When received CONNECT event in Connecting state, with no prior DISCONNECT - ignore the event"
-    bug: "384460395"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

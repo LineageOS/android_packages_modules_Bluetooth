@@ -17,6 +17,8 @@
 package android.bluetooth.hfp;
 
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -33,11 +35,13 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.Utils;
 import android.bluetooth.test_utils.EnableBluetoothRule;
@@ -70,7 +74,8 @@ import pandora.HFPGrpc;
 import pandora.HfpProto.DisableSlcAsHandsfreeRequest;
 import pandora.HfpProto.EnableSlcAsHandsfreeRequest;
 import pandora.HostProto;
-import pandora.HostProto.WaitConnectionRequest;
+import pandora.HostProto.ConnectRequest;
+import pandora.SecurityProto.DeleteBondRequest;
 
 import java.time.Duration;
 
@@ -85,7 +90,8 @@ public class HfpTest {
     public final PandoraDevice mBumble = new PandoraDevice();
 
     @Rule(order = 2)
-    public final EnableBluetoothRule mEnableBluetoothRule = new EnableBluetoothRule();
+    public final EnableBluetoothRule mEnableBluetoothRule =
+            new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
 
     @Mock private BroadcastReceiver mReceiver;
     @Mock private BluetoothProfile.ServiceListener mServiceListener;
@@ -100,6 +106,7 @@ public class HfpTest {
     private HFPGrpc.HFPBlockingStub mHfBlockingStub;
     private BluetoothDevice mBumbleDevice;
     private BluetoothHeadset mHfpService;
+    private BluetoothA2dp mA2dpService;
     private InOrder mInOrder;
 
     @Before
@@ -108,6 +115,7 @@ public class HfpTest {
         mInOrder = inOrder(mReceiver);
 
         IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
         filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
@@ -115,6 +123,7 @@ public class HfpTest {
         Utils.setupIntentLogger(TAG, mReceiver);
 
         mHfpService = (BluetoothHeadset) connectToProfile(BluetoothProfile.HEADSET);
+        mA2dpService = (BluetoothA2dp) connectToProfile(BluetoothProfile.A2DP);
 
         mHfBlockingStub = mBumble.hfBlocking();
         mBumbleDevice = mBumble.getRemoteDevice();
@@ -148,10 +157,8 @@ public class HfpTest {
         // Obtain the connection which will be used for EnableSlc
         ByteString address =
                 ByteString.copyFrom(Utils.addressBytesFromString(mAdapter.getAddress()));
-        WaitConnectionRequest connectionRequest =
-                WaitConnectionRequest.newBuilder().setAddress(address).build();
-        HostProto.WaitConnectionResponse response =
-                mBumble.hostBlocking().waitConnection(connectionRequest);
+        ConnectRequest connectRequest = ConnectRequest.newBuilder().setAddress(address).build();
+        HostProto.ConnectResponse response = mBumble.hostBlocking().connect(connectRequest);
 
         // Enable Slc from HF/Bumble side
         mHfBlockingStub.enableSlcAsHandsfree(
@@ -194,16 +201,23 @@ public class HfpTest {
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
-
+        if (mA2dpService.getConnectionPolicy(mBumbleDevice) == CONNECTION_POLICY_ALLOWED) {
+            assertThat(mA2dpService.setConnectionPolicy(mBumbleDevice, CONNECTION_POLICY_FORBIDDEN))
+                    .isTrue();
+        }
         // Connection is automatically triggered by pairing
         verifyConnectionState(STATE_CONNECTING);
         verifyConnectionState(STATE_CONNECTED);
         assertThat(mHfpService.getConnectionState(mBumbleDevice)).isEqualTo(STATE_CONNECTED);
 
-        assertThat(mHfpService.disconnect(mBumbleDevice)).isTrue();
+        assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
         verifyConnectionState(STATE_DISCONNECTING);
         verifyConnectionState(STATE_DISCONNECTED);
         assertThat(mHfpService.getConnectionState(mBumbleDevice)).isEqualTo(STATE_DISCONNECTED);
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
     }
 
     private void removeBond() {
@@ -213,6 +227,11 @@ public class HfpTest {
                     hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                     hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
         }
+        // Remove the bond on the Bumble device as well.
+        ByteString localAddress =
+                ByteString.copyFrom(Utils.addressBytesFromString(mAdapter.getAddress()));
+        mBumble.securityStorageBlocking()
+                .deleteBond(DeleteBondRequest.newBuilder().setPublic(localAddress).build());
     }
 
     @SafeVarargs

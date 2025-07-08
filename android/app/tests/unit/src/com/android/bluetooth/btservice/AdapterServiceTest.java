@@ -1050,7 +1050,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_whenDeviceIsNotConnected_success() {
         int groupId = 1;
         int getConnectionState_LeAudioService = STATE_CONNECTED;
@@ -1072,7 +1071,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_whenDeviceIsConnected_ignore() {
         int groupId = 1;
         int getConnectionState_LeAudioService = STATE_CONNECTED;
@@ -1094,7 +1092,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_whenLeAudioIsNotAllowed_ignore() {
         int groupId = 1;
         int getConnectionState_LeAudioService = STATE_DISCONNECTED;
@@ -1117,7 +1114,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_failedToConnect() {
         int groupId = 1;
         int clientIf = 1;
@@ -1145,7 +1141,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_triggerDisconnected() {
         int groupId = 1;
         int clientIf = 1;
@@ -1173,7 +1168,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_triggerDisconnecting() {
         int groupId = 1;
         int clientIf = 1;
@@ -1203,7 +1197,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_connectingMultipleClients() {
         int groupId = 1;
         int clientIf = 1;
@@ -1249,7 +1242,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_connectingMultipleDevicesInSameGroup() {
         int groupId = 1;
         int clientIf = 1;
@@ -1296,7 +1288,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ALLOW_GATT_CONNECT_FROM_THE_APPS_WITHOUT_MAKING_LEAUDIO_DEVICE_ACTIVE)
     public void testGattConnectionToLeAudioDevice_remoteSwitchesToActiveBeforeDisconnect() {
         int groupId = 1;
         int clientIf = 1;

@@ -1872,8 +1872,7 @@ uint8_t l2cu_get_fcs_len(tL2C_CCB* p_ccb) {
                p_ccb->our_cfg.fcs_present, p_ccb->our_cfg.fcs, p_ccb->peer_cfg.fcs_present,
                p_ccb->peer_cfg.fcs);
 
-  if (com::android::bluetooth::flags::l2cap_fcs_option_fix() &&
-      (p_ccb->peer_cfg.fcs_present && p_ccb->peer_cfg.fcs == 0x00) &&
+  if ((p_ccb->peer_cfg.fcs_present && p_ccb->peer_cfg.fcs == 0x00) &&
       (p_ccb->our_cfg.fcs_present && p_ccb->our_cfg.fcs == 0x00)) {
     return 0;
   }
@@ -1916,7 +1915,7 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
   }
 
-  if (com::android::bluetooth::flags::l2cap_fcs_option_fix() && p_cfg->fcs_present) {
+  if (p_cfg->fcs_present) {
     p_ccb->peer_cfg.fcs_present = 1;
     p_ccb->peer_cfg.fcs = p_cfg->fcs;
   }

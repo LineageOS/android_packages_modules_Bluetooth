@@ -20,8 +20,12 @@
 #include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <memory>
+#include <mutex>
 #include <utility>
+#include <vector>
 
 #include "asrc_tables.h"
 #include "common/repeating_timer.h"
