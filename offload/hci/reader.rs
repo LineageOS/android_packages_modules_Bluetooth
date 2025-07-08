@@ -51,7 +51,7 @@ impl<'a> Reader<'a> {
 
     pub(crate) fn read_u32<const N: usize>(&mut self) -> Option<u32> {
         let data_it = self.get(N)?.iter().enumerate();
-        Some(data_it.fold(0u32, |v, (i, byte)| v | (*byte as u32) << (i * 8)))
+        Some(data_it.fold(0u32, |v, (i, byte)| v | ((*byte as u32) << (i * 8))))
     }
 
     pub(crate) fn read_bytes<const N: usize>(&mut self) -> Option<[u8; N]> {
