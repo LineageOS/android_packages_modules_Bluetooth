@@ -441,7 +441,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->leaudio_add_aics_support(true);
     com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
 
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
