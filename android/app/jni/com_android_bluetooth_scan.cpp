@@ -788,7 +788,7 @@ static void gattClientMsftAdvMonitorEnableNative(JNIEnv* /* env */, jobject /* o
   sScanner->MsftAdvMonitorEnable(enable, base::Bind(&msft_monitor_enable_cb));
 }
 
-static void batchscan_cfg_storage_cb(uint8_t client_if, uint8_t status) {
+static void batch_scan_cfg_storage_cb(uint8_t client_if, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mScanCallbacksObj) {
@@ -805,12 +805,12 @@ static void gattClientConfigBatchScanStorageNative(JNIEnv* /* env */, jobject /*
   if (!sScanner) {
     return;
   }
-  sScanner->BatchscanConfigStorage(client_if, max_full_reports_percent, max_trunc_reports_percent,
+  sScanner->BatchScanConfigStorage(client_if, max_full_reports_percent, max_trunc_reports_percent,
                                    notify_threshold_level_percent,
-                                   base::Bind(&batchscan_cfg_storage_cb, client_if));
+                                   base::Bind(&batch_scan_cfg_storage_cb, client_if));
 }
 
-static void batchscan_enable_cb(uint8_t client_if, uint8_t status) {
+static void batch_scan_enable_cb(uint8_t client_if, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mScanCallbacksObj) {
@@ -827,15 +827,15 @@ static void gattClientStartBatchScanNative(JNIEnv* /* env */, jobject /* object 
   if (!sScanner) {
     return;
   }
-  sScanner->BatchscanEnable(scan_mode, scan_interval_unit, scan_window_unit, addr_type,
-                            discard_rule, base::Bind(&batchscan_enable_cb, client_if));
+  sScanner->BatchScanEnable(scan_mode, scan_interval_unit, scan_window_unit, addr_type,
+                            discard_rule, base::Bind(&batch_scan_enable_cb, client_if));
 }
 
 static void gattClientStopBatchScanNative(JNIEnv* /* env */, jobject /* object */, jint client_if) {
   if (!sScanner) {
     return;
   }
-  sScanner->BatchscanDisable(base::Bind(&batchscan_enable_cb, client_if));
+  sScanner->BatchScanDisable(base::Bind(&batch_scan_enable_cb, client_if));
 }
 
 static void gattClientReadScanReportsNative(JNIEnv* /* env */, jobject /* object */, jint client_if,
@@ -843,7 +843,7 @@ static void gattClientReadScanReportsNative(JNIEnv* /* env */, jobject /* object
   if (!sScanner) {
     return;
   }
-  sScanner->BatchscanReadReports(client_if, scan_type);
+  sScanner->BatchScanReadReports(client_if, scan_type);
 }
 
 static void periodicScanInitializeNative(JNIEnv* env, jobject object) {
