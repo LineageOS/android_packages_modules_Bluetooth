@@ -343,7 +343,7 @@ void BleScannerInterfaceImpl::SetScanParameters(uint8_t scan_type, int scanner_i
 }
 
 /* Configure the batchscan storage */
-void BleScannerInterfaceImpl::BatchscanConfigStorage(int client_if, int batch_scan_full_max,
+void BleScannerInterfaceImpl::BatchScanConfigStorage(int client_if, int batch_scan_full_max,
                                                      int batch_scan_trunc_max,
                                                      int batch_scan_notify_threshold, Callback cb) {
   log::info("in shim layer");
@@ -353,7 +353,7 @@ void BleScannerInterfaceImpl::BatchscanConfigStorage(int client_if, int batch_sc
 }
 
 /* Enable batchscan */
-void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval, int scan_window,
+void BleScannerInterfaceImpl::BatchScanEnable(int scan_mode, int scan_interval, int scan_window,
                                               int /* addr_type */, int discard_rule, Callback cb) {
   log::info("in shim layer");
   auto batch_scan_mode = static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
@@ -364,14 +364,14 @@ void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval, 
 }
 
 /* Disable batchscan */
-void BleScannerInterfaceImpl::BatchscanDisable(Callback cb) {
+void BleScannerInterfaceImpl::BatchScanDisable(Callback cb) {
   log::info("in shim layer");
   bluetooth::shim::GetScanning()->BatchScanDisable();
   do_in_jni_thread(base::BindOnce(cb, btm_status_value(tBTM_STATUS::BTM_SUCCESS)));
 }
 
 /* Read out batchscan reports */
-void BleScannerInterfaceImpl::BatchscanReadReports(int client_if, int scan_mode) {
+void BleScannerInterfaceImpl::BatchScanReadReports(int client_if, int scan_mode) {
   log::info("in shim layer");
   auto batch_scan_mode = static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
   auto scanner_id = static_cast<bluetooth::hci::ScannerId>(client_if);

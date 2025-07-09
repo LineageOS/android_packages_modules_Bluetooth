@@ -254,29 +254,29 @@ void BleScannerIntf::SetScanParameters(uint8_t scan_type, uint8_t scanner_id_1m,
                                    scan_phy);
 }
 
-void BleScannerIntf::BatchscanConfigStorage(uint8_t scanner_id, int32_t batch_scan_full_max,
+void BleScannerIntf::BatchScanConfigStorage(uint8_t scanner_id, int32_t batch_scan_full_max,
                                             int32_t batch_scan_trunc_max,
                                             int32_t batch_scan_notify_threshold) {
-  scanner_intf_->BatchscanConfigStorage(
+  scanner_intf_->BatchScanConfigStorage(
           scanner_id, batch_scan_full_max, batch_scan_trunc_max, batch_scan_notify_threshold,
           base::Bind(&BleScannerIntf::OnStatusCallback, base::Unretained(this), scanner_id));
 }
 
-void BleScannerIntf::BatchscanEnable(int32_t scan_mode, uint16_t scan_interval,
+void BleScannerIntf::BatchScanEnable(int32_t scan_mode, uint16_t scan_interval,
                                      uint16_t scan_window, int32_t addr_type,
                                      int32_t discard_rule) {
-  scanner_intf_->BatchscanEnable(
+  scanner_intf_->BatchScanEnable(
           scan_mode, scan_interval, scan_window, addr_type, discard_rule,
           base::Bind(&BleScannerIntf::OnStatusCallback, base::Unretained(this), 0));
 }
 
-void BleScannerIntf::BatchscanDisable() {
-  scanner_intf_->BatchscanDisable(
+void BleScannerIntf::BatchScanDisable() {
+  scanner_intf_->BatchScanDisable(
           base::Bind(&BleScannerIntf::OnStatusCallback, base::Unretained(this), 0));
 }
 
-void BleScannerIntf::BatchscanReadReports(uint8_t scanner_id, int32_t scan_mode) {
-  scanner_intf_->BatchscanReadReports(scanner_id, scan_mode);
+void BleScannerIntf::BatchScanReadReports(uint8_t scanner_id, int32_t scan_mode) {
+  scanner_intf_->BatchScanReadReports(scanner_id, scan_mode);
 }
 
 void BleScannerIntf::StartSync(uint8_t sid, RawAddress addr, uint16_t skip, uint16_t timeout) {
