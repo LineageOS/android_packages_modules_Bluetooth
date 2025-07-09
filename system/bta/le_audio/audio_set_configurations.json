@@ -94,48 +94,6 @@
       ]
     },
     {
-      "name": "Two-OneChan-SnkAse-Lc3_16_1_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_1",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_1_1",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_1",
-      "qos_config_name": [
-        "QoS_Config_16_1_1"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_1_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_1",
-      "qos_config_name": [
-        "QoS_Config_16_1_2"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_2_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_2_1",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_16_2_1"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_2_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_16_2_2"
-      ]
-    },
-    {
       "name": "One-TwoChan-SnkAse-Lc3_16_1_Low_Latency",
       "codec_config_name": "One-TwoChan-SnkAse-Lc3_16_1",
       "qos_config_name": [
@@ -273,13 +231,6 @@
       "codec_config_name": "One-OneChan-SnkAse-Lc3_16_1",
       "qos_config_name": [
         "QoS_Config_16_1_2"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_2_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
       ]
     },
     {
@@ -514,34 +465,6 @@
       ]
     },
     {
-      "name": "Two-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1_1",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1",
-      "qos_config_name": [
-        "QoS_Config_16_1_1"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1",
-      "qos_config_name": [
-        "QoS_Config_16_1_2"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_1",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_16_2_1"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_16_2_2"
-      ]
-    },
-    {
       "name": "One-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1_Low_Latency",
       "codec_config_name": "One-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1",
       "qos_config_name": [
@@ -553,13 +476,6 @@
       "codec_config_name": "One-OneChan-SnkAse-Lc3_16_1-One-OneChan-SrcAse-Lc3_16_1",
       "qos_config_name": [
         "QoS_Config_16_1_1"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SrcAse-Lc3_16_2_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SrcAse-Lc3_16_2",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
       ]
     },
     {
@@ -714,20 +630,6 @@
       "codec_config_name": "Two-OneChan-SnkAse-Lc3_24_2",
       "qos_config_name": [
         "QoS_Config_Low_Latency"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_24_2_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_24_2",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_24_2_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_24_2",
-      "qos_config_name": [
-        "QoS_Config_24_2_2"
       ]
     },
     {
@@ -955,13 +857,6 @@
       ]
     },
     {
-      "name": "Two-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2_1",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2",
-      "qos_config_name": [
-        "QoS_Config_32_2_1"
-      ]
-    },
-    {
       "name": "One-OneChan-SnkAse-Lc3_32_1-One-OneChan-SrcAse-Lc3_16_1_Low_Latency",
       "codec_config_name": "One-OneChan-SnkAse-Lc3_32_1-One-OneChan-SrcAse-Lc3_16_1",
       "qos_config_name": [
@@ -1010,7 +905,6 @@
         "QoS_Config_High_Reliability"
       ]
     },
-
     {
       "name": "Two-OneChan-SnkAse-Lc3_48_4_Low_Latency",
       "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4",
@@ -1089,73 +983,10 @@
       ]
     },
     {
-      "name": "Two-OneChan-SnkAse-Lc3_48_4_High_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4",
-      "qos_config_name": [
-        "QoS_Config_High_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_4_1",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4",
-      "qos_config_name": [
-        "QoS_Config_48_4_1"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_4_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4",
-      "qos_config_name": [
-        "QoS_Config_48_4_2"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_3_High_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_3",
-      "qos_config_name": [
-        "QoS_Config_High_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_3_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_3",
-      "qos_config_name": [
-        "QoS_Config_48_3_2"
-      ]
-    },
-    {
       "name": "Two-OneChan-SnkAse-Lc3_48_2_Low_Latency",
       "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_2",
       "qos_config_name": [
         "QoS_Config_Low_Latency"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_2_High_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_2",
-      "qos_config_name": [
-        "QoS_Config_High_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_2_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_2",
-      "qos_config_name": [
-        "QoS_Config_48_2_2"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_1_High_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_1",
-      "qos_config_name": [
-        "QoS_Config_High_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_1_2",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_1",
-      "qos_config_name": [
-        "QoS_Config_48_1_2"
       ]
     },
     {
@@ -1574,20 +1405,6 @@
     {
       "name": "Two-OneChan-SnkAse-Lc3_48_4-One-OneChan-SrcAse-Lc3_32_2_Balanced_Reliability",
       "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4-One-OneChan-SrcAse-Lc3_32_2",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_4-One-OneChan-SrcAse-Lc3_24_2_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4-One-OneChan-SrcAse-Lc3_24_2",
-      "qos_config_name": [
-        "QoS_Config_Balanced_Reliability"
-      ]
-    },
-    {
-      "name": "Two-OneChan-SnkAse-Lc3_48_4-One-OneChan-SrcAse-Lc3_16_2_Balanced_Reliability",
-      "codec_config_name": "Two-OneChan-SnkAse-Lc3_48_4-One-OneChan-SrcAse-Lc3_16_2",
       "qos_config_name": [
         "QoS_Config_Balanced_Reliability"
       ]
