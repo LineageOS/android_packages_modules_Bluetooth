@@ -199,8 +199,8 @@ public class ScanControllerTest {
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
         doReturn(TEST_ADDRESS).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
-        doReturn(mApp).when(mScannerMap).getById(scanClient.mScannerId);
-        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.mScannerId);
+        doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
+        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.getScannerId());
 
         // Simulate remote client crash
         doThrow(new RemoteException()).when(callback).onScanResult(any());
@@ -218,7 +218,7 @@ public class ScanControllerTest {
                 advData,
                 TEST_ADDRESS);
 
-        assertThat(scanClient.mAppDied).isTrue();
+        assertThat(scanClient.getAppDied()).isTrue();
         verify(appScanStats).recordScanStop(TEST_SCANNER_ID);
     }
 
@@ -344,7 +344,7 @@ public class ScanControllerTest {
         } else {
             doReturn(scanClientSet).when(mScanManager).getFullBatchScanQueue();
         }
-        doReturn(mApp).when(mScannerMap).getById(scanClient.mScannerId);
+        doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
         mApp.mAppScanStats = mock(AppScanStats.class);
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;
@@ -437,11 +437,11 @@ public class ScanControllerTest {
         ScanSettings scanSettings = new ScanSettings.Builder().build();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClient.mHasNetworkSettingsPermission = true;
-        scanClient.mSettings =
+        scanClient.setSettings(
                 new ScanSettings.Builder()
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
                         .setLegacy(false)
-                        .build();
+                        .build());
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
 
         ScannerMap.ScannerApp app = mock(ScannerMap.ScannerApp.class);
@@ -544,7 +544,7 @@ public class ScanControllerTest {
                                 new ArgumentMatcher<ScanClient>() {
                                     @Override
                                     public boolean matches(ScanClient client) {
-                                        return pii.callingUid() == client.mAppUid;
+                                        return pii.callingUid() == client.getAppUid();
                                     }
                                 }));
     }

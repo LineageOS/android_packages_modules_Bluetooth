@@ -464,13 +464,13 @@ public class ScanController {
         BluetoothDevice device = mAdapter.getRemoteLeDevice(address, addressType);
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            ScannerMap.ScannerApp app = mScannerMap.getById(client.mScannerId);
+            ScannerMap.ScannerApp app = mScannerMap.getById(client.getScannerId());
             if (app == null) {
                 Log.v(TAG, "App is null; skip.");
                 continue;
             }
 
-            final ScanSettings settings = client.mSettings;
+            final ScanSettings settings = client.getSettings();
             final byte[] scanRecordData;
             boolean isScanResponse = (eventType & ET_SCAN_RESPONSE_MASK) != 0;
             boolean requiresScanResponse = (eventType & ET_SCANNABLE_MASK) != 0 && !isScanResponse;
@@ -511,7 +511,7 @@ public class ScanController {
 
             if (client.mHasDisavowedLocation) {
                 if (mLocationDenylistPredicate.test(result)) {
-                    Log.i(TAG, "Skipping client " + client.mScannerId + " for location deny list");
+                    Log.i(TAG, "Skipping " + client + " for location deny list");
                     continue;
                 }
             }
@@ -549,7 +549,7 @@ public class ScanController {
             }
 
             try {
-                app.mAppScanStats.addResult(client.mScannerId);
+                app.mAppScanStats.addResult(client.getScannerId());
                 if (app.mCallback != null) {
                     app.mCallback.onScanResult(result);
                 } else {
@@ -632,7 +632,7 @@ public class ScanController {
 
     /** Determines if the given scan client has the appropriate permissions to receive callbacks. */
     private boolean hasScanResultPermission(final ScanClient client) {
-        if (leaudioBassScanWithInternalScanController() && client.mIsInternalClient) {
+        if (leaudioBassScanWithInternalScanController() && client.isInternalClient()) {
             // Bypass permission check for internal clients
             return true;
         }
@@ -675,16 +675,16 @@ public class ScanController {
     static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
         if (Flags.rssiScanFilter()) {
-            ScanSettings settings = client.mSettings;
+            ScanSettings settings = client.getSettings();
             if (scanResult.getRssi() < settings.getRssiThreshold()) {
                 return false;
             }
         }
-        if (client.mFilters.isEmpty()) {
+        if (client.getFilters().isEmpty()) {
             // TODO: Do we really wanna return true here?
             return true;
         }
-        for (ScanFilter filter : client.mFilters) {
+        for (ScanFilter filter : client.getFilters()) {
             // Need to check the filter matches, and the original address without changing the API
             if (filter.matches(scanResult)) {
                 return true;
@@ -706,13 +706,13 @@ public class ScanController {
     }
 
     private void handleDeadScanClient(ScanClient client) {
-        if (client.mAppDied) {
-            Log.w(TAG, "Already dead client " + client.mScannerId);
+        if (client.getAppDied()) {
+            Log.w(TAG, "Already dead " + client);
             return;
         }
-        client.mAppDied = true;
+        client.setAppDied(true);
         client.mStats.ifPresent(stats -> stats.mIsAppDead = true);
-        stopScan(client.mScannerId);
+        stopScan(client.getScannerId());
     }
 
     /** Callback method for scan filter enablement/disablement. */
@@ -788,12 +788,12 @@ public class ScanController {
 
     private ScanClient findScanClientById(int clientIf) {
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.mScannerId == clientIf) {
+            if (client.getScannerId() == clientIf) {
                 return client;
             }
         }
         for (ScanClient client : mScanManager.getBatchScanQueue()) {
-            if (client.mScannerId == clientIf) {
+            if (client.getScannerId() == clientIf) {
                 return client;
             }
         }
@@ -802,7 +802,7 @@ public class ScanController {
 
     private ScanClient findBatchScanClientById(int scannerId) {
         for (ScanClient client : mScanManager.getBatchScanQueue()) {
-            if (client.mScannerId == scannerId) {
+            if (client.getScannerId() == scannerId) {
                 return client;
             }
         }
@@ -892,15 +892,15 @@ public class ScanController {
             return;
         }
         try {
-            app.mAppScanStats.addResults(client.mScannerId, results.size());
+            app.mAppScanStats.addResults(client.getScannerId(), results.size());
             if (app.mCallback != null) {
                 if (ScanUtil.isAutoBatchScanClientEnabled(client)) {
-                    Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
+                    Log.d(TAG, "sendBatchScanResults() to onScanResult() for " + client);
                     for (ScanResult result : results) {
                         app.mCallback.onScanResult(result);
                     }
                 } else {
-                    Log.d(TAG, "sendBatchScanResults() to onBatchScanResults()" + client);
+                    Log.d(TAG, "sendBatchScanResults() to onBatchScanResults() for " + client);
                     app.mCallback.onBatchScanResults(results);
                 }
             } else {
@@ -920,14 +920,14 @@ public class ScanController {
     // Check and deliver scan results for different scan clients.
     private void deliverBatchScan(ScanClient client, Set<ScanResult> allResults)
             throws RemoteException {
-        ScannerMap.ScannerApp app = mScannerMap.getById(client.mScannerId);
+        ScannerMap.ScannerApp app = mScannerMap.getById(client.getScannerId());
         if (app == null) {
             return;
         }
 
         List<ScanResult> permittedResults = permittedResults(client, allResults);
 
-        if (client.mFilters.isEmpty()) {
+        if (client.getFilters().isEmpty()) {
             sendBatchScanResults(app, client, permittedResults);
             return;
         }
@@ -1086,8 +1086,8 @@ public class ScanController {
                         SystemClock.elapsedRealtimeNanos());
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.mScannerId == trackingInfo.clientIf()) {
-                ScanSettings settings = client.mSettings;
+            if (client.getScannerId() == trackingInfo.clientIf()) {
+                ScanSettings settings = client.getSettings();
                 if ((advertiserState == ADVT_STATE_ONFOUND)
                         && ((settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
                                 != 0)) {
@@ -1111,7 +1111,7 @@ public class ScanController {
                             TAG,
                             "Not reporting onlost/onfound -"
                                     + (" advertiserState=" + advertiserState)
-                                    + (", scannerId=" + client.mScannerId)
+                                    + (", scannerId=" + client.getScannerId())
                                     + (", callbackType=" + settings.getCallbackType()));
                 }
             }
@@ -1306,8 +1306,7 @@ public class ScanController {
     public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         final ScanClient scanClient =
-                new ScanClient(scannerId, settings, filters, Binder.getCallingUid());
-        scanClient.mIsInternalClient = true;
+                new ScanClient(scannerId, settings, filters, Binder.getCallingUid(), true);
         scanClient.mUserHandle = Binder.getCallingUserHandle();
         scanClient.mEligibleForSanitizedExposureNotification = false;
         scanClient.mHasDisavowedLocation = false;
@@ -1733,9 +1732,7 @@ public class ScanController {
 
         final Map<Integer, ScanSettings> settingsMap = new HashMap<>();
         for (ScanClient client : clients) {
-            if (client.mSettings != null) {
-                settingsMap.put(client.mScannerId, client.mSettings);
-            }
+            settingsMap.put(client.getScannerId(), client.getSettings());
         }
 
         mScannerMap.dump(sb, settingsMap);

@@ -24,37 +24,44 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 /** Helper class identifying a client that has requested LE scan results. */
-// TODO(b/429793161) Remove all `@JvmField` declarations
-// TODO(b/429793161) Remove all `m` prefix
-class ScanClient(scannerId: Int, settings: ScanSettings, filters: List<ScanFilter>?, appUid: Int) {
-    @JvmField val mScannerId: Int = scannerId
-    @JvmField val mScanModeApp: Int
-    @JvmField val mFilters: List<ScanFilter>
-    @JvmField val mAppUid: Int
-
-    @JvmField var mSettings: ScanSettings
-    @JvmField var mStarted = false
-    @JvmField var mIsInternalClient = false
-    // App associated with the scan client died.
-    @JvmField var mAppDied = false
-    @JvmField var mHasLocationPermission = false
-    @JvmField var mUserHandle: UserHandle? = null
-    @JvmField var mIsQApp = false
-    @JvmField var mEligibleForSanitizedExposureNotification = false
-    @JvmField var mHasNetworkSettingsPermission = false
-    @JvmField var mHasNetworkSetupWizardPermission = false
-    @JvmField var mHasScanWithoutLocationPermission = false
-    @JvmField var mHasDisavowedLocation = false
-    @JvmField var mAssociatedDevices: List<String>? = null
+// TODO(b/429793161) Remove all `@JvmField` declarations and `m` prefix
+class ScanClient
+private constructor(
+    val scannerId: Int,
+    var settings: ScanSettings,
+    val scanModeApp: Int,
+    val filters: List<ScanFilter>,
+    val appUid: Int,
+    val isInternalClient: Boolean,
+    var started: Boolean = false,
+    var appDied: Boolean = false,
+    @JvmField var mHasLocationPermission: Boolean = false,
+    @JvmField var mUserHandle: UserHandle? = null,
+    @JvmField var mIsQApp: Boolean = false,
+    @JvmField var mEligibleForSanitizedExposureNotification: Boolean = false,
+    @JvmField var mHasNetworkSettingsPermission: Boolean = false,
+    @JvmField var mHasNetworkSetupWizardPermission: Boolean = false,
+    @JvmField var mHasScanWithoutLocationPermission: Boolean = false,
+    @JvmField var mHasDisavowedLocation: Boolean = false,
+    @JvmField var mAssociatedDevices: List<String>? = null,
     // TODO(b/429793161) Convert to Kotlin native optional
-    @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty()
-
-    init {
-        mSettings = settings
-        mScanModeApp = settings.scanMode
-        mFilters = filters ?: emptyList()
-        mAppUid = appUid
-    }
+    @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty(),
+) {
+    @JvmOverloads
+    constructor(
+        scannerId: Int,
+        settings: ScanSettings,
+        filterList: List<ScanFilter>?,
+        appUid: Int,
+        isInternalClient: Boolean = false,
+    ) : this(
+        scannerId,
+        settings,
+        settings.scanMode,
+        filterList ?: emptyList(),
+        appUid,
+        isInternalClient,
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -63,24 +70,22 @@ class ScanClient(scannerId: Int, settings: ScanSettings, filters: List<ScanFilte
         if (other !is ScanClient) {
             return false
         }
-        return mScannerId == other.mScannerId
+        return scannerId == other.scannerId
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(mScannerId)
+        return Objects.hash(scannerId)
     }
 
     override fun toString(): String {
-        val sb = StringBuilder("ScanClient {")
-        sb.append(" scanModeApp=").append(ScanSettings.getScanModeString(mScanModeApp))
-        sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(mSettings.scanMode))
-        sb.append(", scannerId=").append(mScannerId)
-
+        val sb = StringBuilder("ScanClient(")
+        sb.append("scannerId=").append(scannerId)
+        sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(scanModeApp))
+        sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(settings.scanMode))
         mStats.getOrNull()?.let { stats ->
             sb.append(", appScanStats.appName=").append(stats.mAppName)
         }
-
-        return sb.append(" }").toString()
+        return sb.append(")").toString()
     }
 
     /**
@@ -89,20 +94,20 @@ class ScanClient(scannerId: Int, settings: ScanSettings, filters: List<ScanFilte
      * @return true if scan settings are updated, false otherwise.
      */
     fun updateScanMode(newScanMode: Int): Boolean {
-        if (mSettings.getScanMode() == newScanMode) {
+        if (settings.getScanMode() == newScanMode) {
             return false
         }
 
-        mSettings =
+        settings =
             ScanSettings.Builder()
                 .setScanMode(newScanMode)
-                .setCallbackType(mSettings.getCallbackType())
-                .setScanResultType(mSettings.getScanResultType())
-                .setReportDelay(mSettings.getReportDelayMillis())
-                .setNumOfMatches(mSettings.getNumOfMatches())
-                .setMatchMode(mSettings.getMatchMode())
-                .setLegacy(mSettings.getLegacy())
-                .setPhy(mSettings.getPhy())
+                .setCallbackType(settings.getCallbackType())
+                .setScanResultType(settings.getScanResultType())
+                .setReportDelay(settings.getReportDelayMillis())
+                .setNumOfMatches(settings.getNumOfMatches())
+                .setMatchMode(settings.getMatchMode())
+                .setLegacy(settings.getLegacy())
+                .setPhy(settings.getPhy())
                 .build()
         return true
     }

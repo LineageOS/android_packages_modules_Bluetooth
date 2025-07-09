@@ -139,9 +139,9 @@ class BatchScanThrottler {
                 mScreenOffThrottling ? mUnfilteredScreenOffDelayFloorMs : mUnfilteredDelayFloorMs;
         long intervalMillis = Long.MAX_VALUE;
         for (ScanClient client : batchClients) {
-            if (client.mSettings.getReportDelayMillis() > 0) {
-                long clientIntervalMillis = client.mSettings.getReportDelayMillis();
-                if (client.mFilters.isEmpty() && clientIntervalMillis < unfilteredFloor) {
+            if (client.getSettings().getReportDelayMillis() > 0) {
+                long clientIntervalMillis = client.getSettings().getReportDelayMillis();
+                if (client.getFilters().isEmpty() && clientIntervalMillis < unfilteredFloor) {
                     clientIntervalMillis = unfilteredFloor;
                 }
                 intervalMillis = Math.min(intervalMillis, clientIntervalMillis);
