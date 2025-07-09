@@ -373,6 +373,11 @@ public class AdapterService extends Service {
 
     private volatile int mScanMode;
 
+    private boolean mSuspend = false;
+    private boolean mScanModeChangedDuringSuspend;
+    private String mScanModeChangedDuringSuspendFrom;
+    private int mScanModeAfterSuspend;
+
     // Report ID definition
     public enum BqrQualityReportId {
         QUALITY_REPORT_ID_MONITOR_MODE(0x01),
@@ -3933,17 +3938,34 @@ public class AdapterService extends Service {
     }
 
     boolean setScanMode(int mode, String from) {
-        mScanModeChanges.add(from + ": " + scanModeName(mode));
-        if (!mNativeInterface.setScanMode(convertScanModeToHal(mode))) {
+        if (mSuspend) {
+            Log.d(TAG, "Suspending. Don't broadcast scan mode and return early.");
+            mScanModeChangedDuringSuspend = true;
+            mScanModeChangedDuringSuspendFrom = from;
+            mScanModeAfterSuspend = mode;
+            return true;
+        }
+
+        if (!logAndSetScanModeNative(mode, from)) {
             return false;
         }
+
+        updateScanModeAndBroadcast(mode);
+        return true;
+    }
+
+    private boolean logAndSetScanModeNative(int mode, String from) {
+        mScanModeChanges.add(from + ": " + scanModeName(mode));
+        return mNativeInterface.setScanMode(convertScanModeToHal(mode));
+    }
+
+    private void updateScanModeAndBroadcast(int mode) {
         mScanMode = mode;
         Intent intent =
                 new Intent(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
                         .putExtra(BluetoothAdapter.EXTRA_SCAN_MODE, mScanMode)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
-        return true;
     }
 
     @GuardedBy("mEnergyInfoLock")
@@ -5035,5 +5057,31 @@ public class AdapterService extends Service {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         return (deviceProp != null)
                 && (deviceProp.getConnectionHandle(transport) != BluetoothDevice.ERROR);
+    }
+
+    void setSuspendState(boolean suspend) {
+        if (mSuspend == suspend) {
+            return;
+        }
+
+        mSuspend = suspend;
+        if (suspend) {
+            // When suspending set scan to NONE to minimize power usage. Don't broadcast this
+            // event change to minimize disturbance to other apps. It will be recovered on resume.
+            mScanModeChangedDuringSuspend = false;
+            mScanModeChangedDuringSuspendFrom = "";
+            mScanModeAfterSuspend = mScanMode;
+            logAndSetScanModeNative(SCAN_MODE_NONE, "handleSuspend");
+        } else {
+            // When resuming, always call setScanMode since the actual mode might be updated
+            // in the native layer and not propagated up. However only broadcast when
+            // someone demands a change when we're suspending.
+            if (logAndSetScanModeNative(
+                    mScanModeAfterSuspend, "handleResume " + mScanModeChangedDuringSuspendFrom)) {
+                if (mScanModeChangedDuringSuspend) {
+                    updateScanModeAndBroadcast(mScanModeAfterSuspend);
+                }
+            }
+        }
     }
 }
