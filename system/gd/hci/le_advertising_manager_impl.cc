@@ -1828,6 +1828,26 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
                      "assert failed: status != AdvertisingCallback::AdvertisingStatus::SUCCESS");
     advertising_callbacks_->OnAdvertisingSetStarted(reg_id, kInvalidId, 0, status);
   }
+
+  void dump(int fd) {
+    std::string output;
+    auto&& out = std::back_inserter(output);
+    auto& advertising_sets = advertising_sets_;
+
+    std::format_to(out, "\nLE Advertising Manager Dumpsys:\n");
+    for (AdvertiserId i = 0; i < num_instances_; i++) {
+      if (advertising_sets.contains(i)) {
+        auto& advertiser = advertising_sets[i];
+        std::format_to(out,
+                       "    id: {} address: {} duration: {} in_use: {} started: {} connectable: {} "
+                       "discoverable: {} directed: {} periodic: {}\n",
+                       i, advertiser.current_address, advertiser.duration, advertiser.in_use,
+                       advertiser.started, advertiser.connectable, advertiser.discoverable,
+                       advertiser.directed, advertiser.is_periodic);
+      }
+    }
+    dprintf(fd, "%s", output.c_str());
+  }
 };
 
 LeAdvertisingManagerImpl::LeAdvertisingManagerImpl(
@@ -1979,6 +1999,8 @@ void LeAdvertisingManagerImpl::RegisterAdvertisingCallback(
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::register_advertising_callback,
                            advertising_callback);
 }
+
+void LeAdvertisingManagerImpl::Dump(int fd) { pimpl_->dump(fd); }
 
 }  // namespace hci
 }  // namespace bluetooth

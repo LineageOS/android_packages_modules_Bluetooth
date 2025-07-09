@@ -155,6 +155,8 @@ public:
   virtual void RemoveAdvertiser(AdvertiserId advertiser_id) = 0;
 
   virtual void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback) = 0;
+
+  virtual void Dump(int fd) = 0;
 };
 
 }  // namespace hci
