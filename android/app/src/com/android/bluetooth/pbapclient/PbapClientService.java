@@ -40,6 +40,7 @@ import android.util.Log;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -419,7 +420,10 @@ public class PbapClientService extends ConnectableProfile {
             throw new IllegalArgumentException("Null device");
         }
         Log.d(TAG, "connect(device=" + device.getAddress() + ")");
-        if (getConnectionPolicy(device) <= CONNECTION_POLICY_FORBIDDEN) {
+        if (getConnectionPolicy(device) <= CONNECTION_POLICY_FORBIDDEN
+                || (Flags.pbapClientCheckAccessPermission()
+                        && mAdapterService.getPhonebookAccessPermission(device)
+                                != BluetoothDevice.ACCESS_ALLOWED)) {
             return false;
         }
 
