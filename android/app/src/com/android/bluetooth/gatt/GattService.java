@@ -2040,14 +2040,24 @@ public class GattService extends ProfileService {
                 "onExecuteWrite() -"
                         + (" device=" + device)
                         + (", connId=" + connId)
-                        + (", transId=" + transId));
+                        + (", transId=" + transId)
+                        + (", operation=" + (execWrite == 1 ? "WRITE" : "CANCEL")));
 
         final ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
         if (app == null) {
             return;
         }
 
-        callbackToApp(() -> app.getCallback().onExecuteWrite(device, transId, execWrite == 1));
+        final int requestId;
+        final int handle = HandleMap.HANDLE_PREPARED_WRITE;
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = mHandleMap.addRequestContext(app.id, connId, transId, handle);
+        } else {
+            requestId = transId;
+            mHandleMap.addRequest(connId, transId, handle);
+        }
+
+        callbackToApp(() -> app.getCallback().onExecuteWrite(device, requestId, execWrite == 1));
     }
 
     void onResponseSendCompletedFromNative(int status, int attrHandle) {
@@ -2377,10 +2387,8 @@ public class GattService extends ProfileService {
         }
 
         if (requestContext == null && requestData == null) {
+            Log.w(TAG, "sendResponse(" + callback + "): no record of request we're responding to");
             if (Flags.gattMultiBearerTransactions()) {
-                Log.w(
-                        TAG,
-                        "sendResponse(" + callback + "): no record of request we're responding to");
                 return;
             } else {
                 final List<ContextMap.Connection> connections =
