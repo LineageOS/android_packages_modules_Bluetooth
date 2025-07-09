@@ -892,11 +892,11 @@ public class ScanController {
             return;
         }
         try {
+            app.mAppScanStats.addResults(client.mScannerId, results.size());
             if (app.mCallback != null) {
                 if (ScanUtil.isAutoBatchScanClientEnabled(client)) {
                     Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
                     for (ScanResult result : results) {
-                        app.mAppScanStats.addResult(client.mScannerId);
                         app.mCallback.onScanResult(result);
                     }
                 } else {
