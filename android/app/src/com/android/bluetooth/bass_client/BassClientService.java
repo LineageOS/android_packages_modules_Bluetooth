@@ -23,7 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
-import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
 import static com.android.bluetooth.flags.Flags.leaudioBisSyncControl;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastAllowMonitoringOnResume;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiGetLocalMetadata;
@@ -52,7 +51,6 @@ import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.PeriodicAdvertisingCallback;
 import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.bluetooth.le.PeriodicAdvertisingReport;
-import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
@@ -186,7 +184,6 @@ public class BassClientService extends ConnectableProfile {
     private final HandlerThread mCallbackHandlerThread;
     private final Callbacks mCallbacks;
 
-    private BluetoothLeScannerWrapper mBluetoothLeScannerWrapper = null;
     private DialingOutTimeoutEvent mDialingOutTimeoutEvent = null;
 
     /* Caching the PeriodicAdvertisementResult from Broadcast source */
@@ -202,7 +199,6 @@ public class BassClientService extends ConnectableProfile {
     /*bcastSrcDevice, corresponding broadcast id and PeriodicAdvertisementResult*/
     private final Map<BluetoothDevice, HashMap<Integer, PeriodicAdvertisementResult>>
             mPeriodicAdvertisementResultMap = new HashMap<>();
-    private ScanCallback mSearchScanCallback = null;
     private boolean mIsForegroundScan = false;
     private boolean mIsBackgroundScan = false;
     private boolean mIsAssistantActive = false;
@@ -824,16 +820,8 @@ public class BassClientService extends ConnectableProfile {
 
         setBassClientService(null);
         synchronized (mSearchScanCallbackLock) {
-            if (leaudioBassScanWithInternalScanController()) {
-                if (isAnySearchInProgress()) {
-                    mBassScanCallback.stopScanAndUnregister();
-                }
-            } else {
-                if (mBluetoothLeScannerWrapper != null && mSearchScanCallback != null) {
-                    mBluetoothLeScannerWrapper.stopScan(mSearchScanCallback);
-                }
-                mBluetoothLeScannerWrapper = null;
-                mSearchScanCallback = null;
+            if (isAnySearchInProgress()) {
+                mBassScanCallback.stopScanAndUnregister();
             }
             mIsForegroundScan = false;
             mIsBackgroundScan = false;
@@ -2038,20 +2026,6 @@ public class BassClientService extends ConnectableProfile {
                         + (foreground ? "foreground" : "background"));
 
         synchronized (mSearchScanCallbackLock) {
-            if (!leaudioBassScanWithInternalScanController()) {
-                if (mBluetoothLeScannerWrapper == null) {
-                    mBluetoothLeScannerWrapper =
-                            BassObjectsFactory.getInstance().getBluetoothLeScannerWrapper(mAdapter);
-                }
-                if (mBluetoothLeScannerWrapper == null) {
-                    Log.e(TAG, "startLeScan: cannot get BluetoothLeScanner");
-                    if (foreground) {
-                        mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
-                    }
-                    return;
-                }
-            }
-
             if (!leaudioBroadcastFixAutonomousSourceAdding() && isAnySearchInProgress()) {
                 Log.e(TAG, "LE Scan has already started");
                 mCallbacks.notifySearchStartFailed(
@@ -2067,80 +2041,6 @@ public class BassClientService extends ConnectableProfile {
                 mIsForegroundScan = true;
             } else {
                 mIsBackgroundScan = true;
-            }
-
-            if (!leaudioBassScanWithInternalScanController()) {
-                mSearchScanCallback =
-                        new ScanCallback() {
-                            @Override
-                            public void onScanResult(int callbackType, ScanResult result) {
-                                Log.d(TAG, "onScanResult:" + result);
-                                synchronized (mSearchScanCallbackLock) {
-                                    // check mSearchScanCallback because even after
-                                    // mBluetoothLeScannerWrapper.stopScan(mSearchScanCallback) that
-                                    // callback could be called
-                                    if (mSearchScanCallback == null) {
-                                        Log.d(TAG, "onScanResult: scanner already stopped");
-                                        return;
-                                    }
-                                    if (callbackType != ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
-                                        // Should not happen
-                                        Log.e(TAG, "LE Scan has already started");
-                                        return;
-                                    }
-                                    Integer broadcastId = BassUtils.getBroadcastId(result);
-                                    if (broadcastId == BassConstants.INVALID_BROADCAST_ID) {
-                                        Log.d(TAG, "onScanResult: Broadcast ID is invalid");
-                                        return;
-                                    }
-
-                                    Log.d(TAG, "Broadcast Source Found:" + result.getDevice());
-                                    sEventLogger.logd(
-                                            TAG,
-                                            "Broadcast Source Found: Broadcast ID: " + broadcastId);
-
-                                    if (!mIsForegroundScan
-                                            && (!mIsBackgroundScan
-                                                    || !isWaitingForMetadata(broadcastId))) {
-                                        return;
-                                    }
-
-                                    if (!mCachedBroadcasts.containsKey(broadcastId)) {
-                                        Log.d(
-                                                TAG,
-                                                "selectBroadcastSource: broadcastId "
-                                                        + broadcastId);
-                                        mCachedBroadcasts.put(broadcastId, result);
-                                        addSelectSourceRequest(
-                                                broadcastId, /* hasPriority */ false);
-                                    } else {
-                                        if (mTimeoutHandler.isStarted(
-                                                broadcastId, MESSAGE_SYNC_LOST_TIMEOUT)) {
-                                            mTimeoutHandler.stop(
-                                                    broadcastId, MESSAGE_SYNC_LOST_TIMEOUT);
-                                            mTimeoutHandler.start(
-                                                    broadcastId,
-                                                    MESSAGE_SYNC_LOST_TIMEOUT,
-                                                    sSyncLostTimeout);
-                                        }
-                                        if ((!leaudioBroadcastAllowMonitoringOnResume()
-                                                        && isMonitoringOrResumingPauseReason(
-                                                                broadcastId))
-                                                || isOorMonitoringPauseReason(broadcastId)) {
-                                            addSelectSourceRequest(
-                                                    broadcastId, /* hasPriority= */ true);
-                                        }
-                                    }
-                                }
-                            }
-
-                            public void onScanFailed(int errorCode) {
-                                Log.e(TAG, "Scan Failure:" + errorCode);
-                                mIsForegroundScan = false;
-                                mIsBackgroundScan = false;
-                                informConnectedDeviceAboutScanOffloadStop();
-                            }
-                        };
             }
             mSyncFailureCounter.clear();
 
@@ -2223,34 +2123,8 @@ public class BassClientService extends ConnectableProfile {
                 }
             }
 
-            if (leaudioBassScanWithInternalScanController()) {
-                mBassScanCallback.registerAndStartScan(filters);
-                // Invoke search callbacks in onScannerRegistered
-            } else {
-                ScanSettings settings =
-                        new ScanSettings.Builder()
-                                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                                .setLegacy(false)
-                                .build();
-                if (filters == null) {
-                    filters = new ArrayList<ScanFilter>();
-                }
-                if (!BassUtils.containUuid(filters, BassConstants.BAAS_UUID)) {
-                    byte[] serviceData = {0x00, 0x00, 0x00}; // Broadcast_ID
-                    byte[] serviceDataMask = {0x00, 0x00, 0x00};
-
-                    filters.add(
-                            new ScanFilter.Builder()
-                                    .setServiceData(
-                                            BassConstants.BAAS_UUID, serviceData, serviceDataMask)
-                                    .build());
-                }
-                mBluetoothLeScannerWrapper.startScan(filters, settings, mSearchScanCallback);
-                if (mIsForegroundScan) {
-                    mCallbacks.notifySearchStarted(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
-                }
-            }
+            mBassScanCallback.registerAndStartScan(filters);
+            // Invoke search callbacks in onScannerRegistered
             sEventLogger.logi(
                     TAG,
                     "startSearchingForSources in " + (foreground ? "foreground" : "background"));
@@ -2284,29 +2158,15 @@ public class BassClientService extends ConnectableProfile {
                 return;
             }
 
-            if (leaudioBassScanWithInternalScanController()) {
-                if (!isAnySearchInProgress()) {
-                    Log.e(TAG, "stopSearchingForSources: Scan not started yet");
-                    if (foreground) {
-                        mCallbacks.notifySearchStopFailed(
-                                BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
-                    }
-                    return;
+            if (!isAnySearchInProgress()) {
+                Log.e(TAG, "stopSearchingForSources: Scan not started yet");
+                if (foreground) {
+                    mCallbacks.notifySearchStopFailed(
+                            BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
                 }
-                mBassScanCallback.stopScanAndUnregister();
-            } else {
-                if (mBluetoothLeScannerWrapper == null || mSearchScanCallback == null) {
-                    Log.e(TAG, "stopSearchingForSources: Scan not started yet");
-                    if (foreground) {
-                        mCallbacks.notifySearchStopFailed(
-                                BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
-                    }
-                    return;
-                }
-                mBluetoothLeScannerWrapper.stopScan(mSearchScanCallback);
-                mBluetoothLeScannerWrapper = null;
-                mSearchScanCallback = null;
+                return;
             }
+            mBassScanCallback.stopScanAndUnregister();
 
             printAllSyncData();
 
@@ -2427,11 +2287,7 @@ public class BassClientService extends ConnectableProfile {
     @VisibleForTesting
     boolean isAnySearchInProgress() {
         synchronized (mSearchScanCallbackLock) {
-            if (leaudioBassScanWithInternalScanController()) {
-                return mBassScanCallback.isBroadcastAudioAnnouncementScanActive();
-            } else {
-                return mSearchScanCallback != null;
-            }
+            return mBassScanCallback.isBroadcastAudioAnnouncementScanActive();
         }
     }
 

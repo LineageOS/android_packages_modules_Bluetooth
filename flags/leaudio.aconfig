@@ -168,16 +168,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_bass_scan_with_internal_scan_controller"
-    namespace: "bluetooth"
-    description: "Use internal scan controller for BASS service scan"
-    bug: "392953619"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "do_not_hardcode_tmap_role_mask"
     namespace: "bluetooth"
     description: "When initializing TMAP role mask in LeAudioService, make it a function of enabled services"
