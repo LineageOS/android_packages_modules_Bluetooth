@@ -556,8 +556,12 @@ public class MediaPlayerList {
             String displayName = Util.getDisplayName(mContext, browser.getPackageName());
             int id = mMediaPlayerIds.get(browser.getPackageName());
 
-            Log.d(TAG, "getFolderItemsMediaPlayerList: Adding player " + displayName);
-            Folder playerFolder = new Folder(Utils.formatSimple("%02d", id), false, displayName);
+            Folder playerFolder =
+                    new Folder(
+                            Utils.formatSimple("%02d", id),
+                            false,
+                            displayName,
+                            (int) android.media.MediaDescription.BT_FOLDER_TYPE_MIXED);
             playerList.add(new ListItem(playerFolder));
         }
         cb.run("", playerList);

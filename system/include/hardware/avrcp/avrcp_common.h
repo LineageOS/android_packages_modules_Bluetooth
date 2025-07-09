@@ -211,9 +211,10 @@ struct MediaPlayerItem {
   uint16_t id_;
   std::string name_;
   bool browsable_;
+  uint8_t state_;
 
-  MediaPlayerItem(uint16_t id, const std::string& name, bool browsable)
-      : id_(id), name_(name), browsable_(browsable) {
+  MediaPlayerItem(uint16_t id, const std::string& name, bool browsable, uint8_t state)
+      : id_(id), name_(name), browsable_(browsable), state_(state) {
     if (name_.size() > MAX_FIELD_LEN) {
       name_.resize(MAX_FIELD_LEN);
     }

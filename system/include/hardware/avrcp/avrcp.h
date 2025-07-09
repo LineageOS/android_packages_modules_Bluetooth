@@ -58,6 +58,7 @@ struct FolderInfo {
   std::string media_id;
   bool is_playable;
   std::string name;
+  uint8_t folderType;
 };
 
 // TODO (apanicke): Convert this to a union

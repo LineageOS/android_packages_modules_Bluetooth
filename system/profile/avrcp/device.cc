@@ -701,6 +701,9 @@ void Device::PlaybackStatusNotificationResponse(uint8_t label, bool interim, Pla
   if (!IsActive()) {
     state_to_send = PlayState::PAUSED;
   }
+
+  last_media_player_status_ = status.state;
+
   if (!interim && state_to_send == last_play_status_.state) {
     log::verbose("Not sending notification due to no state update {}", address_);
     return;
@@ -1464,7 +1467,8 @@ void Device::GetMediaPlayerListResponse(uint8_t label, std::shared_ptr<GetFolder
   }
 
   for (size_t i = pkt->GetStartItem(); i <= pkt->GetEndItem() && i < players.size(); i++) {
-    MediaPlayerItem item(players[i].id, players[i].name, players[i].browsing_supported);
+    MediaPlayerItem item(players[i].id, players[i].name, players[i].browsing_supported,
+                         static_cast<uint8_t>(last_media_player_status_));
     builder->AddMediaPlayer(item);
   }
 
@@ -1509,9 +1513,8 @@ void Device::GetVFSListResponse(uint8_t label, std::shared_ptr<GetFolderItemsReq
   for (auto i = pkt->GetStartItem(); i <= pkt->GetEndItem() && i < items.size(); i++) {
     if (items[i].type == ListItem::FOLDER) {
       auto folder = items[i].folder;
-      // right now we always use folders of mixed type
-      FolderItem folder_item(vfs_ids_.get_uid(folder.media_id), 0x00, folder.is_playable,
-                             folder.name);
+      FolderItem folder_item(vfs_ids_.get_uid(folder.media_id), folder.folderType,
+                             folder.is_playable, folder.name);
       if (!builder->AddFolder(folder_item)) {
         break;
       }

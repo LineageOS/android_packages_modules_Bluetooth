@@ -781,7 +781,7 @@ TEST_F(AvrcpDeviceTest, getMediaPlayerListTest) {
 
   auto expected_response =
           GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::NO_ERROR, 0x0000, 0xFFFF);
-  expected_response->AddMediaPlayer(MediaPlayerItem(0, "Test Player", true));
+  expected_response->AddMediaPlayer(MediaPlayerItem(0, "Test Player", true, PlayState::PAUSED));
   EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(expected_response)))).Times(1);
 
   auto request = TestBrowsePacket::Make(get_folder_items_request);
