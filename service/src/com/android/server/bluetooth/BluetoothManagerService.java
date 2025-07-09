@@ -90,8 +90,8 @@ import kotlin.time.TimeSource;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -2270,23 +2270,37 @@ class BluetoothManagerService {
 
     private static void dumpBluetoothFlags(PrintWriter writer) {
         writer.println("🚩Flag dump:");
-        Arrays.stream(Flags.class.getDeclaredMethods())
+        Pattern pattern = Pattern.compile("_([0-9a-z])");
+        // When a flag contains a number, the camelCase method doesn't provide information if the
+        // number should have an underscore before or not. Example: a2dpVersion14 is for
+        // a2dp_version_1_4...
+        // To fix that, we first need to get the static flag value, then we convert the SNAKE_NAME
+        // to camelCase and call the associated method to get the flag value
+        Arrays.stream(Flags.class.getDeclaredFields())
+                .filter((Field f) -> f.getType() == String.class)
                 .forEach(
-                        (Method m) -> {
-                            String name =
-                                    m.getName().replaceAll("([A-Z])", "_$1").toLowerCase(Locale.US);
-                            if (name.equals("$jacoco_init")) {
-                                // On coverage run, jacoco inject a method into Flags. Skip it.
-                                return;
-                            }
-                            boolean flagValue;
+                        (Field f) -> {
                             try {
-                                flagValue = (boolean) m.invoke(null);
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                writer.println("Cannot invoke " + name + " flag:" + e);
+                                String flagName =
+                                        ((String) f.get(null))
+                                                .replaceFirst(
+                                                        "com.android.bluetooth.*\\.flags\\.", "");
+                                String methodName =
+                                        pattern.matcher(flagName)
+                                                .replaceAll(m -> m.group(1).toUpperCase(Locale.US));
+                                boolean flagValue =
+                                        (boolean)
+                                                Flags.class
+                                                        .getDeclaredMethod(methodName)
+                                                        .invoke(null);
+                                writer.println(
+                                        "\t" + (flagValue ? "[■]" : "[ ]") + ": " + flagName);
+                            } catch (IllegalAccessException
+                                    | InvocationTargetException
+                                    | NoSuchMethodException e) {
+                                writer.println("Cannot invoke flag value for " + f);
                                 throw new RuntimeException(e);
                             }
-                            writer.println("\t" + (flagValue ? "[■]" : "[ ]") + ": " + name);
                         });
     }
 

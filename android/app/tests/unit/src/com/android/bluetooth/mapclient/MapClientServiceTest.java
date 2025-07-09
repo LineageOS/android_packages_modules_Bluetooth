@@ -44,6 +44,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.SdpMasRecord;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.telephony.SubscriptionManager;
 
 import androidx.test.filters.MediumTest;
@@ -53,6 +55,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -70,6 +73,7 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class MapClientServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
@@ -142,6 +146,26 @@ public class MapClientServiceTest {
         doReturn(CONNECTION_POLICY_FORBIDDEN)
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
+
+        assertThat(mService.connect(mRemoteDevice)).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MAP_CLIENT_CHECK_ACCESS_PERMISSION)
+    public void connect_whenAccessRejected_returnsFalse() {
+        doReturn(BluetoothDevice.ACCESS_REJECTED)
+                .when(mAdapterService)
+                .getMessageAccessPermission(any(BluetoothDevice.class));
+
+        assertThat(mService.connect(mRemoteDevice)).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MAP_CLIENT_CHECK_ACCESS_PERMISSION)
+    public void connect_whenAccessUnknown_returnsFalse() {
+        doReturn(BluetoothDevice.ACCESS_UNKNOWN)
+                .when(mAdapterService)
+                .getMessageAccessPermission(any(BluetoothDevice.class));
 
         assertThat(mService.connect(mRemoteDevice)).isFalse();
     }

@@ -2519,7 +2519,8 @@ public class LeAudioService extends ConnectableProfile {
              * When adding new device, wait with notification until AudioManager is ready
              * with adding the device.
              */
-            if (!Flags.vcpOnMainLooper()) {
+            if (!Flags.vcpOnMainLooper() || Looper.getMainLooper().isCurrentThread()) {
+                // Remove thread check when LeAudio is moved on the main thread
                 notifyActiveDeviceChanged(null);
             } else {
                 Utils.enforceMainLooperIsNotUsed();
