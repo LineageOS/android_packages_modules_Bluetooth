@@ -56,7 +56,8 @@ using namespace bluetooth;
  * Description      This function enqueue the request from client which needs a
  *                  application response, and update the transaction ID.
  *
- * Returns          void
+ * Returns          uint32_t value representing our internal transaction ID, or
+ *                  0 / GATT_TRANS_ID_INVALID on error
  *
  ******************************************************************************/
 uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code, uint16_t handle) {
@@ -68,27 +69,30 @@ uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code, uint
     EattChannel* channel = EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
     if (channel == nullptr) {
       log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
-      return 0;
+      return GATT_TRANS_ID_INVALID;
     }
 
     p_cmd = &channel->server_outstanding_cmd_;
   }
 
-  uint32_t trans_id = 0;
+  uint32_t trans_id = GATT_TRANS_ID_INVALID;
 
   p_cmd->cid = cid;
 
   if ((p_cmd->op_code == 0) || (op_code == GATT_HANDLE_VALUE_CONF)) { /* no pending request */
-    if (op_code == GATT_CMD_WRITE || op_code == GATT_SIGN_CMD_WRITE || op_code == GATT_REQ_MTU ||
-        op_code == GATT_HANDLE_VALUE_CONF) {
-      trans_id = ++tcb.trans_id;
-    } else {
-      p_cmd->trans_id = ++tcb.trans_id;
+    // No matter the opcode, grab a new transaction ID and make sure it rolls over properly for the
+    // next time we need to grab one. Note that 0x0 is an invalid transaction ID and shouldn't be
+    // used. This is why the pre-increment is used, as the first transaction ID assigned is 0 and
+    // ++tcb.trans_id always avoids that first 0x0 value.
+    trans_id = ++tcb.trans_id;
+    tcb.trans_id %= GATT_TRANS_ID_MAX;
+
+    if (!(op_code == GATT_CMD_WRITE || op_code == GATT_SIGN_CMD_WRITE || op_code == GATT_REQ_MTU ||
+          op_code == GATT_HANDLE_VALUE_CONF)) {
+      p_cmd->trans_id = trans_id;
       p_cmd->op_code = op_code;
       p_cmd->handle = handle;
       p_cmd->status = GATT_NOT_FOUND;
-      tcb.trans_id %= GATT_TRANS_ID_MAX;
-      trans_id = p_cmd->trans_id;
     }
   }
 
@@ -508,7 +512,7 @@ static void gatt_process_read_multi_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op
 
   if (err == GATT_SUCCESS) {
     trans_id = gatt_sr_enqueue_cmd(tcb, cid, op_code, multi_req->handles[0]);
-    if (trans_id != 0) {
+    if (trans_id != GATT_TRANS_ID_INVALID) {
       tGATT_SR_CMD* sr_cmd_p = gatt_sr_get_cmd_by_cid(tcb, cid);
       if (sr_cmd_p == nullptr) {
         log::error("Could not send response on CID were request arrived. {}, 0x{:02x}",
@@ -1074,7 +1078,7 @@ static void gatts_process_write_req(tGATT_TCB& tcb, uint16_t cid, tGATT_SRV_LIST
 
   if (status == GATT_SUCCESS) {
     trans_id = gatt_sr_enqueue_cmd(tcb, cid, op_code, handle);
-    if (trans_id != 0) {
+    if (trans_id != GATT_TRANS_ID_INVALID) {
       conn_id = gatt_create_conn_id(tcb.tcb_idx, el.gatt_if);
 
       uint8_t opcode = 0;

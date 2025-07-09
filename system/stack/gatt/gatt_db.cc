@@ -700,12 +700,12 @@ static tGATT_STATUS gatts_send_app_read_request(tGATT_TCB& tcb, uint16_t cid, ui
   tGATT_SRV_LIST_ELEM& el = *gatt_sr_find_i_rcb_by_handle(handle);
   tCONN_ID conn_id = gatt_create_conn_id(tcb.tcb_idx, el.gatt_if);
 
-  if (trans_id == 0) {
+  if (trans_id == GATT_TRANS_ID_INVALID) {
     trans_id = gatt_sr_enqueue_cmd(tcb, cid, op_code, handle);
     gatt_sr_update_cback_cnt(tcb, cid, el.gatt_if, true, true);
   }
 
-  if (trans_id != 0) {
+  if (trans_id != GATT_TRANS_ID_INVALID) {
     tGATTS_DATA sr_data;
     memset(&sr_data, 0, sizeof(tGATTS_DATA));
 

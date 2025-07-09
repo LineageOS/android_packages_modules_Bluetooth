@@ -39,6 +39,7 @@
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 
+#define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
 #define GATT_CL_RCB_MAX 255          /* Maximum number of cl_rcb */
 
