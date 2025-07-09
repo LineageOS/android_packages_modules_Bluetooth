@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.le_scan
 
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanSettings
 
 object ScanUtil {
@@ -107,14 +108,20 @@ object ScanUtil {
 
     @JvmStatic
     fun isOpportunisticScanClient(client: ScanClient) =
-        client.mSettings.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC
+        client.settings.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC
 
     private fun isFirstMatchScanClient(client: ScanClient) =
-        (client.mSettings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
+        (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
 
     @JvmStatic
     fun isAllMatchesAutoBatchScanClient(client: ScanClient) =
-        client.mSettings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
+        client.settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
+
+    @JvmStatic
+    fun isBatchClient(client: ScanClient?): Boolean =
+        client != null &&
+            client.settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES &&
+            client.settings.reportDelayMillis != 0L
 
     @JvmStatic
     fun isForceDowngradedScanClient(client: ScanClient) =
@@ -130,4 +137,16 @@ object ScanUtil {
     @JvmStatic
     fun isAutoBatchScanClientEnabled(client: ScanClient) =
         client.mStats.map { it.isAutoBatchScan(client.scannerId) }.orElse(false)
+
+    @JvmStatic
+    fun isPhyConfigured(client: ScanClient, use1mPhy: Boolean) =
+        client.settings.phy == ScanSettings.PHY_LE_ALL_SUPPORTED ||
+            client.settings.phy ==
+                if (use1mPhy) BluetoothDevice.PHY_LE_1M else BluetoothDevice.PHY_LE_CODED
+
+    @JvmStatic
+    fun shouldUpdateScan(newScanSetting: Int, oldScanSetting: Int) =
+        newScanSetting != Int.MIN_VALUE &&
+            newScanSetting != ScanSettings.SCAN_MODE_OPPORTUNISTIC &&
+            newScanSetting != oldScanSetting
 }

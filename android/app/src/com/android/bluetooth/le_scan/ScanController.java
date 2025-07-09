@@ -470,7 +470,7 @@ public class ScanController {
                 continue;
             }
 
-            final ScanSettings settings = client.mSettings;
+            final ScanSettings settings = client.getSettings();
             final byte[] scanRecordData;
             boolean isScanResponse = (eventType & ET_SCAN_RESPONSE_MASK) != 0;
             boolean requiresScanResponse = (eventType & ET_SCANNABLE_MASK) != 0 && !isScanResponse;
@@ -675,7 +675,7 @@ public class ScanController {
     static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
         if (Flags.rssiScanFilter()) {
-            ScanSettings settings = client.mSettings;
+            ScanSettings settings = client.getSettings();
             if (scanResult.getRssi() < settings.getRssiThreshold()) {
                 return false;
             }
@@ -1087,7 +1087,7 @@ public class ScanController {
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
             if (client.getScannerId() == trackingInfo.clientIf()) {
-                ScanSettings settings = client.mSettings;
+                ScanSettings settings = client.getSettings();
                 if ((advertiserState == ADVT_STATE_ONFOUND)
                         && ((settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
                                 != 0)) {
@@ -1733,9 +1733,7 @@ public class ScanController {
 
         final Map<Integer, ScanSettings> settingsMap = new HashMap<>();
         for (ScanClient client : clients) {
-            if (client.mSettings != null) {
-                settingsMap.put(client.getScannerId(), client.mSettings);
-            }
+            settingsMap.put(client.getScannerId(), client.getSettings());
         }
 
         mScannerMap.dump(sb, settingsMap);

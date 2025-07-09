@@ -28,7 +28,7 @@ import kotlin.jvm.optionals.getOrNull
 // TODO(b/429793161) Remove all `m` prefix
 class ScanClient(
     val scannerId: Int,
-    settings: ScanSettings,
+    var settings: ScanSettings,
     filters: List<ScanFilter>?,
     appUid: Int,
 ) {
@@ -36,7 +36,6 @@ class ScanClient(
     @JvmField val mFilters: List<ScanFilter>
     @JvmField val mAppUid: Int
 
-    @JvmField var mSettings: ScanSettings
     @JvmField var mStarted = false
     @JvmField var mIsInternalClient = false
     // App associated with the scan client died.
@@ -54,7 +53,6 @@ class ScanClient(
     @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty()
 
     init {
-        mSettings = settings
         mScanModeApp = settings.scanMode
         mFilters = filters ?: emptyList()
         mAppUid = appUid
@@ -78,7 +76,7 @@ class ScanClient(
         val sb = StringBuilder("ScanClient(")
         sb.append("scannerId=").append(scannerId)
         sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(mScanModeApp))
-        sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(mSettings.scanMode))
+        sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(settings.scanMode))
         mStats.getOrNull()?.let { stats ->
             sb.append(", appScanStats.appName=").append(stats.mAppName)
         }
@@ -91,20 +89,20 @@ class ScanClient(
      * @return true if scan settings are updated, false otherwise.
      */
     fun updateScanMode(newScanMode: Int): Boolean {
-        if (mSettings.getScanMode() == newScanMode) {
+        if (settings.getScanMode() == newScanMode) {
             return false
         }
 
-        mSettings =
+        settings =
             ScanSettings.Builder()
                 .setScanMode(newScanMode)
-                .setCallbackType(mSettings.getCallbackType())
-                .setScanResultType(mSettings.getScanResultType())
-                .setReportDelay(mSettings.getReportDelayMillis())
-                .setNumOfMatches(mSettings.getNumOfMatches())
-                .setMatchMode(mSettings.getMatchMode())
-                .setLegacy(mSettings.getLegacy())
-                .setPhy(mSettings.getPhy())
+                .setCallbackType(settings.getCallbackType())
+                .setScanResultType(settings.getScanResultType())
+                .setReportDelay(settings.getReportDelayMillis())
+                .setNumOfMatches(settings.getNumOfMatches())
+                .setMatchMode(settings.getMatchMode())
+                .setLegacy(settings.getLegacy())
+                .setPhy(settings.getPhy())
                 .build()
         return true
     }

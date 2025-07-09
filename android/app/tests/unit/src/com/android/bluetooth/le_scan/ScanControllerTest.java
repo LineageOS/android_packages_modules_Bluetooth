@@ -437,11 +437,11 @@ public class ScanControllerTest {
         ScanSettings scanSettings = new ScanSettings.Builder().build();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClient.mHasNetworkSettingsPermission = true;
-        scanClient.mSettings =
+        scanClient.setSettings(
                 new ScanSettings.Builder()
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
                         .setLegacy(false)
-                        .build();
+                        .build());
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
 
         ScannerMap.ScannerApp app = mock(ScannerMap.ScannerApp.class);
