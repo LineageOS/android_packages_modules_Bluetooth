@@ -199,8 +199,8 @@ public class ScanControllerTest {
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
         doReturn(TEST_ADDRESS).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
-        doReturn(mApp).when(mScannerMap).getById(scanClient.mScannerId);
-        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.mScannerId);
+        doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
+        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.getScannerId());
 
         // Simulate remote client crash
         doThrow(new RemoteException()).when(callback).onScanResult(any());
@@ -344,7 +344,7 @@ public class ScanControllerTest {
         } else {
             doReturn(scanClientSet).when(mScanManager).getFullBatchScanQueue();
         }
-        doReturn(mApp).when(mScannerMap).getById(scanClient.mScannerId);
+        doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
         mApp.mAppScanStats = mock(AppScanStats.class);
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;

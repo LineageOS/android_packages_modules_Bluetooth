@@ -121,13 +121,13 @@ object ScanUtil {
         isTimeoutScanClient(client) || isDowngradedScanClient(client)
 
     private fun isTimeoutScanClient(client: ScanClient) =
-        client.mStats.map { it.isScanTimeout(client.mScannerId) }.orElse(false)
+        client.mStats.map { it.isScanTimeout(client.scannerId) }.orElse(false)
 
     @JvmStatic
     fun isDowngradedScanClient(client: ScanClient) =
-        client.mStats.map { it.isScanDowngraded(client.mScannerId) }.orElse(false)
+        client.mStats.map { it.isScanDowngraded(client.scannerId) }.orElse(false)
 
     @JvmStatic
     fun isAutoBatchScanClientEnabled(client: ScanClient) =
-        client.mStats.map { it.isAutoBatchScan(client.mScannerId) }.orElse(false)
+        client.mStats.map { it.isAutoBatchScan(client.scannerId) }.orElse(false)
 }

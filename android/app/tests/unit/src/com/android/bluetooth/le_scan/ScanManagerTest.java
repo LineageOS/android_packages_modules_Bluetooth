@@ -288,7 +288,7 @@ public class ScanManagerTest {
 
     private void stopScan(ScanClient client) {
         if (Flags.scanControllerThread()) {
-            executeOnScanThread(() -> mScanManager.stopScan(client.mScannerId));
+            executeOnScanThread(() -> mScanManager.stopScan(client.getScannerId()));
         } else {
             sendMessageWaitForProcessed(createStartStopScanMessage(false, client));
         }
@@ -710,7 +710,7 @@ public class ScanManagerTest {
                     advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS);
                     mLooper.dispatchAll();
                     assertThat(client.mSettings.getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.mStats.get().isScanTimeout(client.mScannerId)).isTrue();
+                    assertThat(client.mStats.get().isScanTimeout(client.getScannerId())).isTrue();
                     // Turn off screen
                     setScreenOn(false);
                     assertThat(client.mSettings.getScanMode()).isEqualTo(expectedScanMode);
@@ -750,7 +750,7 @@ public class ScanManagerTest {
                     doReturn(true).when(mMockAppScanStats).isScanningTooLong();
                     mLooper.dispatchAll();
                     assertThat(client.mSettings.getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.mStats.get().isScanTimeout(client.mScannerId)).isTrue();
+                    assertThat(client.mStats.get().isScanTimeout(client.getScannerId())).isTrue();
                     // Turn off screen
                     setScreenOn(false);
                     assertThat(client.mSettings.getScanMode()).isEqualTo(SCAN_MODE_SCREEN_OFF);
@@ -811,7 +811,7 @@ public class ScanManagerTest {
             mLooper.dispatchAll();
             // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
             assertThat(client.mSettings.getScanMode()).isEqualTo(SCAN_MODE_OPPORTUNISTIC);
-            assertThat(client.mStats.get().isScanTimeout(client.mScannerId)).isTrue();
+            assertThat(client.mStats.get().isScanTimeout(client.getScannerId())).isTrue();
         } else {
             Message nextMessage = mLooper.nextMessage();
             assertThat(nextMessage.what).isEqualTo(ScanManager.MSG_SCAN_TIMEOUT);

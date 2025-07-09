@@ -26,8 +26,12 @@ import kotlin.jvm.optionals.getOrNull
 /** Helper class identifying a client that has requested LE scan results. */
 // TODO(b/429793161) Remove all `@JvmField` declarations
 // TODO(b/429793161) Remove all `m` prefix
-class ScanClient(scannerId: Int, settings: ScanSettings, filters: List<ScanFilter>?, appUid: Int) {
-    @JvmField val mScannerId: Int = scannerId
+class ScanClient(
+    val scannerId: Int,
+    settings: ScanSettings,
+    filters: List<ScanFilter>?,
+    appUid: Int,
+) {
     @JvmField val mScanModeApp: Int
     @JvmField val mFilters: List<ScanFilter>
     @JvmField val mAppUid: Int
@@ -63,24 +67,22 @@ class ScanClient(scannerId: Int, settings: ScanSettings, filters: List<ScanFilte
         if (other !is ScanClient) {
             return false
         }
-        return mScannerId == other.mScannerId
+        return scannerId == other.scannerId
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(mScannerId)
+        return Objects.hash(scannerId)
     }
 
     override fun toString(): String {
-        val sb = StringBuilder("ScanClient {")
-        sb.append(" scanModeApp=").append(ScanSettings.getScanModeString(mScanModeApp))
+        val sb = StringBuilder("ScanClient(")
+        sb.append("scannerId=").append(scannerId)
+        sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(mScanModeApp))
         sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(mSettings.scanMode))
-        sb.append(", scannerId=").append(mScannerId)
-
         mStats.getOrNull()?.let { stats ->
             sb.append(", appScanStats.appName=").append(stats.mAppName)
         }
-
-        return sb.append(" }").toString()
+        return sb.append(")").toString()
     }
 
     /**
