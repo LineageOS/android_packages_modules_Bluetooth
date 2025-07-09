@@ -275,3 +275,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_ongoing_rnr_while_bonding"
+    namespace: "bluetooth"
+    description: "Fix pairing failure when RNR onging"
+    bug: "430623282"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
