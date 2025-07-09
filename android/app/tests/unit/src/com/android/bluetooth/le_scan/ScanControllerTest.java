@@ -190,7 +190,7 @@ public class ScanControllerTest {
                         .setLegacy(false)
                         .build();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
-        scanClient.mHasNetworkSettingsPermission = true;
+        scanClient.setHasNetworkSettingsPermission(true);
         AppScanStats appScanStats = mock(AppScanStats.class);
         mApp.mAppScanStats = appScanStats;
         scanClient.mStats = Optional.of(appScanStats);
@@ -330,12 +330,12 @@ public class ScanControllerTest {
         final int appUid = 1234;
         ScanSettings scanSettings = new ScanSettings.Builder().build();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
-        scanClient.mAssociatedDevices = new ArrayList<>();
+        scanClient.setAssociatedDevices(new ArrayList<>());
         if (expectResults) {
             if (isTruncated) {
-                scanClient.mAssociatedDevices.add("02:00:00:00:00:00");
+                scanClient.getAssociatedDevices().add("02:00:00:00:00:00");
             } else {
-                scanClient.mHasScanWithoutLocationPermission = true;
+                scanClient.setHasScanWithoutLocationPermission(true);
             }
         }
         scanClientSet.add(scanClient);
@@ -436,7 +436,7 @@ public class ScanControllerTest {
         final int appUid = 1234;
         ScanSettings scanSettings = new ScanSettings.Builder().build();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
-        scanClient.mHasNetworkSettingsPermission = true;
+        scanClient.setHasNetworkSettingsPermission(true);
         scanClient.setSettings(
                 new ScanSettings.Builder()
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
