@@ -27,3 +27,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "sdp_reset_transport_status_if_disconnect"
+    namespace: "bluetooth"
+    description: "Reset bta_dm_discovery_cb if disconnect unexpectly"
+    bug: "430467927"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
