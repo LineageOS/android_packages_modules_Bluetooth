@@ -35,7 +35,7 @@ class ScanClientTest {
         val filters = listOf(ScanFilter.Builder().build())
         val scanSettings = ScanSettings.Builder().build()
         val scanClientWithFilters = ScanClient(1, scanSettings, filters, appUid)
-        assertThat(scanClientWithFilters.mFilters).isEqualTo(filters)
+        assertThat(scanClientWithFilters.filters).isEqualTo(filters)
     }
 
     @Test
@@ -43,7 +43,7 @@ class ScanClientTest {
         val appUid = 1234
         val scanSettings = ScanSettings.Builder().build()
         val scanClientWithAppUid = ScanClient(1, scanSettings, null, appUid)
-        assertThat(scanClientWithAppUid.mAppUid).isEqualTo(appUid)
+        assertThat(scanClientWithAppUid.appUid).isEqualTo(appUid)
     }
 
     @Test

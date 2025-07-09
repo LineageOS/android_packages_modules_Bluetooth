@@ -47,6 +47,7 @@ import static com.android.bluetooth.le_scan.ScanUtil.priorityForScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresLocationOn;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresScreenOn;
 import static com.android.bluetooth.le_scan.ScanUtil.shouldUpdateScan;
+import static com.android.bluetooth.le_scan.ScanUtil.upgradeScanModeByOneLevel;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -476,7 +477,7 @@ class ScanManager {
         if (mActivityManager == null || packageManager == null) {
             return;
         }
-        String[] packages = packageManager.getPackagesForUid(client.mAppUid);
+        String[] packages = packageManager.getPackagesForUid(client.getAppUid());
         if (packages == null || packages.length == 0) {
             return;
         }
@@ -485,7 +486,7 @@ class ScanManager {
             importance = Math.min(importance, mActivityManager.getPackageImportance(packageName));
         }
         boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
-        mIsUidForegroundMap.put(client.mAppUid, isForeground);
+        mIsUidForegroundMap.put(client.getAppUid(), isForeground);
         final int finalImportance = importance;
         client.mStats.ifPresent(stats -> stats.setAppImportance(finalImportance));
     }
@@ -676,7 +677,7 @@ class ScanManager {
                 }
             }
         }
-        client.mStarted = true;
+        client.setStarted(true);
     }
 
     private void handleStopScan(ScanClient tmpClient) {
@@ -695,7 +696,7 @@ class ScanManager {
             return;
         }
         Log.d(TAG, "Handling stopping scan for " + client);
-        final var appDied = client.mAppDied;
+        final var appDied = client.getAppDied();
         final var scannerId = client.getScannerId();
 
         if (mSuspendedScanClients.contains(client)) {
@@ -894,7 +895,7 @@ class ScanManager {
         if (!isAutoBatchScanClientEnabled(client)) {
             return;
         }
-        final var scanModeApp = client.mScanModeApp;
+        final var scanModeApp = client.getScanModeApp();
         final var scanModeString = getScanModeString(scanModeApp);
         client.updateScanMode(scanModeApp);
         Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to " + scanModeString);
@@ -917,7 +918,7 @@ class ScanManager {
         if (isOpportunisticScanClient(client)) {
             return false;
         }
-        int updatedScanMode = client.mScanModeApp;
+        int updatedScanMode = client.getScanModeApp();
         final var scanModeString = getScanModeString(updatedScanMode);
         if (!isAppForeground(client) || isForceDowngradedScanClient(client)) {
             updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
@@ -950,7 +951,7 @@ class ScanManager {
      * background triggering onUidImportance().
      */
     private boolean isAppForeground(ScanClient client) {
-        return mIsUidForegroundMap.get(client.mAppUid, DEFAULT_UID_IS_FOREGROUND);
+        return mIsUidForegroundMap.get(client.getAppUid(), DEFAULT_UID_IS_FOREGROUND);
     }
 
     private boolean updateScanModeBeforeStart(ScanClient client) {
@@ -972,7 +973,7 @@ class ScanManager {
     }
 
     private boolean upgradeScanModeBeforeStart(ScanClient client) {
-        if (client.mStarted || mAdapterService.getScanUpgradeDurationMillis() == 0) {
+        if (client.getStarted() || mAdapterService.getScanUpgradeDurationMillis() == 0) {
             return false;
         }
         if (client.mStats.isEmpty() || client.mStats.get().hasRecentScan()) {
@@ -1006,18 +1007,8 @@ class ScanManager {
         return false;
     }
 
-    private static boolean upgradeScanModeByOneLevel(ScanClient client) {
-        return switch (client.mScanModeApp) {
-            case ScanSettings.SCAN_MODE_LOW_POWER ->
-                    client.updateScanMode(ScanSettings.SCAN_MODE_BALANCED);
-            case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
-                    client.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
-            default -> false;
-        };
-    }
-
     private void handleRevertScanModeUpgrade(ScanClient client) {
-        final var scanModeApp = client.mScanModeApp;
+        final var scanModeApp = client.getScanModeApp();
         if (priorityForScanMode(client.getSettings().getScanMode())
                 <= priorityForScanMode(scanModeApp)) {
             return;
@@ -1048,13 +1039,13 @@ class ScanManager {
 
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
-            if (client.mAppUid != uid || isOpportunisticScanClient(client)) {
+            if (client.getAppUid() != uid || isOpportunisticScanClient(client)) {
                 continue;
             }
             client.mStats.ifPresent(stats -> stats.setAppImportance(importance));
             final var scanSettings = client.getSettings();
             if (isForeground) {
-                final int scanMode = client.mScanModeApp;
+                final int scanMode = client.getScanModeApp();
                 final int maxScanMode =
                         isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
                 if (client.updateScanMode(minScanMode(scanMode, maxScanMode))) {
@@ -1084,7 +1075,7 @@ class ScanManager {
         if (isOpportunisticScanClient(client)) {
             return false;
         }
-        final var scanModeApp = client.mScanModeApp;
+        final var scanModeApp = client.getScanModeApp();
         final int scanMode = isAppForeground(client) ? scanModeApp : SCAN_MODE_APP_IN_BACKGROUND;
         final int maxScanMode =
                 isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
@@ -1328,7 +1319,7 @@ class ScanManager {
                 && !mScanController
                         .getScanRadioStats()
                         .recordScanRadioStart(
-                                chosenClient.mScanModeApp,
+                                chosenClient.getScanModeApp(),
                                 chosenClient.getScannerId(),
                                 chosenClient.mStats.get(),
                                 getScanWindowMillis(chosenClient.getSettings()),
@@ -1538,7 +1529,7 @@ class ScanManager {
         if (deliveryMode == DELIVERY_MODE_ON_FOUND_LOST) {
             // Decrement the count of trackable advertisements in use
             int entriesToFreePerFilter = getNumOfTrackingAdvertisements(client.getSettings());
-            for (int i = 0; i < client.mFilters.size(); i++) {
+            for (int i = 0; i < client.getFilters().size(); i++) {
                 if (!manageAllocationOfTrackingAdvertisement(entriesToFreePerFilter, false)) {
                     Log.e(
                             TAG,
@@ -1573,7 +1564,7 @@ class ScanManager {
         if (!isExemptFromScanTimeout(client)
                 && (client.mStats.isEmpty() || client.mStats.get().isScanningTooLong())) {
             Log.d(TAG, "RegularScanTimeout(): Client scan time was too long");
-            if (client.mFilters.isEmpty()) {
+            if (client.getFilters().isEmpty()) {
                 Log.w(TAG, "Moving unfiltered scan to opportunistic scan for " + client);
                 setOpportunisticScanClient(client);
                 removeScanFilters(client.getScannerId());
@@ -1690,7 +1681,7 @@ class ScanManager {
             waitForCallback();
         } else {
             Deque<Integer> clientFilterIndices = new ArrayDeque<Integer>();
-            for (ScanFilter filter : client.mFilters) {
+            for (ScanFilter filter : client.getFilters()) {
                 ScanFilterQueue queue = new ScanFilterQueue();
                 queue.addScanFilter(filter);
                 int featureSelection = queue.getFeatureSelection();
@@ -1803,10 +1794,10 @@ class ScanManager {
         if (client == null) {
             return true;
         }
-        if (client.mFilters.isEmpty()) {
+        if (client.getFilters().isEmpty()) {
             return true;
         }
-        if (client.mFilters.size() > mFilterIndexStack.size()) {
+        if (client.getFilters().size() > mFilterIndexStack.size()) {
             client.mStats.ifPresent(
                     stats ->
                             stats.recordHwFilterNotAvailableCountMetrics(
@@ -2098,15 +2089,15 @@ class ScanManager {
         }
 
         if (client == null
-                || client.mFilters.isEmpty()
-                || client.mFilters.size() > mFilterIndexStack.size()) {
+                || client.getFilters().isEmpty()
+                || client.getFilters().size() > mFilterIndexStack.size()) {
             // Use all-pass filter
             updateScanMsft();
             return;
         }
 
         Deque<Integer> clientFilterIndices = new ArrayDeque<>();
-        for (ScanFilter filter : client.mFilters) {
+        for (ScanFilter filter : client.getFilters()) {
             MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
 
             if (monitor.getAddress().bd_addr != null) {

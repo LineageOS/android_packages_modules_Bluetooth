@@ -632,7 +632,7 @@ public class ScanController {
 
     /** Determines if the given scan client has the appropriate permissions to receive callbacks. */
     private boolean hasScanResultPermission(final ScanClient client) {
-        if (leaudioBassScanWithInternalScanController() && client.mIsInternalClient) {
+        if (leaudioBassScanWithInternalScanController() && client.isInternalClient()) {
             // Bypass permission check for internal clients
             return true;
         }
@@ -680,11 +680,11 @@ public class ScanController {
                 return false;
             }
         }
-        if (client.mFilters.isEmpty()) {
+        if (client.getFilters().isEmpty()) {
             // TODO: Do we really wanna return true here?
             return true;
         }
-        for (ScanFilter filter : client.mFilters) {
+        for (ScanFilter filter : client.getFilters()) {
             // Need to check the filter matches, and the original address without changing the API
             if (filter.matches(scanResult)) {
                 return true;
@@ -706,11 +706,11 @@ public class ScanController {
     }
 
     private void handleDeadScanClient(ScanClient client) {
-        if (client.mAppDied) {
+        if (client.getAppDied()) {
             Log.w(TAG, "Already dead " + client);
             return;
         }
-        client.mAppDied = true;
+        client.setAppDied(true);
         client.mStats.ifPresent(stats -> stats.mIsAppDead = true);
         stopScan(client.getScannerId());
     }
@@ -927,7 +927,7 @@ public class ScanController {
 
         List<ScanResult> permittedResults = permittedResults(client, allResults);
 
-        if (client.mFilters.isEmpty()) {
+        if (client.getFilters().isEmpty()) {
             sendBatchScanResults(app, client, permittedResults);
             return;
         }
@@ -1306,8 +1306,7 @@ public class ScanController {
     public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         final ScanClient scanClient =
-                new ScanClient(scannerId, settings, filters, Binder.getCallingUid());
-        scanClient.mIsInternalClient = true;
+                new ScanClient(scannerId, settings, filters, Binder.getCallingUid(), true);
         scanClient.mUserHandle = Binder.getCallingUserHandle();
         scanClient.mEligibleForSanitizedExposureNotification = false;
         scanClient.mHasDisavowedLocation = false;

@@ -218,7 +218,7 @@ public class ScanControllerTest {
                 advData,
                 TEST_ADDRESS);
 
-        assertThat(scanClient.mAppDied).isTrue();
+        assertThat(scanClient.getAppDied()).isTrue();
         verify(appScanStats).recordScanStop(TEST_SCANNER_ID);
     }
 
@@ -544,7 +544,7 @@ public class ScanControllerTest {
                                 new ArgumentMatcher<ScanClient>() {
                                     @Override
                                     public boolean matches(ScanClient client) {
-                                        return pii.callingUid() == client.mAppUid;
+                                        return pii.callingUid() == client.getAppUid();
                                     }
                                 }));
     }

@@ -24,39 +24,44 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 /** Helper class identifying a client that has requested LE scan results. */
-// TODO(b/429793161) Remove all `@JvmField` declarations
-// TODO(b/429793161) Remove all `m` prefix
-class ScanClient(
+// TODO(b/429793161) Remove all `@JvmField` declarations and `m` prefix
+class ScanClient
+private constructor(
     val scannerId: Int,
     var settings: ScanSettings,
-    filters: List<ScanFilter>?,
-    appUid: Int,
-) {
-    @JvmField val mScanModeApp: Int
-    @JvmField val mFilters: List<ScanFilter>
-    @JvmField val mAppUid: Int
-
-    @JvmField var mStarted = false
-    @JvmField var mIsInternalClient = false
-    // App associated with the scan client died.
-    @JvmField var mAppDied = false
-    @JvmField var mHasLocationPermission = false
-    @JvmField var mUserHandle: UserHandle? = null
-    @JvmField var mIsQApp = false
-    @JvmField var mEligibleForSanitizedExposureNotification = false
-    @JvmField var mHasNetworkSettingsPermission = false
-    @JvmField var mHasNetworkSetupWizardPermission = false
-    @JvmField var mHasScanWithoutLocationPermission = false
-    @JvmField var mHasDisavowedLocation = false
-    @JvmField var mAssociatedDevices: List<String>? = null
+    val scanModeApp: Int,
+    val filters: List<ScanFilter>,
+    val appUid: Int,
+    val isInternalClient: Boolean,
+    var started: Boolean = false,
+    var appDied: Boolean = false,
+    @JvmField var mHasLocationPermission: Boolean = false,
+    @JvmField var mUserHandle: UserHandle? = null,
+    @JvmField var mIsQApp: Boolean = false,
+    @JvmField var mEligibleForSanitizedExposureNotification: Boolean = false,
+    @JvmField var mHasNetworkSettingsPermission: Boolean = false,
+    @JvmField var mHasNetworkSetupWizardPermission: Boolean = false,
+    @JvmField var mHasScanWithoutLocationPermission: Boolean = false,
+    @JvmField var mHasDisavowedLocation: Boolean = false,
+    @JvmField var mAssociatedDevices: List<String>? = null,
     // TODO(b/429793161) Convert to Kotlin native optional
-    @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty()
-
-    init {
-        mScanModeApp = settings.scanMode
-        mFilters = filters ?: emptyList()
-        mAppUid = appUid
-    }
+    @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty(),
+) {
+    @JvmOverloads
+    constructor(
+        scannerId: Int,
+        settings: ScanSettings,
+        filterList: List<ScanFilter>?,
+        appUid: Int,
+        isInternalClient: Boolean = false,
+    ) : this(
+        scannerId,
+        settings,
+        settings.scanMode,
+        filterList ?: emptyList(),
+        appUid,
+        isInternalClient,
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -75,7 +80,7 @@ class ScanClient(
     override fun toString(): String {
         val sb = StringBuilder("ScanClient(")
         sb.append("scannerId=").append(scannerId)
-        sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(mScanModeApp))
+        sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(scanModeApp))
         sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(settings.scanMode))
         mStats.getOrNull()?.let { stats ->
             sb.append(", appScanStats.appName=").append(stats.mAppName)

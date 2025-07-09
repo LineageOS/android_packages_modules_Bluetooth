@@ -1583,12 +1583,12 @@ public class ScanManagerTest {
         // Verify radio scan stop is logged with the third app when screen turns on
         mInOrder.verify(mMetricsLogger)
                 .logRadioScanStopped(
-                        eq(new int[] {mostAggressiveClient.mAppUid}),
-                        eq(new String[] {TEST_PACKAGE_NAME + mostAggressiveClient.mAppUid}),
+                        eq(new int[] {mostAggressiveClient.getAppUid()}),
+                        eq(new String[] {TEST_PACKAGE_NAME + mostAggressiveClient.getAppUid()}),
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
-                        eq(AppScanStats.convertScanMode(mostAggressiveClient.mScanModeApp)),
+                        eq(AppScanStats.convertScanMode(mostAggressiveClient.getScanModeApp())),
                         eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS),
                         eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS),
                         eq(false),

@@ -96,7 +96,7 @@ object ScanUtil {
         !client.mHasDisavowedLocation && !isFilteredScan(client)
 
     // A valid filter need at least one field not empty
-    private fun isFilteredScan(client: ScanClient) = client.mFilters.any { !it.isAllFieldsEmpty() }
+    private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty() }
 
     @JvmStatic
     fun isExemptFromScanTimeout(client: ScanClient) =
@@ -149,4 +149,15 @@ object ScanUtil {
         newScanSetting != Int.MIN_VALUE &&
             newScanSetting != ScanSettings.SCAN_MODE_OPPORTUNISTIC &&
             newScanSetting != oldScanSetting
+
+    @JvmStatic
+    fun upgradeScanModeByOneLevel(client: ScanClient) =
+        when (client.scanModeApp) {
+            ScanSettings.SCAN_MODE_LOW_POWER ->
+                client.updateScanMode(ScanSettings.SCAN_MODE_BALANCED)
+            ScanSettings.SCAN_MODE_BALANCED,
+            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                client.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            else -> false
+        }
 }
