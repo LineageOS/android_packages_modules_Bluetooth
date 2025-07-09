@@ -1439,8 +1439,6 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     return true;
   }
 
-  bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
-
   bool ret = false;
   if (is_direct) {
     log::debug("Starting direct connect gatt_if={} address={} transport={} prefer_relax_mode={}",
@@ -1453,10 +1451,12 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     } else {
       log::verbose("Connecting without tcb to: {}", bd_addr);
       ret = connection_manager::direct_connect_add(gatt_if, bd_addr, addr_type, prefer_relax_mode);
+      bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
     }
 
   } else {
     log::debug("Starting background connect gatt_if={} address={}", gatt_if, bd_addr);
+    bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
     if (!BTM_Sec_AddressKnown(bd_addr)) {
       //  RPA can rotate, causing address to "expire" in the background
       //  connection list. RPA is allowed for direct connect, as such request
@@ -1581,11 +1581,14 @@ tGATT_STATUS GATT_Disconnect(tCONN_ID conn_id) {
     return GATT_ILLEGAL_PARAMETER;
   }
 
-  bluetooth::metrics::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, true /* is_connect */,
-                                                     false /* is_direct */);
-
   tGATT_IF gatt_if = gatt_get_gatt_if(conn_id);
   gatt_update_app_use_link_flag(gatt_if, p_tcb, false, true);
+
+  if (p_tcb->transport == BT_TRANSPORT_LE && p_tcb->app_hold_link.empty()) {
+    bluetooth::metrics::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, false /* is_connect */,
+                                                       false /* is_direct */);
+  }
+
   return GATT_SUCCESS;
 }
 
