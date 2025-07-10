@@ -2138,8 +2138,16 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                Log.d(TAG, "setActiveDevice, device: " + device + ", profiles: " + profiles);
-                return mService.setActiveDevice(device, profiles, mAttributionSource);
+                boolean retVal = mService.setActiveDevice(device, profiles, mAttributionSource);
+                Log.d(
+                        TAG,
+                        "setActiveDevice, device: "
+                                + device
+                                + ", profiles: "
+                                + profiles
+                                + ", retVal: "
+                                + retVal);
+                return retVal;
             }
         } catch (RemoteException e) {
             logRemoteException(TAG, e);

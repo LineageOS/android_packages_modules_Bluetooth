@@ -2289,6 +2289,23 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO)
+    public void testSetActiveDeviceWhilePreviousSetActiveDeviceInProgress_returnsFalse() {
+        BluetoothDevice device = getTestDevice(0);
+        BluetoothDevice device1 = getTestDevice(1);
+        connectTestDevice(device);
+
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        assertThat(mHeadsetService.setActiveDevice(device1)).isFalse();
+        mTestLooper.dispatchAll();
+
+        verify(mNativeInterface).setActiveDevice(device);
+        verify(mNativeInterface, never()).setActiveDevice(device1);
+    }
+
+    @Test
     @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
     public void testProcessSendClccResponse_rfcommNotCompleted() {
         doReturn(true).when(mSystemInterface).listCurrentCalls(mHeadsetService);
