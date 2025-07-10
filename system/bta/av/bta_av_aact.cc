@@ -2420,16 +2420,23 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_start_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
-  log::error("peer {} bta_handle:0x{:x} audio_open_cnt:{} started:{} co_started:{}",
+void bta_av_start_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
+  log::error("peer {} bta_handle:0x{:x} audio_open_cnt:{} started:{} co_started:{} status:{}",
              p_scb->PeerAddress(), p_scb->hndl, bta_av_cb.audio_open_cnt, p_scb->started,
-             p_scb->co_started);
+             p_scb->co_started, p_data->str_msg.msg.start_cfm.err_code);
 
   if (!p_scb->started && !p_scb->co_started) {
     bta_sys_idle(BTA_ID_AV,
                  com::android::bluetooth::flags::a2dp_pm_app_id() ? p_scb->app_id
                                                                   : bta_av_cb.audio_open_cnt,
                  p_scb->PeerAddress());
+
+    if (com::android::bluetooth::flags::avdt_close_on_start_failure_bad_state() &&
+        p_data->str_msg.msg.start_cfm.err_code == AVDT_ERR_BAD_STATE) {
+      /* START failed. Close connection. */
+      bta_av_ssm_execute(p_scb, BTA_AV_API_CLOSE_EVT, NULL);
+    }
+
     notify_start_failed(p_scb);
   }
 
