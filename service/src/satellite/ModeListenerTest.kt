@@ -51,7 +51,7 @@ class ModeListenerTest {
     private lateinit var mode: ArrayList<Boolean>
 
     @Before
-    public fun setup() {
+    fun setup() {
         Log.i("SatelliteModeListener", "\t--> setup of " + testName.getMethodName())
         mode = ArrayList()
     }

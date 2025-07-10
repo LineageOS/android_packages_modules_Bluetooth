@@ -27,7 +27,7 @@ import org.mockito.quality.Strictness
 class MockitoRule : MethodRule {
     private val mockitoRule = MockitoJUnit.rule()
 
-    public fun strictness(strictness: Strictness): MockitoRule {
+    fun strictness(strictness: Strictness): MockitoRule {
         mockitoRule.strictness(strictness)
         return this
     }

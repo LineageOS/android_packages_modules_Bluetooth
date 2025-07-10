@@ -61,7 +61,7 @@ public var isOn = false
  * </ul>
  */
 @kotlin.time.ExperimentalTime
-public fun initialize(
+fun initialize(
     looper: Looper,
     systemResolver: ContentResolver,
     state: BluetoothAdapterState,
@@ -158,7 +158,7 @@ public fun initialize(
 }
 
 @kotlin.time.ExperimentalTime
-public fun notifyUserToggledBluetooth(
+fun notifyUserToggledBluetooth(
     resolver: ContentResolver,
     userContext: Context,
     isBluetoothOn: Boolean,
@@ -166,15 +166,15 @@ public fun notifyUserToggledBluetooth(
     AirplaneMetricSession.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn)
 }
 
-public fun setIsMediaProfileConnected(connected: Boolean) {
+fun setIsMediaProfileConnected(connected: Boolean) {
     isMediaProfileConnected = connected
 }
 
-public fun setWatchConnectionState(connected: Boolean) {
+fun setWatchConnectionState(connected: Boolean) {
     watchConnectionState = connected
 }
 
-public fun factoryReset(resolver: ContentResolver, userContext: Context) {
+fun factoryReset(resolver: ContentResolver, userContext: Context) {
     Settings.Global.putInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
     Settings.Global.putInt(resolver, ToastNotification.TOAST_COUNT, 0)
     setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, 0)

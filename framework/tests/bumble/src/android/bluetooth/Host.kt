@@ -65,7 +65,7 @@ public class Host(context: Context) : Closeable {
         scope.cancel()
     }
 
-    public fun createBondAndVerify(remoteDevice: BluetoothDevice) {
+    fun createBondAndVerify(remoteDevice: BluetoothDevice) {
         Log.d(TAG, "createBondAndVerify: $remoteDevice")
         if (bluetoothAdapter.bondedDevices.contains(remoteDevice)) {
             Log.d(TAG, "createBondAndVerify: already bonded")
