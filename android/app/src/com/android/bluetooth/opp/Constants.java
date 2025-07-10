@@ -154,6 +154,8 @@ public class Constants {
 
     static final String FILENAME_SEQUENCE_SEPARATOR = "-";
 
+    private Constants() {}
+
     static void updateShareStatus(Context context, int id, int status) {
         Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + id);
         ContentValues updateValues = new ContentValues();

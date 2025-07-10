@@ -46,6 +46,8 @@ public class InteropUtil {
         INTEROP_ADV_PBAP_VER_1_2;
     }
 
+    private InteropUtil() {}
+
     /**
      * Check if a given address or remote device name matches a known interoperability workaround
      * identified by the interop feature. remote device name will be fetched internally based on the

@@ -90,6 +90,8 @@ public class BluetoothOppUtility {
     static final ConcurrentHashMap<Uri, BluetoothOppSendFileInfo> sSendFileMap =
             new ConcurrentHashMap<Uri, BluetoothOppSendFileInfo>();
 
+    private BluetoothOppUtility() {}
+
     public static boolean isBluetoothShareUri(Uri uri) {
         if (uri.toString().startsWith(BluetoothShare.CONTENT_URI.toString())
                 && !uri.getAuthority().equals(BluetoothShare.CONTENT_URI.getAuthority())) {
