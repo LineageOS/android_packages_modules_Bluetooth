@@ -30,25 +30,32 @@ service GATT {
   rpc ReadCharacteristicFromHandle(ReadCharacteristicRequest) returns (ReadCharacteristicResponse);
 
   // Reads characteristic with given uuid, start and end handles.
-  rpc ReadCharacteristicsFromUuid(ReadCharacteristicsFromUuidRequest) returns (ReadCharacteristicsFromUuidResponse);
+  rpc ReadCharacteristicsFromUuid(ReadCharacteristicsFromUuidRequest)
+      returns (ReadCharacteristicsFromUuidResponse);
 
   // Reads characteristic with given descriptor handle.
-  rpc ReadCharacteristicDescriptorFromHandle(ReadCharacteristicDescriptorRequest) returns (ReadCharacteristicDescriptorResponse);
+  rpc ReadCharacteristicDescriptorFromHandle(ReadCharacteristicDescriptorRequest)
+      returns (ReadCharacteristicDescriptorResponse);
 
   // Register a GATT service
   rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
 
-  // Set characteristic notification/indication with given client characteristic configuration descriptor handle
-  rpc SetCharacteristicNotificationFromHandle(SetCharacteristicNotificationFromHandleRequest) returns  (SetCharacteristicNotificationFromHandleResponse);
+  // Set characteristic notification/indication with given client characteristic configuration
+  // descriptor handle
+  rpc SetCharacteristicNotificationFromHandle(SetCharacteristicNotificationFromHandleRequest)
+      returns (SetCharacteristicNotificationFromHandleResponse);
 
   // Wait for characteristic notification/indication
-  rpc WaitCharacteristicNotification(WaitCharacteristicNotificationRequest) returns (WaitCharacteristicNotificationResponse);
+  rpc WaitCharacteristicNotification(WaitCharacteristicNotificationRequest)
+      returns (WaitCharacteristicNotificationResponse);
 
   // Notify on characteristic
-  rpc NotifyOnCharacteristic(NotifyOnCharacteristicRequest) returns (NotifyOnCharacteristicResponse);
+  rpc NotifyOnCharacteristic(NotifyOnCharacteristicRequest)
+      returns (NotifyOnCharacteristicResponse);
 
   // Indicate on characteristic
-  rpc IndicateOnCharacteristic(IndicateOnCharacteristicRequest) returns (IndicateOnCharacteristicResponse);
+  rpc IndicateOnCharacteristic(IndicateOnCharacteristicRequest)
+      returns (IndicateOnCharacteristicResponse);
 }
 
 enum AttStatusCode {
@@ -86,8 +93,8 @@ enum EnableValue {
 }
 
 enum ServiceType {
-    PRIMARY = 0x00;
-    SECONDARY = 0x01;
+  PRIMARY = 0x00;
+  SECONDARY = 0x01;
 }
 
 // A message representing a GATT service.
