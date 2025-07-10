@@ -24,7 +24,6 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 /** Helper class identifying a client that has requested LE scan results. */
-// TODO(b/429793161) Remove all `@JvmField` declarations and `m` prefix
 class ScanClient
 private constructor(
     val scannerId: Int,
@@ -32,18 +31,18 @@ private constructor(
     val scanModeApp: Int,
     val filters: List<ScanFilter>,
     val appUid: Int,
+    val userHandle: UserHandle?,
     val isInternalClient: Boolean,
     var started: Boolean = false,
     var appDied: Boolean = false,
-    @JvmField var mHasLocationPermission: Boolean = false,
-    @JvmField var mUserHandle: UserHandle? = null,
-    @JvmField var mIsQApp: Boolean = false,
-    @JvmField var mEligibleForSanitizedExposureNotification: Boolean = false,
-    @JvmField var mHasNetworkSettingsPermission: Boolean = false,
-    @JvmField var mHasNetworkSetupWizardPermission: Boolean = false,
-    @JvmField var mHasScanWithoutLocationPermission: Boolean = false,
-    @JvmField var mHasDisavowedLocation: Boolean = false,
-    @JvmField var mAssociatedDevices: List<String>? = null,
+    var hasLocationPermission: Boolean = false,
+    var isQApp: Boolean = false,
+    var isEligibleForSanitizedExposureNotification: Boolean = false,
+    var hasNetworkSettingsPermission: Boolean = false,
+    var hasNetworkSetupWizardPermission: Boolean = false,
+    var hasScanWithoutLocationPermission: Boolean = false,
+    var hasDisavowedLocation: Boolean = false,
+    var associatedDevices: List<String> = emptyList(),
     // TODO(b/429793161) Convert to Kotlin native optional
     @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty(),
 ) {
@@ -53,6 +52,7 @@ private constructor(
         settings: ScanSettings,
         filterList: List<ScanFilter>?,
         appUid: Int,
+        userHandle: UserHandle? = null,
         isInternalClient: Boolean = false,
     ) : this(
         scannerId,
@@ -60,6 +60,7 @@ private constructor(
         settings.scanMode,
         filterList ?: emptyList(),
         appUid,
+        userHandle,
         isInternalClient,
     )
 

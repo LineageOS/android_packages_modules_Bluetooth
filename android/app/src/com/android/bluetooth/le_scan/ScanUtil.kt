@@ -93,7 +93,7 @@ object ScanUtil {
 
     @JvmStatic
     fun requiresLocationOn(client: ScanClient) =
-        !client.mHasDisavowedLocation && !isFilteredScan(client)
+        !client.hasDisavowedLocation && !isFilteredScan(client)
 
     // A valid filter need at least one field not empty
     private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty() }
