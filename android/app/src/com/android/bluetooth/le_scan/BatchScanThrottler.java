@@ -96,18 +96,13 @@ class BatchScanThrottler {
         mScreenOffDelayFloorMs = Math.max(mDelayFloorMs, mScreenOffMinimumDelayFloorMs);
         Log.d(
                 TAG,
-                "Initialized with: mScreenOffMinimumDelayFloorMs="
-                        + mScreenOffMinimumDelayFloorMs
-                        + ", mUnfilteredDelayFloorMs="
-                        + mUnfilteredDelayFloorMs
-                        + ", mUnfilteredScreenOffDelayFloorMs="
-                        + mUnfilteredScreenOffDelayFloorMs
-                        + ", mScreenOffDelayMs="
-                        + mScreenOffDelayMs
-                        + ", mDelayFloorMs="
-                        + mDelayFloorMs
-                        + ", mScreenOffDelayFloorMs="
-                        + mScreenOffDelayFloorMs);
+                "Initialized with:"
+                        + (" screenOffMinimumDelayFloorMs=" + mScreenOffMinimumDelayFloorMs)
+                        + (", unfilteredDelayFloorMs=" + mUnfilteredDelayFloorMs)
+                        + (", unfilteredScreenOffDelayFloorMs=" + mUnfilteredScreenOffDelayFloorMs)
+                        + (", screenOffDelayMs=" + mScreenOffDelayMs)
+                        + (", delayFloorMs=" + mDelayFloorMs)
+                        + (", screenOffDelayFloorMs=" + mScreenOffDelayFloorMs));
         onScreenOn(screenOn);
     }
 
@@ -135,28 +130,35 @@ class BatchScanThrottler {
             mScreenOffThrottling = true;
             resetBackoff();
         }
-        final long unfilteredFloor =
-                mScreenOffThrottling ? mUnfilteredScreenOffDelayFloorMs : mUnfilteredDelayFloorMs;
-        long intervalMillis = Long.MAX_VALUE;
-        for (ScanClient client : batchClients) {
-            if (client.getSettings().getReportDelayMillis() > 0) {
-                long clientIntervalMillis = client.getSettings().getReportDelayMillis();
-                if (client.getFilters().isEmpty() && clientIntervalMillis < unfilteredFloor) {
-                    clientIntervalMillis = unfilteredFloor;
-                }
-                intervalMillis = Math.min(intervalMillis, clientIntervalMillis);
-            }
-        }
+
+        long minimumReportDelayMs = getMinimumReportDelayMillis(batchClients);
+
         final int backoffIndex =
                 mBackoffStage >= BACKOFF_MULTIPLIERS.length
                         ? BACKOFF_MULTIPLIERS.length - 1
                         : mBackoffStage++;
         final long finalInterval =
                 Math.max(
-                        intervalMillis,
+                        minimumReportDelayMs,
                         (mScreenOffThrottling ? mScreenOffDelayFloorMs : mDelayFloorMs)
                                 * BACKOFF_MULTIPLIERS[backoffIndex]);
         Log.d(TAG, "Batch trigger interval: " + finalInterval + "ms");
         return finalInterval;
+    }
+
+    private long getMinimumReportDelayMillis(Set<ScanClient> batchClients) {
+        long unfilteredFloor =
+                mScreenOffThrottling ? mUnfilteredScreenOffDelayFloorMs : mUnfilteredDelayFloorMs;
+        long minimumReportDelayMs = Long.MAX_VALUE;
+        for (ScanClient client : batchClients) {
+            if (client.getSettings().getReportDelayMillis() > 0) {
+                long clientReportDelayMs = client.getSettings().getReportDelayMillis();
+                if (client.getFilters().isEmpty() && clientReportDelayMs < unfilteredFloor) {
+                    clientReportDelayMs = unfilteredFloor;
+                }
+                minimumReportDelayMs = Math.min(minimumReportDelayMs, clientReportDelayMs);
+            }
+        }
+        return minimumReportDelayMs;
     }
 }
