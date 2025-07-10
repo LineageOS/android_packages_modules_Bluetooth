@@ -41,7 +41,7 @@ class BleScanSettingListenerTest {
     private var callbackTriggered: Boolean = false
 
     @Before
-    public fun setup() {
+    fun setup() {
         callbackTriggered = false
     }
 

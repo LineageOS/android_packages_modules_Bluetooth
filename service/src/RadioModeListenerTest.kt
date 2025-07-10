@@ -67,7 +67,7 @@ class RadioModeListenerTest {
     private lateinit var mode: ArrayList<Boolean>
 
     @Before
-    public fun setup() {
+    fun setup() {
         Log.i("RadioModeListenerTest", "\t--> setup of " + testName.getMethodName())
         mode = ArrayList()
     }

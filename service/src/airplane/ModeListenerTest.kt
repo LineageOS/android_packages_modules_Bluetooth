@@ -90,7 +90,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
     private lateinit var notification: ArrayList<String>
 
     @Before
-    public fun setup() {
+    fun setup() {
         Log.i("AirplaneModeListenerTest", "\t--> setup of " + testName.getMethodName())
 
         // Most test will expect the system to be sensitive + off
