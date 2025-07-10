@@ -4,5 +4,4 @@ option java_outer_classname = "AvrcpProto";
 
 package pandora;
 
-service AVRCP {
-}
+service AVRCP {}

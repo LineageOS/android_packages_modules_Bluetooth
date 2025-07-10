@@ -85,11 +85,9 @@ service A2DP {
   // Close a stream, the source or sink tokens must not be reused afterwards.
   rpc Close(CloseRequest) returns (CloseResponse);
   // Get the `AudioEncoding` value of a stream
-  rpc GetAudioEncoding(GetAudioEncodingRequest)
-      returns (GetAudioEncodingResponse);
+  rpc GetAudioEncoding(GetAudioEncodingRequest) returns (GetAudioEncodingResponse);
   // Playback audio by a `Source`
-  rpc PlaybackAudio(stream PlaybackAudioRequest)
-      returns (PlaybackAudioResponse);
+  rpc PlaybackAudio(stream PlaybackAudioRequest) returns (PlaybackAudioResponse);
   // Capture audio from a `Sink`
   rpc CaptureAudio(CaptureAudioRequest) returns (stream CaptureAudioResponse);
   // Get codec configuration

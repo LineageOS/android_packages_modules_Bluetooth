@@ -31,30 +31,30 @@ service BumbleConfig {
 }
 
 message PairingConfig {
-    bool sc = 1;
-    bool mitm = 2;
-    bool bonding = 3;
-    OwnAddressType identity_address_type = 4;
+  bool sc = 1;
+  bool mitm = 2;
+  bool bonding = 3;
+  OwnAddressType identity_address_type = 4;
 }
 
 enum IoCapability {
-    DISPLAY_ONLY = 0x00;
-    DISPLAY_YES_NO = 0x01;
-    KEYBOARD_ONLY = 0x02;
-    NO_OUTPUT_NO_INPUT = 0x03;
-    KEYBOARD_DISPLAY = 0x04;
+  DISPLAY_ONLY = 0x00;
+  DISPLAY_YES_NO = 0x01;
+  KEYBOARD_ONLY = 0x02;
+  NO_OUTPUT_NO_INPUT = 0x03;
+  KEYBOARD_DISPLAY = 0x04;
 }
 
 enum KeyDistribution {
-    ENCRYPTION_KEY = 0x00;
-    IDENTITY_KEY = 0x01;
-    SIGNING_KEY = 0x02;
-    LINK_KEY = 0x03;
+  ENCRYPTION_KEY = 0x00;
+  IDENTITY_KEY = 0x01;
+  SIGNING_KEY = 0x02;
+  LINK_KEY = 0x03;
 }
 
 message OverrideRequest {
-    IoCapability io_capability = 1;
-    PairingConfig pairing_config = 2;
-    repeated KeyDistribution initiator_key_distribution = 3;
-    repeated KeyDistribution responder_key_distribution = 4;
+  IoCapability io_capability = 1;
+  PairingConfig pairing_config = 2;
+  repeated KeyDistribution initiator_key_distribution = 3;
+  repeated KeyDistribution responder_key_distribution = 4;
 }
