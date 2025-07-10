@@ -739,7 +739,7 @@ class GattClientTest {
     }
 
     companion object {
-        private val TAG = GattClientTest::class.java.simpleName
+        private const val TAG = "GattClientTest"
         private const val ANDROID_MTU = 517
         private const val MTU_REQUESTED = 23
         private const val ANOTHER_MTU_REQUESTED = 42
