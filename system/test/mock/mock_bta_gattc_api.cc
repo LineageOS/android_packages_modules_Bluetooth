@@ -21,6 +21,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 
 #include "bta/gatt/bta_gattc_int.h"
@@ -28,7 +29,6 @@
 #include "bta/include/bta_gatt_api.h"
 #include "stack/include/gatt_api.h"
 #include "test/common/mock_functions.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 void BTA_GATTC_Disable(void) { inc_func_call_count(__func__); }

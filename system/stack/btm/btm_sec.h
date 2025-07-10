@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #pragma once
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
@@ -38,7 +39,6 @@
 #include "stack/include/security_client_callbacks.h"
 #include "stack/include/smp_api_types.h"
 #include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)

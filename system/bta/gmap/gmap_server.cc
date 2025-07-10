@@ -21,6 +21,7 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
@@ -38,7 +39,6 @@
 #include "hardware/bt_common_types.h"
 #include "include/hardware/bt_gmap.h"
 #include "osi/include/properties.h"
-#include "types/bt_transport.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

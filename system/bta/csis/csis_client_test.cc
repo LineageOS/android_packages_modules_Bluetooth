@@ -17,13 +17,13 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <vector>
 
 #include "bind_helpers.h"
-#include "bt_transport.h"
 #include "bta_csis_api.h"
 #include "bta_dm_api_mock.h"
 #include "bta_gatt_api_mock.h"

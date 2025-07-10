@@ -18,6 +18,7 @@
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -45,7 +46,6 @@
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_gap_conn_interface.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/bt_transport.h"
 
 static std::map<const char*, bool> fake_osi_bool_props;
 

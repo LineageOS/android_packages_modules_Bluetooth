@@ -20,13 +20,14 @@
 
 #include "mock_stack_btm_interface.h"
 
+#include <bluetooth/types/bt_transport.h>
+
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 // Test accessible feature page

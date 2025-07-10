@@ -25,6 +25,7 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -63,7 +64,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 #ifdef __ANDROID__

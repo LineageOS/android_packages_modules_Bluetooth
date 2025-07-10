@@ -19,6 +19,8 @@
  *   Functions generated:51
  */
 
+#include <bluetooth/types/bt_transport.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_api.h"
@@ -29,7 +31,6 @@
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_dev_class.h"
 #include "test/common/mock_functions.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 struct uid_set_t;

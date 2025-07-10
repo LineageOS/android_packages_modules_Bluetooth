@@ -19,6 +19,7 @@
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -44,7 +45,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "types/bt_transport.h"
 
 bool gatt_profile_get_eatt_support(const RawAddress& /*addr*/) { return true; }
 
