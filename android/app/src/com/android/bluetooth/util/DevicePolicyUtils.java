@@ -26,6 +26,9 @@ import android.provider.ContactsContract.CommonDataKinds.Phone;
 import java.util.List;
 
 public final class DevicePolicyUtils {
+
+    private DevicePolicyUtils() {}
+
     private static boolean isBluetoothWorkContactSharingDisabled(Context context) {
         final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
         final UserManager userManager = context.getSystemService(UserManager.class);

@@ -113,6 +113,8 @@ class BluetoothPbapUtils {
         ADDRESS
     }
 
+    private BluetoothPbapUtils() {}
+
     private static boolean hasFilter(byte[] filter) {
         return filter != null && filter.length > 0;
     }

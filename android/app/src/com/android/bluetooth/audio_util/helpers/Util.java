@@ -52,6 +52,8 @@ class Util {
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
 
+    private Util() {}
+
     /** Get an empty set of Metadata */
     public static final Metadata empty_data() {
         Metadata.Builder builder = new Metadata.Builder();

@@ -138,6 +138,8 @@ public class Config {
                         LeAudioService.isBroadcastEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
             };
 
+    private Config() {}
+
     /**
      * A test function to allow for dynamic enabled TODO: b/402559309 Remove non test usages
      * (LeAudio)

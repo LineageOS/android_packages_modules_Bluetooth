@@ -21,6 +21,9 @@ import static android.os.Flags.asyncTraceForTrack;
 import android.os.Trace;
 
 public final class BluetoothTrace {
+
+    private BluetoothTrace() {}
+
     /**
      * Writes a trace message that a given section of code has begun. Must be followed by a call to
      * {@link #asyncTraceForTrackEnd} using the same track name and cookie.
