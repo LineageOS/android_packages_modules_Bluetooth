@@ -903,7 +903,10 @@ class BluetoothManagerService {
             return false;
         }
 
-        mBleAppManager.addBleApp(token, packageName);
+        if (!mBleAppManager.addBleApp(token, packageName)) {
+            Log.w(TAG, "enableBle: could not monitor app " + packageName + ", it is already dead");
+            return false;
+        }
 
         if (mState.oneOf(
                 State.ON,

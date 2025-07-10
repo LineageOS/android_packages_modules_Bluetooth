@@ -42,21 +42,23 @@ class BleAppManager(
         override fun toString() = packageName
     }
 
-    fun addBleApp(token: IBinder, packageName: String) {
+    /** @return true if the app is now being monitored or was already monitored, false otherwise */
+    fun addBleApp(token: IBinder, packageName: String): Boolean {
         val header = "addBleApp($token, $packageName):"
         if (bleApps.containsKey(token)) {
             Log.v(TAG, "$header Lifecycle is already monitored")
-            return
+            return true
         }
         val deathRec = ClientDeathRecipient(packageName, token)
         try {
             token.linkToDeath(deathRec, 0)
         } catch (ex: RemoteException) {
             Log.e(TAG, "$header Already dead")
-            return
+            return false
         }
         bleApps[token] = deathRec
         Log.v(TAG, "$header Monitoring lifecycle")
+        return true
     }
 
     fun removeBleApp(reason: Int, token: IBinder, packageName: String) {
