@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-private const val TAG: String = "LogTest"
+private const val TAG = "LogTest"
 
 @RunWith(RobolectricTestRunner::class)
 class LogTest {

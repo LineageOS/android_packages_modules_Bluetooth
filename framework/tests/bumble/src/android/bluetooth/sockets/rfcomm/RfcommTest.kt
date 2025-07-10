@@ -1092,7 +1092,7 @@ class RfcommTest {
         }
 
     companion object {
-        private val TAG = RfcommTest::class.java.getSimpleName()
+        private const val TAG = "RfcommTest"
         private val GRPC_TIMEOUT = Duration.ofSeconds(10)
         private val CONNECT_TIMEOUT = Duration.ofSeconds(7)
         private val STATE_CHANGE_TIMEOUT = Duration.ofSeconds(5)

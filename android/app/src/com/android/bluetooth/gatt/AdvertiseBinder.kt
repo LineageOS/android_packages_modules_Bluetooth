@@ -29,7 +29,7 @@ import android.content.AttributionSource
 import android.content.Context
 import com.android.bluetooth.Utils
 
-private val TAG: String = AdvertiseBinder::class.java.simpleName
+private const val TAG = "AdvertiseBinder"
 
 class AdvertiseBinder(
     private val context: Context,

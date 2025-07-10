@@ -21,7 +21,7 @@ import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertThrows
 
-private const val TAG: String = "Permissions"
+private const val TAG = "Permissions"
 
 object Permissions {
     private val uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation()

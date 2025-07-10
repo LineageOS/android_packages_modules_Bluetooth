@@ -719,7 +719,7 @@ class HidHostTest {
     }
 
     companion object {
-        private val TAG = HidHostTest::class.java.simpleName
+        private const val TAG = "HidHostTest"
         private val INTENT_TIMEOUT = Duration.ofSeconds(10)
         private const val KEYBD_RPT_ID = 1
         private const val KEYBD_RPT_SIZE = 9

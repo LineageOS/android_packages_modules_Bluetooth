@@ -21,8 +21,9 @@ import android.bluetooth.IBluetoothCallback
 import android.os.IBinder
 import android.os.RemoteException
 
+private const val TAG = "AdapterBinder"
+
 class AdapterBinder(rawBinder: IBinder) {
-    private val TAG = "AdapterBinder"
     val adapterBinder: IAdapter = IAdapter.Stub.asInterface(rawBinder)
     var adapterServiceBinder: IBinder? = null
     private val createdAt = System.currentTimeMillis()

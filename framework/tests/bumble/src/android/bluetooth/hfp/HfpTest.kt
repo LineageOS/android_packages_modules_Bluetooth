@@ -255,7 +255,7 @@ class HfpTest {
     }
 
     companion object {
-        private val TAG = HfpTest::class.java.simpleName
+        private const val TAG = "HfpTest"
         private val INTENT_TIMEOUT = Duration.ofSeconds(10)
     }
 }

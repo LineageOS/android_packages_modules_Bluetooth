@@ -298,7 +298,7 @@ class BleOnStateTest {
     }
 
     companion object {
-        private val TAG = BleOnStateTest::class.java.simpleName
+        private const val TAG = "BleOnStateTest"
 
         private const val TIMEOUT_ADVERTISING_MS = 1000L
         private const val TIMEOUT_SCANNING_MS = 2000L

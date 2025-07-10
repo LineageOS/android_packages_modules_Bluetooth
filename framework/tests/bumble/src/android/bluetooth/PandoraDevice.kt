@@ -43,7 +43,7 @@ import pandora.SecurityGrpc
 import pandora.SecurityStorageGrpc
 import pandora.l2cap.L2CAPGrpc
 
-private const val TAG: String = "PandoraDevice"
+private const val TAG = "PandoraDevice"
 
 public final class PandoraDevice(
     val networkAddress: String = "localhost",
