@@ -398,20 +398,21 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   AdvertiserId allocate_advertiser() {
     // number of LE_MULTI_ADVT start from 1
     AdvertiserId id = advertising_api_type_ == AdvertisingApiType::ANDROID_HCI ? 1 : 0;
-    while (id < num_instances_ && advertising_sets_.count(id) != 0) {
+    while (id < num_instances_ && advertising_sets_.contains(id) && advertising_sets_[id].in_use) {
       id++;
     }
     if (id == num_instances_) {
       log::warn("Number of max instances {} reached", (uint16_t)num_instances_);
       return kInvalidId;
     }
+    advertising_sets_[id] = Advertiser();
     advertising_sets_[id].in_use = true;
     return id;
   }
 
   void remove_advertiser(AdvertiserId advertiser_id) {
     std::unique_lock lock(id_mutex_);
-    if (advertising_sets_.count(advertiser_id) == 0) {
+    if (!advertising_sets_.contains(advertiser_id)) {
       return;
     }
 
@@ -868,7 +869,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void get_own_address(AdvertiserId advertiser_id) {
-    if (advertising_sets_.find(advertiser_id) == advertising_sets_.end()) {
+    if (!advertising_sets_.contains(advertiser_id)) {
       log::info("Unknown advertising id {}", advertiser_id);
       return;
     }
@@ -1245,7 +1246,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     std::vector<EnabledSet> enabled_sets = {curr_set};
     Enable enable_value = enable ? Enable::ENABLED : Enable::DISABLED;
 
-    if (!advertising_sets_.count(advertiser_id)) {
+    if (!advertising_sets_.contains(advertiser_id)) {
       log::warn("No advertising set with key: {}", advertiser_id);
       return;
     }
