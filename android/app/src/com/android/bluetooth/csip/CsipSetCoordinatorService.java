@@ -901,10 +901,8 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     @VisibleForTesting
     void bondStateChanged(BluetoothDevice device, int bondState) {
         Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
-        if (bondState == BluetoothDevice.BOND_BONDING
-                && mFoundSetMemberToGroupId.containsKey(device)) {
-            mFoundSetMemberToGroupId.remove(device);
-        }
+
+        mFoundSetMemberToGroupId.remove(device);
 
         // Remove state machine if the bonding for a device is removed
         if (bondState != BluetoothDevice.BOND_NONE) {
