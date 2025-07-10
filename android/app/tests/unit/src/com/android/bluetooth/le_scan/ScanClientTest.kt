@@ -35,7 +35,7 @@ class ScanClientTest {
         val filters = listOf(ScanFilter.Builder().build())
         val scanSettings = ScanSettings.Builder().build()
         val scanClientWithFilters = ScanClient(1, scanSettings, filters, appUid)
-        assertThat(scanClientWithFilters.mFilters).isEqualTo(filters)
+        assertThat(scanClientWithFilters.filters).isEqualTo(filters)
     }
 
     @Test
@@ -43,7 +43,7 @@ class ScanClientTest {
         val appUid = 1234
         val scanSettings = ScanSettings.Builder().build()
         val scanClientWithAppUid = ScanClient(1, scanSettings, null, appUid)
-        assertThat(scanClientWithAppUid.mAppUid).isEqualTo(appUid)
+        assertThat(scanClientWithAppUid.appUid).isEqualTo(appUid)
     }
 
     @Test
@@ -55,12 +55,12 @@ class ScanClientTest {
         val newScanMode = ScanSettings.SCAN_MODE_BALANCED
         val updated = scanClient.updateScanMode(newScanMode)
         assertThat(updated).isTrue()
-        assertThat(scanClient.mSettings.scanMode).isEqualTo(newScanMode)
+        assertThat(scanClient.settings.scanMode).isEqualTo(newScanMode)
 
-        val sameScanMode = scanClient.mSettings.scanMode
+        val sameScanMode = scanClient.settings.scanMode
         val notUpdated = scanClient.updateScanMode(sameScanMode)
         assertThat(notUpdated).isFalse()
-        assertThat(scanClient.mSettings.scanMode).isEqualTo(sameScanMode)
+        assertThat(scanClient.settings.scanMode).isEqualTo(sameScanMode)
     }
 
     @Test

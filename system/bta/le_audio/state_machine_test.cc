@@ -18,6 +18,7 @@
 #include "state_machine.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <log/log.h>
@@ -40,7 +41,6 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_iso.h"
-#include "types/bt_transport.h"
 
 using ::bluetooth::le_audio::DeviceConnectState;
 using ::bluetooth::le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel;

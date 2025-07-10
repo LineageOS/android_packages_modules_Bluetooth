@@ -129,6 +129,8 @@ public class BluetoothMapUtils {
         }
     }
 
+    private BluetoothMapUtils() {}
+
     public static void printCursor(Cursor c) {
         StringBuilder sb = new StringBuilder();
         sb.append("\nprintCursor:\n");

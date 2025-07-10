@@ -205,3 +205,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "mode_change_before_sco_unpark"
+    namespace: "bluetooth"
+    description: "Do mode change before SCO unpark"
+    bug: "419189913"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

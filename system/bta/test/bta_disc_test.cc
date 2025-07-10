@@ -18,6 +18,7 @@
 
 #include <base/test/bind_test_util.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -31,7 +32,6 @@
 #include "bta/test/bta_test_fixtures.h"
 #include "bta_api_data_types.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "types/bt_transport.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

@@ -110,6 +110,7 @@ class BassClientStateMachine extends StateMachine {
     static final int SWITCH_BCAST_SOURCE = 14;
     static final int CANCEL_PENDING_SOURCE_OPERATION = 15;
     static final int INITIATE_PA_SYNC_TRANSFER = 16;
+    static final int UPDATE_METADATA = 17;
 
     // Type of argument for set broadcast code operation
     static final int ARGTYPE_METADATA = 1;
@@ -809,14 +810,13 @@ class BassClientStateMachine extends StateMachine {
         if (isSourceAbsent(prevRecvState) && isSourcePresent(recvState)) {
             Log.d(TAG, "processBroadcastReceiverState: Source Addition");
             removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
-            if (mPendingMetadata != null) {
+            if ((mPendingMetadata != null)
+                    && (mPendingMetadata.getBroadcastId() == recvState.getBroadcastId())) {
                 setCurrentBroadcastMetadata(sourceId, mPendingMetadata);
-                mPendingMetadata = null;
-            }
-            if (mPendingOperation == ADD_BCAST_SOURCE) {
                 mService.getCallbacks()
                         .notifySourceAdded(
                                 mDevice, recvState, BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
+                mPendingMetadata = null;
             } else {
                 mService.getCallbacks()
                         .notifySourceAdded(
@@ -828,7 +828,8 @@ class BassClientStateMachine extends StateMachine {
         } else if (isSourcePresent(prevRecvState) && isSourcePresent(recvState)) {
             Log.d(TAG, "processBroadcastReceiverState: Source Update");
             removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
-            if (mPendingMetadata != null) {
+            if ((mPendingMetadata != null)
+                    && (mPendingMetadata.getBroadcastId() == recvState.getBroadcastId())) {
                 setCurrentBroadcastMetadata(sourceId, mPendingMetadata);
                 mPendingMetadata = null;
             }
@@ -2051,6 +2052,13 @@ class BassClientStateMachine extends StateMachine {
                     int sourceIdForPast = message.arg2;
                     initiatePaSyncTransfer(syncHandle, sourceIdForPast);
                 }
+                case UPDATE_METADATA -> {
+                    int sourceIdForUpdateMetadata = message.arg1;
+                    metaData = (BluetoothLeBroadcastMetadata) message.obj;
+                    setCurrentBroadcastMetadata(sourceIdForUpdateMetadata, metaData);
+                    updateMetadataWithReceiveStateIfBisSyncStateChanged(
+                            getBroadcastReceiveStateForSourceId(sourceIdForUpdateMetadata));
+                }
                 default -> {
                     Log.d(TAG, "CONNECTED: not handled message:" + message.what);
                     return NOT_HANDLED;
@@ -2207,7 +2215,8 @@ class BassClientStateMachine extends StateMachine {
                         SET_BCAST_CODE,
                         REMOVE_BCAST_SOURCE,
                         SWITCH_BCAST_SOURCE,
-                        INITIATE_PA_SYNC_TRANSFER -> {
+                        INITIATE_PA_SYNC_TRANSFER,
+                        UPDATE_METADATA -> {
                     Log.d(
                             TAG,
                             "defer the message: "
@@ -2300,6 +2309,7 @@ class BassClientStateMachine extends StateMachine {
             case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
             case CANCEL_PENDING_SOURCE_OPERATION -> "CANCEL_PENDING_SOURCE_OPERATION";
             case INITIATE_PA_SYNC_TRANSFER -> "INITIATE_PA_SYNC_TRANSFER";
+            case UPDATE_METADATA -> "UPDATE_METADATA";
             default -> Integer.toString(what);
         };
     }

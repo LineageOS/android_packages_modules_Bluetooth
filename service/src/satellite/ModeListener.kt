@@ -42,7 +42,7 @@ public var isOn = false
     private set
 
 /** Listen on satellite mode and trigger the callback if it has changed */
-public fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: Boolean) -> Unit) {
+fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: Boolean) -> Unit) {
     isOn =
         initializeRadioModeListener(
             looper,

@@ -16,12 +16,12 @@
 
 #pragma once
 
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 
 #include "stack/include/hci_error_code.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 struct acl_client_callback_s {

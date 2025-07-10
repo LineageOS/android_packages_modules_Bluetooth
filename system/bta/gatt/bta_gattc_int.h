@@ -25,6 +25,7 @@
 #define BTA_GATTC_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -39,7 +40,6 @@
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/gatt_api.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

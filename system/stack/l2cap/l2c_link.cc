@@ -26,6 +26,7 @@
 #define LOG_TAG "l2c_link"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -48,7 +49,6 @@
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

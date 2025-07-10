@@ -20,12 +20,12 @@
  */
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/bt_transport.h>
 
 #include <cstdint>
 
 #include "stack/gatt/gatt_int.h"
 #include "test/common/mock_functions.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& /* remote_bda */) {

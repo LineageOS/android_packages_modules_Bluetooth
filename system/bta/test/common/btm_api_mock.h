@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include <bluetooth/types/bt_transport.h>
 #include <gmock/gmock.h>
 
 #include <cstdint>
@@ -25,7 +26,6 @@
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/btm/security_device_record.h"
 #include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

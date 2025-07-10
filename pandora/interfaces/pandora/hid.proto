@@ -57,9 +57,7 @@ message SendHostReportRequest {
   string report = 3;
 }
 
-message SendHostReportResponse {
-
-}
+message SendHostReportResponse {}
 
 message ProtocolModeEvent {
   ProtocolMode protocol_mode = 1;

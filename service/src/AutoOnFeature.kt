@@ -47,7 +47,7 @@ import kotlin.time.toDuration
 
 private const val TAG = "AutoOnFeature"
 
-public fun resetAutoOnTimerForUser(
+fun resetAutoOnTimerForUser(
     looper: Looper,
     context: Context,
     state: BluetoothAdapterState,
@@ -89,12 +89,12 @@ public fun resetAutoOnTimerForUser(
     timer = Timer.start(looper, context, receiver, callback_on)
 }
 
-public fun pause() {
+fun pause() {
     timer?.pause()
     timer = null
 }
 
-public fun notifyBluetoothOn(context: Context) {
+fun notifyBluetoothOn(context: Context) {
     timer?.cancel()
     timer = null
 
@@ -109,16 +109,16 @@ public fun notifyBluetoothOn(context: Context) {
     }
 }
 
-public fun isUserSupported(resolver: ContentResolver) = isFeatureSupportedForUser(resolver)
+fun isUserSupported(resolver: ContentResolver) = isFeatureSupportedForUser(resolver)
 
-public fun isUserEnabled(context: Context): Boolean {
+fun isUserEnabled(context: Context): Boolean {
     if (!isUserSupported(context.contentResolver)) {
         throw IllegalStateException("AutoOnFeature not supported for user: ${context.getUser()}")
     }
     return isFeatureEnabledForUser(context.contentResolver)
 }
 
-public fun setUserEnabled(
+fun setUserEnabled(
     looper: Looper,
     context: Context,
     state: BluetoothAdapterState,
@@ -137,7 +137,7 @@ public fun setUserEnabled(
     resetAutoOnTimerForUser(looper, context, state, callback_on)
 }
 
-public fun factoryResetAutoOn(context: Context) {
+fun factoryResetAutoOn(context: Context) {
     Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, 0)
     timer?.cancel()
     timer = null

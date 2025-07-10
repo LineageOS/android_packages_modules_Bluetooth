@@ -45,8 +45,7 @@ message StopServerRequest {
   ServerId server = 1;
 }
 
-message StopServerResponse {
-}
+message StopServerResponse {}
 
 message AcceptConnectionRequest {
   ServerId server = 1;
@@ -60,16 +59,14 @@ message DisconnectionRequest {
   RfcommConnection connection = 1;
 }
 
-message DisconnectionResponse {
-}
+message DisconnectionResponse {}
 
 message TxRequest {
   RfcommConnection connection = 1;
   bytes data = 2;
 }
 
-message TxResponse {
-}
+message TxResponse {}
 
 message RxRequest {
   RfcommConnection connection = 1;

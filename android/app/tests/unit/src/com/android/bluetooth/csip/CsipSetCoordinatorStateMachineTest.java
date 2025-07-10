@@ -37,11 +37,14 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.*;
@@ -56,6 +59,7 @@ import org.mockito.Mockito;
 @RunWith(AndroidJUnit4.class)
 public class CsipSetCoordinatorStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private CsipSetCoordinatorService mService;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
@@ -422,6 +426,52 @@ public class CsipSetCoordinatorStateMachineTest {
                 CsipSetCoordinatorStateMachine.STACK_EVENT,
                 event,
                 CsipSetCoordinatorStateMachine.Disconnecting.class);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
+    public void ignoreConnectState_onConnectingState() {
+        initToConnectingState();
+        allowConnection(true);
+        doReturn(true).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
+        doReturn(true).when(mNativeInterface).connect(any(BluetoothDevice.class));
+
+        /* Those 2 connects should be ignored */
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
+
+        sendMessageAndVerifyTransition(
+                CsipSetCoordinatorStateMachine.DISCONNECT,
+                CsipSetCoordinatorStateMachine.Disconnected.class);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
+    public void handleMultipleConnectDisconnect_onDisconnectingState() {
+        initToConnectedState();
+
+        doReturn(true).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
+        sendMessageAndVerifyTransition(
+                CsipSetCoordinatorStateMachine.DISCONNECT,
+                CsipSetCoordinatorStateMachine.Disconnecting.class);
+
+        /* While being in disconnecting state deffer Connect Disconnect message */
+
+        doReturn(true).when(mNativeInterface).connect(any(BluetoothDevice.class));
+        doReturn(true).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
+        // deferred
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
+        // Removed Connec and Disconnect
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
+
+        /* Now move to Disconnected state and make sure we are going to Connecting state */
+        CsipSetCoordinatorStackEvent event =
+                new CsipSetCoordinatorStackEvent(
+                        CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
+
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
+        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
     }
 
     @Test

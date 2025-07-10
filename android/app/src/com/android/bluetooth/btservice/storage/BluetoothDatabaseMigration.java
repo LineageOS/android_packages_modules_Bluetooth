@@ -37,6 +37,8 @@ import java.util.List;
 public final class BluetoothDatabaseMigration {
     private static final String TAG = BluetoothDatabaseMigration.class.getSimpleName();
 
+    private BluetoothDatabaseMigration() {}
+
     public static boolean run(Context ctx, Cursor cursor) {
         boolean result = true;
         MetadataDatabase database = MetadataDatabase.createDatabaseWithoutMigration(ctx);

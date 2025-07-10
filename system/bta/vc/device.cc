@@ -16,6 +16,7 @@
  */
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -40,7 +41,6 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
-#include "types/bt_transport.h"
 #include "vc/types.h"
 
 using bluetooth::vc::internal::VolumeControlDevice;

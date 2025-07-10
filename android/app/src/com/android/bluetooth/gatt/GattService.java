@@ -111,6 +111,9 @@ public class GattService extends ProfileService {
         UUID.fromString("00001846-0000-1000-8000-00805F9B34FB"), // CSIS
     };
 
+    private static final UUID APPLE_NOTIFICATION_CENTER_SERVICE_UUID =
+            UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0");
+
     private final int[] mSubrateHighParameters;
     private final int[] mSubrateBalancedParameters;
     private final int[] mSubrateLowParameters;
@@ -384,7 +387,7 @@ public class GattService extends ProfileService {
     void permissionCheck(IBluetoothGattCallback callback, BluetoothDevice device, int handle) {
         final var clientApp = mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "(" + callback + "): App not registered");
+            Log.w(TAG, "(" + callback + ") - App not registered");
             return;
         }
         final var connId = getFirstConnectionIdForDevice(clientApp.id, device);
@@ -431,7 +434,7 @@ public class GattService extends ProfileService {
                         + (" clientIf=" + clientIf)
                         + (" connId=" + connId)
                         + (" transport=" + transportToString(transport))
-                        + (" status=" + status)
+                        + (" status=" + gattStatusToString(status))
                         + (" device=" + device));
         int connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED;
         if (status != 0) {
@@ -525,7 +528,11 @@ public class GattService extends ProfileService {
     }
 
     void onClientPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
-        Log.d(TAG, "onClientPhyUpdate() - connId=" + connId + ", status=" + status);
+        Log.d(
+                TAG,
+                "onClientPhyUpdate() -"
+                        + (" connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         final var device = mClientMap.deviceByConnId(connId);
         if (device == null) {
@@ -547,7 +554,7 @@ public class GattService extends ProfileService {
                 "onClientPhyRead() -"
                         + (" clientIf=" + clientIf)
                         + (", device=" + device)
-                        + (", status=" + status));
+                        + (", status=" + gattStatusToString(status)));
 
         final var connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
@@ -565,7 +572,11 @@ public class GattService extends ProfileService {
 
     void onClientConnUpdateFromNative(
             int connId, int interval, int latency, int timeout, int status) {
-        Log.d(TAG, "onClientConnUpdate() - connId=" + connId + ", status=" + status);
+        Log.d(
+                TAG,
+                "onClientConnUpdate() -"
+                        + (" connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         final var device = mClientMap.deviceByConnId(connId);
         if (device == null) {
@@ -601,7 +612,11 @@ public class GattService extends ProfileService {
 
     void onClientSubrateChangeFromNative(
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        Log.d(TAG, "onClientSubrateChange() - connId=" + connId + ", status=" + status);
+        Log.d(
+                TAG,
+                "onClientSubrateChange() -"
+                        + (" connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         int subrateMode;
 
@@ -636,7 +651,7 @@ public class GattService extends ProfileService {
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null || app.getCallback() == null) {
-            Log.e(TAG, "app or callback is null");
+            Log.e(TAG, "onGetGattDb() - app or callback is null");
             return;
         }
 
@@ -656,7 +671,7 @@ public class GattService extends ProfileService {
 
                     currSrvc = new BluetoothGattService(el.uuid, el.id, el.type);
                     dbOut.add(currSrvc);
-                    isRestrictedSrvc = isRestrictedSrvcUuid(el.uuid);
+                    isRestrictedSrvc = isRestrictedSrvcUuid(el.uuid, device);
                     isHidSrvc = isHidSrvcUuid(el.uuid);
                     if (isRestrictedSrvc) {
                         restrictedIds.add(el.id);
@@ -719,7 +734,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "onRegisterForNotifications() -"
                         + (" device=" + device)
-                        + (", status=" + status)
+                        + (", status=" + gattStatusToString(status))
                         + (", registered=" + registered)
                         + (", handle=" + handle));
     }
@@ -743,7 +758,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "onReadCharacteristic() -"
                         + (" device=" + device)
-                        + (", status=" + status)
+                        + (", status=" + gattStatusToString(status))
                         + (", length=" + data.length));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
@@ -764,7 +779,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "onWriteCharacteristic() -"
                         + (" device=" + device)
-                        + (", status=" + status)
+                        + (", status=" + gattStatusToString(status))
                         + (", length=" + data.length));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
@@ -788,7 +803,11 @@ public class GattService extends ProfileService {
 
     void onExecuteCompletedFromNative(int connId, int status) {
         final var device = mClientMap.deviceByConnId(connId);
-        Log.v(TAG, "onExecuteCompleted() - device=" + device + ", status=" + status);
+        Log.v(
+                TAG,
+                "onExecuteCompleted() -"
+                        + (" device=" + device)
+                        + (", status=" + gattStatusToString(status)));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -803,7 +822,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "onReadDescriptor() -"
                         + (" device=" + device)
-                        + (", status=" + status)
+                        + (", status=" + gattStatusToString(status))
                         + (", length=" + data.length));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
@@ -819,7 +838,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "onWriteDescriptor() -"
                         + (" device=" + device)
-                        + (", status=" + status)
+                        + (", status=" + gattStatusToString(status))
                         + (", length=" + data.length));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
@@ -836,7 +855,7 @@ public class GattService extends ProfileService {
                         + (" clientIf=" + clientIf)
                         + (", device=" + device)
                         + (", rssi=" + rssi)
-                        + (", status=" + status));
+                        + (", status=" + gattStatusToString(status)));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getById(clientIf);
         if (app == null) {
@@ -854,7 +873,12 @@ public class GattService extends ProfileService {
 
     void onConfigureMTUFromNative(int connId, int status, int mtu) {
         final var device = mClientMap.deviceByConnId(connId);
-        Log.d(TAG, "onConfigureMTU() device=" + device + ", status=" + status + ", mtu=" + mtu);
+        Log.d(
+                TAG,
+                "onConfigureMTU() -"
+                        + (" device=" + device)
+                        + (", status=" + gattStatusToString(status))
+                        + (", mtu=" + mtu));
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -1001,7 +1025,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "unregisterClient(" + callback + "): Already unregistered");
+            Log.w(TAG, "unregisterClient(" + callback + ") - Already unregistered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1031,7 +1055,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "clientConnect(" + callback + "): App not registered");
+            Log.w(TAG, "clientConnect(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1125,7 +1149,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "clientDisconnect(" + callback + "): App not registered");
+            Log.w(TAG, "clientDisconnect(" + callback + ") - App not registered");
             return;
         }
         clientDisconnectInternal(clientApp.id, device, source);
@@ -1161,7 +1185,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "clientSetPreferredPhy(" + callback + "): App not registered");
+            Log.w(TAG, "clientSetPreferredPhy(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1179,7 +1203,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "clientReadPhy(" + callback + "): App not registered");
+            Log.w(TAG, "clientReadPhy(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1197,7 +1221,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "refreshDevice(" + callback + "): App not registered");
+            Log.w(TAG, "refreshDevice(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1209,7 +1233,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "discoverServices(" + callback + "): App not registered");
+            Log.w(TAG, "discoverServices(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1227,7 +1251,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "discoverServiceByUuid(" + callback + "): App not registered");
+            Log.w(TAG, "discoverServiceByUuid(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1249,7 +1273,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "readCharacteristic(" + callback + "): App not registered");
+            Log.w(TAG, "readCharacteristic(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1273,7 +1297,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "readUsingCharacteristicUuid(" + callback + "): App not registered");
+            Log.w(TAG, "readUsingCharacteristicUuid(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1303,7 +1327,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "writeCharacteristic(" + callback + "): App not registered");
+            Log.w(TAG, "writeCharacteristic(" + callback + ") - App not registered");
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         final var clientIf = clientApp.id;
@@ -1322,7 +1346,7 @@ public class GattService extends ProfileService {
         synchronized (mPermits) {
             final var permit = mPermits.get(device);
             if (permit == null) {
-                Log.d(TAG, "writeCharacteristic() -  atomicBoolean uninitialized!");
+                Log.d(TAG, "writeCharacteristic() - atomicBoolean uninitialized!");
                 return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
             }
 
@@ -1347,7 +1371,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "readDescriptor(" + callback + "): App not registered");
+            Log.w(TAG, "readDescriptor(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1371,7 +1395,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "writeDescriptor(" + callback + "): App not registered");
+            Log.w(TAG, "writeDescriptor(" + callback + ") - App not registered");
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         final var clientIf = clientApp.id;
@@ -1397,7 +1421,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "endReliableWrite(" + callback + "): App not registered");
+            Log.w(TAG, "endReliableWrite(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1419,7 +1443,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "writeDescriptor(" + callback + "): App not registered");
+            Log.w(TAG, "writeDescriptor(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1437,7 +1461,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "readRemoteRssi(" + callback + "): App not registered");
+            Log.w(TAG, "readRemoteRssi(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1464,7 +1488,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "configureMTU(" + callback + "): App not registered");
+            Log.w(TAG, "configureMTU(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1482,7 +1506,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "connectionParameterUpdate(" + callback + "): App not registered");
+            Log.w(TAG, "connectionParameterUpdate(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1523,7 +1547,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "leConnectionUpdate(" + callback + "): App not registered");
+            Log.w(TAG, "leConnectionUpdate(" + callback + ") - App not registered");
             return;
         }
         final var clientIf = clientApp.id;
@@ -1553,7 +1577,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "subrateModeRequest(" + callback + "): App not registered");
+            Log.w(TAG, "subrateModeRequest(" + callback + ") - App not registered");
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         final var clientIf = clientApp.id;
@@ -1569,8 +1593,8 @@ public class GattService extends ProfileService {
 
         Log.d(
                 TAG,
-                ("subrateModeRequest(" + device + ", " + subrateMode + "): ")
-                        + (", subrate min/max=" + subrateMin + "/" + subrateMax)
+                ("subrateModeRequest(" + device + ", " + subrateMode + ") - ")
+                        + (" subrate min/max=" + subrateMin + "/" + subrateMax)
                         + (", maxLatency=" + maxLatency)
                         + (", continuationNumber=" + contNumber)
                         + (", timeout=" + supervisionTimeout));
@@ -1601,7 +1625,11 @@ public class GattService extends ProfileService {
     }
 
     void onServiceAddedFromNative(int status, int serverIf, List<GattDbElement> service) {
-        Log.d(TAG, "onServiceAdded(), status=" + status);
+        Log.d(
+                TAG,
+                "onServiceAdded() -"
+                        + (" serverIf=" + serverIf)
+                        + (" status=" + gattStatusToString(status)));
 
         if (status != 0) {
             return;
@@ -1663,7 +1691,11 @@ public class GattService extends ProfileService {
     }
 
     void onServiceStoppedFromNative(int status, int serverIf, int srvcHandle) {
-        Log.d(TAG, "onServiceStopped() srvcHandle=" + srvcHandle + ", status=" + status);
+        Log.d(
+                TAG,
+                "onServiceStopped() -"
+                        + (" srvcHandle=" + srvcHandle)
+                        + (", status=" + gattStatusToString(status)));
         if (status == 0) {
             mHandleMap.setStarted(serverIf, srvcHandle, false);
         }
@@ -1671,7 +1703,11 @@ public class GattService extends ProfileService {
     }
 
     void onServiceDeletedFromNative(int status, int serverIf, int srvcHandle) {
-        Log.d(TAG, "onServiceDeleted() srvcHandle=" + srvcHandle + ", status=" + status);
+        Log.d(
+                TAG,
+                "onServiceDeleted() -"
+                        + (" srvcHandle=" + srvcHandle)
+                        + (", status=" + gattStatusToString(status)));
         mHandleMap.deleteService(serverIf, srvcHandle);
     }
 
@@ -1679,18 +1715,15 @@ public class GattService extends ProfileService {
             BluetoothDevice device, int transport, boolean connected, int connId, int serverIf) {
         Log.d(
                 TAG,
-                "onClientConnected() connId="
-                        + connId
-                        + ", device="
-                        + device
-                        + ", transport="
-                        + transportToString(transport)
-                        + ", connected="
-                        + connected);
+                "onClientConnected() -"
+                        + (" connId=" + connId)
+                        + (", device=" + device)
+                        + (", transport=" + transportToString(transport))
+                        + (", connected=" + connected));
 
         final ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getById(serverIf);
         if (app == null) {
-            Log.w(TAG, "onClientConnected() received connection event for unregistered app");
+            Log.w(TAG, "onClientConnected() - received connection event for unregistered app");
             return;
         }
 
@@ -1720,7 +1753,7 @@ public class GattService extends ProfileService {
             if (!previouslyConnected && currentlyConnected) {
                 Log.i(
                         TAG,
-                        "onClientConnected()"
+                        "onClientConnected() -"
                                 + (" serverIf=" + serverIf)
                                 + (", device=" + device)
                                 + " has its first bearer and is now connected");
@@ -1729,7 +1762,7 @@ public class GattService extends ProfileService {
             } else if (previouslyConnected && !currentlyConnected) {
                 Log.i(
                         TAG,
-                        "onClientConnected()"
+                        "onClientConnected() -"
                                 + (" serverIf=" + serverIf)
                                 + (", device=" + device)
                                 + " has no more bearers and is disconnected");
@@ -1738,7 +1771,7 @@ public class GattService extends ProfileService {
             } else {
                 Log.d(
                         TAG,
-                        "onClientConnected()"
+                        "onClientConnected() -"
                                 + ("serverIf=" + serverIf)
                                 + (", device=" + device)
                                 + (" event dropped, previouslyConnected=" + previouslyConnected)
@@ -1758,7 +1791,7 @@ public class GattService extends ProfileService {
             applicationUid =
                     this.getPackageManager().getPackageUid(app.packageName, PackageInfoFlags.of(0));
         } catch (NameNotFoundException e) {
-            Log.d(TAG, "onClientConnected() uid_not_found=" + app.packageName);
+            Log.d(TAG, "onClientConnected() - uid_not_found=" + app.packageName);
         }
 
         // Lambdas require an effectively final variable. This should be removed when the
@@ -1771,7 +1804,11 @@ public class GattService extends ProfileService {
     }
 
     void onServerPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
-        Log.d(TAG, "onServerPhyUpdate() - connId=" + connId + ", status=" + status);
+        Log.d(
+                TAG,
+                "onServerPhyUpdate() -"
+                        + (" connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         final var device = mServerMap.deviceByConnId(connId);
         if (device == null) {
@@ -1788,7 +1825,11 @@ public class GattService extends ProfileService {
 
     void onServerPhyReadFromNative(
             int serverIf, BluetoothDevice device, int txPhy, int rxPhy, int status) {
-        Log.d(TAG, "onServerPhyRead() - device=" + device + ", status=" + status);
+        Log.d(
+                TAG,
+                "onServerPhyRead() -"
+                        + (" device=" + device)
+                        + (", status=" + gattStatusToString(status)));
 
         final List<ContextMap.Connection> connections =
                 mServerMap.getConnectionsByDevice(serverIf, device);
@@ -1800,7 +1841,7 @@ public class GattService extends ProfileService {
 
         final ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
         if (app == null) {
-            Log.w(TAG, "onServerPhyReadFromNative() received phy read for unregistered app");
+            Log.w(TAG, "onServerPhyReadFromNative() - received phy read for unregistered app");
             return;
         }
 
@@ -1812,7 +1853,11 @@ public class GattService extends ProfileService {
 
     void onServerConnUpdateFromNative(
             int connId, int interval, int latency, int timeout, int status) {
-        Log.d(TAG, "onServerConnUpdate() - connId=" + connId + ", status=" + status);
+        Log.d(
+                TAG,
+                "onServerConnUpdate() -"
+                        + (" connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         final var device = mServerMap.deviceByConnId(connId);
         if (device == null) {
@@ -1832,7 +1877,11 @@ public class GattService extends ProfileService {
 
     void onServerSubrateChangeFromNative(
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        Log.d(TAG, "onServerSubrateChange() - connId=" + connId + ", status=" + status);
+        Log.d(
+                TAG,
+                "onServerSubrateChange() -"
+                        + (" connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         int subrateMode;
 
@@ -2040,22 +2089,36 @@ public class GattService extends ProfileService {
                 "onExecuteWrite() -"
                         + (" device=" + device)
                         + (", connId=" + connId)
-                        + (", transId=" + transId));
+                        + (", transId=" + transId)
+                        + (", operation=" + (execWrite == 1 ? "WRITE" : "CANCEL")));
 
         final ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
         if (app == null) {
             return;
         }
 
-        callbackToApp(() -> app.getCallback().onExecuteWrite(device, transId, execWrite == 1));
+        final int requestId;
+        final int handle = HandleMap.HANDLE_PREPARED_WRITE;
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = mHandleMap.addRequestContext(app.id, connId, transId, handle);
+        } else {
+            requestId = transId;
+            mHandleMap.addRequest(connId, transId, handle);
+        }
+
+        callbackToApp(() -> app.getCallback().onExecuteWrite(device, requestId, execWrite == 1));
     }
 
     void onResponseSendCompletedFromNative(int status, int attrHandle) {
-        Log.d(TAG, "onResponseSendCompleted() handle=" + attrHandle);
+        Log.d(TAG, "onResponseSendCompleted() - handle=" + attrHandle);
     }
 
     void onNotificationSentFromNative(int connId, int status) {
-        Log.v(TAG, "onNotificationSent() connId=" + connId + ", status=" + status);
+        Log.v(
+                TAG,
+                "onNotificationSent() -"
+                        + ("connId=" + connId)
+                        + (", status=" + gattStatusToString(status)));
 
         final var device = mServerMap.deviceByConnId(connId);
         if (device == null) {
@@ -2151,7 +2214,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "unregisterServer(" + callback + "): App not registered");
+            Log.w(TAG, "unregisterServer(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2173,7 +2236,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "serverConnect(" + callback + "): App not registered");
+            Log.w(TAG, "serverConnect(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2192,7 +2255,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "serverDisconnect(" + callback + "): App not registered");
+            Log.w(TAG, "serverDisconnect(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2231,7 +2294,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "serverSetPreferredPhy(" + callback + "): App not registered");
+            Log.w(TAG, "serverSetPreferredPhy(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2250,7 +2313,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "serverReadPhy(" + callback + "): App not registered");
+            Log.w(TAG, "serverReadPhy(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2270,7 +2333,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "addService(" + callback + "): App not registered");
+            Log.w(TAG, "addService(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2317,7 +2380,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "removeService(" + callback + "): App not registered");
+            Log.w(TAG, "removeService(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2329,7 +2392,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "clearServices(" + callback + "): App not registered");
+            Log.w(TAG, "clearServices(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
@@ -2344,14 +2407,20 @@ public class GattService extends ProfileService {
             int status,
             int offset,
             byte[] value) {
+        Log.v(
+                TAG,
+                "sendResponse() -"
+                        + (" device=" + device)
+                        + (", requestId=" + requestId)
+                        + (", status=" + gattStatusToString(status)));
+
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "sendResponse(" + callback + "): App not registered");
+            Log.w(TAG, "sendResponse(" + callback + ") - App not registered");
             return;
         }
         final var serverIf = serverApp.id;
-        Log.v(TAG, "sendResponse() - device=" + device + ", requestId=" + requestId);
 
         int handle = 0;
         int connId = 0;
@@ -2377,10 +2446,8 @@ public class GattService extends ProfileService {
         }
 
         if (requestContext == null && requestData == null) {
+            Log.w(TAG, "sendResponse(" + callback + ") - no record of request we're responding to");
             if (Flags.gattMultiBearerTransactions()) {
-                Log.w(
-                        TAG,
-                        "sendResponse(" + callback + "): no record of request we're responding to");
                 return;
             } else {
                 final List<ContextMap.Connection> connections =
@@ -2408,7 +2475,7 @@ public class GattService extends ProfileService {
         final ContextMap<IBluetoothGattServerCallback>.App serverApp =
                 mServerMap.getByCallbackId(callback);
         if (serverApp == null) {
-            Log.w(TAG, "sendNotification(" + callback + "): App not registered");
+            Log.w(TAG, "sendNotification(" + callback + ") - App not registered");
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         final var serverIf = serverApp.id;
@@ -2522,11 +2589,19 @@ public class GattService extends ProfileService {
         return HidHostService.ANDROID_HEADTRACKER_UUID.getUuid().equals(uuid);
     }
 
-    private static boolean isRestrictedSrvcUuid(final UUID uuid) {
+    private static boolean isAppleNotificationCenterSrvcUuid(final UUID uuid) {
+        return APPLE_NOTIFICATION_CENTER_SERVICE_UUID.equals(uuid);
+    }
+
+    private boolean isRestrictedSrvcUuid(final UUID uuid, BluetoothDevice device) {
         return isFidoSrvcUuid(uuid)
                 || isAndroidTvRemoteSrvcUuid(uuid)
                 || isLeAudioSrvcUuid(uuid)
-                || isAndroidHeadtrackerSrvcUuid(uuid);
+                || isAndroidHeadtrackerSrvcUuid(uuid)
+                || (Flags.gattMessagingPermissions()
+                        && isAppleNotificationCenterSrvcUuid(uuid)
+                        && mAdapterService.getMessageAccessPermission(device)
+                                != BluetoothDevice.ACCESS_ALLOWED);
     }
 
     private int getDeviceType(BluetoothDevice device) {
@@ -2584,7 +2659,11 @@ public class GattService extends ProfileService {
     }
 
     private void stopNextService(int serverIf, int status) {
-        Log.d(TAG, "stopNextService() - serverIf=" + serverIf + ", status=" + status);
+        Log.d(
+                TAG,
+                "stopNextService() -"
+                        + (" serverIf=" + serverIf)
+                        + (", status=" + gattStatusToString(status)));
 
         if (status != 0) {
             return;
@@ -2800,6 +2879,71 @@ public class GattService extends ProfileService {
                             .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__CONNECTION_TIMEOUT;
             // For now all other errors are bucketed together.
             default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL;
+        };
+    }
+
+    /*
+     * Print a readable version of the various status codes that can come from the stack or
+     * applications.
+     *
+     * Codes from applications _should_ be from the public constants in BluetoothGatt. These
+     * constants are a subset of the greater set of values available inside the stack at
+     * system/stack/gatt/gatt_api.h's GattStatus enum.
+     *
+     * Code from the stack can be any value from the GattStatus enum.
+     *
+     * This block should be kept in sync with system/stack/gatt/gatt_api.h
+     */
+    private static String gattStatusToString(int status) {
+        return switch (status) {
+            case BluetoothGatt.GATT_SUCCESS -> "GATT_SUCCESS (0x00)";
+            case 0x01 -> "GATT_INVALID_HANDLE (0x01)";
+            case BluetoothGatt.GATT_READ_NOT_PERMITTED -> "GATT_READ_NOT_PERMITTED (0x02)";
+            case BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> "GATT_WRITE_NOT_PERMITTED (0x03)";
+            case 0x04 -> "GATT_INVALID_PDU (0x04)";
+            case BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION ->
+                    "GATT_INSUFFICIENT_AUTHENTICATION (0x05)";
+            case BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED -> "GATT_REQUEST_NOT_SUPPORTED (0x06)";
+            case BluetoothGatt.GATT_INVALID_OFFSET -> "GATT_INVALID_OFFSET (0x07)";
+            case BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION ->
+                    "GATT_INSUFFICIENT_AUTHORIZATION (0x08)";
+            case 0x09 -> "GATT_PREPARE_Q_FULL (0x09)";
+            case 0x0a -> "GATT_NOT_FOUND (0x0a)";
+            case 0x0b -> "GATT_NOT_LONG (0x0b)";
+            case 0x0c -> "GATT_INSUF_KEY_SIZE (0x0c)";
+            case BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH ->
+                    "GATT_INVALID_ATTRIBUTE_LENGTH (0x0d)";
+            case 0x0e -> "GATT_ERR_UNLIKELY (0x0e)";
+            case BluetoothGatt.GATT_INSUFFICIENT_ENCRYPTION ->
+                    "GATT_INSUFFICIENT_ENCRYPTION (0x0f)";
+            case 0x10 -> "GATT_UNSUPPORT_GRP_TYPE (0x10)";
+            case 0x11 -> "GATT_INSUF_RESOURCE (0x11)";
+            case 0x12 -> "GATT_DATABASE_OUT_OF_SYNC (0x12)";
+            case 0x13 -> "GATT_VALUE_NOT_ALLOWED (0x13)";
+            case 0x87 -> "GATT_ILLEGAL_PARAMETER (0x87)";
+            case 0x80 -> "GATT_NO_RESOURCES (0x80)";
+            case 0x81 -> "GATT_INTERNAL_ERROR (0x81)";
+            case 0x82 -> "GATT_WRONG_STATE (0x82)";
+            case 0x83 -> "GATT_DB_FULL (0x83)";
+            case 0x84 -> "GATT_BUSY (0x84)";
+            case 0x85 -> "GATT_ERROR (0x85)";
+            case 0x86 -> "GATT_CMD_STARTED (0x86)";
+            case 0x88 -> "GATT_PENDING (0x88)";
+            case 0x89 -> "GATT_AUTH_FAIL (0x89)";
+            case 0x8b -> "GATT_INVALID_CFG (0x8b)";
+            case 0x8c -> "GATT_SERVICE_STARTED (0x8c)";
+            case 0x8d -> "GATT_ENCRYPED_NO_MITM (0x8d)";
+            case 0x8e -> "GATT_NOT_ENCRYPTED (0x8e)";
+            case BluetoothGatt.GATT_CONNECTION_CONGESTED -> "GATT_CONNECTION_CONGESTED (0x8f)";
+            case 0x90 -> "GATT_DUP_REG (0x90)";
+            case 0x91 -> "GATT_ALREADY_OPEN (0x91)";
+            case 0x92 -> "GATT_CANCEL (0x92)";
+            case BluetoothGatt.GATT_CONNECTION_TIMEOUT -> "GATT_CONNECTION_TIMEOUT (0x93)";
+            case 0xFD -> "GATT_CCC_CFG_ERR (0xFD)";
+            case 0xFE -> "GATT_PRC_IN_PROGRESS (0xFE)";
+            case 0xFF -> "GATT_OUT_OF_RANGE (0xFF)";
+            case BluetoothGatt.GATT_FAILURE -> "GATT_FAILURE (0x101)";
+            default -> "UNKNOWN STATUS (" + status + ")";
         };
     }
 

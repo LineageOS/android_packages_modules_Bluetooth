@@ -266,7 +266,13 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT -> deferMessage(message);
+                case CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
                     mNativeInterface.disconnect(mDevice);
@@ -357,7 +363,17 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT -> deferMessage(message);
+                case CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        if (!hasDeferredMessages(CONNECT)) {
+                            deferMessage(message);
+                        } else {
+                            log("Connect already scheduled for " + mDevice);
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
                     mNativeInterface.disconnect(mDevice);
@@ -370,7 +386,17 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
                     sendMessage(STACK_EVENT, disconnectEvent);
                 }
-                case DISCONNECT -> deferMessage(message);
+                case DISCONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        log("Disconnect is ongoing for " + mDevice);
+                        if (hasDeferredMessages(CONNECT)) {
+                            log("Removing scheduled connect for " + mDevice);
+                            removeDeferredMessages(CONNECT);
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case STACK_EVENT -> {
                     CsipSetCoordinatorStackEvent event = (CsipSetCoordinatorStackEvent) message.obj;
                     log("Disconnecting: stack event: " + event);

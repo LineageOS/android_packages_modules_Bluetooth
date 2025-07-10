@@ -31,6 +31,18 @@ class HandleMap {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + HandleMap.class.getSimpleName();
 
+    // Preprared writes can be requested by a client, requesting that a server implementation hold
+    // all write requests until the client commits or executes the write. This execution is meant to
+    // commit all the writes, in the order they were received, on the server. This operations is
+    // exposed to server apps via the 'isPrep' field in the various request callbacks, combined with
+    // the onExecuteWrite() callback when the client is ready to commit. While both operations have
+    // transaction IDs, the characteristics written to usually have attribute handles that are
+    // exposed to apps, but the prepared write commit operation itself does not. Despite this, our
+    // APIs used to send a response require a handle. We use 0 as a dummy handle to respond to these
+    // preprared writes. By specification, this is an invalid handle, so its safe to use without
+    // consequence. The stack will ignore the handle down below anyways.
+    public static final int HANDLE_PREPARED_WRITE = 0;
+
     enum Type {
         SERVICE,
         CHARACTERISTIC,

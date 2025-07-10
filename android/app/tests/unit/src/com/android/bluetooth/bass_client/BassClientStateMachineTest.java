@@ -51,6 +51,7 @@ import static com.android.bluetooth.bass_client.BassClientStateMachine.START_SCA
 import static com.android.bluetooth.bass_client.BassClientStateMachine.STOP_SCAN_OFFLOAD;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.SWITCH_BCAST_SOURCE;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.UPDATE_BCAST_SOURCE;
+import static com.android.bluetooth.bass_client.BassClientStateMachine.UPDATE_METADATA;
 import static com.android.bluetooth.bass_client.BassConstants.CLIENT_CHARACTERISTIC_CONFIG;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -608,7 +609,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -723,7 +724,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -787,6 +788,8 @@ public class BassClientStateMachineTest {
 
         // Sync value again
         mStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        mStateMachine.mPendingMetadata = metadata;
         when(characteristic.getValue()).thenReturn(value);
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
@@ -818,6 +821,7 @@ public class BassClientStateMachineTest {
 
         // Sync value again
         mStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
+        mStateMachine.mPendingMetadata = metadata;
         when(characteristic.getValue()).thenReturn(value);
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
@@ -832,7 +836,6 @@ public class BassClientStateMachineTest {
         assertThat(receiveStateCaptor.getValue().getSourceDevice()).isEqualTo(mSourceTestDevice);
 
         // Empty value to indicates removing source from device by stack (source switch)
-        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
         mStateMachine.mPendingSourceToSwitch = metadata;
         when(characteristic.getValue()).thenReturn(new byte[] {});
         cb.onCharacteristicChanged(null, characteristic);
@@ -852,6 +855,7 @@ public class BassClientStateMachineTest {
 
         // Sync value again
         mStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
+        mStateMachine.mPendingMetadata = metadata;
         when(characteristic.getValue()).thenReturn(value);
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
@@ -892,7 +896,7 @@ public class BassClientStateMachineTest {
         assertThat(receiveStateCaptor.getValue().getSourceDevice()).isEqualTo(mSourceTestDevice);
 
         // Update value - PA SyncInfo Request, local broadcast
-        mStateMachine.mPendingMetadata = createBroadcastMetadata();
+        mStateMachine.mPendingMetadata = metadata;
         when(mBassClientService.isLocalBroadcast(any(BluetoothLeBroadcastReceiveState.class)))
                 .thenReturn(true);
         cb.onCharacteristicChanged(null, characteristic);
@@ -1332,7 +1336,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) paSync,
@@ -1457,7 +1461,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -1583,21 +1587,59 @@ public class BassClientStateMachineTest {
     }
 
     @Test
-    public void sendInitiatePaSyncTransferMessage_inConnectedState() {
-        initToConnectedState();
-        int syncHandle = 1234;
-        int sourceId = 4321;
+    public void syncRequestForPast_initiatePaSyncTransferMessage() {
+        prepareInitialReceiveStateForGatt();
 
-        mStateMachine.sendMessage(INITIATE_PA_SYNC_TRANSFER, syncHandle, sourceId);
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice,
+                TEST_SOURCE_ID,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                0x0L);
+
+        verify(mBassClientService).syncRequestForPast(mDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+
+        int syncHandle = 1234;
+        mStateMachine.sendMessage(INITIATE_PA_SYNC_TRANSFER, syncHandle, TEST_SOURCE_ID);
         mLooper.dispatchAll();
 
-        int serviceData = 0x000000FF & sourceId;
+        int serviceData = 0x000000FF & TEST_SOURCE_ID;
         serviceData = serviceData << 8;
         // advA matches EXT_ADV_ADDRESS
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
         verify(mPeriodicAdvertisingManager).transferSync(any(), eq(serviceData), eq(syncHandle));
+    }
+
+    @Test
+    public void syncRequestForMetadata_updateMetadataMessage() {
+        initToConnectedState();
+        mStateMachine.connectGatt(true);
+        mStateMachine.mNumOfBroadcastReceiverStates = 2;
+        BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
+        when(mBassClientService.getCallbacks()).thenReturn(callbacks);
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice,
+                TEST_SOURCE_ID,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING,
+                0x1L);
+
+        verify(callbacks)
+                .notifySourceAdded(any(), any(), eq(BluetoothStatusCodes.REASON_REMOTE_REQUEST));
+
+        assertThat(mStateMachine.getCurrentBroadcastMetadata(TEST_SOURCE_ID)).isNull();
+
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        Message msg = mStateMachine.obtainMessage(UPDATE_METADATA);
+        msg.arg1 = TEST_SOURCE_ID;
+        msg.obj = metadata;
+        mStateMachine.sendMessage(msg);
+        mLooper.dispatchAll();
+
+        assertThat(mStateMachine.getCurrentBroadcastMetadata(TEST_SOURCE_ID)).isEqualTo(metadata);
     }
 
     @Test
@@ -1753,6 +1795,10 @@ public class BassClientStateMachineTest {
         mStateMachine.sendMessage(INITIATE_PA_SYNC_TRANSFER);
         mLooper.dispatchAll();
         assertThat(mStateMachine.hasDeferredMessagesSuper(INITIATE_PA_SYNC_TRANSFER)).isTrue();
+
+        mStateMachine.sendMessage(UPDATE_METADATA);
+        mLooper.dispatchAll();
+        assertThat(mStateMachine.hasDeferredMessagesSuper(UPDATE_METADATA)).isTrue();
     }
 
     @Test

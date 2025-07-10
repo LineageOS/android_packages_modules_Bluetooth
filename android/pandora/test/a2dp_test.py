@@ -76,6 +76,7 @@ from typing_extensions import override
 logger = logging.getLogger(__name__)
 
 AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR = 'com.android.bluetooth.flags.avdt_wait_for_initial_delay_report_as_initiator'
+AVDT_CLOSE_ON_START_FAILURE_BAD_STATE = 'com.android.bluetooth.flags.avdt_close_on_start_failure_bad_state'
 
 AUDIO_SIGNAL_AMPLITUDE = 0.8
 AUDIO_SIGNAL_FREQUENCY = 440
@@ -1426,6 +1427,50 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         result = await connect_awaitable
         assert result.connection is not None, "connection is None!"
         await disconnect(result.connection, ref1_dut)
+
+    @avatar.asynchronous
+    @enableFlag(AVDT_CLOSE_ON_START_FAILURE_BAD_STATE)
+    async def test_avdt_handle_start_cfm_bad_state_error(self) -> None:
+        """Test AVDTP handling of start confirmation BAD_STATE error.
+
+        Test steps after DUT and RD1 connected and paired:
+        1. Start streaming to RD1.
+        2. RD1 will simulate failure response - AVDTP_BAD_STATE.
+        3. The DUT closes the AVDTP connection.
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
+        channel = SignalingChannel.accept(connection)
+
+        # Connect AVDTP to RD1.
+        _, dut_ref1_source = await asyncio.gather(
+            channel.accept_open_stream(seid_information=[
+                SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+            ],
+                                       service_capabilities=sbc_service_capabilites()),
+            open_source(self.dut_a2dp, dut_ref1))
+
+        # Start streaming to RD1.
+        self.dut_a2dp.Start(source=dut_ref1_source)
+
+        cmd = await channel.expect_signal(StartCommand(transaction_label=ANY, acp_seid=ANY),
+                                          timeout=10.0)
+
+        # Simulate AVDTP_BAD_STATE response.
+        channel.send_signal(
+            StartReject(transaction_label=cmd.transaction_label,
+                        acp_seid=0x01,
+                        error_code=ErrorCode.AVDTP_BAD_STATE))
+
+        # Expect the DUT to close connection.
+        await channel.accept_close(timeout=10.0)
 
 
 if __name__ == '__main__':

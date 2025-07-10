@@ -18,6 +18,7 @@
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
@@ -97,7 +98,6 @@
 #include "stack/include/main_thread.h"
 #include "state_machine.h"
 #include "storage_helper.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 #ifdef TARGET_FLOSS
@@ -3221,6 +3221,21 @@ public:
     }
 
     log::info("{}", leAudioDevice->address_);
+
+    /* Clear device audio directions, so group diretions will be updated using new values.
+     * Find group and clear directions, as changed service may mean that
+     * capabilities are changed.
+     */
+    if (leAudioDevice->group_id_ != bluetooth::groups::kGroupUnknown) {
+      leAudioDevice->audio_directions_ = 0;
+      LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
+      if (group == nullptr) {
+        log::error("Unknown group for leAudioDevice {} ({})", leAudioDevice->address_,
+                   std::format_ptr(leAudioDevice));
+      } else {
+        group->audio_directions_ = 0;
+      }
+    }
 
     if (leAudioDevice->known_service_handles_ == false) {
       log::debug("Database already invalidated");

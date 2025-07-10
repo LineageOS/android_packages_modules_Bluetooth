@@ -73,7 +73,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -1381,55 +1380,7 @@ public class LeAudioBroadcastServiceTest {
     }
 
     @Test
-    @DisableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_PRIMARY_GROUP_SELECTION,
-        Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
-        Flags.FLAG_LEAUDIO_USE_AUDIO_RECORDING_LISTENER
-    })
-    public void testUpdateFallbackInputDevice() {
-        int groupId = 1;
-        int groupId2 = 2;
-        int broadcastId = 243;
-        byte[] code = {0x00, 0x01, 0x00, 0x02};
-
-        initializeNative();
-        prepareConnectedUnicastDevice(groupId2, mDevice2);
-        prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
-
-        /* group 1 is deactivated due to broadcast and group 2 is set by default as broadcast to
-         * unicast fallback group (first add device)
-         */
-        verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice2));
-        verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
-
-        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId);
-
-        reset(mAudioManager);
-
-        assertThat(mService.setActiveDevice(mDevice2)).isTrue();
-
-        if (!Flags.leaudioUseAudioRecordingListener()) {
-            /* Update fallback active device (only input is active) */
-            ArgumentCaptor<BluetoothProfileConnectionInfo> connectionInfoArgumentCaptor =
-                    ArgumentCaptor.forClass(BluetoothProfileConnectionInfo.class);
-
-            assertThat(mService.setActiveDevice(mDevice2)).isTrue();
-            verify(mAudioManager)
-                    .handleBluetoothActiveDeviceChanged(
-                            eq(mDevice2), eq(mDevice1), connectionInfoArgumentCaptor.capture());
-            List<BluetoothProfileConnectionInfo> connInfos =
-                    connectionInfoArgumentCaptor.getAllValues();
-            assertThat(connInfos).hasSize(1);
-            assertThat(connInfos.get(0).isLeOutput()).isFalse();
-        }
-        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId2);
-    }
-
-    @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
-        Flags.FLAG_LEAUDIO_BROADCAST_PRIMARY_GROUP_SELECTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     public void testOnBroadcastToUnicastFallbackGroupChanged() throws RemoteException {
         int groupId1 = 1;
         int groupId2 = 2;
@@ -1490,10 +1441,7 @@ public class LeAudioBroadcastServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_PRIMARY_GROUP_SELECTION,
-        Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     public void testManageBroadcastToUnicastFallbackGroup() {
         int groupId = 1;
         int groupId2 = 2;
@@ -1562,7 +1510,6 @@ public class LeAudioBroadcastServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_PRIMARY_GROUP_SELECTION,
         Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
         Flags.FLAG_LEAUDIO_USE_AUDIO_RECORDING_LISTENER
     })
