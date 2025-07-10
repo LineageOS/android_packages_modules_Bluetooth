@@ -266,7 +266,13 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT -> deferMessage(message);
+                case CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
                     mNativeInterface.disconnect(mDevice);
