@@ -25,6 +25,7 @@ java_library {
         "bluetooth_flags_java_lib",
         "compatibility-device-util-axt",
         "junit",
+        "libprotobuf-java-lite",
     ],
     srcs: [
         "src/**/*.java",
