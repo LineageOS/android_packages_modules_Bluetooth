@@ -46,10 +46,12 @@ import org.robolectric.RobolectricTestRunner
 class ActiveLogTest {
     @get:Rule val testName = TestName()
 
+    private lateinit var activeLogs: ActiveLogs
+
     @Before
     fun setUp() {
         Log.i("ActiveLogTest", "\t--> setup of " + testName.getMethodName())
-        ActiveLogs.activeLogs.clear()
+        activeLogs = ActiveLogs()
     }
 
     @Test
@@ -57,7 +59,7 @@ class ActiveLogTest {
         val stringWriter = StringWriter()
         val writer = PrintWriter(stringWriter)
 
-        ActiveLogs.dump(writer)
+        activeLogs.dump(writer)
 
         assertThat(stringWriter.toString()).isEqualTo("Bluetooth never enabled!\n")
     }
@@ -66,12 +68,12 @@ class ActiveLogTest {
     fun dump_whenActiveLog_indicateAll() {
         val numberOfLogEntry = 3
         for (i in 1..numberOfLogEntry) {
-            ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
+            activeLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
         }
         val stringWriter = StringWriter()
         val writer = PrintWriter(stringWriter)
 
-        ActiveLogs.dump(writer)
+        activeLogs.dump(writer)
 
         assertThat(stringWriter.toString()).matches("Enable log:\n(.*\n){$numberOfLogEntry}")
     }
@@ -79,12 +81,12 @@ class ActiveLogTest {
     @Test
     fun dump_overflowQueue_indicateFirstEntries() {
         for (i in 1..ActiveLogs.MAX_ENTRIES_STORED * 2) {
-            ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
+            activeLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
         }
         val stringWriter = StringWriter()
         val writer = PrintWriter(stringWriter)
 
-        ActiveLogs.dump(writer)
+        activeLogs.dump(writer)
 
         assertThat(stringWriter.toString())
             .matches("Enable log:\n(.*\n){${ActiveLogs.MAX_ENTRIES_STORED}}")
@@ -92,13 +94,13 @@ class ActiveLogTest {
 
     @Test
     fun dump_differentState_logsVariation() {
-        ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, true, "Foo", true)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, true)
+        activeLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_START_ERROR, true, "Foo", true)
+        activeLogs.add(ENABLE_DISABLE_REASON_START_ERROR, true)
         val stringWriter = StringWriter()
         val writer = PrintWriter(stringWriter)
 
-        ActiveLogs.dump(writer)
+        activeLogs.dump(writer)
 
         assertThat(stringWriter.toString())
             .matches("Enable log:\n.*Disable.*\n.*EnableBle.*\n.*Enable.*\n")
@@ -106,24 +108,24 @@ class ActiveLogTest {
 
     @Test
     fun dump_allReason_stringIsKnown() {
-        ActiveLogs.add(ENABLE_DISABLE_REASON_AIRPLANE_MODE, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_DIED, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_AUTO_ON, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTORE_USER_SETTING, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_SATELLITE_MODE, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_SYSTEM_BOOT, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false)
-        ActiveLogs.add(42, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_AIRPLANE_MODE, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_APPLICATION_DIED, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_AUTO_ON, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_CRASH, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_RESTARTED, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_RESTORE_USER_SETTING, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_SATELLITE_MODE, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_SYSTEM_BOOT, false)
+        activeLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false)
+        activeLogs.add(42, false)
         val stringWriter = StringWriter()
         val writer = PrintWriter(stringWriter)
 
-        ActiveLogs.dump(writer)
+        activeLogs.dump(writer)
         assertThat(stringWriter.toString())
             .matches(
                 "Enable log:\n" +

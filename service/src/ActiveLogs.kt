@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// @file:JvmName("ActiveLogs")
-
 package com.android.server.bluetooth
 
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE
@@ -41,34 +39,21 @@ import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__
 import java.io.PrintWriter
 
 private const val TAG = "ActiveLogs"
+private const val DEFAULT_PACKAGE = "BluetoothSystemServer"
 
-object ActiveLogs {
-    @VisibleForTesting internal const val MAX_ENTRIES_STORED = 20
+class ActiveLogs {
     @VisibleForTesting
     internal val activeLogs: ArrayDeque<ActiveLog> = ArrayDeque(MAX_ENTRIES_STORED)
 
-    @JvmStatic
-    fun dump(writer: PrintWriter) {
-        if (activeLogs.isEmpty()) {
-            writer.println("Bluetooth never enabled!")
-        } else {
-            writer.println("Enable log:")
-            activeLogs.forEach { writer.println("  $it") }
-        }
-    }
-
-    @JvmStatic
-    fun add(reason: Int, enable: Boolean) {
-        add(reason, enable, "BluetoothSystemServer", false)
-    }
-
-    @JvmStatic
-    fun add(reason: Int, enable: Boolean, packageName: String, isBle: Boolean) {
+    @JvmOverloads
+    fun add(reason: Int, enable: Boolean, name: String = DEFAULT_PACKAGE, isBle: Boolean = false) {
         val last = activeLogs.lastOrNull()
         if (activeLogs.size == MAX_ENTRIES_STORED) {
             activeLogs.removeFirst()
         }
-        activeLogs.addLast(ActiveLog(reason, packageName, enable, isBle))
+        val log = ActiveLog(reason, name, enable, isBle)
+        Log.d(TAG, "$log")
+        activeLogs.addLast(log)
         val state =
             if (enable) BLUETOOTH_ENABLED_STATE_CHANGED__STATE__ENABLED
             else BLUETOOTH_ENABLED_STATE_CHANGED__STATE__DISABLED
@@ -90,10 +75,23 @@ object ActiveLogs {
             null,
             state,
             reason,
-            packageName,
+            name,
             lastState,
             timeSinceLastChanged,
         )
+    }
+
+    fun dump(writer: PrintWriter) {
+        if (activeLogs.isEmpty()) {
+            writer.println("Bluetooth never enabled!")
+        } else {
+            writer.println("Enable log:")
+            activeLogs.forEach { writer.println("  $it") }
+        }
+    }
+
+    companion object {
+        @VisibleForTesting internal const val MAX_ENTRIES_STORED = 20
     }
 }
 
@@ -106,17 +104,12 @@ internal class ActiveLog(
 ) {
     val timestamp = System.currentTimeMillis()
 
-    init {
-        Log.d(TAG, this.toString())
-    }
-
     override fun toString() =
         Log.timeToStringWithZone(timestamp) +
             " \tPackage [$packageName] requested to [" +
             (if (enable) "Enable" else "Disable") +
             (if (isBle) "Ble" else "") +
-            "]. \tReason is " +
-            getEnableDisableReasonString(reason)
+            "]. \tReason is ${getEnableDisableReasonString(reason)}"
 }
 
 private fun getEnableDisableReasonString(reason: Int): String {
