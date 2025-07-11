@@ -22,7 +22,6 @@
 #define PACKET_TESTING
 
 #include "packet/bit_inserter.h"
-#include "packet/parser/test/big_endian_test_packets.h"
 #include "packet/parser/test/six_bytes.h"
 #include "packet/parser/test/test_packets.h"
 #include "packet/raw_builder.h"
@@ -1418,111 +1417,6 @@ DEFINE_AND_INSTANTIATE_OneVersionedStructPacketReflectionTest(one_versioned_stru
 DEFINE_AND_INSTANTIATE_OneVersionOneStructPacketReflectionTest(one_version_one_struct_packet);
 DEFINE_AND_INSTANTIATE_OneVersionTwoStructPacketReflectionTest(one_version_two_struct_packet);
 
-vector<uint8_t> one_struct_be{
-        0x01, 0x02, 0x03,  // id = 0x01, count = 0x0203
-};
-
-TEST(GeneratedPacketTest, testOneStructBe) {
-  TwoRelatedNumbersBe trn;
-  trn.id_ = 1;
-  trn.count_ = 0x0203;
-
-  auto packet = OneStructBeBuilder::Create(trn);
-  ASSERT_EQ(one_struct_be.size(), packet->size());
-
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter it(*packet_bytes);
-  packet->Serialize(it);
-
-  ASSERT_EQ(one_struct_be.size(), packet_bytes->size());
-  for (size_t i = 0; i < one_struct_be.size(); i++) {
-    ASSERT_EQ(one_struct_be[i], packet_bytes->at(i));
-  }
-
-  PacketView<!kLittleEndian> packet_bytes_view(packet_bytes);
-  auto view = OneStructBeView::Create(packet_bytes_view);
-  ASSERT_TRUE(view.IsValid());
-  auto one = view.GetOne();
-  ASSERT_EQ(one.id_, trn.id_);
-  ASSERT_EQ(one.count_, trn.count_);
-}
-
-vector<uint8_t> two_structs_be{
-        0x01, 0x01, 0x02,  // id, id * 0x0102
-        0x02, 0x02, 0x04,
-};
-
-TEST(GeneratedPacketTest, testTwoStructsBe) {
-  std::vector<TwoRelatedNumbersBe> count_array;
-  for (uint8_t i = 1; i < 3; i++) {
-    TwoRelatedNumbersBe trn;
-    trn.id_ = i;
-    trn.count_ = 0x0102 * i;
-    count_array.push_back(trn);
-  }
-
-  auto packet = TwoStructsBeBuilder::Create(count_array[0], count_array[1]);
-  ASSERT_EQ(two_structs_be.size(), packet->size());
-
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter it(*packet_bytes);
-  packet->Serialize(it);
-
-  ASSERT_EQ(two_structs_be.size(), packet_bytes->size());
-  for (size_t i = 0; i < two_structs_be.size(); i++) {
-    ASSERT_EQ(two_structs_be[i], packet_bytes->at(i));
-  }
-
-  PacketView<!kLittleEndian> packet_bytes_view(packet_bytes);
-  auto view = TwoStructsBeView::Create(packet_bytes_view);
-  ASSERT_TRUE(view.IsValid());
-  auto one = view.GetOne();
-  ASSERT_EQ(one.id_, count_array[0].id_);
-  ASSERT_EQ(one.count_, count_array[0].count_);
-  auto two = view.GetTwo();
-  ASSERT_EQ(two.id_, count_array[1].id_);
-  ASSERT_EQ(two.count_, count_array[1].count_);
-}
-
-vector<uint8_t> array_of_struct_be{
-        0x04,              // _count_
-        0x01, 0x01, 0x02,  // id, id * 0x0102
-        0x02, 0x02, 0x04, 0x03, 0x03, 0x06, 0x04, 0x04, 0x08,
-};
-
-TEST(GeneratedPacketTest, testArrayOfStructBe) {
-  std::vector<TwoRelatedNumbersBe> count_array;
-  for (uint8_t i = 1; i < 5; i++) {
-    TwoRelatedNumbersBe trn;
-    trn.id_ = i;
-    trn.count_ = 0x0102 * i;
-    count_array.push_back(trn);
-  }
-
-  auto packet = ArrayOfStructBeBuilder::Create(count_array);
-
-  ASSERT_EQ(array_of_struct_be.size(), packet->size());
-
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter it(*packet_bytes);
-  packet->Serialize(it);
-
-  ASSERT_EQ(array_of_struct_be.size(), packet_bytes->size());
-  for (size_t i = 0; i < array_of_struct_be.size(); i++) {
-    ASSERT_EQ(array_of_struct_be[i], packet_bytes->at(i));
-  }
-
-  PacketView<!kLittleEndian> packet_bytes_view(packet_bytes);
-  auto view = ArrayOfStructBeView::Create(packet_bytes_view);
-  ASSERT_TRUE(view.IsValid());
-  auto array = view.GetArray();
-  ASSERT_EQ(count_array.size(), array.size());
-  for (size_t i = 0; i < count_array.size(); i++) {
-    ASSERT_EQ(array[i].id_, count_array[i].id_);
-    ASSERT_EQ(array[i].count_, count_array[i].count_);
-  }
-}
-
 vector<uint8_t> one_four_byte_struct{
         0x04,                    // struct_type_ = FourByte
         0xd1, 0xd2, 0xd3, 0xd4,  // four_bytes_
@@ -1930,41 +1824,6 @@ TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
   view = OneGenericStructArrayNoZeroView::Create(PacketView<kLittleEndian>(too_few_bytes));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1ul, view.GetAnArray().size());
-}
-
-TEST(GeneratedPacketTest, testToStringOutput) {
-  std::vector<TwoRelatedNumbersBe> count_array;
-  for (uint8_t i = 1; i < 5; i++) {
-    TwoRelatedNumbersBe trn;
-    trn.id_ = i;
-    trn.count_ = 0x0102 * i;
-    count_array.push_back(trn);
-  }
-
-  auto packet = ArrayOfStructBeBuilder::Create(count_array);
-
-  ASSERT_EQ(array_of_struct_be.size(), packet->size());
-
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter it(*packet_bytes);
-  packet->Serialize(it);
-
-  ASSERT_EQ(array_of_struct_be.size(), packet_bytes->size());
-  for (size_t i = 0; i < array_of_struct_be.size(); i++) {
-    ASSERT_EQ(array_of_struct_be[i], packet_bytes->at(i));
-  }
-
-  PacketView<!kLittleEndian> packet_bytes_view(packet_bytes);
-  auto view = ArrayOfStructBeView::Create(packet_bytes_view);
-  ASSERT_TRUE(view.IsValid());
-
-  ASSERT_EQ(
-          "ArrayOfStructBe { array_count = 0x4, array = VECTOR[TwoRelatedNumbersBe { id = 0x1, "
-          "count = 0x102 }, "
-          "TwoRelatedNumbersBe { id = 0x2, count = 0x204 }, TwoRelatedNumbersBe { id = 0x3, count "
-          "= 0x306 }, "
-          "TwoRelatedNumbersBe { id = 0x4, count = 0x408 }] }",
-          view.ToString());
 }
 
 TEST(GeneratedPacketTest, testEnumText) {
