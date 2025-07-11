@@ -119,7 +119,7 @@ void AclArbiter::SendPacketToPeer(uint8_t tcb_idx,
     if (L2CA_SendFixedChnlData(L2CAP_ATT_CID, p_tcb->peer_bda, p_buf) !=
         L2CAP_DW_SUCCESS) {
       log::warn("Unable to send L2CAP data peer:{} fixed_cid:{} len:{}",
-                p_tcb->peer_bda, L2CAP_ATT_CID, p_buf->len);
+                p_tcb->peer_bda, L2CAP_ATT_CID, buffer.size());
     }
   } else {
     log::error("Dropping packet since connection no longer exists");
