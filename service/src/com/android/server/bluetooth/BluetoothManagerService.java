@@ -381,13 +381,17 @@ class BluetoothManagerService {
     }
 
     private int estimateBusyTime(int state) {
-        if (state == State.BLE_ON && isBluetoothPersistedStateOn()) {
+        if (!Flags.gracefulDisableWithoutMessage()
+                && state == State.BLE_ON
+                && isBluetoothPersistedStateOn()) {
+            // Impossible case, if BrEdr is starting, state would be TURNING_ON
             // Bluetooth is in BLE and is starting classic
             return SERVICE_RESTART_TIME_MS;
         } else if (state != State.ON && state != State.OFF && state != State.BLE_ON) {
-            // Bluetooth is turning state
+            // Bluetooth is in a temporary turning state
             return ADD_PROXY_DELAY_MS;
-        } else if (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
+        } else if ((!Flags.gracefulDisableWithoutMessage()
+                        && mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED))
                 || mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                 || isBinding()
                 || mNextUser != null) {
@@ -1338,6 +1342,9 @@ class BluetoothManagerService {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MESSAGE_HANDLE_DISABLE_DELAYED -> {
+                    if (Flags.gracefulDisableWithoutMessage()) {
+                        throw new IllegalStateException("gracefulDisableWithoutMessage is enabled");
+                    }
                     Log.d(TAG, "MESSAGE_HANDLE_DISABLE_DELAYED: mAdapter=" + mAdapter);
 
                     handleDisableDelayed();
@@ -1587,7 +1594,11 @@ class BluetoothManagerService {
     private void handleDisableMessage() {
         mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
 
-        if (isBinding()) {
+        if (Flags.gracefulDisableWithoutMessage()
+                && Flags.userSwitchDuringBleOn()
+                && mState.oneOf(State.OFF)) {
+            Log.d(TAG, "Disable while already OFF. Nothing to do");
+        } else if (isBinding()) {
             Log.d(TAG, "Disable while binding");
             mEnable = false;
             mContext.unbindService(mConnection);
@@ -1600,12 +1611,31 @@ class BluetoothManagerService {
             Log.d(TAG, "Disable while BLE_TURNING_ON");
             mEnable = false;
             bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-        } else if (mEnable && mAdapter != null) {
-            mWaitForDisableRetry = 0;
-            handleDisableDelayed();
-        } else {
+        } else if (Flags.gracefulDisableWithoutMessage()) {
+            if (mState.oneOf(State.ON)) {
+                Log.d(TAG, "Disable while ON");
+                onToBleOn();
+            } else if (mState.oneOf(State.TURNING_ON)) {
+                Log.d(TAG, "Disable while TURNING_ON, set mEnable for later");
+            } else if (mState.oneOf(State.BLE_ON)) {
+                Log.d(TAG, "Disable while BLE_ON");
+            } else if (mEnable) {
+                Log.w(TAG, "Disable during unexpected state " + mState + ". mEnable is true !");
+            } else {
+                Log.d(TAG, "Disable during state " + mState + ". mEnable is false. Nothing to do");
+            }
+        } else if (!Flags.gracefulDisableWithoutMessage()) {
+            if (mEnable && mAdapter != null) {
+                mWaitForDisableRetry = 0;
+                handleDisableDelayed();
+            } else {
+                mEnable = false;
+                onToBleOn();
+            }
+        }
+
+        if (Flags.gracefulDisableWithoutMessage()) {
             mEnable = false;
-            onToBleOn();
         }
     }
 
@@ -1784,6 +1814,9 @@ class BluetoothManagerService {
     }
 
     private void handleDisableDelayed() {
+        if (Flags.gracefulDisableWithoutMessage()) {
+            throw new IllegalStateException("gracefulDisableWithoutMessage is enabled");
+        }
         // The Bluetooth is turning on, wait for State.ON
         if (!mState.oneOf(State.ON)) {
             if (mWaitForDisableRetry < MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES) {
@@ -1932,7 +1965,12 @@ class BluetoothManagerService {
             if (mDeviceConfigAllowAutoOn) {
                 AutoOnFeature.notifyBluetoothOn(mCurrentUserContext);
             }
-            sendBluetoothOnCallback();
+            if (Flags.gracefulDisableWithoutMessage() && !mEnable) {
+                Log.d(TAG, "bluetoothStateChangeHandler: onToBleOn because mEnable is false");
+                onToBleOn();
+            } else {
+                sendBluetoothOnCallback();
+            }
         } else if (newState == State.BLE_ON && prevState == State.BLE_TURNING_ON) {
             continueFromBleOnState();
         } // Nothing specific to do for State.TURNING_<X>

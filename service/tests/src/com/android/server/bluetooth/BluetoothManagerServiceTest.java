@@ -110,7 +110,8 @@ public class BluetoothManagerServiceTest {
         return FlagsWrapper.progressionOf(
                 Flags.FLAG_CLEANUP_STARTING_USER,
                 Flags.FLAG_USER_SWITCH_DURING_BLE_ON,
-                Flags.FLAG_USER_RESTRICTION_REFACTOR);
+                Flags.FLAG_USER_RESTRICTION_REFACTOR,
+                Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -784,6 +785,37 @@ public class BluetoothManagerServiceTest {
         syncHandler(0); // To post from the binder death
 
         endTest(); // Nothing happen
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE,
+        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
+    })
+    public void disable_whenTurningOn_shouldAbortAndTurnOff() throws Exception {
+        mManagerService.enable(0, "disable_whenTurningOn_shouldAbortAndTurnOff");
+        IBluetoothCallback btCallback = transition_offToBleOn();
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
+
+        // AdapterService go to turning_on
+        btCallback.onBluetoothStateChange(State.BLE_ON, State.TURNING_ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        assertThat(mManagerService.getState()).isEqualTo(State.TURNING_ON);
+
+        // Call disable during TURNING_ON
+        mManagerService.disable("disable_whenTurningOn_shouldAbortAndTurnOff", true);
+
+        // When all profiles are started, adapterService consider it is ON
+        btCallback.onBluetoothStateChange(State.TURNING_ON, State.ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+
+        // Because of graceful disable, it should immediately call onToBleOn
+        // and then go through the full off transition.
+        transition_onToOff(btCallback);
+
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
     }
 
     @SafeVarargs
