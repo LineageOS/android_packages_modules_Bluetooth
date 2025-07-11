@@ -175,6 +175,7 @@ class BluetoothManagerService {
 
     private final boolean mIsHearingAidProfileSupported;
     private final String mHciInstanceName;
+    private AutoOn mAutoOn;
 
     private String mAddress;
     private String mName;
@@ -321,7 +322,9 @@ class BluetoothManagerService {
     @VisibleForTesting
     boolean factoryReset(int count) {
         if (Flags.factoryResetClearAdditionalData()) {
-            AutoOnFeature.factoryResetAutoOn(mCurrentUserContext);
+            if (mAutoOn != null) {
+                mAutoOn.factoryReset();
+            }
             AirplaneModeListener.factoryReset(mContentResolver, mCurrentUserContext);
             setBtHciSnoopLogMode(-1);
         }
@@ -480,8 +483,10 @@ class BluetoothManagerService {
 
         if (reason == ENABLE_DISABLE_REASON_SATELLITE_MODE
                 || !AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
-            // AirplaneMode can have a state where it does not impact the AutoOnFeature
-            AutoOnFeature.pause();
+            // AirplaneMode can have a state where it does not impact AutoOn
+            if (mAutoOn != null) {
+                mAutoOn.pause();
+            }
         }
 
         if (currentState == State.ON) {
@@ -711,7 +716,7 @@ class BluetoothManagerService {
 
         mDeviceConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
-        Log.d(TAG, "AutoOnFeature property=" + mDeviceConfigAllowAutoOn);
+        Log.d(TAG, "AutoOn allowed by config=" + mDeviceConfigAllowAutoOn);
     }
 
     @VisibleForTesting
@@ -1195,6 +1200,16 @@ class BluetoothManagerService {
                         mContext.createContextAsUser(userHandle, 0),
                         "Current User Context cannot be null");
 
+        if (mAutoOn != null) {
+            mAutoOn =
+                    new AutoOn(
+                            mLooper,
+                            mCurrentUserContext,
+                            mCurrentUser,
+                            mState,
+                            this::enableFromAutoOn);
+        }
+
         AirplaneModeListener.initialize(
                 mLooper,
                 mContentResolver,
@@ -1664,7 +1679,11 @@ class BluetoothManagerService {
             return;
         }
 
-        AutoOnFeature.pause();
+        if (mAutoOn != null) {
+            mAutoOn.pause();
+            mAutoOn = null;
+            Log.d(TAG, "Stopping AutoOn for" + mCurrentUser);
+        }
 
         if (Flags.userSwitchDuringBleOn()) {
             if (mState.oneOf(State.OFF)) {
@@ -1718,6 +1737,16 @@ class BluetoothManagerService {
     private void executeUserSwitch(UserHandle userTo) {
         mCurrentUser = userTo;
         mCurrentUserContext = mContext.createContextAsUser(mCurrentUser, 0);
+
+        if (mAutoOn != null) {
+            mAutoOn =
+                    new AutoOn(
+                            mLooper,
+                            mCurrentUserContext,
+                            mCurrentUser,
+                            mState,
+                            this::enableFromAutoOn);
+        }
 
         if (isBluetoothDisallowed()) {
             Log.i(TAG, "executeUserSwitch: Bluetooth is disallowed");
@@ -1973,8 +2002,8 @@ class BluetoothManagerService {
 
         // Notify all proxy objects first of adapter state change
         if (newState == State.ON) {
-            if (mDeviceConfigAllowAutoOn) {
-                AutoOnFeature.notifyBluetoothOn(mCurrentUserContext);
+            if (mAutoOn != null) {
+                mAutoOn.notifyBluetoothOn();
             }
             if (Flags.gracefulDisableWithoutMessage() && !mEnable) {
                 Log.d(TAG, header + "onToBleOn because mEnable is false");
@@ -2364,12 +2393,11 @@ class BluetoothManagerService {
     private final boolean mDeviceConfigAllowAutoOn;
 
     private void autoOnSetupTimer() {
-        if (!mDeviceConfigAllowAutoOn) {
-            Log.d(TAG, "No support for AutoOn feature: Not creating a timer");
+        if (mAutoOn == null) {
+            Log.d(TAG, "AutoOn is not active: Not creating a timer");
             return;
         }
-        AutoOnFeature.resetAutoOnTimerForUser(
-                mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
+        mAutoOn.resetAutoOnTimer();
     }
 
     private <T> T postAndWait(Callable<T> callable) {
@@ -2391,33 +2419,21 @@ class BluetoothManagerService {
     }
 
     boolean isAutoOnSupported() {
-        return mDeviceConfigAllowAutoOn
-                && postAndWait(
-                        () ->
-                                AutoOnFeature.isUserSupported(
-                                        mCurrentUserContext.getContentResolver()));
+        return mAutoOn != null && postAndWait(() -> mAutoOn.isSupported());
     }
 
     boolean isAutoOnEnabled() {
-        if (!mDeviceConfigAllowAutoOn) {
-            throw new IllegalStateException("AutoOnFeature is not supported in current config");
+        if (mAutoOn == null) {
+            throw new IllegalStateException("AutoOn is not supported in current config");
         }
-        return postAndWait(() -> AutoOnFeature.isUserEnabled(mCurrentUserContext));
+        return postAndWait(() -> mAutoOn.isEnabled());
     }
 
     void setAutoOnEnabled(boolean status) {
-        if (!mDeviceConfigAllowAutoOn) {
-            throw new IllegalStateException("AutoOnFeature is not supported in current config");
+        if (mAutoOn == null) {
+            throw new IllegalStateException("AutoOn is not supported in current config");
         }
-        postAndWait(
-                Executors.callable(
-                        () ->
-                                AutoOnFeature.setUserEnabled(
-                                        mLooper,
-                                        mCurrentUserContext,
-                                        mState,
-                                        status,
-                                        this::enableFromAutoOn)));
+        postAndWait(Executors.callable(() -> mAutoOn.setEnabled(status)));
     }
 
     /** Check if BLE is supported by this platform */

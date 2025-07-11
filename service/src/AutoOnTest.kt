@@ -16,6 +16,7 @@
 
 package com.android.server.bluetooth.test
 
+import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.Application
 import android.bluetooth.BluetoothAdapter
@@ -23,25 +24,19 @@ import android.content.Context
 import android.content.Intent
 import android.os.IpcDataCache
 import android.os.Looper
+import android.os.UserHandle
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.truth.content.IntentSubject.assertThat
+import com.android.server.bluetooth.AutoOn
+import com.android.server.bluetooth.AutoOn.Companion.STORAGE_KEY
+import com.android.server.bluetooth.AutoOn.Companion.USER_SETTINGS_KEY
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
-import com.android.server.bluetooth.Timer
-import com.android.server.bluetooth.USER_SETTINGS_KEY
 import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.airplane.test.ModeListenerTest as AirplaneListener
-import com.android.server.bluetooth.factoryResetAutoOn
-import com.android.server.bluetooth.isUserEnabled
-import com.android.server.bluetooth.isUserSupported
-import com.android.server.bluetooth.notifyBluetoothOn
-import com.android.server.bluetooth.pause
-import com.android.server.bluetooth.resetAutoOnTimerForUser
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
 import com.android.server.bluetooth.satellite.test.ModeListenerTest as SatelliteListener
-import com.android.server.bluetooth.setUserEnabled
-import com.android.server.bluetooth.timer
 import com.google.common.truth.Expect
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDateTime
@@ -60,49 +55,51 @@ import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
-class AutoOnFeatureTest {
+class AutoOnTest {
 
     @get:Rule val testName = TestName()
     @get:Rule val expect = Expect.create()
 
     private val looper = Looper.getMainLooper()
     private val state = BluetoothAdapterState()
+    private val user = UserHandle.of(ActivityManager.getCurrentUser())
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val resolver = context.contentResolver
     private val now = LocalDateTime.now()
     private val timerTarget = LocalDateTime.of(now.toLocalDate(), LocalTime.of(5, 0)).plusDays(1)
+    private lateinit var autoOn: AutoOn
 
     private var callback_count = 0
 
     @Before
     fun setUp() {
-        Log.i("AutoOnFeatureTest", "\t--> setUp(${testName.getMethodName()})")
+        Log.i("AutoOnTest", "\t--> setUp(${testName.getMethodName()})")
 
         callback_count = 0
-        enableUserSettings()
+        autoOn = AutoOn(looper, context, user, state, this::callback_on)
+        enableSetting()
     }
 
     @After
     fun tearDown() {
-        timer?.cancel()
-        timer = null
+        autoOn.timer?.cancel()
         resetSavedTimer()
     }
 
     private fun setupTimer() {
-        resetAutoOnTimerForUser(looper, context, state, this::callback_on)
+        autoOn.resetAutoOnTimer()
     }
 
-    private fun setUserEnabled(status: Boolean) {
-        setUserEnabled(looper, context, state, status, this::callback_on)
+    private fun setEnabled(status: Boolean) {
+        autoOn.setEnabled(status)
     }
 
-    private fun enableUserSettings() {
+    private fun enableSetting() {
         Settings.Secure.putInt(resolver, USER_SETTINGS_KEY, 1)
         shadowOf(looper).idle()
     }
 
-    private fun disableUserSettings() {
+    private fun disableSettings() {
         Settings.Secure.putInt(resolver, USER_SETTINGS_KEY, 0)
         shadowOf(looper).idle()
     }
@@ -113,20 +110,20 @@ class AutoOnFeatureTest {
     }
 
     private fun resetSavedTimer() {
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, null)
+        Settings.Secure.putString(resolver, STORAGE_KEY, null)
         shadowOf(looper).idle()
     }
 
     private fun expectStorageTime() {
         shadowOf(looper).idle()
         expect
-            .that(Settings.Secure.getString(resolver, Timer.STORAGE_KEY))
+            .that(Settings.Secure.getString(resolver, STORAGE_KEY))
             .isEqualTo(timerTarget.toString())
     }
 
     private fun expectNoStorageTime() {
         shadowOf(looper).idle()
-        expect.that(Settings.Secure.getString(resolver, Timer.STORAGE_KEY)).isNull()
+        expect.that(Settings.Secure.getString(resolver, STORAGE_KEY)).isNull()
     }
 
     private fun callback_on() {
@@ -139,7 +136,7 @@ class AutoOnFeatureTest {
 
         setupTimer()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
     }
 
@@ -150,15 +147,15 @@ class AutoOnFeatureTest {
         setupTimer()
 
         state.set(BluetoothAdapter.STATE_OFF)
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
     }
 
     @Test
-    fun setupTimer_whenBtOffAndUserEnabled_isScheduled() {
+    fun setupTimer_whenBtOffAndEnabled_isScheduled() {
         setupTimer()
 
-        expect.that(timer).isNotNull()
+        expect.that(autoOn.timer).isNotNull()
     }
 
     @Test
@@ -171,7 +168,7 @@ class AutoOnFeatureTest {
         shadowOf(looper).runOneTask()
 
         expect.that(callback_count).isEqualTo(1)
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
     }
 
     @Test
@@ -186,117 +183,117 @@ class AutoOnFeatureTest {
         shadowOf(looper).runOneTask()
 
         expect.that(callback_count).isEqualTo(1)
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
     }
 
     @Test
     fun notifyBluetoothOn_whenNoTimer_noCrash() {
-        notifyBluetoothOn(context)
+        autoOn.notifyBluetoothOn()
 
-        assertThat(timer).isNull()
+        assertThat(autoOn.timer).isNull()
     }
 
     @Test
     fun notifyBluetoothOn_whenTimer_isNotScheduled() {
         setupTimer()
-        notifyBluetoothOn(context)
+        autoOn.notifyBluetoothOn()
 
         shadowOf(looper).runToEndOfTasks()
         expect.that(callback_count).isEqualTo(0)
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
     }
 
     @Test
     fun notifyBluetoothOn_whenItWasNeverUsed_enableSettings() {
         restoreSettings()
 
-        notifyBluetoothOn(context)
+        autoOn.notifyBluetoothOn()
 
-        assertThat(isUserSupported(resolver)).isTrue()
+        assertThat(autoOn.isSupported()).isTrue()
     }
 
     @Test
     fun notifyBluetoothOn_whenStorage_resetStorage() {
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, timerTarget.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, timerTarget.toString())
         shadowOf(looper).idle()
 
-        notifyBluetoothOn(context)
+        autoOn.notifyBluetoothOn()
 
         expectNoStorageTime()
     }
 
     @Test
-    fun apiIsUserEnable_whenItWasNeverUsed_throwException() {
+    fun apiIsEnable_whenItWasNeverUsed_throwException() {
         restoreSettings()
 
-        assertFailsWith<IllegalStateException> { isUserEnabled(context) }
+        assertFailsWith<IllegalStateException> { autoOn.isEnabled() }
     }
 
     @Test
-    fun apiSetUserEnabled_whenItWasNeverUsed_throwException() {
+    fun apiSetEnabled_whenItWasNeverUsed_throwException() {
         restoreSettings()
 
-        assertFailsWith<IllegalStateException> { setUserEnabled(true) }
+        assertFailsWith<IllegalStateException> { setEnabled(true) }
     }
 
     @Test
-    fun apiIsUserEnable_whenEnabled_isTrue() {
-        assertThat(isUserEnabled(context)).isTrue()
+    fun apiIsEnable_whenEnabled_isTrue() {
+        assertThat(autoOn.isEnabled()).isTrue()
     }
 
     @Test
-    fun apiIsUserEnable_whenDisabled_isFalse() {
-        disableUserSettings()
-        assertThat(isUserEnabled(context)).isFalse()
+    fun apiIsEnable_whenDisabled_isFalse() {
+        disableSettings()
+        assertThat(autoOn.isEnabled()).isFalse()
     }
 
     @Test
-    fun apiSetUserEnableToFalse_whenScheduled_isNotScheduled() {
+    fun apiSetEnableToFalse_whenScheduled_isNotScheduled() {
         setupTimer()
 
-        setUserEnabled(false)
+        setEnabled(false)
 
-        assertThat(isUserEnabled(context)).isFalse()
+        assertThat(autoOn.isEnabled()).isFalse()
         assertThat(callback_count).isEqualTo(0)
-        assertThat(timer).isNull()
+        assertThat(autoOn.timer).isNull()
     }
 
     @Test
-    fun apiSetUserEnableToFalse_whenIdle_isNotScheduled() {
-        setUserEnabled(false)
+    fun apiSetEnableToFalse_whenIdle_isNotScheduled() {
+        setEnabled(false)
 
-        assertThat(isUserEnabled(context)).isFalse()
+        assertThat(autoOn.isEnabled()).isFalse()
         assertThat(callback_count).isEqualTo(0)
-        assertThat(timer).isNull()
+        assertThat(autoOn.timer).isNull()
     }
 
     @Test
-    fun apiSetUserEnableToTrue_whenIdle_canSchedule() {
-        disableUserSettings()
+    fun apiSetEnableToTrue_whenIdle_canSchedule() {
+        disableSettings()
 
-        setUserEnabled(true)
+        setEnabled(true)
 
-        assertThat(timer).isNotNull()
+        assertThat(autoOn.timer).isNotNull()
     }
 
     @Test
-    fun apiSetUserEnableToggle_whenScheduled_isRescheduled() {
+    fun apiSetEnableToggle_whenScheduled_isRescheduled() {
         val pastTime = timerTarget.minusDays(3)
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, pastTime.toString())
         shadowOf(looper).idle()
 
-        setUserEnabled(false)
+        setEnabled(false)
         expectNoStorageTime()
 
-        setUserEnabled(true)
+        setEnabled(true)
         expectStorageTime()
 
-        assertThat(timer).isNotNull()
+        assertThat(autoOn.timer).isNotNull()
     }
 
     @Test
-    fun apiSetUserEnableToFalse_whenEnabled_broadcastIntent() {
-        setUserEnabled(false)
+    fun apiSetEnableToFalse_whenEnabled_broadcastIntent() {
+        setEnabled(false)
 
         assertThat(shadowOf(context as Application).getBroadcastIntents().get(0)).run {
             hasAction(BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED)
@@ -308,9 +305,9 @@ class AutoOnFeatureTest {
     }
 
     @Test
-    fun apiSetUserEnableToTrue_whenDisabled_broadcastIntent() {
-        disableUserSettings()
-        setUserEnabled(true)
+    fun apiSetEnableToTrue_whenDisabled_broadcastIntent() {
+        disableSettings()
+        setEnabled(true)
 
         assertThat(shadowOf(context as Application).getBroadcastIntents().get(0)).run {
             hasAction(BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED)
@@ -322,17 +319,17 @@ class AutoOnFeatureTest {
     }
 
     @Test
-    fun apiSetUserEnableToTrue_whenAlreadyEnabled_doNothing() {
-        setUserEnabled(true)
+    fun apiSetEnableToTrue_whenAlreadyEnabled_doNothing() {
+        setEnabled(true)
 
         assertThat(shadowOf(context as Application).getBroadcastIntents().size).isEqualTo(0)
     }
 
     @Test
     fun pause_whenIdle_noTimeSave() {
-        pause()
+        autoOn.pause()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
         expectNoStorageTime()
     }
@@ -341,9 +338,9 @@ class AutoOnFeatureTest {
     fun pause_whenTimer_timeIsSaved() {
         setupTimer()
 
-        pause()
+        autoOn.pause()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
     }
@@ -352,7 +349,7 @@ class AutoOnFeatureTest {
     fun setupTimer_whenIdle_timeIsSave() {
         setupTimer()
 
-        expect.that(timer).isNotNull()
+        expect.that(autoOn.timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
     }
@@ -361,12 +358,12 @@ class AutoOnFeatureTest {
     fun setupTimer_whenPaused_isResumed() {
         val now = LocalDateTime.now()
         val alarmTime = LocalDateTime.of(now.toLocalDate(), LocalTime.of(5, 0)).plusDays(1)
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, alarmTime.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, alarmTime.toString())
         shadowOf(looper).idle()
 
         setupTimer()
 
-        expect.that(timer).isNotNull()
+        expect.that(autoOn.timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
     }
@@ -374,12 +371,12 @@ class AutoOnFeatureTest {
     @Test
     fun setupTimer_whenSaveTimerIsExpired_triggerCallback() {
         val pastTime = timerTarget.minusDays(3)
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, pastTime.toString())
         shadowOf(looper).idle()
 
         setupTimer()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(1)
         expectNoStorageTime()
     }
@@ -394,7 +391,7 @@ class AutoOnFeatureTest {
         setupTimer()
 
         SatelliteListener.setupSatelliteModeToOff(resolver, looper)
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
         expectNoStorageTime()
     }
@@ -405,12 +402,12 @@ class AutoOnFeatureTest {
 
         // Fake storage time so when receiving the intent, the test think we jump in the future
         val pastTime = timerTarget.minusDays(3)
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, pastTime.toString())
 
         context.sendBroadcast(Intent(Intent.ACTION_TIMEZONE_CHANGED))
         shadowOf(looper).idle()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(1)
         expectNoStorageTime()
     }
@@ -421,12 +418,12 @@ class AutoOnFeatureTest {
 
         // Fake stored time so when receiving the intent, the test think we jumped in the future
         val pastTime = timerTarget.minusDays(3)
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, pastTime.toString())
 
         context.sendBroadcast(Intent(Intent.ACTION_TIME_CHANGED))
         shadowOf(looper).idle()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(1)
         expectNoStorageTime()
     }
@@ -437,12 +434,12 @@ class AutoOnFeatureTest {
 
         // Fake stored time so when receiving the intent, the test think we jumped in the future
         val pastTime = timerTarget.minusDays(3)
-        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+        Settings.Secure.putString(resolver, STORAGE_KEY, pastTime.toString())
 
         context.sendBroadcast(Intent(Intent.ACTION_DATE_CHANGED))
         shadowOf(looper).idle()
 
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(1)
         expectNoStorageTime()
     }
@@ -457,7 +454,7 @@ class AutoOnFeatureTest {
         setupTimer()
 
         AirplaneListener.setupAirplaneModeToOff(resolver, looper)
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
         expectNoStorageTime()
     }
@@ -472,7 +469,7 @@ class AutoOnFeatureTest {
         setupTimer()
 
         AirplaneListener.setupAirplaneModeToOff(resolver, looper)
-        expect.that(timer).isNotNull()
+        expect.that(autoOn.timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
     }
@@ -481,30 +478,30 @@ class AutoOnFeatureTest {
     fun factoryReset_whenTimerIsRunning_isCancelledAndOff() {
         setupTimer()
 
-        factoryResetAutoOn(context)
+        autoOn.factoryReset()
 
         expectNoStorageTime()
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
     }
 
     @Test
     fun factoryReset_whenNoTimer_isCancelledAndOff() {
-        factoryResetAutoOn(context)
+        autoOn.factoryReset()
 
         expectNoStorageTime()
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
     }
 
     @Test
     fun factoryReset_whenTimerDisabled_isCancelledAndOff() {
-        disableUserSettings()
-        factoryResetAutoOn(context)
+        disableSettings()
+        autoOn.factoryReset()
 
-        assertThat(isUserEnabled(context)).isFalse()
+        assertThat(autoOn.isEnabled()).isFalse()
         expectNoStorageTime()
-        expect.that(timer).isNull()
+        expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
     }
 
