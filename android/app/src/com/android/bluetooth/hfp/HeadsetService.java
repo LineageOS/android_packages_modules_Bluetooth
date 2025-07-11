@@ -1516,7 +1516,7 @@ public class HeadsetService extends ConnectableProfile {
                     logScoSessionMetric(
                             device,
                             BluetoothStatsLog
-                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_VOICE_RECOGNITION_INITIATED_END,
+                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_DISCONNECT_AUDIO_END,
                             Binder.getCallingUid());
                 });
     }
