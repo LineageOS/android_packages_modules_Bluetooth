@@ -122,7 +122,7 @@ class BassClientStateMachine extends StateMachine {
     private final Map<Integer, BluetoothLeBroadcastReceiveState>
             mBluetoothLeBroadcastReceiveStates =
                     new HashMap<Integer, BluetoothLeBroadcastReceiveState>();
-    private final Map<Integer, BluetoothLeBroadcastMetadata> mCurrentMetadata = new HashMap();
+    private final Map<Integer, BluetoothLeBroadcastMetadata> mCurrentMetadata = new HashMap<>();
     private final Disconnected mDisconnected = new Disconnected();
     private final Connected mConnected = new Connected();
     private final Connecting mConnecting = new Connecting();
@@ -155,7 +155,7 @@ class BassClientStateMachine extends StateMachine {
     @VisibleForTesting BluetoothLeBroadcastMetadata mPendingMetadata = null;
     private BluetoothLeBroadcastMetadata mSetBroadcastPINMetadata = null;
     @VisibleForTesting boolean mSetBroadcastCodePending = false;
-    private final Map<Integer, Boolean> mPendingRemove = new HashMap();
+    private final Map<Integer, Boolean> mPendingRemove = new HashMap<>();
     private boolean mForceSB = false;
     @VisibleForTesting byte mNextSourceId = 0;
     private boolean mAllowReconnect = false;
