@@ -28,6 +28,7 @@ service HAP {
   rpc GetPreset(GetPresetRequest) returns (GetPresetResponse);
   rpc GetAllPresets(GetAllPresetsRequest) returns (GetAllPresetsResponse);
   rpc WaitPresetChanged(google.protobuf.Empty) returns (WaitPresetChangedResponse);
+  rpc WaitActivePresetChanged(WaitActivePresetChangedRequest) returns (google.protobuf.Empty);
   rpc WaitPeripheral(WaitPeripheralRequest) returns (google.protobuf.Empty);
 }
 
@@ -99,6 +100,11 @@ message WaitPresetChangedResponse {
   Connection connection = 1;
   repeated PresetRecord preset_record_list = 2;
   uint32 reason = 3;
+}
+
+message WaitActivePresetChangedRequest {
+  Connection connection = 1;
+  uint32 index = 2;
 }
 
 message WaitPeripheralRequest {
