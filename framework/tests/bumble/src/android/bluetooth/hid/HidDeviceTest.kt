@@ -38,6 +38,8 @@ import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.cts.EnableBluetoothRule
@@ -189,28 +191,15 @@ class HidDeviceTest {
     /**
      * Test enable HID Device role and connect with a remote device.
      * 1. Create bond with a remote device and connect HID Device profile
-     * 2. Remove bond with the remote device
+     * 2. Disconnect HID Device profile
+     * 3. Remove bond with the remote device
      */
     @Test
     fun remoteDeviceConnectToHidDeviceServiceTest() {
         createBond(device)
-        if (a2dpService.getConnectionPolicy(device) != CONNECTION_POLICY_FORBIDDEN) {
-            assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN))
-                .isTrue()
-        }
-        if (hfpService.getConnectionPolicy(device) != CONNECTION_POLICY_FORBIDDEN) {
-            assertThat(hfpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
-        }
-        if (hidService.getConnectionPolicy(device) != CONNECTION_POLICY_FORBIDDEN) {
-            assertThat(hidService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
-        }
 
-        assertThat(hidDeviceService.connect(device)).isTrue()
-        verifyHidDeviceConnectionStateChanged(device, STATE_CONNECTING)
-        verifyHidDeviceConnectionStateChanged(device, STATE_CONNECTED)
-
-        assertThat(hidDeviceService.getConnectionState(device))
-            .isEqualTo(BluetoothHidDevice.STATE_CONNECTED)
+        verifyConnectHidDeviceService()
+        verifyDisconnectHidDeviceService()
 
         if (device.bondState == BOND_BONDED) {
             removeBond(device)
@@ -235,18 +224,56 @@ class HidDeviceTest {
         verifyAppStatusChanged(null, true)
     }
 
+    /**
+     * Test transmit data to remote device.
+     * 1. Create bond and connect to HID Device service.
+     * 2. Call sendReport, replyReport and reportError to remote device.
+     * 3. Remove bond.
+     */
+    @Test
+    fun sendDataTest() {
+        createBond(device)
+        verifyConnectHidDeviceService()
+        val type: Byte = 0
+        val id = 100
+        val data = byteArrayOf(0x00, 0x01)
+        val error: Byte = 0
+
+        assertThat(hidDeviceService.sendReport(device, id, data)).isTrue()
+        assertThat(hidDeviceService.replyReport(device, type, id.toByte(), data)).isTrue()
+        assertThat(hidDeviceService.reportError(device, error)).isTrue()
+
+        removeBond(device)
+    }
+
+    private fun verifyConnectHidDeviceService() {
+        assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
+        assertThat(hfpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
+        assertThat(hidService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
+
+        assertThat(hidDeviceService.connect(device)).isTrue()
+        verifyHidDeviceConnectionStateChanged(device, STATE_CONNECTING)
+        verifyHidDeviceConnectionStateChanged(device, STATE_CONNECTED)
+
+        assertThat(hidDeviceService.getConnectionState(device))
+            .isEqualTo(BluetoothHidDevice.STATE_CONNECTED)
+    }
+
+    private fun verifyDisconnectHidDeviceService() {
+        assertThat(hidDeviceService.disconnect(device)).isTrue()
+        verifyHidDeviceConnectionStateChanged(device, STATE_DISCONNECTING)
+        verifyHidDeviceConnectionStateChanged(device, STATE_DISCONNECTED)
+
+        assertThat(hidDeviceService.getConnectionState(device))
+            .isEqualTo(BluetoothHidDevice.STATE_DISCONNECTED)
+    }
+
     private fun verifyRemoteDeviceConnectToHidHostService() {
         createBond(device)
-        if (a2dpService.getConnectionPolicy(device) != CONNECTION_POLICY_FORBIDDEN) {
-            assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN))
-                .isTrue()
-        }
-        if (hfpService.getConnectionPolicy(device) != CONNECTION_POLICY_FORBIDDEN) {
-            assertThat(hfpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
-        }
-        if (hidService.getConnectionPolicy(device) != CONNECTION_POLICY_ALLOWED) {
-            assertThat(hidService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED)).isTrue()
-        }
+        assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
+        assertThat(hfpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
+        assertThat(hidService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED)).isTrue()
+
         assertThat(device.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED))
