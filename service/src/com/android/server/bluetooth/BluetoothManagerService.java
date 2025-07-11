@@ -716,9 +716,9 @@ class BluetoothManagerService {
             mEnableExternal = true;
         }
 
-        mDeviceConfigAllowAutoOn =
+        mConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
-        Log.d(TAG, "AutoOn allowed by config=" + mDeviceConfigAllowAutoOn);
+        Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
     }
 
     @VisibleForTesting
@@ -1202,7 +1202,7 @@ class BluetoothManagerService {
                         mContext.createContextAsUser(userHandle, 0),
                         "Current User Context cannot be null");
 
-        if (mAutoOn != null) {
+        if (mConfigAllowAutoOn) {
             mAutoOn =
                     new AutoOn(
                             mLooper,
@@ -1740,7 +1740,7 @@ class BluetoothManagerService {
         mCurrentUser = userTo;
         mCurrentUserContext = mContext.createContextAsUser(mCurrentUser, 0);
 
-        if (mAutoOn != null) {
+        if (mConfigAllowAutoOn) {
             mAutoOn =
                     new AutoOn(
                             mLooper,
@@ -2392,7 +2392,7 @@ class BluetoothManagerService {
         };
     }
 
-    private final boolean mDeviceConfigAllowAutoOn;
+    private final boolean mConfigAllowAutoOn;
 
     private void autoOnSetupTimer() {
         if (mAutoOn == null) {
