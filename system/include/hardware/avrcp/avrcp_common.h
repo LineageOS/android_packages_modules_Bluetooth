@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <set>
+#include <type_traits>
 
 namespace bluetooth {
 namespace avrcp {
@@ -44,6 +45,38 @@ enum class Opcode : uint8_t {
   SUBUNIT_INFO = 0x31,
   PASS_THROUGH = 0x7c,
 };
+
+enum class RcFeature : uint8_t {
+  RC_FEAT_NONE = 0x00,            /* AVRCP 1.0 */
+  RC_FEAT_METADATA = 0x01,        /* AVRCP 1.3 */
+  RC_FEAT_ABSOLUTE_VOLUME = 0x02, /* Supports TG role and volume sync */
+  RC_FEAT_BROWSE = 0x04,          /* AVRCP 1.4 and up, with Browsing support */
+  RC_FEAT_COVERART = 0x08,        /* AVRCP 1.6 and up, with Cover Art support */
+};
+
+using RcFeatureType = std::underlying_type_t<RcFeature>;
+
+inline RcFeature operator|(RcFeature lhs, RcFeature rhs) {
+  return static_cast<RcFeature>(static_cast<RcFeatureType>(lhs) | static_cast<RcFeatureType>(rhs));
+}
+
+inline RcFeature operator|=(RcFeature lhs, RcFeature rhs) {
+  lhs = lhs | rhs;
+  return lhs;
+}
+
+inline RcFeature operator&(RcFeature lhs, RcFeature rhs) {
+  return static_cast<RcFeature>(static_cast<RcFeatureType>(lhs) & static_cast<RcFeatureType>(rhs));
+}
+
+inline RcFeature operator&=(RcFeature lhs, RcFeature rhs) {
+  lhs = lhs & rhs;
+  return lhs;
+}
+
+inline RcFeature operator~(RcFeature val) {
+  return static_cast<RcFeature>(~static_cast<RcFeatureType>(val));
+}
 
 // Found in AVRCP_v1.6.1 Section 4.5 Table 4.5
 // Searching can be done in the spec by Camel Casing the constant name

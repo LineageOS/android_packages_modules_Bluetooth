@@ -150,6 +150,7 @@ public:
   void MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt);
   void BrowseMessageReceived(uint8_t label, std::shared_ptr<BrowsePacket> pkt);
   void VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pkt);
+  void SetRcFeatures(RcFeature feature);
 
   /********************
    * MESSAGE RESPONSES
@@ -378,6 +379,8 @@ private:
 
   // pending interim labels for VolumeChanged notification
   std::set<uint8_t> pending_interim_labels_;
+
+  RcFeature peer_feature_ = RcFeature::RC_FEAT_NONE;
 
   int8_t volume_ = -1;
   std::optional<int8_t> pending_volume_ = {};
