@@ -88,6 +88,7 @@ public:
   MOCK_METHOD((void), StopSession, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), SetCodecPriority,
               (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
               (override));
@@ -114,6 +115,7 @@ public:
   MOCK_METHOD((void), StopSession, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), SetCodecPriority,
               (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
               (override));
@@ -173,6 +175,7 @@ void LeAudioClientInterface::Sink::StartSession() {}
 void LeAudioClientInterface::Sink::StopSession() {}
 void LeAudioClientInterface::Sink::ConfirmStreamingRequest() {}
 void LeAudioClientInterface::Sink::CancelStreamingRequest() {}
+void LeAudioClientInterface::Sink::StreamSuspended() {}
 void LeAudioClientInterface::Sink::SetCodecPriority(
         const ::bluetooth::le_audio::types::LeAudioCodecId&, int32_t) {}
 void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
@@ -201,6 +204,7 @@ void LeAudioClientInterface::Source::StartSession() {}
 void LeAudioClientInterface::Source::StopSession() {}
 void LeAudioClientInterface::Source::ConfirmStreamingRequest() {}
 void LeAudioClientInterface::Source::CancelStreamingRequest() {}
+void LeAudioClientInterface::Source::StreamSuspended() {}
 void LeAudioClientInterface::Source::SetCodecPriority(
         const ::bluetooth::le_audio::types::LeAudioCodecId&, int32_t) {}
 void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
