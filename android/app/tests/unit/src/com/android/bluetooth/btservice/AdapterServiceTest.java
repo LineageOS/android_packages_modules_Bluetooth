@@ -246,7 +246,8 @@ public class AdapterServiceTest {
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
                 Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
-                Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+                Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
+                Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
     }
 
     public AdapterServiceTest(FlagsWrapper flags) {
@@ -1354,6 +1355,7 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_ON_TO_BLE_ON_VIA_OFF)
     public void onToBleOn_afterUpdatingSnoopLogValue_forceTurnOffBluetooth() {
         Optional<BluetoothProperties.snoop_log_mode_values> snoopSettingEmpty =
                 Optional.of(BluetoothProperties.snoop_log_mode_values.EMPTY);
