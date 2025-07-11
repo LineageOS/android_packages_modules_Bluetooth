@@ -121,6 +121,7 @@ public class BluetoothManagerServiceTest {
 
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
+    private final BluetoothComponent mBluetoothComponent = new BluetoothComponent(mTargetContext);
 
     @Mock BluetoothServerProxy mBluetoothServerProxy;
     @Mock Context mContext;
@@ -231,7 +232,14 @@ public class BluetoothManagerServiceTest {
 
         mLooper = new TestLooper();
 
-        mManagerService = new BluetoothManagerService(mContext, mLooper.getLooper(), "default");
+        if (Flags.userRestrictionRefactor()) {
+            mManagerService =
+                    new BluetoothManagerService(
+                            mContext, mLooper.getLooper(), "default", mBluetoothComponent);
+        } else {
+            mManagerService =
+                    new BluetoothManagerService(mContext, mLooper.getLooper(), "default", null);
+        }
         mManagerService.internalHandleOnBootPhase(mUser);
 
         mManagerService.registerAdapter(mManagerCallback);
@@ -693,7 +701,14 @@ public class BluetoothManagerServiceTest {
     public void initialStart_whenPersistentStorageOn_bluetoothStart() throws Exception {
         mPersistedState = BluetoothManagerService.BLUETOOTH_ON_BLUETOOTH;
 
-        mManagerService = new BluetoothManagerService(mContext, mLooper.getLooper(), "default");
+        if (Flags.userRestrictionRefactor()) {
+            mManagerService =
+                    new BluetoothManagerService(
+                            mContext, mLooper.getLooper(), "default", mBluetoothComponent);
+        } else {
+            mManagerService =
+                    new BluetoothManagerService(mContext, mLooper.getLooper(), "default", null);
+        }
         mManagerService.internalHandleOnBootPhase(mUser);
 
         mManagerService.registerAdapter(mManagerCallback);

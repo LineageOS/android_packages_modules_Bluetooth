@@ -43,6 +43,7 @@ import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGRO
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.BroadcastOptions;
 import android.bluetooth.IAdapter;
@@ -162,6 +163,7 @@ class BluetoothManagerService {
 
     private final BleAppManager mBleAppManager;
     private final ActiveLogs mActiveLogs;
+    private final BluetoothComponent mBluetoothComponent;
 
     private final BluetoothAdapterState mState = new BluetoothAdapterState();
     private final List<Long> mCrashTimestamps = new ArrayList<>();
@@ -414,7 +416,14 @@ class BluetoothManagerService {
     Unit sendToggleNotification(String notificationReason) {
         Intent intent =
                 new Intent("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION");
-        intent.setComponent(resolveSystemService(intent));
+        if (Flags.userRestrictionRefactor()) {
+            intent.setComponent(
+                    new ComponentName(
+                            mBluetoothComponent.getPackageName(),
+                            "com.android.bluetooth.notification.NotificationHelperService"));
+        } else {
+            intent.setComponent(resolveSystemService(intent));
+        }
         intent.putExtra(
                 "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
         mCurrentUserContext.startService(intent);
@@ -586,11 +595,15 @@ class BluetoothManagerService {
             };
 
     BluetoothManagerService(
-            @NonNull Context context, @NonNull Looper looper, @NonNull String hciInstanceName) {
+            @NonNull Context context,
+            @NonNull Looper looper,
+            @NonNull String hciInstanceName,
+            @Nullable BluetoothComponent bluetoothComponent) {
         mContext = requireNonNull(context, "Context cannot be null");
         mContentResolver = requireNonNull(mContext.getContentResolver(), "Resolver cannot be null");
         mLooper = requireNonNull(looper, "Looper cannot be null");
         mHciInstanceName = requireNonNull(hciInstanceName, "Hci instance name cannot be null");
+        mBluetoothComponent = bluetoothComponent;
         mActiveLogs = new ActiveLogs();
 
         mUserManager =
@@ -606,7 +619,11 @@ class BluetoothManagerService {
         BleScanSettingListener.initialize(mLooper, mContentResolver, this::onBleScanDisabled);
 
         if (Flags.userRestrictionRefactor()) {
-            UserRestriction.initialize(mContext, mLooper, this::onBluetoothDisallowed);
+            UserRestriction.initialize(
+                    mContext,
+                    mLooper,
+                    requireNonNull(mBluetoothComponent),
+                    this::onBluetoothDisallowed);
         }
 
         // Disable ASHA if BLE is not supported, overriding any system property
@@ -1795,7 +1812,11 @@ class BluetoothManagerService {
         UserHandle user = UserHandle.CURRENT;
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
+        if (Flags.userRestrictionRefactor()) {
+            intent.setComponent(mBluetoothComponent.getComponentName());
+        } else {
+            intent.setComponent(resolveSystemService(intent));
+        }
 
         mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
@@ -1814,7 +1835,11 @@ class BluetoothManagerService {
         requireNonNull(mCurrentUser, "There is no user to start for.");
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
+        if (Flags.userRestrictionRefactor()) {
+            intent.setComponent(mBluetoothComponent.getComponentName());
+        } else {
+            intent.setComponent(resolveSystemService(intent));
+        }
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
         if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
@@ -2322,6 +2347,9 @@ class BluetoothManagerService {
     }
 
     private ComponentName resolveSystemService(@NonNull Intent intent) {
+        if (Flags.userRestrictionRefactor()) {
+            throw new IllegalStateException("userRestrictionRefactor is enabled");
+        }
         List<ComponentName> results =
                 mContext.getPackageManager().queryIntentServices(intent, 0).stream()
                         .filter(

@@ -23,7 +23,6 @@ import android.os.UserManager
 import android.provider.Settings
 import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
-import com.android.server.SystemService.TargetUser
 
 val SERVICE_NAME = "bluetooth_manager" // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
 
@@ -35,18 +34,22 @@ class BluetoothService(context: Context) : SystemService(context) {
     init {
         mHandlerThread = HandlerThread("BluetoothManagerService")
         mHandlerThread.start()
-        if (Flags.hciInstanceNameUseInjected()) {
-            var bluetoothHciInstance = BluetoothHciInstance()
-            mBluetoothManagerService =
-                BluetoothManagerService(
-                    context,
-                    mHandlerThread.getLooper(),
-                    bluetoothHciInstance.getInstance(),
-                )
-        } else {
-            mBluetoothManagerService =
-                BluetoothManagerService(context, mHandlerThread.getLooper(), "default")
-        }
+        val hciInstance =
+            if (Flags.hciInstanceNameUseInjected()) {
+                BluetoothHciInstance().getInstance()
+            } else {
+                "default"
+            }
+
+        val bluetoothComponent =
+            if (Flags.userRestrictionRefactor()) {
+                BluetoothComponent(context)
+            } else {
+                null
+            }
+
+        mBluetoothManagerService =
+            BluetoothManagerService(context, mHandlerThread.looper, hciInstance, bluetoothComponent)
     }
 
     private fun initialize(user: TargetUser) {
@@ -58,7 +61,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onStart() {
-        publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
+        publishBinderService(SERVICE_NAME, mBluetoothManagerService.binder)
     }
 
     private fun shouldInitializeBluetooth(): Boolean {

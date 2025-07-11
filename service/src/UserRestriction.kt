@@ -26,7 +26,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
-import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import android.sysprop.BluetoothProperties
@@ -35,6 +34,7 @@ import com.android.internal.annotations.VisibleForTesting
 private const val TAG = "UserRestriction"
 
 object UserRestriction {
+    private lateinit var bluetoothComponent: BluetoothComponent
 
     // OPP activities should be enabled even when Bluetooth is OFF.
     @JvmStatic
@@ -56,7 +56,13 @@ object UserRestriction {
 
     /** Listen on User restriction and trigger the callback when Bluetooth is not allowed */
     @JvmStatic
-    fun initialize(context: Context, looper: Looper, callback: () -> Unit) {
+    fun initialize(
+        context: Context,
+        looper: Looper,
+        component: BluetoothComponent,
+        callback: () -> Unit,
+    ) {
+        bluetoothComponent = component
         val receiver =
             object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context, intent: Intent) {
@@ -122,48 +128,15 @@ object UserRestriction {
             Log.v(TAG, "Bluetooth sharing state is already $bluetoothSharingState")
             return
         }
-        val bluetoothPackageName = getBluetoothPackageName(userContext)
+        val bluetoothPackageName = bluetoothComponent.packageName
 
         oppActivities.forEach { activityName ->
-            userContext
-                .getPackageManager()
-                .setComponentEnabledSetting(
-                    ComponentName(bluetoothPackageName, activityName),
-                    bluetoothSharingState,
-                    PackageManager.DONT_KILL_APP,
-                )
+            userContext.packageManager.setComponentEnabledSetting(
+                ComponentName(bluetoothPackageName, activityName),
+                bluetoothSharingState,
+                PackageManager.DONT_KILL_APP,
+            )
         }
-    }
-
-    private fun getBluetoothPackageName(context: Context): String {
-        val systemPackageManager = context.getPackageManager()
-        return systemPackageManager
-            .getPackagesForUid(Process.BLUETOOTH_UID)!!
-            .asSequence()
-            .onEach { Log.v(TAG, "getBluetoothPackageName searching within package $it") }
-            .map { pkg ->
-                try {
-                    systemPackageManager.getPackageInfo(
-                        pkg,
-                        PackageManager.PackageInfoFlags.of(
-                            PackageManager.GET_ACTIVITIES.toLong() or
-                                PackageManager.MATCH_ANY_USER.toLong() or
-                                PackageManager.MATCH_UNINSTALLED_PACKAGES.toLong() or
-                                PackageManager.MATCH_DISABLED_COMPONENTS.toLong()
-                        ),
-                    )
-                } catch (e: PackageManager.NameNotFoundException) {
-                    Log.e(TAG, "getBluetoothPackageName: Could not find package $pkg")
-                    null
-                }
-            }
-            .filterNotNull()
-            .filter { packageInfo -> packageInfo.activities != null }
-            .flatMap { packageInfo -> packageInfo.activities!!.asSequence() }
-            .onEach { Log.v(TAG, "getBluetoothPackageName: Checking activity ${it.name}") }
-            .filter { activity -> oppActivities.contains(activity.name) }
-            .first()
-            .packageName
     }
 
     private fun getBluetoothSharingState(userContext: Context): Int {
