@@ -161,6 +161,7 @@ class BluetoothManagerService {
     @VisibleForTesting static final int BLUETOOTH_ON_AIRPLANE = 2;
 
     private final BleAppManager mBleAppManager;
+    private final ActiveLogs mActiveLogs;
 
     private final BluetoothAdapterState mState = new BluetoothAdapterState();
     private final List<Long> mCrashTimestamps = new ArrayList<>();
@@ -344,7 +345,7 @@ class BluetoothManagerService {
         BluetoothProperties.factory_reset(true);
 
         mBleAppManager.clearBleApps();
-        ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
         if (mState.oneOf(State.BLE_ON)) {
             bleOnToOff();
         } else {
@@ -372,11 +373,11 @@ class BluetoothManagerService {
         mBleAppManager.clearBleApps();
         int state = getState();
         if (state == State.BLE_ON) {
-            ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
+            mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
             bleOnToOff();
             return true;
         } else if (state == State.ON) {
-            ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
+            mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
             onToBleOn();
             return true;
         }
@@ -491,13 +492,13 @@ class BluetoothManagerService {
 
         if (currentState == State.ON) {
             mEnable = false;
-            ActiveLogs.add(reason, false);
+            mActiveLogs.add(reason, false);
             onToBleOn();
         } else if (currentState == State.BLE_ON) {
             // If currentState is BLE_ON make sure we trigger stopBle
             mEnable = false;
             mEnableExternal = false;
-            ActiveLogs.add(reason, false);
+            mActiveLogs.add(reason, false);
             bleOnToOff();
         }
     }
@@ -615,6 +616,7 @@ class BluetoothManagerService {
         mContentResolver = requireNonNull(mContext.getContentResolver(), "Resolver cannot be null");
         mLooper = requireNonNull(looper, "Looper cannot be null");
         mHciInstanceName = requireNonNull(hciInstanceName, "Hci instance name cannot be null");
+        mActiveLogs = new ActiveLogs();
 
         mUserManager =
                 requireNonNull(
@@ -731,7 +733,7 @@ class BluetoothManagerService {
 
         mEnable = false;
         mEnableExternal = false;
-        ActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false);
 
         if (mState.oneOf(State.BLE_ON)) {
             bleOnToOff();
@@ -959,7 +961,7 @@ class BluetoothManagerService {
         }
         if (Flags.userSwitchDuringBleOn()) {
             mEnable = false;
-            ActiveLogs.add(reason, false, packageName, true);
+            mActiveLogs.add(reason, false, packageName, true);
             bleOnToOff();
             return Unit.INSTANCE;
         }
@@ -967,7 +969,7 @@ class BluetoothManagerService {
             disableBleScanMode();
         }
         if (!mEnableExternal) {
-            ActiveLogs.add(reason, false, packageName, true);
+            mActiveLogs.add(reason, false, packageName, true);
             bleOnToOff();
         }
         return Unit.INSTANCE;
@@ -1476,7 +1478,7 @@ class BluetoothManagerService {
 
                     // log the unexpected crash
                     addCrashLog();
-                    ActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false);
+                    mActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false);
                     if (mEnable) {
                         mEnable = false;
                         mHandler.sendEmptyMessageDelayed(
@@ -1543,7 +1545,7 @@ class BluetoothManagerService {
         }
 
         // disable
-        ActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false);
         onToBleOn();
         // Pbap service need receive State.TURNING_OFF intent to close
         bluetoothStateChangeHandler(State.ON, State.TURNING_OFF);
@@ -1567,7 +1569,7 @@ class BluetoothManagerService {
 
         mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
         // enable
-        ActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, true);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, true);
         // mEnable flag could have been reset on stopBle. Reenable it.
         mEnable = true;
         handleEnable();
@@ -1669,7 +1671,7 @@ class BluetoothManagerService {
         }
         // Enable without persisting the setting as it doesn't change when Bluetooth restarts
         mEnable = true;
-        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, true);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, true);
         handleEnable();
     }
 
@@ -1726,7 +1728,7 @@ class BluetoothManagerService {
         mEnable = false;
         mEnableExternal = false;
 
-        ActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false);
         switch (mState.get()) {
             case State.ON -> onToBleOn();
             case State.BLE_ON -> bleOnToOff();
@@ -1840,7 +1842,7 @@ class BluetoothManagerService {
             if (Flags.userSwitchDuringBleOn()) {
                 bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
                 mBleAppManager.clearBleApps();
-                ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
+                mActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
             }
             return;
         }
@@ -2051,7 +2053,7 @@ class BluetoothManagerService {
     }
 
     private void sendDisableMsg(int reason, String packageName) {
-        ActiveLogs.add(reason, false, packageName, false);
+        mActiveLogs.add(reason, false, packageName, false);
         handleDisableMessage();
     }
 
@@ -2064,7 +2066,7 @@ class BluetoothManagerService {
     }
 
     private void sendEnableMsg(boolean quietMode, int reason, String packageName, boolean isBle) {
-        ActiveLogs.add(reason, true, packageName, isBle);
+        mActiveLogs.add(reason, true, packageName, isBle);
         mLastEnabledTime = Instant.now();
         handleEnableMessage(quietMode, isBle);
     }
@@ -2101,7 +2103,7 @@ class BluetoothManagerService {
         SystemClock.sleep(500);
 
         // disable
-        ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
+        mActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
         onToBleOn();
 
         waitForState(State.OFF);
@@ -2243,7 +2245,7 @@ class BluetoothManagerService {
         }
 
         writer.println("");
-        ActiveLogs.dump(writer);
+        mActiveLogs.dump(writer);
 
         writer.println("");
 
