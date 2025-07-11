@@ -33,10 +33,13 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 class BleAppManagerTest {
 
-    private class FakeBinder : IBinder {
+    private class FakeBinder(private val throwOnLinkToDeath: Boolean = false) : IBinder {
         var deathRecipient: IBinder.DeathRecipient? = null
 
         override fun linkToDeath(recipient: IBinder.DeathRecipient, flags: Int) {
+            if (throwOnLinkToDeath) {
+                throw android.os.RemoteException("Binder is dead")
+            }
             deathRecipient = recipient
         }
 
@@ -89,7 +92,7 @@ class BleAppManagerTest {
     fun addBleApp_addsAppAndLinksToDeath() {
         assertThat(bleAppManager.isBleAppPresent()).isFalse()
 
-        bleAppManager.addBleApp(token, packageName)
+        assertThat(bleAppManager.addBleApp(token, packageName)).isTrue()
 
         assertThat(bleAppManager.isBleAppPresent()).isTrue()
         assertThat(token.deathRecipient).isNotNull()
@@ -103,7 +106,7 @@ class BleAppManagerTest {
         assertThat(bleAppManager.toString()).isEqualTo("{$packageName}")
 
         // Add same app again
-        bleAppManager.addBleApp(token, packageName)
+        assertThat(bleAppManager.addBleApp(token, packageName)).isTrue()
 
         // No change
         assertThat(token.deathRecipient).isEqualTo(deathRecipient)
@@ -189,6 +192,15 @@ class BleAppManagerTest {
         assertThat(callbackTriggered).isTrue()
         assertThat(callbackReason).isEqualTo(ENABLE_DISABLE_REASON_APPLICATION_DIED)
         assertThat(callbackPackageName).isEqualTo(packageName)
+    }
+
+    @Test
+    fun addBleApp_forDeadBinder_returnsFalse() {
+        val token = FakeBinder(throwOnLinkToDeath = true)
+        val packageName = "com.test.app"
+
+        assertThat(bleAppManager.addBleApp(token, packageName)).isFalse()
+        assertThat(bleAppManager.isBleAppPresent()).isFalse()
     }
 
     @Test

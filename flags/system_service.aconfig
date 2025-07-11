@@ -32,6 +32,16 @@ flag {
 }
 
 flag {
+    name: "graceful_disable_without_message"
+    namespace: "bluetooth"
+    description: "Handle disable requests gracefully without a delayed message"
+    bug: "431067156"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "oneway_media_profile"
     namespace: "bluetooth"
     description: "remove non-oneway call to check if media profile are connected"
@@ -63,6 +73,16 @@ flag {
     namespace: "bluetooth"
     description: "Move user restriction to Kotlin and properly check before any attempt to start Bluetooth"
     bug: "420992261"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "on_to_ble_on_via_off"
+    namespace: "bluetooth"
+    description: "When transitioning from ON to BLE_ON, go through OFF state completely to reset bluetooth state."
+    bug: "431079894"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
