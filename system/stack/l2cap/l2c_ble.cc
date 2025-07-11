@@ -151,6 +151,7 @@ bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
       return false;
     } else {
       if (!l2cu_initialize_fixed_ccb(p_lcb, L2CAP_ATT_CID)) {
+        l2cu_release_lcb(p_lcb);
         log::error("Unable to allocate channel resource for le acl connection");
         return false;
       }
