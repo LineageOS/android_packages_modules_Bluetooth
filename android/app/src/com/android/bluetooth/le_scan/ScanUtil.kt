@@ -99,6 +99,19 @@ object ScanUtil {
     private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty }
 
     @JvmStatic
+    fun isBackgroundScan(settings: ScanSettings) =
+        (settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
+
+    @JvmStatic
+    fun isBatchScan(settings: ScanSettings) =
+        settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES &&
+            settings.reportDelayMillis != 0L
+
+    @JvmStatic
+    fun isOpportunisticScan(settings: ScanSettings) =
+        settings.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC
+
+    @JvmStatic
     fun isExemptFromScanTimeout(client: ScanClient) =
         isOpportunisticScanClient(client) || isFirstMatchScanClient(client)
 
@@ -107,8 +120,7 @@ object ScanUtil {
         isOpportunisticScanClient(client) || !isAllMatchesAutoBatchScanClient(client)
 
     @JvmStatic
-    fun isOpportunisticScanClient(client: ScanClient) =
-        client.settings.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC
+    fun isOpportunisticScanClient(client: ScanClient) = isOpportunisticScan(client.settings)
 
     private fun isFirstMatchScanClient(client: ScanClient) =
         (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
@@ -118,10 +130,7 @@ object ScanUtil {
         client.settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
 
     @JvmStatic
-    fun isBatchClient(client: ScanClient?): Boolean =
-        client != null &&
-            client.settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES &&
-            client.settings.reportDelayMillis != 0L
+    fun isBatchClient(client: ScanClient?) = client != null && isBatchScan(client.settings)
 
     @JvmStatic
     fun isForceDowngradedScanClient(client: ScanClient) =
