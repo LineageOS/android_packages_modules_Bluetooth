@@ -82,10 +82,10 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     AvrcpNativeInterface mNativeInterface;
 
     // Absolute volume support map.
-    HashMap<BluetoothDevice, Boolean> mDeviceMap = new HashMap();
+    HashMap<BluetoothDevice, Boolean> mDeviceMap = new HashMap<>();
 
     // Volume stored is system volume (0 - {@code mDeviceMaxVolume}).
-    HashMap<BluetoothDevice, Integer> mVolumeMap = new HashMap();
+    HashMap<BluetoothDevice, Integer> mVolumeMap = new HashMap<>();
 
     BluetoothDevice mCurrentDevice = null;
     boolean mAbsoluteVolumeSupported = false;

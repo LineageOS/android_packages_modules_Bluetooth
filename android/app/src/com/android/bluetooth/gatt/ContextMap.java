@@ -289,7 +289,7 @@ class ContextMap<C extends IInterface> {
     }
 
     public List<Integer> getAllAppsIds() {
-        List<Integer> appIds = new ArrayList();
+        List<Integer> appIds = new ArrayList<>();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
                 appIds.add(entry.id);
@@ -300,7 +300,7 @@ class ContextMap<C extends IInterface> {
 
     /** Get all registered application callbacks. */
     public List<C> getAllAppsCallbackId() {
-        List<C> appIds = new ArrayList();
+        List<C> appIds = new ArrayList<>();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
                 appIds.add(entry.getCallback());

@@ -40,7 +40,7 @@ public class PlayerSettingsManager {
      * Map containing the current values of the player settings. Used to prevent sending a state
      * change event when values are unchanged.
      */
-    private final Map<Integer, Integer> mCurrentAppSettingValue = new HashMap();
+    private final Map<Integer, Integer> mCurrentAppSettingValue = new HashMap<>();
 
     /**
      * Instantiates a new PlayerSettingsManager.

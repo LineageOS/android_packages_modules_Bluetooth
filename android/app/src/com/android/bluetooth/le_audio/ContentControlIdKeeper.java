@@ -44,13 +44,13 @@ public class ContentControlIdKeeper {
 
     private static SortedSet<Integer> sAssignedCcidList = new TreeSet();
     private static HashMap<ParcelUuid, Pair<Integer, Integer>> sUuidToCcidContextPair =
-            new HashMap();
+            new HashMap<>();
     // TODO(b/422543753) Delete on flag cleanup
     private static ServiceFactory sServiceFactory = null;
 
     static synchronized void initForTesting(ServiceFactory instance) {
         sAssignedCcidList = new TreeSet();
-        sUuidToCcidContextPair = new HashMap();
+        sUuidToCcidContextPair = new HashMap<>();
         sServiceFactory = instance;
     }
 
