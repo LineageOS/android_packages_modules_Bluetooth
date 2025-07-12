@@ -44,7 +44,6 @@ import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -365,16 +364,12 @@ public final class BluetoothLeScanner {
     @SystemApi
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
+    @SuppressLint("AndroidFrameworkRequiresPermission")
     public void startTruncatedScan(
             List<TruncatedFilter> truncatedFilters,
             ScanSettings settings,
             final ScanCallback callback) {
-        int filterSize = truncatedFilters.size();
-        List<ScanFilter> scanFilters = new ArrayList<ScanFilter>(filterSize);
-        for (TruncatedFilter filter : truncatedFilters) {
-            scanFilters.add(filter.getFilter());
-        }
-        startScan(scanFilters, settings, null, callback, null);
+        Log.wtf(TAG, "startTruncatedScan is deprecated and not supported; Will be removed soon");
     }
 
     /**
