@@ -50,6 +50,14 @@ class BluetoothService(context: Context) : SystemService(context) {
 
         mBluetoothManagerService =
             BluetoothManagerService(context, mHandlerThread.looper, hciInstance, bluetoothComponent)
+
+        if (Flags.userRestrictionRefactor()) {
+            BluetoothRestriction.initialize(
+                context,
+                mHandlerThread.looper,
+                mBluetoothManagerService::onBluetoothDisallowed,
+            )
+        }
     }
 
     private fun initialize(user: TargetUser) {

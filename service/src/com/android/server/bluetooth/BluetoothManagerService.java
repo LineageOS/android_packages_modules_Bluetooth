@@ -179,6 +179,7 @@ class BluetoothManagerService {
     private final boolean mIsHearingAidProfileSupported;
     private final String mHciInstanceName;
     private AutoOn mAutoOn;
+    private SharingRestriction mSharingRestriction;
 
     private String mAddress;
     private String mName;
@@ -618,14 +619,6 @@ class BluetoothManagerService {
         // Observe BLE scan only mode settings change.
         BleScanSettingListener.initialize(mLooper, mContentResolver, this::onBleScanDisabled);
 
-        if (Flags.userRestrictionRefactor()) {
-            UserRestriction.initialize(
-                    mContext,
-                    mLooper,
-                    requireNonNull(mBluetoothComponent),
-                    this::onBluetoothDisallowed);
-        }
-
         // Disable ASHA if BLE is not supported, overriding any system property
         if (!isBleSupported(mContext)) {
             mIsHearingAidProfileSupported = false;
@@ -713,7 +706,6 @@ class BluetoothManagerService {
         Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
     }
 
-    @VisibleForTesting
     Unit onBluetoothDisallowed() {
         if (mState.oneOf(State.OFF)) {
             return Unit.INSTANCE;
@@ -1223,7 +1215,9 @@ class BluetoothManagerService {
         SatelliteModeListener.initialize(mLooper, mContentResolver, this::onSatelliteModeChanged);
 
         if (Flags.userRestrictionRefactor()) {
-            UserRestriction.initializeUser(mCurrentUserContext);
+            mSharingRestriction =
+                    new SharingRestriction(
+                            mCurrentUserContext, mLooper, mBluetoothComponent, mCurrentUser);
         }
 
         if (isBluetoothDisallowed()) {
@@ -1685,6 +1679,10 @@ class BluetoothManagerService {
             Log.d(TAG, "Stopping AutoOn for" + mCurrentUser);
         }
 
+        if (Flags.userRestrictionRefactor()) {
+            mSharingRestriction.stop();
+        }
+
         if (Flags.userSwitchDuringBleOn()) {
             if (mState.oneOf(State.OFF)) {
                 executeUserSwitch(userTo);
@@ -1746,6 +1744,11 @@ class BluetoothManagerService {
                             mCurrentUser,
                             mState,
                             this::enableFromAutoOn);
+        }
+        if (Flags.userRestrictionRefactor()) {
+            mSharingRestriction =
+                    new SharingRestriction(
+                            mCurrentUserContext, mLooper, mBluetoothComponent, mCurrentUser);
         }
 
         if (isBluetoothDisallowed()) {
@@ -2137,7 +2140,7 @@ class BluetoothManagerService {
 
     private boolean isBluetoothDisallowed() {
         if (Flags.userRestrictionRefactor()) {
-            return !UserRestriction.isBluetoothAllowed();
+            return !BluetoothRestriction.isBluetoothAllowed();
         }
         final long callingIdentity = Binder.clearCallingIdentity();
         try {

@@ -49,7 +49,6 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.IBinder;
 import android.os.Process;
-import android.os.UserHandle;
 import android.os.UserManager;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -442,9 +441,8 @@ public class BluetoothServiceBinderTest {
             InstrumentationRegistry.getInstrumentation()
                     .getUiAutomation()
                     .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
-            UserRestriction.handleRestrictionChange(
+            BluetoothRestriction.handleRestrictionChange(
                     mContext,
-                    UserHandle.SYSTEM,
                     () -> {
                         return Unit.INSTANCE;
                     });

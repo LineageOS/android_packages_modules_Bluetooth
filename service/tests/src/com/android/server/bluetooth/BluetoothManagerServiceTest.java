@@ -240,9 +240,14 @@ public class BluetoothManagerServiceTest {
             mManagerService =
                     new BluetoothManagerService(mContext, mLooper.getLooper(), "default", null);
         }
+        doReturn(false).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+        BluetoothRestriction.initialize(
+                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+
         mManagerService.internalHandleOnBootPhase(mUser);
 
         mManagerService.registerAdapter(mManagerCallback);
+
     }
 
     @After
@@ -317,14 +322,8 @@ public class BluetoothManagerServiceTest {
 
         doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
 
-        mLooper.getNewExecutor()
-                .execute(
-                        () ->
-                                UserRestriction.handleRestrictionChange(
-                                        mContext,
-                                        UserHandle.SYSTEM,
-                                        mManagerService::onBluetoothDisallowed));
-        assertThat(mLooper.dispatchAll()).isEqualTo(1);
+        BluetoothRestriction.handleRestrictionChange(
+                mContext, mManagerService::onBluetoothDisallowed);
         transition_onToOff(btCallback);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
@@ -716,6 +715,23 @@ public class BluetoothManagerServiceTest {
         // No need to call enable, Bluetooth will start automatically
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_USER_RESTRICTION_REFACTOR)
+    public void initialStart_whenUserIsRestricted_staysOff() throws Exception {
+        doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+        BluetoothRestriction.handleRestrictionChange(
+                mContext, mManagerService::onBluetoothDisallowed);
+
+        mManagerService =
+                new BluetoothManagerService(
+                        mContext, mLooper.getLooper(), "default", mBluetoothComponent);
+        mManagerService.internalHandleOnBootPhase(mUser);
+
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
     }
