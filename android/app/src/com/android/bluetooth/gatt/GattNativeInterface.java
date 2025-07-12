@@ -17,7 +17,6 @@
 package com.android.bluetooth.gatt;
 
 import android.bluetooth.BluetoothDevice;
-import android.os.RemoteException;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -44,64 +43,55 @@ public class GattNativeInterface {
 
     /* Callbacks */
 
-    void onClientRegistered(int status, int clientIf, long uuidLsb, long uuidMsb)
-            throws RemoteException {
+    void onClientRegistered(int status, int clientIf, long uuidLsb, long uuidMsb) {
         mGattService.onClientRegisteredFromNative(status, clientIf, new UUID(uuidMsb, uuidLsb));
     }
 
-    void onConnected(int clientIf, int connId, int transport, int status, String address)
-            throws RemoteException {
+    void onConnected(int clientIf, int connId, int transport, int status, String address) {
         mGattService.onConnectedFromNative(clientIf, connId, transport, status, getDevice(address));
     }
 
-    void onDisconnected(int clientIf, int connId, int transport, int status, String address)
-            throws RemoteException {
+    void onDisconnected(int clientIf, int connId, int transport, int status, String address) {
         mGattService.onDisconnectedFromNative(
                 clientIf, connId, transport, status, getDevice(address));
     }
 
-    void onClientPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
+    void onClientPhyUpdate(int connId, int txPhy, int rxPhy, int status) {
         mGattService.onClientPhyUpdateFromNative(connId, txPhy, rxPhy, status);
     }
 
-    void onClientPhyRead(int clientIf, String address, int txPhy, int rxPhy, int status)
-            throws RemoteException {
+    void onClientPhyRead(int clientIf, String address, int txPhy, int rxPhy, int status) {
         mGattService.onClientPhyReadFromNative(clientIf, getDevice(address), txPhy, rxPhy, status);
     }
 
-    void onClientConnUpdate(int connId, int interval, int latency, int timeout, int status)
-            throws RemoteException {
+    void onClientConnUpdate(int connId, int interval, int latency, int timeout, int status) {
         mGattService.onClientConnUpdateFromNative(connId, interval, latency, timeout, status);
     }
 
-    void onServiceChanged(int connId) throws RemoteException {
+    void onServiceChanged(int connId) {
         mGattService.onServiceChangedFromNative(connId);
     }
 
     void onClientSubrateChange(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status)
-            throws RemoteException {
+            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
         mGattService.onClientSubrateChangeFromNative(
                 connId, subrateFactor, latency, contNum, timeout, status);
     }
 
-    void onServerPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
+    void onServerPhyUpdate(int connId, int txPhy, int rxPhy, int status) {
         mGattService.onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status);
     }
 
-    void onServerPhyRead(int serverIf, String address, int txPhy, int rxPhy, int status)
-            throws RemoteException {
+    void onServerPhyRead(int serverIf, String address, int txPhy, int rxPhy, int status) {
         mGattService.onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status);
     }
 
-    void onServerConnUpdate(int connId, int interval, int latency, int timeout, int status)
-            throws RemoteException {
+    void onServerConnUpdate(int connId, int interval, int latency, int timeout, int status) {
         mGattService.onServerConnUpdateFromNative(connId, interval, latency, timeout, status);
     }
 
     void onServerSubrateChange(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status)
-            throws RemoteException {
+            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
         mGattService.onServerSubrateChangeFromNative(
                 connId, subrateFactor, latency, contNum, timeout, status);
     }
@@ -110,7 +100,7 @@ public class GattNativeInterface {
         return mGattService.getSampleGattDbElement();
     }
 
-    void onGetGattDb(int connId, List<GattDbElement> db) throws RemoteException {
+    void onGetGattDb(int connId, List<GattDbElement> db) {
         mGattService.onGetGattDbFromNative(connId, db);
     }
 
@@ -118,59 +108,53 @@ public class GattNativeInterface {
         mGattService.onRegisterForNotificationsFromNative(connId, status, registered, handle);
     }
 
-    void onNotify(int connId, String address, int handle, boolean isNotify, byte[] data)
-            throws RemoteException {
+    void onNotify(int connId, String address, int handle, boolean isNotify, byte[] data) {
         mGattService.onNotifyFromNative(connId, getDevice(address), handle, isNotify, data);
     }
 
-    void onReadCharacteristic(int connId, int status, int handle, byte[] data)
-            throws RemoteException {
+    void onReadCharacteristic(int connId, int status, int handle, byte[] data) {
         mGattService.onReadCharacteristicFromNative(connId, status, handle, data);
     }
 
-    void onWriteCharacteristic(int connId, int status, int handle, byte[] data)
-            throws RemoteException {
+    void onWriteCharacteristic(int connId, int status, int handle, byte[] data) {
         mGattService.onWriteCharacteristicFromNative(connId, status, handle, data);
     }
 
-    void onExecuteCompleted(int connId, int status) throws RemoteException {
+    void onExecuteCompleted(int connId, int status) {
         mGattService.onExecuteCompletedFromNative(connId, status);
     }
 
-    void onReadDescriptor(int connId, int status, int handle, byte[] data) throws RemoteException {
+    void onReadDescriptor(int connId, int status, int handle, byte[] data) {
         mGattService.onReadDescriptorFromNative(connId, status, handle, data);
     }
 
-    void onWriteDescriptor(int connId, int status, int handle, byte[] data) throws RemoteException {
+    void onWriteDescriptor(int connId, int status, int handle, byte[] data) {
         mGattService.onWriteDescriptorFromNative(connId, status, handle, data);
     }
 
-    void onReadRemoteRssi(int clientIf, String address, int rssi, int status)
-            throws RemoteException {
+    void onReadRemoteRssi(int clientIf, String address, int rssi, int status) {
         mGattService.onReadRemoteRssiFromNative(clientIf, getDevice(address), rssi, status);
     }
 
-    void onConfigureMTU(int connId, int status, int mtu) throws RemoteException {
+    void onConfigureMTU(int connId, int status, int mtu) {
         mGattService.onConfigureMTUFromNative(connId, status, mtu);
     }
 
-    void onClientCongestion(int connId, boolean congested) throws RemoteException {
+    void onClientCongestion(int connId, boolean congested) {
         mGattService.onClientCongestionFromNative(connId, congested);
     }
 
     /* Server callbacks */
 
-    void onServerRegistered(int status, int serverIf, long uuidLsb, long uuidMsb)
-            throws RemoteException {
+    void onServerRegistered(int status, int serverIf, long uuidLsb, long uuidMsb) {
         mGattService.onServerRegisteredFromNative(status, serverIf, new UUID(uuidMsb, uuidLsb));
     }
 
-    void onServiceAdded(int status, int serverIf, List<GattDbElement> service)
-            throws RemoteException {
+    void onServiceAdded(int status, int serverIf, List<GattDbElement> service) {
         mGattService.onServiceAddedFromNative(status, serverIf, service);
     }
 
-    void onServiceStopped(int status, int serverIf, int srvcHandle) throws RemoteException {
+    void onServiceStopped(int status, int serverIf, int srvcHandle) {
         mGattService.onServiceStoppedFromNative(status, serverIf, srvcHandle);
     }
 
@@ -179,22 +163,19 @@ public class GattNativeInterface {
     }
 
     void onClientConnected(
-            String address, int transport, boolean connected, int connId, int serverIf)
-            throws RemoteException {
+            String address, int transport, boolean connected, int connId, int serverIf) {
         mGattService.onClientConnectedFromNative(
                 getDevice(address), transport, connected, connId, serverIf);
     }
 
     void onServerReadCharacteristic(
-            String address, int connId, int transId, int handle, int offset, boolean isLong)
-            throws RemoteException {
+            String address, int connId, int transId, int handle, int offset, boolean isLong) {
         mGattService.onServerReadCharacteristicFromNative(
                 getDevice(address), connId, transId, handle, offset, isLong);
     }
 
     void onServerReadDescriptor(
-            String address, int connId, int transId, int handle, int offset, boolean isLong)
-            throws RemoteException {
+            String address, int connId, int transId, int handle, int offset, boolean isLong) {
         mGattService.onServerReadDescriptorFromNative(
                 getDevice(address), connId, transId, handle, offset, isLong);
     }
@@ -208,8 +189,7 @@ public class GattNativeInterface {
             int length,
             boolean needRsp,
             boolean isPrep,
-            byte[] data)
-            throws RemoteException {
+            byte[] data) {
         mGattService.onServerWriteCharacteristicFromNative(
                 getDevice(address), connId, transId, handle, offset, length, needRsp, isPrep, data);
     }
@@ -223,14 +203,12 @@ public class GattNativeInterface {
             int length,
             boolean needRsp,
             boolean isPrep,
-            byte[] data)
-            throws RemoteException {
+            byte[] data) {
         mGattService.onServerWriteDescriptorFromNative(
                 getDevice(address), connId, transId, handle, offset, length, needRsp, isPrep, data);
     }
 
-    void onExecuteWrite(String address, int connId, int transId, int execWrite)
-            throws RemoteException {
+    void onExecuteWrite(String address, int connId, int transId, int execWrite) {
         mGattService.onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite);
     }
 
@@ -238,15 +216,15 @@ public class GattNativeInterface {
         mGattService.onResponseSendCompletedFromNative(status, attrHandle);
     }
 
-    void onNotificationSent(int connId, int status) throws RemoteException {
+    void onNotificationSent(int connId, int status) {
         mGattService.onNotificationSentFromNative(connId, status);
     }
 
-    void onServerCongestion(int connId, boolean congested) throws RemoteException {
+    void onServerCongestion(int connId, boolean congested) {
         mGattService.onServerCongestionFromNative(connId, congested);
     }
 
-    void onMtuChanged(int connId, int mtu) throws RemoteException {
+    void onMtuChanged(int connId, int mtu) {
         mGattService.onMtuChangedFromNative(connId, mtu);
     }
 
