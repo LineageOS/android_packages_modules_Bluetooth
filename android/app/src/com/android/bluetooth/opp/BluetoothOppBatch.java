@@ -96,7 +96,7 @@ public class BluetoothOppBatch {
     /** A batch is always created with at least one ShareInfo */
     BluetoothOppBatch(AdapterService adapterService, BluetoothOppShareInfo info) {
         mContext = adapterService;
-        mShares = new ArrayList();
+        mShares = new ArrayList<>();
         mTimestamp = info.mTimestamp;
         mDirection = info.mDirection;
         mDestination = adapterService.getRemoteDevice(info.mDestination);

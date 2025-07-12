@@ -589,7 +589,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
      * @return related list of devices sorted from the lowest to the highest rank value.
      */
     public @NonNull List<BluetoothDevice> getGroupDevicesOrdered(int groupId) {
-        final Map<BluetoothDevice, Integer> deviceRankMap = new HashMap();
+        final Map<BluetoothDevice, Integer> deviceRankMap = new HashMap<>();
         for (Map.Entry<BluetoothDevice, ?> entry : mDeviceGroupIdRankMap.entrySet()) {
             Map<Integer, Integer> rankMap = (Map<Integer, Integer>) entry.getValue();
             BluetoothDevice device = entry.getKey();

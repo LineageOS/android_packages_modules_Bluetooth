@@ -169,17 +169,17 @@ class ScanBinder(
         }
 
         // Ambient discovery mode, needs privileged permission.
-        if (settings.getScanMode() == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY) {
+        if (settings.scanMode == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY) {
             return true
         }
 
         // Regular scan, no special permission.
-        if (settings.getReportDelayMillis() == 0L) {
+        if (settings.reportDelayMillis == 0L) {
             return false
         }
 
         // Batch scan, truncated mode needs permission.
-        return settings.getScanResultType() == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED
+        return settings.scanResultType == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED
     }
 
     /**
@@ -194,7 +194,7 @@ class ScanBinder(
         for (filter in filters) {
             // The only case to enforce here is if there is an address. If there is an address,
             // enforce if the correct combination criteria is met.
-            if (filter.getDeviceAddress() != null) {
+            if (filter.deviceAddress != null) {
                 // At this point we have an address, that means a caller used the
                 // setDeviceAddress(address) public API for the ScanFilter. We don't want to enforce
                 // if the type is PUBLIC and the IRK is null. However, if we have a different type
@@ -202,8 +202,7 @@ class ScanBinder(
                 // type) or setDeviceAddress(address, type, irk) which are both @SystemApi and
                 // require permissions to be enforced
                 if (
-                    filter.getAddressType() == BluetoothDevice.ADDRESS_TYPE_PUBLIC &&
-                        filter.getIrk() == null
+                    filter.addressType == BluetoothDevice.ADDRESS_TYPE_PUBLIC && filter.irk == null
                 ) {
                     // Do not enforce
                 } else {

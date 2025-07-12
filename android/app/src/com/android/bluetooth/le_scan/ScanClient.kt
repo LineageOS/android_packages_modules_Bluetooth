@@ -95,20 +95,20 @@ private constructor(
      * @return true if scan settings are updated, false otherwise.
      */
     fun updateScanMode(newScanMode: Int): Boolean {
-        if (settings.getScanMode() == newScanMode) {
+        if (settings.scanMode == newScanMode) {
             return false
         }
 
         settings =
             ScanSettings.Builder()
                 .setScanMode(newScanMode)
-                .setCallbackType(settings.getCallbackType())
-                .setScanResultType(settings.getScanResultType())
-                .setReportDelay(settings.getReportDelayMillis())
-                .setNumOfMatches(settings.getNumOfMatches())
-                .setMatchMode(settings.getMatchMode())
-                .setLegacy(settings.getLegacy())
-                .setPhy(settings.getPhy())
+                .setCallbackType(settings.callbackType)
+                .setScanResultType(settings.scanResultType)
+                .setReportDelay(settings.reportDelayMillis)
+                .setNumOfMatches(settings.numOfMatches)
+                .setMatchMode(settings.matchMode)
+                .setLegacy(settings.legacy)
+                .setPhy(settings.phy)
                 .build()
         return true
     }

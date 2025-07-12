@@ -90,7 +90,7 @@ class DistanceMeasurementBinder(
         manager.postOnDistanceMeasurementThread {
             manager.startDistanceMeasurement(
                 uuid.uuid,
-                source.getUid(),
+                source.uid,
                 distanceMeasurementParams,
                 callback,
             )

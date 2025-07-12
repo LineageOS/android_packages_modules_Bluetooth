@@ -64,7 +64,7 @@ public final class TransportDiscoveryData implements Parcelable {
      */
     public TransportDiscoveryData(@NonNull byte[] transportDiscoveryData) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(transportDiscoveryData);
-        mTransportBlocks = new ArrayList();
+        mTransportBlocks = new ArrayList<>();
         if (byteBuffer.remaining() > 0) {
             mTransportDataType = byteBuffer.get();
         } else {

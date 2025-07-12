@@ -47,7 +47,7 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
         if (!isWatch(adapterService)) {
             val cdm = adapterService.getSystemService(CompanionDeviceManager::class.java)
             cdm.addOnAssociationsChangedListener(Handler(looper)::post, this)
-            onAssociationsChanged(cdm.getAllAssociations())
+            onAssociationsChanged(cdm.allAssociations)
         }
     }
 

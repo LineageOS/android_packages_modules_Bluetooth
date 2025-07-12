@@ -19,6 +19,10 @@ package com.android.bluetooth.le_scan;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 
+import static com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan;
+import static com.android.bluetooth.le_scan.ScanUtil.isBatchScan;
+import static com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan;
+
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -55,59 +59,54 @@ class AppScanStats {
     private static final AtomicBoolean sIsScreenOn = new AtomicBoolean(false);
 
     private static class LastScan {
+        public final StringBuilder filterString = new StringBuilder();
+        public final int scannerId;
+        public final int scanMode;
+        public final int scanCallbackType;
+        public final boolean isBackgroundScan;
+        public final boolean isBatchScan;
+        public final boolean isCallbackScan;
+        public final boolean isFilterScan;
+        public final boolean isOpportunisticScan;
+        public final long timestamp;
+        public final long reportDelayMillis;
+        public final int appImportanceOnStart;
+        @Nullable public final String attributionTag;
+
         public long duration;
         public long suspendDuration;
         public long suspendStartTime;
         public boolean isSuspended;
-        public final long timestamp;
-        public final long reportDelayMillis;
-        public boolean isOpportunisticScan;
         public boolean isTimeout;
         public boolean isDowngraded;
-        public boolean isBackgroundScan;
-        public final boolean isFilterScan;
-        public final boolean isCallbackScan;
-        public boolean isBatchScan;
         public boolean isAutoBatchScan;
         public int results;
-        public final int scannerId;
-        public final int scanMode;
-        public final int scanCallbackType;
-        public final StringBuilder filterString;
-        @Nullable public final String attributionTag;
-        public final int appImportanceOnStart;
 
-        LastScan(
-                long timestamp,
-                long reportDelayMillis,
-                boolean isFilterScan,
-                boolean isCallbackScan,
+        private LastScan(
                 int scannerId,
                 int scanMode,
                 int scanCallbackType,
-                @Nullable String attributionTag,
-                int appImportanceOnStart) {
-            this.duration = 0;
+                long timestamp,
+                long reportDelayMillis,
+                boolean isBackgroundScan,
+                boolean isBatchScan,
+                boolean isCallbackScan,
+                boolean isFilterScan,
+                boolean isOpportunisticScan,
+                int appImportanceOnStart,
+                @Nullable String attributionTag) {
             this.timestamp = timestamp;
             this.reportDelayMillis = reportDelayMillis;
-            this.isOpportunisticScan = false;
-            this.isTimeout = false;
-            this.isDowngraded = false;
-            this.isBackgroundScan = false;
-            this.isFilterScan = isFilterScan;
+            this.isBackgroundScan = isBackgroundScan;
+            this.isBatchScan = isBatchScan;
             this.isCallbackScan = isCallbackScan;
-            this.isBatchScan = false;
-            this.isAutoBatchScan = false;
+            this.isFilterScan = isFilterScan;
+            this.isOpportunisticScan = isOpportunisticScan;
+            this.scannerId = scannerId;
             this.scanMode = scanMode;
             this.scanCallbackType = scanCallbackType;
             this.attributionTag = attributionTag;
-            this.results = 0;
-            this.scannerId = scannerId;
-            this.suspendDuration = 0;
-            this.suspendStartTime = 0;
-            this.isSuspended = false;
             this.appImportanceOnStart = appImportanceOnStart;
-            this.filterString = new StringBuilder();
         }
 
         private String getAttributionTag() {
@@ -259,35 +258,30 @@ class AppScanStats {
         if (existingScan != null) {
             return;
         }
-        this.mScansStarted++;
+        mScansStarted++;
         startTime = mTimeProvider.elapsedRealtime();
 
         LastScan scan =
                 new LastScan(
-                        startTime,
-                        settings.getReportDelayMillis(),
-                        isFilterScan,
-                        isCallbackScan,
                         scannerId,
                         settings.getScanMode(),
                         settings.getCallbackType(),
-                        attributionTag,
-                        mAppImportance);
-        if (settings != null) {
-            scan.isOpportunisticScan = scan.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC;
-            scan.isBackgroundScan =
-                    (scan.scanCallbackType & ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0;
-            scan.isBatchScan =
-                    settings.getCallbackType() == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
-                            && settings.getReportDelayMillis() != 0;
-            switch (scan.scanMode) {
-                case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScan++;
-                case ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScan++;
-                case ScanSettings.SCAN_MODE_BALANCED -> mBalancedScan++;
-                case ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScan++;
-                case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> mAmbientDiscoveryScan++;
-                default -> {} // Nothing to do
-            }
+                        startTime,
+                        settings.getReportDelayMillis(),
+                        isBackgroundScan(settings),
+                        isBatchScan(settings),
+                        isCallbackScan,
+                        isFilterScan,
+                        isOpportunisticScan(settings),
+                        mAppImportance,
+                        attributionTag);
+        switch (scan.scanMode) {
+            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScan++;
+            case ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScan++;
+            case ScanSettings.SCAN_MODE_BALANCED -> mBalancedScan++;
+            case ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScan++;
+            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> mAmbientDiscoveryScan++;
+            default -> {} // Nothing to do
         }
 
         if (isFilterScan) {
