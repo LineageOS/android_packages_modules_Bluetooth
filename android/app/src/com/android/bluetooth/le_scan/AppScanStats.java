@@ -55,29 +55,30 @@ class AppScanStats {
     private static final AtomicBoolean sIsScreenOn = new AtomicBoolean(false);
 
     private static class LastScan {
+        public final StringBuilder filterString = new StringBuilder();
+        public final long timestamp;
+        public final long reportDelayMillis;
+        public final boolean isFilterScan;
+        public final boolean isCallbackScan;
+        public final int scannerId;
+        public final int scanMode;
+        public final int scanCallbackType;
+        @Nullable public final String attributionTag;
+        public final int appImportanceOnStart;
+
         public long duration;
         public long suspendDuration;
         public long suspendStartTime;
         public boolean isSuspended;
-        public final long timestamp;
-        public final long reportDelayMillis;
         public boolean isOpportunisticScan;
         public boolean isTimeout;
         public boolean isDowngraded;
         public boolean isBackgroundScan;
-        public final boolean isFilterScan;
-        public final boolean isCallbackScan;
         public boolean isBatchScan;
         public boolean isAutoBatchScan;
         public int results;
-        public final int scannerId;
-        public final int scanMode;
-        public final int scanCallbackType;
-        public final StringBuilder filterString;
-        @Nullable public final String attributionTag;
-        public final int appImportanceOnStart;
 
-        LastScan(
+        private LastScan(
                 long timestamp,
                 long reportDelayMillis,
                 boolean isFilterScan,
@@ -87,27 +88,15 @@ class AppScanStats {
                 int scanCallbackType,
                 @Nullable String attributionTag,
                 int appImportanceOnStart) {
-            this.duration = 0;
             this.timestamp = timestamp;
             this.reportDelayMillis = reportDelayMillis;
-            this.isOpportunisticScan = false;
-            this.isTimeout = false;
-            this.isDowngraded = false;
-            this.isBackgroundScan = false;
             this.isFilterScan = isFilterScan;
             this.isCallbackScan = isCallbackScan;
-            this.isBatchScan = false;
-            this.isAutoBatchScan = false;
+            this.scannerId = scannerId;
             this.scanMode = scanMode;
             this.scanCallbackType = scanCallbackType;
             this.attributionTag = attributionTag;
-            this.results = 0;
-            this.scannerId = scannerId;
-            this.suspendDuration = 0;
-            this.suspendStartTime = 0;
-            this.isSuspended = false;
             this.appImportanceOnStart = appImportanceOnStart;
-            this.filterString = new StringBuilder();
         }
 
         private String getAttributionTag() {
