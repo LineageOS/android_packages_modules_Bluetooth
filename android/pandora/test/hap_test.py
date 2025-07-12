@@ -177,6 +177,21 @@ class HearingAidDevice:
             has_expected_preset = has_preset
         assert_equal(has_expected_preset, self.has.active_preset_index)
 
+    async def set_active_preset_and_verify(self, dut_hap: HAP, preset: PresetRecord):
+        await asyncio.gather(
+            dut_hap.SetActivePreset(connection=self.to_ref, index=preset.index),
+            dut_hap.WaitActivePresetChanged(connection=self.to_ref, index=preset.index))
+        await self.assert_active_preset(dut_hap, preset)
+
+    async def set_active_preset_for_group_and_verify(self, dut_hap: HAP, other,
+                                                     preset: PresetRecord):
+        await asyncio.gather(
+            dut_hap.SetActivePresetForGroup(connection=self.to_ref, index=preset.index),
+            dut_hap.WaitActivePresetChanged(connection=self.to_ref, index=preset.index),
+            dut_hap.WaitActivePresetChanged(connection=other.to_ref, index=preset.index))
+        await self.assert_active_preset(dut_hap, preset)
+        await other.assert_active_preset(dut_hap, preset)
+
 
 def synchronize_has(left: HearingAidDevice, right: HearingAidDevice):
     """Synchronizes the HearingAccessService between two hearing aid devices."""
@@ -270,8 +285,6 @@ class HapTest(base_test.BaseTestClass):
         assert_equal('success', secure.result_variant())
         assert_equal('success', wait_security.result_variant())
 
-        # Allow time for service discovery to complete before proceeding.
-        await asyncio.sleep(DEVICE_DEFAULT_DELAY)
         await self.dut_hap.WaitPeripheral(connection=dut_connection_to_ref)
         advertisement.cancel()
 
@@ -316,9 +329,7 @@ class HapTest(base_test.BaseTestClass):
 
         await self.logcat.Log("Remove preset in server")
         await self.ref_left.has.delete_preset(UNAVAILABLE_PRESET.index)
-
-        # Wait for the DUT to process the preset change notification.
-        await asyncio.sleep(DEVICE_DEFAULT_DELAY)
+        await self.dut_hap.WaitPresetChanged()
 
         await self.ref_left.assert_all_presets(self.dut_hap)
 
@@ -333,9 +344,7 @@ class HapTest(base_test.BaseTestClass):
         await self.ref_left.has.generic_update(
             PresetChangedOperation(PresetChangedOperation.ChangeId.GENERIC_UPDATE,
                                    PresetChangedOperation.Generic(BAR_PRESET.index, added_preset)))
-
-        # Wait for the DUT to process the preset change notification.
-        await asyncio.sleep(DEVICE_DEFAULT_DELAY)
+        await self.dut_hap.WaitPresetChanged()
 
         await self.ref_left.assert_all_presets(self.dut_hap)
 
@@ -373,15 +382,8 @@ class HapTest(base_test.BaseTestClass):
     async def test_set_active_preset(self) -> None:
         await self.setup_monaural()
 
-        await self.dut_hap.SetActivePreset(connection=self.ref_left.to_ref, index=BAR_PRESET.index)
-        # Wait for the DUT to process the active preset change.
-        await asyncio.sleep(DEVICE_DEFAULT_DELAY)
-        await self.ref_left.assert_active_preset(self.dut_hap, BAR_PRESET)
-
-        await self.dut_hap.SetActivePreset(connection=self.ref_left.to_ref, index=FOO_PRESET.index)
-        # Wait for the DUT to process the active preset change.
-        await asyncio.sleep(DEVICE_DEFAULT_DELAY)
-        await self.ref_left.assert_active_preset(self.dut_hap, FOO_PRESET)
+        await self.ref_left.set_active_preset_and_verify(self.dut_hap, BAR_PRESET)
+        await self.ref_left.set_active_preset_and_verify(self.dut_hap, FOO_PRESET)
 
     @asynchronous
     async def test__set_active_binaural__when_disconnecting__do_not_crash(self) -> None:
@@ -415,21 +417,13 @@ class HapTest(base_test.BaseTestClass):
         # preliminary check to be sure we are setting a new & different preset
         await self.ref_left.assert_active_preset(self.dut_hap, FOO_PRESET)
 
-        await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
-                                                   index=BAR_PRESET.index)
-
-        # Wait for the binaural preset change to synchronize.
-        await asyncio.sleep(3)
-
-        await self.ref_left.assert_active_preset(self.dut_hap, BAR_PRESET)
-        await self.ref_right.assert_active_preset(self.dut_hap, BAR_PRESET)
+        await self.ref_left.set_active_preset_for_group_and_verify(self.dut_hap, self.ref_right,
+                                                                   BAR_PRESET)
 
     @asynchronous
     @enableFlag('com.android.bluetooth.flags.synchronize_preset_can_timeout')
     async def test__synchronize_operation_failed__when_selecting_preset__can_recover(self) -> None:
         await self.setup_binaural()
-        # Wait for initial setup to complete.
-        await asyncio.sleep(DEVICE_DEFAULT_DELAY)
 
         # remove synchronization capabilities
         self.ref_left.has.other_server_in_binaural_set = None
@@ -441,13 +435,12 @@ class HapTest(base_test.BaseTestClass):
         await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
                                                    index=BAR_PRESET.index)
 
-        # Wait for the preset change to be processed.
-        await asyncio.sleep(3)
-        # Left is updated
-        await self.ref_left.assert_active_preset(self.dut_hap, BAR_PRESET)
+        # Only left is updated
+        await self.dut_hap.WaitActivePresetChanged(connection=self.ref_left.to_ref,
+                                                   index=BAR_PRESET.index)
 
-        # Timeout operation is 10 secondes
-        await asyncio.sleep(13)
+        # Timeout group operation is 10 secondes
+        await asyncio.sleep(11)
 
         # As expected, only left preset has been updated
         await self.ref_left.assert_active_preset(self.dut_hap, BAR_PRESET)
@@ -460,7 +453,8 @@ class HapTest(base_test.BaseTestClass):
                                                    index=BAR_PRESET.index)
 
         # Wait for the DUT to recover and synchronize.
-        await asyncio.sleep(13)
+        await self.dut_hap.WaitActivePresetChanged(connection=self.ref_right.to_ref,
+                                                   index=BAR_PRESET.index)
 
         await self.ref_left.assert_active_preset(self.dut_hap, BAR_PRESET)
         await self.ref_right.assert_active_preset(self.dut_hap, BAR_PRESET)

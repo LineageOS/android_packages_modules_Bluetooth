@@ -17,7 +17,9 @@
 package com.android.server.bluetooth.test
 
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE
+import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_DIED
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST
+import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AUTO_ON
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET
@@ -104,17 +106,19 @@ class ActiveLogTest {
 
     @Test
     fun dump_allReason_stringIsKnown() {
-        ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false)
         ActiveLogs.add(ENABLE_DISABLE_REASON_AIRPLANE_MODE, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_DIED, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_AUTO_ON, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false)
         ActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false)
         ActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTORE_USER_SETTING, false)
+        ActiveLogs.add(ENABLE_DISABLE_REASON_SATELLITE_MODE, false)
         ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false)
         ActiveLogs.add(ENABLE_DISABLE_REASON_SYSTEM_BOOT, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false)
         ActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTORE_USER_SETTING, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false)
-        ActiveLogs.add(ENABLE_DISABLE_REASON_SATELLITE_MODE, false)
         ActiveLogs.add(42, false)
         val stringWriter = StringWriter()
         val writer = PrintWriter(stringWriter)
@@ -123,17 +127,19 @@ class ActiveLogTest {
         assertThat(stringWriter.toString())
             .matches(
                 "Enable log:\n" +
-                    ".*APPLICATION_REQUEST\n" +
                     ".*AIRPLANE_MODE\n" +
+                    ".*APPLICATION_DIED\n" +
+                    ".*APPLICATION_REQUEST\n" +
+                    ".*AUTO_ON\n" +
+                    ".*CRASH\n" +
                     ".*DISALLOWED\n" +
+                    ".*FACTORY_RESET\n" +
                     ".*RESTARTED\n" +
+                    ".*RESTORE_USER_SETTING\n" +
+                    ".*SATELLITE MODE\n" +
                     ".*START_ERROR\n" +
                     ".*SYSTEM_BOOT\n" +
-                    ".*CRASH\n" +
                     ".*USER_SWITCH\n" +
-                    ".*RESTORE_USER_SETTING\n" +
-                    ".*FACTORY_RESET\n" +
-                    ".*SATELLITE MODE\n" +
                     ".*UNKNOWN\\[\\d+\\]\n"
             )
     }

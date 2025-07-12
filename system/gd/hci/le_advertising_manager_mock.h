@@ -85,6 +85,8 @@ public:
 
   MOCK_METHOD(void, RegisterAdvertisingCallback, (AdvertisingCallback * advertising_callback),
               (override));
+
+  MOCK_METHOD(void, Dump, (int fd), (override));
 };
 
 }  // namespace testing

@@ -1711,6 +1711,11 @@ public class AdapterService extends Service {
             e.getValue().execute(() -> e.getKey().onBluetoothStateChange(from, to));
         }
 
+        if (Flags.onToBleOnViaOff()) {
+            // Nothing to do, as we are now guaranteed to go OFF before reaching a stable BLE_ON
+            return;
+        }
+
         // Turn the Adapter all the way off if we are disabling and the snoop log setting changed.
         if (to == BluetoothAdapter.STATE_BLE_TURNING_ON) {
             sSnoopLogSettingAtEnable =
