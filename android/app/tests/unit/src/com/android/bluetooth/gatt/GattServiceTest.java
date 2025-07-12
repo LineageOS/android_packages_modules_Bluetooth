@@ -1177,7 +1177,7 @@ public class GattServiceTest {
                 /* request ID */ 0,
                 /* status */ 0,
                 /* offset */ 0,
-                /* Data null for a preprared write response */ null);
+                /* Data null for a prepared write response */ null);
 
         verify(mNativeInterface)
                 .gattServerSendResponse(
@@ -1216,7 +1216,7 @@ public class GattServiceTest {
                 /* request ID */ 0,
                 /* status */ 0,
                 /* offset */ 0,
-                /* Data null for a preprared write cancel response */ null);
+                /* Data null for a prepared write cancel response */ null);
 
         verify(mNativeInterface)
                 .gattServerSendResponse(
