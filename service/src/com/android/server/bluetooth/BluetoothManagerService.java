@@ -354,36 +354,6 @@ class BluetoothManagerService {
         return true;
     }
 
-    boolean onFactoryResetFromBinder() {
-        // Wait for stable state if bluetooth is temporary state.
-        int state = getState();
-        if (state == State.BLE_TURNING_ON
-                || state == State.TURNING_ON
-                || state == State.TURNING_OFF) {
-            if (!waitForState(State.BLE_ON, State.ON)) {
-                return false;
-            }
-        }
-        return postAndWait(() -> onFactoryReset());
-    }
-
-    @VisibleForTesting
-    boolean onFactoryReset() {
-        // Clear registered LE apps to force shut-off Bluetooth
-        mBleAppManager.clearBleApps();
-        int state = getState();
-        if (state == State.BLE_ON) {
-            mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
-            bleOnToOff();
-            return true;
-        } else if (state == State.ON) {
-            mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
-            onToBleOn();
-            return true;
-        }
-        return false;
-    }
-
     private int estimateBusyTime(int state) {
         if (!Flags.gracefulDisableWithoutMessage()
                 && state == State.BLE_ON

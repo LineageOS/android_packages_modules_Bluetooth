@@ -215,20 +215,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
-    public boolean onFactoryReset(AttributionSource source) {
-        requireNonNull(source, "AttributionSource cannot be null in onFactoryReset");
-
-        BtPermissionUtils.enforcePrivileged(mContext);
-
-        if (!checkConnectPermissionForDataDelivery(
-                mContext, mPermissionManager, source, "onFactoryReset")) {
-            return false;
-        }
-
-        return mService.onFactoryResetFromBinder();
-    }
-
-    @Override
     public boolean isBleScanAvailable() {
         return mService.isBleScanAvailable();
     }
