@@ -4538,7 +4538,7 @@ public class BassClientService extends ConnectableProfile {
                         device ->
                                 getAllSources(device).stream()
                                         .anyMatch(rs -> rs.getBroadcastId() == broadcastId))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     private static boolean isSyncedToBroadcastStream(Long syncState) {
