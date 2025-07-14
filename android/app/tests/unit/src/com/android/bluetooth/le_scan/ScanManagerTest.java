@@ -363,8 +363,8 @@ public class ScanManagerTest {
 
         mClientId = mClientId + 1;
         ScanClient client = new ScanClient(mClientId, scanSettings, scanFilterList, appUid);
-        client.mStats = Optional.of(appScanStats);
-        client.mStats
+        client.setAppScanStats(Optional.of(appScanStats));
+        client.getAppScanStats()
                 .get()
                 .recordScanStart(scanSettings, scanFilterList, isFiltered, false, mClientId, null);
         return client;
@@ -473,8 +473,8 @@ public class ScanManagerTest {
 
         final int appUid = 1234;
         ScanClient client = new ScanClient(id, scanSettings, scanFilterList, appUid);
-        client.mStats = Optional.of(mMockAppScanStats);
-        client.mStats
+        client.setAppScanStats(Optional.of(mMockAppScanStats));
+        client.getAppScanStats()
                 .get()
                 .recordScanStart(scanSettings, scanFilterList, isFiltered, false, id, null);
         return client;
@@ -710,7 +710,8 @@ public class ScanManagerTest {
                     advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS);
                     mLooper.dispatchAll();
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.mStats.get().isScanTimeout(client.getScannerId())).isTrue();
+                    assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
+                            .isTrue();
                     // Turn off screen
                     setScreenOn(false);
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
@@ -750,7 +751,8 @@ public class ScanManagerTest {
                     doReturn(true).when(mMockAppScanStats).isScanningTooLong();
                     mLooper.dispatchAll();
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.mStats.get().isScanTimeout(client.getScannerId())).isTrue();
+                    assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
+                            .isTrue();
                     // Turn off screen
                     setScreenOn(false);
                     assertThat(client.getSettings().getScanMode()).isEqualTo(SCAN_MODE_SCREEN_OFF);
@@ -811,7 +813,8 @@ public class ScanManagerTest {
             mLooper.dispatchAll();
             // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
             assertThat(client.getSettings().getScanMode()).isEqualTo(SCAN_MODE_OPPORTUNISTIC);
-            assertThat(client.mStats.get().isScanTimeout(client.getScannerId())).isTrue();
+            assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
+                    .isTrue();
         } else {
             Message nextMessage = mLooper.nextMessage();
             assertThat(nextMessage.what).isEqualTo(ScanManager.MSG_SCAN_TIMEOUT);
@@ -1356,7 +1359,7 @@ public class ScanManagerTest {
 
             advanceTime(scanTestDuration);
             // Record scan stop
-            client.mStats.get().recordScanStop(mClientId);
+            client.getAppScanStats().get().recordScanStop(mClientId);
             // Verify that the app scan stop is logged
             mInOrder.verify(mMetricsLogger)
                     .logAppScanStateChanged(
@@ -1926,8 +1929,8 @@ public class ScanManagerTest {
         assertThat(mScanManager.getRegularScanQueue()).contains(client);
         assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
         assertThat(client.getSettings().getScanMode()).isEqualTo(SCAN_MODE_LOW_LATENCY);
-        // Set AppScanStats to null
-        client.mStats = Optional.empty();
+        // Set AppScanStats to empty
+        client.setAppScanStats(Optional.empty());
         // Set connecting state
         setConnectingState(true);
         // Since AppScanStats is null, no downgrade takes place for scan mode
