@@ -820,10 +820,6 @@ class BluetoothManagerService {
         mCallbacks.unregister(callback);
     }
 
-    boolean isEnabled() {
-        return getState() == State.ON;
-    }
-
     /**
      * Sends the current foreground user id to the Bluetooth process. This user id is used to
      * determine if Binder calls are coming from the active user.
@@ -2230,7 +2226,6 @@ class BluetoothManagerService {
         String errorMsg = null;
 
         writer.println("Bluetooth Status");
-        writer.println("  enabled: " + isEnabled());
         writer.println("  state: " + mState);
         writer.println("  address: " + logAddress(mAddress));
         writer.println("  name: " + mName);
