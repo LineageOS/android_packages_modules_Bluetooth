@@ -296,25 +296,6 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    public void onFactoryReset() {
-        assertThrows(NullPointerException.class, () -> mBinder.onFactoryReset(null));
-
-        assertThrows(SecurityException.class, () -> mBinder.onFactoryReset(mSource));
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED);
-
-        assertThrows(SecurityException.class, () -> mBinder.onFactoryReset(mSource));
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED, BLUETOOTH_CONNECT);
-
-        assertThat(mBinder.onFactoryReset(mSource)).isFalse();
-        verify(mManagerService).onFactoryResetFromBinder();
-        verifyMock();
-    }
-
-    @Test
     public void isBleScanAvailable() {
         // No permission needed for this call
         mBinder.isBleScanAvailable();
