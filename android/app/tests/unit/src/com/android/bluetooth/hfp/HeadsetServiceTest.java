@@ -1378,7 +1378,47 @@ public class HeadsetServiceTest {
                 ArgumentCaptor.forClass(
                         AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener.class);
         verify(mAudioDeviceVolumeManager)
-                .setDeviceAbsoluteVolumeBehavior(any(), any(), any(), callback.capture());
+                .setDeviceAbsoluteMultiVolumeBehavior(any(), any(), any(), callback.capture());
+
+        callback.getValue().onAudioDeviceVolumeChanged(attributes, volumeInfo);
+        verify(mStateMachines.get(mCurrentDevice))
+                .sendMessage(eq(HeadsetStateMachine.SCO_VOLUME_CHANGED), eq(volumeIndex));
+    }
+
+    @Test
+    @RequiresFlagsEnabled({
+        android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT,
+    })
+    public void testVolumeChangeAssistant_sendsMessageToStateMachine() {
+        int volumeIndex = 7; // sample value used for testing volume change
+        when(mDatabaseManager.getProfileConnectionPolicy(
+                        any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        mCurrentDevice = getTestDevice(0);
+        assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
+        when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
+        when(mStateMachines.get(mCurrentDevice).getConnectionState()).thenReturn(STATE_CONNECTED);
+        when(mStateMachines.get(mCurrentDevice).getConnectingTimestampMs())
+                .thenReturn(SystemClock.uptimeMillis());
+        assertThat(mHeadsetService.getConnectedDevices()).containsExactly(mCurrentDevice);
+        mHeadsetService.onConnectionStateChangedFromStateMachine(
+                mCurrentDevice, STATE_DISCONNECTED, STATE_CONNECTED);
+        mHeadsetService.setActiveDevice(mCurrentDevice);
+
+        AudioDeviceAttributes attributes =
+                new AudioDeviceAttributes(
+                        AudioDeviceAttributes.ROLE_OUTPUT,
+                        AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                        mCurrentDevice.getAddress());
+        VolumeInfo volumeInfo =
+                new VolumeInfo.Builder(AudioManager.STREAM_ASSISTANT)
+                        .setVolumeIndex(volumeIndex)
+                        .build();
+        ArgumentCaptor<AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener> callback =
+                ArgumentCaptor.forClass(
+                        AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener.class);
+        verify(mAudioDeviceVolumeManager)
+                .setDeviceAbsoluteMultiVolumeBehavior(any(), any(), any(), callback.capture());
 
         callback.getValue().onAudioDeviceVolumeChanged(attributes, volumeInfo);
         verify(mStateMachines.get(mCurrentDevice))
