@@ -36,8 +36,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     private val serviceDispatcher = Handler(looper).asCoroutineDispatcher()
     private val scope = CoroutineScope(serviceDispatcher + SupervisorJob())
 
-    private val mBluetoothManagerService: BluetoothManagerService
-    private val serviceApi: BluetoothManagerServiceApi
+    private var supervisor: BluetoothSupervisor
     private var mInitialized = false
 
     init {
@@ -56,14 +55,14 @@ class BluetoothService(context: Context) : SystemService(context) {
                 null
             }
         // Run BluetoothManagerService on the correct thread even during constructor
-        mBluetoothManagerService =
+        supervisor =
             runBlocking(serviceDispatcher) {
-                BluetoothManagerService(context, looper, hciInstance, bluetoothComponent)
+                BluetoothSupervisor(context, looper, hciInstance, bluetoothComponent)
             }
-        serviceApi = mBluetoothManagerService.api
+
         runOnBmsThread {
             if (Flags.userRestrictionRefactor()) {
-                BluetoothRestriction.initialize(context, looper, serviceApi::onBluetoothDisallowed)
+                BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
             }
         }
     }
@@ -74,13 +73,16 @@ class BluetoothService(context: Context) : SystemService(context) {
     private fun initialize(user: TargetUser) {
         if (!mInitialized) {
             Log.i("initialize($user)")
-            runOnBmsThread { serviceApi.handleOnBootPhase(user.userHandle) }
+            runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
             mInitialized = true
         }
     }
 
     override fun onStart() {
-        publishBinderService(SERVICE_NAME, BluetoothServiceBinder(looper, serviceApi, context))
+        publishBinderService(
+            SERVICE_NAME,
+            BluetoothServiceBinder(looper, supervisor.api(), context),
+        )
     }
 
     override fun onUserStarting(user: TargetUser) {
@@ -98,7 +100,7 @@ class BluetoothService(context: Context) : SystemService(context) {
             return
         }
         Log.i("onUserStarting($user) Initializing for foreground user ")
-        runOnBmsThread { serviceApi.handleOnBootPhase(user.userHandle) }
+        runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
         mInitialized = true
     }
 
@@ -107,6 +109,6 @@ class BluetoothService(context: Context) : SystemService(context) {
         if (!mInitialized) {
             throw IllegalStateException("Initialize did not happen")
         }
-        runOnBmsThread { serviceApi.onUserSwitching(to.userHandle) }
+        runOnBmsThread { supervisor.onUserSwitching(to.userHandle) }
     }
 }
