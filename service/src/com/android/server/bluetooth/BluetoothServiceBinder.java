@@ -18,6 +18,7 @@ package com.android.server.bluetooth;
 
 import static android.Manifest.permission.DUMP;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 import static com.android.server.bluetooth.BtPermissionUtils.checkConnectPermissionForDataDelivery;
@@ -33,13 +34,22 @@ import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 import android.content.Context;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.UserManager;
 import android.permission.PermissionManager;
 
+import libcore.util.SneakyThrow;
+
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private static final String TAG = BluetoothServiceBinder.class.getSimpleName();
@@ -50,32 +60,55 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final AppOpsManager mAppOpsManager;
     private final PermissionManager mPermissionManager;
     private final BtPermissionUtils mPermissionUtils;
+    private final Handler mHandler;
 
-    BluetoothServiceBinder(BluetoothManagerService bms, Context ctx, UserManager userManager) {
+    BluetoothServiceBinder(
+            Looper looper, BluetoothManagerService bms, Context ctx, UserManager userManager) {
         mService = bms;
         mContext = ctx;
         mUserManager = userManager;
-        mAppOpsManager =
-                requireNonNull(
-                        ctx.getSystemService(AppOpsManager.class),
-                        "AppOpsManager system service cannot be null");
-        mPermissionManager =
-                requireNonNull(
-                        ctx.getSystemService(PermissionManager.class),
-                        "PermissionManager system service cannot be null");
+        mAppOpsManager = requireNonNull(ctx.getSystemService(AppOpsManager.class));
+        mPermissionManager = requireNonNull(ctx.getSystemService(PermissionManager.class));
         mPermissionUtils = new BtPermissionUtils(ctx);
+        mHandler = new Handler(looper);
+    }
+
+    private void postFromBinder(Runnable runnable) {
+        postFromBinder(
+                () -> {
+                    runnable.run();
+                    return null;
+                });
+    }
+
+    private <T> T postFromBinder(Callable<T> callable) {
+        FutureTask<T> task = new FutureTask(callable);
+
+        mHandler.post(task);
+        try {
+            // Any method calling postFromBinder should most likely be done in under 1 seconds.
+            // But real life shows that the system server thread may sometimes be unwillingly busy.
+            // By putting a 10 seconds timeout we make sure this will generate an ANR (on purpose).
+            // ANR will be investigated and fixed
+            return task.get(10, TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException e) {
+            SneakyThrow.sneakyThrow(e);
+        } catch (ExecutionException e) {
+            SneakyThrow.sneakyThrow(e.getCause());
+        }
+        return null; // Unreachable due to SneakyThrow
     }
 
     @Override
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
-        requireNonNull(callback, "Callback cannot be null in registerAdapter");
+        requireNonNull(callback);
         return mService.registerAdapter(callback);
     }
 
     @Override
     public void unregisterAdapter(@NonNull IBluetoothManagerCallback callback) {
-        requireNonNull(callback, "Callback cannot be null in unregisterAdapter");
+        requireNonNull(callback);
         mService.unregisterAdapter(callback);
     }
 
@@ -86,7 +119,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public String getAddress(AttributionSource source) {
-        requireNonNull(source, "AttributionSource cannot be null in getAddress");
+        requireNonNull(source);
 
         if (!checkConnectPermissionForDataDelivery(
                 mContext, mPermissionManager, source, "getAddress")) {
@@ -110,7 +143,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public String getName(AttributionSource source) {
-        requireNonNull(source, "AttributionSource cannot be null in getName");
+        requireNonNull(source);
 
         if (!checkConnectPermissionForDataDelivery(
                 mContext, mPermissionManager, source, "getName")) {
@@ -138,7 +171,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public boolean enable(@NonNull AttributionSource source) {
-        requireNonNull(source, "AttributionSource cannot be null in enable");
+        requireNonNull(source);
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -154,14 +187,17 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        Log.d(TAG, "enable()");
-        return mService.enableFromBinder(source.getPackageName());
+        var reason = ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
+        var packageName = source.getPackageName();
+
+        Log.d(TAG, "enable(" + reason + ", " + packageName + ")");
+        return postFromBinder(() -> mService.enable(reason, packageName));
     }
 
     @Override
     public boolean enableBle(AttributionSource source, IBinder token) {
-        requireNonNull(source, "AttributionSource cannot be null in enableBle");
-        requireNonNull(token, "IBinder cannot be null in enableBle");
+        requireNonNull(source);
+        requireNonNull(token);
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -177,13 +213,15 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        Log.d(TAG, "enableBle(" + token + ")");
-        return mService.enableBleFromBinder(source.getPackageName(), token);
+        var packageName = source.getPackageName();
+
+        Log.d(TAG, "enableBle(" + packageName + ", " + token + ")");
+        return postFromBinder(() -> mService.enableBle(packageName, token));
     }
 
     @Override
     public boolean enableNoAutoConnect(AttributionSource source) {
-        requireNonNull(source, "AttributionSource cannot be null in enableNoAutoConnect");
+        requireNonNull(source);
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -203,13 +241,15 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             throw new SecurityException("No permission to enable Bluetooth quietly");
         }
 
-        Log.d(TAG, "enableNoAutoConnect()");
-        return mService.enableNoAutoConnectFromBinder(source.getPackageName());
+        var packageName = source.getPackageName();
+
+        Log.d(TAG, "enableNoAutoConnect(" + packageName + ")");
+        return postFromBinder(() -> mService.enableNoAutoConnect(packageName));
     }
 
     @Override
     public boolean disable(AttributionSource source, boolean persist) {
-        requireNonNull(source, "AttributionSource cannot be null in disable");
+        requireNonNull(source);
 
         if (!persist) {
             BtPermissionUtils.enforcePrivileged(mContext);
@@ -229,14 +269,16 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        Log.d(TAG, "disable(" + persist + ")");
-        return mService.disableFromBinder(source.getPackageName(), persist);
+        var packageName = source.getPackageName();
+
+        Log.d(TAG, "disable(" + packageName + ", " + persist + ")");
+        return postFromBinder(() -> mService.disable(packageName, persist));
     }
 
     @Override
     public boolean disableBle(AttributionSource source, IBinder token) {
-        requireNonNull(source, "AttributionSource cannot be null in disableBle");
-        requireNonNull(token, "IBinder cannot be null in disableBle");
+        requireNonNull(source);
+        requireNonNull(token);
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -252,8 +294,10 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        Log.d(TAG, "disableBle(" + token + ")");
-        return mService.disableBleFromBinder(source.getPackageName(), token);
+        var packageName = source.getPackageName();
+
+        Log.d(TAG, "disableBle(" + packageName + ", " + token + ")");
+        return postFromBinder(() -> mService.disableBle(packageName, token));
     }
 
     @Override
@@ -267,7 +311,8 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        return mService.factoryResetFromBinder();
+        Log.d(TAG, "factoryReset(0)");
+        return postFromBinder(() -> mService.factoryReset(0));
     }
 
     @Override
@@ -287,19 +332,22 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Override
     public boolean isAutoOnSupported() {
         BtPermissionUtils.enforcePrivileged(mContext);
-        return mService.isAutoOnSupported();
+        Log.d(TAG, "isAutoOnSupported()");
+        return postFromBinder(() -> mService.isAutoOnSupported());
     }
 
     @Override
     public boolean isAutoOnEnabled() {
         BtPermissionUtils.enforcePrivileged(mContext);
-        return mService.isAutoOnEnabled();
+        Log.d(TAG, "isAutoOnEnabled()");
+        return postFromBinder(() -> mService.isAutoOnEnabled());
     }
 
     @Override
     public void setAutoOnEnabled(boolean status) {
         BtPermissionUtils.enforcePrivileged(mContext);
-        mService.setAutoOnEnabled(status);
+        Log.d(TAG, "setAutoOnEnabled(" + status + ")");
+        postFromBinder(() -> mService.setAutoOnEnabled(status));
     }
 
     @Override

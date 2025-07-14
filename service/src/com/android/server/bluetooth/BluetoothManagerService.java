@@ -83,8 +83,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
 import com.android.server.bluetooth.satellite.SatelliteModeListener;
 
-import libcore.util.SneakyThrow;
-
 import kotlin.Unit;
 import kotlin.time.TimeSource;
 
@@ -98,11 +96,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
@@ -322,12 +317,6 @@ class BluetoothManagerService {
         }
     }
 
-    boolean factoryResetFromBinder() {
-        Log.d(TAG, "factoryResetFromBinder()");
-        return postAndWait(() -> factoryReset(0));
-    }
-
-    @VisibleForTesting
     boolean factoryReset(int count) {
         if (Flags.factoryResetClearAdditionalData()) {
             if (mAutoOn != null) {
@@ -612,7 +601,7 @@ class BluetoothManagerService {
                         mContext.getSystemService(UserManager.class),
                         "UserManager system service cannot be null");
 
-        mBinder = new BluetoothServiceBinder(this, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper, this, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
         mBleAppManager = new BleAppManager(mLooper, this::bleOnToOffIfNeeded);
 
@@ -865,12 +854,6 @@ class BluetoothManagerService {
         }
     }
 
-    boolean enableBleFromBinder(String packageName, IBinder token) {
-        Log.d(TAG, "enableBleFromBinder()");
-        return postAndWait(() -> enableBle(packageName, token));
-    }
-
-    @VisibleForTesting
     boolean enableBle(String packageName, IBinder token) {
         Log.i(
                 TAG,
@@ -917,12 +900,6 @@ class BluetoothManagerService {
         return true;
     }
 
-    boolean disableBleFromBinder(String packageName, IBinder token) {
-        Log.d(TAG, "disableBleFromBinder()");
-        return postAndWait(() -> disableBle(packageName, token));
-    }
-
-    @VisibleForTesting
     boolean disableBle(String packageName, IBinder token) {
         Log.i(
                 TAG,
@@ -1028,12 +1005,6 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    boolean enableNoAutoConnectFromBinder(String packageName) {
-        Log.d(TAG, "enableNoAutoConnectFromBinder()");
-        return postAndWait(() -> enableNoAutoConnect(packageName));
-    }
-
-    @VisibleForTesting
     boolean enableNoAutoConnect(String packageName) {
         if (isSatelliteModeOn()) {
             Log.d(TAG, "enableNoAutoConnect(" + packageName + "): Blocked by satellite mode");
@@ -1051,12 +1022,6 @@ class BluetoothManagerService {
         return true;
     }
 
-    boolean enableFromBinder(String packageName) {
-        Log.d(TAG, "enableFromBinder()");
-        return postAndWait(() -> enable(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName));
-    }
-
-    @VisibleForTesting
     boolean enable(int reason, String packageName) {
         Log.d(
                 TAG,
@@ -1082,12 +1047,6 @@ class BluetoothManagerService {
         return true;
     }
 
-    boolean disableFromBinder(String packageName, boolean persist) {
-        Log.d(TAG, "disableFromBinder()");
-        return postAndWait(() -> disable(packageName, persist));
-    }
-
-    @VisibleForTesting
     boolean disable(String packageName, boolean persist) {
         Log.d(
                 TAG,
@@ -2394,43 +2353,22 @@ class BluetoothManagerService {
         mAutoOn.resetAutoOnTimer();
     }
 
-    private <T> T postAndWait(Callable<T> callable) {
-        FutureTask<T> task = new FutureTask(callable);
-
-        mHandler.post(task);
-        try {
-            // Any method calling postAndWait should most likely be done in under 1 seconds.
-            // But real life shows that the system server thread may sometimes be unwillingly busy.
-            // By putting a 10 seconds timeout we make sure this will generate an ANR (on purpose),
-            // and investigation on what is happening in the system server thread and be fixed
-            return task.get(10, TimeUnit.SECONDS);
-        } catch (TimeoutException | InterruptedException e) {
-            SneakyThrow.sneakyThrow(e);
-        } catch (ExecutionException e) {
-            SneakyThrow.sneakyThrow(e.getCause());
-        }
-        return null;
-    }
-
     boolean isAutoOnSupported() {
-        Log.d(TAG, "isAutoOnSupported()");
-        return mAutoOn != null && postAndWait(() -> mAutoOn.isSupported());
+        return mAutoOn != null && mAutoOn.isSupported();
     }
 
     boolean isAutoOnEnabled() {
         if (mAutoOn == null) {
             throw new IllegalStateException("AutoOn is not supported in current config");
         }
-        Log.d(TAG, "isAutoOnEnabled()");
-        return postAndWait(() -> mAutoOn.isEnabled());
+        return mAutoOn.isEnabled();
     }
 
     void setAutoOnEnabled(boolean status) {
         if (mAutoOn == null) {
             throw new IllegalStateException("AutoOn is not supported in current config");
         }
-        Log.d(TAG, "setAutoOnEnabled(" + status + " )");
-        postAndWait(Executors.callable(() -> mAutoOn.setEnabled(status)));
+        mAutoOn.setEnabled(status);
     }
 
     /** Check if BLE is supported by this platform */
