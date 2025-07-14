@@ -43,8 +43,9 @@ private constructor(
     var hasScanWithoutLocationPermission: Boolean = false,
     var hasDisavowedLocation: Boolean = false,
     var associatedDevices: List<String> = emptyList(),
-    // TODO(b/429793161) Convert to Kotlin native optional
-    @JvmField internal var mStats: Optional<AppScanStats> = Optional.empty(),
+    @get:JvmName("getAppScanStats")
+    @set:JvmName("setAppScanStats")
+    internal var appScanStats: Optional<AppScanStats> = Optional.empty(),
 ) {
     @JvmOverloads
     constructor(
@@ -83,7 +84,7 @@ private constructor(
         sb.append("scannerId=").append(scannerId)
         sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(scanModeApp))
         sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(settings.scanMode))
-        mStats.getOrNull()?.let { stats ->
+        appScanStats.getOrNull()?.let { stats ->
             sb.append(", appScanStats.appName=").append(stats.mAppName)
         }
         return sb.append(")").toString()

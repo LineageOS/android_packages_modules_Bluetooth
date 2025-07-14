@@ -193,7 +193,7 @@ public class ScanControllerTest {
         scanClient.setHasNetworkSettingsPermission(true);
         AppScanStats appScanStats = mock(AppScanStats.class);
         mApp.mAppScanStats = appScanStats;
-        scanClient.mStats = Optional.of(appScanStats);
+        scanClient.setAppScanStats(Optional.of(appScanStats));
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);

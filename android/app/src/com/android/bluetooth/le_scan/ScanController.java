@@ -708,7 +708,7 @@ public class ScanController {
             return;
         }
         client.setAppDied(true);
-        client.mStats.ifPresent(stats -> stats.mIsAppDead = true);
+        client.getAppScanStats().ifPresent(stats -> stats.mIsAppDead = true);
         stopScan(client.getScannerId());
     }
 
@@ -1324,7 +1324,7 @@ public class ScanController {
             int scannerId, ScanSettings settings, List<ScanFilter> filters, ScanClient scanClient) {
         AppScanStats app = mScannerMap.getAppScanStatsById(scannerId);
         if (app != null) {
-            scanClient.mStats = Optional.of(app);
+            scanClient.setAppScanStats(Optional.of(app));
             doOnScanThread(
                     () -> {
                         mScanManager.fetchAppForegroundState(scanClient);
@@ -1442,7 +1442,7 @@ public class ScanController {
 
         AppScanStats scanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (scanStats != null) {
-            scanClient.mStats = Optional.of(scanStats);
+            scanClient.setAppScanStats(Optional.of(scanStats));
             doOnScanThread(
                     () -> {
                         mScanManager.fetchAppForegroundState(scanClient);
