@@ -237,6 +237,7 @@ class BluetoothManagerService {
 
                 @Override
                 public void onMediaProfileConnectionChange(boolean connected) {
+                    Log.d(TAG, "IBluetoothCallback.onMediaProfileConnectionChange: " + connected);
                     mHandler.post(
                             () -> {
                                 AirplaneModeListener.setIsMediaProfileConnected(connected);
@@ -245,20 +246,22 @@ class BluetoothManagerService {
 
                 @Override
                 public void onWatchConnectionChange(boolean connected) {
+                    Log.d(TAG, "IBluetoothCallback.onWatchConnectionChange: " + connected);
                     mHandler.post(() -> AirplaneModeListener.setWatchConnectionState(connected));
                 }
 
                 @Override
-                public void setAdapterServiceBinder(IBinder adapterServiceBinder) {
+                public void setAdapterServiceBinder(IBinder binder) {
+                    Log.d(TAG, "IBluetoothCallback.setAdapterServiceBinder: " + binder);
                     mHandler.post(
                             () -> {
                                 if (mAdapter == null) {
                                     return;
                                 }
-                                mAdapter.setAdapterServiceBinder(adapterServiceBinder);
+                                mAdapter.setAdapterServiceBinder(binder);
                                 broadcastToAdapters(
                                         "setAdapterServiceBinder",
-                                        (item) -> item.onBluetoothServiceUp(adapterServiceBinder));
+                                        (item) -> item.onBluetoothServiceUp(binder));
                             });
                 }
             };
@@ -317,6 +320,7 @@ class BluetoothManagerService {
     }
 
     boolean factoryResetFromBinder() {
+        Log.d(TAG, "factoryResetFromBinder()");
         return postAndWait(() -> factoryReset(0));
     }
 
@@ -440,6 +444,7 @@ class BluetoothManagerService {
 
     // Call is coming from the systemServer main thread and need to be post to avoid race
     void onSwitchUser(UserHandle userHandle) {
+        Log.d(TAG, "BluetoothService.onSwitchUser: " + userHandle);
         mHandler.post(
                 () ->
                         delayModeChangedIfNeeded(
@@ -852,6 +857,7 @@ class BluetoothManagerService {
     }
 
     boolean enableBleFromBinder(String packageName, IBinder token) {
+        Log.d(TAG, "enableBleFromBinder()");
         return postAndWait(() -> enableBle(packageName, token));
     }
 
@@ -903,6 +909,7 @@ class BluetoothManagerService {
     }
 
     boolean disableBleFromBinder(String packageName, IBinder token) {
+        Log.d(TAG, "disableBleFromBinder()");
         return postAndWait(() -> disableBle(packageName, token));
     }
 
@@ -1013,6 +1020,7 @@ class BluetoothManagerService {
     }
 
     boolean enableNoAutoConnectFromBinder(String packageName) {
+        Log.d(TAG, "enableNoAutoConnectFromBinder()");
         return postAndWait(() -> enableNoAutoConnect(packageName));
     }
 
@@ -1035,6 +1043,7 @@ class BluetoothManagerService {
     }
 
     boolean enableFromBinder(String packageName) {
+        Log.d(TAG, "enableFromBinder()");
         return postAndWait(() -> enable(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName));
     }
 
@@ -1066,6 +1075,7 @@ class BluetoothManagerService {
     }
 
     boolean disableFromBinder(String packageName, boolean persist) {
+        Log.d(TAG, "disableFromBinder()");
         return postAndWait(() -> disable(packageName, persist));
     }
 
@@ -1161,6 +1171,7 @@ class BluetoothManagerService {
      * PHASE_SYSTEM_SERVICES_READY.
      */
     void handleOnBootPhase(UserHandle userHandle) {
+        Log.d(TAG, "BluetoothService.handleOnBootPhase: " + userHandle);
         mHandler.post(() -> internalHandleOnBootPhase(userHandle));
     }
 
@@ -2391,6 +2402,7 @@ class BluetoothManagerService {
     }
 
     boolean isAutoOnSupported() {
+        Log.d(TAG, "isAutoOnSupported()");
         return mAutoOn != null && postAndWait(() -> mAutoOn.isSupported());
     }
 
@@ -2398,6 +2410,7 @@ class BluetoothManagerService {
         if (mAutoOn == null) {
             throw new IllegalStateException("AutoOn is not supported in current config");
         }
+        Log.d(TAG, "isAutoOnEnabled()");
         return postAndWait(() -> mAutoOn.isEnabled());
     }
 
@@ -2405,6 +2418,7 @@ class BluetoothManagerService {
         if (mAutoOn == null) {
             throw new IllegalStateException("AutoOn is not supported in current config");
         }
+        Log.d(TAG, "setAutoOnEnabled(" + status + " )");
         postAndWait(Executors.callable(() -> mAutoOn.setEnabled(status)));
     }
 
