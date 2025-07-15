@@ -49,7 +49,6 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.IBinder;
 import android.os.Process;
-import android.os.UserHandle;
 import android.os.UserManager;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -296,25 +295,6 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    public void onFactoryReset() {
-        assertThrows(NullPointerException.class, () -> mBinder.onFactoryReset(null));
-
-        assertThrows(SecurityException.class, () -> mBinder.onFactoryReset(mSource));
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED);
-
-        assertThrows(SecurityException.class, () -> mBinder.onFactoryReset(mSource));
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED, BLUETOOTH_CONNECT);
-
-        assertThat(mBinder.onFactoryReset(mSource)).isFalse();
-        verify(mManagerService).onFactoryResetFromBinder();
-        verifyMock();
-    }
-
-    @Test
     public void isBleScanAvailable() {
         // No permission needed for this call
         mBinder.isBleScanAvailable();
@@ -461,9 +441,8 @@ public class BluetoothServiceBinderTest {
             InstrumentationRegistry.getInstrumentation()
                     .getUiAutomation()
                     .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
-            UserRestriction.handleRestrictionChange(
+            BluetoothRestriction.handleRestrictionChange(
                     mContext,
-                    UserHandle.SYSTEM,
                     () -> {
                         return Unit.INSTANCE;
                     });

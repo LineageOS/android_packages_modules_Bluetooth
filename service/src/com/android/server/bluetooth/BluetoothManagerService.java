@@ -43,6 +43,7 @@ import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGRO
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.BroadcastOptions;
 import android.bluetooth.IAdapter;
@@ -162,6 +163,7 @@ class BluetoothManagerService {
 
     private final BleAppManager mBleAppManager;
     private final ActiveLogs mActiveLogs;
+    private final BluetoothComponent mBluetoothComponent;
 
     private final BluetoothAdapterState mState = new BluetoothAdapterState();
     private final List<Long> mCrashTimestamps = new ArrayList<>();
@@ -177,12 +179,13 @@ class BluetoothManagerService {
     private final boolean mIsHearingAidProfileSupported;
     private final String mHciInstanceName;
     private AutoOn mAutoOn;
+    private SharingRestriction mSharingRestriction;
 
     private String mAddress;
     private String mName;
     private AdapterBinder mAdapter;
-    private Context mCurrentUserContext;
-    private UserHandle mCurrentUser;
+    private Context mUserContext;
+    private UserHandle mUser;
     private UserHandle mNextUser; // Non null if a user switch is in progress
 
     // used inside handler thread
@@ -237,6 +240,7 @@ class BluetoothManagerService {
 
                 @Override
                 public void onMediaProfileConnectionChange(boolean connected) {
+                    Log.d(TAG, "IBluetoothCallback.onMediaProfileConnectionChange: " + connected);
                     mHandler.post(
                             () -> {
                                 AirplaneModeListener.setIsMediaProfileConnected(connected);
@@ -245,20 +249,22 @@ class BluetoothManagerService {
 
                 @Override
                 public void onWatchConnectionChange(boolean connected) {
+                    Log.d(TAG, "IBluetoothCallback.onWatchConnectionChange: " + connected);
                     mHandler.post(() -> AirplaneModeListener.setWatchConnectionState(connected));
                 }
 
                 @Override
-                public void setAdapterServiceBinder(IBinder adapterServiceBinder) {
+                public void setAdapterServiceBinder(IBinder binder) {
+                    Log.d(TAG, "IBluetoothCallback.setAdapterServiceBinder: " + binder);
                     mHandler.post(
                             () -> {
                                 if (mAdapter == null) {
                                     return;
                                 }
-                                mAdapter.setAdapterServiceBinder(adapterServiceBinder);
+                                mAdapter.setAdapterServiceBinder(binder);
                                 broadcastToAdapters(
                                         "setAdapterServiceBinder",
-                                        (item) -> item.onBluetoothServiceUp(adapterServiceBinder));
+                                        (item) -> item.onBluetoothServiceUp(binder));
                             });
                 }
             };
@@ -317,6 +323,7 @@ class BluetoothManagerService {
     }
 
     boolean factoryResetFromBinder() {
+        Log.d(TAG, "factoryResetFromBinder()");
         return postAndWait(() -> factoryReset(0));
     }
 
@@ -326,7 +333,7 @@ class BluetoothManagerService {
             if (mAutoOn != null) {
                 mAutoOn.factoryReset();
             }
-            AirplaneModeListener.factoryReset(mContentResolver, mCurrentUserContext);
+            AirplaneModeListener.factoryReset(mContentResolver, mUserContext);
             setBtHciSnoopLogMode(-1);
         }
         if (count == 10 || mState.oneOf(State.OFF)) {
@@ -352,36 +359,6 @@ class BluetoothManagerService {
             onToBleOn();
         }
         return true;
-    }
-
-    boolean onFactoryResetFromBinder() {
-        // Wait for stable state if bluetooth is temporary state.
-        int state = getState();
-        if (state == State.BLE_TURNING_ON
-                || state == State.TURNING_ON
-                || state == State.TURNING_OFF) {
-            if (!waitForState(State.BLE_ON, State.ON)) {
-                return false;
-            }
-        }
-        return postAndWait(() -> onFactoryReset());
-    }
-
-    @VisibleForTesting
-    boolean onFactoryReset() {
-        // Clear registered LE apps to force shut-off Bluetooth
-        mBleAppManager.clearBleApps();
-        int state = getState();
-        if (state == State.BLE_ON) {
-            mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
-            bleOnToOff();
-            return true;
-        } else if (state == State.ON) {
-            mActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
-            onToBleOn();
-            return true;
-        }
-        return false;
     }
 
     private int estimateBusyTime(int state) {
@@ -440,10 +417,17 @@ class BluetoothManagerService {
     Unit sendToggleNotification(String notificationReason) {
         Intent intent =
                 new Intent("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION");
-        intent.setComponent(resolveSystemService(intent));
+        if (Flags.userRestrictionRefactor()) {
+            intent.setComponent(
+                    new ComponentName(
+                            mBluetoothComponent.getPackageName(),
+                            "com.android.bluetooth.notification.NotificationHelperService"));
+        } else {
+            intent.setComponent(resolveSystemService(intent));
+        }
         intent.putExtra(
                 "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
-        mCurrentUserContext.startService(intent);
+        mUserContext.startService(intent);
         return Unit.INSTANCE;
     }
 
@@ -470,6 +454,7 @@ class BluetoothManagerService {
 
     // Call is coming from the systemServer main thread and need to be post to avoid race
     void onSwitchUser(UserHandle userHandle) {
+        Log.d(TAG, "BluetoothService.onSwitchUser: " + userHandle);
         mHandler.post(
                 () ->
                         delayModeChangedIfNeeded(
@@ -483,7 +468,7 @@ class BluetoothManagerService {
         mBleAppManager.clearBleApps();
 
         if (reason == ENABLE_DISABLE_REASON_SATELLITE_MODE
-                || !AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+                || !AirplaneModeListener.hasUserToggledApm(mUserContext)) {
             // AirplaneMode can have a state where it does not impact AutoOn
             if (mAutoOn != null) {
                 mAutoOn.pause();
@@ -611,11 +596,15 @@ class BluetoothManagerService {
             };
 
     BluetoothManagerService(
-            @NonNull Context context, @NonNull Looper looper, @NonNull String hciInstanceName) {
+            @NonNull Context context,
+            @NonNull Looper looper,
+            @NonNull String hciInstanceName,
+            @Nullable BluetoothComponent bluetoothComponent) {
         mContext = requireNonNull(context, "Context cannot be null");
         mContentResolver = requireNonNull(mContext.getContentResolver(), "Resolver cannot be null");
         mLooper = requireNonNull(looper, "Looper cannot be null");
         mHciInstanceName = requireNonNull(hciInstanceName, "Hci instance name cannot be null");
+        mBluetoothComponent = bluetoothComponent;
         mActiveLogs = new ActiveLogs();
 
         mUserManager =
@@ -629,10 +618,6 @@ class BluetoothManagerService {
 
         // Observe BLE scan only mode settings change.
         BleScanSettingListener.initialize(mLooper, mContentResolver, this::onBleScanDisabled);
-
-        if (Flags.userRestrictionRefactor()) {
-            UserRestriction.initialize(mContext, mLooper, this::onBluetoothDisallowed);
-        }
 
         // Disable ASHA if BLE is not supported, overriding any system property
         if (!isBleSupported(mContext)) {
@@ -721,7 +706,6 @@ class BluetoothManagerService {
         Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
     }
 
-    @VisibleForTesting
     Unit onBluetoothDisallowed() {
         if (mState.oneOf(State.OFF)) {
             return Unit.INSTANCE;
@@ -859,8 +843,8 @@ class BluetoothManagerService {
         return mIsHearingAidProfileSupported;
     }
 
-    Context getCurrentUserContext() {
-        return mCurrentUserContext;
+    Context getUserContext() {
+        return mUserContext;
     }
 
     boolean isMediaProfileConnected() {
@@ -882,6 +866,7 @@ class BluetoothManagerService {
     }
 
     boolean enableBleFromBinder(String packageName, IBinder token) {
+        Log.d(TAG, "enableBleFromBinder()");
         return postAndWait(() -> enableBle(packageName, token));
     }
 
@@ -933,6 +918,7 @@ class BluetoothManagerService {
     }
 
     boolean disableBleFromBinder(String packageName, IBinder token) {
+        Log.d(TAG, "disableBleFromBinder()");
         return postAndWait(() -> disableBle(packageName, token));
     }
 
@@ -1043,6 +1029,7 @@ class BluetoothManagerService {
     }
 
     boolean enableNoAutoConnectFromBinder(String packageName) {
+        Log.d(TAG, "enableNoAutoConnectFromBinder()");
         return postAndWait(() -> enableNoAutoConnect(packageName));
     }
 
@@ -1065,6 +1052,7 @@ class BluetoothManagerService {
     }
 
     boolean enableFromBinder(String packageName) {
+        Log.d(TAG, "enableFromBinder()");
         return postAndWait(() -> enable(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName));
     }
 
@@ -1089,13 +1077,13 @@ class BluetoothManagerService {
 
         mQuietEnableExternal = false;
         mEnableExternal = true;
-        AirplaneModeListener.notifyUserToggledBluetooth(
-                mContentResolver, mCurrentUserContext, true);
+        AirplaneModeListener.notifyUserToggledBluetooth(mContentResolver, mUserContext, true);
         sendEnableMsg(false, reason, packageName);
         return true;
     }
 
     boolean disableFromBinder(String packageName, boolean persist) {
+        Log.d(TAG, "disableFromBinder()");
         return postAndWait(() -> disable(packageName, persist));
     }
 
@@ -1108,8 +1096,7 @@ class BluetoothManagerService {
                         + (" isBinding=" + isBinding())
                         + (" mState=" + mState));
 
-        AirplaneModeListener.notifyUserToggledBluetooth(
-                mContentResolver, mCurrentUserContext, false);
+        AirplaneModeListener.notifyUserToggledBluetooth(mContentResolver, mUserContext, false);
 
         if (persist) {
             setBluetoothPersistedState(BLUETOOTH_OFF);
@@ -1191,25 +1178,17 @@ class BluetoothManagerService {
      * PHASE_SYSTEM_SERVICES_READY.
      */
     void handleOnBootPhase(UserHandle userHandle) {
+        Log.d(TAG, "BluetoothService.handleOnBootPhase: " + userHandle);
         mHandler.post(() -> internalHandleOnBootPhase(userHandle));
     }
 
     @VisibleForTesting
     void internalHandleOnBootPhase(UserHandle userHandle) {
-        mCurrentUser = userHandle;
-        mCurrentUserContext =
-                requireNonNull(
-                        mContext.createContextAsUser(userHandle, 0),
-                        "Current User Context cannot be null");
+        mUser = userHandle;
+        mUserContext = mContext.createContextAsUser(userHandle, 0);
 
         if (mConfigAllowAutoOn) {
-            mAutoOn =
-                    new AutoOn(
-                            mLooper,
-                            mCurrentUserContext,
-                            mCurrentUser,
-                            mState,
-                            this::enableFromAutoOn);
+            mAutoOn = new AutoOn(mLooper, mUserContext, mUser, mState, this::enableFromAutoOn);
         }
 
         AirplaneModeListener.initialize(
@@ -1219,13 +1198,14 @@ class BluetoothManagerService {
                 this::onAirplaneModeChanged,
                 this::sendToggleNotification,
                 this::isMediaProfileConnected,
-                this::getCurrentUserContext,
+                this::getUserContext,
                 TimeSource.Monotonic.INSTANCE);
 
         SatelliteModeListener.initialize(mLooper, mContentResolver, this::onSatelliteModeChanged);
 
         if (Flags.userRestrictionRefactor()) {
-            UserRestriction.initializeUser(mCurrentUserContext);
+            mSharingRestriction =
+                    new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
         }
 
         if (isBluetoothDisallowed()) {
@@ -1241,7 +1221,7 @@ class BluetoothManagerService {
             autoOnSetupTimer();
             return;
         }
-        Log.i(TAG, "internalHandleOnBootPhase: Auto-enabling Bluetooth for " + mCurrentUser);
+        Log.i(TAG, "internalHandleOnBootPhase: Auto-enabling Bluetooth for " + mUser);
         sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_SYSTEM_BOOT);
     }
 
@@ -1676,7 +1656,7 @@ class BluetoothManagerService {
     }
 
     private void handleSwitchMessage(UserHandle userTo, int attempt) {
-        if (Flags.cleanupStartingUser() && mCurrentUser.equals(userTo)) {
+        if (Flags.cleanupStartingUser() && mUser.equals(userTo)) {
             Log.d(TAG, "Skip redundant switch on user=" + userTo);
             return;
         }
@@ -1684,7 +1664,11 @@ class BluetoothManagerService {
         if (mAutoOn != null) {
             mAutoOn.pause();
             mAutoOn = null;
-            Log.d(TAG, "Stopping AutoOn for" + mCurrentUser);
+            Log.d(TAG, "Stopping AutoOn for" + mUser);
+        }
+
+        if (Flags.userRestrictionRefactor()) {
+            mSharingRestriction.stop();
         }
 
         if (Flags.userSwitchDuringBleOn()) {
@@ -1696,8 +1680,8 @@ class BluetoothManagerService {
             return;
         }
 
-        mCurrentUser = userTo;
-        mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
+        mUser = userTo;
+        mUserContext = mContext.createContextAsUser(userTo, 0);
 
         /* disable and enable BT when detect a user switch */
         if (mState.oneOf(State.ON)) {
@@ -1737,17 +1721,15 @@ class BluetoothManagerService {
     }
 
     private void executeUserSwitch(UserHandle userTo) {
-        mCurrentUser = userTo;
-        mCurrentUserContext = mContext.createContextAsUser(mCurrentUser, 0);
+        mUser = userTo;
+        mUserContext = mContext.createContextAsUser(mUser, 0);
 
         if (mConfigAllowAutoOn) {
-            mAutoOn =
-                    new AutoOn(
-                            mLooper,
-                            mCurrentUserContext,
-                            mCurrentUser,
-                            mState,
-                            this::enableFromAutoOn);
+            mAutoOn = new AutoOn(mLooper, mUserContext, mUser, mState, this::enableFromAutoOn);
+        }
+        if (Flags.userRestrictionRefactor()) {
+            mSharingRestriction =
+                    new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
         }
 
         if (isBluetoothDisallowed()) {
@@ -1763,7 +1745,7 @@ class BluetoothManagerService {
             autoOnSetupTimer();
             return;
         }
-        Log.i(TAG, "executeUserSwitch: Auto-enabling Bluetooth for " + mCurrentUser);
+        Log.i(TAG, "executeUserSwitch: Auto-enabling Bluetooth for " + mUser);
         mEnableExternal = true;
         sendEnableMsg(false, ENABLE_DISABLE_REASON_USER_SWITCH);
     }
@@ -1789,8 +1771,7 @@ class BluetoothManagerService {
         if (Flags.userSwitchDuringBleOn()) {
             bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
         }
-        RolePermissionListener.registerForUser(
-                mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
+        RolePermissionListener.registerForUser(mLooper, mUserContext, mUser, this::onRoleGranted);
     }
 
     private Unit onRoleGranted() {
@@ -1814,7 +1795,11 @@ class BluetoothManagerService {
         UserHandle user = UserHandle.CURRENT;
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
+        if (Flags.userRestrictionRefactor()) {
+            intent.setComponent(mBluetoothComponent.getComponentName());
+        } else {
+            intent.setComponent(resolveSystemService(intent));
+        }
 
         mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
@@ -1830,13 +1815,17 @@ class BluetoothManagerService {
     }
 
     private void bindToAdapterForCurrentUser() {
-        requireNonNull(mCurrentUser, "There is no user to start for.");
+        requireNonNull(mUser, "There is no user to start for.");
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
+        if (Flags.userRestrictionRefactor()) {
+            intent.setComponent(mBluetoothComponent.getComponentName());
+        } else {
+            intent.setComponent(resolveSystemService(intent));
+        }
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
-        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
+        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mUser)) {
             Log.e(TAG, "Fail to bind to intent=" + intent);
             mContext.unbindService(mConnection);
             if (Flags.userSwitchDuringBleOn()) {
@@ -2131,7 +2120,7 @@ class BluetoothManagerService {
 
     private boolean isBluetoothDisallowed() {
         if (Flags.userRestrictionRefactor()) {
-            return !UserRestriction.isBluetoothAllowed();
+            return !BluetoothRestriction.isBluetoothAllowed();
         }
         final long callingIdentity = Binder.clearCallingIdentity();
         try {
@@ -2341,6 +2330,9 @@ class BluetoothManagerService {
     }
 
     private ComponentName resolveSystemService(@NonNull Intent intent) {
+        if (Flags.userRestrictionRefactor()) {
+            throw new IllegalStateException("userRestrictionRefactor is enabled");
+        }
         List<ComponentName> results =
                 mContext.getPackageManager().queryIntentServices(intent, 0).stream()
                         .filter(
@@ -2421,6 +2413,7 @@ class BluetoothManagerService {
     }
 
     boolean isAutoOnSupported() {
+        Log.d(TAG, "isAutoOnSupported()");
         return mAutoOn != null && postAndWait(() -> mAutoOn.isSupported());
     }
 
@@ -2428,6 +2421,7 @@ class BluetoothManagerService {
         if (mAutoOn == null) {
             throw new IllegalStateException("AutoOn is not supported in current config");
         }
+        Log.d(TAG, "isAutoOnEnabled()");
         return postAndWait(() -> mAutoOn.isEnabled());
     }
 
@@ -2435,6 +2429,7 @@ class BluetoothManagerService {
         if (mAutoOn == null) {
             throw new IllegalStateException("AutoOn is not supported in current config");
         }
+        Log.d(TAG, "setAutoOnEnabled(" + status + " )");
         postAndWait(Executors.callable(() -> mAutoOn.setEnabled(status)));
     }
 
