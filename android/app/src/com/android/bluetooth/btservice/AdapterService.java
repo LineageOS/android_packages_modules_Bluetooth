@@ -4197,16 +4197,6 @@ public class AdapterService extends Service {
         };
     }
 
-    static int convertScanModeFromHal(int mode) {
-        return switch (mode) {
-            case AbstractionLayer.BT_SCAN_MODE_NONE -> SCAN_MODE_NONE;
-            case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE -> SCAN_MODE_CONNECTABLE;
-            case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE ->
-                    SCAN_MODE_CONNECTABLE_DISCOVERABLE;
-            default -> -1;
-        };
-    }
-
     // This function is called from JNI. It allows native code to acquire a single wake lock.
     // If the wake lock is already held, this function returns success. Although this function
     // only supports acquiring a single wake lock at a time right now, it will eventually be
