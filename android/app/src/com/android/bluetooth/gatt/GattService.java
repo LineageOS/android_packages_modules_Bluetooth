@@ -273,7 +273,7 @@ public class GattService extends ProfileService {
                             "bluetooth.ble.client.subrate_mode_low_min_subrate.config",
                             SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT),
                     SystemProperties.getInt(
-                            "bluetooth.ble.client.subrate_mode_low_min_subrate.config",
+                            "bluetooth.ble.client.subrate_mode_low_max_subrate.config",
                             SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT),
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_low_latency.config",
@@ -288,7 +288,7 @@ public class GattService extends ProfileService {
                             "bluetooth.ble.client.subrate_mode_balanced_min_subrate.config",
                             SUBRATE_BALANCED_MODE_SUBRATE_MIN_DEFAULT),
                     SystemProperties.getInt(
-                            "bluetooth.ble.client.subrate_mode_balanced_min_subrate.config",
+                            "bluetooth.ble.client.subrate_mode_balanced_max_subrate.config",
                             SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT),
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_balanced_latency.config",
@@ -303,7 +303,7 @@ public class GattService extends ProfileService {
                             "bluetooth.ble.client.subrate_mode_high_min_subrate.config",
                             SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT),
                     SystemProperties.getInt(
-                            "bluetooth.ble.client.subrate_mode_high_min_subrate.config",
+                            "bluetooth.ble.client.subrate_mode_high_max_subrate.config",
                             SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT),
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_high_latency.config",
