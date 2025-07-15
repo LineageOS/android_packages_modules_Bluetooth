@@ -3204,6 +3204,10 @@ public class BassClientService extends ConnectableProfile {
         }
 
         for (BluetoothDevice device : devices) {
+            if (!isLocalBroadcast(sourceMetadata)) {
+                checkAndSetGroupAllowedContextMask(device);
+            }
+
             BluetoothDevice sourceDevice = sourceMetadata.getSourceDevice();
             if (!isLocalBroadcast(sourceMetadata)
                     && (!getActiveSyncedSources()
@@ -3342,10 +3346,6 @@ public class BassClientService extends ConnectableProfile {
             if (isGroupOp) {
                 enqueueSourceGroupOp(
                         device, BassClientStateMachine.ADD_BCAST_SOURCE, sourceMetadata);
-            }
-
-            if (!isLocalBroadcast(sourceMetadata)) {
-                checkAndSetGroupAllowedContextMask(device);
             }
 
             sEventLogger.logi(
