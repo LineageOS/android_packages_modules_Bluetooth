@@ -90,6 +90,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,6 +101,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Class that handles Bluetooth LE scan related operations. */
 class ScanManager {
@@ -360,6 +362,12 @@ class ScanManager {
                                 e);
                     }
                 });
+    }
+
+    Map<Integer, ScanSettings> getSettingsMap() {
+        return Stream.of(mRegularScanClients, mBatchClients, mSuspendedScanClients)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toMap(ScanClient::getScannerId, ScanClient::getSettings));
     }
 
     @VisibleForTesting
