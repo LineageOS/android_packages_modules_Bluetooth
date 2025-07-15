@@ -109,7 +109,6 @@ class ScannerMap {
                             appName,
                             workSource,
                             appUid,
-                            this,
                             adapterService,
                             scanController,
                             getSystemClock());
@@ -240,7 +239,8 @@ class ScannerMap {
         sb.append("\nLE Scanner Map:\n");
         sb.append("  Entries: ").append(mAppScanStatsMap.size()).append("\n\n");
         for (AppScanStats appScanStats : mAppScanStatsMap.values()) {
-            appScanStats.dump(sb);
+            var scannerApps = getByName(appScanStats.mAppName);
+            appScanStats.dump(sb, scannerApps);
         }
     }
 
