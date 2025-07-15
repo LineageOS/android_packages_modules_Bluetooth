@@ -248,7 +248,7 @@ class BtPermissionUtils {
 
     private static boolean isBluetoothDisallowed(UserManager userManager) {
         if (Flags.userRestrictionRefactor()) {
-            return !UserRestriction.isBluetoothAllowed();
+            return !BluetoothRestriction.isBluetoothAllowed();
         }
         final long callingIdentity = Binder.clearCallingIdentity();
         try {
