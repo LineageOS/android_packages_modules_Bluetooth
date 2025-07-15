@@ -573,7 +573,17 @@ public:
    */
   void UpdateCodecConfig(const RawAddress& peer_address,
                          const std::vector<btav_a2dp_codec_config_t>& codec_preferences,
-                         std::promise<void> peer_ready_promise) {
+                         std::promise<void> peer_ready_promise, bool is_metadata_update) {
+    if (is_metadata_update) {
+      for (const auto& codec_preference : codec_preferences) {
+        if (!bluetooth::audio::a2dp::provider::supports_codec(codec_preference.codec_type)) {
+          log::info("Skipping metadata update for a codec without offload extensibility");
+          peer_ready_promise.set_value();
+          return;
+        }
+      }
+    }
+
     // Restart the session if the codec for the active peer is updated
     if (!peer_address.IsEmpty() && active_peer_ == peer_address) {
       btif_a2dp_source_end_session(active_peer_);
@@ -2532,7 +2542,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
       const std::vector<btav_a2dp_codec_config_t> codec_preferences = {codec_config};
       std::promise<void> peer_ready_promise;
       btif_av_source.UpdateCodecConfig(peer_.PeerAddress(), codec_preferences,
-                                       std::move(peer_ready_promise));
+                                       std::move(peer_ready_promise), true);
     } break;
 
     case BTIF_AV_RECONFIGURE_REQ_EVT: {
@@ -2556,7 +2566,8 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
           if (req_data) {
             btif_av_source.UpdateCodecConfig(peer_.PeerAddress(),
                                              req_data.value().codec_preferences,
-                                             std::move(req_data.value().reconf_ready_promise));
+                                             std::move(req_data.value().reconf_ready_promise),
+                                             false);
           }
         }
       }
@@ -2805,7 +2816,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event, void* p_data
         const std::vector<btav_a2dp_codec_config_t> codec_preferences = {codec_config};
         std::promise<void> peer_ready_promise;
         btif_av_source.UpdateCodecConfig(peer_.PeerAddress(), codec_preferences,
-                                         std::move(peer_ready_promise));
+                                         std::move(peer_ready_promise), true);
       }
     } break;
 
@@ -2819,7 +2830,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event, void* p_data
         auto req_data = peer_.GetReconfigureStreamData();
         if (req_data) {
           btif_av_source.UpdateCodecConfig(peer_.PeerAddress(), req_data.value().codec_preferences,
-                                           std::move(req_data.value().reconf_ready_promise));
+                                           std::move(req_data.value().reconf_ready_promise), false);
         }
       }
     } break;
