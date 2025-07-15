@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Test cases for {@link AppScanStats}. */
@@ -51,7 +52,6 @@ public class AppScanStatsTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BatteryStatsManager mBatteryStatsManager;
     @Mock private ScanController mMockScanController;
-    @Mock private ScannerMap map;
 
     private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
@@ -69,15 +69,8 @@ public class AppScanStatsTest {
         final int uid = 1234;
         AppScanStats appScanStats =
                 new AppScanStats(
-                        name,
-                        source,
-                        uid,
-                        map,
-                        mAdapterService,
-                        mMockScanController,
-                        mTimeProvider);
+                        name, source, uid, mAdapterService, mMockScanController, mTimeProvider);
 
-        assertThat(appScanStats.mScannerMap).isEqualTo(map);
         assertThat(appScanStats.mScanController).isEqualTo(mMockScanController);
         assertThat(appScanStats.isScanning()).isFalse();
     }
@@ -90,13 +83,7 @@ public class AppScanStatsTest {
         final int uid = 1234;
         AppScanStats appScanStats =
                 new AppScanStats(
-                        name,
-                        source,
-                        uid,
-                        map,
-                        mAdapterService,
-                        mMockScanController,
-                        mTimeProvider);
+                        name, source, uid, mAdapterService, mMockScanController, mTimeProvider);
 
         ScanSettings settings = new ScanSettings.Builder().build();
         List<ScanFilter> filters = new ArrayList<>();
@@ -110,6 +97,6 @@ public class AppScanStatsTest {
         appScanStats.mIsRegistered = true;
 
         StringBuilder stringBuilder = new StringBuilder();
-        appScanStats.dump(stringBuilder);
+        appScanStats.dump(stringBuilder, Collections.emptyList());
     }
 }

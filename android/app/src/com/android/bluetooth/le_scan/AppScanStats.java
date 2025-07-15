@@ -119,7 +119,6 @@ class AppScanStats {
     private final List<LastScan> mLastScans = new ArrayList<>();
     private final Map<Integer, LastScan> mOngoingScans = new HashMap<>();
     private final WorkSource mWorkSource; // Used for BatteryStatsManager
-    @VisibleForTesting final ScannerMap mScannerMap; // Used to grab Apps
     private final AdapterService mAdapterService;
     // Used to keep track of scans and result stats
     private final BatteryStatsManager mBatteryStatsManager;
@@ -154,7 +153,6 @@ class AppScanStats {
             String name,
             WorkSource source,
             int uid,
-            ScannerMap map,
             AdapterService adapterService,
             ScanController scanController,
             TimeProvider timeProvider) {
@@ -162,7 +160,6 @@ class AppScanStats {
         // Bill the caller uid if the work source isn't passed through
         mWorkSource = requireNonNullElseGet(source, () -> new WorkSource(uid, mAppName));
         mWorkSourceUtil = new WorkSourceUtil(mWorkSource);
-        mScannerMap = map;
         mAdapterService = requireNonNull(adapterService);
         mBatteryStatsManager = adapterService.getSystemService(BatteryStatsManager.class);
         mScanController = scanController;
@@ -674,7 +671,7 @@ class AppScanStats {
         };
     }
 
-    synchronized void dump(StringBuilder sb) {
+    synchronized void dump(StringBuilder sb, List<ScannerMap.ScannerApp> scannerApps) {
         final long currentTime = System.currentTimeMillis();
         final long currTime = mTimeProvider.elapsedRealtime();
         final int oppScan = mOppScan;
@@ -730,12 +727,11 @@ class AppScanStats {
         else sb.append(":");
 
         if (mIsRegistered) {
-            List<ScannerMap.ScannerApp> appEntries = mScannerMap.getByName(mAppName);
-            for (ScannerMap.ScannerApp appEntry : appEntries) {
-                sb.append("\n    Application ID: ").append(appEntry.mId);
-                sb.append(", UUID: ").append(appEntry.mUuid);
-                if (appEntry.mAttributionTag != null) {
-                    sb.append(", Tag: ").append(appEntry.mAttributionTag);
+            for (ScannerMap.ScannerApp scannerApp : scannerApps) {
+                sb.append("\n    Application ID: ").append(scannerApp.mId);
+                sb.append(", UUID: ").append(scannerApp.mUuid);
+                if (scannerApp.mAttributionTag != null) {
+                    sb.append(", Tag: ").append(scannerApp.mAttributionTag);
                 }
             }
         }

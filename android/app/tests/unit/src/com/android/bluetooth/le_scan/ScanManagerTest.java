@@ -256,7 +256,6 @@ public class ScanManagerTest {
                                 TEST_APP_NAME,
                                 null,
                                 appUid,
-                                null,
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
@@ -1328,7 +1327,6 @@ public class ScanManagerTest {
                                     APP_NAME,
                                     source,
                                     appUid,
-                                    null,
                                     mAdapterService,
                                     mScanController,
                                     mTimeProvider));
@@ -1406,7 +1404,6 @@ public class ScanManagerTest {
                                 APP_NAME_1,
                                 source1,
                                 appUid1,
-                                null,
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
@@ -1432,7 +1429,6 @@ public class ScanManagerTest {
                                 APP_NAME_2,
                                 source2,
                                 appUid2,
-                                null,
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
@@ -1474,7 +1470,6 @@ public class ScanManagerTest {
                                 APP_NAME_3,
                                 source3,
                                 appUid3,
-                                null,
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
@@ -1517,7 +1512,6 @@ public class ScanManagerTest {
                                 APP_NAME_4,
                                 source4,
                                 appUid4,
-                                null,
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
