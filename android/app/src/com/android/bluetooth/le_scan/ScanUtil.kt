@@ -88,6 +88,29 @@ object ScanUtil {
         }
 
     @JvmStatic
+    fun scanModeToString(scanMode: Int) =
+        when (scanMode) {
+            ScanSettings.SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
+            ScanSettings.SCAN_MODE_LOW_POWER -> "LOW_POWER"
+            ScanSettings.SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
+            ScanSettings.SCAN_MODE_BALANCED -> "BALANCED"
+            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
+            else -> "UNKNOWN($scanMode)"
+        }
+
+    @JvmStatic
+    fun callbackTypeToString(callbackType: Int) =
+        when (callbackType) {
+            ScanSettings.CALLBACK_TYPE_ALL_MATCHES -> "ALL_MATCHES"
+            ScanSettings.CALLBACK_TYPE_FIRST_MATCH -> "FIRST_MATCH"
+            ScanSettings.CALLBACK_TYPE_MATCH_LOST -> "LOST"
+            ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH"
+            ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
+                "[FIRST_MATCH | LOST]"
+            else -> "UNKNOWN($callbackType)"
+        }
+
+    @JvmStatic
     fun requiresScreenOn(client: ScanClient) =
         !isOpportunisticScanClient(client) && !isFilteredScan(client)
 
