@@ -893,7 +893,7 @@ class BluetoothManagerService {
                 State.TURNING_ON,
                 State.TURNING_OFF,
                 State.BLE_TURNING_ON)) {
-            Log.i(TAG, "enableBle: Bluetooth is already in state" + mState);
+            Log.i(TAG, "enableBle: Bluetooth is already in state " + mState);
             return true;
         }
         sendEnableMsg(false, ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, true);
