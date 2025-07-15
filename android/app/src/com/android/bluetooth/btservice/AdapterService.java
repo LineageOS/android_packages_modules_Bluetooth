@@ -3764,14 +3764,6 @@ public class AdapterService extends Service {
         setDeviceAccessFromPrefs(device, value, SIM_ACCESS_PERMISSION_PREFERENCE_FILE);
     }
 
-    public boolean isRpaOffloadSupported() {
-        return mAdapterProperties.isRpaOffloadSupported();
-    }
-
-    public int getNumOfOffloadedIrkSupported() {
-        return mAdapterProperties.getNumOfOffloadedIrkSupported();
-    }
-
     public int getNumOfOffloadedScanFilterSupported() {
         return mAdapterProperties.getNumOfOffloadedScanFilterSupported();
     }

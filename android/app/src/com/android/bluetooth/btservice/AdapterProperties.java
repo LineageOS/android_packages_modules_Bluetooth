@@ -113,8 +113,6 @@ class AdapterProperties {
     private long mDiscoveryEndMs; // < Time (ms since epoch) that discovery ended or will end.
     // TODO - all hw capabilities to be exposed as a class
     private int mNumOfAdvertisementInstancesSupported;
-    private boolean mRpaOffloadSupported;
-    private int mNumOfOffloadedIrkSupported;
     private int mNumOfOffloadedScanFilterSupported;
     private int mOffloadedScanResultStorageBytes;
     private int mVersSupported;
@@ -277,14 +275,6 @@ class AdapterProperties {
 
     int getNumOfAdvertisementInstancesSupported() {
         return mNumOfAdvertisementInstancesSupported;
-    }
-
-    boolean isRpaOffloadSupported() {
-        return mRpaOffloadSupported;
-    }
-
-    int getNumOfOffloadedIrkSupported() {
-        return mNumOfOffloadedIrkSupported;
     }
 
     int getNumOfOffloadedScanFilterSupported() {
@@ -798,8 +788,8 @@ class AdapterProperties {
     private void updateFeatureSupport(byte[] val) {
         mVersSupported = ((0xFF & ((int) val[1])) << 8) + (0xFF & ((int) val[0]));
         mNumOfAdvertisementInstancesSupported = (0xFF & ((int) val[3]));
-        mRpaOffloadSupported = ((0xFF & ((int) val[4])) != 0);
-        mNumOfOffloadedIrkSupported = (0xFF & ((int) val[5]));
+        var rpaOffloadSupported = ((0xFF & ((int) val[4])) != 0);
+        var numOfOffloadedIrkSupported = (0xFF & ((int) val[5]));
         mNumOfOffloadedScanFilterSupported = (0xFF & ((int) val[6]));
         mIsActivityAndEnergyReporting = ((0xFF & ((int) val[7])) != 0);
         mOffloadedScanResultStorageBytes = ((0xFF & ((int) val[9])) << 8) + (0xFF & ((int) val[8]));
@@ -827,8 +817,8 @@ class AdapterProperties {
                 "BT_PROPERTY_LOCAL_LE_FEATURES: update from BT controller"
                         + (" mNumOfAdvertisementInstancesSupported="
                                 + mNumOfAdvertisementInstancesSupported)
-                        + (", rpaOffloadSupported=" + mRpaOffloadSupported)
-                        + (", numOfOffloadedIrkSupported=" + mNumOfOffloadedIrkSupported)
+                        + (", rpaOffloadSupported=" + rpaOffloadSupported)
+                        + (", numOfOffloadedIrkSupported=" + numOfOffloadedIrkSupported)
                         + (", numOfOffloadedScanFilterSupported="
                                 + mNumOfOffloadedScanFilterSupported)
                         + (", offloadedScanResultStorageBytes= " + mOffloadedScanResultStorageBytes)
