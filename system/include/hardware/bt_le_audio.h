@@ -65,6 +65,7 @@ enum class GroupStatus {
   INACTIVE = 0,
   ACTIVE,
   TURNED_IDLE_DURING_CALL,
+  AUTONOMOUS_INACTIVE,
 };
 
 enum class GroupStreamStatus {

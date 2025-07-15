@@ -916,7 +916,7 @@ public:
       log::info("All devices disconnected, group becomes inactive");
       /* Both devices will  be disconnected soon. Notify upper layer that group
        * is inactive */
-      groupSetAndNotifyInactive();
+      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
     }
   }
 
@@ -1690,20 +1690,24 @@ public:
     return group->is_duplex_preference_le_audio;
   }
 
-  void groupSetAndNotifyInactive(void) {
+  void groupSetAndNotifyInactive(bool autonomous_inactive) {
     if (active_group_id_ == bluetooth::groups::kGroupUnknown) {
       return;
     }
     sink_monitor_notified_status_ = std::nullopt;
     source_monitor_notified_status_ = std::nullopt;
-    log::info("Group id: {}", active_group_id_);
+    log::info("Group id: {}, autonomous_inactive: {}", active_group_id_, autonomous_inactive);
 
     StopSuspendTimeout();
 
     StopAudio();
     ClientAudioInterfaceRelease();
 
-    callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+    if (autonomous_inactive) {
+      callbacks_->OnGroupStatus(active_group_id_, GroupStatus::AUTONOMOUS_INACTIVE);
+    } else {
+      callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+    }
     active_group_id_ = bluetooth::groups::kGroupUnknown;
   }
 
@@ -1768,7 +1772,7 @@ public:
 
       log::info("Active group_id changed {} -> {}", active_group_id_, group_id);
       auto group_id_to_close = active_group_id_;
-      groupSetAndNotifyInactive();
+      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
       GroupStop(group_id_to_close);
       audioContextTypeManager_->OverrideContextTypes({AudioContexts(), AudioContexts()});
       return;
@@ -1862,7 +1866,7 @@ public:
       if (prepare_for_a_call) {
         if (!PrepareStreamForAConversational(group)) {
           log::error("Could not configure group {} for a call", group->group_id_);
-          groupSetAndNotifyInactive();
+          groupSetAndNotifyInactive(/* autonomous_inactive */ false);
           return;
         }
       }
@@ -6981,7 +6985,7 @@ public:
              */
             UpdateLocationsAndContextsAvailability(group, true);
           } else {
-            groupSetAndNotifyInactive();
+            groupSetAndNotifyInactive(/* autonomous_inactive */ true);
           }
         }
         audio_sender_state_ = AudioState::IDLE;
@@ -7001,7 +7005,7 @@ public:
            */
           log::error("Internal state machine error for group {}", group_id);
           group->PrintDebugState();
-          groupSetAndNotifyInactive();
+          groupSetAndNotifyInactive(/* autonomous_inactive */ false);
           audio_sender_state_ = AudioState::IDLE;
           audio_receiver_state_ = AudioState::IDLE;
           return;

@@ -3848,7 +3848,8 @@ public class LeAudioService extends ConnectableProfile {
                         updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, true);
                     }
                 }
-                case LeAudioStackEvent.GROUP_STATUS_INACTIVE -> {
+                case LeAudioStackEvent.GROUP_STATUS_INACTIVE,
+                        LeAudioStackEvent.GROUP_STATUS_AUTONOMOUS_INACTIVE -> {
                     LeAudioGroupDescriptor descriptor = getGroupDescriptor(groupId);
                     if (descriptor == null) {
                         Log.e(TAG, "deviceDisconnected: no descriptors for group: " + groupId);
