@@ -1725,16 +1725,6 @@ public class ScanController {
     }
 
     public void dump(StringBuilder sb) {
-        final List<ScanClient> clients = new ArrayList<>();
-        clients.addAll(mScanManager.getRegularScanQueue());
-        clients.addAll(mScanManager.getBatchScanQueue());
-        clients.addAll(mScanManager.getSuspendedScanQueue());
-
-        final Map<Integer, ScanSettings> settingsMap = new HashMap<>();
-        for (ScanClient client : clients) {
-            settingsMap.put(client.getScannerId(), client.getSettings());
-        }
-
-        mScannerMap.dump(sb, settingsMap);
+        mScannerMap.dump(sb, mScanManager.getSettingsMap());
     }
 }
