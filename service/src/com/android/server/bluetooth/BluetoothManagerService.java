@@ -781,12 +781,12 @@ class BluetoothManagerService {
         return "XX:XX:XX:XX:" + address.substring(address.length() - 5);
     }
 
-    // Called from unsafe binder thread
     IBinder registerAdapter(IBluetoothManagerCallback callback) {
         mCallbacks.register(callback);
-        // Copy to local variable to avoid race condition when checking for null
-        AdapterBinder adapter = mAdapter;
-        return adapter != null ? adapter.getAdapterServiceBinder() : null;
+        if (mAdapter == null) {
+            return null;
+        }
+        return mAdapter.getAdapterServiceBinder();
     }
 
     void unregisterAdapter(IBluetoothManagerCallback callback) {

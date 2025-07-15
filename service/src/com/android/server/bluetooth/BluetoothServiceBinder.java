@@ -103,18 +103,18 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
         requireNonNull(callback);
-        return mService.registerAdapter(callback);
+        return postFromBinder(() -> mService.registerAdapter(callback));
     }
 
     @Override
     public void unregisterAdapter(@NonNull IBluetoothManagerCallback callback) {
         requireNonNull(callback);
-        mService.unregisterAdapter(callback);
+        postFromBinder(() -> mService.unregisterAdapter(callback));
     }
 
     @Override
     public int getState() {
-        return mService.getState();
+        return mService.getState(); // This method is designed to work concurrently
     }
 
     @Override
@@ -138,7 +138,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return IBluetoothManager.DEFAULT_MAC_ADDRESS;
         }
 
-        return mService.getAddress();
+        return postFromBinder(() -> mService.getAddress());
     }
 
     @Override
@@ -156,17 +156,17 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return null;
         }
 
-        return mService.getName();
+        return postFromBinder(() -> mService.getName());
     }
 
     @Override
     public boolean isBleScanAvailable() {
-        return mService.isBleScanAvailable();
+        return postFromBinder(() -> mService.isBleScanAvailable());
     }
 
     @Override
     public boolean isHearingAidProfileSupported() {
-        return mService.isHearingAidProfileSupported();
+        return postFromBinder(() -> mService.isHearingAidProfileSupported());
     }
 
     @Override
@@ -319,14 +319,14 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     public int setBtHciSnoopLogMode(int mode) {
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return mService.setBtHciSnoopLogMode(mode);
+        return postFromBinder(() -> mService.setBtHciSnoopLogMode(mode));
     }
 
     @Override
     public int getBtHciSnoopLogMode() {
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return mService.getBtHciSnoopLogMode();
+        return postFromBinder(() -> mService.getBtHciSnoopLogMode());
     }
 
     @Override
@@ -373,6 +373,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return;
         }
 
-        mService.dump(fd, writer, args);
+        postFromBinder(() -> mService.dump(fd, writer, args));
     }
 }
