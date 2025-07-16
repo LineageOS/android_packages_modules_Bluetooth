@@ -17,7 +17,6 @@
 package com.android.bluetooth.le_scan;
 
 import android.annotation.Nullable;
-import android.os.RemoteException;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +37,10 @@ public class ScanNativeInterface {
 
     void cleanup() {
         cleanupNative();
+    }
+
+    private void doOnScanThread(Runnable r) {
+        mScanController.doOnScanThread(r);
     }
 
     /* Native methods */
@@ -193,7 +196,9 @@ public class ScanNativeInterface {
 
     /** Remove a MSFT Advertisement Monitor */
     void gattClientMsftAdvMonitorRemove(int filter_index) {
-        int monitor_handle = mScanController.msftMonitorHandleFromFilterIndex(filter_index);
+        final int monitor_handle =
+                mScanController.fetchOnScanThread(
+                        () -> mScanController.msftMonitorHandleFromFilterIndex(filter_index), -1);
         if (monitor_handle < 0) return;
         gattClientMsftAdvMonitorRemoveNative(filter_index, monitor_handle);
     }
@@ -269,54 +274,65 @@ public class ScanNativeInterface {
             int periodicAdvInt,
             byte[] advData,
             String originalAddress) {
-        mScanController.onScanResult(
-                eventType,
-                addressType,
-                address,
-                primaryPhy,
-                secondaryPhy,
-                advertisingSid,
-                txPower,
-                rssi,
-                periodicAdvInt,
-                advData,
-                originalAddress);
+        doOnScanThread(
+                () ->
+                        mScanController.onScanResult(
+                                eventType,
+                                addressType,
+                                address,
+                                primaryPhy,
+                                secondaryPhy,
+                                advertisingSid,
+                                txPower,
+                                rssi,
+                                periodicAdvInt,
+                                advData,
+                                originalAddress));
     }
 
-    void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb)
-            throws RemoteException {
-        mScanController.onScannerRegistered(status, scannerId, uuidLsb, uuidMsb);
+    void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb) {
+        doOnScanThread(
+                () -> mScanController.onScannerRegistered(status, scannerId, uuidLsb, uuidMsb));
     }
 
     void onScanFilterEnableDisabled(int action, int status, int clientIf) {
-        mScanController.onScanFilterEnableDisabled(action, status, clientIf);
+        doOnScanThread(() -> mScanController.onScanFilterEnableDisabled(action, status, clientIf));
     }
 
     void onScanFilterParamsConfigured(int action, int status, int clientIf, int availableSpace) {
-        mScanController.onScanFilterParamsConfigured(action, status, clientIf, availableSpace);
+        doOnScanThread(
+                () ->
+                        mScanController.onScanFilterParamsConfigured(
+                                action, status, clientIf, availableSpace));
     }
 
     void onScanFilterConfig(
             int action, int status, int clientIf, int filterType, int availableSpace) {
-        mScanController.onScanFilterConfig(action, status, clientIf, filterType, availableSpace);
+        doOnScanThread(
+                () ->
+                        mScanController.onScanFilterConfig(
+                                action, status, clientIf, filterType, availableSpace));
     }
 
     void onBatchScanStorageConfigured(int status, int clientIf) {
-        mScanController.onBatchScanStorageConfigured(status, clientIf);
+        doOnScanThread(() -> mScanController.onBatchScanStorageConfigured(status, clientIf));
     }
 
     void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
-        mScanController.onBatchScanStartStopped(startStopAction, status, clientIf);
+        doOnScanThread(
+                () -> mScanController.onBatchScanStartStopped(startStopAction, status, clientIf));
     }
 
     void onBatchScanReports(
-            int status, int scannerId, int reportType, int numRecords, byte[] recordData)
-            throws RemoteException {
-        mScanController.onBatchScanReports(status, scannerId, reportType, numRecords, recordData);
+            int status, int scannerId, int reportType, int numRecords, byte[] recordData) {
+        doOnScanThread(
+                () ->
+                        mScanController.onBatchScanReports(
+                                status, scannerId, reportType, numRecords, recordData));
     }
 
     void onBatchScanThresholdCrossed(int clientIf) {
-        mScanController.onBatchScanThresholdCrossed(clientIf);
+        doOnScanThread(() -> mScanController.onBatchScanThresholdCrossed(clientIf));
     }
 
     @Nullable
@@ -350,23 +366,24 @@ public class ScanNativeInterface {
                 timeStamp);
     }
 
-    void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) throws RemoteException {
-        mScanController.onTrackAdvFoundLost(trackingInfo);
+    void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) {
+        doOnScanThread(() -> mScanController.onTrackAdvFoundLost(trackingInfo));
     }
 
-    void onScanParamSetupCompleted(int status, int scannerId) throws RemoteException {
-        mScanController.onScanParamSetupCompleted(status, scannerId);
+    void onScanParamSetupCompleted(int status, int scannerId) {
+        doOnScanThread(() -> mScanController.onScanParamSetupCompleted(status, scannerId));
     }
 
     void onMsftAdvMonitorAdd(int filter_index, int monitor_handle, int status) {
-        mScanController.onMsftAdvMonitorAdd(filter_index, monitor_handle, status);
+        doOnScanThread(
+                () -> mScanController.onMsftAdvMonitorAdd(filter_index, monitor_handle, status));
     }
 
     void onMsftAdvMonitorRemove(int filter_index, int status) {
-        mScanController.onMsftAdvMonitorRemove(filter_index, status);
+        doOnScanThread(() -> mScanController.onMsftAdvMonitorRemove(filter_index, status));
     }
 
     void onMsftAdvMonitorEnable(int status) {
-        mScanController.onMsftAdvMonitorEnable(status);
+        doOnScanThread(() -> mScanController.onMsftAdvMonitorEnable(status));
     }
 }

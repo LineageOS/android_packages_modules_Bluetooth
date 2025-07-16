@@ -73,7 +73,6 @@ import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
@@ -90,6 +89,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,6 +100,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Class that handles Bluetooth LE scan related operations. */
 class ScanManager {
@@ -322,44 +323,44 @@ class ScanManager {
     void cleanup() {
         Log.i(TAG, "cleanup()");
         mIsAvailable = false;
-        mScanController.forceRunSyncOnScanThread(
-                () -> {
-                    mRegularScanClients.clear();
-                    mBatchClients.clear();
-                    mSuspendedScanClients.clear();
+        mRegularScanClients.clear();
+        mBatchClients.clear();
+        mSuspendedScanClients.clear();
 
-                    if (mActivityManager != null) {
-                        try {
-                            mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
-                        } catch (IllegalArgumentException e) {
-                            Log.w(TAG, "exception when invoking removeOnUidImportanceListener", e);
-                        }
-                    }
+        if (mActivityManager != null) {
+            try {
+                mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "exception when invoking removeOnUidImportanceListener", e);
+            }
+        }
 
-                    mDisplayManager.unregisterDisplayListener(mDisplayListener);
+        mDisplayManager.unregisterDisplayListener(mDisplayListener);
 
-                    if (!Flags.scanControllerThread()) {
-                        // Shut down the thread
-                        mClientHandler.removeCallbacksAndMessages(null);
-                    }
+        if (!Flags.scanControllerThread()) {
+            // Shut down the thread
+            mClientHandler.removeCallbacksAndMessages(null);
+        }
 
-                    mAlarmManager.cancel(mBatchScanIntervalIntent);
-                    // Protect against multiple calls of cleanup.
-                    BroadcastReceiver receiver = mBatchAlarmReceiver.getAndSet(null);
-                    if (receiver != null) {
-                        mAdapterService.unregisterReceiver(receiver);
-                    }
-                    mNativeInterface.cleanup();
+        mAlarmManager.cancel(mBatchScanIntervalIntent);
+        // Protect against multiple calls of cleanup.
+        BroadcastReceiver receiver = mBatchAlarmReceiver.getAndSet(null);
+        if (receiver != null) {
+            mAdapterService.unregisterReceiver(receiver);
+        }
+        mNativeInterface.cleanup();
 
-                    try {
-                        mAdapterService.unregisterReceiver(mLocationReceiver);
-                    } catch (IllegalArgumentException e) {
-                        Log.w(
-                                TAG,
-                                "exception when invoking unregisterReceiver(mLocationReceiver)",
-                                e);
-                    }
-                });
+        try {
+            mAdapterService.unregisterReceiver(mLocationReceiver);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "exception when invoking unregisterReceiver(mLocationReceiver)", e);
+        }
+    }
+
+    Map<Integer, ScanSettings> getSettingsMap() {
+        return Stream.of(mRegularScanClients, mBatchClients, mSuspendedScanClients)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toMap(ScanClient::getScannerId, ScanClient::getSettings));
     }
 
     @VisibleForTesting
@@ -380,13 +381,11 @@ class ScanManager {
     }
 
     void registerScanner(UUID uuid) {
-        mScanController.enforceScanThread();
         mNativeInterface.registerScanner(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
     }
 
     void unregisterScanner(int scannerId) {
-        mScanController.enforceScanThread();
         mNativeInterface.unregisterScanner(scannerId);
     }
 
@@ -402,7 +401,6 @@ class ScanManager {
     }
 
     void startScan(ScanClient client) {
-        mScanController.enforceScanThread();
         Log.d(TAG, "startScan() " + client);
         if (Flags.scanControllerThread()) {
             handleStartScan(client);
@@ -414,7 +412,6 @@ class ScanManager {
     void stopScan(int scannerId) {
         ScanSettings scanSettings = new ScanSettings.Builder().build();
         ScanClient tmpClient = new ScanClient(scannerId, scanSettings, null, 0);
-        mScanController.enforceScanThread();
         if (Flags.scanControllerThread()) {
             handleStopScan(tmpClient);
         } else {
@@ -423,7 +420,6 @@ class ScanManager {
     }
 
     void flushBatchScanResults(ScanClient client) {
-        mScanController.enforceScanThread();
         Log.d(TAG, "flushBatchScanResults for client: " + client);
         if (Flags.scanControllerThread()) {
             handleFlushBatchResults(client);
@@ -433,7 +429,6 @@ class ScanManager {
     }
 
     void callbackDone(int scannerId, int status) {
-        mScanController.enforceScanThread();
         Log.d(TAG, "callback done for scannerId - " + scannerId + " status - " + status);
         if (status == 0) {
             mNativeInterface.callbackDone();
@@ -442,7 +437,6 @@ class ScanManager {
     }
 
     void batchScanResultDelivered() {
-        mScanController.enforceScanThread();
         mBatchScanThrottler.resetBackoff();
     }
 
@@ -467,12 +461,10 @@ class ScanManager {
             }
         }
 
-        mScanController.enforceScanThread();
         return mCurUsedTrackableAdvertisementsScanThread;
     }
 
     void fetchAppForegroundState(ScanClient client) {
-        mScanController.enforceScanThread();
         PackageManager packageManager = mAdapterService.getPackageManager();
         if (mActivityManager == null || packageManager == null) {
             return;
@@ -1168,7 +1160,7 @@ class ScanManager {
         }
     }
 
-    // TODO(b/397863857) Inline within `public void handleProfileConnectionStateChanged` on cleanup
+    // TODO(b/397863857) Inline within `void handleProfileConnectionStateChanged` on cleanup
     private void handleProfileConnectionStateChanged(int profile, int fromState, int toState) {
         final boolean updatedConnectingState =
                 updateCountersAndCheckForConnectingState(toState, fromState);
@@ -1543,12 +1535,8 @@ class ScanManager {
                             TAG,
                             "Error freeing for onfound/onlost filter resources "
                                     + entriesToFreePerFilter);
-                    try {
-                        mScanController.onScanManagerErrorCallback(
-                                client.getScannerId(), ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "failed on onScanManagerCallback at freeing", e);
-                    }
+                    mScanController.onScanManagerErrorCallback(
+                            client.getScannerId(), ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
                 }
             }
         }
@@ -1717,12 +1705,8 @@ class ScanManager {
                                                 stats.recordHwFilterNotAvailableCountMetrics(
                                                         scannerId,
                                                         mumOfOffloadedScanFilterSupported));
-                        try {
-                            mScanController.onScanManagerErrorCallback(
-                                    scannerId, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "failed on onScanManagerCallback", e);
-                        }
+                        mScanController.onScanManagerErrorCallback(
+                                scannerId, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
                     }
                 }
                 configureFilterParameter(
@@ -2330,9 +2314,7 @@ class ScanManager {
      * Handle bluetooth profile connection state changes (for A2DP, HFP, HFP Client, A2DP Sink and
      * LE Audio).
      */
-    public void handleBluetoothProfileConnectionStateChanged(
-            int profile, int fromState, int toState) {
-        mScanController.enforceScanThread();
+    void handleBluetoothProfileConnectionStateChanged(int profile, int fromState, int toState) {
         if (Flags.scanControllerThread()) {
             handleProfileConnectionStateChanged(profile, fromState, toState);
         } else {

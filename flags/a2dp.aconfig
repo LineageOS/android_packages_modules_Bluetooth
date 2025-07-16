@@ -149,3 +149,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_source_null_fixed_queue"
+    namespace: "bluetooth"
+    description: "Resolve race in btif_a2dp_source between start and shutdown"
+    bug: "432232478"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

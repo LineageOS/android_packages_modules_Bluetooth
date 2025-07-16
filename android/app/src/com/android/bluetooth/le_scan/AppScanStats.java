@@ -19,9 +19,11 @@ package com.android.bluetooth.le_scan;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 
+import static com.android.bluetooth.le_scan.ScanUtil.callbackTypeToString;
 import static com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan;
 import static com.android.bluetooth.le_scan.ScanUtil.isBatchScan;
 import static com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan;
+import static com.android.bluetooth.le_scan.ScanUtil.scanModeToString;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -646,29 +648,6 @@ class AppScanStats {
         }
         filterString.append(" ]");
         return filterString.toString();
-    }
-
-    private static String scanModeToString(int scanMode) {
-        return switch (scanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC";
-            case ScanSettings.SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY";
-            case ScanSettings.SCAN_MODE_BALANCED -> "BALANCED";
-            case ScanSettings.SCAN_MODE_LOW_POWER -> "LOW_POWER";
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY";
-            default -> "UNKNOWN(" + scanMode + ")";
-        };
-    }
-
-    private static String callbackTypeToString(int callbackType) {
-        return switch (callbackType) {
-            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES -> "ALL_MATCHES";
-            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH -> "FIRST_MATCH";
-            case ScanSettings.CALLBACK_TYPE_MATCH_LOST -> "LOST";
-            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH";
-            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH | ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
-                    "[FIRST_MATCH | LOST]";
-            default -> "UNKNOWN: " + callbackType;
-        };
     }
 
     synchronized void dump(StringBuilder sb, List<ScannerMap.ScannerApp> scannerApps) {

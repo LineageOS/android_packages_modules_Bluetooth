@@ -1345,6 +1345,7 @@ public class HeadsetService extends ConnectableProfile {
                                     previousActiveDevice,
                                     BluetoothProfileConnectionInfo.createHfpInfo());
                     // Audio Framework will handle audio transition
+                    updateInbandRinging(device, true);
                     return true;
                 }
                 broadcastActiveDevice(mActiveDevice);
