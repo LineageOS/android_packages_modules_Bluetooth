@@ -45,7 +45,9 @@ extern "C" {
 
 __attribute__((visibility("default"))) void* ffi_controller_new(
         uint8_t const address[6], void (*send_hci)(int idc, uint8_t const* data, size_t data_len),
-        void (*send_ll)(uint8_t const* data, size_t data_len, int phy, int tx_power)) {
+        void (*send_ll)(uint8_t const* data, size_t data_len, int phy, int tx_power),
+        void (*invalid_packet_handler)(int reason, char const* message, uint8_t const* data,
+                                       size_t data_len)) {
   DualModeController* controller = new DualModeController();
   controller->SetAddress(
           Address({address[0], address[1], address[2], address[3], address[4], address[5]}));
@@ -65,6 +67,15 @@ __attribute__((visibility("default"))) void* ffi_controller_new(
           [=](std::vector<uint8_t> const& data, Phy::Type phy, int8_t tx_power) {
             send_ll(data.data(), data.size(), static_cast<int>(phy), tx_power);
           });
+
+  if (invalid_packet_handler) {
+    controller->RegisterInvalidPacketHandler([=](uint32_t /*id*/, InvalidPacketReason reason,
+                                                 std::string message,
+                                                 std::vector<uint8_t> const& packet) {
+      invalid_packet_handler(static_cast<int>(reason), message.c_str(), packet.data(),
+                             packet.size());
+    });
+  }
 
   return controller;
 }
