@@ -31,13 +31,18 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.tests.bluetooth.MockitoRule
+import java.util.function.Supplier
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.any
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.whenever
 
 /** Test cases for [ScanBinder]. */
 @SmallTest
@@ -56,6 +61,18 @@ class ScanBinderTest {
 
     @Before
     fun setUp() {
+        doAnswer { invocation ->
+                (invocation.getArgument(0) as Runnable).run()
+                null
+            }
+            .whenever(scanController)
+            .doOnScanThread(any())
+        doAnswer { invocation ->
+                val supplier = invocation.getArgument<Supplier<*>>(0)
+                supplier.get()
+            }
+            .whenever(scanController)
+            .fetchOnScanThread<Any>(any(), any())
         binder = ScanBinder(adapterService, scanController)
     }
 
