@@ -37,6 +37,7 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -342,7 +343,9 @@ public class CsipSetCoordinatorStateMachineTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void testProcessConnectMessage_onConnectingState() {
+        /* Connect is not deferred anymore in Connecting state. This is going to be removed */
         initToConnectingState();
         sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
         assertThat(
@@ -559,7 +562,9 @@ public class CsipSetCoordinatorStateMachineTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
     public void testProcessDisconnectMessage_onDisconnectingState() {
+        /* Disconnect will not be deferred anymore when flag is enabled. This test will be removed */
         initToDisconnectingState();
         sendAndDispatchMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
         assertThat(
