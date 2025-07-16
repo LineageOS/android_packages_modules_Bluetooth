@@ -22,8 +22,11 @@ flag {
 }
 
 flag {
-    name: "ldac_rate_control_configuration"
+    name: "ldac_rate_control"
     namespace: "bluetooth"
     description: "Configure LDAC rate control based on the LDAC bitrate."
     bug: "422347819"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
