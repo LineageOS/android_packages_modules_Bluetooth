@@ -554,6 +554,7 @@ public class BluetoothManagerServiceTest {
         serviceConnection.onServiceDisconnected(
                 new ComponentName("", "com.android.bluetooth.btservice.AdapterService"));
         syncHandler(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         // Send a late bluetoothStateChange (since it can happen concurrently)

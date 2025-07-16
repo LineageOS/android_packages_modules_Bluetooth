@@ -1471,18 +1471,22 @@ class BluetoothManagerService {
 
                     sendBluetoothServiceDownCallback();
 
-                    // Send BT state broadcast to update
-                    // the BT icon correctly
+                    // Send BT state broadcast to update listener correctly (like Bt icon)
                     if (mState.oneOf(State.TURNING_ON, State.ON)) {
-                        bluetoothStateChangeHandler(State.ON, State.TURNING_OFF);
+                        bluetoothStateChangeHandler(mState.get(), State.TURNING_OFF);
                     }
                     if (mState.oneOf(State.TURNING_OFF)) {
-                        bluetoothStateChangeHandler(State.TURNING_OFF, State.OFF);
+                        bluetoothStateChangeHandler(mState.get(), State.BLE_ON);
+                    }
+                    if (mState.oneOf(State.BLE_ON)) {
+                        bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
+                    }
+                    if (mState.oneOf(State.BLE_TURNING_ON, State.BLE_TURNING_OFF)) {
+                        bluetoothStateChangeHandler(mState.get(), State.OFF);
                     }
 
                     mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
                     mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
-                    mState.set(State.OFF);
                 }
                 case MESSAGE_RESTART_BLUETOOTH_SERVICE -> handleRestartMessage();
 
