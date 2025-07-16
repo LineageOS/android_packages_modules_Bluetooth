@@ -716,7 +716,8 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    private Unit onBleScanDisabled() {
+    @VisibleForTesting
+    Unit onBleScanDisabled() {
         if (mState.oneOf(State.OFF, State.BLE_TURNING_OFF)) {
             Log.i(TAG, "onBleScanDisabled: Nothing to do, Bluetooth is already turning off");
             return Unit.INSTANCE;
@@ -725,6 +726,9 @@ class BluetoothManagerService {
 
         if (mState.oneOf(State.BLE_ON)) {
             Log.i(TAG, "onBleScanDisabled: Shutting down BLE_ON mode");
+            if (Flags.userSwitchDuringBleOn()) {
+                mEnable = false;
+            }
             bleOnToOff();
         } else {
             Log.i(TAG, "onBleScanDisabled: Bluetooth is not in BLE_ON, staying on");
@@ -1392,7 +1396,7 @@ class BluetoothManagerService {
                         }
                         // When performing FactoryReset, we currently depend on this to restart
                         if (mEnable && !isBinding()) {
-                            Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
+                            Log.d(TAG, "Entering State.OFF but mEnable is true; restarting.");
                             handleRestartMessage();
                         }
                     }
@@ -1736,6 +1740,9 @@ class BluetoothManagerService {
     private Unit onRoleGranted() {
         if (!(mEnableExternal || mBleAppManager.isBleAppPresent())) {
             Log.w(TAG, "onRoleGranted: external=" + mEnableExternal + " ble=" + mBleAppManager);
+            if (Flags.userSwitchDuringBleOn()) {
+                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+            }
         } else if (mAdapter != null) {
             Log.w(TAG, "onRoleGranted: Adapter already created");
         } else if (isBinding()) {
