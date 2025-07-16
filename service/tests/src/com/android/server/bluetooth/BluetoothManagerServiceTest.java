@@ -259,6 +259,7 @@ public class BluetoothManagerServiceTest {
     private void endTest() {
         mLooper.moveTimeForward(120_000);
         assertThat(mLooper.nextMessage()).isNull();
+        verifyNoIntentSent();
     }
 
     /**
@@ -348,7 +349,8 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    public void enable_bindTimeout() throws Exception {
+    @DisableFlags(Flags.FLAG_USER_SWITCH_DURING_BLE_ON)
+    public void enable_bindTimeout_old() throws Exception {
         mManagerService.enableBle("enable_bindTimeout", mBleBinder);
 
         mLooper.moveTimeForward(120_000); // 120 seconds
@@ -359,6 +361,21 @@ public class BluetoothManagerServiceTest {
         //   * No error is printed to the user
         //   * Code stop trying to start the bluetooth.
         //   * if user ask to enable again, it will start a second bind but the first still run
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_USER_SWITCH_DURING_BLE_ON)
+    public void enable_bindTimeout() throws Exception {
+        mManagerService.enableBle("enable_bindTimeout", mBleBinder);
+        verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+
+        mLooper.moveTimeForward(120_000); // 120 seconds
+        syncHandler(MESSAGE_TIMEOUT_BIND);
+
+        mInOrder.verify(mContext).unbindService(any());
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
 
         endTest();
     }
@@ -468,6 +485,8 @@ public class BluetoothManagerServiceTest {
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
         mInOrder.verify(mAdapterBinder).bleOnToOn();
+        verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
+        verifyStateIntentSent(State.OFF, State.TURNING_ON);
 
         endTest();
     }
@@ -492,6 +511,8 @@ public class BluetoothManagerServiceTest {
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
         mInOrder.verify(mAdapterBinder).bleOnToOn();
+        verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
+        verifyStateIntentSent(State.OFF, State.TURNING_ON);
 
         endTest();
     }
@@ -524,12 +545,16 @@ public class BluetoothManagerServiceTest {
     public void crash_whileTransitionState_canRecover() throws Exception {
         mManagerService.enableBle("crash_whileTransitionState_canRecover", mBleBinder);
 
+        if (Flags.userSwitchDuringBleOn()) {
+            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        }
         var serviceConnection = acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
         mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString());
-        btCallback.onBluetoothStateChange(State.OFF, State.BLE_TURNING_ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        if (!Flags.userSwitchDuringBleOn()) {
+            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        }
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
 
         serviceConnection.onServiceDisconnected(
@@ -565,9 +590,15 @@ public class BluetoothManagerServiceTest {
     @Test
     public void disable_whenBinding_bluetoothShouldStop_new() throws Exception {
         mManagerService.enable(0, "disable_whenBinding_bluetoothShouldStop_new");
+        if (Flags.userSwitchDuringBleOn()) {
+            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        }
         mInOrder.verify(mContext).bindServiceAsUser(any(), any(), anyInt(), any());
         mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
         mInOrder.verify(mContext).unbindService(any());
+        if (Flags.userSwitchDuringBleOn()) {
+            verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+        }
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
@@ -580,6 +611,7 @@ public class BluetoothManagerServiceTest {
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
         mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
         mInOrder.verify(mContext).unbindService(any());
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
@@ -903,7 +935,6 @@ public class BluetoothManagerServiceTest {
         transition_bleOnToOff(btCallback);
 
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
-        verifyNoIntentSent();
 
         endTest();
     }
