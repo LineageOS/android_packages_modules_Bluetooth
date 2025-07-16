@@ -116,7 +116,7 @@ public class PairingTest {
     private static final String TAG = PairingTest.class.getSimpleName();
     private static final int DEVICE_NAME_MAX = 26;
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final int TEST_DELAY_MS = 1000;
+    private static final int TEST_DELAY_MS = 2000;
     private static final int TEST_PSM = 5;
     private static final int TIMEOUT_ADVERTISING_MS = 1000;
 
@@ -909,7 +909,8 @@ public class PairingTest {
 
         // Wait for profiles to get connected
         // Todo: b/382118305 - due to settings app interference, profile connection initiate twice
-        // after bonding. Introduced 1 second delay after first profile connection success
+        // after bonding. Introduced 2 second delay after first profile connection success
+        // (b/378268278)
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         future.completeOnTimeout(null, TEST_DELAY_MS, TimeUnit.MILLISECONDS).join();
 
