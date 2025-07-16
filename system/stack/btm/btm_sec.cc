@@ -3046,6 +3046,12 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
 
   /* If this is a bonding procedure can disconnect the link now */
   if (are_bonding) {
+    tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+    if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, &role) !=
+        tBTM_STATUS::BTM_SUCCESS) {
+      log::warn("Unable to get link role peer:{}", p_dev_rec->bd_addr);
+    }
+    p_dev_rec->switch_role_after_encryption = false;
     p_dev_rec->sec_rec.security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
 
     if (status != HCI_SUCCESS) {
@@ -3058,11 +3064,6 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
       BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
 
-      tHCI_ROLE role = HCI_ROLE_UNKNOWN;
-      if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, &role) !=
-          tBTM_STATUS::BTM_SUCCESS) {
-        log::warn("Unable to get link role peer:{}", p_dev_rec->bd_addr);
-      }
       if (role == HCI_ROLE_CENTRAL) {
         // Encryption is required to start SM over BR/EDR
         // indicate that this is encryption after authentication
@@ -3082,6 +3083,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     } else {
       BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
+      p_dev_rec->switch_role_after_encryption =
+              p_dev_rec->IsLocallyInitiated() && role == HCI_ROLE_PERIPHERAL;
       BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
       l2cu_start_post_bond_timer(p_dev_rec->hci_handle);
     }
@@ -3255,11 +3258,13 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
       derive_ltk = false;
       log::verbose("BR key is temporary, skip derivation of LE LTK");
     }
+
     tHCI_ROLE role = HCI_ROLE_UNKNOWN;
     if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, &role) !=
         tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get link policy role peer:{}", p_dev_rec->bd_addr);
     }
+
     if (p_dev_rec->sec_rec.new_encryption_key_is_p256) {
       if (btm_sec_use_smp_br_chnl(p_dev_rec) && role == HCI_ROLE_CENTRAL &&
           /* if LE key is not known, do deriving */
@@ -3274,6 +3279,19 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
         if (!interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, &p_dev_rec->bd_addr)) {
           log::verbose("start SM over BR/EDR");
           SMP_BR_PairWith(p_dev_rec->bd_addr);
+        }
+      }
+    }
+
+    if (com::android::bluetooth::flags::role_switch_after_encryption() &&
+        p_dev_rec->switch_role_after_encryption) {
+      p_dev_rec->switch_role_after_encryption = false;
+      if (role == HCI_ROLE_PERIPHERAL) {
+        if (get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
+                    p_dev_rec->RemoteAddress()) == tBTM_STATUS::BTM_CMD_STARTED) {
+          log::info("Trying to switch role to central peer: {}", p_dev_rec->RemoteAddress());
+        } else {
+          log::warn("Unable to switch role to central peer:{}", p_dev_rec->RemoteAddress());
         }
       }
     }
