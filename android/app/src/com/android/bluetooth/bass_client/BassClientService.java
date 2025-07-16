@@ -587,18 +587,15 @@ public class BassClientService extends ConnectableProfile {
     }
 
     private static final Comparator<SourceSyncRequest> sSourceSyncRequestComparator =
-            new Comparator<SourceSyncRequest>() {
-                @Override
-                public int compare(SourceSyncRequest ssr1, SourceSyncRequest ssr2) {
-                    if (ssr1.hasPriority && !ssr2.hasPriority) {
-                        return -1;
-                    } else if (!ssr1.hasPriority && ssr2.hasPriority) {
-                        return 1;
-                    } else if (ssr1.syncFailureCounter != ssr2.syncFailureCounter) {
-                        return Integer.compare(ssr1.syncFailureCounter, ssr2.syncFailureCounter);
-                    } else {
-                        return Integer.compare(ssr2.getRssi(), ssr1.getRssi());
-                    }
+            (ssr1, ssr2) -> {
+                if (ssr1.hasPriority && !ssr2.hasPriority) {
+                    return -1;
+                } else if (!ssr1.hasPriority && ssr2.hasPriority) {
+                    return 1;
+                } else if (ssr1.syncFailureCounter != ssr2.syncFailureCounter) {
+                    return Integer.compare(ssr1.syncFailureCounter, ssr2.syncFailureCounter);
+                } else {
+                    return Integer.compare(ssr2.getRssi(), ssr1.getRssi());
                 }
             };
 

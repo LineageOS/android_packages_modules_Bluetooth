@@ -641,12 +641,7 @@ class MceStateMachine extends StateMachine {
                             + getMessageName(getCurrentMessage().what));
 
             MapClientContent.Callbacks callbacks =
-                    new MapClientContent.Callbacks() {
-                        @Override
-                        public void onMessageStatusChanged(String handle, int status) {
-                            setMessageStatus(handle, status);
-                        }
-                    };
+                    (handle, status) -> setMessageStatus(handle, status);
             // Keeps mock database from being overwritten in tests
             if (mDatabase == null) {
                 mDatabase = new MapClientContent(mAdapterService, callbacks, mDevice);

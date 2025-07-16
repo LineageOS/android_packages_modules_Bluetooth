@@ -109,11 +109,9 @@ public class ScanController {
     private static final int ET_LEGACY_MASK = 0x10;
 
     private final PendingIntent.CancelListener mScanIntentCancelListener =
-            new PendingIntent.CancelListener() {
-                public void onCanceled(PendingIntent intent) {
-                    Log.d(TAG, "scanning PendingIntent canceled");
-                    stopScan(intent);
-                }
+            intent -> {
+                Log.d(TAG, "scanning PendingIntent canceled");
+                stopScan(intent);
             };
 
     private final Map<Integer, Integer> mFilterIndexToMsftAdvMonitorMap = new HashMap<>();
