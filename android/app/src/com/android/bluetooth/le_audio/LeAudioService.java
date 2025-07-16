@@ -4072,6 +4072,7 @@ public class LeAudioService extends ConnectableProfile {
             boolean success = stackEvent.valueBool1;
 
             if (!success) {
+                /* On fail, EVENT_TYPE_BROADCAST_CREATED will be send with fail too */
                 Log.e(TAG, "EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED: failed to create");
 
                 if (mAwaitingBroadcastCreateResponse) {
@@ -5705,9 +5706,34 @@ public class LeAudioService extends ConnectableProfile {
                     Log.w(TAG, "CreateBroadcastTimeoutEvent: No handler");
                     return;
                 }
-            }
 
-            mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
+                mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
+            } else {
+                mCreateBroadcastTimeoutEvent = null;
+                mCreateBroadcastQueue.remove();
+                mAwaitingBroadcastCreateResponse = false;
+
+                /* Disconnect Broadcast device which was connected to avoid non LE Audio sound
+                 * leak in handover scenario.
+                 */
+                if ((mUnicastGroupIdDeactivatedForBroadcastTransition != LE_AUDIO_GROUP_ID_INVALID)
+                        && mCreateBroadcastQueue.isEmpty()
+                        && (!Objects.equals(null, mActiveBroadcastAudioDevice))) {
+                    transitionFromBroadcastToUnicast();
+                }
+
+                mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
+                logBroadcastSessionStatsWithStatus(
+                        INVALID_BROADCAST_ID,
+                        BluetoothStatsLog
+                                .BROADCAST_AUDIO_SESSION_REPORTED__SESSION_SETUP_STATUS__SETUP_STATUS_CREATE_FAILED);
+
+                // In case if there were additional calls to create broadcast
+                if (!mCreateBroadcastQueue.isEmpty()) {
+                    BluetoothLeBroadcastSettings settings = mCreateBroadcastQueue.remove();
+                    createBroadcast(settings);
+                }
+            }
         }
     }
 

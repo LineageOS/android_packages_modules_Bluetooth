@@ -451,6 +451,15 @@ public class LeAudioBroadcastServiceTest {
         mLooper.moveTimeForward(LeAudioService.CREATE_BROADCAST_TIMEOUT_MS);
         mLooper.dispatchAll();
         verify(mCallbacks).onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
+
+        if (Flags.leaudioBroadcastCreationTimeoutFix()) {
+            // Try again
+            mService.createBroadcast(settings);
+            mLooper.moveTimeForward(LeAudioService.CREATE_BROADCAST_TIMEOUT_MS);
+            mLooper.dispatchAll();
+            verify(mCallbacks, times(2))
+                    .onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
+        }
     }
 
     @Test
