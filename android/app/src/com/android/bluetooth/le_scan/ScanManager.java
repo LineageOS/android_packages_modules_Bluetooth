@@ -33,6 +33,7 @@ import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_BOTH;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_FULL;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
+import static com.android.bluetooth.le_scan.ScanUtil.clearAutoBatchScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isAllMatchesAutoBatchScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isAutoBatchScanClientEnabled;
 import static com.android.bluetooth.le_scan.ScanUtil.isBatchClient;
@@ -46,6 +47,8 @@ import static com.android.bluetooth.le_scan.ScanUtil.minScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.priorityForScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresLocationOn;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresScreenOn;
+import static com.android.bluetooth.le_scan.ScanUtil.setAutoBatchScanClient;
+import static com.android.bluetooth.le_scan.ScanUtil.setOpportunisticScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.shouldUpdateScan;
 import static com.android.bluetooth.le_scan.ScanUtil.upgradeScanModeByOneLevel;
 
@@ -874,31 +877,6 @@ class ScanManager {
         }
     }
 
-    private static void setAutoBatchScanClient(ScanClient client) {
-        if (isAutoBatchScanClientEnabled(client)) {
-            return;
-        }
-        client.updateScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF);
-        Log.d(
-                TAG,
-                "Scan mode update during setAutoBatchScanClient() to "
-                        + getScanModeString(ScanSettings.SCAN_MODE_SCREEN_OFF));
-        client.getAppScanStats()
-                .ifPresent(stats -> stats.setAutoBatchScan(client.getScannerId(), true));
-    }
-
-    private static void clearAutoBatchScanClient(ScanClient client) {
-        if (!isAutoBatchScanClientEnabled(client)) {
-            return;
-        }
-        final var scanModeApp = client.getScanModeApp();
-        final var scanModeString = getScanModeString(scanModeApp);
-        client.updateScanMode(scanModeApp);
-        Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to " + scanModeString);
-        client.getAppScanStats()
-                .ifPresent(stats -> stats.setAutoBatchScan(client.getScannerId(), false));
-    }
-
     private void updateRegularScanClientsScreenOff() {
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
@@ -1590,19 +1568,6 @@ class ScanManager {
                 Log.w(TAG, "There is no scan radio to stop");
             }
         }
-    }
-
-    private static void setOpportunisticScanClient(ScanClient client) {
-        // TODO: Add constructor to ScanSettings.Builder
-        // that can copy values from an existing ScanSettings object
-        ScanSettings.Builder builder = new ScanSettings.Builder();
-        ScanSettings settings = client.getSettings();
-        builder.setScanMode(ScanSettings.SCAN_MODE_OPPORTUNISTIC);
-        builder.setCallbackType(settings.getCallbackType());
-        builder.setScanResultType(settings.getScanResultType());
-        builder.setReportDelay(settings.getReportDelayMillis());
-        builder.setNumOfMatches(settings.getNumOfMatches());
-        client.setSettings(builder.build());
     }
 
     // Find the regular scan client information.
