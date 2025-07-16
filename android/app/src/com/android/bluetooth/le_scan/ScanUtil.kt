@@ -18,6 +18,9 @@ package com.android.bluetooth.le_scan
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanSettings
+import android.util.Log
+
+private const val TAG = "ScanUtil"
 
 object ScanUtil {
 
@@ -192,4 +195,43 @@ object ScanUtil {
                 client.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             else -> false
         }
+
+    @JvmStatic
+    fun setOpportunisticScanClient(client: ScanClient) {
+        val existingSettings = client.settings
+        client.settings =
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
+                .setCallbackType(existingSettings.callbackType)
+                .setScanResultType(existingSettings.scanResultType)
+                .setReportDelay(existingSettings.reportDelayMillis)
+                .setNumOfMatches(existingSettings.numOfMatches)
+                .build()
+    }
+
+    @JvmStatic
+    fun setAutoBatchScanClient(client: ScanClient) {
+        if (isAutoBatchScanClientEnabled(client)) {
+            return
+        }
+        client.updateScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF)
+        val scanModeString = ScanSettings.getScanModeString(client.scanModeApp)
+        Log.d(TAG, "Scan mode update during setAutoBatchScanClient() to $scanModeString")
+        client.appScanStats.ifPresent { appScanStats ->
+            appScanStats.setAutoBatchScan(client.scannerId, true)
+        }
+    }
+
+    @JvmStatic
+    fun clearAutoBatchScanClient(client: ScanClient) {
+        if (!isAutoBatchScanClientEnabled(client)) {
+            return
+        }
+        client.updateScanMode(client.scanModeApp)
+        val scanModeString = ScanSettings.getScanModeString(client.scanModeApp)
+        Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
+        client.appScanStats.ifPresent { appScanStats ->
+            appScanStats.setAutoBatchScan(client.scannerId, false)
+        }
+    }
 }
