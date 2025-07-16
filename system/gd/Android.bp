@@ -47,13 +47,13 @@ cc_defaults {
         linux: {
             srcs: [
                 "os/linux_generic/alarm.cc",
+                "os/linux_generic/boottime_clock.cc",
                 "os/linux_generic/files.cc",
                 "os/linux_generic/reactive_semaphore.cc",
                 "os/linux_generic/reactor.cc",
                 "os/linux_generic/repeating_alarm.cc",
                 "os/linux_generic/thread.cc",
                 "os/linux_generic/wakelock_manager.cc",
-                "os/linux_generic/boottime_clock.cc",
             ],
         },
         host: {
@@ -266,8 +266,8 @@ cc_test {
     srcs: [
         "os/handler.cc",
         "os/linux_generic/alarm.cc",
-        "os/linux_generic/boottime_clock.cc",
         "os/linux_generic/alarm_timerfd_unittest.cc",
+        "os/linux_generic/boottime_clock.cc",
         "os/linux_generic/files.cc",
         "os/linux_generic/reactive_semaphore.cc",
         "os/linux_generic/reactor.cc",
@@ -628,6 +628,7 @@ cc_fuzz {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
+        ":TestMockStackBtm",
         "hci/fuzz/acl_manager_fuzz_test.cc",
     ],
     static_libs: [
@@ -636,6 +637,7 @@ cc_fuzz {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/include",
+        "packages/modules/Bluetooth/system/stack/include",
     ],
     fuzz_config: {
         cc: ["android-bluetooth-security@google.com"],
@@ -653,9 +655,9 @@ cc_benchmark {
     srcs: [
         "benchmark.cc",
         "os/alarm_benchmark.cc",
+        "os/handler_benchmark.cc",
         "os/queue_benchmark.cc",
         "os/thread_benchmark.cc",
-        "os/handler_benchmark.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
