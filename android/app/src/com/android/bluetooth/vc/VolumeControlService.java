@@ -105,7 +105,8 @@ public class VolumeControlService extends ConnectableProfile {
     private final Looper mStateMachinesLooper;
     private final VolumeControlNativeInterface mNativeInterface;
 
-    private final Map<BluetoothDevice, VolumeControlStateMachine> mStateMachines = new HashMap<>();
+    private final Map<BluetoothDevice, VolumeControlStateMachine> mStateMachines =
+            new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, VolumeControlOffsetDescriptor> mAudioOffsets =
             new HashMap<>();
     private final Map<BluetoothDevice, VolumeControlInputDescriptor> mAudioInputs =
@@ -448,7 +449,13 @@ public class VolumeControlService extends ConnectableProfile {
     }
 
     public List<BluetoothDevice> getConnectedDevices() {
-        enforceMainLooperIsUsed();
+        if (Flags.vcpOnMainLooper()) {
+            // Getter can be accessed from Binder thread
+            return mStateMachines.values().stream()
+                    .filter(VolumeControlStateMachine::isConnected)
+                    .map(VolumeControlStateMachine::getDevice)
+                    .toList();
+        }
         List<BluetoothDevice> devices = new ArrayList<>();
         synchronized (mStateMachines) {
             for (VolumeControlStateMachine sm : mStateMachines.values()) {

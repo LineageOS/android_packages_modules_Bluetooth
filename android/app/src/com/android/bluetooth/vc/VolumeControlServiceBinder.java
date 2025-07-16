@@ -125,9 +125,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
     @Override
     public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(service, s -> s.getConnectedDevices(), Collections.emptyList());
-        }
         if (service == null) {
             return Collections.emptyList();
         }
