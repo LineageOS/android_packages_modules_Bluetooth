@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;

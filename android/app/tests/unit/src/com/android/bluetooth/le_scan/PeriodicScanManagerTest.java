@@ -31,8 +31,8 @@ import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.ScanResult;
 import android.os.IBinder;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;

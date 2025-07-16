@@ -42,7 +42,7 @@ import android.telephony.TelephonyManager;
 import android.text.util.Rfc822Token;
 import android.text.util.Rfc822Tokenizer;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.SignedLongLong;

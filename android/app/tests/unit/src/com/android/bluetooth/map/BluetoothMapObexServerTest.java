@@ -34,8 +34,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.RemoteException;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;

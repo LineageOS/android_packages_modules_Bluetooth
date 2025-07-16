@@ -33,8 +33,8 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
 import android.os.Looper;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;

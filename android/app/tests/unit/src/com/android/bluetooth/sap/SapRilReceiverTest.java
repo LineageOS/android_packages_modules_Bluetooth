@@ -58,8 +58,8 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.tests.bluetooth.MockitoRule;
 

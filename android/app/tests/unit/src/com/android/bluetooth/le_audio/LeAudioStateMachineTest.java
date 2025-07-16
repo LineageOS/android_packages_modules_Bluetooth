@@ -45,8 +45,8 @@ import android.os.HandlerThread;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.flags.Flags;
@@ -71,7 +71,6 @@ public class LeAudioStateMachineTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
 
     @Mock private LeAudioService mLeAudioService;
     @Mock private LeAudioNativeInterface mLeAudioNativeInterface;
