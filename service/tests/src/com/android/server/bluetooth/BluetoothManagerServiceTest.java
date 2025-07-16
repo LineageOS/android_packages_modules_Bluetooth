@@ -889,11 +889,34 @@ public class BluetoothManagerServiceTest {
         endTest();
     }
 
+    @Test
+    @EnableFlags({
+        Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE,
+        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
+    })
+    public void disableScan_whenBleOn_isTurnedOff() throws Exception {
+        mManagerService.enableBle("disableScan_whenBleOn_isTurnedOff", mBleBinder);
+        IBluetoothCallback btCallback = transition_offToBleOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
+
+        mManagerService.onBleScanDisabled();
+        transition_bleOnToOff(btCallback);
+
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+        verifyNoIntentSent();
+
+        endTest();
+    }
+
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
         mInOrder.verify(mContext)
                 .sendBroadcastAsUser(
                         MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any(), any());
+    }
+
+    private void verifyNoIntentSent() {
+        mInOrder.verify(mContext, never()).sendBroadcastAsUser(any(), any(), any(), any());
     }
 
     private void verifyBleStateIntentSent(int from, int to) {
