@@ -75,14 +75,14 @@ class Controller:
     def __init__(self, address: hci.Address):
         # Write the callbacks for handling HCI and LL send events.
         @SEND_HCI_FUNC
-        def send_hci(idc: c_int, data: POINTER(c_ubyte), data_len: c_size_t):
+        def send_hci(cookie: c_void_p, idc: c_int, data: POINTER(c_ubyte), data_len: c_size_t):
             packet = []
             for n in range(data_len):
                 packet.append(data[n])
             self.receive_hci_(int(idc), bytes(packet))
 
         @SEND_LL_FUNC
-        def send_ll(data: POINTER(c_ubyte), data_len: c_size_t, phy: c_int, tx_power: c_int):
+        def send_ll(cookie: c_void_p, data: POINTER(c_ubyte), data_len: c_size_t, phy: c_int, tx_power: c_int):
             packet = []
             for n in range(data_len):
                 packet.append(data[n])
@@ -94,7 +94,7 @@ class Controller:
         # Create a c++ controller instance.
         self.instance = rootcanal.ffi_controller_new(c_char_p(address.address),
                                                      self.send_hci_callback, self.send_ll_callback,
-                                                     None)
+                                                     None, None)
 
         self.address = address
         self.evt_queue = collections.deque()
