@@ -293,7 +293,7 @@ public class AdapterSuspend {
         for (int audioProfile : AUDIO_PROFILES) {
             List<BluetoothDevice> devices = mAdapterService.getActiveDevices(audioProfile);
             // getActiveDevices might return a list containing null elements. Filter them first.
-            devices = devices.stream().filter(d -> d != null).collect(Collectors.toList());
+            devices = devices.stream().filter(Objects::nonNull).collect(Collectors.toList());
             if (!devices.isEmpty()) {
                 mLastActiveAudioDevices = devices;
                 Log.i(

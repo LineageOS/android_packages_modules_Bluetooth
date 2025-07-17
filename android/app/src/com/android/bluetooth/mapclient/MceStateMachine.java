@@ -640,8 +640,7 @@ class MceStateMachine extends StateMachine {
                             + " [Connected]: Entered, message="
                             + getMessageName(getCurrentMessage().what));
 
-            MapClientContent.Callbacks callbacks =
-                    (handle, status) -> setMessageStatus(handle, status);
+            MapClientContent.Callbacks callbacks = MceStateMachine.this::setMessageStatus;
             // Keeps mock database from being overwritten in tests
             if (mDatabase == null) {
                 mDatabase = new MapClientContent(mAdapterService, callbacks, mDevice);

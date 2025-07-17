@@ -2096,7 +2096,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
      * @return {@code true} if is broadcasting audio, {@code false} otherwise
      */
     private boolean isBroadcastActive() {
-        return getLeAudioService().map(leAudio -> leAudio.isBroadcastActive()).orElse(false);
+        return getLeAudioService().map(LeAudioService::isBroadcastActive).orElse(false);
     }
 
     @VisibleForTesting

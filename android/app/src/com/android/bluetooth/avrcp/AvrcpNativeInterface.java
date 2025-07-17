@@ -107,8 +107,7 @@ public class AvrcpNativeInterface {
 
     void setBrowsedPlayer(int playerId, String currentPath) {
         d("setBrowsedPlayer: playerId=" + playerId + ", currentPath= " + currentPath);
-        mAvrcpService.setBrowsedPlayer(
-                playerId, currentPath, (a, b, c, d) -> setBrowsedPlayerResponse(a, b, c, d));
+        mAvrcpService.setBrowsedPlayer(playerId, currentPath, this::setBrowsedPlayerResponse);
     }
 
     void setBrowsedPlayerResponse(int playerId, boolean success, String currentPath, int numItems) {
@@ -131,7 +130,7 @@ public class AvrcpNativeInterface {
 
     void getFolderItemsRequest(int playerId, String mediaId) {
         d("getFolderItemsRequest: playerId=" + playerId + " mediaId=" + mediaId);
-        mAvrcpService.getFolderItems(playerId, mediaId, (a, b) -> getFolderItemsResponse(a, b));
+        mAvrcpService.getFolderItems(playerId, mediaId, this::getFolderItemsResponse);
     }
 
     void getFolderItemsResponse(String parentId, List<ListItem> items) {

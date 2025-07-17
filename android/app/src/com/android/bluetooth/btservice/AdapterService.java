@@ -1486,7 +1486,7 @@ public class AdapterService extends Service {
             mBluetoothKeystoreService.cleanup();
         }
 
-        mPhonePolicy.ifPresent(policy -> policy.cleanup());
+        mPhonePolicy.ifPresent(PhonePolicy::cleanup);
 
         mSilenceDeviceManager.cleanup();
 
@@ -1511,7 +1511,7 @@ public class AdapterService extends Service {
 
         mSystemServerCallbacks.kill();
 
-        mMetadataListeners.values().forEach(v -> v.kill());
+        mMetadataListeners.values().forEach(RemoteCallbackList::kill);
     }
 
     private void stopRfcommServerSockets() {

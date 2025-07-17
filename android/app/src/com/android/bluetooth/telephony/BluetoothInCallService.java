@@ -374,7 +374,7 @@ public class BluetoothInCallService extends InCallService {
         Log.i(TAG, "BluetoothInCallService is created");
         mAllowVideoAnswer =
                 SystemProperties.getBoolean("bluetooth.hfp.answer_call_with_video.enabled", false);
-        mCallInfo = requireNonNullElseGet(callInfo, () -> new CallInfo());
+        mCallInfo = requireNonNullElseGet(callInfo, CallInfo::new);
     }
 
     // TODO(b/422543753) Delete on flag cleanup
