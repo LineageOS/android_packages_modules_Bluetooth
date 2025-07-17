@@ -601,7 +601,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         // Return device list sorted by descending rank order
         return deviceRankMap.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
-                .map(e -> e.getKey())
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 

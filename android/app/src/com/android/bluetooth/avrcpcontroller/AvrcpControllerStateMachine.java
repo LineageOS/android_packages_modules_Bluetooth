@@ -1237,9 +1237,7 @@ class AvrcpControllerStateMachine extends StateMachine {
     }
 
     private int getFocusState() {
-        return getA2dpSinkService()
-                .map(a2dpSink -> a2dpSink.getFocusState())
-                .orElse(AudioManager.ERROR);
+        return getA2dpSinkService().map(A2dpSinkService::getFocusState).orElse(AudioManager.ERROR);
     }
 
     MediaSessionCompat.Callback mSessionCallbacks =

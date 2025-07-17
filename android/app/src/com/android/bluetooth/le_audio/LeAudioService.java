@@ -869,7 +869,7 @@ public class LeAudioService extends ConnectableProfile {
         mBroadcastDescriptors.clear();
         logAllBroadcastSessionStatsAndCleanup();
 
-        mLeAudioBroadcasterNativeInterface.ifPresent(i -> i.cleanup());
+        mLeAudioBroadcasterNativeInterface.ifPresent(LeAudioBroadcasterNativeInterface::cleanup);
 
         try {
             mStateMachinesThread.quitSafely();

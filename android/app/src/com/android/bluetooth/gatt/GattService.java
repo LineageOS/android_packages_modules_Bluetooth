@@ -1092,9 +1092,7 @@ public class GattService extends ProfileService {
         final var packageName = source.getPackageName();
         boolean preferRelaxMode = false;
         final var tag = getLastAttributionTag(source);
-        if (tag != null
-                && GATT_CLIENTS_PREFER_RELAX_MODE.stream()
-                        .anyMatch(suffix -> tag.endsWith(suffix))) {
+        if (tag != null && GATT_CLIENTS_PREFER_RELAX_MODE.stream().anyMatch(tag::endsWith)) {
             preferRelaxMode = true;
         }
         Log.d(TAG, "clientConnect tag: " + tag + ", preferRelaxMode:" + preferRelaxMode);

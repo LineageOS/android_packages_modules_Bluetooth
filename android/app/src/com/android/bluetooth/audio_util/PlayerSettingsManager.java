@@ -50,8 +50,7 @@ public class PlayerSettingsManager {
     public PlayerSettingsManager(MediaPlayerList mediaPlayerList, AvrcpTargetService service) {
         mService = service;
         mMediaPlayerList = mediaPlayerList;
-        mMediaPlayerList.setPlayerSettingsCallback(
-                (mediaPlayerWrapper) -> activePlayerChanged(mediaPlayerWrapper));
+        mMediaPlayerList.setPlayerSettingsCallback(this::activePlayerChanged);
         mControllerCallback = new MediaControllerCallback();
 
         MediaPlayerWrapper wrapper = mMediaPlayerList.getActivePlayer();

@@ -202,7 +202,7 @@ public class ScanController {
         }
         mScanThread = new HandlerThread("BluetoothScanManager");
         mScanThread.start();
-        mScanLooper = requireNonNullElseGet(looper, () -> mScanThread.getLooper());
+        mScanLooper = requireNonNullElseGet(looper, mScanThread::getLooper);
         if (Flags.scanControllerThread()) {
             mScanHandler = new Handler(mScanLooper);
         } else {
