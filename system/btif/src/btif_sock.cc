@@ -118,12 +118,10 @@ bt_status_t btif_sock_init(uid_set_t* uid_set) {
     goto error;
   }
 
-#ifndef TARGET_FLOSS
   status = btsock_hal_init();
   if (status != BT_STATUS_SUCCESS) {
     log::warn("error initializing socket hal: {}", status);
   }
-#endif
 
   return BT_STATUS_SUCCESS;
 
