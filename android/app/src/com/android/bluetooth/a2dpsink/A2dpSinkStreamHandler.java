@@ -97,14 +97,11 @@ public class A2dpSinkStreamHandler extends Handler {
 
     // Focus changes when we are currently holding focus.
     private final OnAudioFocusChangeListener mAudioFocusListener =
-            new OnAudioFocusChangeListener() {
-                @Override
-                public void onAudioFocusChange(int focusChange) {
-                    Log.d(TAG, "onAudioFocusChangeListener(focusChange= " + focusChange + ")");
-                    A2dpSinkStreamHandler.this
-                            .obtainMessage(AUDIO_FOCUS_CHANGE, focusChange)
-                            .sendToTarget();
-                }
+            focusChange -> {
+                Log.d(TAG, "onAudioFocusChangeListener(focusChange= " + focusChange + ")");
+                A2dpSinkStreamHandler.this
+                        .obtainMessage(AUDIO_FOCUS_CHANGE, focusChange)
+                        .sendToTarget();
             };
 
     A2dpSinkStreamHandler(AdapterService adapterService, A2dpSinkNativeInterface nativeInterface) {

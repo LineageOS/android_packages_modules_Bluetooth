@@ -38,7 +38,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.StaleDataException;
@@ -260,13 +259,7 @@ public class BluetoothOppTransferHistory extends Activity
                 .setTitle(R.string.transfer_clear_dlg_title)
                 .setMessage(R.string.transfer_clear_dlg_msg)
                 .setPositiveButton(
-                        android.R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                clearAllDownloads();
-                            }
-                        })
+                        android.R.string.ok, (dialog, whichButton) -> clearAllDownloads())
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
