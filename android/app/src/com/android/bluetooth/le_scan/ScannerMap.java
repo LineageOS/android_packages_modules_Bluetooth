@@ -243,53 +243,24 @@ class ScannerMap {
     }
 
     static class ScannerApp {
-        /** Context information */
-        @Nullable ScanController.PendingIntentInfo mInfo;
-
-        /** Statistics for this app */
-        AppScanStats mAppScanStats;
-
-        /** The UUID of the application */
         final UUID mUuid;
-
-        /** The package name of the application */
-        final String mName;
-
         /** The last attribution tag in the attribution source chain */
         @Nullable final String mAttributionTag;
-
-        /** Application callbacks */
         @Nullable IScannerCallback mCallback;
-
-        /** The id of the application */
+        final String mName; // The package name of the application
+        @Nullable ScanController.PendingIntentInfo mInfo; // Context information
+        AppScanStats mAppScanStats;
         int mId;
-
-        /** Whether the calling app has location permission */
         boolean mHasLocationPermission;
-
-        /** The user handle of the app that started the scan */
-        @Nullable UserHandle mUserHandle;
-
-        /** Whether the calling app has the network settings permission */
+        @Nullable UserHandle mUserHandle; // The user handle of the app that started the scan
         boolean mHasNetworkSettingsPermission;
-
-        /** Whether the calling app has the network setup wizard permission */
         boolean mHasNetworkSetupWizardPermission;
-
-        /** Whether the calling app has the network setup wizard permission */
         boolean mHasScanWithoutLocationPermission;
-
-        /** Whether the calling app has disavowed the use of bluetooth for location */
         boolean mHasDisavowedLocation;
-
         boolean mEligibleForSanitizedExposureNotification;
-
         @Nullable List<String> mAssociatedDevices;
-
-        /** Death recipient */
         @Nullable private ScanController.ScannerDeathRecipient mDeathRecipient;
 
-        /** Creates a new app context. */
         ScannerApp(
                 UUID uuid,
                 @Nullable String attributionTag,
@@ -305,7 +276,6 @@ class ScannerMap {
             this.mAppScanStats = appScanStats;
         }
 
-        /** Link death recipient */
         void linkToDeath(ScanController.ScannerDeathRecipient deathRecipient) {
             // It might not be a binder object
             if (mCallback == null) {
@@ -316,6 +286,7 @@ class ScannerMap {
                 mDeathRecipient = deathRecipient;
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to link deathRecipient for app id " + mId);
+                cleanup();
             }
         }
 
