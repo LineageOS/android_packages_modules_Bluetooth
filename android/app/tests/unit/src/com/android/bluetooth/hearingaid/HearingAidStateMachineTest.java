@@ -41,8 +41,8 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.UserHandle;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.tests.bluetooth.MockitoRule;

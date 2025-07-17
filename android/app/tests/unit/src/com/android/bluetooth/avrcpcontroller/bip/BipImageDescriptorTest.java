@@ -18,7 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.google.common.testing.EqualsTester;
 
