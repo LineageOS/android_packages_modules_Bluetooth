@@ -1520,7 +1520,7 @@ public class ScanController {
      * crash or forced close).
      */
     class ScannerDeathRecipient implements IBinder.DeathRecipient {
-        int mScannerId;
+        private final int mScannerId;
         private final String mPackageName;
 
         ScannerDeathRecipient(int scannerId, String packageName) {

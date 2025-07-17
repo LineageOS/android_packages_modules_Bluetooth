@@ -24,8 +24,6 @@ import android.app.PendingIntent;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
-import android.os.IBinder;
-import android.os.IInterface;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.WorkSource;
@@ -289,7 +287,7 @@ class ScannerMap {
         @Nullable List<String> mAssociatedDevices;
 
         /** Death recipient */
-        @Nullable private IBinder.DeathRecipient mDeathRecipient;
+        @Nullable private ScanController.ScannerDeathRecipient mDeathRecipient;
 
         /** Creates a new app context. */
         ScannerApp(
@@ -308,14 +306,13 @@ class ScannerMap {
         }
 
         /** Link death recipient */
-        void linkToDeath(IBinder.DeathRecipient deathRecipient) {
+        void linkToDeath(ScanController.ScannerDeathRecipient deathRecipient) {
             // It might not be a binder object
             if (mCallback == null) {
                 return;
             }
             try {
-                IBinder binder = ((IInterface) mCallback).asBinder();
-                binder.linkToDeath(deathRecipient, 0);
+                mCallback.asBinder().linkToDeath(deathRecipient, 0);
                 mDeathRecipient = deathRecipient;
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to link deathRecipient for app id " + mId);
@@ -324,10 +321,9 @@ class ScannerMap {
 
         /** Unlink death recipient */
         void cleanup() {
-            if (mDeathRecipient != null) {
+            if (mDeathRecipient != null && mCallback != null) {
                 try {
-                    IBinder binder = ((IInterface) mCallback).asBinder();
-                    binder.unlinkToDeath(mDeathRecipient, 0);
+                    mCallback.asBinder().unlinkToDeath(mDeathRecipient, 0);
                 } catch (NoSuchElementException e) {
                     Log.e(TAG, "Unable to unlink deathRecipient for app id " + mId);
                 }
