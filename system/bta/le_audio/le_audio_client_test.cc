@@ -14412,92 +14412,9 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsActive) {
   // Stop
   StopStreaming(group_id, true);
 
-  if (com::android::bluetooth::flags::leaudio_use_audio_recording_listener()) {
-    // simulate suspend timeout passed, alarm executing
-    fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
-    SyncOnMainLoop();
-  } else {
-    // Check if cache configuration is still present
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSink)
-                        .size());
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSource)
-                        .size());
-
-    // Release, Sink HAL client should remain in monitor mode
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(0);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(0);
-    LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
-    SyncOnMainLoop();
-
-    Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-    Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-    Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
-
-    // Re-initialize mock for destroyed hal client
-    RegisterSourceHalClientMock();
-
-    // Setting group inactive, shall not change cached configuration
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSink)
-                        .size());
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSource)
-                        .size());
-
-    EXPECT_CALL(mock_audio_hal_client_callbacks_,
-                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
-                                           UnicastMonitorModeStatus::STREAMING_REQUESTED))
-            .Times(1);
-
-    // Start streaming to trigger next group going to IDLE state
-    LocalAudioSinkResume();
-
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
-    LeAudioClient::Get()->GroupSetActive(group_id);
-    Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-    SyncOnMainLoop();
-
-    Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-
-    StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
-    SyncOnMainLoop();
-    Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-
-    // Stop streaming and expect Service to be informed about straming suspension
-    EXPECT_CALL(mock_audio_hal_client_callbacks_,
-                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
-                                           UnicastMonitorModeStatus::STREAMING_SUSPENDED))
-            .Times(1);
-
-    // Stop
-    StopStreaming(group_id, true);
-
-    // Release, Sink HAL client should remain in monitor mode
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(0);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(0);
-    LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
-    SyncOnMainLoop();
-
-    Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-    Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-    Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
-
-    // De-activate monitoring mode
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(1);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
-    do_in_main_thread(base::BindOnce(
-            &LeAudioClient::SetUnicastMonitorMode, base::Unretained(LeAudioClient::Get()),
-            bluetooth::le_audio::types::kLeAudioDirectionSink, false /* enable */));
-    SyncOnMainLoop();
-    Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
-  }
+  // simulate suspend timeout passed, alarm executing
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  SyncOnMainLoop();
 }
 
 TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsInactive) {
@@ -14565,39 +14482,9 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsInactive) {
   // Stop
   StopStreaming(group_id, true);
 
-  if (com::android::bluetooth::flags::leaudio_use_audio_recording_listener()) {
-    // simulate suspend timeout passed, alarm executing
-    fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
-    SyncOnMainLoop();
-  } else {
-    // Check if cache configuration is still present
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSink)
-                        .size());
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSource)
-                        .size());
-
-    // Release, Sink HAL client should remain in monitor mode
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
-    EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(0);
-    EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(0);
-    LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
-    SyncOnMainLoop();
-
-    Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-    Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-    Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
-
-    // Setting group inactive, shall not change cached configuration
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSink)
-                        .size());
-    ASSERT_TRUE(group->GetCachedConfiguration(types::LeAudioContextType::CONVERSATIONAL)
-                        ->confs.get(le_audio::types::kLeAudioDirectionSource)
-                        .size());
-  }
+  // simulate suspend timeout passed, alarm executing
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  SyncOnMainLoop();
 }
 
 TEST_F(UnicastTestHandoverMode, ClearSinkMonitorModeWhileUnicastIsActive) {
@@ -15209,8 +15096,6 @@ TEST_F(UnicastTest, CodecFrameBlocks2) {
 }
 
 TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContexts) {
-  com::android::bluetooth::flags::provider_->leaudio_stop_updated_to_not_available_context_stream(
-          true);
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
 
@@ -15270,8 +15155,6 @@ TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContexts) {
 }
 
 TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContextsInCallMode) {
-  com::android::bluetooth::flags::provider_->leaudio_stop_updated_to_not_available_context_stream(
-          true);
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
 
