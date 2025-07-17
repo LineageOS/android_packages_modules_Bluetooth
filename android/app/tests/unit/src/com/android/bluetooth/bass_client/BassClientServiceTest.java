@@ -5162,30 +5162,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void bigMonitoring_suspendReceivers_withoutScanning() {
-        bigMonitoringWithoutScanning();
-
-        // Suspend receivers, SUSPENDED_BY_HOST
-        mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        verifyStopBroadcastMonitoringWithUnsync();
-        verifyModifyMessageAndInjectSourceModified();
-        checkNoResumeSynchronizationByBig();
-        checkResumeSynchronizationByHost();
-    }
-
-    @Test
-    public void bigMonitoring_suspendReceivers_duringScanning() {
-        bigMonitoringDuringScanning();
-
-        // Suspend receivers, SUSPENDED_BY_HOST
-        mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        verifyStopBroadcastMonitoringWithoutUnsync();
-        verifyModifyMessageAndInjectSourceModified();
-        checkNoResumeSynchronizationByBig();
-        checkResumeSynchronizationByHost();
-    }
-
-    @Test
     public void bigMonitoring_suspendAllReceivers_withoutScanning() {
         bigMonitoringWithoutScanning();
 
@@ -5422,7 +5398,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
     public void bigMonitoring_handleUnicastSourceStreamStatusChange_withoutScanning() {
         bigMonitoringWithoutScanning();
 
@@ -5444,7 +5419,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
     public void bigMonitoring_handleUnicastSourceStreamStatusChange_duringScanning() {
         bigMonitoringDuringScanning();
 
@@ -6114,26 +6088,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void suspendedByHost_suspendReceivers_withoutScanning() {
-        prepareSynchronizedPairAndStopSearching();
-
-        // Suspend receivers, SUSPENDED_BY_HOST
-        mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNotAllowBroadcastMonitoring();
-        checkResumeSynchronizationByHost();
-    }
-
-    @Test
-    public void suspendedByHost_suspendReceivers_duringScanning() {
-        prepareSynchronizedPair();
-
-        // Suspend receivers, SUSPENDED_BY_HOST
-        mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNotAllowBroadcastMonitoring();
-        checkResumeSynchronizationByHost();
-    }
-
-    @Test
     public void suspendedByHost_suspendAllReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6190,7 +6144,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
     public void suspendedByHost_handleUnicastSourceStreamStatusChange_beforeResumeCompleted() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6848,36 +6801,6 @@ public class BassClientServiceTest {
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         checkResumeSynchronizationByHost();
-    }
-
-    @Test
-    public void removeSource_duringSuspend() {
-        prepareSynchronizedPair();
-
-        // Suspend receivers, SUSPENDED_BY_HOST
-        mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-
-        // Remove source, SUSPENDED_BY_HOST
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        checkNotAllowBroadcastMonitoring();
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        checkNoResumeSynchronizationByHost();
-    }
-
-    @Test
-    public void stopReceivers_duringSuspend() {
-        prepareSynchronizedPair();
-
-        // Suspend receivers, SUSPENDED_BY_HOST
-        mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-
-        // Remove source, SUSPENDED_BY_HOST
-        mBassClientService.stopReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNotAllowBroadcastMonitoring();
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        checkNoResumeSynchronizationByHost();
     }
 
     @Test

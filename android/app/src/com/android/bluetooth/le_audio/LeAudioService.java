@@ -33,7 +33,6 @@ import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiManagePrimaryGroup;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
-import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator;
 import static com.android.bluetooth.flags.Flags.leaudioUseAudioRecordingListener;
 
 import static java.util.Objects.requireNonNull;
@@ -1695,13 +1694,9 @@ public class LeAudioService extends ConnectableProfile {
             return false;
         }
 
-        if (leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator()) {
-            return (descriptor.mGroupId == mUnicastGroupIdDeactivatedForBroadcastTransition)
-                    || device.equals(mActiveAudioInDevice)
-                    || device.equals(mActiveAudioOutDevice);
-        } else {
-            return descriptor.mGroupId == mUnicastGroupIdDeactivatedForBroadcastTransition;
-        }
+        return (descriptor.mGroupId == mUnicastGroupIdDeactivatedForBroadcastTransition)
+                || device.equals(mActiveAudioInDevice)
+                || device.equals(mActiveAudioOutDevice);
     }
 
     /** Return true if group is primary - is active or was active before switch to broadcast */
