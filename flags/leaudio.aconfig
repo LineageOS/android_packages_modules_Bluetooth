@@ -128,16 +128,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_use_audio_recording_listener"
-    namespace: "bluetooth"
-    description: "Use Audio Recording listener instead of monitoring sink session"
-    bug: "381054654"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_disable_broadcast_for_hap_device"
     namespace: "bluetooth"
     description: "Disable broadcast feature for HAP device"

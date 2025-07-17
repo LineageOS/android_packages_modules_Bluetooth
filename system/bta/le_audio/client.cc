@@ -1525,19 +1525,6 @@ public:
 
   void SetUnicastMonitorMode(uint8_t direction, bool enable) override {
     if (direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
-      /* Cleanup Sink HAL client interface if listening mode is toggled off
-       * before group activation (active group context would take care of
-       * Sink HAL client cleanup).
-       */
-      if (!com::android::bluetooth::flags::leaudio_use_audio_recording_listener()) {
-        if (sink_monitor_mode_ && !enable && le_audio_sink_hal_client_ &&
-            active_group_id_ == bluetooth::groups::kGroupUnknown) {
-          local_metadata_context_types_.sink.clear();
-          le_audio_sink_hal_client_->Stop();
-          le_audio_sink_hal_client_.reset();
-        }
-      }
-
       log::debug("enable: {}", enable);
       sink_monitor_mode_ = enable;
     } else if (direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
@@ -5175,16 +5162,6 @@ public:
                                             "r_state: " + ToString(audio_receiver_state_) +
                                                     ", s_state: " + ToString(audio_sender_state_));
 
-    if (!com::android::bluetooth::flags::leaudio_use_audio_recording_listener()) {
-      if (sink_monitor_mode_ && active_group_id_ == bluetooth::groups::kGroupUnknown) {
-        if (sink_monitor_notified_status_ != UnicastMonitorModeStatus::STREAMING_REQUESTED) {
-          notifyAudioLocalSink(UnicastMonitorModeStatus::STREAMING_REQUESTED);
-        }
-        CancelLocalAudioSinkStreamingRequest();
-        return;
-      }
-    }
-
     /* Stop the VBC close watchdog if needed */
     StopVbcCloseTimeout();
 
@@ -7169,12 +7146,9 @@ private:
        * the session callbacks special action from this Module would be
        * required e.g. to Unicast handover.
        */
-      if (com::android::bluetooth::flags::leaudio_use_audio_recording_listener() ||
-          !sink_monitor_mode_) {
-        local_metadata_context_types_.sink.clear();
-        le_audio_sink_hal_client_->Stop();
-        le_audio_sink_hal_client_.reset();
-      }
+      local_metadata_context_types_.sink.clear();
+      le_audio_sink_hal_client_->Stop();
+      le_audio_sink_hal_client_.reset();
     }
 
     local_metadata_context_types_.source.clear();

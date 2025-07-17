@@ -33,7 +33,6 @@ import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiManagePrimaryGroup;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
-import static com.android.bluetooth.flags.Flags.leaudioUseAudioRecordingListener;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -217,7 +216,6 @@ public class LeAudioService extends ConnectableProfile {
     boolean mTmapStarted = false;
     private boolean mAwaitingBroadcastCreateResponse = false;
     boolean mIsSourceStreamMonitorModeEnabled = false;
-    boolean mIsSinkStreamMonitorModeEnabled = false;
     boolean mIsBroadcastPausedFromOutside = false;
 
     private static final int LOG_NB_EVENTS = 150;
@@ -321,9 +319,7 @@ public class LeAudioService extends ConnectableProfile {
 
         mAudioManager.addOnModeChangedListener(getMainExecutor(), mAudioModeChangeListener);
 
-        if (leaudioUseAudioRecordingListener()) {
-            mAudioManager.registerAudioRecordingCallback(mAudioRecordingCallback, null);
-        }
+        mAudioManager.registerAudioRecordingCallback(mAudioRecordingCallback, null);
     }
 
     // TODO(b/422543753) Delete on flag cleanup
@@ -773,16 +769,11 @@ public class LeAudioService extends ConnectableProfile {
         mQueuedInCallValue = Optional.empty();
         mAudioManager.removeOnModeChangedListener(mAudioModeChangeListener);
 
-        if (leaudioUseAudioRecordingListener()) {
-            mAudioManager.unregisterAudioRecordingCallback(mAudioRecordingCallback);
-        }
+        mAudioManager.unregisterAudioRecordingCallback(mAudioRecordingCallback);
 
         mCreateBroadcastQueue.clear();
         mAwaitingBroadcastCreateResponse = false;
         mIsSourceStreamMonitorModeEnabled = false;
-        if (!leaudioUseAudioRecordingListener()) {
-            mIsSinkStreamMonitorModeEnabled = false;
-        }
         mIsBroadcastPausedFromOutside = false;
 
         clearCreateBroadcastTimeoutCallback();
@@ -1557,11 +1548,6 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         Log.d(TAG, "destroyBroadcast");
-
-        if (!leaudioUseAudioRecordingListener()) {
-            mIsSinkStreamMonitorModeEnabled = false;
-            mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, false);
-        }
 
         mLeAudioBroadcasterNativeInterface.get().destroyBroadcast(broadcastId);
     }
@@ -2429,19 +2415,6 @@ public class LeAudioService extends ConnectableProfile {
         if (isActive) {
             newOutDevice = getLeadDeviceForTheGroup(groupId);
             newInDevice = newOutDevice;
-        } else {
-            /* While broadcasting a input device needs to be connected to track Audio Framework
-             * streaming requests. This would allow native to make a fallback to Unicast decision.
-             */
-            if (!leaudioUseAudioRecordingListener()) {
-                if (notifyAndUpdateInactiveOutDeviceOnly
-                        && ((newSupportedAudioDirections & AUDIO_DIRECTION_INPUT_BIT) != 0)) {
-                    newInDevice = getLeadDeviceForTheGroup(groupId);
-                } else if (mIsSinkStreamMonitorModeEnabled) {
-                    mIsSinkStreamMonitorModeEnabled = false;
-                    mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, false);
-                }
-            }
         }
 
         boolean isNewActiveOutDevice =
@@ -2628,36 +2601,6 @@ public class LeAudioService extends ConnectableProfile {
             // we need to update the cached group id and skip changing the active device
             if (!leaudioBroadcastApiManagePrimaryGroup()) {
                 updateFallbackUnicastGroupIdForBroadcast(groupId);
-
-                if (!leaudioUseAudioRecordingListener()) {
-                    LeAudioGroupDescriptor fallbackGroupDescriptor = getGroupDescriptor(groupId);
-
-                    if (fallbackGroupDescriptor != null) {
-                        if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
-                            /* In case of removing fallback unicast group, monitoring input device
-                             * should be removed from active devices.
-                             */
-                            updateActiveDevices(
-                                    groupId,
-                                    fallbackGroupDescriptor.mDirection,
-                                    AUDIO_DIRECTION_INPUT_BIT,
-                                    false,
-                                    fallbackGroupDescriptor.mHasFallbackDeviceWhenGettingInactive,
-                                    true);
-                        } else {
-                            if (mActiveAudioInDevice != null) {
-                                updateActiveDevices(
-                                        groupId,
-                                        fallbackGroupDescriptor.mDirection,
-                                        AUDIO_DIRECTION_INPUT_BIT,
-                                        false,
-                                        fallbackGroupDescriptor
-                                                .mHasFallbackDeviceWhenGettingInactive,
-                                        true);
-                            }
-                        }
-                    }
-                }
             }
 
             return true;
@@ -3081,17 +3024,7 @@ public class LeAudioService extends ConnectableProfile {
 
             descriptor.setActiveState(ACTIVE_STATE_INACTIVE);
 
-            /* Group became inactive due to broadcast creation, check if input device should remain
-             * connected to track streaming request on Unicast
-             */
-            boolean leaveConnectedInputDevice = false;
-            Integer newDirections = AUDIO_DIRECTION_NONE;
             if (isBroadcastReadyToBeActivated()) {
-                if (!leaudioUseAudioRecordingListener()) {
-                    leaveConnectedInputDevice = true;
-                    newDirections |= AUDIO_DIRECTION_INPUT_BIT;
-                }
-
                 /* Update Broadcast device before streaming state in handover case to avoid switch
                  * to non LE Audio device in Audio Manager e.g. Phone Speaker for broadcast to
                  * unicast handover case.
@@ -3110,10 +3043,10 @@ public class LeAudioService extends ConnectableProfile {
             updateActiveDevices(
                     groupId,
                     descriptor.mDirection,
-                    newDirections,
+                    AUDIO_DIRECTION_NONE,
                     false,
                     descriptor.mHasFallbackDeviceWhenGettingInactive,
-                    leaveConnectedInputDevice);
+                    false);
             /* Clear lost devices */
             Log.d(TAG, "Clear for group: " + groupId);
             descriptor.mHasFallbackDeviceWhenGettingInactive = false;
@@ -4137,11 +4070,6 @@ public class LeAudioService extends ConnectableProfile {
             if (mAwaitingBroadcastCreateResponse && !areAllGroupsInNotActiveState()) {
                 /* Broadcast would be created once unicast group became inactive */
                 Log.i(TAG, "Unicast group is active, deactivate due to pending broadcast");
-
-                if (!leaudioUseAudioRecordingListener()) {
-                    mIsSinkStreamMonitorModeEnabled = true;
-                    mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, true);
-                }
 
                 removeActiveDevice(true);
             }
@@ -5611,38 +5539,6 @@ public class LeAudioService extends ConnectableProfile {
                                 + " -> "
                                 + groupId);
                 return;
-            }
-
-            /* Update exposed monitoring input device while being in Broadcast mode */
-            if (!leaudioUseAudioRecordingListener()
-                    && isBroadcastActive()
-                    && getActiveGroupId() == LE_AUDIO_GROUP_ID_INVALID
-                    && mUnicastGroupIdDeactivatedForBroadcastTransition
-                            != LE_AUDIO_GROUP_ID_INVALID) {
-                /* In case of removing fallback unicast group, monitoring input
-                 * device should be removed from active devices.
-                 */
-                int newDirection = AUDIO_DIRECTION_NONE;
-                int oldDirection =
-                        oldFallbackGroupDescriptor != null
-                                ? oldFallbackGroupDescriptor.mDirection
-                                : AUDIO_DIRECTION_NONE;
-                boolean notifyAndUpdateInactiveOutDeviceOnly = false;
-                boolean hasFallbackDeviceWhenGettingInactive =
-                        oldFallbackGroupDescriptor != null
-                                ? oldFallbackGroupDescriptor.mHasFallbackDeviceWhenGettingInactive
-                                : false;
-                if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
-                    newDirection = AUDIO_DIRECTION_INPUT_BIT;
-                    notifyAndUpdateInactiveOutDeviceOnly = true;
-                }
-                updateActiveDevices(
-                        groupId,
-                        oldDirection,
-                        newDirection,
-                        false, // isActive
-                        hasFallbackDeviceWhenGettingInactive,
-                        notifyAndUpdateInactiveOutDeviceOnly);
             }
         } finally {
             mGroupReadLock.unlock();
