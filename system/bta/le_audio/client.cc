@@ -1466,32 +1466,29 @@ public:
       /* When inCall mode is disabled and remaining metadata is no longer supported by group -
        * stream should be stopped.
        */
-      if (com::android::bluetooth::flags::leaudio_stop_updated_to_not_available_context_stream()) {
-        if (stopStreamIfCurrentContextTypeIsNotAllowed(
-                    bluetooth::le_audio::types::kLeAudioDirectionSource, group,
-                    local_metadata_context_types_.sink)) {
-          log::info(
-                  "After disable InCall mode, updated sink metadata contexts are not allowed "
-                  "context types: {} | configured: {} vs allowed context mask: {}",
-                  ToString(local_metadata_context_types_.sink),
-                  ToString(configuration_context_type_),
-                  ToString(group->GetAllowedContextMask(
-                          bluetooth::le_audio::types::kLeAudioDirectionSource)));
-          return;
-        }
+      if (stopStreamIfCurrentContextTypeIsNotAllowed(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource, group,
+                  local_metadata_context_types_.sink)) {
+        log::info(
+                "After disable InCall mode, updated sink metadata contexts are not allowed "
+                "context types: {} | configured: {} vs allowed context mask: {}",
+                ToString(local_metadata_context_types_.sink), ToString(configuration_context_type_),
+                ToString(group->GetAllowedContextMask(
+                        bluetooth::le_audio::types::kLeAudioDirectionSource)));
+        return;
+      }
 
-        if (stopStreamIfCurrentContextTypeIsNotAllowed(
-                           bluetooth::le_audio::types::kLeAudioDirectionSink, group,
-                           local_metadata_context_types_.source)) {
-          log::info(
-                  "After disable InCall mode, updated source metadata contexts are not allowed "
-                  "context types: {} | configured: {} vs allowed context mask: {}",
-                  ToString(local_metadata_context_types_.source),
-                  ToString(configuration_context_type_),
-                  ToString(group->GetAllowedContextMask(
-                          bluetooth::le_audio::types::kLeAudioDirectionSink)));
-          return;
-        }
+      if (stopStreamIfCurrentContextTypeIsNotAllowed(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink, group,
+                  local_metadata_context_types_.source)) {
+        log::info(
+                "After disable InCall mode, updated source metadata contexts are not allowed "
+                "context types: {} | configured: {} vs allowed context mask: {}",
+                ToString(local_metadata_context_types_.source),
+                ToString(configuration_context_type_),
+                ToString(group->GetAllowedContextMask(
+                        bluetooth::le_audio::types::kLeAudioDirectionSink)));
+        return;
       }
     }
 
@@ -5585,11 +5582,9 @@ public:
      * If device is inCall mode, AF may quickly change metadata from ringing mode to active.
      * To avoid short stream suspend, let's keep stream alive.
      */
-    if (com::android::bluetooth::flags::leaudio_stop_updated_to_not_available_context_stream() &&
-        !IsInVoipOrRegularCall() &&
-        stopStreamIfCurrentContextTypeIsNotAllowed(
-                bluetooth::le_audio::types::kLeAudioDirectionSink, group,
-                local_metadata_context_types_.source)) {
+    if (!IsInVoipOrRegularCall() && stopStreamIfCurrentContextTypeIsNotAllowed(
+                                            bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                            group, local_metadata_context_types_.source)) {
       StopVbcCloseTimeout();
       log::info(
               "Updated source metadata contexts are not allowed context types: {} | configured: {} "
@@ -5773,11 +5768,9 @@ public:
      * If device is inCall mode, AF may quickly change metadata from ringing mode to active.
      * To avoid short stream suspend, let's keep stream alive.
      */
-    if (com::android::bluetooth::flags::leaudio_stop_updated_to_not_available_context_stream() &&
-        !IsInVoipOrRegularCall() &&
-        stopStreamIfCurrentContextTypeIsNotAllowed(
-                bluetooth::le_audio::types::kLeAudioDirectionSource, group,
-                local_metadata_context_types_.sink)) {
+    if (!IsInVoipOrRegularCall() && stopStreamIfCurrentContextTypeIsNotAllowed(
+                                            bluetooth::le_audio::types::kLeAudioDirectionSource,
+                                            group, local_metadata_context_types_.sink)) {
       log::info(
               "Updated sink metadata contexts are not allowed context types: {} | configured: {} "
               "vs allowed context mask: {}",

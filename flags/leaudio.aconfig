@@ -93,16 +93,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_stop_updated_to_not_available_context_stream"
-    namespace: "bluetooth"
-    description: "Allow stack to stop stream which remains with non allowed context"
-    bug: "376251433"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_config_profile_enabling"
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"

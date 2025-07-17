@@ -15106,8 +15106,6 @@ TEST_F(UnicastTest, CodecFrameBlocks2) {
 }
 
 TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContexts) {
-  com::android::bluetooth::flags::provider_->leaudio_stop_updated_to_not_available_context_stream(
-          true);
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
 
@@ -15167,8 +15165,6 @@ TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContexts) {
 }
 
 TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContextsInCallMode) {
-  com::android::bluetooth::flags::provider_->leaudio_stop_updated_to_not_available_context_stream(
-          true);
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
 
