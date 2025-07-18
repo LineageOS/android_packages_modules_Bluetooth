@@ -126,7 +126,7 @@ class BluetoothManagerService {
     // Maximum msec to delay MESSAGE_USER_SWITCHED
     private static final int USER_SWITCHED_TIME_MS = 200 * HW_MULTIPLIER;
     // Delay for the addProxy function in msec
-    private static final int ADD_PROXY_DELAY_MS = 100 * HW_MULTIPLIER;
+    @VisibleForTesting static final int ADD_PROXY_DELAY_MS = 100 * HW_MULTIPLIER;
     // Delay for retrying enable and disable in msec
     @VisibleForTesting static final int ENABLE_DISABLE_DELAY_MS = 300 * HW_MULTIPLIER;
 
@@ -442,14 +442,15 @@ class BluetoothManagerService {
     }
 
     // Call is coming from the systemServer main thread and need to be post to avoid race
-    void onSwitchUser(UserHandle userHandle) {
+    void onSwitchUserFromService(UserHandle userHandle) {
         Log.d(TAG, "BluetoothService.onSwitchUser: " + userHandle);
-        mHandler.post(
-                () ->
-                        delayModeChangedIfNeeded(
-                                ON_SWITCH_USER_TOKEN,
-                                () -> handleSwitchUser(userHandle),
-                                "onSwitchUser"));
+        mHandler.post(() -> onSwitchUser(userHandle));
+    }
+
+    @VisibleForTesting
+    void onSwitchUser(UserHandle userHandle) {
+        delayModeChangedIfNeeded(
+                ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(userHandle), "onSwitchUser");
     }
 
     private void forceToOffFromModeChange(int currentState, int reason) {

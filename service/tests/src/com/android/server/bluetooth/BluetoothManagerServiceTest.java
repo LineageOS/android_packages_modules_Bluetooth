@@ -144,6 +144,7 @@ public class BluetoothManagerServiceTest {
     private InOrder mInOrder;
     private TestLooper mLooper;
     private BluetoothManagerService mManagerService;
+    private UserHandle mCurrentUser;
 
     private static class ServerQuery extends IpcDataCache.QueryHandler<IBluetoothManager, Integer> {
         @Override
@@ -168,6 +169,7 @@ public class BluetoothManagerServiceTest {
     @Before
     public void setUp() throws Exception {
         mInOrder = inOrder(mContext, mManagerCallback, mAdapterBinder);
+        mCurrentUser = mUser;
 
         IpcDataCache<IBluetoothManager, Integer> testCache =
                 new IpcDataCache<>(
@@ -394,7 +396,8 @@ public class BluetoothManagerServiceTest {
                 new ComponentName("", "com.android.bluetooth.btservice.AdapterService");
 
         var captor = ArgumentCaptor.forClass(ServiceConnection.class);
-        mInOrder.verify(mContext).bindServiceAsUser(any(), captor.capture(), anyInt(), any());
+        mInOrder.verify(mContext)
+                .bindServiceAsUser(any(), captor.capture(), anyInt(), eq(mCurrentUser));
         assertThat(captor.getAllValues()).hasSize(1);
 
         var serviceConnection = captor.getAllValues().get(0);
@@ -769,12 +772,208 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_fastSwitch_restartsForLatestUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_fastSwitch_restartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+        // A third user switch arrives before the first one is processed.
+        UserHandle anotherUser = mock(UserHandle.class);
+        mManagerService.onSwitchUser(anotherUser);
+
+        transition_onToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        // TODO Simplify this test case. We should never start on mNextUser
+
+        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
+        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
+
+        transition_onToOff(btCallback);
+
+        mCurrentUser = anotherUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_fastSwitchOnInitialUser_restartsForInitialUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_fastSwitch_restartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+        mManagerService.onSwitchUser(mUser);
+
+        transition_onToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
+        btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        // TODO Simplify this test case. We should never start on mNextUser
+
+        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
+        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
+
+        transition_onToOff(btCallback);
+
+        mCurrentUser = mUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_duringShutdownForSwitch_restartsForLatestUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_duringShutdownForSwitch_restartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+
+        // Start the shutdown process
+        mInOrder.verify(mAdapterBinder).onToBleOn();
+        verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
+        verifyStateIntentSent(State.ON, State.TURNING_OFF);
+        assertThat(mManagerService.getState()).isEqualTo(State.TURNING_OFF);
+
+        // Switch user again while shutting down
+        UserHandle anotherUser = mock(UserHandle.class);
+        mManagerService.onSwitchUser(anotherUser);
+
+        // Complete the shutdown by going to BLE_ON then OFF
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
+        verifyStateIntentSent(State.TURNING_OFF, State.OFF);
+        transition_bleOnToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        // TODO Simplify this test case. We should never start on mNextUser
+
+        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
+        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
+
+        transition_onToOff(btCallback);
+
+        mCurrentUser = anotherUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_duringRestartForSwitch_completesThenRestartsForLatestUser()
+            throws Exception {
+        mManagerService.enable(
+                0, "userSwitch_duringRestartForSwitch_completesThenRestartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        // First user switch
+        mManagerService.onSwitchUser(mNextUser);
+        transition_onToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
+        // Restart for mNextUser begins
+        // Inlined transition_offToOn to inject the switch
+        IBluetoothCallback newBtCallback = transition_offToBleOn();
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
+        verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
+        verifyStateIntentSent(State.OFF, State.TURNING_ON);
+        assertThat(mManagerService.getState()).isEqualTo(State.TURNING_ON);
+
+        // Switch user again while in TURNING_ON
+        UserHandle anotherUser = mock(UserHandle.class);
+        mManagerService.onSwitchUser(anotherUser);
+
+        // The current startup should complete
+        newBtCallback.onBluetoothStateChange(State.TURNING_ON, State.ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.TURNING_ON, State.ON);
+        verifyStateIntentSent(State.TURNING_ON, State.ON);
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
+        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
+
+        // Now it should shut down for the new user switch
+        transition_onToOff(newBtCallback);
+
+        mCurrentUser = anotherUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_whenBleTurningOn_abortsAndStaysOff() throws Exception {
+        mManagerService.enableBle("userSwitch_whenBleTurningOn_abortsAndStaysOff", mBleBinder);
+        acceptBluetoothBinding();
+        IBluetoothCallback btCallback = captureBluetoothCallback();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+
+        // TODO we shouldn't have to complete the transition to BLE_ON
+
+        btCallback.setAdapterServiceBinder(mBinder);
+        syncHandler(0); // To post setAdapterServiceBinder
+        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(mBinder);
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.BLE_ON);
+
+        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
+        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
+
+        transition_bleOnToOff(btCallback);
+        // // The service should be unbound, and state should go to OFF.
+        // mInOrder.verify(mContext).unbindService(any());
+        // verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+        // assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        // A late state change should be ignored.
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
+    }
+
+    @Test
     @EnableFlags({
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
     public void userSwitch_whenBtOff_stayOff() throws Exception {
-        mManagerService.handleSwitchUser(mNextUser);
+        mManagerService.onSwitchUser(mNextUser);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
@@ -790,7 +989,7 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToBleOn();
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
 
-        mManagerService.handleSwitchUser(mNextUser);
+        mManagerService.onSwitchUser(mNextUser);
         transition_bleOnToOff(btCallback);
 
         endTest();
@@ -806,9 +1005,12 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.handleSwitchUser(mNextUser);
+        mManagerService.onSwitchUser(mNextUser);
 
         transition_onToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
