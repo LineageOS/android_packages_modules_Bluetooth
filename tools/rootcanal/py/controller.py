@@ -30,8 +30,8 @@ from ctypes import *
 rootcanal = cdll.LoadLibrary("lib_rootcanal_ffi.so")
 rootcanal.ffi_controller_new.restype = c_void_p
 
-SEND_HCI_FUNC = CFUNCTYPE(None, c_int, POINTER(c_ubyte), c_size_t)
-SEND_LL_FUNC = CFUNCTYPE(None, POINTER(c_ubyte), c_size_t, c_int, c_int)
+SEND_HCI_FUNC = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_ubyte), c_size_t)
+SEND_LL_FUNC = CFUNCTYPE(None, c_void_p, POINTER(c_ubyte), c_size_t, c_int, c_int)
 
 
 class Idc(enum.IntEnum):
@@ -82,7 +82,8 @@ class Controller:
             self.receive_hci_(int(idc), bytes(packet))
 
         @SEND_LL_FUNC
-        def send_ll(cookie: c_void_p, data: POINTER(c_ubyte), data_len: c_size_t, phy: c_int, tx_power: c_int):
+        def send_ll(cookie: c_void_p, data: POINTER(c_ubyte), data_len: c_size_t, phy: c_int,
+                    tx_power: c_int):
             packet = []
             for n in range(data_len):
                 packet.append(data[n])
