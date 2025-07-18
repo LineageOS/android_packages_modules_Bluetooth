@@ -901,29 +901,16 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = captureBluetoothCallback();
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
 
-        mManagerService.onSwitchUser(mNextUser);
+        mManagerService.onSwitchUserFromService(mNextUser);
 
-        // TODO we shouldn't have to complete the transition to BLE_ON
-
-        btCallback.setAdapterServiceBinder(mBinder);
-        syncHandler(0); // To post setAdapterServiceBinder
-        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(mBinder);
+        // A late state change that will be ignored.
         btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.BLE_ON);
 
-        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
-        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
+        syncHandler(0); // Process onSwitchUserFromService
 
-        transition_bleOnToOff(btCallback);
-        // // The service should be unbound, and state should go to OFF.
-        // mInOrder.verify(mContext).unbindService(any());
-        // verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
-        // assertThat(mManagerService.getState()).isEqualTo(State.OFF);
-
-        // A late state change should be ignored.
-        btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        // The service should be unbound, and state should go to OFF.
+        mInOrder.verify(mContext).unbindService(any());
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
@@ -971,10 +958,7 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
     public void enable_afterLeSession_canStart() throws Exception {
         mManagerService.enableBle("enable_afterLeSession_canStart", mBleBinder);
         IBluetoothCallback btCallback = transition_offToBleOn();

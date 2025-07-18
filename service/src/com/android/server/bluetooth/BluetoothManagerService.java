@@ -357,7 +357,7 @@ class BluetoothManagerService {
             // Impossible case, if BrEdr is starting, state would be TURNING_ON
             // Bluetooth is in BLE and is starting classic
             return SERVICE_RESTART_TIME_MS;
-        } else if (!mState.oneOf(State.ON, State.OFF, State.BLE_ON)) {
+        } else if (!mState.oneOf(State.ON, State.OFF, State.BLE_ON, State.BLE_TURNING_ON)) {
             // Bluetooth is in a temporary turning state
             return ADD_PROXY_DELAY_MS;
         } else if ((!Flags.gracefulDisableWithoutMessage()
@@ -472,11 +472,14 @@ class BluetoothManagerService {
             mActiveLogs.add(reason, false);
             onToBleOn();
         } else if (currentState == State.BLE_ON) {
-            // If currentState is BLE_ON make sure we trigger stopBle
             mEnable = false;
             mEnableExternal = false;
             mActiveLogs.add(reason, false);
             bleOnToOff();
+        } else if (currentState == State.BLE_TURNING_ON && Flags.userSwitchDuringBleOn()) {
+            mEnable = false;
+            mActiveLogs.add(reason, false);
+            bleTurninOnToOff();
         }
     }
 
@@ -1688,6 +1691,7 @@ class BluetoothManagerService {
         switch (mState.get()) {
             case State.ON -> onToBleOn();
             case State.BLE_ON -> bleOnToOff();
+            case State.BLE_TURNING_ON -> bleTurninOnToOff();
             default -> throw new IllegalStateException("From impossible state: " + mState);
         }
     }
@@ -1899,6 +1903,20 @@ class BluetoothManagerService {
             Log.e(TAG, "Unable to call bleOnToOff()", e);
         }
         bluetoothStateChangeHandler(State.BLE_ON, State.BLE_TURNING_OFF);
+    }
+
+    private void bleTurninOnToOff() {
+        if (!mState.oneOf(State.BLE_TURNING_ON)) {
+            throw new IllegalStateException("bleTurninOnToOff: Impossible from " + mState);
+        }
+        Log.d(TAG, "bleTurninOnToOff: Sending request");
+        if (mAdapter == null) {
+            // When Bluetooth was not yet bound, prevent binding to complete
+            mContext.unbindService(mConnection);
+            mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
+        }
+        mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
     }
 
     private void broadcastIntentStateChange(String action, int prevState, int newState) {
