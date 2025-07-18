@@ -265,7 +265,7 @@ public class BluetoothManagerServiceTest {
     }
 
     private void endTest() {
-        mLooper.moveTimeForward(120_000);
+        mLooper.moveTimeForward(200_000);
         assertThat(mLooper.nextMessage()).isNull();
         verifyNoMoreInteractions(ignoreStubs(mContext));
     }
@@ -1079,7 +1079,8 @@ public class BluetoothManagerServiceTest {
             SERVICE_RESTART_TIME_MS * 3,
             SERVICE_RESTART_TIME_MS * 40,
             SERVICE_RESTART_TIME_MS * 50,
-            SERVICE_RESTART_TIME_MS * 60
+            SERVICE_RESTART_TIME_MS * 60,
+            0
         };
 
         mManagerService.enableBle("crashLoop_recoveryTimeIncrease", mBleBinder);
@@ -1094,6 +1095,11 @@ public class BluetoothManagerServiceTest {
             syncHandler(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
             verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
             assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+            if (delay == 0) {
+                // Last restart attempt
+                break;
+            }
 
             mLooper.moveTimeForward(delay - 50);
             assertThat(mLooper.nextMessage()).isNull();
