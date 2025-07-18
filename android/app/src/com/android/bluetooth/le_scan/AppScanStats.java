@@ -70,10 +70,10 @@ class AppScanStats {
         public final boolean isCallbackScan;
         public final boolean isFilterScan;
         public final boolean isOpportunisticScan;
-        public final long timestamp;
         public final long reportDelayMillis;
         public final int appImportanceOnStart;
         @Nullable public final String attributionTag;
+        private final long mStartTimestamp;
 
         public long duration;
         public long suspendDuration;
@@ -85,10 +85,10 @@ class AppScanStats {
         public int results;
 
         private LastScan(
+                long startTimestamp,
                 int scannerId,
                 int scanMode,
                 int scanCallbackType,
-                long timestamp,
                 long reportDelayMillis,
                 boolean isBackgroundScan,
                 boolean isBatchScan,
@@ -97,10 +97,10 @@ class AppScanStats {
                 boolean isOpportunisticScan,
                 int appImportanceOnStart,
                 @Nullable String attributionTag) {
+            mStartTimestamp = startTimestamp;
             this.scannerId = scannerId;
             this.scanMode = scanMode;
             this.scanCallbackType = scanCallbackType;
-            this.timestamp = timestamp;
             this.reportDelayMillis = reportDelayMillis;
             this.isBackgroundScan = isBackgroundScan;
             this.isBatchScan = isBatchScan;
@@ -133,7 +133,7 @@ class AppScanStats {
     int mAppImportance = IMPORTANCE_CACHED;
     private int mScansStarted = 0;
     private int mScansStopped = 0;
-    private long mScanStartTime = 0;
+    private long mScanStartTimestamp = 0;
     private long mTotalActiveTime = 0;
     private long mTotalSuspendTime = 0;
     private long mTotalScanTime = 0;
@@ -147,7 +147,6 @@ class AppScanStats {
     private int mBalancedScan = 0;
     private int mLowLatencyScan = 0;
     private int mAmbientDiscoveryScan = 0;
-    private long startTime = 0;
     private int results = 0;
     private int mScheduledBatchAlarmCount = 0;
 
@@ -258,14 +257,13 @@ class AppScanStats {
             return;
         }
         mScansStarted++;
-        startTime = mTimeProvider.elapsedRealtime();
-
+        final var startTimestamp = mTimeProvider.elapsedRealtime();
         LastScan scan =
                 new LastScan(
+                        startTimestamp,
                         scannerId,
                         settings.getScanMode(),
                         settings.getCallbackType(),
-                        startTime,
                         settings.getReportDelayMillis(),
                         isBackgroundScan(settings),
                         isBatchScan(settings),
@@ -292,7 +290,7 @@ class AppScanStats {
         }
 
         if (!isScanning()) {
-            mScanStartTime = startTime;
+            mScanStartTimestamp = startTimestamp;
         }
         boolean isUnoptimized =
                 !(scan.isFilterScan || scan.isBackgroundScan || scan.isOpportunisticScan);
@@ -317,7 +315,7 @@ class AppScanStats {
         }
         this.mScansStopped++;
         long stopTime = mTimeProvider.elapsedRealtime();
-        long scanDuration = stopTime - scan.timestamp;
+        long scanDuration = stopTime - scan.mStartTimestamp;
         scan.duration = scanDuration;
         if (scan.isSuspended) {
             long suspendDuration = stopTime - scan.suspendStartTime;
@@ -566,7 +564,7 @@ class AppScanStats {
             return false;
         }
 
-        return (mTimeProvider.elapsedRealtime() - mLastScans.get(0).timestamp)
+        return (mTimeProvider.elapsedRealtime() - mLastScans.get(0).mStartTimestamp)
                 < mAdapterService.getScanQuotaWindowMillis();
     }
 
@@ -574,7 +572,7 @@ class AppScanStats {
         if (!isScanning()) {
             return false;
         }
-        return (mTimeProvider.elapsedRealtime() - mScanStartTime)
+        return (mTimeProvider.elapsedRealtime() - mScanStartTimestamp)
                 >= mAdapterService.getScanTimeoutMillis();
     }
 
@@ -583,7 +581,7 @@ class AppScanStats {
             return false;
         }
         LastScan lastScan = mLastScans.get(mLastScans.size() - 1);
-        return ((mTimeProvider.elapsedRealtime() - lastScan.duration - lastScan.timestamp)
+        return ((mTimeProvider.elapsedRealtime() - lastScan.duration - lastScan.mStartTimestamp)
                 < LARGE_SCAN_TIME_GAP_MS);
     }
 
@@ -668,7 +666,7 @@ class AppScanStats {
         long ambientDiscoveryScanTime = mAmbientDiscoveryScanTime;
 
         for (var ongoingScan : mOngoingScans.values()) {
-            final var scanDuration = currTime - ongoingScan.timestamp;
+            final var scanDuration = currTime - ongoingScan.mStartTimestamp;
             final long suspendDuration;
             if (ongoingScan.isSuspended) {
                 suspendDuration = currTime - ongoingScan.suspendStartTime;
@@ -762,7 +760,8 @@ class AppScanStats {
         if (!mLastScans.isEmpty()) {
             sb.append("\n    Last ").append(mLastScans.size()).append(" scans:");
             for (LastScan scan : mLastScans) {
-                final var timestamp = Instant.ofEpochMilli(currentTime - currTime + scan.timestamp);
+                final var timestamp =
+                        Instant.ofEpochMilli(currentTime - currTime + scan.mStartTimestamp);
                 sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
                 sb.append("Duration: ").append(scan.duration).append("ms ");
                 if (scan.isOpportunisticScan) {
@@ -826,9 +825,10 @@ class AppScanStats {
         if (!mOngoingScans.isEmpty()) {
             sb.append("\n    Ongoing ").append(mOngoingScans.size()).append(" scans:");
             for (LastScan scan : mOngoingScans.values()) {
-                final var timestamp = Instant.ofEpochMilli(currentTime - currTime + scan.timestamp);
+                final var timestamp =
+                        Instant.ofEpochMilli(currentTime - currTime + scan.mStartTimestamp);
                 sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
-                sb.append("Elapsed: ").append((currTime - scan.timestamp)).append("ms ");
+                sb.append("Elapsed: ").append((currTime - scan.mStartTimestamp)).append("ms ");
                 if (scan.isOpportunisticScan) {
                     sb.append("(Opp) ");
                 }
