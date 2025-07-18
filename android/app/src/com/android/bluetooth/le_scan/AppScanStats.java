@@ -823,7 +823,8 @@ class AppScanStats {
                 final var timestamp =
                         Instant.ofEpochMilli(currentTime - currTime + scan.mStartTimestamp);
                 sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
-                sb.append("Elapsed: ").append((currTime - scan.mStartTimestamp)).append("ms ");
+                final var elapsed = currTime - scan.mStartTimestamp;
+                sb.append("Elapsed: ").append(elapsed).append("ms ");
                 if (scan.isOpportunisticScan) {
                     sb.append("(Opp) ");
                 }
@@ -857,12 +858,18 @@ class AppScanStats {
                     sb.append("Regular Scan");
                 }
                 if (scan.suspendStartTime != 0) {
-                    final var activeDuration = scan.duration - scan.suspendDuration;
+                    final long suspendDuration;
+                    if (scan.isSuspended) {
+                        suspendDuration = (currTime - scan.suspendStartTime) + scan.suspendDuration;
+                    } else {
+                        suspendDuration = scan.suspendDuration;
+                    }
+                    final var activeDuration = elapsed - suspendDuration;
                     sb.append("\n        └ ")
                             .append("Active Time: ")
                             .append(activeDuration)
                             .append("ms, Suspended Time: ")
-                            .append(scan.suspendDuration);
+                            .append(suspendDuration);
                 }
                 sb.append("\n        └ ")
                         .append("Scan Config: [ScanMode=")
