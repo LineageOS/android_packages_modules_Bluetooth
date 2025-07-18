@@ -350,21 +350,21 @@ class BluetoothManagerService {
         return true;
     }
 
-    private int estimateBusyTime(int state) {
+    private int estimateBusyTime(Object token) {
         if (!Flags.gracefulDisableWithoutMessage()
-                && state == State.BLE_ON
+                && mState.oneOf(State.BLE_ON)
                 && isBluetoothPersistedStateOn()) {
             // Impossible case, if BrEdr is starting, state would be TURNING_ON
             // Bluetooth is in BLE and is starting classic
             return SERVICE_RESTART_TIME_MS;
-        } else if (state != State.ON && state != State.OFF && state != State.BLE_ON) {
+        } else if (!mState.oneOf(State.ON, State.OFF, State.BLE_ON)) {
             // Bluetooth is in a temporary turning state
             return ADD_PROXY_DELAY_MS;
         } else if ((!Flags.gracefulDisableWithoutMessage()
                         && mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED))
                 || mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                 || isBinding()
-                || mNextUser != null) {
+                || (token != ON_SWITCH_USER_TOKEN && mNextUser != null)) {
             Log.d(
                     TAG,
                     "Busy reason:"
@@ -381,12 +381,11 @@ class BluetoothManagerService {
     }
 
     private void delayModeChangedIfNeeded(Object token, Runnable r, String modeChanged) {
-        final int state = getState();
-        final int delayMs = estimateBusyTime(state);
+        final int delayMs = estimateBusyTime(token);
         Log.d(
                 TAG,
                 ("delayModeChangedIfNeeded(" + modeChanged + "):")
-                        + (" state=" + State.$.toString(state))
+                        + (" state=" + mState)
                         + (" Airplane.isOnOverrode=" + AirplaneModeListener.isOnOverrode())
                         + (" Airplane.isOn=" + AirplaneModeListener.isOn())
                         + (" isSatelliteModeOn()=" + isSatelliteModeOn())
@@ -449,6 +448,9 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     void onSwitchUser(UserHandle userHandle) {
+        if (Flags.cleanupStartingUser()) {
+            mNextUser = userHandle;
+        }
         delayModeChangedIfNeeded(
                 ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(userHandle), "onSwitchUser");
     }
@@ -1624,8 +1626,8 @@ class BluetoothManagerService {
     }
 
     private void handleSwitchMessage(UserHandle userTo, int attempt) {
-        if (Flags.cleanupStartingUser() && mUser.equals(userTo)) {
-            Log.d(TAG, "Skip redundant switch on user=" + userTo);
+        if (Flags.cleanupStartingUser() && mUser.equals(mNextUser)) {
+            Log.d(TAG, "Skip fast switch on same user=" + userTo);
             return;
         }
 
@@ -1672,7 +1674,9 @@ class BluetoothManagerService {
 
     private void prepareUserSwitch(UserHandle userTo) {
         Log.d(TAG, "prepareUserSwitch for " + userTo);
-        mNextUser = userTo;
+        if (!Flags.cleanupStartingUser()) {
+            mNextUser = userTo;
+        }
 
         // Clear registered LE apps to force shut-off
         mBleAppManager.clearBleApps();
@@ -1977,6 +1981,7 @@ class BluetoothManagerService {
             continueFromBleOnState();
         } else if (newState == State.OFF) {
             if (mNextUser != null) {
+                mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
                 // Once everything is done finish the user switch if present
                 executeUserSwitch(mNextUser);
                 mNextUser = null;
