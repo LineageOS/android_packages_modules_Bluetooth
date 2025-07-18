@@ -97,6 +97,9 @@ class AppScanStats {
                 boolean isOpportunisticScan,
                 int appImportanceOnStart,
                 @Nullable String attributionTag) {
+            this.scannerId = scannerId;
+            this.scanMode = scanMode;
+            this.scanCallbackType = scanCallbackType;
             this.timestamp = timestamp;
             this.reportDelayMillis = reportDelayMillis;
             this.isBackgroundScan = isBackgroundScan;
@@ -104,11 +107,8 @@ class AppScanStats {
             this.isCallbackScan = isCallbackScan;
             this.isFilterScan = isFilterScan;
             this.isOpportunisticScan = isOpportunisticScan;
-            this.scannerId = scannerId;
-            this.scanMode = scanMode;
-            this.scanCallbackType = scanCallbackType;
-            this.attributionTag = attributionTag;
             this.appImportanceOnStart = appImportanceOnStart;
+            this.attributionTag = attributionTag;
         }
 
         private String getAttributionTag() {
@@ -658,9 +658,6 @@ class AppScanStats {
         final int balancedScan = mBalancedScan;
         final int lowLatencyScan = mLowLatencyScan;
         final long ambientDiscoveryScan = mAmbientDiscoveryScan;
-        long scanDuration = 0;
-        long suspendDuration = 0;
-        long activeDuration = 0;
         long totalActiveTime = mTotalActiveTime;
         long totalSuspendTime = mTotalSuspendTime;
         long totalScanTime = mTotalScanTime;
@@ -670,19 +667,20 @@ class AppScanStats {
         long lowLatencyScanTime = mLowLatencyScanTime;
         long ambientDiscoveryScanTime = mAmbientDiscoveryScanTime;
 
-        for (LastScan scan : mOngoingScans.values()) {
-            scanDuration = currTime - scan.timestamp;
-
-            if (scan.isSuspended) {
-                suspendDuration = currTime - scan.suspendStartTime;
+        for (var ongoingScan : mOngoingScans.values()) {
+            final var scanDuration = currTime - ongoingScan.timestamp;
+            final long suspendDuration;
+            if (ongoingScan.isSuspended) {
+                suspendDuration = currTime - ongoingScan.suspendStartTime;
                 totalSuspendTime += suspendDuration;
+            } else {
+                suspendDuration = 0;
             }
-
+            final var activeDuration = scanDuration - ongoingScan.suspendDuration - suspendDuration;
             totalScanTime += scanDuration;
             totalSuspendTime += suspendDuration;
-            activeDuration = scanDuration - scan.suspendDuration - suspendDuration;
             totalActiveTime += activeDuration;
-            switch (scan.scanMode) {
+            switch (ongoingScan.scanMode) {
                 case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> oppScanTime += activeDuration;
                 case ScanSettings.SCAN_MODE_LOW_POWER -> lowPowerScanTime += activeDuration;
                 case ScanSettings.SCAN_MODE_BALANCED -> balancedScanTime += activeDuration;
@@ -715,19 +713,19 @@ class AppScanStats {
             }
         }
 
-        sb.append("\n    LE scans                 ")
+        sb.append("\n    LE scans               ")
                 .append("(started/stopped)                                   : ")
                 .append(mScansStarted)
                 .append(" / ")
                 .append(mScansStopped);
-        sb.append("\n    Scan time (ms)           ")
+        sb.append("\n    Scan time(ms)          ")
                 .append("(active/suspend/total)                              : ")
                 .append(totalActiveTime)
                 .append(" / ")
                 .append(totalSuspendTime)
                 .append(" / ")
                 .append(totalScanTime);
-        sb.append("\n    Scan time with mode (ms) ")
+        sb.append("\n    Scan time per mode(ms) ")
                 .append("(Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
                 .append(oppScanTime)
                 .append(" / ")
@@ -739,7 +737,7 @@ class AppScanStats {
                 .append(" / ")
                 .append(ambientDiscoveryScanTime);
         sb.append("\n    Scan mode counter ")
-                .append("       (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
+                .append("     (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
                 .append(oppScan)
                 .append(" / ")
                 .append(lowPowerScan)
@@ -750,20 +748,19 @@ class AppScanStats {
                 .append(" / ")
                 .append(ambientDiscoveryScan);
         sb.append("\n    Score ")
-                .append("                                                                       : ")
+                .append("                                                                     : ")
                 .append(score);
         sb.append("\n    Total number of results")
-                .append("                                                      : ")
+                .append("                                                    : ")
                 .append(results);
         if (mScheduledBatchAlarmCount > 0) {
             sb.append("\n    Number of batch alarms scheduled")
-                    .append("                                             : ")
+                    .append("                                           : ")
                     .append(mScheduledBatchAlarmCount);
         }
 
         if (!mLastScans.isEmpty()) {
             sb.append("\n    Last ").append(mLastScans.size()).append(" scans:");
-
             for (LastScan scan : mLastScans) {
                 final var timestamp = Instant.ofEpochMilli(currentTime - currTime + scan.timestamp);
                 sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
@@ -807,7 +804,7 @@ class AppScanStats {
                     sb.append("\n        └ ").append("App Importance: Foreground Service");
                 }
                 if (scan.suspendDuration != 0) {
-                    activeDuration = scan.duration - scan.suspendDuration;
+                    final var activeDuration = scan.duration - scan.suspendDuration;
                     sb.append("\n        └ ")
                             .append("Suspended Time: ")
                             .append(scan.suspendDuration)
@@ -827,7 +824,7 @@ class AppScanStats {
         }
 
         if (!mOngoingScans.isEmpty()) {
-            sb.append("\n    Ongoing scans:");
+            sb.append("\n    Ongoing ").append(mOngoingScans.size()).append(" scans:");
             for (LastScan scan : mOngoingScans.values()) {
                 final var timestamp = Instant.ofEpochMilli(currentTime - currTime + scan.timestamp);
                 sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
@@ -865,7 +862,7 @@ class AppScanStats {
                     sb.append("Regular Scan");
                 }
                 if (scan.suspendStartTime != 0) {
-                    activeDuration = scan.duration - scan.suspendDuration;
+                    final var activeDuration = scan.duration - scan.suspendDuration;
                     sb.append("\n        └ ")
                             .append("Suspended Time:")
                             .append(scan.suspendDuration)
