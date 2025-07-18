@@ -58,7 +58,7 @@ std::bitset<8> GmapServer::UGG_feature_ =
 bool GmapServer::IsGmapServerEnabled() {
   bool system_prop = osi_property_get_bool("bluetooth.profile.gmap.enabled", false);
   bool is_gmap_supported_in_software_datapath =
-          android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+          android::sysprop::bluetooth::LeAudio::is_software_datapath_supported_test().value_or(
                   false);
 
   bool result =
@@ -94,7 +94,7 @@ void GmapServer::Initialize(std::bitset<8> role, std::bitset<8> UGG_feature) {
 void GmapServer::Initialize(std::bitset<8> UGG_feature) {
   GmapServer::UGG_feature_ = UGG_feature;
   bool is_gmap_supported_in_software_datapath =
-          android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+          android::sysprop::bluetooth::LeAudio::is_software_datapath_supported_test().value_or(
                   false);
   if (is_gmap_supported_in_software_datapath) {
     // Enable UGG Features for testing only.
