@@ -667,13 +667,8 @@ class AppScanStats {
 
         for (var ongoingScan : mOngoingScans.values()) {
             final var scanDuration = currTime - ongoingScan.mStartTimestamp;
-            final long suspendDuration;
-            if (ongoingScan.isSuspended) {
-                suspendDuration = currTime - ongoingScan.suspendStartTime;
-                totalSuspendTime += suspendDuration;
-            } else {
-                suspendDuration = 0;
-            }
+            final long suspendDuration =
+                    ongoingScan.isSuspended ? currTime - ongoingScan.suspendStartTime : 0;
             final var activeDuration = scanDuration - ongoingScan.suspendDuration - suspendDuration;
             totalScanTime += scanDuration;
             totalSuspendTime += suspendDuration;
@@ -805,10 +800,10 @@ class AppScanStats {
                 if (scan.suspendDuration != 0) {
                     final var activeDuration = scan.duration - scan.suspendDuration;
                     sb.append("\n        └ ")
-                            .append("Suspended Time: ")
-                            .append(scan.suspendDuration)
-                            .append("ms, Active Time: ")
-                            .append(activeDuration);
+                            .append("Active Time: ")
+                            .append(activeDuration)
+                            .append("ms, Suspended Time: ")
+                            .append(scan.suspendDuration);
                 }
                 sb.append("\n        └ ")
                         .append("Scan Config: [ScanMode=")
@@ -864,10 +859,10 @@ class AppScanStats {
                 if (scan.suspendStartTime != 0) {
                     final var activeDuration = scan.duration - scan.suspendDuration;
                     sb.append("\n        └ ")
-                            .append("Suspended Time:")
-                            .append(scan.suspendDuration)
-                            .append("ms, Active Time:")
-                            .append(activeDuration);
+                            .append("Active Time: ")
+                            .append(activeDuration)
+                            .append("ms, Suspended Time: ")
+                            .append(scan.suspendDuration);
                 }
                 sb.append("\n        └ ")
                         .append("Scan Config: [ScanMode=")
