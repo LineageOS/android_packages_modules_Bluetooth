@@ -913,7 +913,27 @@ impl Rule for InformationalRule {
                         self.report_address_type(&ev.get_peer_address(), AddressType::LE);
                     }
 
-                    LeMetaEventChild::LeEnhancedConnectionComplete(ev) => {
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV1(ev) => {
+                        if ev.get_status() != ErrorCode::Success {
+                            return;
+                        }
+
+                        // Determining LE initiator is complex, for simplicity assume host inits.
+                        self.report_acl_state(
+                            &ev.get_peer_address(),
+                            Transport::LE,
+                            AclState::Initiating,
+                        );
+                        self.report_connection_start(
+                            &ev.get_peer_address(),
+                            ev.get_connection_handle(),
+                            Transport::LE,
+                            packet.ts,
+                        );
+                        self.report_address_type(&ev.get_peer_address(), AddressType::LE);
+                    }
+
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV2(ev) => {
                         if ev.get_status() != ErrorCode::Success {
                             return;
                         }
