@@ -1561,9 +1561,13 @@ ControllerImpl::ControllerImpl(Handler* handler, hci::HciInterface* hci_interfac
   //  We should get rid of pimpl and move content of Start into constructor.
   impl_ = std::make_unique<ControllerImpl::impl>((*this), handler, hci_interface);
   impl_->Start();
+
+  log::verbose("Controller module started !!");
 }
 
-ControllerImpl::~ControllerImpl() = default;
+ControllerImpl::~ControllerImpl() {
+  log::verbose("Controller module stopped !!");
+}
 
 template <typename OutputT>
 void ControllerImpl::impl::dump(OutputT&& out) const {

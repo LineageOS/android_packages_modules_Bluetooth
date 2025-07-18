@@ -613,6 +613,8 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_log_path,
   alarm_ = std::make_unique<os::RepeatingAlarm>(&handler_->thread());
   alarm_->Schedule(common::Bind(&delete_old_btsnooz_files, snooz_log_path_, snooz_log_life_time_),
                    snooz_log_delete_alarm_interval_);
+
+  log::verbose("SnoopLogger module started !!");
 }
 
 os::Handler* SnoopLogger::GetHandler() { return handler_; }
@@ -1409,6 +1411,8 @@ SnoopLogger::~SnoopLogger() {
     handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
     delete handler_;
   }
+
+  log::verbose("SnoopLogger module stoped !!");
 }
 
 size_t SnoopLogger::GetMaxPacketsPerFile() {

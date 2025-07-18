@@ -1677,9 +1677,12 @@ LeScanningManagerImpl::LeScanningManagerImpl(os::Handler* handler, hci::HciInter
                                              storage::StorageModule* storage_module) {
   pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, le_address_manager,
                                   storage_module);
+  log::verbose("LeScanningManager module started !!");
 }
 
-LeScanningManagerImpl::~LeScanningManagerImpl() = default;
+LeScanningManagerImpl::~LeScanningManagerImpl() {
+  log::verbose("LeScanningManager module stopped !!");
+};
 
 void LeScanningManagerImpl::RegisterScanner(Uuid app_uuid) {
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::register_scanner, app_uuid);

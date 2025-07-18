@@ -133,6 +133,8 @@ StorageModule::StorageModule(os::Handler* handler, std::string config_file_path,
   if (save_needed) {
     SaveDelayed();
   }
+
+  log::verbose("Storage module started !!");
 }
 
 StorageModule::~StorageModule() {
@@ -152,6 +154,8 @@ StorageModule::~StorageModule() {
     handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
     delete handler_;
   }
+
+  log::verbose("Storage module stopped !!");
 }
 
 Mutation StorageModule::Modify() {

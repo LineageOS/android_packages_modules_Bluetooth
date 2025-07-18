@@ -311,9 +311,12 @@ MsftExtensionManager::MsftExtensionManager(os::Handler* handler, hal::HciHal* ha
                                            hci::HciInterface* hci_layer) {
   log::info("MsftExtensionManager()");
   pimpl_ = std::make_unique<impl>(handler, hal, hci_layer);
+  log::verbose("module started !!");
 }
 
-MsftExtensionManager::~MsftExtensionManager() = default;
+MsftExtensionManager::~MsftExtensionManager() {
+  log::verbose("module stopped !!");
+};
 
 bool MsftExtensionManager::SupportsMsftExtensions() { return pimpl_->supports_msft_extensions(); }
 

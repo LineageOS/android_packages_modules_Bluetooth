@@ -243,11 +243,14 @@ public:
   os::Handler* handler_;
 };
 
-AclScheduler::AclScheduler(os::Handler* handler) : pimpl_(std::make_unique<impl>(handler)) {}
+AclScheduler::AclScheduler(os::Handler* handler) : pimpl_(std::make_unique<impl>(handler)) {
+  log::verbose("module started !!");
+}
 
 AclScheduler::~AclScheduler() {
   pimpl_->Stop();
   pimpl_.reset();
+  log::verbose("module stopped !!");
 }
 
 void AclScheduler::EnqueueOutgoingAclConnection(
