@@ -117,6 +117,8 @@ static BtLeAudioGroupStatus to_rust_btle_audio_group_status(le_audio::GroupStatu
       return BtLeAudioGroupStatus::Active;
     case le_audio::GroupStatus::TURNED_IDLE_DURING_CALL:
       return BtLeAudioGroupStatus::TurnedIdleDuringCall;
+    case le_audio::GroupStatus::AUTONOMOUS_INACTIVE:
+      return BtLeAudioGroupStatus::AutonomousInactive;
     default:
       log::assert_that(false, "Unhandled enum value from C++");
   }

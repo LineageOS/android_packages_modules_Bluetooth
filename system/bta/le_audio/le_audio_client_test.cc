@@ -7617,7 +7617,8 @@ TEST_F(UnicastTest, SpeakerStreamingAutonomousRelease) {
   // Verify Data transfer on one audio source cis
   TestAudioDataTransfer(group_id, 1 /* cis_count_out */, 0 /* cis_count_in */, 1920);
 
-  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnGroupStatus(group_id, GroupStatus::INACTIVE))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStatus(group_id, GroupStatus::AUTONOMOUS_INACTIVE))
           .Times(1);
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))

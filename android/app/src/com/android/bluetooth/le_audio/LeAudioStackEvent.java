@@ -69,6 +69,7 @@ public class LeAudioStackEvent {
     static final int GROUP_STATUS_INACTIVE = 0;
     static final int GROUP_STATUS_ACTIVE = 1;
     static final int GROUP_STATUS_TURNED_IDLE_DURING_CALL = 2;
+    static final int GROUP_STATUS_AUTONOMOUS_INACTIVE = 3;
 
     static final int GROUP_NODE_ADDED = 1;
     static final int GROUP_NODE_REMOVED = 2;
@@ -241,6 +242,7 @@ public class LeAudioStackEvent {
                         case GROUP_STATUS_INACTIVE -> "GROUP_STATUS_INACTIVE";
                         case GROUP_STATUS_TURNED_IDLE_DURING_CALL ->
                                 "GROUP_STATUS_TURNED_IDLE_DURING_CALL";
+                        case GROUP_STATUS_AUTONOMOUS_INACTIVE -> "GROUP_STATUS_AUTONOMOUS_INACTIVE";
                         default -> Integer.toString(value);
                     };
             case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED ->
