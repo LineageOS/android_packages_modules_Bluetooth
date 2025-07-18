@@ -120,7 +120,7 @@ class BluetoothManagerService {
     private static final Duration STATE_TIMEOUT = Duration.ofSeconds(4L * HW_MULTIPLIER);
 
     // Maximum msec to wait for service restart
-    private static final int SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
+    @VisibleForTesting static final int SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
     // Maximum msec to wait for restart due to error
     private static final int ERROR_RESTART_TIME_MS = 3000 * HW_MULTIPLIER;
     // Maximum msec to delay MESSAGE_USER_SWITCHED
@@ -432,7 +432,8 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    private Unit onSatelliteModeChanged(boolean isSatelliteModeOn) {
+    @VisibleForTesting
+    Unit onSatelliteModeChanged(boolean isSatelliteModeOn) {
         delayModeChangedIfNeeded(
                 ON_SATELLITE_MODE_CHANGED_TOKEN,
                 () -> handleSatelliteModeChanged(isSatelliteModeOn),
@@ -1430,8 +1431,14 @@ class BluetoothManagerService {
                     mActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false);
                     if (mEnable) {
                         mEnable = false;
-                        mHandler.sendEmptyMessageDelayed(
-                                MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
+                        var delay = (mErrorRecoveryRetryCounter + 1) * SERVICE_RESTART_TIME_MS;
+                        if ((mErrorRecoveryRetryCounter + 1) > MAX_ERROR_RESTART_RETRIES / 2) {
+                            // Last attempts should leave more time
+                            delay = delay * 10;
+                        }
+
+                        Log.d(TAG, "Crash recovery will be attempted in " + delay + "ms");
+                        mHandler.sendEmptyMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, delay);
                     }
 
                     sendBluetoothServiceDownCallback();
@@ -2230,10 +2237,6 @@ class BluetoothManagerService {
         } catch (Exception e) {
             Log.e(TAG, "updateOppLauncherComponentState failed: " + e);
         }
-    }
-
-    private int getServiceRestartMs() {
-        return (mErrorRecoveryRetryCounter + 1) * SERVICE_RESTART_TIME_MS;
     }
 
     void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
