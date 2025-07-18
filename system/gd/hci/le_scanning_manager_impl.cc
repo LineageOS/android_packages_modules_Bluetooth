@@ -1622,12 +1622,10 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     paused_ = false;
     if (scan_on_resume_) {
       scan_on_resume_ = false;
-      if (com::android::bluetooth::flags::configure_scan_on_resume()) {
-        // This is a workaround for b/381010390.
-        // We'll eventually recover scan parameters which could be overridden by
-        // btm_send_hci_set_scan_params.
-        configure_scan();
-      }
+      // This is a workaround for b/381010390.
+      // We'll eventually recover scan parameters which could be overridden by
+      // btm_send_hci_set_scan_params.
+      configure_scan();
       start_scan();
     }
     le_address_manager_->AckResume(this);
