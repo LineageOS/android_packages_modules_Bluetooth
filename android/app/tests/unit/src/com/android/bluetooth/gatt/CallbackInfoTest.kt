@@ -17,8 +17,8 @@
 package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothDevice
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.test.runner.AndroidJUnit4
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.google.common.truth.Expect
 import com.google.protobuf.ByteString

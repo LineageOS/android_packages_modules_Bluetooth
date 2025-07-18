@@ -16,8 +16,8 @@
 
 package com.android.bluetooth.le_scan
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.test.runner.AndroidJUnit4
 import com.google.common.truth.Expect
 import org.junit.Rule
 import org.junit.Test
