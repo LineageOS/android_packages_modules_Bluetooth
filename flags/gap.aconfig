@@ -302,3 +302,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "remove_address_cache_from_ble_scanner"
+    namespace: "bluetooth"
+    description: "Fix the case where device name is not updated when pairing failed."
+    bug: "432614634"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
