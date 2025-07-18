@@ -306,11 +306,25 @@ public class AdapterService extends Service {
     private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
 
     private boolean mIsMediaProfileConnected;
+
+    @GuardedBy("mEnergyInfoLock")
+    private Instant mLastActivityReport = Instant.now();
+
+    @GuardedBy("mEnergyInfoLock")
     private int mStackReportedState;
+
+    @GuardedBy("mEnergyInfoLock")
     private long mTxTimeTotalMs;
+
+    @GuardedBy("mEnergyInfoLock")
     private long mRxTimeTotalMs;
+
+    @GuardedBy("mEnergyInfoLock")
     private long mIdleTimeTotalMs;
+
+    @GuardedBy("mEnergyInfoLock")
     private long mEnergyUsedTotalVoltAmpSecMicro;
+
     private final HashSet<String> mLeAudioAllowDevices = new HashSet<>();
 
     /* List of pairs of gatt clients which controls AutoActiveMode on the device.*/
@@ -3905,48 +3919,57 @@ public class AdapterService extends Service {
         return true;
     }
 
+    @GuardedBy("mEnergyInfoLock")
+    private BluetoothActivityEnergyInfo returnCurrentActivityInfo() {
+        final BluetoothActivityEnergyInfo info =
+                new BluetoothActivityEnergyInfo(
+                        SystemClock.elapsedRealtime(),
+                        mStackReportedState,
+                        mTxTimeTotalMs,
+                        mRxTimeTotalMs,
+                        mIdleTimeTotalMs,
+                        mEnergyUsedTotalVoltAmpSecMicro);
+
+        // Copy the traffic objects whose byte counts are > 0
+        final List<UidTraffic> result = new ArrayList<>();
+        for (int i = 0; i < mUidTraffic.size(); i++) {
+            final UidTraffic traffic = mUidTraffic.valueAt(i);
+            if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
+                result.add(traffic.clone());
+            }
+        }
+
+        info.setUidTraffic(result);
+
+        return info;
+    }
+
     BluetoothActivityEnergyInfo requestActivityInfo() {
         if (mAdapterProperties.getState() != BluetoothAdapter.STATE_ON
                 || !mAdapterProperties.isActivityAndEnergyReportingSupported()) {
             return null;
         }
 
-        // Pull the data. The callback will notify mEnergyInfoLock.
-        mNativeInterface.readEnergyInfo();
+        var now = Instant.now();
+        var staleThreshold = now.minusMillis(CONTROLLER_ENERGY_UPDATE_TIMEOUT_MILLIS);
+        var waitDeadline = now.plusMillis(CONTROLLER_ENERGY_UPDATE_TIMEOUT_MILLIS);
 
         synchronized (mEnergyInfoLock) {
-            long now = System.currentTimeMillis();
-            final long deadline = now + CONTROLLER_ENERGY_UPDATE_TIMEOUT_MILLIS;
-            while (now < deadline) {
+            // If activity info has just been requested, return the already saved data directly
+            if (mLastActivityReport.isAfter(staleThreshold)) {
+                return returnCurrentActivityInfo();
+            }
+            // Pull the live data. The callback will notify mEnergyInfoLock.
+            mNativeInterface.readEnergyInfo();
+            while (now.isBefore(waitDeadline)) {
                 try {
-                    mEnergyInfoLock.wait(deadline - now);
+                    mEnergyInfoLock.wait(Duration.between(now, waitDeadline).toMillis());
                     break;
                 } catch (InterruptedException e) {
-                    now = System.currentTimeMillis();
+                    now = Instant.now();
                 }
             }
-
-            final BluetoothActivityEnergyInfo info =
-                    new BluetoothActivityEnergyInfo(
-                            SystemClock.elapsedRealtime(),
-                            mStackReportedState,
-                            mTxTimeTotalMs,
-                            mRxTimeTotalMs,
-                            mIdleTimeTotalMs,
-                            mEnergyUsedTotalVoltAmpSecMicro);
-
-            // Copy the traffic objects whose byte counts are > 0
-            final List<UidTraffic> result = new ArrayList<>();
-            for (int i = 0; i < mUidTraffic.size(); i++) {
-                final UidTraffic traffic = mUidTraffic.valueAt(i);
-                if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
-                    result.add(traffic.clone());
-                }
-            }
-
-            info.setUidTraffic(result);
-
-            return info;
+            return returnCurrentActivityInfo();
         }
     }
 
@@ -4272,6 +4295,7 @@ public class AdapterService extends Service {
                     existingTraffic.addTxBytes(traffic.getTxBytes());
                 }
             }
+            mLastActivityReport = Instant.now();
             mEnergyInfoLock.notifyAll();
         }
     }
