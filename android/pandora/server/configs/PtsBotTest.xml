@@ -28,7 +28,7 @@
     </target_preparer>
 
     <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
-        <option name="run-command" value="settings put global bluetooth_btsnoop_default_mode full" />
+        <option name="run-command" value="setprop persist.bluetooth.btsnoopdefaultmode full" />
         <option name="run-command" value="setprop persist.bluetooth.btsnoopsize 0xfffffffffffffff" />
     </target_preparer>
 
