@@ -102,6 +102,7 @@ public class AvrcpTargetService extends ProfileService {
     // Only used to see if the metadata has changed from its previous value
     private MediaData mCurrentData;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static AvrcpTargetService sInstance = null;
 
     public AvrcpTargetService(AdapterService adapterService) {
@@ -232,6 +233,7 @@ public class AvrcpTargetService extends ProfileService {
 
     /** Sets the AvrcpTargetService instance. */
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static void set(AvrcpTargetService instance) {
         sInstance = instance;
     }
@@ -241,6 +243,7 @@ public class AvrcpTargetService extends ProfileService {
      *
      * <p>Returns null if the service hasn't been initialized.
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static AvrcpTargetService get() {
         return sInstance;
     }
