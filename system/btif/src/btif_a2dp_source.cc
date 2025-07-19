@@ -407,6 +407,7 @@ class A2dpStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {
   }
 
   Status SetLatencyMode(bool low_latency) const override {
+    invoke_switch_buffer_size_cb(low_latency);
     btif_av_set_low_latency(low_latency);
     return Status::SUCCESS;
   }
