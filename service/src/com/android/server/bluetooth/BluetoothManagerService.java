@@ -1984,44 +1984,71 @@ class BluetoothManagerService {
             AirplaneModeListener.setWatchConnectionState(false);
         }
 
-        // Notify all proxy objects first of adapter state change
         if (newState == State.ON) {
-            if (mAutoOn != null) {
-                mAutoOn.notifyBluetoothOn();
-            }
-            if (Flags.gracefulDisableWithoutMessage() && !mEnable) {
-                Log.d(TAG, header + "onToBleOn because mEnable is false");
-                onToBleOn();
-            } else {
-                sendBluetoothOnCallback();
-            }
+            actionWhenBluetoothReachStateOn();
         } else if (newState == State.BLE_ON && prevState == State.BLE_TURNING_ON) {
             continueFromBleOnState();
         } else if (newState == State.OFF) {
-            if (mNextUser != null) {
-                mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
-                // Once everything is done finish the user switch if present
-                executeUserSwitch(mNextUser);
-                mNextUser = null;
-            } else if (Flags.onToBleOnViaOff()
-                    && prevState == State.BLE_TURNING_OFF
-                    && !mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)) {
-                if (mBleAppManager.isBleAppPresent() && !AirplaneModeListener.isOn()) {
-                    Log.d(TAG, header + "Ble app present, restarting in BLE_ON");
-                    sendEnableMsg(
-                            false,
-                            ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                            mContext.getPackageName(),
-                            true);
-                } else {
-                    Log.d(
-                            TAG,
-                            header
-                                    + "staying OFF and clearing ble apps."
-                                    + (" ble app present=" + mBleAppManager)
-                                    + (" airplane mode=" + AirplaneModeListener.isOn()));
-                    mBleAppManager.clearBleApps();
-                }
+            actionWhenBluetoothReachStateOff(prevState);
+        }
+    }
+
+    private void actionWhenBluetoothReachStateOn() {
+        String header = "actionWhenBluetoothReachStateOn(): ";
+        if (mAutoOn != null) {
+            mAutoOn.notifyBluetoothOn();
+        }
+
+        if (Flags.gracefulDisableWithoutMessage() && !mEnable) {
+            Log.d(TAG, header + "mEnable is false. Turning off");
+            onToBleOn();
+            return;
+        }
+
+        if (mNextUser != null) {
+            mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
+            if (mNextUser != mUser) {
+                Log.d(TAG, header + "Resume user switch");
+                prepareUserSwitch(mNextUser);
+                return;
+            }
+            Log.d(TAG, header + "Already on correct user. Discard user switch");
+            mNextUser = null;
+        }
+
+        sendBluetoothOnCallback();
+    }
+
+    private void actionWhenBluetoothReachStateOff(int prevState) {
+        String header = "actionWhenBluetoothReachStateOff(): ";
+
+        if (mNextUser != null) {
+            Log.d(TAG, header + "Resume user switch");
+            mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
+            // Once everything is done finish the user switch if present
+            executeUserSwitch(mNextUser);
+            mNextUser = null;
+            return;
+        }
+
+        if (Flags.onToBleOnViaOff()
+                && prevState == State.BLE_TURNING_OFF
+                && !mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)) {
+            if (mBleAppManager.isBleAppPresent() && !AirplaneModeListener.isOn()) {
+                Log.d(TAG, header + "Ble app present, restarting in BLE_ON");
+                sendEnableMsg(
+                        false,
+                        ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
+                        mContext.getPackageName(),
+                        true);
+            } else {
+                Log.d(
+                        TAG,
+                        header
+                                + "staying OFF and clearing ble apps."
+                                + (" ble app present=" + mBleAppManager)
+                                + (" airplane mode=" + AirplaneModeListener.isOn()));
+                mBleAppManager.clearBleApps();
             }
         }
     }

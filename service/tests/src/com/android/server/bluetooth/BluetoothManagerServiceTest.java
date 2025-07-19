@@ -854,21 +854,19 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        // First user switch
         mManagerService.onSwitchUser(mNextUser);
         transition_onToOff(btCallback);
 
         mCurrentUser = mNextUser;
 
         // Restart for mNextUser begins
-        // Inlined transition_offToOn to inject the switch
         IBluetoothCallback newBtCallback = transition_offToBleOn();
         mInOrder.verify(mAdapterBinder).bleOnToOn();
         verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
         verifyStateIntentSent(State.OFF, State.TURNING_ON);
         assertThat(mManagerService.getState()).isEqualTo(State.TURNING_ON);
 
-        // Switch user again while in TURNING_ON
+        // Switch user again in the middle of TURNING_ON
         UserHandle anotherUser = mock(UserHandle.class);
         mManagerService.onSwitchUser(anotherUser);
 
@@ -877,12 +875,9 @@ public class BluetoothManagerServiceTest {
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
         verifyBleStateIntentSent(State.TURNING_ON, State.ON);
         verifyStateIntentSent(State.TURNING_ON, State.ON);
-        assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mLooper.moveTimeForward(BluetoothManagerService.ADD_PROXY_DELAY_MS);
-        syncHandler(0); // Process ON_SWITCH_USER_TOKEN delayed message
-
-        // Now it should shut down for the new user switch
+        // Now it should shut down for the new user switch and never stay ON
+        assertThat(mManagerService.getState()).isNotEqualTo(State.ON);
         transition_onToOff(newBtCallback);
 
         mCurrentUser = anotherUser;
@@ -975,10 +970,7 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
     public void bleBinderDeath_whenBleOn_isOff() throws Exception {
         mManagerService.enableBle("bleBinderDeath_whenBleOn_isOff", mBleBinder);
         IBluetoothCallback btCallback = transition_offToBleOn();
