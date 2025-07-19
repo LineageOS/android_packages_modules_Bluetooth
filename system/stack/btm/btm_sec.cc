@@ -1720,15 +1720,17 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
 void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   tBTM_SEC_DEV_REC* p_dev_rec = nullptr;
 
-  if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
-      (btm_sec_cb.pairing_bda == bda)) {
-    log::verbose("Security Manager: reject connect request from bonding device");
+  if (!com::android::bluetooth::flags::concurrent_incoming_outgoing_pairing()) {
+    if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
+        (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
+        (btm_sec_cb.pairing_bda == bda)) {
+      log::verbose("Security Manager: reject connect request from bonding device");
 
-    /* incoming connection from bonding device is rejected */
-    btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_REJECTED_CONNECT;
-    btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
-    return;
+      /* incoming connection from bonding device is rejected */
+      btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_REJECTED_CONNECT;
+      btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
+      return;
+    }
   }
 
   /* Host is not interested or approved connection.  Save BDA and DC and */
@@ -3462,6 +3464,13 @@ static void btm_sec_connect_after_reject_timeout(void* /* data */) {
 void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status, uint8_t enc_mode,
                        tHCI_ROLE assigned_role) {
   uint8_t bit_shift = 0;
+
+  if (com::android::bluetooth::flags::concurrent_incoming_outgoing_pairing()) {
+    if (status == HCI_ERR_CONNECTION_EXISTS) {
+      log::warn("Connection already exists, ignore");
+      return;
+    }
+  }
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
   if (p_dev_rec == nullptr) {

@@ -22,7 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.avrcpcontroller.BrowseTree.BrowseNode;
 import com.android.bluetooth.btservice.AdapterService;

@@ -50,9 +50,9 @@ import android.os.SystemProperties;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;

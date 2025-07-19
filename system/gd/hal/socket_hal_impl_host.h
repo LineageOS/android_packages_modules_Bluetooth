@@ -24,7 +24,7 @@ class SocketHalImpl : public SocketHal {
 protected:
   hal::SocketCapabilities GetSocketCapabilities() const override { return {}; }
 
-  bool RegisterCallback(hal::SocketHalCallback const* /*callback*/) override { return false; }
+  bool RegisterCallback(hal::SocketHalCallback const* /*callback*/) override { return true; }
 
   bool Opened(const hal::SocketContext& /*context*/) const override { return false; }
 

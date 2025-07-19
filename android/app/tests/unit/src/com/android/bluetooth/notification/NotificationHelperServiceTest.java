@@ -41,9 +41,9 @@ import android.content.pm.PackageManager;
 import android.service.notification.StatusBarNotification;
 import android.test.mock.MockContentResolver;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 import com.android.tests.bluetooth.MockitoRule;

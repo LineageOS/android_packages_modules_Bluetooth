@@ -93,10 +93,8 @@ struct Stack::impl {
                                 acl_manager_.GetLeAddressManager(), &acl_manager_),
         distance_measurement_manager_(handler, &hci_layer_, &controller_, &acl_manager_,
                                       &ranging_hal_) {
-#ifndef TARGET_FLOSS
     socket_hal_ = std::make_unique<hal::SocketHalImpl>();
     lpp_offload_manager_ = std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get());
-#endif
   }
 
   // TODO: Remove this constructor once the flag (same_handler_for_all_modules) is fully rolled out.
@@ -125,11 +123,9 @@ struct Stack::impl {
                                 acl_manager_.GetLeAddressManager(), &acl_manager_),
         distance_measurement_manager_(new os::Handler(thread), &hci_layer_, &controller_,
                                       &acl_manager_, &ranging_hal_) {
-#ifndef TARGET_FLOSS
     socket_hal_ = std::make_unique<hal::SocketHalImpl>();
     lpp_offload_manager_ =
             std::make_unique<lpp::LppOffloadManager>(new os::Handler(thread), socket_hal_.get());
-#endif
   }
 
   ~impl() {

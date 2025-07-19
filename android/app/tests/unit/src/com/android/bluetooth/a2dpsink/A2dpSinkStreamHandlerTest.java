@@ -36,10 +36,10 @@ import android.media.AudioManager;
 import android.os.HandlerThread;
 import android.os.Looper;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ServiceTestRule;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;

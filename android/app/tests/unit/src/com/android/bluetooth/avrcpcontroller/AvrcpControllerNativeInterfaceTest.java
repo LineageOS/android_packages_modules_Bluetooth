@@ -24,8 +24,8 @@ import static com.google.common.truth.Truth.assertThat;
 import android.bluetooth.BluetoothDevice;
 import android.support.v4.media.session.PlaybackStateCompat;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;

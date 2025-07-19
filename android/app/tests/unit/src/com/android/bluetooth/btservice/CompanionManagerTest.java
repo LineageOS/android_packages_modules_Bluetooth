@@ -35,9 +35,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.HandlerThread;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.tests.bluetooth.MockitoRule;
 

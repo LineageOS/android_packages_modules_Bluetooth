@@ -31,9 +31,9 @@ import android.bluetooth.IBluetoothGattCallback;
 import android.content.AttributionSource;
 import android.content.pm.PackageManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.gatt.ContextMap.App;

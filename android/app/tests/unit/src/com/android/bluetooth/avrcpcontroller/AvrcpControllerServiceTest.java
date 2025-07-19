@@ -40,10 +40,10 @@ import android.media.AudioManager;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.support.v4.media.session.PlaybackStateCompat;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ServiceTestRule;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;

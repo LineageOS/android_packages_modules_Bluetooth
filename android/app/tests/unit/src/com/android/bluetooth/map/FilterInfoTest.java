@@ -23,8 +23,8 @@ import android.provider.BaseColumns;
 import android.provider.Telephony.Mms;
 import android.provider.Telephony.Sms;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
 import org.junit.Test;

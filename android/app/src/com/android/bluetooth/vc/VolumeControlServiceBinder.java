@@ -394,7 +394,7 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
     public int getNumberOfAudioInputControlServices(
             AttributionSource source, BluetoothDevice device) {
         Log.d(TAG, "getNumberOfAudioInputControlServices(" + device + ")");
-        return aicsWrapper(source, device, i -> i.size(), 0);
+        return aicsWrapper(source, device, VolumeControlInputDescriptor::size, 0);
     }
 
     @Override

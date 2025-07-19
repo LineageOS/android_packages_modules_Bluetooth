@@ -93,26 +93,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_stop_updated_to_not_available_context_stream"
-    namespace: "bluetooth"
-    description: "Allow stack to stop stream which remains with non allowed context"
-    bug: "376251433"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_monitor_unicast_source_when_managed_by_broadcast_delegator"
-    namespace: "bluetooth"
-    description: "Monitor stream for primary devices which manages external sources"
-    bug: "378661060"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_config_profile_enabling"
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"
@@ -142,16 +122,6 @@ flag {
     namespace: "bluetooth"
     description: "Use trasparent codec for DSA hardware path"
     bug: "382263607"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_use_audio_recording_listener"
-    namespace: "bluetooth"
-    description: "Use Audio Recording listener instead of monitoring sink session"
-    bug: "381054654"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

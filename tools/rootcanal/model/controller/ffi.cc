@@ -16,8 +16,6 @@
 
 #include "model/controller/ffi.h"
 
-#include <android-base/logging.h>
-
 #include <iostream>
 
 #include "model/controller/dual_mode_controller.h"
@@ -34,10 +32,6 @@ enum Idc {
   EVT,
   ISO,
 };
-
-__attribute__((constructor)) static void ConfigureLogging() {
-  android::base::InitLogging({}, android::base::StdioLogger);
-}
 
 }  // namespace hci
 

@@ -285,3 +285,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "concurrent_incoming_outgoing_pairing"
+    namespace: "bluetooth"
+    description: "Handle concurrent incoming and outgoing pairing requests"
+    bug: "431870814"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

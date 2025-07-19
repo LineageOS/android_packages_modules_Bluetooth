@@ -35,8 +35,8 @@ import android.os.Bundle;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.tests.R;

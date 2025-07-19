@@ -916,7 +916,7 @@ public:
       log::info("All devices disconnected, group becomes inactive");
       /* Both devices will  be disconnected soon. Notify upper layer that group
        * is inactive */
-      groupSetAndNotifyInactive();
+      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
     }
   }
 
@@ -1466,32 +1466,29 @@ public:
       /* When inCall mode is disabled and remaining metadata is no longer supported by group -
        * stream should be stopped.
        */
-      if (com::android::bluetooth::flags::leaudio_stop_updated_to_not_available_context_stream()) {
-        if (stopStreamIfCurrentContextTypeIsNotAllowed(
-                    bluetooth::le_audio::types::kLeAudioDirectionSource, group,
-                    local_metadata_context_types_.sink)) {
-          log::info(
-                  "After disable InCall mode, updated sink metadata contexts are not allowed "
-                  "context types: {} | configured: {} vs allowed context mask: {}",
-                  ToString(local_metadata_context_types_.sink),
-                  ToString(configuration_context_type_),
-                  ToString(group->GetAllowedContextMask(
-                          bluetooth::le_audio::types::kLeAudioDirectionSource)));
-          return;
-        }
+      if (stopStreamIfCurrentContextTypeIsNotAllowed(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource, group,
+                  local_metadata_context_types_.sink)) {
+        log::info(
+                "After disable InCall mode, updated sink metadata contexts are not allowed "
+                "context types: {} | configured: {} vs allowed context mask: {}",
+                ToString(local_metadata_context_types_.sink), ToString(configuration_context_type_),
+                ToString(group->GetAllowedContextMask(
+                        bluetooth::le_audio::types::kLeAudioDirectionSource)));
+        return;
+      }
 
-        if (stopStreamIfCurrentContextTypeIsNotAllowed(
-                           bluetooth::le_audio::types::kLeAudioDirectionSink, group,
-                           local_metadata_context_types_.source)) {
-          log::info(
-                  "After disable InCall mode, updated source metadata contexts are not allowed "
-                  "context types: {} | configured: {} vs allowed context mask: {}",
-                  ToString(local_metadata_context_types_.source),
-                  ToString(configuration_context_type_),
-                  ToString(group->GetAllowedContextMask(
-                          bluetooth::le_audio::types::kLeAudioDirectionSink)));
-          return;
-        }
+      if (stopStreamIfCurrentContextTypeIsNotAllowed(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink, group,
+                  local_metadata_context_types_.source)) {
+        log::info(
+                "After disable InCall mode, updated source metadata contexts are not allowed "
+                "context types: {} | configured: {} vs allowed context mask: {}",
+                ToString(local_metadata_context_types_.source),
+                ToString(configuration_context_type_),
+                ToString(group->GetAllowedContextMask(
+                        bluetooth::le_audio::types::kLeAudioDirectionSink)));
+        return;
       }
     }
 
@@ -1528,19 +1525,6 @@ public:
 
   void SetUnicastMonitorMode(uint8_t direction, bool enable) override {
     if (direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
-      /* Cleanup Sink HAL client interface if listening mode is toggled off
-       * before group activation (active group context would take care of
-       * Sink HAL client cleanup).
-       */
-      if (!com::android::bluetooth::flags::leaudio_use_audio_recording_listener()) {
-        if (sink_monitor_mode_ && !enable && le_audio_sink_hal_client_ &&
-            active_group_id_ == bluetooth::groups::kGroupUnknown) {
-          local_metadata_context_types_.sink.clear();
-          le_audio_sink_hal_client_->Stop();
-          le_audio_sink_hal_client_.reset();
-        }
-      }
-
       log::debug("enable: {}", enable);
       sink_monitor_mode_ = enable;
     } else if (direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
@@ -1690,20 +1674,24 @@ public:
     return group->is_duplex_preference_le_audio;
   }
 
-  void groupSetAndNotifyInactive(void) {
+  void groupSetAndNotifyInactive(bool autonomous_inactive) {
     if (active_group_id_ == bluetooth::groups::kGroupUnknown) {
       return;
     }
     sink_monitor_notified_status_ = std::nullopt;
     source_monitor_notified_status_ = std::nullopt;
-    log::info("Group id: {}", active_group_id_);
+    log::info("Group id: {}, autonomous_inactive: {}", active_group_id_, autonomous_inactive);
 
     StopSuspendTimeout();
 
     StopAudio();
     ClientAudioInterfaceRelease();
 
-    callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+    if (autonomous_inactive) {
+      callbacks_->OnGroupStatus(active_group_id_, GroupStatus::AUTONOMOUS_INACTIVE);
+    } else {
+      callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+    }
     active_group_id_ = bluetooth::groups::kGroupUnknown;
   }
 
@@ -1768,7 +1756,7 @@ public:
 
       log::info("Active group_id changed {} -> {}", active_group_id_, group_id);
       auto group_id_to_close = active_group_id_;
-      groupSetAndNotifyInactive();
+      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
       GroupStop(group_id_to_close);
       audioContextTypeManager_->OverrideContextTypes({AudioContexts(), AudioContexts()});
       return;
@@ -1862,7 +1850,7 @@ public:
       if (prepare_for_a_call) {
         if (!PrepareStreamForAConversational(group)) {
           log::error("Could not configure group {} for a call", group->group_id_);
-          groupSetAndNotifyInactive();
+          groupSetAndNotifyInactive(/* autonomous_inactive */ false);
           return;
         }
       }
@@ -5178,16 +5166,6 @@ public:
                                             "r_state: " + ToString(audio_receiver_state_) +
                                                     ", s_state: " + ToString(audio_sender_state_));
 
-    if (!com::android::bluetooth::flags::leaudio_use_audio_recording_listener()) {
-      if (sink_monitor_mode_ && active_group_id_ == bluetooth::groups::kGroupUnknown) {
-        if (sink_monitor_notified_status_ != UnicastMonitorModeStatus::STREAMING_REQUESTED) {
-          notifyAudioLocalSink(UnicastMonitorModeStatus::STREAMING_REQUESTED);
-        }
-        CancelLocalAudioSinkStreamingRequest();
-        return;
-      }
-    }
-
     /* Stop the VBC close watchdog if needed */
     StopVbcCloseTimeout();
 
@@ -5585,11 +5563,9 @@ public:
      * If device is inCall mode, AF may quickly change metadata from ringing mode to active.
      * To avoid short stream suspend, let's keep stream alive.
      */
-    if (com::android::bluetooth::flags::leaudio_stop_updated_to_not_available_context_stream() &&
-        !IsInVoipOrRegularCall() &&
-        stopStreamIfCurrentContextTypeIsNotAllowed(
-                bluetooth::le_audio::types::kLeAudioDirectionSink, group,
-                local_metadata_context_types_.source)) {
+    if (!IsInVoipOrRegularCall() && stopStreamIfCurrentContextTypeIsNotAllowed(
+                                            bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                            group, local_metadata_context_types_.source)) {
       StopVbcCloseTimeout();
       log::info(
               "Updated source metadata contexts are not allowed context types: {} | configured: {} "
@@ -5773,11 +5749,9 @@ public:
      * If device is inCall mode, AF may quickly change metadata from ringing mode to active.
      * To avoid short stream suspend, let's keep stream alive.
      */
-    if (com::android::bluetooth::flags::leaudio_stop_updated_to_not_available_context_stream() &&
-        !IsInVoipOrRegularCall() &&
-        stopStreamIfCurrentContextTypeIsNotAllowed(
-                bluetooth::le_audio::types::kLeAudioDirectionSource, group,
-                local_metadata_context_types_.sink)) {
+    if (!IsInVoipOrRegularCall() && stopStreamIfCurrentContextTypeIsNotAllowed(
+                                            bluetooth::le_audio::types::kLeAudioDirectionSource,
+                                            group, local_metadata_context_types_.sink)) {
       log::info(
               "Updated sink metadata contexts are not allowed context types: {} | configured: {} "
               "vs allowed context mask: {}",
@@ -6981,7 +6955,7 @@ public:
              */
             UpdateLocationsAndContextsAvailability(group, true);
           } else {
-            groupSetAndNotifyInactive();
+            groupSetAndNotifyInactive(/* autonomous_inactive */ true);
           }
         }
         audio_sender_state_ = AudioState::IDLE;
@@ -7001,7 +6975,7 @@ public:
            */
           log::error("Internal state machine error for group {}", group_id);
           group->PrintDebugState();
-          groupSetAndNotifyInactive();
+          groupSetAndNotifyInactive(/* autonomous_inactive */ false);
           audio_sender_state_ = AudioState::IDLE;
           audio_receiver_state_ = AudioState::IDLE;
           return;
@@ -7177,12 +7151,9 @@ private:
        * the session callbacks special action from this Module would be
        * required e.g. to Unicast handover.
        */
-      if (com::android::bluetooth::flags::leaudio_use_audio_recording_listener() ||
-          !sink_monitor_mode_) {
-        local_metadata_context_types_.sink.clear();
-        le_audio_sink_hal_client_->Stop();
-        le_audio_sink_hal_client_.reset();
-      }
+      local_metadata_context_types_.sink.clear();
+      le_audio_sink_hal_client_->Stop();
+      le_audio_sink_hal_client_.reset();
     }
 
     local_metadata_context_types_.source.clear();

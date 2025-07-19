@@ -65,9 +65,9 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.telephony.TelephonyManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.tests.bluetooth.MockitoRule;
 

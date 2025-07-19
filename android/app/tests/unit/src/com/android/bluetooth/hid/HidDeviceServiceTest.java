@@ -54,8 +54,8 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.os.RemoteException;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
