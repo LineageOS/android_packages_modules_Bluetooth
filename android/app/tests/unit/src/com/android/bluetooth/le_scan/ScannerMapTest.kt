@@ -63,7 +63,8 @@ class ScannerMapTest {
         val intent = PendingIntent.getBroadcast(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
         val info = ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID)
         val uuid = UUID.randomUUID()
-        val app = scannerMap.add(uuid, attributionSource, info, adapterService, scanController)
+        val app =
+            scannerMap.add(uuid, null, attributionSource, info, adapterService, scanController)
         app.mId = SCANNER_ID
 
         assertThat(scannerMap.getById(SCANNER_ID).mName).isEqualTo(APP_NAME)

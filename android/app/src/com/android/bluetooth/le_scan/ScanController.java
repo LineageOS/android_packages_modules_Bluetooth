@@ -1360,9 +1360,15 @@ public class ScanController {
             return;
         }
 
-        ScannerMap.ScannerApp app = mScannerMap.add(uuid, source, piInfo, mAdapterService, this);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        app.mUserHandle = UserHandle.getUserHandleForUid(uid);
+        ScannerMap.ScannerApp app =
+                mScannerMap.add(
+                        uuid,
+                        UserHandle.getUserHandleForUid(uid),
+                        source,
+                        piInfo,
+                        mAdapterService,
+                        this);
         mAppOps.checkPackage(uid, callingPackage);
         app.mEligibleForSanitizedExposureNotification =
                 callingPackage.equals(mExposureNotificationPackage);
