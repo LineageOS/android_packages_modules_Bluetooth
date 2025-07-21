@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -58,6 +59,7 @@
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
+using namespace metrics;
 
 /*****************************************************************************
  *  Constants
@@ -106,6 +108,7 @@ static void bta_ag_cback_open(tBTA_AG_SCB* p_scb, const RawAddress& bd_addr,
   open.hdr.handle = bta_ag_scb_to_idx(p_scb);
   open.hdr.app_id = p_scb->app_id;
   open.status = status;
+  LogMetricAgOpenStatus(bd_addr, open.status);
   open.service_id = bta_ag_svc_id[p_scb->conn_service];
   open.bd_addr = bd_addr;
 
@@ -565,8 +568,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   log::verbose("bta_ag_rfc_open: ag_conn_timeout: {}", ag_conn_timeout);
   if (p_scb->conn_service == BTA_AG_HFP) {
     /* if hfp start timer for service level conn */
-    bta_sys_start_timer(p_scb->ring_timer,ag_conn_timeout,
-                        BTA_AG_SVC_TIMEOUT_EVT, bta_ag_scb_to_idx(p_scb));
+    bta_sys_start_timer(p_scb->ring_timer, ag_conn_timeout, BTA_AG_SVC_TIMEOUT_EVT,
+                        bta_ag_scb_to_idx(p_scb));
   } else {
     /* else service level conn is open */
     bta_ag_svc_conn_open(p_scb, data);

@@ -17,6 +17,7 @@
 #include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
+#include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_hfp_api.h"
 #include "main/shim/helpers.h"
 #include "stack/include/btm_api_types.h"
@@ -356,6 +357,21 @@ State MapScoCodecToState(uint16_t codec) {
   }
 }
 
+State MapAgOpenStatusToState(tBTA_AG_STATUS status) {
+  switch (status) {
+    case BTA_AG_SUCCESS:
+      return State::SUCCESS;
+    case BTA_AG_FAIL_SDP:
+      return State::SDP_DISCOVERY_FAILED;
+    case BTA_AG_FAIL_RFCOMM:
+      return State::RFCOMM_CONNECTION_FAILED;
+    case BTA_AG_FAIL_RESOURCES:
+      return State::RESOURCES_EXCEEDED;
+    default:
+      return State::FAIL;
+  }
+}
+
 void LogIncomingAclStartEvent(const hci::Address& address) {
   LogBluetoothEvent(address, EventType::ACL_CONNECTION_RESPONDER, State::START);
 }
@@ -493,6 +509,11 @@ void LogMetricHfpSuspendStream(hci::Address address) {
 
 void LogMetricHfpStreamStarted(hci::Address address) {
   LogBluetoothEvent(address, EventType::SCO_SESSION, State::AUDIO_PROVIDER_STREAM_STARTED);
+}
+
+void LogMetricAgOpenStatus(hci::Address address, tBTA_AG_STATUS status) {
+  LogBluetoothEvent(address, EventType::HFP_SESSION,
+                    bluetooth::metrics::MapAgOpenStatusToState(status));
 }
 
 }  // namespace bluetooth::metrics
