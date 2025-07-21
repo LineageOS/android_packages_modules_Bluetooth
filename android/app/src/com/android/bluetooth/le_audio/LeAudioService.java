@@ -58,6 +58,7 @@ import android.bluetooth.IBluetoothLeBroadcastCallback;
 import android.bluetooth.IBluetoothVolumeControl;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.IScannerCallback;
+import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
@@ -2176,7 +2177,7 @@ public class LeAudioService extends ConnectableProfile {
         @Override
         public synchronized void onScannerRegistered(int status, int scannerId) {
             Log.d(TAG, "onScannerRegistered: status: " + status + ", id:" + scannerId);
-            if (status != 0) {
+            if (status != ScanCallback.NO_ERROR) {
                 mScannerId = SCANNER_NOT_INITIALIZED;
                 return;
             }

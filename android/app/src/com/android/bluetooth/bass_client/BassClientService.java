@@ -50,6 +50,7 @@ import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.PeriodicAdvertisingCallback;
 import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.bluetooth.le.PeriodicAdvertisingReport;
+import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
@@ -288,7 +289,7 @@ public class BassClientService extends ConnectableProfile {
         public void onScannerRegistered(int status, int scannerId) {
             Log.d(TAG, "onScannerRegistered: Status: " + status + ", id:" + scannerId);
             synchronized (this) {
-                if (status != BluetoothStatusCodes.SUCCESS) {
+                if (status != ScanCallback.NO_ERROR) {
                     Log.e(TAG, "onScannerRegistered: Scanner registration failed: " + status);
                     if (mIsForegroundScan) {
                         mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
