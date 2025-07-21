@@ -532,7 +532,7 @@ bool PrepareAseCtpUpdateMetadata(const std::vector<struct ctp_update_metadata>& 
 
 bool PrepareAseCtpRelease(const std::vector<uint8_t>& ase_ids, std::vector<uint8_t>& value) {
   if (ase_ids.size() == 0) {
-    return true;
+    return false;
   }
   value.resize(ase_ids.size() * kAseIdSize + kAseNumSize + kCtpOpSize);
 
