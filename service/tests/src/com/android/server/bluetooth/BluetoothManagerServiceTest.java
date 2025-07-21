@@ -144,6 +144,7 @@ public class BluetoothManagerServiceTest {
     private InOrder mInOrder;
     private TestLooper mLooper;
     private BluetoothManagerService mManagerService;
+    private UserHandle mCurrentUser;
 
     private static class ServerQuery extends IpcDataCache.QueryHandler<IBluetoothManager, Integer> {
         @Override
@@ -168,6 +169,7 @@ public class BluetoothManagerServiceTest {
     @Before
     public void setUp() throws Exception {
         mInOrder = inOrder(mContext, mManagerCallback, mAdapterBinder);
+        mCurrentUser = mUser;
 
         IpcDataCache<IBluetoothManager, Integer> testCache =
                 new IpcDataCache<>(
@@ -394,7 +396,8 @@ public class BluetoothManagerServiceTest {
                 new ComponentName("", "com.android.bluetooth.btservice.AdapterService");
 
         var captor = ArgumentCaptor.forClass(ServiceConnection.class);
-        mInOrder.verify(mContext).bindServiceAsUser(any(), captor.capture(), anyInt(), any());
+        mInOrder.verify(mContext)
+                .bindServiceAsUser(any(), captor.capture(), anyInt(), eq(mCurrentUser));
         assertThat(captor.getAllValues()).hasSize(1);
 
         var serviceConnection = captor.getAllValues().get(0);
@@ -769,46 +772,21 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
-    public void userSwitch_whenBtOff_stayOff() throws Exception {
-        mManagerService.handleSwitchUser(mNextUser);
-        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
-
-        endTest();
-    }
-
-    @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
-    public void userSwitch_whenBleOn_stopAndDontRestart() throws Exception {
-        mManagerService.enableBle("userSwitch_whenBleOn_stopAndDontRestart", mBleBinder);
-        IBluetoothCallback btCallback = transition_offToBleOn();
-        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
-
-        mManagerService.handleSwitchUser(mNextUser);
-        transition_bleOnToOff(btCallback);
-
-        endTest();
-    }
-
-    @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
-    public void userSwitch_whenOn_stopAndRestart() throws Exception {
-        mManagerService.enable(0, "userSwitch_whenOn_stopAndRestart");
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_fastSwitch_restartsForLatestUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_fastSwitch_restartsForLatestUser");
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.handleSwitchUser(mNextUser);
+        mManagerService.onSwitchUser(mNextUser);
+        // A third user switch arrives before the first one is processed.
+        UserHandle anotherUser = mock(UserHandle.class);
+        mManagerService.onSwitchUser(anotherUser);
 
         transition_onToOff(btCallback);
+
+        mCurrentUser = anotherUser;
+
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
@@ -816,10 +794,166 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_fastSwitchOnInitialUser_restartsForInitialUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_fastSwitch_restartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+        mManagerService.onSwitchUser(mUser);
+
+        transition_onToOff(btCallback);
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_duringShutdownForSwitch_restartsForLatestUser() throws Exception {
+        mManagerService.enable(0, "userSwitch_duringShutdownForSwitch_restartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+
+        // Start the shutdown process
+        mInOrder.verify(mAdapterBinder).onToBleOn();
+        verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
+        verifyStateIntentSent(State.ON, State.TURNING_OFF);
+        assertThat(mManagerService.getState()).isEqualTo(State.TURNING_OFF);
+
+        // Switch user again while shutting down
+        UserHandle anotherUser = mock(UserHandle.class);
+        mManagerService.onSwitchUser(anotherUser);
+
+        // Complete the shutdown by going to BLE_ON then OFF
+        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
+        verifyStateIntentSent(State.TURNING_OFF, State.OFF);
+        transition_bleOnToOff(btCallback);
+
+        mCurrentUser = anotherUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_duringRestartForSwitch_completesThenRestartsForLatestUser()
+            throws Exception {
+        mManagerService.enable(
+                0, "userSwitch_duringRestartForSwitch_completesThenRestartsForLatestUser");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+        transition_onToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
+        // Restart for mNextUser begins
+        IBluetoothCallback newBtCallback = transition_offToBleOn();
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
+        verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
+        verifyStateIntentSent(State.OFF, State.TURNING_ON);
+        assertThat(mManagerService.getState()).isEqualTo(State.TURNING_ON);
+
+        // Switch user again in the middle of TURNING_ON
+        UserHandle anotherUser = mock(UserHandle.class);
+        mManagerService.onSwitchUser(anotherUser);
+
+        // The current startup should complete
+        newBtCallback.onBluetoothStateChange(State.TURNING_ON, State.ON);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.TURNING_ON, State.ON);
+        verifyStateIntentSent(State.TURNING_ON, State.ON);
+
+        // Now it should shut down for the new user switch and never stay ON
+        assertThat(mManagerService.getState()).isNotEqualTo(State.ON);
+        transition_onToOff(newBtCallback);
+
+        mCurrentUser = anotherUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_whenBleTurningOn_abortsAndStaysOff() throws Exception {
+        mManagerService.enableBle("userSwitch_whenBleTurningOn_abortsAndStaysOff", mBleBinder);
+        acceptBluetoothBinding();
+        IBluetoothCallback btCallback = captureBluetoothCallback();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
+
+        mManagerService.onSwitchUserFromService(mNextUser);
+
+        // A late state change that will be ignored.
+        btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
+
+        syncHandler(0); // Process onSwitchUserFromService
+
+        // The service should be unbound, and state should go to OFF.
+        mInOrder.verify(mContext).unbindService(any());
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_whenBtOff_stayOff() throws Exception {
+        mManagerService.onSwitchUser(mNextUser);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_whenBleOn_stopAndDontRestart() throws Exception {
+        mManagerService.enableBle("userSwitch_whenBleOn_stopAndDontRestart", mBleBinder);
+        IBluetoothCallback btCallback = transition_offToBleOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+        transition_bleOnToOff(btCallback);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
+    public void userSwitch_whenOn_stopAndRestart() throws Exception {
+        mManagerService.enable(0, "userSwitch_whenOn_stopAndRestart");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSwitchUser(mNextUser);
+
+        transition_onToOff(btCallback);
+
+        mCurrentUser = mNextUser;
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
     public void enable_afterLeSession_canStart() throws Exception {
         mManagerService.enableBle("enable_afterLeSession_canStart", mBleBinder);
         IBluetoothCallback btCallback = transition_offToBleOn();
@@ -836,10 +970,7 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_CLEANUP_STARTING_USER,
-        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
-    })
+    @EnableFlags({Flags.FLAG_CLEANUP_STARTING_USER, Flags.FLAG_USER_SWITCH_DURING_BLE_ON})
     public void bleBinderDeath_whenBleOn_isOff() throws Exception {
         mManagerService.enableBle("bleBinderDeath_whenBleOn_isOff", mBleBinder);
         IBluetoothCallback btCallback = transition_offToBleOn();

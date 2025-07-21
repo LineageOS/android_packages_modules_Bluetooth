@@ -142,13 +142,13 @@ class BluetoothService(context: Context) : SystemService(context) {
                     "Switching on a user when not initialized should never happen"
                 )
             }
-            mBluetoothManagerService.onSwitchUser(to.userHandle)
+            mBluetoothManagerService.onSwitchUserFromService(to.userHandle)
             return
         }
         if (!mInitialized) {
             initialize(to)
         } else {
-            mBluetoothManagerService.onSwitchUser(to.userHandle)
+            mBluetoothManagerService.onSwitchUserFromService(to.userHandle)
         }
     }
 
