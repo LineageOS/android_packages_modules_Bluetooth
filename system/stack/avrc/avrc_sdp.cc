@@ -383,3 +383,15 @@ uint16_t AVRC_RemoveRecord(uint32_t sdp_handle) {
  *
  ******************************************************************************/
 void AVRC_Init(void) { avrc_cb = tAVRC_CB{}; }
+
+/*******************************************************************************
+ *
+ * Function         AVRC_ResetServiceUuid
+ *
+ * Description      This function is called at stack cleanup to reset the
+ *                  service uuid.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void AVRC_ResetServiceUuid() { avrc_cb.service_uuid = 0; }
