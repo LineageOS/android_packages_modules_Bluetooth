@@ -528,7 +528,7 @@ public class AvrcpTargetService extends ProfileService {
                         + " device="
                         + activeDevice
                         + " key="
-                        + (KeyEvent.KEYCODE_MEDIA_PLAY == keyCode ? "PLAY" : "PAUSE")
+                        + KeyEvent.keyCodeToString(keyCode)
                         + " pushed="
                         + pushed
                         + " voice active="
