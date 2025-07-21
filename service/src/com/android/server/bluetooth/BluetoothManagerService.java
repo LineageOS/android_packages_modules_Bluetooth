@@ -2007,7 +2007,7 @@ class BluetoothManagerService {
 
         if (mNextUser != null) {
             mHandler.removeCallbacksAndMessages(ON_SWITCH_USER_TOKEN);
-            if (mNextUser != mUser) {
+            if (!mNextUser.equals(mUser)) {
                 Log.d(TAG, header + "Resume user switch");
                 prepareUserSwitch(mNextUser);
                 return;
