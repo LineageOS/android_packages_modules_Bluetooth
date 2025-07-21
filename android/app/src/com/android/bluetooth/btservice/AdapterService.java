@@ -1078,10 +1078,7 @@ public class AdapterService extends Service {
         recursivelyDeleteDirectory(getDataDir(), false);
         recursivelyDeleteDirectory(Paths.get("/data/misc/bluedroid/").toFile(), false);
         recursivelyDeleteDirectory(Paths.get("/data/misc/bluetooth/").toFile(), false);
-
-        if (Flags.factoryResetClearAdditionalData()) {
-            NotificationHelperService.factoryReset(getContentResolver());
-        }
+        NotificationHelperService.factoryReset(getContentResolver());
         Log.i(TAG, "factoryResetIfNeeded(): Completed");
     }
 

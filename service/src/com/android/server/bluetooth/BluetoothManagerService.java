@@ -315,13 +315,12 @@ class BluetoothManagerService {
     }
 
     boolean factoryReset(int count) {
-        if (Flags.factoryResetClearAdditionalData()) {
-            if (mAutoOn != null) {
-                mAutoOn.factoryReset();
-            }
-            AirplaneModeListener.factoryReset(mContentResolver, mUserContext);
-            setBtHciSnoopLogMode(-1);
+        if (mAutoOn != null) {
+            mAutoOn.factoryReset();
         }
+        AirplaneModeListener.factoryReset(mContentResolver, mUserContext);
+        setBtHciSnoopLogMode(-1);
+
         if (count == 10 || mState.oneOf(State.OFF)) {
             Log.e(TAG, "factoryReset(" + count + "): Set property to retry when Bluetooth start");
             BluetoothProperties.factory_reset(true);
