@@ -845,16 +845,6 @@ class BluetoothManagerService {
         return mUserContext;
     }
 
-    boolean isMediaProfileConnected() {
-        if (Flags.onewayMediaProfile()) {
-            throw new IllegalStateException("Not callable when the flag is enabled");
-        }
-        if (!mState.oneOf(State.ON)) {
-            return false;
-        }
-        return mAdapter.isMediaProfileConnected();
-    }
-
     // Disable ble scan only mode.
     private void disableBleScanMode() {
         if (mState.oneOf(State.ON)) {
@@ -1165,7 +1155,6 @@ class BluetoothManagerService {
                 mState,
                 this::onAirplaneModeChanged,
                 this::sendToggleNotification,
-                this::isMediaProfileConnected,
                 this::getUserContext,
                 TimeSource.Monotonic.INSTANCE);
 

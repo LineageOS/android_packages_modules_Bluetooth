@@ -4125,9 +4125,6 @@ public class AdapterService extends Service {
         if (Flags.adapterSuspendMgmt()) {
             mAdapterSuspend.profileConnectionStateChanged(profile, device, fromState, toState);
         }
-        if (!Flags.onewayMediaProfile()) {
-            return;
-        }
         boolean mediaConnected = isMediaProfileConnected();
         if (mIsMediaProfileConnected != mediaConnected) {
             mIsMediaProfileConnected = mediaConnected;

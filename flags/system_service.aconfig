@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "oneway_media_profile"
-    namespace: "bluetooth"
-    description: "remove non-oneway call to check if media profile are connected"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "416087818"
-}
-
-flag {
     name: "cleanup_starting_user"
     namespace: "bluetooth"
     description: "Allow the system server to initialize and start the stack when a foreground user start, without waiting on user switch"
