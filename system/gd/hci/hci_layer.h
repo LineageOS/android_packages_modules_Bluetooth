@@ -184,6 +184,7 @@ protected:
   };
 
   void StartWithNoHalDependencies(os::Handler* handler);
+  void StopWithNoHalDependencies();
 
   void LifeCycleStop();
 
