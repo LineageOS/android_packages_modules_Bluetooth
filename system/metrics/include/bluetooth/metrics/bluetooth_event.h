@@ -18,6 +18,7 @@
 
 #include <bluetooth/metrics/os_metrics.h>
 
+#include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_sec_api.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
@@ -32,6 +33,8 @@ android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
 android::bluetooth::State MapHfpVersionToState(uint16_t version);
 
 android::bluetooth::State MapScoCodecToState(uint16_t codec);
+
+android::bluetooth::State MapAgOpenStatusToState(tBTA_AG_STATUS status);
 
 void LogIncomingAclStartEvent(const hci::Address& address);
 
@@ -156,5 +159,12 @@ void LogMetricHfpSuspendStream(hci::Address address);
  * @param address
  */
 void LogMetricHfpStreamStarted(hci::Address address);
+
+/**
+ * Logs the status when the AG connection is opened
+ * @param address
+ * @param status
+ */
+void LogMetricAgOpenStatus(hci::Address address, tBTA_AG_STATUS status);
 
 }  // namespace bluetooth::metrics

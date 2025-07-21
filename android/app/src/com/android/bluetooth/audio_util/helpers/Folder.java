@@ -20,15 +20,17 @@ class Folder implements Cloneable {
     public String mediaId;
     public boolean isPlayable;
     public String title;
+    public int folderType;
 
-    Folder(String i, boolean p, String t) {
+    Folder(String i, boolean p, String t, int f) {
         mediaId = i;
         isPlayable = p;
         title = t;
+        folderType = f;
     }
 
     @Override
     public Folder clone() {
-        return new Folder(mediaId, isPlayable, title);
+        return new Folder(mediaId, isPlayable, title, folderType);
     }
 }

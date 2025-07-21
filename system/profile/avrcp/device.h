@@ -363,6 +363,7 @@ private:
 
   SongInfo last_song_info_;
   PlayStatus last_play_status_;
+  PlayState last_media_player_status_ = PlayState::PAUSED;
 
   base::CancelableClosure play_pos_update_cb_;
 
