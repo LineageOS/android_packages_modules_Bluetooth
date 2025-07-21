@@ -340,6 +340,7 @@ public:
                       : stream_map.streams_map_current;
       update_receiver(unicast_cfg, direction);
       stream_map.is_initial = false;
+      stream_map.has_changed = false;
     }
   }
 
@@ -890,6 +891,9 @@ public:
     }
 
     auto& stream_map = offloader_stream_maps.get(direction);
+    if (!stream_map.streams_map_target.empty() || !stream_map.streams_map_current.empty()) {
+      stream_map.has_changed = true;
+    }
     stream_map.streams_map_target.clear();
     stream_map.streams_map_current.clear();
   }
