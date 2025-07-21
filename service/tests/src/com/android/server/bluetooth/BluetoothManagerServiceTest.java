@@ -323,7 +323,6 @@ public class BluetoothManagerServiceTest {
     @Test
     @EnableFlags({
         Flags.FLAG_USER_RESTRICTION_REFACTOR,
-        Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
     })
     public void onUserRestrictionsChanged_whenOn_turnOff() throws Exception {
         mManagerService.enable(0, "onUserRestrictionsChanged_whenOn_turnOff");

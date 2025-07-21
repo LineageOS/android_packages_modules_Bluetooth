@@ -164,18 +164,6 @@ class AdapterBinder extends IAdapter.Stub {
     }
 
     @Override
-    public void setForegroundUserId(int userId) {
-        if (Flags.limitUserSwitchPropagation()) {
-            throw new IllegalStateException("limitUserSwitchPropagation is activated");
-        }
-        AdapterService service = getServiceAndEnforcePrivileged();
-        if (service == null) {
-            return;
-        }
-        Utils.setForegroundUserId(userId);
-    }
-
-    @Override
     public void unregAllGattClient() {
         AdapterService service = getServiceAndEnforcePrivileged();
         if (service == null) {
