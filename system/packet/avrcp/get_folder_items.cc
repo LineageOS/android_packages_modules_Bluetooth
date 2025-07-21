@@ -150,7 +150,7 @@ void GetFolderItemsResponseBuilder::PushMediaPlayerItem(
   AddPayloadOctets2(pkt, base::ByteSwap(item.id_));  // Player ID
   AddPayloadOctets1(pkt, 0x01);                      // Player Type
   AddPayloadOctets4(pkt, 0x00000000);                // Player Subtype
-  AddPayloadOctets1(pkt, 0x02);  // Player Play Status // TODO: Add this as a passed field
+  AddPayloadOctets1(pkt, item.state_);               // Player Play Status
 
   // Features
   AddPayloadOctets1(pkt, 0x00);

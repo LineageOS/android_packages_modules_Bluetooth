@@ -494,6 +494,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
   jfieldID field_mediaId = env->GetFieldID(class_folder, "mediaId", "Ljava/lang/String;");
   jfieldID field_isPlayable = env->GetFieldID(class_folder, "isPlayable", "Z");
   jfieldID field_name = env->GetFieldID(class_folder, "title", "Ljava/lang/String;");
+  jfieldID field_folderType = env->GetFieldID(class_folder, "folderType", "I");
 
   jstring jstr = (jstring)env->GetObjectField(folder, field_mediaId);
   if (jstr != nullptr) {
@@ -512,6 +513,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
     env->ReleaseStringUTFChars(jstr, value);
     env->DeleteLocalRef(jstr);
   }
+  info.folderType = env->GetIntField(folder, field_folderType);
 
   return info;
 }

@@ -51,7 +51,7 @@ extern "C" int LLVMFuzzerTestOneInput(uint8_t* data, size_t size) {
   test_packet->GetData();
 
   // Third test with the same data.
-  MediaPlayerItem player1(1, s, true);
+  MediaPlayerItem player1(1, s, true, 0);
 
   // Browsing Header + Status field + UID Counter field + Number of Items
   // field
