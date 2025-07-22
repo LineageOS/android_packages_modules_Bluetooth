@@ -155,21 +155,13 @@ TEST_F(BtaHdTest, bta_hd_intr_data_act__use_report_id_true) {
   data.p_data->len = static_cast<uint16_t>(data32.size());
   data.p_data->offset = 0;
   uint8_t* p_data = (uint8_t*)(data.p_data + 1);
-  int i = 0;
-  for (const auto& byte : data32) {
-    p_data[i++] = byte;
-  }
+  std::copy(data32.begin(), data32.end(), p_data);
 
   bta_hd_cb.p_cback = [](tBTA_HD_EVT event, tBTA_HD* p_data) {
     ASSERT_EQ(BTA_HD_INTR_DATA_EVT, event);
     uint8_t* data = (uint8_t*)(p_data->intr_data.p_data);
-    size_t i = 0;
-    ASSERT_EQ(data32[i], p_data->intr_data.report_id);
-    i++;
-    size_t j = 0;
-    for (; i < data32.size(); i++, j++) {
-      ASSERT_EQ(data32[i], data[j]);
-    }
+    ASSERT_EQ(data32[0], p_data->intr_data.report_id);
+    ASSERT_TRUE(std::equal(data32.begin() + 1, data32.end(), data));
   };
 
   bta_hd_intr_data_act((tBTA_HD_DATA*)(&data));
@@ -194,10 +186,7 @@ TEST_F(BtaHdTest, bta_hd_get_report_act__use_report_id_true) {
   data.p_data->len = static_cast<uint16_t>(data32.size());
   data.p_data->offset = 0;
   uint8_t* p_data = (uint8_t*)(data.p_data + 1);
-  int i = 0;
-  for (const auto& byte : data32) {
-    p_data[i++] = byte;
-  }
+  std::copy(data32.begin(), data32.end(), p_data);
 
   bta_hd_cb.p_cback = [](tBTA_HD_EVT event, tBTA_HD* p_data) {
     ASSERT_EQ(BTA_HD_GET_REPORT_EVT, event);
@@ -207,4 +196,67 @@ TEST_F(BtaHdTest, bta_hd_get_report_act__use_report_id_true) {
   };
 
   bta_hd_get_report_act((tBTA_HD_DATA*)(&data));
+}
+
+TEST_F(BtaHdTest, bta_hd_set_report_act) {
+  tBTA_HD_CBACK_DATA data = {
+          .hdr =
+                  {
+                          .event = 0,
+                          .len = 0,
+                          .offset = 0,
+                          .layer_specific = 0,
+                  },
+          .addr = RawAddress::kEmpty,
+          .data = 32,
+          .p_data = static_cast<BT_HDR*>(osi_calloc(32 + sizeof(BT_HDR))),
+  };
+
+  bta_hd_cb.use_report_id = true;
+
+  data.p_data->len = static_cast<uint16_t>(data32.size());
+  data.p_data->offset = 0;
+  uint8_t* p_data = (uint8_t*)(data.p_data + 1);
+  std::copy(data32.begin(), data32.end(), p_data);
+
+  bta_hd_cb.p_cback = [](tBTA_HD_EVT event, tBTA_HD* p_data) {
+    ASSERT_EQ(BTA_HD_SET_REPORT_EVT, event);
+    ASSERT_EQ(0x01, p_data->set_report.report_type);
+    ASSERT_EQ(0x02, p_data->set_report.report_id);
+    ASSERT_EQ(30, p_data->set_report.len);
+    ASSERT_TRUE(std::equal(data32.begin() + 2, data32.end(), p_data->set_report.p_data));
+  };
+
+  bta_hd_set_report_act((tBTA_HD_DATA*)(&data));
+}
+
+TEST_F(BtaHdTest, bta_hd_vc_unplug_act) {
+  bta_hd_vc_unplug_act();
+  ASSERT_EQ(1, get_func_call_count("HID_DevVirtualCableUnplug"));
+  ASSERT_EQ(true, bta_hd_cb.vc_unplug);
+}
+
+TEST_F(BtaHdTest, bta_hd_vc_unplug_done_act) {
+  tBTA_HD_CBACK_DATA data = {
+          .hdr =
+                  {
+                          .event = 0,
+                          .len = 0,
+                          .offset = 0,
+                          .layer_specific = 0,
+                  },
+          .addr = RawAddress::kEmpty,
+          .data = 32,
+          .p_data = static_cast<BT_HDR*>(osi_calloc(sizeof(BT_HDR))),
+  };
+
+  data.addr = kRawAddress;
+  bta_hd_cb.p_cback = [](tBTA_HD_EVT event, tBTA_HD* p_data) {
+    ASSERT_EQ(BTA_HD_VC_UNPLUG_EVT, event);
+    ASSERT_EQ(kRawAddress, p_data->conn.bda);
+  };
+
+  bta_hd_vc_unplug_done_act((tBTA_HD_DATA*)(&data));
+  ASSERT_EQ(1, get_func_call_count("HID_DevUnplugDevice"));
+  ASSERT_EQ(kRawAddress, bta_hd_cb.bd_addr);
 }
