@@ -64,3 +64,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_event_handler_reg_and_dereg"
+    namespace: "bluetooth"
+    description: "Fix the event handler registration and deregistration."
+    bug: "433222144"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
