@@ -20,13 +20,11 @@ import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
-import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.flags.Flags
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
 import com.google.testing.junit.testparameterinjector.TestParameter
@@ -696,7 +694,6 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_UNREGISTER_GATT_CLIENT_DISCONNECTED)
     fun connectAndDisconnectManyClientsWithoutClose() {
         advertiseWithBumble()
 
