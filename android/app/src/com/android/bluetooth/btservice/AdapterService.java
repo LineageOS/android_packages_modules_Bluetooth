@@ -2254,6 +2254,22 @@ public class AdapterService extends Service {
     }
 
     /**
+     * Wrapper to facilitate DatabaseManager migration see {@link
+     * DatabaseManager#getKeyMissingCount}
+     */
+    public int getKeyMissingCount(BluetoothDevice device) {
+        return mDatabaseManager.getKeyMissingCount(device);
+    }
+
+    /**
+     * Wrapper to facilitate DatabaseManager migration see {@link
+     * DatabaseManager#updateKeyMissingCount}
+     */
+    public void updateKeyMissingCount(BluetoothDevice device, boolean isKeyMissingDetected) {
+        mDatabaseManager.updateKeyMissingCount(device, isKeyMissingDetected);
+    }
+
+    /**
      * Set metadata value for the given device and key
      *
      * @return true if metadata is set successfully
