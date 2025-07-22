@@ -215,7 +215,7 @@ public class BassClientService extends ConnectableProfile {
         private static final int SCANNER_ID_NOT_INITIALIZED = -2;
         private static final int SCANNER_ID_INITIALIZING = -1;
 
-        private final List<ScanFilter> mBaasUuidFilters = new ArrayList<ScanFilter>();
+        private final List<ScanFilter> mBaasUuidFilters = new ArrayList<>();
         private int mScannerId = SCANNER_ID_NOT_INITIALIZED;
 
         void registerAndStartScan(List<ScanFilter> filters) {
@@ -1085,7 +1085,7 @@ public class BassClientService extends ConnectableProfile {
                         + (" sourceId: " + sourceId));
 
         synchronized (mSinksWaitingForPast) {
-            mSinksWaitingForPast.put(sink, new Pair<Integer, Integer>(broadcastId, sourceId));
+            mSinksWaitingForPast.put(sink, new Pair<>(broadcastId, sourceId));
         }
         addSelectSourceRequest(broadcastId, /* hasPriority */ true);
     }
@@ -1269,8 +1269,7 @@ public class BassClientService extends ConnectableProfile {
         if (mLocalBroadcastReceivers.containsKey(broadcastId)) {
             mLocalBroadcastReceivers.get(broadcastId).add(sink);
         } else {
-            mLocalBroadcastReceivers.put(
-                    broadcastId, new HashSet<BluetoothDevice>(Arrays.asList(sink)));
+            mLocalBroadcastReceivers.put(broadcastId, new HashSet<>(Arrays.asList(sink)));
         }
     }
 
@@ -1304,8 +1303,7 @@ public class BassClientService extends ConnectableProfile {
             BassClientStateMachine stateMachine = mStateMachines.get(sink);
             if (stateMachine == null) {
                 Log.e(TAG, "Can't get state machine for device: " + sink);
-                return new Pair<BluetoothLeBroadcastMetadata, Map<BluetoothDevice, Integer>>(
-                        null, null);
+                return new Pair<>(null, null);
             }
 
             BluetoothLeBroadcastMetadata metadata =
@@ -3667,9 +3665,7 @@ public class BassClientService extends ConnectableProfile {
                     continue;
                 }
 
-                list.add(
-                        new Pair<BluetoothLeBroadcastReceiveState, BluetoothDevice>(
-                                receiveState, device));
+                list.add(new Pair<>(receiveState, device));
             }
         }
 
@@ -4062,8 +4058,7 @@ public class BassClientService extends ConnectableProfile {
             for (BluetoothLeBroadcastReceiveState receiveState : getAllSources(device)) {
                 broadcastIdsToStopMonitoring.add(receiveState.getBroadcastId());
 
-                sourcesToModify.add(
-                        new Pair<BluetoothDevice, Integer>(device, receiveState.getSourceId()));
+                sourcesToModify.add(new Pair<>(device, receiveState.getSourceId()));
 
                 sEventLogger.logd(TAG, "Add broadcast sink to paused cache: " + device);
                 mPausedBroadcastSinks.add(device);

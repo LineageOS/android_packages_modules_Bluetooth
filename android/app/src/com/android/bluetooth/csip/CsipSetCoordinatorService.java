@@ -644,7 +644,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         }
 
         if (!mDeviceGroupIdRankMap.containsKey(device)) {
-            mDeviceGroupIdRankMap.put(device, new HashMap<Integer, Integer>());
+            mDeviceGroupIdRankMap.put(device, new HashMap<>());
         }
 
         Map<Integer, Integer> all_device_groups = mDeviceGroupIdRankMap.get(device);

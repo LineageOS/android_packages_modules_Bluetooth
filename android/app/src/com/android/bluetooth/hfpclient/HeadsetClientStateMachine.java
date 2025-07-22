@@ -320,11 +320,11 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     private void addQueuedAction(int action, Object data) {
-        mQueuedActions.add(new Pair<Integer, Object>(action, data));
+        mQueuedActions.add(new Pair<>(action, data));
     }
 
     private void addQueuedAction(int action, int data) {
-        mQueuedActions.add(new Pair<Integer, Object>(action, data));
+        mQueuedActions.add(new Pair<>(action, data));
     }
 
     @VisibleForTesting
@@ -424,26 +424,26 @@ public class HeadsetClientStateMachine extends StateMachine {
         // Create set of IDs for added calls, removed calls and consistent calls.
         // WARN!!! Java Map -> Set has association hence changes to Set are reflected in the Map
         // itself (i.e. removing an element from Set removes it from the Map hence use copy).
-        Set<Integer> currCallIdSet = new HashSet<Integer>();
+        Set<Integer> currCallIdSet = new HashSet<>();
         currCallIdSet.addAll(mCalls.keySet());
         // Remove the entry for unassigned call.
         currCallIdSet.remove(HF_ORIGINATED_CALL_ID);
 
-        Set<Integer> newCallIdSet = new HashSet<Integer>();
+        Set<Integer> newCallIdSet = new HashSet<>();
         newCallIdSet.addAll(mCallsUpdate.keySet());
 
         // Added.
-        Set<Integer> callAddedIds = new HashSet<Integer>();
+        Set<Integer> callAddedIds = new HashSet<>();
         callAddedIds.addAll(newCallIdSet);
         callAddedIds.removeAll(currCallIdSet);
 
         // Removed.
-        Set<Integer> callRemovedIds = new HashSet<Integer>();
+        Set<Integer> callRemovedIds = new HashSet<>();
         callRemovedIds.addAll(currCallIdSet);
         callRemovedIds.removeAll(newCallIdSet);
 
         // Retained.
-        Set<Integer> callRetainedIds = new HashSet<Integer>();
+        Set<Integer> callRetainedIds = new HashSet<>();
         callRetainedIds.addAll(currCallIdSet);
         callRetainedIds.retainAll(newCallIdSet);
 
@@ -2241,7 +2241,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> deviceList = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> deviceList = new ArrayList<>();
         final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
         if (bondedDevices == null) {
             return deviceList;
@@ -2292,7 +2292,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     List<BluetoothDevice> getConnectedDevices() {
-        List<BluetoothDevice> devices = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> devices = new ArrayList<>();
         synchronized (this) {
             if (isConnected()) {
                 devices.add(mCurrentDevice);
@@ -2307,7 +2307,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     public List<HfpClientCall> getCurrentCalls() {
-        return new ArrayList<HfpClientCall>(mCalls.values());
+        return new ArrayList<>(mCalls.values());
     }
 
     public Bundle getCurrentAgEvents() {

@@ -570,7 +570,7 @@ public class SapService extends ConnectableProfile
     }
 
     public List<BluetoothDevice> getConnectedDevices() {
-        List<BluetoothDevice> devices = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> devices = new ArrayList<>();
         synchronized (this) {
             if (mState == BluetoothSap.STATE_CONNECTED && mRemoteDevice != null) {
                 devices.add(mRemoteDevice);
@@ -580,7 +580,7 @@ public class SapService extends ConnectableProfile
     }
 
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> deviceList = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> deviceList = new ArrayList<>();
         BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
         int connectionState;
         synchronized (this) {

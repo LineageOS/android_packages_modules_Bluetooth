@@ -46,8 +46,7 @@ public class SmsMmsContacts {
 
     private HashMap<Long, String> mPhoneNumbers = null;
 
-    @VisibleForTesting
-    final HashMap<String, MapContact> mNames = new HashMap<String, MapContact>(10);
+    @VisibleForTesting final HashMap<String, MapContact> mNames = new HashMap<>(10);
 
     private static final Uri ADDRESS_URI =
             MmsSms.CONTENT_URI.buildUpon().appendPath("canonical-addresses").build();
@@ -141,7 +140,7 @@ public class SmsMmsContacts {
             if (c != null) {
                 size = c.getCount();
             }
-            mPhoneNumbers = new HashMap<Long, String>(size);
+            mPhoneNumbers = new HashMap<>(size);
         } else {
             mPhoneNumbers.clear();
         }

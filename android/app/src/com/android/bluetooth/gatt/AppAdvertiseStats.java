@@ -106,7 +106,7 @@ class AppAdvertiseStats {
     private boolean mPeriodicIncludeTxPower = false;
     private int mPeriodicInterval = 0;
     private int mAppImportance = IMPORTANCE_CACHED;
-    public ArrayList<AppAdvertiserRecord> mAdvertiserRecords = new ArrayList<AppAdvertiserRecord>();
+    public ArrayList<AppAdvertiserRecord> mAdvertiserRecords = new ArrayList<>();
 
     AppAdvertiseStats(int appUid, int id, String name, AttributionSource source) {
         this.mAppUid = appUid;

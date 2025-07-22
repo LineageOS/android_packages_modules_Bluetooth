@@ -165,7 +165,7 @@ public class SapMessage {
     static AtomicInteger sNextSerial = new AtomicInteger(1);
 
     // Map<rilSerial, RequestType> - HashTable is synchronized
-    static Map<Integer, Integer> sOngoingRequests = new ConcurrentHashMap<Integer, Integer>();
+    static Map<Integer, Integer> sOngoingRequests = new ConcurrentHashMap<>();
     private boolean mSendToRil = false; // set to true for messages that needs to go to the RIL
     private boolean mClearRilQueue = false; /* set to true for messages that needs to cause the
                                               sOngoingRequests to be cleared. */

@@ -1644,7 +1644,7 @@ class ScanManager {
             configureFilterParameter(scannerId, client, ALL_PASS_FILTER_SELECTION, filterIndex, 0);
             waitForCallback();
         } else {
-            Deque<Integer> clientFilterIndices = new ArrayDeque<Integer>();
+            Deque<Integer> clientFilterIndices = new ArrayDeque<>();
             for (ScanFilter filter : client.getFilters()) {
                 ScanFilterQueue queue = new ScanFilterQueue();
                 queue.addScanFilter(filter);

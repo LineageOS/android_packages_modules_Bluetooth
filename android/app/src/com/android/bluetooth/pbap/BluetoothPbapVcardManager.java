@@ -238,7 +238,7 @@ public class BluetoothPbapVcardManager {
                 new String[] {Calls.NUMBER, Calls.CACHED_NAME, Calls.NUMBER_PRESENTATION};
 
         Cursor callCursor = null;
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         try {
             callCursor =
                     BluetoothMethodProxy.getInstance()
@@ -282,7 +282,7 @@ public class BluetoothPbapVcardManager {
     }
 
     public final List<String> getPhonebookNameList(final int orderByWhat) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
         // Owner vCard enhancement. Use "ME" profile if configured
         String ownerName = null;
         if (BluetoothPbapConfig.useProfileForOwnerVcard()) {
@@ -347,7 +347,7 @@ public class BluetoothPbapVcardManager {
             int pbSize,
             byte[] selector,
             String vCardSelectorOperator) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
         PropertySelector vcardselector = new PropertySelector(selector);
         int vcardType;
 
@@ -389,7 +389,7 @@ public class BluetoothPbapVcardManager {
                                     null,
                                     Phone.CONTACT_ID);
 
-            ArrayList<String> contactNameIdList = new ArrayList<String>();
+            ArrayList<String> contactNameIdList = new ArrayList<>();
             appendDistinctNameIdList(
                     contactNameIdList,
                     mContext.getString(android.R.string.unknownName),
@@ -474,7 +474,7 @@ public class BluetoothPbapVcardManager {
     }
 
     public final List<String> getContactNamesByNumber(final String phoneNumber) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
 
         Cursor contactCursor = null;
         Uri uri = null;
