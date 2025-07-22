@@ -70,7 +70,7 @@ private fun getRadioModeValue(resolver: ContentResolver, radio: String, modeKey:
     return if (isSensitive(resolver, radio)) {
         isGlobalModeOn(resolver, modeKey)
     } else {
-        Log.d(TAG, "Not sensitive to " + radio + " change. Forced to false")
+        Log.d(TAG, "Not sensitive to $radio change. Forced to false")
         false
     }
 }

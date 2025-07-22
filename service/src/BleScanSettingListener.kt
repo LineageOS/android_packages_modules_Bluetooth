@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// @file:JvmName("BleScanSettingListener")
-
 package com.android.server.bluetooth
 
 import android.content.ContentResolver
