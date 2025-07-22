@@ -24,8 +24,6 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeCall;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.IBluetoothLeCallControlCallback;
-import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
@@ -44,6 +42,23 @@ import java.util.UUID;
 
 public class TbsService extends ProfileService {
     private static final String TAG = TbsService.class.getSimpleName();
+
+    /** Callback for TBS events. */
+    public interface Callback {
+        void onBearerRegistered(int ccid);
+
+        void onAcceptCall(int requestId, UUID uuid);
+
+        void onTerminateCall(int requestId, UUID uuid);
+
+        void onHoldCall(int requestId, UUID uuid);
+
+        void onUnholdCall(int requestId, UUID uuid);
+
+        void onPlaceCall(int requestId, UUID uuid, String uri);
+
+        void onJoinCalls(int requestId, List<UUID> uuids);
+    }
 
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static TbsService sTbsService;
@@ -77,7 +92,7 @@ public class TbsService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new TbsServiceBinder(this);
+        return null;
     }
 
     @Override
@@ -224,7 +239,7 @@ public class TbsService extends ProfileService {
 
     public void registerBearer(
             String token,
-            IBluetoothLeCallControlCallback callback,
+            Callback callback,
             String uci,
             List<String> uriSchemes,
             int capabilities,
@@ -235,21 +250,9 @@ public class TbsService extends ProfileService {
         boolean success =
                 mTbsGeneric.addBearer(
                         token, callback, uci, uriSchemes, capabilities, providerName, technology);
-        if (success) {
-            try {
-                callback.asBinder()
-                        .linkToDeath(
-                                () -> {
-                                    Log.e(TAG, token + " application died, removing...");
-                                    unregisterBearer(token);
-                                },
-                                0);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
+        if (!success) {
+            Log.e(TAG, "Failed to register bearer for token=" + token);
         }
-
-        Log.d(TAG, "registerBearer: token=" + token + " success=" + success);
     }
 
     public void unregisterBearer(String token) {
