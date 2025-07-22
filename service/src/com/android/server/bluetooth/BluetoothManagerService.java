@@ -479,7 +479,7 @@ class BluetoothManagerService {
         } else if (currentState == State.BLE_TURNING_ON && Flags.userSwitchDuringBleOn()) {
             mEnable = false;
             mActiveLogs.add(reason, false);
-            bleTurninOnToOff();
+            bleTurningOnToOff();
         }
     }
 
@@ -1691,7 +1691,7 @@ class BluetoothManagerService {
         switch (mState.get()) {
             case State.ON -> onToBleOn();
             case State.BLE_ON -> bleOnToOff();
-            case State.BLE_TURNING_ON -> bleTurninOnToOff();
+            case State.BLE_TURNING_ON -> bleTurningOnToOff();
             default -> throw new IllegalStateException("From impossible state: " + mState);
         }
     }
@@ -1905,11 +1905,11 @@ class BluetoothManagerService {
         bluetoothStateChangeHandler(State.BLE_ON, State.BLE_TURNING_OFF);
     }
 
-    private void bleTurninOnToOff() {
+    private void bleTurningOnToOff() {
         if (!mState.oneOf(State.BLE_TURNING_ON)) {
-            throw new IllegalStateException("bleTurninOnToOff: Impossible from " + mState);
+            throw new IllegalStateException("bleTurningOnToOff: Impossible from " + mState);
         }
-        Log.d(TAG, "bleTurninOnToOff: Sending request");
+        Log.d(TAG, "bleTurningOnToOff: Sending request");
         if (mAdapter == null) {
             // When Bluetooth was not yet bound, prevent binding to complete
             mContext.unbindService(mConnection);
