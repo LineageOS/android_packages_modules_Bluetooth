@@ -73,7 +73,8 @@ object Utils {
     fun intentLogger(tag: String, intent: Intent) {
         val action = intent.getAction()
         when (action) {
-            BluetoothAdapter.ACTION_DISCOVERY_STARTED -> Log.d("intentLogger", "$tag/$action")
+            BluetoothAdapter.ACTION_DISCOVERY_STARTED,
+            BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> Log.d("intentLogger", "$tag/$action")
             BluetoothDevice.ACTION_ACL_CONNECTED,
             BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                 val device = intent.getBluetoothDeviceExtra()
