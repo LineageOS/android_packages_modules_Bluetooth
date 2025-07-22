@@ -1030,7 +1030,7 @@ public class TbsGeneric {
     }
 
     private synchronized Map.Entry<Integer, TbsCall> getForegroundCall() {
-        LinkedHashSet<Integer> states = new LinkedHashSet<Integer>();
+        LinkedHashSet<Integer> states = new LinkedHashSet<>();
         Map.Entry<Integer, TbsCall> foregroundCall;
 
         if (mCurrentCallsList.size() == 0) {

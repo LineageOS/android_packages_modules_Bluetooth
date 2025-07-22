@@ -47,7 +47,7 @@ public class BipTransformation {
     public static final int FILL = 1;
     public static final int CROP = 2;
 
-    public final HashSet<Integer> mSupportedTransformations = new HashSet<Integer>(3);
+    public final HashSet<Integer> mSupportedTransformations = new HashSet<>(3);
 
     /** Create an empty set of BIP Transformations */
     public BipTransformation() {}

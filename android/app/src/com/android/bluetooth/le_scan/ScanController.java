@@ -943,7 +943,7 @@ public class ScanController {
     }
 
     private Set<ScanResult> parseTruncatedResults(int numRecords, byte[] batchRecord) {
-        Set<ScanResult> results = new HashSet<ScanResult>(numRecords);
+        Set<ScanResult> results = new HashSet<>(numRecords);
         long now = SystemClock.elapsedRealtimeNanos();
         for (int i = 0; i < numRecords; ++i) {
             byte[] record =
@@ -969,7 +969,7 @@ public class ScanController {
     }
 
     private Set<ScanResult> parseFullResults(int numRecords, byte[] batchRecord) {
-        Set<ScanResult> results = new HashSet<ScanResult>(numRecords);
+        Set<ScanResult> results = new HashSet<>(numRecords);
         int position = 0;
         long now = SystemClock.elapsedRealtimeNanos();
         while (position < batchRecord.length) {

@@ -692,7 +692,7 @@ class AdapterProperties {
         }
 
         if (update) {
-            mProfileConnectionState.put(profile, new Pair<Integer, Integer>(newHashState, numDev));
+            mProfileConnectionState.put(profile, new Pair<>(newHashState, numDev));
             invalidateGetProfileConnectionStateCache();
         }
     }
@@ -863,7 +863,7 @@ class AdapterProperties {
         // The maximum number of raw is BUFFER_CODEC_MAX_NUM(32).
         // The maximum number of column is BUFFER_TYPE_MAX(3).
         // The array element indicates the buffer time, the size is two octet.
-        List<BufferConstraint> bufferConstraintList = new ArrayList<BufferConstraint>();
+        List<BufferConstraint> bufferConstraintList = new ArrayList<>();
 
         for (int i = 0; i < BufferConstraints.BUFFER_CODEC_MAX_NUM; i++) {
             int defaultBufferTime =

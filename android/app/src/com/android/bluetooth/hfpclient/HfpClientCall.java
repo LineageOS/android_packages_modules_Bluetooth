@@ -251,7 +251,7 @@ public final class HfpClientCall implements Parcelable {
 
     /** {@link Parcelable.Creator} interface implementation. */
     public static final @NonNull Parcelable.Creator<HfpClientCall> CREATOR =
-            new Parcelable.Creator<HfpClientCall>() {
+            new Parcelable.Creator<>() {
                 @Override
                 public HfpClientCall createFromParcel(Parcel in) {
                     return new HfpClientCall(

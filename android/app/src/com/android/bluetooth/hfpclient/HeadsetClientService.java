@@ -377,7 +377,7 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> devices = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> devices = new ArrayList<>();
         synchronized (mStateMachineMap) {
             for (BluetoothDevice bd : mStateMachineMap.keySet()) {
                 for (int state : states) {

@@ -240,7 +240,7 @@ final class BondStateMachine extends StateMachine {
     }
 
     private class PendingCommandState extends State {
-        private final ArrayList<BluetoothDevice> mDevices = new ArrayList<BluetoothDevice>();
+        private final ArrayList<BluetoothDevice> mDevices = new ArrayList<>();
 
         @Override
         public void enter() {
