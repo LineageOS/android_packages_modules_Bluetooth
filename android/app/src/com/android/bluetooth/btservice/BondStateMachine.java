@@ -601,13 +601,7 @@ final class BondStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, oldState);
         if (newState == BluetoothDevice.BOND_NONE) {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
-            if (Flags.enableWakeupFlagForIntents() && oldState == BluetoothDevice.BOND_BONDED) {
-                // wakeup the apps to receive the intent when the bond is removed (BOND_BONDED ->
-                // BOND_NONE)
-                intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-            }
         }
-
         mAdapterService.onBondStateChanged(device, newState);
         mAdapterService.sendBroadcastAsUser(
                 intent,
