@@ -72,6 +72,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -450,7 +451,7 @@ public class RemoteDevices {
         // LRU cache of package names associated to this device
         private final Set<String> mPackages =
                 Collections.newSetFromMap(
-                        new LinkedHashMap<String, Boolean>() {
+                        new LinkedHashMap<>() {
                             // This is called on every add. Returning true removes the eldest entry.
                             protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
                                 return size() >= MAX_PACKAGE_NAMES;
@@ -649,8 +650,7 @@ public class RemoteDevices {
                     return mUuidsBrEdr;
                 }
 
-                java.util.LinkedHashSet<ParcelUuid> result =
-                        new java.util.LinkedHashSet<ParcelUuid>();
+                LinkedHashSet<ParcelUuid> result = new LinkedHashSet<>();
                 if (mUuidsBrEdr != null) {
                     for (ParcelUuid uuid : mUuidsBrEdr) {
                         result.add(uuid);

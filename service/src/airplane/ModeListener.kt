@@ -37,7 +37,7 @@ import kotlin.time.TimeSource
 private const val TAG = "AirplaneModeListener"
 
 /** @return true if Bluetooth state is currently impacted by airplane mode */
-public var isOnOverrode = false
+var isOnOverrode = false
     private set
 
 /**
@@ -46,7 +46,7 @@ public var isOnOverrode = false
  * This need to be used instead of reading the settings properties to avoid race condition from
  * within the BluetoothManagerService thread
  */
-public var isOn = false
+var isOn = false
     private set
 
 /**

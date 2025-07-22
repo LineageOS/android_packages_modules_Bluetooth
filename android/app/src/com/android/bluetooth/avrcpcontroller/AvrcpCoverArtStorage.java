@@ -89,7 +89,7 @@ public class AvrcpCoverArtStorage {
         // A Thread safe way of creating a new UUID->Image set for a device. The putIfAbsent()
         // function will return the value of the key if it wasn't absent. If it returns null, then
         // there was no value there and we are to assume the reference we passed in was added.
-        Map<String, Bitmap> newImageSet = new ConcurrentHashMap<String, Bitmap>(1);
+        Map<String, Bitmap> newImageSet = new ConcurrentHashMap<>(1);
         Map<String, Bitmap> images = mDeviceImages.putIfAbsent(device, newImageSet);
         if (images == null) {
             newImageSet.put(imageUuid, image);

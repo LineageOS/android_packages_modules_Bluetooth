@@ -38,7 +38,7 @@ internal const val SETTINGS_SATELLITE_MODE_ENABLED = "satellite_mode_enabled"
 
 private const val TAG = "SatelliteModeListener"
 
-public var isOn = false
+var isOn = false
     private set
 
 /** Listen on satellite mode and trigger the callback if it has changed */
@@ -53,7 +53,7 @@ fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: Boolean)
                 val previousMode = isOn
                 isOn = newMode
                 if (previousMode == isOn) {
-                    Log.d(TAG, "Ignore satellite mode change because is already: " + isOn)
+                    Log.d(TAG, "Ignore satellite mode change because is already: $isOn")
                     return
                 }
                 Log.i(TAG, "Trigger callback with state: $isOn")

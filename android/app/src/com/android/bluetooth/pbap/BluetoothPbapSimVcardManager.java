@@ -164,7 +164,7 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
             name = mCursor.getString(NUMBER_COLUMN_INDEX);
         }
         // Create ContentValues for making name as Structured name
-        List<ContentValues> contentValuesList = new ArrayList<ContentValues>();
+        List<ContentValues> contentValuesList = new ArrayList<>();
         ContentValues nameContentValues = new ContentValues();
         nameContentValues.put(StructuredName.DISPLAY_NAME, name);
         contentValuesList.add(nameContentValues);
@@ -243,7 +243,7 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
         if (mCursor == null) {
             return;
         }
-        ArrayList<String> nameList = new ArrayList<String>();
+        ArrayList<String> nameList = new ArrayList<>();
         for (mCursor.moveToFirst(); !mCursor.isAfterLast(); mCursor.moveToNext()) {
             String name = mCursor.getString(NAME_COLUMN_INDEX);
             if (TextUtils.isEmpty(name)) {
@@ -281,10 +281,10 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
     }
 
     public final List<String> getSIMPhonebookNameList(final int orderByWhat) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
         nameList.add(BluetoothPbapService.getLocalPhoneName());
         // Since owner card should always be 0.vcf, maintain a separate list to avoid sorting
-        ArrayList<String> allnames = new ArrayList<String>();
+        ArrayList<String> allnames = new ArrayList<>();
         Cursor contactCursor = null;
         try {
             contactCursor =
@@ -319,8 +319,8 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
     }
 
     public final List<String> getSIMContactNamesByNumber(final String phoneNumber) {
-        List<String> nameList = new ArrayList<String>();
-        List<String> startNameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
+        List<String> startNameList = new ArrayList<>();
         Cursor contactCursor = null;
 
         try {

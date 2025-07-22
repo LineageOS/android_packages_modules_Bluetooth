@@ -33,10 +33,10 @@ class BluetoothComponent(context: Context) {
      *
      * Can be either `com.android.bluetooth` or `com.android.google.bluetooth`
      */
-    @get:JvmName("getPackageName") val packageName: String
+    val packageName: String
 
     /** The component name of the Bluetooth AdapterService */
-    @get:JvmName("getComponentName") val componentName: ComponentName
+    val componentName: ComponentName
 
     init {
         val pm = context.packageManager

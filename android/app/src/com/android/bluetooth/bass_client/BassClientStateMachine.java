@@ -120,8 +120,7 @@ class BassClientStateMachine extends StateMachine {
 
     /*key is combination of sourceId, Address and advSid for this hashmap*/
     private final Map<Integer, BluetoothLeBroadcastReceiveState>
-            mBluetoothLeBroadcastReceiveStates =
-                    new HashMap<Integer, BluetoothLeBroadcastReceiveState>();
+            mBluetoothLeBroadcastReceiveStates = new HashMap<>();
     private final Map<Integer, BluetoothLeBroadcastMetadata> mCurrentMetadata = new HashMap<>();
     private final Disconnected mDisconnected = new Disconnected();
     private final Connected mConnected = new Connected();
@@ -135,8 +134,7 @@ class BassClientStateMachine extends StateMachine {
     private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
 
     @VisibleForTesting
-    final List<BluetoothGattCharacteristic> mBroadcastCharacteristics =
-            new ArrayList<BluetoothGattCharacteristic>();
+    final List<BluetoothGattCharacteristic> mBroadcastCharacteristics = new ArrayList<>();
 
     @VisibleForTesting BluetoothDevice mDevice;
 
@@ -665,9 +663,8 @@ class BassClientStateMachine extends StateMachine {
                     receiverState[
                             BassConstants.BCAST_RCVR_STATE_BADCODE_START_IDX + badBroadcastCodeLen];
             int offset = BassConstants.BCAST_RCVR_STATE_BADCODE_START_IDX + badBroadcastCodeLen + 1;
-            ArrayList<BluetoothLeAudioContentMetadata> metadataList =
-                    new ArrayList<BluetoothLeAudioContentMetadata>();
-            ArrayList<Long> bisSyncState = new ArrayList<Long>();
+            ArrayList<BluetoothLeAudioContentMetadata> metadataList = new ArrayList<>();
+            ArrayList<Long> bisSyncState = new ArrayList<>();
             for (int i = 0; i < numSubGroups; i++) {
                 byte[] bisSyncIndex = new byte[Long.BYTES];
                 System.arraycopy(

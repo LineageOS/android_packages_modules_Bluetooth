@@ -331,7 +331,7 @@ public class TbsGatt {
         byte[] gtbs_cccd = mAdapterService.getMetadata(device, METADATA_GTBS_CCCD);
 
         if ((gtbs_cccd == null) || (gtbs_cccd.length == 0)) {
-            uuidList = new ArrayList<ParcelUuid>();
+            uuidList = new ArrayList<>();
         } else {
             uuidList = new ArrayList<>(Arrays.asList(Utils.byteArrayToUuid(gtbs_cccd)));
 
@@ -356,7 +356,7 @@ public class TbsGatt {
         byte[] gtbs_cccd = mAdapterService.getMetadata(device, METADATA_GTBS_CCCD);
 
         if ((gtbs_cccd == null) || (gtbs_cccd.length == 0)) {
-            uuidList = new ArrayList<ParcelUuid>();
+            uuidList = new ArrayList<>();
         } else {
             uuidList = new ArrayList<>(Arrays.asList(Utils.byteArrayToUuid(gtbs_cccd)));
 

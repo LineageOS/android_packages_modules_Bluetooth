@@ -968,7 +968,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         if (type.equals("number")) {
             List<Integer> savedPosList = new ArrayList<>();
-            List<String> selectedNameList = new ArrayList<String>();
+            List<String> selectedNameList = new ArrayList<>();
             // query the number, to get the names
             List<String> names = new ArrayList<>();
             if (contactType == ContactsType.TYPE_PHONEBOOK) {
@@ -1002,7 +1002,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         } else {
             List<Integer> savedPosList = new ArrayList<>();
-            List<String> selectedNameList = new ArrayList<String>();
+            List<String> selectedNameList = new ArrayList<>();
             if (appParamValue.searchValue != null) {
                 compareValue = appParamValue.searchValue.trim().toLowerCase(Locale.ROOT);
             }

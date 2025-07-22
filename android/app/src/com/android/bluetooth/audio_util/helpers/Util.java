@@ -159,7 +159,7 @@ class Util {
     // Helper method to close a list of ListItems so that if the callee wants
     // to mutate the list they can do it without affecting any internally cached info
     public static List<ListItem> cloneList(List<ListItem> list) {
-        List<ListItem> clone = new ArrayList<ListItem>(list.size());
+        List<ListItem> clone = new ArrayList<>(list.size());
         for (ListItem item : list) clone.add(item.clone());
         return clone;
     }

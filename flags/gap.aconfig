@@ -81,16 +81,6 @@ flag {
 }
 
 flag {
-    name: "unregister_gatt_client_disconnected"
-    namespace: "bluetooth"
-    description: "Unregister gatt client when disconneted to prevent client leaks"
-    bug: "380388092"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "distance_measurement_thread"
     namespace: "bluetooth"
     description: "Makes distance measurement operations run on one thread."
@@ -298,6 +288,16 @@ flag {
     namespace: "bluetooth"
     description: "Prevent adding both pseudo and identity address to the accept list."
     bug: "428800297"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "remove_address_cache_from_ble_scanner"
+    namespace: "bluetooth"
+    description: "Fix the case where device name is not updated when pairing failed."
+    bug: "432614634"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

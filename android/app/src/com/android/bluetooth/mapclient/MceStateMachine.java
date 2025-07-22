@@ -230,8 +230,7 @@ class MceStateMachine extends StateMachine {
 
     // Map each message to its metadata via the handle
     @VisibleForTesting
-    ConcurrentHashMap<String, MessageMetadata> mMessages =
-            new ConcurrentHashMap<String, MessageMetadata>();
+    ConcurrentHashMap<String, MessageMetadata> mMessages = new ConcurrentHashMap<>();
 
     MceStateMachine(
             MapClientService service, BluetoothDevice device, AdapterService adapterService) {

@@ -24,7 +24,8 @@ import android.provider.Settings
 import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
 
-val SERVICE_NAME = "bluetooth_manager" // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
+// See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
+private const val SERVICE_NAME = "bluetooth_manager"
 
 class BluetoothService(context: Context) : SystemService(context) {
     private val mHandlerThread: HandlerThread
@@ -118,7 +119,7 @@ class BluetoothService(context: Context) : SystemService(context) {
                 context
                     .createContextAsUser(user.userHandle, 0)
                     .getSystemService(android.os.UserManager::class.java)!!
-                    .isUserForeground()
+                    .isUserForeground
             if (!isForeground) {
                 Log.i("onUserStarting($user) Skipping non foreground user ")
                 return
@@ -142,13 +143,13 @@ class BluetoothService(context: Context) : SystemService(context) {
                     "Switching on a user when not initialized should never happen"
                 )
             }
-            mBluetoothManagerService.onSwitchUser(to.userHandle)
+            mBluetoothManagerService.onSwitchUserFromService(to.userHandle)
             return
         }
         if (!mInitialized) {
             initialize(to)
         } else {
-            mBluetoothManagerService.onSwitchUser(to.userHandle)
+            mBluetoothManagerService.onSwitchUserFromService(to.userHandle)
         }
     }
 

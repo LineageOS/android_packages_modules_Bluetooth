@@ -417,7 +417,7 @@ class ContextMap<C extends IInterface> {
      * <p>This function provides a way to get all connections for a device so we can do the above.
      */
     List<Connection> getConnectionsByDevice(int appId, BluetoothDevice device) {
-        List<Connection> currentConnections = new ArrayList<Connection>();
+        List<Connection> currentConnections = new ArrayList<>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
                 if (connection.device.equals(device) && connection.appId == appId) {
@@ -442,7 +442,7 @@ class ContextMap<C extends IInterface> {
 
     /** Returns all Connections that have a given app UID. */
     public List<Connection> getConnectionByApp(int appId) {
-        List<Connection> currentConnections = new ArrayList<Connection>();
+        List<Connection> currentConnections = new ArrayList<>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
                 if (connection.appId == appId) {

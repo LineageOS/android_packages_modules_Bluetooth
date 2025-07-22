@@ -523,7 +523,7 @@ public class HidDeviceService extends ConnectableProfile {
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> inputDevices = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> inputDevices = new ArrayList<>();
 
         if (mHidDevice != null) {
             for (int state : states) {

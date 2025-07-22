@@ -159,7 +159,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         mCoverArtPsm = 0;
         mCoverArtManager = service.getCoverArtManager();
 
-        mAvailablePlayerList = new SparseArray<AvrcpPlayer>();
+        mAvailablePlayerList = new SparseArray<>();
         mAddressedPlayerId = AvrcpPlayer.DEFAULT_ID;
 
         AvrcpPlayer.Builder apb = new AvrcpPlayer.Builder();
@@ -267,7 +267,9 @@ class AvrcpControllerStateMachine extends StateMachine {
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);
         ProfileService.println(
-                sb, "Cover Art: " + (mCoverArtManager.getState(mDevice) == STATE_CONNECTED));
+                sb, "Cover Art: " + (mCoverArtManager != null ?
+                    mCoverArtManager.getState(mDevice) == STATE_CONNECTED :
+                    "false, mCoverArtManager is null"));
 
         ProfileService.println(sb, "Addressed Player ID: " + mAddressedPlayerId);
         ProfileService.println(sb, "Browsed Player ID: " + mBrowseTree.getCurrentBrowsedPlayer());
@@ -923,7 +925,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                         // Since players hold metadata, including cover art handles that point to
                         // stored images, be sure to save image UUIDs so we can see if we can
                         // remove them from storage after setting our new player object
-                        ArrayList<String> coverArtUuids = new ArrayList<String>();
+                        ArrayList<String> coverArtUuids = new ArrayList<>();
                         for (int i = 0; i < mAvailablePlayerList.size(); i++) {
                             AvrcpPlayer player = mAvailablePlayerList.valueAt(i);
                             AvrcpItem track = player.getCurrentTrack();

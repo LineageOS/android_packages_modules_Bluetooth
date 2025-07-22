@@ -2207,7 +2207,7 @@ class HeadsetStateMachine extends StateMachine {
     static Object[] generateArgs(String input) {
         int i = 0;
         int j;
-        ArrayList<Object> out = new ArrayList<Object>();
+        ArrayList<Object> out = new ArrayList<>();
         while (i <= input.length()) {
             j = findChar(',', input, i);
 

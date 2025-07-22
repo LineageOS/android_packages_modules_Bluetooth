@@ -9,6 +9,16 @@ flag {
 }
 
 flag {
+    name: "adapter_suspend_advertisement"
+    namespace: "bluetooth"
+    description: "Disable advertisement on adapter suspend and re-enable on resume"
+    bug: "433136730"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "factory_reset_clear_additional_data"
     namespace: "bluetooth"
     description: "Factory reset will now clear the notification history and reset snoop log mode"
