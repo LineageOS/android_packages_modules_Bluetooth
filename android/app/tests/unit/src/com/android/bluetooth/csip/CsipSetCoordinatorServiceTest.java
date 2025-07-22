@@ -66,7 +66,6 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
@@ -98,7 +97,6 @@ public class CsipSetCoordinatorServiceTest {
     @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
     @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mLeAudioService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
     @Mock private IBluetoothCsipSetCoordinatorLockCallback mCsipSetCoordinatorLockCallback;
 
@@ -113,14 +111,13 @@ public class CsipSetCoordinatorServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.COORDINATED_SET})
                 .when(mAdapterService)
                 .getRemoteUuids(any());
 
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
         doReturn(true).when(mNativeInterface).connect(any());
         doReturn(true).when(mNativeInterface).disconnect(any());
@@ -164,7 +161,7 @@ public class CsipSetCoordinatorServiceTest {
                         CONNECTION_POLICY_UNKNOWN,
                         CONNECTION_POLICY_FORBIDDEN,
                         CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(policy);
         }
     }
@@ -181,7 +178,7 @@ public class CsipSetCoordinatorServiceTest {
                             CONNECTION_POLICY_ALLOWED,
                             badPolicyValue)) {
                 doReturn(bondState).when(mAdapterService).getBondState(any());
-                doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
                 assertThat(mService.okToConnect(mDevice1)).isFalse();
             }
         }
@@ -193,11 +190,11 @@ public class CsipSetCoordinatorServiceTest {
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice1)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice1)).isTrue();
         }
     }
@@ -327,7 +324,7 @@ public class CsipSetCoordinatorServiceTest {
     @Test
     public void connectToDevice_whenPolicyForbid_returnFalse() {
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
         assertThat(mService.connect(mDevice1)).isFalse();
@@ -464,12 +461,12 @@ public class CsipSetCoordinatorServiceTest {
                 getByteAddress(mDevice2), group_id, group_size, 0x01, uuidLsb, uuidMsb);
 
         // When LEA is FORBIDDEN, verify we don't disable CSIP until all set devices are available
-        verify(mDatabaseManager, never())
+        verify(mAdapterService, never())
                 .setProfileConnectionPolicy(
                         mDevice1,
                         BluetoothProfile.CSIP_SET_COORDINATOR,
                         CONNECTION_POLICY_FORBIDDEN);
-        verify(mDatabaseManager, never())
+        verify(mAdapterService, never())
                 .setProfileConnectionPolicy(
                         mDevice2,
                         BluetoothProfile.CSIP_SET_COORDINATOR,
@@ -479,12 +476,12 @@ public class CsipSetCoordinatorServiceTest {
         mService.connectionStateChanged(mDevice2, STATE_CONNECTING, STATE_CONNECTED);
 
         // When LEA is FORBIDDEN, verify we disable CSIP once all set devices are available
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1,
                         BluetoothProfile.CSIP_SET_COORDINATOR,
                         CONNECTION_POLICY_FORBIDDEN);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice2,
                         BluetoothProfile.CSIP_SET_COORDINATOR,

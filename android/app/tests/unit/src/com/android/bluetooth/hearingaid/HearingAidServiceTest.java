@@ -63,7 +63,6 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -90,7 +89,6 @@ public class HearingAidServiceTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private HearingAidNativeInterface mNativeInterface;
     @Mock private AudioManager mAudioManager;
 
@@ -111,9 +109,8 @@ public class HearingAidServiceTest {
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID})
                 .when(mAdapterService)
@@ -178,7 +175,7 @@ public class HearingAidServiceTest {
                         CONNECTION_POLICY_UNKNOWN,
                         CONNECTION_POLICY_FORBIDDEN,
                         CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.getConnectionPolicy(mLeftDevice)).isEqualTo(policy);
         }
     }
@@ -196,7 +193,7 @@ public class HearingAidServiceTest {
                             CONNECTION_POLICY_ALLOWED,
                             CONNECTION_POLICY_FORBIDDEN,
                             badPolicyValue)) {
-                doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
                 assertThat(mService.okToConnect(mSingleDevice)).isFalse();
             }
         }
@@ -209,7 +206,7 @@ public class HearingAidServiceTest {
         int badBondState = 42;
         doReturn(badBondState).when(mAdapterService).getBondState(any());
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mSingleDevice)).isFalse();
         }
     }
@@ -221,7 +218,7 @@ public class HearingAidServiceTest {
         for (int bondState : List.of(BOND_NONE, BOND_BONDING)) {
             doReturn(bondState).when(mAdapterService).getBondState(any());
             for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-                doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
                 assertThat(mService.okToConnect(mSingleDevice)).isTrue();
             }
         }
@@ -231,11 +228,11 @@ public class HearingAidServiceTest {
     public void okToConnect_whenBonded() {
         int badPolicyValue = 1024;
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mSingleDevice)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mSingleDevice)).isTrue();
         }
     }
@@ -253,7 +250,7 @@ public class HearingAidServiceTest {
     @Test
     public void connectToDevice_whenPolicyForbid_returnFalse() {
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
         assertThat(mService.connect(mLeftDevice)).isFalse();
@@ -664,13 +661,13 @@ public class HearingAidServiceTest {
 
     @Test
     public void serviceBinder_setConnectionPolicy() {
-        when(mDatabaseManager.setProfileConnectionPolicy(
+        when(mAdapterService.setProfileConnectionPolicy(
                         mSingleDevice, BluetoothProfile.HEARING_AID, CONNECTION_POLICY_UNKNOWN))
                 .thenReturn(true);
 
         assertThat(mBinder.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_UNKNOWN, null))
                 .isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mSingleDevice, BluetoothProfile.HEARING_AID, CONNECTION_POLICY_UNKNOWN);
     }

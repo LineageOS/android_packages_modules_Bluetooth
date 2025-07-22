@@ -32,13 +32,13 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.net.TetheringInterface;
 import android.net.TetheringManager;
@@ -50,7 +50,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.pan.PanService.BluetoothPanDevice;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -68,7 +67,6 @@ public class PanServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private PanNativeInterface mNativeInterface;
     @Mock private UserManager mMockUserManager;
 
@@ -84,7 +82,6 @@ public class PanServiceTest {
     @Before
     public void setUp() {
         doReturn(mContext.getResources()).when(mAdapterService).getResources();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mockGetSystemService(mAdapterService, UserManager.class, mMockUserManager);
         mockGetSystemService(mAdapterService, TetheringManager.class);
 
@@ -180,26 +177,20 @@ public class PanServiceTest {
 
     @Test
     public void setConnectionPolicy_whenDatabaseManagerRefuses_returnsFalse() {
+        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        when(mDatabaseManager.setProfileConnectionPolicy(
-                        mRemoteDevice, BluetoothProfile.PAN, connectionPolicy))
-                .thenReturn(false);
 
         assertThat(mService.setConnectionPolicy(mRemoteDevice, connectionPolicy)).isFalse();
     }
 
     @Test
     public void setConnectionPolicy_returnsTrue() {
-        when(mDatabaseManager.setProfileConnectionPolicy(
-                        mRemoteDevice, BluetoothProfile.PAN, CONNECTION_POLICY_ALLOWED))
-                .thenReturn(true);
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+
         assertThat(mService.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
         mTestLooper.dispatchAll();
         verify(mNativeInterface, timeout(TIMEOUT_MS)).connect(any());
 
-        when(mDatabaseManager.setProfileConnectionPolicy(
-                        mRemoteDevice, BluetoothProfile.PAN, CONNECTION_POLICY_FORBIDDEN))
-                .thenReturn(true);
         assertThat(mService.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue();
         mTestLooper.dispatchAll();

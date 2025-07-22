@@ -280,7 +280,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     return;
                 }
                 // Activate A2DP if audio mode is normal or HFP is not supported or enabled.
-                if (mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET)
+                if (mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET)
                                 != CONNECTION_POLICY_ALLOWED
                         || mAudioManager.getMode() == AudioManager.MODE_NORMAL) {
                     boolean a2dpMadeActive = setA2dpActiveDevice(device);
@@ -350,7 +350,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     return;
                 }
                 // Activate HFP if audio mode is not normal or A2DP is not supported or enabled.
-                if (mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.A2DP)
+                if (mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.A2DP)
                                 != CONNECTION_POLICY_ALLOWED
                         || mAudioManager.getMode() != AudioManager.MODE_NORMAL) {
                     if (Utils.remoteDeviceIsWatch(mAdapterService, device)) {
@@ -668,7 +668,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 }
                 if (!Objects.equals(mHfpActiveDevice, device)
                         && mHfpConnectedDevices.contains(device)
-                        && mDatabaseManager.getProfileConnectionPolicy(
+                        && mAdapterService.getProfileConnectionPolicy(
                                         device, BluetoothProfile.HEADSET)
                                 == CONNECTION_POLICY_ALLOWED) {
                     mClassicDeviceToBeActivated = device;
@@ -752,8 +752,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 }
                 if (!Objects.equals(mA2dpActiveDevice, device)
                         && mA2dpConnectedDevices.contains(device)
-                        && mDatabaseManager.getProfileConnectionPolicy(
-                                        device, BluetoothProfile.A2DP)
+                        && mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.A2DP)
                                 == CONNECTION_POLICY_ALLOWED) {
                     mClassicDeviceToBeActivated = device;
                     setA2dpActiveDevice(device);

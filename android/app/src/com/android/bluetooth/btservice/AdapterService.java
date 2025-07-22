@@ -1993,8 +1993,7 @@ public class AdapterService extends Service {
         return !mStartedProfiles.values().stream()
                 .anyMatch(
                         profile ->
-                                mDatabaseManager.getProfileConnectionPolicy(
-                                                device, profile.getProfileId())
+                                getProfileConnectionPolicy(device, profile.getProfileId())
                                         != CONNECTION_POLICY_UNKNOWN);
     }
 
@@ -2236,6 +2235,22 @@ public class AdapterService extends Service {
 
     boolean isAvailable() {
         return !mCleaningUp;
+    }
+
+    /**
+     * Wrapper to facilitate DatabaseManager migration see {@link
+     * DatabaseManager#setProfileConnectionPolicy}
+     */
+    public boolean setProfileConnectionPolicy(BluetoothDevice device, int profile, int policy) {
+        return mDatabaseManager.setProfileConnectionPolicy(device, profile, policy);
+    }
+
+    /**
+     * Wrapper to facilitate DatabaseManager migration see {@link
+     * DatabaseManager#getProfileConnectionPolicy}
+     */
+    public int getProfileConnectionPolicy(BluetoothDevice device, int profile) {
+        return mDatabaseManager.getProfileConnectionPolicy(device, profile);
     }
 
     /**

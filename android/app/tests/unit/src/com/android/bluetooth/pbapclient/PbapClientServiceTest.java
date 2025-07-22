@@ -57,7 +57,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -80,7 +79,6 @@ public class PbapClientServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private PackageManager mPackageManager;
     @Mock private Resources mResources;
     @Mock private SdpPseRecord mMockSdpRecord;
@@ -109,11 +107,10 @@ public class PbapClientServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
-        doReturn(true).when(mDatabaseManager).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
 
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
@@ -346,7 +343,7 @@ public class PbapClientServiceTest {
     public void testConnect_onForbiddenAndUnconnectedDevice_deviceNotCreated() {
         mDeviceMap.clear();
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(BluetoothDevice.class), anyInt());
         assertThat(mService.connect(mDevice)).isFalse();
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
@@ -357,8 +354,8 @@ public class PbapClientServiceTest {
     public void testConnect_onUnknownAndUnconnectedDevice_deviceNotCreated() {
         mDeviceMap.clear();
         doReturn(CONNECTION_POLICY_UNKNOWN)
-                .when(mDatabaseManager)
-                .getProfileConnectionPolicy(any(BluetoothDevice.class), anyInt());
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(any(), anyInt());
         assertThat(mService.connect(mDevice)).isFalse();
     }
 
@@ -501,9 +498,7 @@ public class PbapClientServiceTest {
     // setConnectionPolicy (database call fails) -> false
     @Test
     public void testSetConnectionPolicy_databaseCallFails_returnsFalse() {
-        doReturn(false)
-                .when(mDatabaseManager)
-                .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
+        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         assertThat(mService.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED)).isFalse();
     }
 
@@ -517,7 +512,7 @@ public class PbapClientServiceTest {
     @Test
     public void testGetConnectionPolicy_onNullDevice_returnsUnknown() {
         doReturn(CONNECTION_POLICY_UNKNOWN)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(nullable(BluetoothDevice.class), anyInt());
         assertThat(mService.getConnectionPolicy(null)).isEqualTo(CONNECTION_POLICY_UNKNOWN);
     }

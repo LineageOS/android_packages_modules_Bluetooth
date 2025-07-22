@@ -189,10 +189,10 @@ public class PhonePolicyTest {
         ParcelUuid[] uuids = {BluetoothUuid.HFP, BluetoothUuid.A2DP_SINK};
         mPhonePolicy.onUuidsDiscovered(mDevice1, uuids);
 
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_ALLOWED);
     }
@@ -343,19 +343,19 @@ public class PhonePolicyTest {
 
         // Does not auto connect and allow HFP and A2DP to be connected
         processInitProfilePriorities_LeAudioHelper(true, false, false, false);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_ALLOWED);
 
         // Auto connect to HFP and A2DP but disallow LE Audio
         processInitProfilePriorities_LeAudioHelper(false, true, false, false);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_FORBIDDEN);
         verify(mA2dpService, times(2)).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
@@ -363,13 +363,13 @@ public class PhonePolicyTest {
 
         // Does not auto connect and disallow LE Audio to be connected
         processInitProfilePriorities_LeAudioHelper(false, false, false, false);
-        verify(mDatabaseManager, times(2))
+        verify(mAdapterService, times(2))
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_FORBIDDEN);
-        verify(mDatabaseManager, times(2))
+        verify(mAdapterService, times(2))
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager, times(2))
+        verify(mAdapterService, times(2))
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_ALLOWED);
     }
@@ -386,35 +386,35 @@ public class PhonePolicyTest {
 
         // Does not auto connect and allow HFP and A2DP to be connected
         processInitProfilePriorities_LeAudioHelper(true, false, true, false);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_ALLOWED);
 
         // Auto connect to LE audio but disallow HFP and A2DP
         processInitProfilePriorities_LeAudioHelper(false, true, true, false);
         verify(mLeAudioService, times(2)).setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_FORBIDDEN);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_FORBIDDEN);
 
         // Does not auto connect and disallow HFP and A2DP to be connected
         processInitProfilePriorities_LeAudioHelper(false, false, true, false);
-        verify(mDatabaseManager, times(2))
+        verify(mAdapterService, times(2))
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_ALLOWED);
-        verify(mDatabaseManager, times(2))
+        verify(mAdapterService, times(2))
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HEADSET, CONNECTION_POLICY_FORBIDDEN);
-        verify(mDatabaseManager, times(2))
+        verify(mAdapterService, times(2))
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP, CONNECTION_POLICY_FORBIDDEN);
     }
