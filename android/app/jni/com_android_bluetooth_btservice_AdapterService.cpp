@@ -1347,7 +1347,7 @@ static jboolean set_data(JNIEnv* env, jobject oobData, jint transport, bt_oob_da
         env->ReleaseByteArrayElements(leAppearance, leAppearanceBytes, 0);
         return JNI_FALSE;
       }
-      memcpy(oob_data->sm_tk, leAppearanceBytes, OOB_LE_APPEARANCE_SIZE);
+      memcpy(oob_data->le_appearance, leAppearanceBytes, OOB_LE_APPEARANCE_SIZE);
       env->ReleaseByteArrayElements(leAppearance, leAppearanceBytes, 0);
     }
 
