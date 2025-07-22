@@ -1532,14 +1532,12 @@ void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
 
   for (int i = 0; i < MAX_L2CAP_LINKS; i++, p_lcb++) {
     if ((p_lcb->in_use) && p_lcb->transport == BT_TRANSPORT_LE) {
-      if (!(p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE)) {
-        bool ret = L2CA_UpdateBleConnParams(p_lcb->remote_bd_addr, p_lcb->min_interval,
-                                            p_lcb->max_interval, p_lcb->latency, p_lcb->timeout,
-                                            p_lcb->min_ce_len, p_lcb->max_ce_len);
+      bool ret = L2CA_UpdateBleConnParams(p_lcb->remote_bd_addr, p_lcb->min_interval,
+                                          p_lcb->max_interval, p_lcb->latency, p_lcb->timeout,
+                                          p_lcb->min_ce_len, p_lcb->max_ce_len);
 
-        if (!ret) {
-          log::warn("Unable to update BLE connection parameters peer:{}", p_lcb->remote_bd_addr);
-        }
+      if (!ret) {
+        log::warn("Unable to update BLE connection parameters peer:{}", p_lcb->remote_bd_addr);
       }
     }
   }

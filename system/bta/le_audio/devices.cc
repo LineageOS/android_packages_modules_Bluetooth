@@ -1465,21 +1465,13 @@ void LeAudioDevice::StartConnSubrate() {
   if (curr_conn_interval > LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive() ||
       curr_conn_interval < LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()) {
     log::verbose("Curr_conn_interval {}", curr_conn_interval);
-    if (subrate_state_ == SubrateState::DISABLED) {
-      stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
-              address_, LeConnectionParameters::GetMinConnIntervalLeIsoAggressive(),
-              LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive(),
-              BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF, BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
-      stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
-      SetSubrateState(SubrateState::PENDING_ENABLING_CONN_UPDATE);
-      return;
-    } else if (subrate_state_ == SubrateState::PENDING_ENABLING_CONN_UPDATE_COMPLETE) {
-      log::error(
-              "Pending on the subrate update, but the connection interval is incorrect. "
-              "Reset the state");
-      StopConnSubrate();
-      return;
-    }
+    stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
+            address_, LeConnectionParameters::GetMinConnIntervalLeIsoAggressive(),
+            LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive(),
+            BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF, BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
+    stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
+    SetSubrateState(SubrateState::PENDING_ENABLING_CONN_UPDATE);
+    return;
   }
 
   uint32_t max_subrate =
@@ -1509,9 +1501,9 @@ void LeAudioDevice::StartConnSubrate() {
     return;
   }
 
+  stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
   stack::l2cap::get_interface().L2CA_SubrateRequest(address_, min_subrate, max_subrate, 0,
                                                     cont_number, supervision_timeout);
-  stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
   SetSubrateState(SubrateState::PENDING_ENABLING_SUBRATE_UPDATE);
 }
 

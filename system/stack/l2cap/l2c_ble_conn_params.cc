@@ -357,6 +357,12 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
           p_lcb->max_interval = LeConnectionParameters::GetMaxConnIntervalRelaxed();
           p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
         } else if (p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE) {
+          if (p_lcb->ConnInterval() <=
+                      LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive() &&
+              p_lcb->ConnInterval() >=
+                      LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()) {
+            return;
+          }
           log::info("Use aggressive connection parameters for LE audio. addr={}",
                     p_lcb->remote_bd_addr);
           p_lcb->min_interval = LeConnectionParameters::GetMinConnIntervalLeIsoAggressive();
@@ -524,18 +530,24 @@ static void l2cble_start_subrate_change(tL2C_LCB* p_lcb) {
     return;
   }
 
-  if (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_DISABLE &&
-      !(p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE)) {
-    log::verbose("returning L2C_BLE_SUBRATE_REQ_DISABLE");
+  /* application allows to do update, if we were delaying one do it now */
+  if (!(p_lcb->subrate_req_mask & L2C_BLE_NEW_SUBRATE_PARAM)) {
+    log::verbose("returning no L2C_BLE_NEW_SUBRATE_PARAM");
     return;
   }
 
-  /* application allows to do update, if we were delaying one do it now */
-  if (!(p_lcb->subrate_req_mask & L2C_BLE_NEW_SUBRATE_PARAM) ||
-      (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) ||
-      (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM)) {
-    log::verbose("returning L2C_BLE_NEW_SUBRATE_PARAM");
-    return;
+  if (!(p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE)) {
+    if (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_DISABLE) {
+      log::verbose("returning L2C_BLE_SUBRATE_REQ_DISABLE");
+      return;
+    }
+
+    /* application allows to do update, if we were delaying one do it now */
+    if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) ||
+        (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM)) {
+      log::verbose("returning L2C_BLE_UPDATE_PENDING or L2C_BLE_NEW_CONN_PARAM");
+      return;
+    }
   }
 
   if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
