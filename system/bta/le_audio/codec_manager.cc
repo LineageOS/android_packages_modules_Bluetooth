@@ -362,6 +362,11 @@ public:
       return;
     }
 
+    if (!codec_provider_info_.has_value()) {
+      log::debug("Codec extensions not enabled");
+      return;
+    }
+
     log::debug("isMulticodecSupported: {}", codec_provider_info_->isMulticodecSupported);
 
     if (!codec_provider_info_->isMulticodecSupported) {

@@ -1812,7 +1812,7 @@ TEST_F(CodecManagerTestAdsp, test_notify_hal_with_empty_cis_handles_unsupported)
 
 TEST_F(CodecManagerTestAdsp, test_notify_hal_with_empty_cis_handles) {
   osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
-  provider_info->isMulticodecSupported = true;
+  provider_info = bluetooth::le_audio::ProviderInfo({.isMulticodecSupported = true});
 
   // Set the offloader capabilities
   std::vector<AudioSetConfiguration> offload_capabilities;
