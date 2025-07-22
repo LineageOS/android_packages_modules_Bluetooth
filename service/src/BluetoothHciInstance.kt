@@ -18,8 +18,8 @@ package com.android.server.bluetooth
 
 import android.os.ServiceManager
 
-private val BLUETOOTH_HCI_INTERFACE = "android.hardware.bluetooth.IBluetoothHci"
-private val HCI_DEFAULT_INSTANCE_NAME = "default"
+private const val BLUETOOTH_HCI_INTERFACE = "android.hardware.bluetooth.IBluetoothHci"
+private const val HCI_DEFAULT_INSTANCE_NAME = "default"
 
 class BluetoothHciInstance {
     private val hciInstances: Array<String> =
