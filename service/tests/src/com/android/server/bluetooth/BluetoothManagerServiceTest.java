@@ -30,6 +30,7 @@ import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_BLUET
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTART_BLUETOOTH_SERVICE;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTORE_USER_SETTING_OFF;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_TIMEOUT_BIND;
+import static com.android.server.bluetooth.BluetoothManagerService.SERVICE_RESTART_TIME_MS;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -264,7 +265,7 @@ public class BluetoothManagerServiceTest {
     }
 
     private void endTest() {
-        mLooper.moveTimeForward(120_000);
+        mLooper.moveTimeForward(200_000);
         assertThat(mLooper.nextMessage()).isNull();
         verifyNoMoreInteractions(ignoreStubs(mContext));
     }
@@ -1066,6 +1067,63 @@ public class BluetoothManagerServiceTest {
         transition_bleOnToOff(btCallback);
 
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
+    }
+
+    @Test
+    public void crashLoop_recoveryTimeIncrease() throws Exception {
+        int[] recoveryDelays = {
+            SERVICE_RESTART_TIME_MS,
+            SERVICE_RESTART_TIME_MS * 2,
+            SERVICE_RESTART_TIME_MS * 3,
+            SERVICE_RESTART_TIME_MS * 40,
+            SERVICE_RESTART_TIME_MS * 50,
+            SERVICE_RESTART_TIME_MS * 60,
+            0
+        };
+
+        mManagerService.enableBle("crashLoop_recoveryTimeIncrease", mBleBinder);
+
+        for (int delay : recoveryDelays) {
+            var serviceConnection = acceptBluetoothBinding();
+            if (!Flags.userSwitchDuringBleOn()) {
+                verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+            }
+            serviceConnection.onServiceDisconnected(
+                    new ComponentName("", "com.android.bluetooth.btservice.AdapterService"));
+            syncHandler(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
+            verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+            assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+            if (delay == 0) {
+                // Last restart attempt
+                break;
+            }
+
+            mLooper.moveTimeForward(delay - 50);
+            assertThat(mLooper.nextMessage()).isNull();
+            mLooper.moveTimeForward(50);
+
+            syncHandler(MESSAGE_RESTART_BLUETOOTH_SERVICE);
+        }
+
+        endTest();
+    }
+
+    @Test
+    public void satelliteMode_whenOn_turnsBluetoothOffAndOn() throws Exception {
+        mManagerService.enable(0, "satelliteMode_whenOn_turnsBluetoothOffAndOn");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onSatelliteModeChanged(true);
+        transition_onToOff(btCallback);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        mManagerService.onSatelliteModeChanged(false);
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
         endTest();
     }

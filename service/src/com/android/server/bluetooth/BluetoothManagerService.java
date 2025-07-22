@@ -120,9 +120,7 @@ class BluetoothManagerService {
     private static final Duration STATE_TIMEOUT = Duration.ofSeconds(4L * HW_MULTIPLIER);
 
     // Maximum msec to wait for service restart
-    private static final int SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
-    // Maximum msec to wait for restart due to error
-    private static final int ERROR_RESTART_TIME_MS = 3000 * HW_MULTIPLIER;
+    @VisibleForTesting static final int SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
     // Maximum msec to delay MESSAGE_USER_SWITCHED
     private static final int USER_SWITCHED_TIME_MS = 200 * HW_MULTIPLIER;
     // Delay for the addProxy function in msec
@@ -432,7 +430,8 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    private Unit onSatelliteModeChanged(boolean isSatelliteModeOn) {
+    @VisibleForTesting
+    Unit onSatelliteModeChanged(boolean isSatelliteModeOn) {
         delayModeChangedIfNeeded(
                 ON_SATELLITE_MODE_CHANGED_TOKEN,
                 () -> handleSatelliteModeChanged(isSatelliteModeOn),
@@ -1429,9 +1428,7 @@ class BluetoothManagerService {
                     addCrashLog();
                     mActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false);
                     if (mEnable) {
-                        mEnable = false;
-                        mHandler.sendEmptyMessageDelayed(
-                                MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
+                        prepareRestartMessage();
                     }
 
                     sendBluetoothServiceDownCallback();
@@ -1614,14 +1611,28 @@ class BluetoothManagerService {
         }
     }
 
-    private void handleRestartMessage() {
+    private void prepareRestartMessage() {
+        mEnable = false;
+
         mErrorRecoveryRetryCounter++;
-        Log.d(TAG, "handleRestartMessage: retry count=" + mErrorRecoveryRetryCounter);
-        if (mErrorRecoveryRetryCounter >= MAX_ERROR_RESTART_RETRIES) {
+        Log.d(TAG, "prepareRestartMessage: retry count=" + mErrorRecoveryRetryCounter);
+        if (mErrorRecoveryRetryCounter > MAX_ERROR_RESTART_RETRIES) {
             resetAdapter();
             Log.e(TAG, "Reached maximum retry to restart Bluetooth!");
             return;
         }
+
+        var delay = mErrorRecoveryRetryCounter * SERVICE_RESTART_TIME_MS;
+        if (mErrorRecoveryRetryCounter > MAX_ERROR_RESTART_RETRIES / 2) {
+            // Last attempts should leave more time
+            delay = delay * 10;
+        }
+
+        Log.d(TAG, "Crash recovery will be attempted in " + delay + "ms");
+        mHandler.sendEmptyMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, delay);
+    }
+
+    private void handleRestartMessage() {
         // Enable without persisting the setting as it doesn't change when Bluetooth restarts
         mEnable = true;
         mActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, true);
@@ -2129,10 +2140,7 @@ class BluetoothManagerService {
             mBleAppManager.clearBleApps();
         }
 
-        mEnable = false;
-
-        // Send a Bluetooth Restart message to reenable bluetooth
-        mHandler.sendEmptyMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, ERROR_RESTART_TIME_MS);
+        prepareRestartMessage();
 
         if (repeatAirplaneRunnable) {
             onAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
@@ -2230,10 +2238,6 @@ class BluetoothManagerService {
         } catch (Exception e) {
             Log.e(TAG, "updateOppLauncherComponentState failed: " + e);
         }
-    }
-
-    private int getServiceRestartMs() {
-        return (mErrorRecoveryRetryCounter + 1) * SERVICE_RESTART_TIME_MS;
     }
 
     void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
