@@ -172,8 +172,12 @@ void BleScannerInterfaceImpl::Scan(bool start) {
     return;
   }
 
-  do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
-                                  base::Unretained(&address_cache_)));
+  // TODO (b/432614634): When the flag remove_address_cache_from_ble_scanner is removed,
+  //                     also remove the AddressCache class entirely.
+  if (!com::android::bluetooth::flags::remove_address_cache_from_ble_scanner()) {
+    do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
+                                    base::Unretained(&address_cache_)));
+  }
 }
 
 /** Setup scan filter params */
@@ -721,8 +725,11 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
 
   // update device name
   if (p_eir_remote_name) {
-    if (!address_cache_.find(bd_addr)) {
-      address_cache_.add(bd_addr);
+    if (com::android::bluetooth::flags::remove_address_cache_from_ble_scanner() ||
+        !address_cache_.find(bd_addr)) {
+      if (!com::android::bluetooth::flags::remove_address_cache_from_ble_scanner()) {
+        address_cache_.add(bd_addr);
+      }
 
       if (remote_name_len > BD_NAME_LEN + 1 ||
           (remote_name_len == BD_NAME_LEN + 1 && p_eir_remote_name[BD_NAME_LEN] != '\0')) {
