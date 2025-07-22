@@ -53,7 +53,7 @@ def enable_btsnoop(device: android_device.AndroidDevice) -> None:
   """
     # Starting from mainline 25.08, persist.bluetooth.btsnooplogmode will be reset
     # on factory reset, but default snoop mode will be kept.
-    device.adb.shell(['settings', 'put', 'global', 'bluetooth_btsnoop_default_mode', 'full'])
+    device.adb.shell(['setprop', 'persist.bluetooth.btsnoopdefaultmode', 'full'])
     device.adb.shell(['setprop', 'persist.bluetooth.btsnooplogmode', 'full'])
 
 
