@@ -272,8 +272,13 @@ class BluetoothManagerService {
                 new Intent(ACTION_LOCAL_NAME_CHANGED)
                         .putExtra(EXTRA_LOCAL_NAME, name)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        mContext.sendBroadcastAsUser(
-                intent, UserHandle.ALL, BLUETOOTH_CONNECT, getTempAllowlistBroadcastOptions());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mContext.sendBroadcastAsUser(
+                    intent, mUser, BLUETOOTH_CONNECT, getTempAllowlistBroadcastOptions());
+        } else {
+            mContext.sendBroadcastAsUser(
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, getTempAllowlistBroadcastOptions());
+        }
     }
 
     private void storeAddress(String address) {
@@ -2036,8 +2041,12 @@ class BluetoothManagerService {
                         .putExtra(EXTRA_PREVIOUS_STATE, prevState)
                         .putExtra(EXTRA_STATE, newState)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        mContext.sendBroadcastAsUser(
-                intent, UserHandle.ALL, null, getTempAllowlistBroadcastOptions());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mContext.sendBroadcastAsUser(intent, mUser, null, getTempAllowlistBroadcastOptions());
+        } else {
+            mContext.sendBroadcastAsUser(
+                    intent, UserHandle.ALL, null, getTempAllowlistBroadcastOptions());
+        }
     }
 
     private static boolean isBleState(int state) {

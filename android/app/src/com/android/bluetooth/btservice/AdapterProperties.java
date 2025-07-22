@@ -562,8 +562,16 @@ class AdapterProperties {
                 MetricsLogger.getInstance()
                         .logProfileConnectionStateChange(device, profile, newState, prevState);
                 debugLog("updateOnProfileConnectionChanged: " + logInfo);
-                mService.sendBroadcastAsUser(
-                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                if (Flags.onlyBroadcastToLocalUser()) {
+                    mService.sendBroadcast(
+                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                } else {
+                    mService.sendBroadcastAsUser(
+                            intent,
+                            UserHandle.ALL,
+                            BLUETOOTH_CONNECT,
+                            Utils.getTempBroadcastBundle());
+                }
             }
         }
     }

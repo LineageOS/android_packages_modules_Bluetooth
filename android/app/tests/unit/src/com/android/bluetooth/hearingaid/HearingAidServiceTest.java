@@ -133,12 +133,17 @@ public class HearingAidServiceTest {
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        mInOrder.verify(mAdapterService)
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                        eq(UserHandle.ALL),
-                        any(),
-                        any());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService)
+                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
+        } else {
+            mInOrder.verify(mAdapterService)
+                    .sendBroadcastAsUser(
+                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                            eq(UserHandle.ALL),
+                            any(),
+                            any());
+        }
     }
 
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
@@ -709,13 +714,22 @@ public class HearingAidServiceTest {
         stackEvent.device = device;
         stackEvent.valueInt1 = newConnectionState;
         messageFromNativeAndDispatch(stackEvent);
-        mInOrder.verify(mAdapterService, never())
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(
-                                hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
-                        eq(UserHandle.ALL),
-                        any(),
-                        any());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService, never())
+                    .sendBroadcast(
+                            MockitoHamcrest.argThat(
+                                    hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
+                            any(),
+                            any());
+        } else {
+            mInOrder.verify(mAdapterService, never())
+                    .sendBroadcastAsUser(
+                            MockitoHamcrest.argThat(
+                                    hasAction(BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED)),
+                            eq(UserHandle.ALL),
+                            any(),
+                            any());
+        }
     }
 
     // Emulate hiSyncId map update from native stack

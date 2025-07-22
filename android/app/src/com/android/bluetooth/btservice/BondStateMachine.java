@@ -603,8 +603,13 @@ final class BondStateMachine extends StateMachine {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
         }
         mAdapterService.onBondStateChanged(device, newState);
-        mAdapterService.sendBroadcastAsUser(
-                intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mAdapterService.sendBroadcast(
+                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        } else {
+            mAdapterService.sendBroadcastAsUser(
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        }
         infoLog(
                 "Bond State Change Intent:"
                         + device

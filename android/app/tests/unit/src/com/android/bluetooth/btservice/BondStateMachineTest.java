@@ -737,10 +737,16 @@ public class BondStateMachineTest {
 
         // Check for bond state Intent status.
         if (shouldBroadcast) {
-            verify(mAdapterService, times(++mVerifyCount))
-                    .sendBroadcastAsUser(
-                            intentArgument.capture(), eq(UserHandle.ALL),
-                            eq(BLUETOOTH_CONNECT), any(Bundle.class));
+            if (Flags.onlyBroadcastToLocalUser()) {
+                verify(mAdapterService, times(++mVerifyCount))
+                        .sendBroadcast(
+                                intentArgument.capture(), eq(BLUETOOTH_CONNECT), any(Bundle.class));
+            } else {
+                verify(mAdapterService, times(++mVerifyCount))
+                        .sendBroadcastAsUser(
+                                intentArgument.capture(), eq(UserHandle.ALL),
+                                eq(BLUETOOTH_CONNECT), any(Bundle.class));
+            }
             verifyBondStateChangeIntent(
                     broadcastOldState, broadcastNewState, intentArgument.getValue());
         } else {

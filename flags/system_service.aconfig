@@ -2,6 +2,16 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "only_broadcast_to_local_user"
+    namespace: "bluetooth"
+    description: "The bluetooth stack start and exist only for the current user. We should only restrict the intent to the current user"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "435244086"
+}
+
+flag {
     name: "kill_instead_of_exit"
     namespace: "bluetooth"
     description: "There is no value in pretending we are exiting properly. This is a kill and we should express it this way when finishing the process"

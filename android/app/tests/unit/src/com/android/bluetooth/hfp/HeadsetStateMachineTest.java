@@ -1692,16 +1692,29 @@ public class HeadsetStateMachineTest {
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        mInOrder.verify(mHeadsetService)
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                        eq(UserHandle.ALL),
-                        eq(BLUETOOTH_CONNECT),
-                        any());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mHeadsetService)
+                    .sendBroadcast(
+                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                            eq(BLUETOOTH_CONNECT),
+                            any());
+        } else {
+            mInOrder.verify(mHeadsetService)
+                    .sendBroadcastAsUser(
+                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                            eq(UserHandle.ALL),
+                            eq(BLUETOOTH_CONNECT),
+                            any());
+        }
     }
 
     private void verifyNoIntentSent() {
-        mInOrder.verify(mHeadsetService, never()).sendBroadcastAsUser(any(), any(), any(), any());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mHeadsetService, never()).sendBroadcast(any(), any(), any());
+        } else {
+            mInOrder.verify(mHeadsetService, never())
+                    .sendBroadcastAsUser(any(), any(), any(), any());
+        }
     }
 
     private void verifyConnectionStateIntent(int oldState, int newState) {
