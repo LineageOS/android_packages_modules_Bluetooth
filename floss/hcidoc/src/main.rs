@@ -37,6 +37,18 @@ fn main() {
                 .action(ArgAction::SetTrue)
                 .help("Only print signals from active rules, don't print other events."),
         )
+        .arg(
+            Arg::new("json")
+                .long("json")
+                .action(ArgAction::SetTrue)
+                .help("Print summary in JSON format"),
+        )
+        .arg(
+            Arg::new("json-only")
+                .long("json-only")
+                .action(ArgAction::SetTrue)
+                .help("Only print JSON summary, don't print others."),
+        )
         .get_matches();
 
     let filename = match matches.get_one::<String>("filename") {
@@ -62,6 +74,16 @@ fn main() {
     if report_only_signals {
         report_signals = true;
     }
+
+    let json = match matches.get_one::<bool>("json") {
+        Some(v) => *v,
+        None => false,
+    };
+
+    let json_only = match matches.get_one::<bool>("json-only") {
+        Some(v) => *v,
+        None => false,
+    };
 
     let parser = match LogParser::new(filename) {
         Ok(p) => p,
@@ -101,11 +123,15 @@ fn main() {
         }
     }
 
-    if !report_only_signals {
+    if !report_only_signals && !json_only {
         engine.report(&mut writer);
     }
-    if report_signals {
+    if report_signals && !json_only {
         let _ = writeln!(&mut writer, "### Signals ###");
         engine.report_signals(&mut writer);
+    }
+
+    if json {
+        engine.output_json(&mut writer);
     }
 }
