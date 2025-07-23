@@ -136,12 +136,12 @@ class ScanBinder(
         source: AttributionSource,
     ) {
         withControllerRunOnScanThread(source, "registerSync") {
-            registerSync(scanResult, skip, timeout, callback, source)
+            registerSync(scanResult, skip, timeout, callback)
         }
     }
 
     override fun unregisterSync(callback: IPeriodicAdvertisingCallback, source: AttributionSource) {
-        withControllerRunOnScanThread(source, "unregisterSync") { unregisterSync(callback, source) }
+        withControllerRunOnScanThread(source, "unregisterSync") { unregisterSync(callback) }
     }
 
     override fun transferSync(
@@ -151,7 +151,7 @@ class ScanBinder(
         source: AttributionSource,
     ) {
         withControllerRunOnScanThread(source, "transferSync") {
-            transferSync(device, serviceData, syncHandle, source)
+            transferSync(device, serviceData, syncHandle)
         }
     }
 
@@ -163,13 +163,13 @@ class ScanBinder(
         source: AttributionSource,
     ) {
         withControllerRunOnScanThread(source, "transferSetInfo") {
-            transferSetInfo(device, serviceData, advHandle, callback, source)
+            transferSetInfo(device, serviceData, advHandle, callback)
         }
     }
 
     override fun numHwTrackFiltersAvailable(source: AttributionSource): Int {
         val controller = getController(source, "numHwTrackFiltersAvailable") ?: return 0
-        return controller.fetchOnScanThread({ controller.numHwTrackFiltersAvailable(source) }, 0)
+        return controller.fetchOnScanThread({ controller.numHwTrackFiltersAvailable() }, 0)
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")

@@ -1480,22 +1480,17 @@ public class ScanController {
      *************************************************************************/
 
     void registerSync(
-            ScanResult scanResult,
-            int skip,
-            int timeout,
-            IPeriodicAdvertisingCallback callback,
-            AttributionSource source) {
+            ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
         mPeriodicScanManager.startSync(scanResult, skip, timeout, callback);
     }
 
-    void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
+    void unregisterSync(IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
         mPeriodicScanManager.stopSync(callback);
     }
 
-    void transferSync(
-            BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
+    void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
         enforceScanThread();
         mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
     }
@@ -1504,13 +1499,12 @@ public class ScanController {
             BluetoothDevice bda,
             int serviceData,
             int advHandle,
-            IPeriodicAdvertisingCallback callback,
-            AttributionSource source) {
+            IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
         mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
     }
 
-    int numHwTrackFiltersAvailable(AttributionSource source) {
+    int numHwTrackFiltersAvailable() {
         enforceScanThread();
         return mAdapterService.getTotalNumOfTrackableAdvertisements()
                 - mScanManager.getCurrentUsedTrackingAdvertisement();
