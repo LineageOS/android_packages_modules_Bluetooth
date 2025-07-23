@@ -1209,7 +1209,7 @@ public class ScanController {
         final var uuid = UUID.randomUUID();
         Log.d(TAG, "registerScanner() - UUID=" + uuid);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        mScannerMap.add(uuid, source, workSource, uid, callback, mAdapterService, this);
+        mScannerMap.addWithCallback(uuid, source, workSource, uid, callback, mAdapterService, this);
         mScanManager.registerScanner(uuid);
     }
 
@@ -1362,7 +1362,7 @@ public class ScanController {
 
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         ScannerMap.ScannerApp app =
-                mScannerMap.add(
+                mScannerMap.addWithPendingIntent(
                         uuid,
                         UserHandle.getUserHandleForUid(uid),
                         source,

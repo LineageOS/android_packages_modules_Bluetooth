@@ -48,8 +48,7 @@ class ScannerMap {
 
     private final ConcurrentLinkedQueue<ScannerApp> mApps = new ConcurrentLinkedQueue<>();
 
-    /** Add an entry to the application context list with a callback. */
-    ScannerApp add(
+    ScannerApp addWithCallback(
             UUID uuid,
             AttributionSource source,
             WorkSource workSource,
@@ -69,8 +68,7 @@ class ScannerMap {
                 scanController);
     }
 
-    /** Add an entry to the application context list with a pending intent. */
-    ScannerApp add(
+    ScannerApp addWithPendingIntent(
             UUID uuid,
             UserHandle userHandle,
             AttributionSource source,
