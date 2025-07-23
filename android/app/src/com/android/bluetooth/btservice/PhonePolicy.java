@@ -626,8 +626,8 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         }
     }
 
-    void handleLeAudioOnlyDeviceAfterCsipConnect(BluetoothDevice device) {
-        String log = "handleLeAudioOnlyDeviceAfterCsipConnect(" + device + "): ";
+    void handleConnectionPolicyAfterCsipConnect(BluetoothDevice device) {
+        String log = "handleConnectionPolicyAfterCsipConnect(" + device + "): ";
 
         final var leAudio = getLeAudioService();
         if (leAudio.isEmpty()
@@ -640,6 +640,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         List<BluetoothDevice> groupDevices = new ArrayList<>();
         boolean isAnyOtherGroupMemberAllowed = false;
 
+        /* isLeAudioOnlyGroup returning true implies csipSetCoordinatorService is valid */
         final var csipSetCoordinator = getCsipSetCoordinatorService();
         if (csipSetCoordinator.isPresent()) {
             /* Since isLeAudioOnlyGroup return true it means csipSetCoordinatorService is valid */
@@ -663,11 +664,19 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                         + ("isAnyOtherGroupMemberAllowed=" + isAnyOtherGroupMemberAllowed)
                         + (" isLeAudioOnlyGroup=" + isLeAudioOnlyGroup));
 
+        /* This is the key check for Dual Mode devices.
+         * If the group is dual mode and no other member has an active ALLOWED policy,
+         * we return early to avoid enabling all profiles for the entire group.
+         */
         if (!isAnyOtherGroupMemberAllowed && !isLeAudioOnlyGroup) {
             /* Log no needed as above function will log on error. */
             return;
         }
 
+        /* For LE Audio Only groups, or for a Dual Mode group that already has an active member,
+         * iterate through all members and ensure their LE Audio connection policy is set to
+         * ALLOWED.
+         */
         for (BluetoothDevice dev : groupDevices) {
             if (leAudio.get().getConnectionPolicy(dev) != CONNECTION_POLICY_ALLOWED) {
                 /* Setting LeAudio service as allowed is sufficient,
@@ -693,7 +702,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 case BluetoothProfile.A2DP -> mA2dpRetrySet.remove(device);
                 case BluetoothProfile.HEADSET -> mHeadsetRetrySet.remove(device);
                 case BluetoothProfile.CSIP_SET_COORDINATOR ->
-                        handleLeAudioOnlyDeviceAfterCsipConnect(device);
+                        handleConnectionPolicyAfterCsipConnect(device);
                 default -> {} // Nothing to do
             }
             connectOtherProfile(device);
