@@ -3893,7 +3893,7 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_cons
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
   pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = false;
-  pairing_cb.is_ssp = true;
+  pairing_cb.is_ssp = false;
   if (!com::android::bluetooth::flags::temporary_pairing_tracking()) {
     btm_set_bond_type_dev(p_ble_req->bd_addr, pairing_cb.bond_type);
   }
