@@ -473,9 +473,16 @@ void VolumeControlDevice::EnqueueRemainingRequests(tGATT_IF /*gatt_if*/,
         ++pair_it;
       }
 
-      log::debug{"{}, calling multi-read with {} attributes, {} left", address, multi_read.num_attr,
-                 std::distance(pair_it, handles_to_read.end())};
-      BtaGattQueue::ReadMultiCharacteristic(connection_id, multi_read, chrc_multi_read_cb, nullptr);
+      if (multi_read.num_attr == 1) {
+        log::debug("{}, calling read with last, single attribute", address);
+        BtaGattQueue::ReadCharacteristic(connection_id, multi_read.handles[0], chrc_read_cb,
+                                         nullptr);
+      } else {
+        log::debug{"{}, calling multi-read with {} attributes, {} left", address,
+                   multi_read.num_attr, std::distance(pair_it, handles_to_read.end())};
+        BtaGattQueue::ReadMultiCharacteristic(connection_id, multi_read, chrc_multi_read_cb,
+                                              nullptr);
+      }
     }
   } else {
     for (auto const& [handle, _] : handles_to_read) {
