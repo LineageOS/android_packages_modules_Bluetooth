@@ -780,22 +780,22 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread) {
 
   // The amount of attributes read at once is limited by the MTU size - 1 (here 22)
   tBTA_GATTC_MULTI expected_to_read_part_1 = {
-          .num_attr = 4,
+          .num_attr = 3,
           .handles = {0x0022 /* audio input state 1 */, 0x0025 /* gain setting properties 1 */,
-                      0x0027 /* audio input type 1 */, 0x0029 /* audio input status 1 */},
+                      0x0027 /* audio input type 1 */},
   };
 
   tBTA_GATTC_MULTI expected_to_read_part_2 = {
-          .num_attr = 5,
-          .handles = {0x0042 /* audio input state 2 */, 0x0045 /* gain setting properties 2 */,
-                      0x0047 /* audio input type 2 */, 0x0049 /* audio input status 2 */,
-                      0x0062 /* audio output state 1 */},
+          .num_attr = 4,
+          .handles = {0x0029 /* audio input status 1 */, 0x0042 /* audio input state 2 */,
+                      0x0045 /* gain setting properties 2 */, 0x0047 /* audio input type 2 */,
+                      0x0049 /* audio input status 2 */},
   };
 
   tBTA_GATTC_MULTI expected_to_read_part_3 = {
-          .num_attr = 3,
-          .handles = {0x0065 /* audio output location 1 */, 0x0082 /* audio output state 1 */,
-                      0x0085 /* audio output location 1 */},
+          .num_attr = 5,
+          .handles = {0x0062 /* audio output state 1 */, 0x0065 /* audio output location 1 */,
+                      0x0082 /* audio output state 1 */, 0x0085 /* audio output location 1 */},
   };
 
   uint16_t expected_audio_input_description_1 = 0x002e;
