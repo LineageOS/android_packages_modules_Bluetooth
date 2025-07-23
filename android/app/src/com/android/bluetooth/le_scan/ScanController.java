@@ -870,57 +870,6 @@ public class ScanController {
         mScanManager.callbackDone(scannerId, status);
     }
 
-    private void sendBatchScanResults(
-            ScannerMap.ScannerApp app, ScanClient client, List<ScanResult> results) {
-        if (results.isEmpty()) {
-            return;
-        }
-        try {
-            app.mAppScanStats.addResults(client.getScannerId(), results.size());
-            if (app.mCallback != null) {
-                if (ScanUtil.isAutoBatchScanClientEnabled(client)) {
-                    Log.d(TAG, "sendBatchScanResults() to onScanResult() for " + client);
-                    for (ScanResult result : results) {
-                        app.mCallback.onScanResult(result);
-                    }
-                } else {
-                    Log.d(TAG, "sendBatchScanResults() to onBatchScanResults() for " + client);
-                    app.mCallback.onBatchScanResults(results);
-                }
-            } else {
-                sendResultsByPendingIntent(
-                        app.mInfo, results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
-            }
-        } catch (RemoteException | PendingIntent.CanceledException e) {
-            Log.e(TAG, "Exception: " + e);
-            handleDeadScanClient(client);
-        }
-        mScanManager.batchScanResultDelivered();
-    }
-
-    // Check and deliver scan results for different scan clients.
-    private void deliverBatchScan(ScanClient client, Set<ScanResult> allResults) {
-        ScannerMap.ScannerApp app = mScannerMap.getById(client.getScannerId());
-        if (app == null) {
-            return;
-        }
-
-        List<ScanResult> permittedResults = permittedResults(client, allResults);
-
-        if (client.getFilters().isEmpty()) {
-            sendBatchScanResults(app, client, permittedResults);
-            return;
-        }
-        // Reconstruct the scan results.
-        List<ScanResult> results = new ArrayList<>();
-        for (ScanResult scanResult : permittedResults) {
-            if (matchesFilters(client, scanResult)) {
-                results.add(scanResult);
-            }
-        }
-        sendBatchScanResults(app, client, results);
-    }
-
     private Set<ScanResult> parseBatchScanResults(
             int numRecords, int reportType, byte[] batchRecord) {
         if (numRecords == 0) {
@@ -928,13 +877,8 @@ public class ScanController {
         }
         Log.d(
                 TAG,
-                "Parsing "
-                        + numRecords
-                        + " batch scan results at "
-                        + Utils.getLocalTimeString()
-                        + " (elapsed: "
-                        + SystemClock.elapsedRealtime()
-                        + "ms)");
+                ("Parsing " + numRecords + " batch scan results at " + Utils.getLocalTimeString())
+                        + (" (elapsed: " + SystemClock.elapsedRealtime() + "ms)"));
         if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             return parseTruncatedResults(numRecords, batchRecord);
         } else {
@@ -1003,6 +947,57 @@ public class ScanController {
                             device, ScanRecord.parseFromBytes(scanRecord), rssi, timestampNanos));
         }
         return results;
+    }
+
+    // Check and deliver scan results for different scan clients.
+    private void deliverBatchScan(ScanClient client, Set<ScanResult> allResults) {
+        ScannerMap.ScannerApp app = mScannerMap.getById(client.getScannerId());
+        if (app == null) {
+            return;
+        }
+
+        List<ScanResult> permittedResults = permittedResults(client, allResults);
+
+        if (client.getFilters().isEmpty()) {
+            sendBatchScanResults(app, client, permittedResults);
+            return;
+        }
+        // Reconstruct the scan results.
+        List<ScanResult> results = new ArrayList<>();
+        for (ScanResult scanResult : permittedResults) {
+            if (matchesFilters(client, scanResult)) {
+                results.add(scanResult);
+            }
+        }
+        sendBatchScanResults(app, client, results);
+    }
+
+    private void sendBatchScanResults(
+            ScannerMap.ScannerApp app, ScanClient client, List<ScanResult> results) {
+        if (results.isEmpty()) {
+            return;
+        }
+        try {
+            app.mAppScanStats.addResults(client.getScannerId(), results.size());
+            if (app.mCallback != null) {
+                if (ScanUtil.isAutoBatchScanClientEnabled(client)) {
+                    Log.d(TAG, "sendBatchScanResults() to onScanResult() for " + client);
+                    for (ScanResult result : results) {
+                        app.mCallback.onScanResult(result);
+                    }
+                } else {
+                    Log.d(TAG, "sendBatchScanResults() to onBatchScanResults() for " + client);
+                    app.mCallback.onBatchScanResults(results);
+                }
+            } else {
+                sendResultsByPendingIntent(
+                        app.mInfo, results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
+            }
+        } catch (RemoteException | PendingIntent.CanceledException e) {
+            Log.e(TAG, "Exception: " + e);
+            handleDeadScanClient(client);
+        }
+        mScanManager.batchScanResultDelivered();
     }
 
     void onBatchScanThresholdCrossed(int clientIf) {
