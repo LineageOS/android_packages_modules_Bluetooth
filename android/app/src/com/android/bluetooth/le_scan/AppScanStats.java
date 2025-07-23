@@ -74,9 +74,7 @@ class AppScanStats {
         public final long reportDelayMillis;
         public final int appImportanceOnStart;
         @Nullable public final String attributionTag;
-        private final long mStartTimestamp;
 
-        public long duration;
         public long suspendDuration;
         public long suspendStartTime;
         public boolean isSuspended;
@@ -84,6 +82,9 @@ class AppScanStats {
         public boolean isDowngraded;
         public boolean isAutoBatchScan;
         public int results;
+
+        private final long mStartTimestamp;
+        private long mEndTimestamp;
 
         private LastScan(
                 long startTimestamp,
@@ -316,8 +317,7 @@ class AppScanStats {
         }
         this.mScansStopped++;
         long stopTime = mTimeProvider.elapsedRealtime();
-        long scanDuration = stopTime - scan.mStartTimestamp;
-        scan.duration = scanDuration;
+        scan.mEndTimestamp = stopTime;
         if (scan.isSuspended) {
             long suspendDuration = stopTime - scan.suspendStartTime;
             scan.suspendDuration += suspendDuration;
@@ -329,6 +329,7 @@ class AppScanStats {
         }
         mLastScans.add(scan);
 
+        long scanDuration = scan.mEndTimestamp - scan.mStartTimestamp;
         mTotalScanTime += scanDuration;
         long activeDuration = scanDuration - scan.suspendDuration;
         mTotalActiveTime += activeDuration;
@@ -360,7 +361,7 @@ class AppScanStats {
                 scan.isFilterScan,
                 scan.isBackgroundScan,
                 scan.isOpportunisticScan);
-        recordScanAppCountMetricsStop(scan);
+        recordScanAppCountMetricsStop(scan, scanDuration);
     }
 
     private void recordScanAppCountMetricsStart(LastScan scan) {
@@ -395,7 +396,7 @@ class AppScanStats {
         }
     }
 
-    private void recordScanAppCountMetricsStop(LastScan scan) {
+    private void recordScanAppCountMetricsStop(LastScan scan, long duration) {
         MetricsLogger logger = MetricsLogger.getInstance();
         logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_TOTAL_DISABLE, 1);
         logger.logAppScanStateChanged(
@@ -408,7 +409,7 @@ class AppScanStats {
                 convertScanType(scan),
                 convertScanMode(scan.scanMode),
                 scan.reportDelayMillis,
-                scan.duration,
+                duration,
                 mOngoingScans.size(),
                 sIsScreenOn.get(),
                 mIsAppDead,
@@ -581,9 +582,8 @@ class AppScanStats {
         if (!isScanning() || mLastScans.isEmpty()) {
             return false;
         }
-        LastScan lastScan = mLastScans.get(mLastScans.size() - 1);
-        return ((mTimeProvider.elapsedRealtime() - lastScan.duration - lastScan.mStartTimestamp)
-                < LARGE_SCAN_TIME_GAP_MS);
+        var lastScan = mLastScans.getLast();
+        return (mTimeProvider.elapsedRealtime() - lastScan.mEndTimestamp) < LARGE_SCAN_TIME_GAP_MS;
     }
 
     synchronized void recordBatchAlarmScheduled() {
@@ -771,12 +771,13 @@ class AppScanStats {
                     Instant.ofEpochMilli(currentTime - currTime + scan.mStartTimestamp);
             sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
 
-            long elapsed = 0;
+            final long duration;
             if (isOngoing) {
-                elapsed = currTime - scan.mStartTimestamp;
-                sb.append("Elapsed: ").append(elapsed).append("ms ");
+                duration = currTime - scan.mStartTimestamp;
+                sb.append("Elapsed: ").append(duration).append("ms ");
             } else {
-                sb.append("Duration: ").append(scan.duration).append("ms ");
+                duration = scan.mEndTimestamp - scan.mStartTimestamp;
+                sb.append("Duration: ").append(duration).append("ms ");
             }
 
             if (scan.isOpportunisticScan) sb.append("(Opp) ");
@@ -813,27 +814,15 @@ class AppScanStats {
                 }
             }
 
-            boolean hasSuspendInfo = false;
-            long activeDuration = 0;
-            long suspendDuration = 0;
-            if (isOngoing) {
-                if (scan.suspendStartTime != 0) {
-                    hasSuspendInfo = true;
-                    suspendDuration =
-                            scan.isSuspended
-                                    ? (currTime - scan.suspendStartTime) + scan.suspendDuration
-                                    : scan.suspendDuration;
-                    activeDuration = elapsed - suspendDuration;
-                }
-            } else {
-                if (scan.suspendDuration != 0) {
-                    hasSuspendInfo = true;
+            if (scan.suspendStartTime != 0) {
+                final long suspendDuration;
+                if (isOngoing && scan.isSuspended) {
+                    suspendDuration = (currTime - scan.suspendStartTime) + scan.suspendDuration;
+                } else {
                     suspendDuration = scan.suspendDuration;
-                    activeDuration = scan.duration - suspendDuration;
                 }
-            }
+                final var activeDuration = duration - suspendDuration;
 
-            if (hasSuspendInfo) {
                 sb.append("\n        └ ");
                 sb.append("Active Time: ").append(activeDuration).append("ms");
                 sb.append(", Suspended Time: ").append(suspendDuration).append("ms");

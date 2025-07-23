@@ -830,6 +830,10 @@ impl Rule for OddDisconnectionsRule {
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
     }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
+    }
 }
 
 // What state are we in for the LinkKeyMismatchRule state?
@@ -1053,6 +1057,10 @@ impl Rule for LinkKeyMismatchRule {
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
     }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
+    }
 }
 
 struct SecurityMode3Rule {
@@ -1122,6 +1130,10 @@ impl Rule for SecurityMode3Rule {
 
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
+    }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
     }
 }
 

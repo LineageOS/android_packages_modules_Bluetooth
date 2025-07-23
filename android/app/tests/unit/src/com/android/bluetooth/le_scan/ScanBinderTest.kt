@@ -41,7 +41,6 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.whenever
 
 /** Test cases for [ScanBinder]. */
@@ -145,7 +144,7 @@ class ScanBinderTest {
         val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
         binder.registerSync(scanResult, skip, timeout, callback, attributionSource)
-        verify(scanController).registerSync(scanResult, skip, timeout, callback, attributionSource)
+        verify(scanController).registerSync(scanResult, skip, timeout, callback)
     }
 
     @Test
@@ -153,7 +152,7 @@ class ScanBinderTest {
         val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
         binder.unregisterSync(callback, attributionSource)
-        verify(scanController).unregisterSync(callback, attributionSource)
+        verify(scanController).unregisterSync(callback)
     }
 
     @Test
@@ -162,7 +161,7 @@ class ScanBinderTest {
         val syncHandle = 2
 
         binder.transferSync(device, serviceData, syncHandle, attributionSource)
-        verify(scanController).transferSync(device, serviceData, syncHandle, attributionSource)
+        verify(scanController).transferSync(device, serviceData, syncHandle)
     }
 
     @Test
@@ -172,14 +171,13 @@ class ScanBinderTest {
         val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
         binder.transferSetInfo(device, serviceData, advHandle, callback, attributionSource)
-        verify(scanController)
-            .transferSetInfo(device, serviceData, advHandle, callback, attributionSource)
+        verify(scanController).transferSetInfo(device, serviceData, advHandle, callback)
     }
 
     @Test
     fun numHwTrackFiltersAvailable() {
         binder.numHwTrackFiltersAvailable(attributionSource)
-        verify(scanController).numHwTrackFiltersAvailable(attributionSource)
+        verify(scanController).numHwTrackFiltersAvailable()
     }
 
     @Test

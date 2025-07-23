@@ -473,7 +473,7 @@ public class ScanControllerTest {
 
         mScanController.registerScanner(callback, workSource, mAttributionSource);
         verify(mScannerMap)
-                .add(
+                .addWithCallback(
                         any(),
                         eq(mAttributionSource),
                         eq(workSource),
@@ -554,7 +554,7 @@ public class ScanControllerTest {
         int timeout = 2;
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mScanController.registerSync(scanResult, skip, timeout, callback, mAttributionSource);
+        mScanController.registerSync(scanResult, skip, timeout, callback);
         verify(mPeriodicScanManager).startSync(scanResult, skip, timeout, callback);
     }
 
@@ -562,7 +562,7 @@ public class ScanControllerTest {
     public void unregisterSync() {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mScanController.unregisterSync(callback, mAttributionSource);
+        mScanController.unregisterSync(callback);
         verify(mPeriodicScanManager).stopSync(callback);
     }
 
@@ -571,7 +571,7 @@ public class ScanControllerTest {
         int serviceData = 1;
         int syncHandle = 2;
 
-        mScanController.transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
+        mScanController.transferSync(mDevice, serviceData, syncHandle);
         verify(mPeriodicScanManager).transferSync(mDevice, serviceData, syncHandle);
     }
 
@@ -581,8 +581,7 @@ public class ScanControllerTest {
         int advHandle = 2;
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mScanController.transferSetInfo(
-                mDevice, serviceData, advHandle, callback, mAttributionSource);
+        mScanController.transferSetInfo(mDevice, serviceData, advHandle, callback);
         verify(mPeriodicScanManager).transferSetInfo(mDevice, serviceData, advHandle, callback);
     }
 

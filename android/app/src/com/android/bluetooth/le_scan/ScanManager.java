@@ -641,40 +641,40 @@ class ScanManager {
             startRegularScan(client);
             if (!isOpportunisticScanClient(client)) {
                 configureRegularScanParams();
-
-                if (!isExemptFromScanTimeout(client)) {
-                    if (Flags.scanControllerThread()) {
-                        // Ensure only one timeout runnable exists per client.
-                        Runnable oldRunnable = mScanTimeoutRunnables.remove(client);
-                        if (oldRunnable != null) {
-                            mHandler.removeCallbacks(oldRunnable);
-                        }
-
-                        final Runnable timeoutRunnable =
-                                () -> {
-                                    if (!mIsAvailable) return;
-                                    mScanTimeoutRunnables.remove(client);
-                                    regularScanTimeout(client);
-                                };
-                        mScanTimeoutRunnables.put(client, timeoutRunnable);
-                        mHandler.postDelayed(
-                                timeoutRunnable, mAdapterService.getScanTimeoutMillis());
-                    } else {
-                        Message msg = mClientHandler.obtainMessage(MSG_SCAN_TIMEOUT);
-                        msg.obj = client;
-                        // Only one timeout message should exist at any time
-                        mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
-                        mClientHandler.sendMessageDelayed(
-                                msg, mAdapterService.getScanTimeoutMillis());
-                    }
-                    Log.d(
-                            TAG,
-                            ("Apply scan timeout (" + mAdapterService.getScanTimeoutMillis() + ")")
-                                    + (" to " + client));
-                }
+                configureTimeout(client);
             }
         }
         client.setStarted(true);
+    }
+
+    private void configureTimeout(ScanClient client) {
+        if (isExemptFromScanTimeout(client)) {
+            return;
+        }
+        if (Flags.scanControllerThread()) {
+            // Ensure only one timeout runnable exists per client
+            Runnable oldRunnable = mScanTimeoutRunnables.remove(client);
+            if (oldRunnable != null) {
+                mHandler.removeCallbacks(oldRunnable);
+            }
+            final Runnable timeoutRunnable =
+                    () -> {
+                        if (!mIsAvailable) return;
+                        mScanTimeoutRunnables.remove(client);
+                        regularScanTimeout(client);
+                    };
+            mScanTimeoutRunnables.put(client, timeoutRunnable);
+            mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeoutMillis());
+        } else {
+            Message msg = mClientHandler.obtainMessage(MSG_SCAN_TIMEOUT);
+            msg.obj = client;
+            // Only one timeout message should exist at any time
+            mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
+            mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanTimeoutMillis());
+        }
+        Log.d(
+                TAG,
+                "Apply scan timeout (" + mAdapterService.getScanTimeoutMillis() + ") to " + client);
     }
 
     private void handleStopScan(ScanClient tmpClient) {
