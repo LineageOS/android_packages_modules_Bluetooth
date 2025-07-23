@@ -51,7 +51,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class BluetoothServiceBinder extends IBluetoothManager.Stub {
+class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private static final String TAG = BluetoothServiceBinder.class.getSimpleName();
 
     private final BluetoothManagerService mService;
@@ -356,7 +356,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             @NonNull ParcelFileDescriptor out,
             @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new ShellCommand(this, mService::waitForState)
+        return new BluetoothShellCommand(mService, this)
                 .exec(
                         this,
                         in.getFileDescriptor(),
