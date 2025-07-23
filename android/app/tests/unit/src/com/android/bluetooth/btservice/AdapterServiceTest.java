@@ -179,7 +179,6 @@ public class AdapterServiceTest {
 
     private PackageManager mMockPackageManager;
     private MockContentResolver mMockContentResolver;
-    private int mForegroundUserId;
     private TestLooper mLooper;
 
     private MockAdapterService mAdapterService;
@@ -245,7 +244,6 @@ public class AdapterServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
                 Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
                 Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
     }
@@ -345,14 +343,6 @@ public class AdapterServiceTest {
                 .when(mMockContext)
                 .getDatabasePath(anyString());
 
-        // Sets the foreground user id to match that of the tests (restored in tearDown)
-        if (!Flags.limitUserSwitchPropagation()) {
-            mForegroundUserId = Utils.getForegroundUserId();
-            int callingUid = Binder.getCallingUid();
-            UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
-            Utils.setForegroundUserId(callingUser.getIdentifier());
-        }
-
         when(mIBluetoothCallback.asBinder()).thenReturn(mBinder);
 
         configureEnabledProfiles();
@@ -367,11 +357,6 @@ public class AdapterServiceTest {
     @After
     public void tearDown() {
         Log.e(TAG, "tearDown()");
-
-        // Restores the foregroundUserId to the ID prior to the test setup
-        if (!Flags.limitUserSwitchPropagation()) {
-            Utils.setForegroundUserId(mForegroundUserId);
-        }
 
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);

@@ -324,7 +324,6 @@ public class BluetoothManagerServiceTest {
     @Test
     @EnableFlags({
         Flags.FLAG_USER_RESTRICTION_REFACTOR,
-        Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
     })
     public void onUserRestrictionsChanged_whenOn_turnOff() throws Exception {
         mManagerService.enable(0, "onUserRestrictionsChanged_whenOn_turnOff");
@@ -668,9 +667,7 @@ public class BluetoothManagerServiceTest {
     @Test
     public void factoryReset_whileBtOff_savePropertyForLater() throws Exception {
         mManagerService.factoryReset(0);
-        if (Flags.factoryResetClearAdditionalData()) {
-            ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
-        }
+        ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
         ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
 
         endTest();
@@ -683,9 +680,7 @@ public class BluetoothManagerServiceTest {
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
         mManagerService.factoryReset(0);
-        if (Flags.factoryResetClearAdditionalData()) {
-            ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
-        }
+        ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
         ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
 
         transition_onToOff(btCallback);
