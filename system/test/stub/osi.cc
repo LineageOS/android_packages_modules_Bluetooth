@@ -396,8 +396,52 @@ static void fake_osi_alarm_clear(alarm_t* alarm) {
   }
 }
 
+/* Here is a set of helper test functions to check how many times given alarm was set
+ * and how many times was canceled.
+ */
+std::mutex alarm_mock_mutex_{};
+
+static std::map<std::string, int>& _get_alarm_set_mloop_mock_func_call_count_map() {
+  static std::map<std::string, int> alarm_set_mloop_mock_function_count_map;
+  return alarm_set_mloop_mock_function_count_map;
+}
+
+static void inc_alarm_set_mloop_mock_func_call_count_map(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  _get_alarm_set_mloop_mock_func_call_count_map()[alarm_name]++;
+}
+
+int get_alarm_set_on_mloop_call_count(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  return _get_alarm_set_mloop_mock_func_call_count_map()[alarm_name];
+}
+
+static std::map<std::string, int>& _get_alarm_cancel_mock_func_call_count_map() {
+  static std::map<std::string, int> alarm_cancel_mock_func_call_count_map;
+  return alarm_cancel_mock_func_call_count_map;
+}
+
+static void inc_alarm_cancel_mock_func_call_count_map(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  _get_alarm_cancel_mock_func_call_count_map()[alarm_name]++;
+}
+
+int get_alarm_cancel_call_count(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  return _get_alarm_cancel_mock_func_call_count_map()[alarm_name];
+}
+
+void reset_alarm_mock_function_count_map() {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  _get_alarm_cancel_mock_func_call_count_map().clear();
+  _get_alarm_set_mloop_mock_func_call_count_map().clear();
+}
+
 void alarm_cancel(alarm_t* alarm) {
   inc_func_call_count(__func__);
+  if (alarm != nullptr) {
+    inc_alarm_cancel_mock_func_call_count_map((char*)(alarm));
+  }
   fake_osi_alarm_clear(alarm);
 }
 
@@ -420,6 +464,7 @@ void alarm_set(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t cb, void* 
 
 void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t cb, void* data) {
   inc_func_call_count(__func__);
+  inc_alarm_set_mloop_mock_func_call_count_map((char*)(alarm));
 
   if (fake_osi_alarm_set_on_mloop_.alarm != nullptr) {
     bluetooth::log::info("Queuing alarm {} ({})", (char*)(fake_osi_alarm_set_on_mloop_.alarm),

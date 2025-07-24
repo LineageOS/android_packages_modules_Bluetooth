@@ -20,6 +20,10 @@
 
 #include "osi/include/alarm.h"
 
+int get_alarm_set_on_mloop_call_count(const char* alarm_name);
+int get_alarm_cancel_call_count(const char* alarm_name);
+void reset_alarm_mock_function_count_map();
+
 struct fake_osi_alarm_set_on_mloop {
   alarm_t* alarm;
   uint64_t interval_ms{0};
