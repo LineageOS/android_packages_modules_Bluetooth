@@ -437,6 +437,16 @@ void reset_alarm_mock_function_count_map() {
   _get_alarm_set_mloop_mock_func_call_count_map().clear();
 }
 
+void fake_osi_alarm_expired(struct fake_osi_alarm_set_on_mloop& fake_alarm, bool is_periodic) {
+  bluetooth::log::info("Simulating alarm {} to be fired, is periodic: {}", (char*)fake_alarm.alarm,
+                       is_periodic);
+  fake_alarm.cb(fake_alarm.data);
+
+  if (!is_periodic) {
+    fake_osi_alarm_clear(fake_alarm.alarm);
+  }
+}
+
 void alarm_cancel(alarm_t* alarm) {
   inc_func_call_count(__func__);
   if (alarm != nullptr) {

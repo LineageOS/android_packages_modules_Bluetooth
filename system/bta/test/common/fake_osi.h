@@ -30,3 +30,6 @@ struct fake_osi_alarm_set_on_mloop {
   alarm_callback_t cb{};
   void* data{nullptr};
 };
+
+void fake_osi_alarm_expired(struct fake_osi_alarm_set_on_mloop& fake_alarm,
+                            bool is_periodic = false);
