@@ -17,3 +17,6 @@ per-file *.cfg,.cfg,TEST_MAPPING,*.bp,*.xml,.clang-tidy,pyrightconfig.json=file:
 # - *.gn is for GN build rules
 # - Cargo.toml is for Rust build rules
 per-file build.py,*.gn,Cargo.toml=file:/OWNERS_chromeos
+
+# Python project files
+per-file pyproject.toml=file:/OWNERS_testing
