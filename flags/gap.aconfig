@@ -71,16 +71,6 @@ flag {
 }
 
 flag {
-    name: "configure_scan_on_resume"
-    namespace: "bluetooth"
-    description: "Configure scan paramters when start scanning from onResume"
-    bug: "383436218"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "distance_measurement_thread"
     namespace: "bluetooth"
     description: "Makes distance measurement operations run on one thread."

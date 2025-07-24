@@ -564,7 +564,7 @@ class RfcommTest {
      * - Verify an IOException is caught during the connection attempt.
      */
     @Test
-    fun clientConnectiontFailedRaisesException() {
+    fun clientConnectionFailedRaisesException() {
         updateSecurityConfig()
         // Disable inquiry and page scan
         mBumble

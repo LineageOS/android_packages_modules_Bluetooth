@@ -66,11 +66,6 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
-    fun setForegroundUserId(userId: Int) {
-        adapterBinder.setForegroundUserId(userId)
-    }
-
-    @Throws(RemoteException::class)
     fun unregAllGattClient() {
         adapterBinder.unregAllGattClient()
     }
