@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "snoop_logger_save_multiple_snoop_logs"
+    namespace: "bluetooth"
+    description: "Save more than the current and the last snoop logs and rotate the log names."
+    bug: "434047798"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
