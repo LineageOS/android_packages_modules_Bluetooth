@@ -2,6 +2,13 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "use_data_store_storage"
+    namespace: "bluetooth"
+    description: "Implement a robust storage to handle rollback"
+    bug: "430166215"
+}
+
+flag {
     name: "adapter_suspend_mgmt"
     namespace: "bluetooth"
     description: "Configure the BT adapter in a suspend state to avoid unexpected wake-up"

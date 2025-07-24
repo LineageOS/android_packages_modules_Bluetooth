@@ -259,6 +259,9 @@ public class LeAudioServiceTest {
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
         doReturn(mAdapterService).when(mAdapterService).createContextAsUser(any(), anyInt());
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(any(), eq(BluetoothProfile.LE_AUDIO));
         doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
         doReturn(MAX_LE_AUDIO_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
 
@@ -420,15 +423,16 @@ public class LeAudioServiceTest {
     public void testEnableDisableProfile() {
         // Make sure the device is known to the service and is not forbidden to connect
         mService.createDeviceDescriptor(mSingleDevice, true);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Verify the device is enabled in the service when policy is not FORBIDDEN during BT Enable
         mService.handleBluetoothEnabled();
         verify(mNativeInterface).setEnableState(eq(mSingleDevice), eq(true));
 
         // Verify the device is disabled in the service when policy is set to FORBIDDEN
-        when(mDatabaseManager.setProfileConnectionPolicy(
+        when(mAdapterService.setProfileConnectionPolicy(
                         eq(mSingleDevice), eq(BluetoothProfile.LE_AUDIO), anyInt()))
                 .thenReturn(true);
         mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
@@ -445,23 +449,21 @@ public class LeAudioServiceTest {
 
     @Test
     public void testGetSetPriority() {
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
-        assertWithMessage("Initial device priority")
-                .that(CONNECTION_POLICY_UNKNOWN)
-                .isEqualTo(mService.getConnectionPolicy(mLeftDevice));
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        assertThat(mService.getConnectionPolicy(mLeftDevice)).isEqualTo(CONNECTION_POLICY_UNKNOWN);
 
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
-        assertWithMessage("Setting device priority to PRIORITY_OFF")
-                .that(CONNECTION_POLICY_FORBIDDEN)
-                .isEqualTo(mService.getConnectionPolicy(mLeftDevice));
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        assertThat(mService.getConnectionPolicy(mLeftDevice))
+                .isEqualTo(CONNECTION_POLICY_FORBIDDEN);
 
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        assertWithMessage("Setting device priority to PRIORITY_ON")
-                .that(CONNECTION_POLICY_ALLOWED)
-                .isEqualTo(mService.getConnectionPolicy(mLeftDevice));
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        assertThat(mService.getConnectionPolicy(mLeftDevice)).isEqualTo(CONNECTION_POLICY_ALLOWED);
     }
 
     /**
@@ -475,8 +477,9 @@ public class LeAudioServiceTest {
     private void testOkToConnectCase(
             BluetoothDevice device, int bondState, int priority, boolean expected) {
         doReturn(bondState).when(mAdapterService).getBondState(device);
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
-                .thenReturn(priority);
+        doReturn(priority)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO);
         assertThat(mService.okToConnect(device)).isEqualTo(expected);
     }
 
@@ -513,12 +516,15 @@ public class LeAudioServiceTest {
     @Test
     public void testOutgoingConnectMissingLeAudioUuid() {
         // Update the device priority so okToConnect() returns true
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Return No UUID
         doReturn(new ParcelUuid[] {})
@@ -533,8 +539,9 @@ public class LeAudioServiceTest {
     @Test
     public void testOutgoingConnectPriorityOff() {
         // Set the device priority to PRIORITY_OFF so connect() should fail
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
 
         // Send a connect request
         assertWithMessage("Connect expected to fail").that(mService.connect(mLeftDevice)).isFalse();
@@ -544,12 +551,15 @@ public class LeAudioServiceTest {
     @Test
     public void testOutgoingConnectTimeout() {
         // Update the device priority so okToConnect() returns true
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Send a connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -619,12 +629,15 @@ public class LeAudioServiceTest {
     @Test
     public void testAudioManagerConnectDisconnect() {
         // Update the device priority so okToConnect() returns true
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Send a connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -707,12 +720,15 @@ public class LeAudioServiceTest {
     @Test
     public void testCreateStateMachineStackEvents() {
         // Update the device priority so okToConnect() returns true
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Create device descriptor with connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -762,12 +778,15 @@ public class LeAudioServiceTest {
     @Test
     public void testDeleteStateMachineUnbondEvents() {
         // Update the device priority so okToConnect() returns true
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Create device descriptor with connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -817,12 +836,15 @@ public class LeAudioServiceTest {
     @Test
     public void testDeleteStateMachineDisconnectEvents() {
         // Update the device priority so okToConnect() returns true
-        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
-        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Create device descriptor with connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -859,8 +881,9 @@ public class LeAudioServiceTest {
 
         List<BluetoothDevice> prevConnectedDevices = mService.getConnectedDevices();
 
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        doReturn(CONNECTION_POLICY_ALLOWED)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO);
         doReturn(true).when(mNativeInterface).connectLeAudio(device);
         doReturn(true).when(mNativeInterface).disconnectLeAudio(device);
 
@@ -933,15 +956,14 @@ public class LeAudioServiceTest {
     /** Test setting connection policy */
     @Test
     public void testSetConnectionPolicy() {
-        doReturn(true)
-                .when(mDatabaseManager)
-                .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         when(mVolumeControlService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mCsipSetCoordinatorService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
 
@@ -1009,17 +1031,16 @@ public class LeAudioServiceTest {
         doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
-        doReturn(true)
-                .when(mDatabaseManager)
-                .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         // Make LE Audio related services setConnectionPolicy() method return true.
         // These should NOT be called if not available
         when(mVolumeControlService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mCsipSetCoordinatorService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
 
@@ -1036,18 +1057,10 @@ public class LeAudioServiceTest {
         }
     }
 
-    /**
-     * Helper function to connect Test device
-     *
-     * @param device test device
-     */
     private void connectTestDevice(BluetoothDevice device, int GroupId) {
         List<BluetoothDevice> prevConnectedDevices = mService.getConnectedDevices();
 
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
-        // Send a connect request
-        assertWithMessage("Connect failed").that(mService.connect(device)).isTrue();
+        assertThat(mService.connect(device)).isTrue();
 
         // Make device bonded
         mBondedDevices.add(device);
@@ -1078,11 +1091,8 @@ public class LeAudioServiceTest {
         assertThat(mService.getConnectionState(device)).isEqualTo(STATE_CONNECTED);
 
         // Verify that the device is in the list of connected devices
-        assertThat(mService.getConnectedDevices().contains(device)).isTrue();
-        // Verify the list of previously connected devices
-        for (BluetoothDevice prevDevice : prevConnectedDevices) {
-            assertThat(mService.getConnectedDevices().contains(prevDevice)).isTrue();
-        }
+        assertThat(mService.getConnectedDevices()).contains(device);
+        assertThat(mService.getConnectedDevices()).containsAtLeastElementsIn(prevConnectedDevices);
     }
 
     /** Test adding node */
@@ -1682,10 +1692,10 @@ public class LeAudioServiceTest {
         mService.messageFromNative(healthBasedGroupAction);
         assertThat(mService.mLeAudioNativeIsInitialized).isTrue();
 
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mLeftDevice, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_FORBIDDEN);
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mRightDevice, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_FORBIDDEN);
     }
@@ -2427,8 +2437,9 @@ public class LeAudioServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         doReturn(new BluetoothDevice[] {mSingleDevice}).when(mAdapterService).getBondedDevices();
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         connectTestDevice(mSingleDevice, TEST_GROUP_ID);
 
@@ -2486,11 +2497,10 @@ public class LeAudioServiceTest {
         int groupId = 1;
 
         mService.handleBluetoothEnabled();
-        doReturn(true)
-                .when(mDatabaseManager)
-                .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
-        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
 
         // Ensures GATT server services are not authorized when the device does not have a group
         assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();

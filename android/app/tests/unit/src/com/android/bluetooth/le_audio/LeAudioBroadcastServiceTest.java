@@ -739,7 +739,7 @@ public class LeAudioBroadcastServiceTest {
         /* Prepare active group to cause pending broadcast */
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any(BluetoothDevice.class));
         doReturn(true).when(mLeAudioNativeInterface).connectLeAudio(any(BluetoothDevice.class));
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
+        when(mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
                 .when(mAdapterService)

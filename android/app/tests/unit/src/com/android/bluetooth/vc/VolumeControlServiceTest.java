@@ -66,7 +66,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -107,7 +106,6 @@ public class VolumeControlServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BassClientService mBassClientService;
     @Mock private LeAudioService mLeAudioService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private VolumeControlNativeInterface mNativeInterface;
     @Mock private AudioManager mAudioManager;
     @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
@@ -144,10 +142,9 @@ public class VolumeControlServiceTest {
         doReturn(true).when(mNativeInterface).disconnectVolumeControl(any());
 
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.VOLUME_CONTROL})
                 .when(mAdapterService)
@@ -208,7 +205,7 @@ public class VolumeControlServiceTest {
                         CONNECTION_POLICY_UNKNOWN,
                         CONNECTION_POLICY_FORBIDDEN,
                         CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(policy);
         }
     }
@@ -225,7 +222,7 @@ public class VolumeControlServiceTest {
                             CONNECTION_POLICY_ALLOWED,
                             badPolicyValue)) {
                 doReturn(bondState).when(mAdapterService).getBondState(any());
-                doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
                 assertThat(mService.okToConnect(mDevice1)).isFalse();
             }
         }
@@ -237,11 +234,11 @@ public class VolumeControlServiceTest {
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice1)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice1)).isTrue();
         }
     }
@@ -269,7 +266,7 @@ public class VolumeControlServiceTest {
 
     @Test
     public void connectToDevice_whenPolicyForbid_returnFalse() {
-        when(mDatabaseManager.getProfileConnectionPolicy(mDevice1, BluetoothProfile.VOLUME_CONTROL))
+        when(mAdapterService.getProfileConnectionPolicy(mDevice1, BluetoothProfile.VOLUME_CONTROL))
                 .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         assertThat(mService.connect(mDevice1)).isFalse();
@@ -1175,7 +1172,7 @@ public class VolumeControlServiceTest {
     @Test
     public void setConnectionPolicy() {
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_UNKNOWN)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.VOLUME_CONTROL, CONNECTION_POLICY_UNKNOWN);
     }
