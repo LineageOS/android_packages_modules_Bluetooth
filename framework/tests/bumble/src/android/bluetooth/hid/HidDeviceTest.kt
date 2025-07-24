@@ -107,6 +107,15 @@ class HidDeviceTest {
             HIDD_REPORT_DESC,
         )
 
+    private val sdpSettingsBadDescriptor =
+        BluetoothHidDeviceAppSdpSettings(
+            SDP_NAME,
+            SDP_DESCRIPTION,
+            SDP_PROVIDER,
+            BluetoothHidDevice.SUBCLASS1_COMBO,
+            BAD_HIDD_REPORT_DESC,
+        )
+
     private val outQos =
         BluetoothHidDeviceAppQosSettings(
             BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
@@ -220,6 +229,29 @@ class HidDeviceTest {
         verifyRemoteDeviceConnectToHidHostService()
 
         assertThat(hidDeviceService.registerApp(sdpSettings, null, outQos, executor, callback))
+            .isTrue()
+        verifyAppStatusChanged(null, true)
+    }
+
+    /**
+     * Test disable HID Device role and connect a remote device to HID Host service.
+     * 1. Unregister the app.
+     * 2. Register the app with a bad descriptor.
+     */
+    @Test
+    fun badDescriptorHidDeviceTest() {
+        assertThat(hidDeviceService.unregisterApp()).isTrue()
+        verifyAppStatusChanged(null, false)
+
+        assertThat(
+                hidDeviceService.registerApp(
+                    sdpSettingsBadDescriptor,
+                    null,
+                    outQos,
+                    executor,
+                    callback,
+                )
+            )
             .isTrue()
         verifyAppStatusChanged(null, true)
     }
@@ -356,6 +388,118 @@ class HidDeviceTest {
         private const val QOS_TOKEN_BUCKET_SIZE = 9
         private const val QOS_PEAK_BANDWIDTH = 0
         private const val QOS_LATENCY = 11250
-        private val HIDD_REPORT_DESC = byteArrayOf()
+
+        private const val ID_KEYBOARD: Byte = 0x01
+        private const val ID_MOUSE: Byte = 0x02
+        private val BAD_HIDD_REPORT_DESC: ByteArray =
+            byteArrayOf(
+                0xFE.toByte(), // Long item
+                0xFE.toByte(), // Long item
+                0xFE.toByte(), // Long item
+            )
+        private val HIDD_REPORT_DESC: ByteArray =
+            byteArrayOf(
+                0x05,
+                0x01, // Usage page (Generic Desktop)
+                0x09,
+                0x06, // Usage (Keyboard)
+                0xA1.toByte(),
+                0x01, // Collection (Application)
+                0x85.toByte(),
+                ID_KEYBOARD, // Report ID
+                0x05,
+                0x07, // Usage page (Key Codes)
+                0x19,
+                0xE0.toByte(), // Usage minimum (224)
+                0x29,
+                0xE7.toByte(), // Usage maximum (231)
+                0x15,
+                0x00, // Logical minimum (0)
+                0x25,
+                0x01, // Logical maximum (1)
+                0x75,
+                0x01, // Report size (1)
+                0x95.toByte(),
+                0x08, // Report count (8)
+                0x81.toByte(),
+                0x02, // Input (Data, Variable, Absolute) ; Modifier byte
+                0x75,
+                0x08, // Report size (8)
+                0x95.toByte(),
+                0x01, // Report count (1)
+                0x81.toByte(),
+                0x01, // Input (Constant)              ; Reserved byte
+                0x75,
+                0x08, // Report size (8)
+                0x95.toByte(),
+                0x06, // Report count (6)
+                0x15,
+                0x00, // Logical Minimum (0)
+                0x25,
+                0x65, // Logical Maximum (101)
+                0x05,
+                0x07, // Usage page (Key Codes)
+                0x19,
+                0x00, // Usage Minimum (0)
+                0x29,
+                0x65, // Usage Maximum (101)
+                0x81.toByte(),
+                0x00, // Input (Data, Array)           ; Key array (6 keys)
+                0xC0.toByte(), // End Collection
+                0x05,
+                0x01, // Usage Page (Generic Desktop)
+                0x09,
+                0x02, // Usage (Mouse)
+                0xA1.toByte(),
+                0x01, // Collection (Application)
+                0x85.toByte(),
+                ID_MOUSE, // Report ID
+                0x09,
+                0x01, // Usage (Pointer)
+                0xA1.toByte(),
+                0x00, // Collection (Physical)
+                0x05,
+                0x09, // Usage Page (Buttons)
+                0x19,
+                0x01, // Usage minimum (1)
+                0x29,
+                0x03, // Usage maximum (3)
+                0x15,
+                0x00, // Logical minimum (0)
+                0x25,
+                0x01, // Logical maximum (1)
+                0x75,
+                0x01, // Report size (1)
+                0x95.toByte(),
+                0x03, // Report count (3)
+                0x81.toByte(),
+                0x02, // Input (Data, Variable, Absolute)
+                0x75,
+                0x05, // Report size (5)
+                0x95.toByte(),
+                0x01, // Report count (1)
+                0x81.toByte(),
+                0x01, // Input (constant)              ; 5 bit padding
+                0x05,
+                0x01, // Usage page (Generic Desktop)
+                0x09,
+                0x30, // Usage (X)
+                0x09,
+                0x31, // Usage (Y)
+                0x09,
+                0x38, // Usage (Wheel)
+                0x15,
+                0x81.toByte(), // Logical minimum (-127)
+                0x25,
+                0x7F, // Logical maximum (127)
+                0x75,
+                0x08, // Report size (8)
+                0x95.toByte(),
+                0x03, // Report count (3)
+                0x81.toByte(),
+                0x06, // Input (Data, Variable, Relative)
+                0xC0.toByte(), // End Collection
+                0xC0.toByte(), // End Collection
+            )
     }
 }
