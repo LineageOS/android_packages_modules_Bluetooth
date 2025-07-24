@@ -31,6 +31,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.flags.Flags
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.hamcrest.Matchers.greaterThan
 import org.junit.After
 import org.junit.Assume.assumeThat
@@ -50,6 +51,7 @@ import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.OwnAddressType
 
 @RunWith(AndroidJUnit4::class)
+@ExperimentalCoroutinesApi
 class ConnParamTest {
 
     @get:Rule(order = 0)
