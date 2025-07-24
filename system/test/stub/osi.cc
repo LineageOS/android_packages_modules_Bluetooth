@@ -331,8 +331,18 @@ void* fixed_queue_try_remove_from_queue(fixed_queue_t* queue, void* data) {
 
 alarm_t* alarm_new(const char* name) {
   inc_func_call_count(__func__);
-  return (alarm_t*)new uint8_t[30];
+  bluetooth::log::debug("{}", name);
+
+  if (name == nullptr) {
+    return (alarm_t*)new uint8_t[30];
+  }
+
+  uint8_t* val = new uint8_t[60];
+  memset(val, 0, 60);
+  memcpy(val, name, strlen(name));
+  return (alarm_t*)val;
 }
+
 alarm_t* alarm_new_periodic(const char* name) {
   inc_func_call_count(__func__);
   return nullptr;
@@ -349,16 +359,14 @@ bool alarm_is_scheduled(const alarm_t* alarm) {
 
   auto iter = find_if(previous_fake_osi_alarms_.begin(), previous_fake_osi_alarms_.end(),
                       [alarm](auto const& a) {
-                        bluetooth::log::debug("iter: {} == {} ?", std::format_ptr(a.alarm),
-                                              std::format_ptr(alarm));
+                        bluetooth::log::debug("iter: {} == {} ?", (char*)(a.alarm), (char*)(alarm));
                         return a.alarm == alarm;
                       });
   if (iter != previous_fake_osi_alarms_.end()) {
     return true;
   }
 
-  bluetooth::log::debug(" {} == {} ?", std::format_ptr(fake_osi_alarm_set_on_mloop_.alarm),
-                        std::format_ptr(alarm));
+  bluetooth::log::debug(" {} == {} ?", (char*)(fake_osi_alarm_set_on_mloop_.alarm), (char*)(alarm));
 
   return fake_osi_alarm_set_on_mloop_.alarm == alarm;
 }
@@ -372,14 +380,15 @@ static void fake_osi_alarm_clear(alarm_t* alarm) {
     auto iter = find_if(previous_fake_osi_alarms_.begin(), previous_fake_osi_alarms_.end(),
                         [alarm](auto const& a) { return a.alarm == alarm; });
     if (iter != previous_fake_osi_alarms_.end()) {
-      bluetooth::log::debug(" clearing alarm {} ", std::format_ptr(iter->alarm));
+      bluetooth::log::debug(" clearing alarm {}({}) ", (char*)(alarm),
+                            std::format_ptr(iter->alarm));
       previous_fake_osi_alarms_.erase(iter);
       return;
     }
   }
 
   if (fake_osi_alarm_set_on_mloop_.alarm == alarm || alarm == nullptr) {
-    bluetooth::log::debug(" clearing alarm {} ", std::format_ptr(alarm));
+    bluetooth::log::debug(" clearing alarm {}({}) ", (char*)(alarm), std::format_ptr(alarm));
     fake_osi_alarm_set_on_mloop_.alarm = nullptr;
     fake_osi_alarm_set_on_mloop_.interval_ms = 0;
     fake_osi_alarm_set_on_mloop_.cb = nullptr;
@@ -413,11 +422,12 @@ void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t c
   inc_func_call_count(__func__);
 
   if (fake_osi_alarm_set_on_mloop_.alarm != nullptr) {
-    bluetooth::log::info("Queuing alarm {}", std::format_ptr(fake_osi_alarm_set_on_mloop_.alarm));
+    bluetooth::log::info("Queuing alarm {} ({})", (char*)(fake_osi_alarm_set_on_mloop_.alarm),
+                         std::format_ptr(fake_osi_alarm_set_on_mloop_.alarm));
     previous_fake_osi_alarms_.push_back(fake_osi_alarm_set_on_mloop_);
   }
 
-  bluetooth::log::info("Adding alarm {}", std::format_ptr(alarm));
+  bluetooth::log::info("Adding alarm {}({})", (char*)(alarm), std::format_ptr(alarm));
   fake_osi_alarm_set_on_mloop_.alarm = alarm;
   fake_osi_alarm_set_on_mloop_.interval_ms = interval_ms;
   fake_osi_alarm_set_on_mloop_.cb = cb;
