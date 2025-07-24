@@ -621,23 +621,32 @@ struct JsonDeviceAclInfo {
     end_time: Option<String>,
     initiator: InitiatorType,
     end_initiator: InitiatorType,
-    profile_connections: Vec<JsonDeviceProfileInfo>,
+    profile_connections: HashMap<ProfileType, Vec<JsonDeviceProfileInfo>>,
 }
 
 impl From<&AclInformation> for JsonDeviceAclInfo {
     fn from(acl: &AclInformation) -> Self {
+        // This closure now groups profiles into the HashMap.
+        let profiles_map = acl
+            .active_profiles
+            .values()
+            .chain(acl.inactive_profiles.iter())
+            .map(JsonDeviceProfileInfo::from)
+            .fold(
+                HashMap::new(),
+                |mut acc: HashMap<ProfileType, Vec<JsonDeviceProfileInfo>>, profile_info| {
+                    acc.entry(profile_info.profile).or_default().push(profile_info);
+                    acc
+                },
+            );
+
         JsonDeviceAclInfo {
             transport: acl.transport,
             start_time: acl.start_time.to_string(),
             end_time: (acl.end_time != INVALID_TS).then(|| acl.end_time.to_string()),
             initiator: acl.start_initiator,
             end_initiator: acl.end_initiator,
-            profile_connections: acl
-                .active_profiles
-                .values()
-                .chain(acl.inactive_profiles.iter())
-                .map(JsonDeviceProfileInfo::from)
-                .collect(),
+            profile_connections: profiles_map,
         }
     }
 }
