@@ -37,7 +37,6 @@ import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
-import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
 import static com.android.bluetooth.Utils.getBytesFromAddress;
@@ -4483,7 +4482,7 @@ public class AdapterService extends Service {
     private Duration mScanQuotaWindow = DeviceConfigListener.DEFAULT_SCAN_QUOTA_WINDOW;
 
     @GuardedBy("mDeviceConfigLock")
-    private long mScanTimeoutMillis = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT_MILLIS;
+    private Duration mScanTimeout = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 
     @GuardedBy("mDeviceConfigLock")
     private int mScanUpgradeDurationMillis =
@@ -4542,10 +4541,10 @@ public class AdapterService extends Service {
         }
     }
 
-    /** Returns scan timeout in millis. */
-    public long getScanTimeoutMillis() {
+    /** Returns scan timeout. */
+    public Duration getScanTimeout() {
         synchronized (mDeviceConfigLock) {
-            return mScanTimeoutMillis;
+            return mScanTimeout;
         }
     }
 
@@ -4624,7 +4623,7 @@ public class AdapterService extends Service {
         private static final Duration DEFAULT_SCAN_QUOTA_WINDOW = Duration.ofSeconds(30);
 
         @VisibleForTesting
-        public static final long DEFAULT_SCAN_TIMEOUT_MILLIS = 10 * MINUTE_IN_MILLIS;
+        public static final Duration DEFAULT_SCAN_TIMEOUT = Duration.ofMinutes(10);
 
         @VisibleForTesting
         public static final int DEFAULT_SCAN_UPGRADE_DURATION_MILLIS = (int) SECOND_IN_MILLIS * 6;
@@ -4660,8 +4659,10 @@ public class AdapterService extends Service {
                                 properties.getLong(
                                         SCAN_QUOTA_WINDOW_MILLIS,
                                         DEFAULT_SCAN_QUOTA_WINDOW.toMillis()));
-                mScanTimeoutMillis =
-                        properties.getLong(SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT_MILLIS);
+                mScanTimeout =
+                        Duration.ofMillis(
+                                properties.getLong(
+                                        SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT.toMillis()));
                 mScanUpgradeDurationMillis =
                         properties.getInt(
                                 SCAN_UPGRADE_DURATION_MILLIS, DEFAULT_SCAN_UPGRADE_DURATION_MILLIS);

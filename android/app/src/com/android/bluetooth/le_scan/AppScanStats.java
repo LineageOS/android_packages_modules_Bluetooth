@@ -577,8 +577,10 @@ class AppScanStats {
         if (!isScanning()) {
             return false;
         }
-        return (mTimeProvider.elapsedRealtime() - mScanStartTimestamp)
-                >= mAdapterService.getScanTimeoutMillis();
+
+        return Duration.ofMillis(mTimeProvider.elapsedRealtime() - mScanStartTimestamp)
+                        .compareTo(mAdapterService.getScanTimeout())
+                >= 0;
     }
 
     synchronized boolean hasRecentScan() {
