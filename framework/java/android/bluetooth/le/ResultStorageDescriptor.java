@@ -21,6 +21,7 @@ import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 /**
  * Describes the way to store scan result.
@@ -31,6 +32,8 @@ import android.os.Parcelable;
 @Deprecated
 @SystemApi
 public final class ResultStorageDescriptor implements Parcelable {
+    private static final String TAG = ResultStorageDescriptor.class.getSimpleName();
+    private static final String MESSAGE = " is deprecated and not supported; Will be removed soon";
     private int mType;
     private int mOffset;
     private int mLength;
@@ -58,6 +61,7 @@ public final class ResultStorageDescriptor implements Parcelable {
      * @param length Byte length of the data
      */
     public ResultStorageDescriptor(int type, int offset, int length) {
+        Log.wtf(TAG, MESSAGE);
         mType = type;
         mOffset = offset;
         mLength = length;
