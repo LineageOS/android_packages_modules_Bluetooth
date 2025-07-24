@@ -40,6 +40,7 @@ aconfig("bluetooth_flags_c_lib") {
     "service_discovery.aconfig",
     "sockets.aconfig",
     "system_service.aconfig",
+    "tbs.aconfig",
     "threading.aconfig",
     "vcp.aconfig",
     "vsc.aconfig",
