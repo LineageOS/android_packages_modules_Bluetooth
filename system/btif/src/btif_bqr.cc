@@ -65,6 +65,9 @@ static uint16_t LmpLlMessageTraceCounter = 0;
 // Counter of Bluetooth Multi-profile/Coex scheduling trace
 static uint16_t BtSchedulingTraceCounter = 0;
 
+// Must match the value of BqrCommon.BQR_COMMON_LEN in BluetoothQualityReport.java exactly.
+static const int kBqrCommonLength = 85;
+
 class BluetoothQualityReportInterfaceImpl;
 static std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
 
@@ -989,16 +992,24 @@ class BluetoothQualityReportInterfaceImpl : public bluetooth::bqr::BluetoothQual
     }
 
     std::vector<uint8_t> raw_data;
-    raw_data.insert(raw_data.begin(), bqr_raw_data, bqr_raw_data + bqr_raw_data_len);
+    if (com::android::bluetooth::flags::bqr_common_part_unified_length()) {
+      raw_data = generate_unified_bqr_data(bqr_raw_data, bqr_raw_data_len);
+      if (raw_data.empty()) {
+        log::error("unified bqr data is empty");
+        return;
+      }
+    } else {
+      raw_data.insert(raw_data.begin(), bqr_raw_data, bqr_raw_data + bqr_raw_data_len);
 
-    if (vendor_cap_supported_version < kBqrVersion5_0 &&
-        bqr_raw_data_len < kLinkQualityParamTotalLen + kVersion5_0ParamsTotalLen) {
-      std::vector<uint8_t>::iterator it = raw_data.begin() + kLinkQualityParamTotalLen;
-      /**
-       * Insert zeros as remote address and calibration count
-       * for BQR 5.0 incompatible devices
-       */
-      raw_data.insert(it, kVersion5_0ParamsTotalLen, 0);
+      if (vendor_cap_supported_version < kBqrVersion5_0 &&
+          bqr_raw_data_len < kLinkQualityParamTotalLen + kVersion5_0ParamsTotalLen) {
+        std::vector<uint8_t>::iterator it = raw_data.begin() + kLinkQualityParamTotalLen;
+        /**
+         * Insert zeros as remote address and calibration count
+         * for BQR 5.0 incompatible devices
+         */
+        raw_data.insert(it, kVersion5_0ParamsTotalLen, 0);
+      }
     }
 
     bt_remote_version_t info = btif_get_remote_version(bd_addr);
@@ -1019,6 +1030,71 @@ class BluetoothQualityReportInterfaceImpl : public bluetooth::bqr::BluetoothQual
 
 private:
   BluetoothQualityReportCallbacks* callbacks = nullptr;
+
+  int get_unified_bqr_common_len() {
+    int length = kLinkQualityParamTotalLen + kVersion5_0ParamsTotalLen;
+    if (vendor_cap_supported_version < kBqrIsoVersion) {
+      return length;
+    }
+
+    length += kISOLinkQualityParamTotalLen;
+    if (vendor_cap_supported_version <= kBqrVersion5_0) {
+      return length;
+    }
+
+    length += kVersion6_0ParamsTotalLen;
+    if (vendor_cap_supported_version <= kBqrVersion7_0) {
+      return length;
+    }
+
+    log::error("Unsupported BQR version: {:#x}", vendor_cap_supported_version);
+    return -1;
+  }
+
+  std::vector<uint8_t> generate_unified_bqr_data(const uint8_t* bqr_raw_data,
+                                                 uint32_t bqr_raw_data_len) {
+    std::vector<uint8_t> unified_data(bqr_raw_data, bqr_raw_data + bqr_raw_data_len);
+
+    std::set<uint8_t> report_ids_with_common_part = {
+            QUALITY_REPORT_ID_MONITOR_MODE,      QUALITY_REPORT_ID_APPROACH_LSTO,
+            QUALITY_REPORT_ID_A2DP_AUDIO_CHOPPY, QUALITY_REPORT_ID_SCO_VOICE_CHOPPY,
+            QUALITY_REPORT_ID_LE_AUDIO_CHOPPY,   QUALITY_REPORT_ID_CONNECT_FAIL,
+    };
+    uint8_t report_id;
+    STREAM_TO_UINT8(report_id, bqr_raw_data);
+    if (report_ids_with_common_part.count(report_id) == 0) {
+      return unified_data;
+    }
+
+    int common_len = get_unified_bqr_common_len();
+    if (common_len == -1) {
+      return {};
+    }
+
+    bool is_version_before_5_0 = vendor_cap_supported_version < kBqrVersion5_0;
+    int required_len = is_version_before_5_0 ? common_len - kVersion5_0ParamsTotalLen : common_len;
+
+    if (bqr_raw_data_len < static_cast<uint32_t>(required_len)) {
+      return {};
+    }
+
+    if (is_version_before_5_0 && bqr_raw_data_len < static_cast<uint32_t>(common_len)) {
+      auto insert_pos = unified_data.begin() + kLinkQualityParamTotalLen;
+      /**
+       * Insert zeros as remote address and calibration count
+       * for BQR 5.0 incompatible devices
+       */
+      unified_data.insert(insert_pos, kVersion5_0ParamsTotalLen, 0);
+    }
+
+    int padding_length = kBqrCommonLength - common_len;
+    if (padding_length > 0) {
+      auto insert_pos = unified_data.begin() + common_len;
+      unified_data.insert(insert_pos, padding_length, 0);
+    }
+
+    return unified_data;
+  }
 };
 
 BluetoothQualityReportInterface* getBluetoothQualityReportInterface() {
