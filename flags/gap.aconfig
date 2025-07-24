@@ -292,3 +292,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "broadcast_transport_type_on_reset"
+    namespace: "bluetooth"
+    description: "Broadcast the transport type on BT reset as part of ACL_DISCONNECTED."
+    bug: "433990971"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
