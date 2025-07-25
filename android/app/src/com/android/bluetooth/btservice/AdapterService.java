@@ -37,7 +37,6 @@ import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
-import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
@@ -4516,12 +4515,11 @@ public class AdapterService extends Service {
     private Duration mScanTimeout = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScanUpgradeDurationMillis =
-            DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
+    private Duration mScanUpgradeDuration = DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScanDowngradeDurationMillis =
-            DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
+    private Duration mScanDowngradeDuration =
+            DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 
     @GuardedBy("mDeviceConfigLock")
     private int mScreenOffLowPowerWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
@@ -4579,17 +4577,17 @@ public class AdapterService extends Service {
         }
     }
 
-    /** Returns scan upgrade duration in millis. */
-    public int getScanUpgradeDurationMillis() {
+    /** Returns scan upgrade duration. */
+    public Duration getScanUpgradeDuration() {
         synchronized (mDeviceConfigLock) {
-            return mScanUpgradeDurationMillis;
+            return mScanUpgradeDuration;
         }
     }
 
-    /** Returns scan downgrade duration in millis. */
-    public int getScanDowngradeDurationMillis() {
+    /** Returns scan downgrade duration. */
+    public Duration getScanDowngradeDuration() {
         synchronized (mDeviceConfigLock) {
-            return mScanDowngradeDurationMillis;
+            return mScanDowngradeDuration;
         }
     }
 
@@ -4657,11 +4655,11 @@ public class AdapterService extends Service {
         public static final Duration DEFAULT_SCAN_TIMEOUT = Duration.ofMinutes(10);
 
         @VisibleForTesting
-        public static final int DEFAULT_SCAN_UPGRADE_DURATION_MILLIS = (int) SECOND_IN_MILLIS * 6;
+        public static final Duration DEFAULT_SCAN_UPGRADE_DURATION = Duration.ofSeconds(6);
 
         @VisibleForTesting
-        public static final int DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS =
-                (int) SECOND_IN_MILLIS * 6;
+        public static final Duration DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING =
+                Duration.ofSeconds(6);
 
         public void start() {
             DeviceConfig.addOnPropertiesChangedListener(
@@ -4694,13 +4692,18 @@ public class AdapterService extends Service {
                         Duration.ofMillis(
                                 properties.getLong(
                                         SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT.toMillis()));
-                mScanUpgradeDurationMillis =
-                        properties.getInt(
-                                SCAN_UPGRADE_DURATION_MILLIS, DEFAULT_SCAN_UPGRADE_DURATION_MILLIS);
-                mScanDowngradeDurationMillis =
-                        properties.getInt(
-                                SCAN_DOWNGRADE_DURATION_MILLIS,
-                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS);
+                mScanUpgradeDuration =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCAN_UPGRADE_DURATION_MILLIS,
+                                        (int) DEFAULT_SCAN_UPGRADE_DURATION.toMillis()));
+                mScanDowngradeDuration =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCAN_DOWNGRADE_DURATION_MILLIS,
+                                        (int)
+                                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
+                                                        .toMillis()));
                 mScreenOffLowPowerWindowMillis =
                         properties.getInt(
                                 SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,

@@ -35,9 +35,9 @@ import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
 
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
-import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
+import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
-import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
+import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
 import static com.android.bluetooth.le_scan.ScanManager.MSFT_HCI_EXT_ENABLED;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS;
@@ -896,9 +896,7 @@ public class ScanManagerTest {
         scanModeMap.put(SCAN_MODE_BALANCED, SCAN_MODE_LOW_LATENCY);
         scanModeMap.put(SCAN_MODE_LOW_LATENCY, SCAN_MODE_LOW_LATENCY);
         scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_LOW_LATENCY);
-        doReturn(DEFAULT_SCAN_UPGRADE_DURATION_MILLIS)
-                .when(mAdapterService)
-                .getScanUpgradeDurationMillis();
+        doReturn(DEFAULT_SCAN_UPGRADE_DURATION).when(mAdapterService).getScanUpgradeDuration();
 
         for (int i = 0; i < scanModeMap.size(); i++) {
             int scanMode = scanModeMap.keyAt(i);
@@ -916,7 +914,7 @@ public class ScanManagerTest {
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
             // Wait for upgrade duration
-            advanceTime(DEFAULT_SCAN_UPGRADE_DURATION_MILLIS);
+            advanceTime(DEFAULT_SCAN_UPGRADE_DURATION);
             mLooper.dispatchAll();
             assertThat(client.getSettings().getScanMode()).isEqualTo(scanMode);
         }
@@ -924,12 +922,10 @@ public class ScanManagerTest {
 
     @Test
     public void testUpDowngradeStartScanForConcurrency() {
-        doReturn(DEFAULT_SCAN_UPGRADE_DURATION_MILLIS)
+        doReturn(DEFAULT_SCAN_UPGRADE_DURATION).when(mAdapterService).getScanUpgradeDuration();
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanUpgradeDurationMillis();
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
-                .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
 
         // Set filtered scan flag
         final boolean isFiltered = true;
@@ -953,12 +949,13 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
                     // Wait for upgrade and downgrade duration
-                    int max_duration =
-                            DEFAULT_SCAN_UPGRADE_DURATION_MILLIS
-                                            > DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS
-                                    ? DEFAULT_SCAN_UPGRADE_DURATION_MILLIS
-                                    : DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
-                    advanceTime(max_duration);
+                    var maxDuration =
+                            DEFAULT_SCAN_UPGRADE_DURATION.compareTo(
+                                                    DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
+                                            > 0
+                                    ? DEFAULT_SCAN_UPGRADE_DURATION
+                                    : DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
+                    advanceTime(maxDuration);
                     mLooper.dispatchAll();
                     assertThat(client.getSettings().getScanMode()).isEqualTo(scanMode);
                 });
@@ -975,9 +972,9 @@ public class ScanManagerTest {
         scanModeMap.put(SCAN_MODE_LOW_LATENCY, SCAN_MODE_BALANCED);
         scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_AMBIENT_DISCOVERY);
 
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
 
         for (int i = 0; i < scanModeMap.size(); i++) {
             int scanMode = scanModeMap.keyAt(i);
@@ -998,7 +995,7 @@ public class ScanManagerTest {
             setConnectingState(true);
             assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
             // Wait for downgrade duration
-            advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS);
+            advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING);
             mLooper.dispatchAll();
             assertThat(client.getSettings().getScanMode()).isEqualTo(scanMode);
         }
@@ -1015,9 +1012,9 @@ public class ScanManagerTest {
         scanModeMap.put(SCAN_MODE_LOW_LATENCY, SCAN_MODE_LOW_LATENCY);
         scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_SCREEN_OFF_BALANCED);
 
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
 
         for (int i = 0; i < scanModeMap.size(); i++) {
             int scanMode = scanModeMap.keyAt(i);
@@ -1039,7 +1036,7 @@ public class ScanManagerTest {
             // Turn off screen
             setScreenOn(false);
             // Move time forward so that stop connecting action can be dispatched
-            advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS);
+            advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING);
             mLooper.dispatchAll();
             assertThat(mScanManager.getRegularScanQueue()).contains(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
@@ -1049,9 +1046,9 @@ public class ScanManagerTest {
 
     @Test
     public void testDowngradeDuringScanForConcurrencyBackground() {
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
 
         // Set filtered scan flag
         final boolean isFiltered = true;
@@ -1077,7 +1074,7 @@ public class ScanManagerTest {
                     // Set as background app
                     setAppImportance(false, Binder.getCallingUid());
                     // Wait for downgrade duration
-                    advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS);
+                    advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING);
                     mLooper.dispatchAll();
                     assertThat(mScanManager.getRegularScanQueue()).contains(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
@@ -1887,9 +1884,9 @@ public class ScanManagerTest {
         // Set filtered scan flag
         final boolean isFiltered = true;
 
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
 
         // Turn off screen
         setScreenOn(false);
@@ -1911,9 +1908,9 @@ public class ScanManagerTest {
         // Set filtered scan flag
         final boolean isFiltered = true;
 
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
 
         // Turn off screen
         setScreenOn(false);
@@ -1934,9 +1931,9 @@ public class ScanManagerTest {
 
     @Test
     public void profileConnectionStateChanged_sendStartConnectionMessage() {
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
         assertThat(mScanManager.mIsConnecting).isFalse();
 
         mScanManager.handleBluetoothProfileConnectionStateChanged(
@@ -1948,9 +1945,9 @@ public class ScanManagerTest {
 
     @Test
     public void multipleProfileConnectionStateChanged_updateCountersCorrectly() {
-        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS)
+        doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
                 .when(mAdapterService)
-                .getScanDowngradeDurationMillis();
+                .getScanDowngradeDuration();
         assertThat(mScanManager.mIsConnecting).isFalse();
 
         mScanManager.handleBluetoothProfileConnectionStateChanged(
