@@ -36,9 +36,8 @@ object ScanUtil {
 
     @JvmField val SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW = 512.milliseconds.toJavaDuration()
     @JvmField val SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL = 10240.milliseconds.toJavaDuration()
-
-    const val SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS = 183
-    const val SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS = 730
+    @JvmField val SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW = 183.milliseconds.toJavaDuration()
+    @JvmField val SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL = 730.milliseconds.toJavaDuration()
 
     // Result types defined in bt stack
     const val SCAN_RESULT_TYPE_TRUNCATED = 1

@@ -1896,7 +1896,7 @@ class ScanManager {
             case ScanSettings.SCAN_MODE_SCREEN_OFF ->
                     (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
             case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    mAdapterService.getScreenOffBalancedWindowMillis();
+                    (int) mAdapterService.getScreenOffBalancedWindow().toMillis();
             default ->
                     Settings.Global.getInt(
                             resolver,
@@ -1932,7 +1932,7 @@ class ScanManager {
             case ScanSettings.SCAN_MODE_SCREEN_OFF ->
                     (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
             case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    mAdapterService.getScreenOffBalancedIntervalMillis();
+                    (int) mAdapterService.getScreenOffBalancedInterval().toMillis();
             default ->
                     Settings.Global.getInt(
                             resolver,

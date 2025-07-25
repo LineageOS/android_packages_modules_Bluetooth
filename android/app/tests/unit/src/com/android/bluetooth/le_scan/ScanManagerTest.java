@@ -45,8 +45,8 @@ import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_INTER
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_WINDOW_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW;
 
@@ -191,15 +191,15 @@ public class ScanManagerTest {
         doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW)
                 .when(mAdapterService)
                 .getScreenOffLowPowerWindow();
-        doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS)
+        doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW)
                 .when(mAdapterService)
-                .getScreenOffBalancedWindowMillis();
+                .getScreenOffBalancedWindow();
         doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL)
                 .when(mAdapterService)
                 .getScreenOffLowPowerInterval();
-        doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS)
+        doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL)
                 .when(mAdapterService)
-                .getScreenOffBalancedIntervalMillis();
+                .getScreenOffBalancedInterval();
         doReturn(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS)
                 .when(mAdapterService)
                 .getTotalNumOfTrackableAdvertisements();
