@@ -57,7 +57,7 @@ void GmapClient::DebugDump(std::stringstream &stream) {
 bool GmapClient::IsGmapClientEnabled() {
   bool system_prop = osi_property_get_bool("bluetooth.profile.gmap.enabled", false);
   bool is_gmap_supported_in_software_datapath =
-          android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+          android::sysprop::bluetooth::LeAudio::is_software_datapath_supported_test().value_or(
                   false);
 
   bool result =

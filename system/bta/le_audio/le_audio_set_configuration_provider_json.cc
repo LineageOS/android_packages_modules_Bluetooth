@@ -91,12 +91,11 @@ struct AudioSetConfigurationProviderJson {
   static constexpr auto kDefaultScenario = "Media";
 
   AudioSetConfigurationProviderJson(types::CodecLocation location) {
-    bool is_gmap_supported_in_software_datapath =
-            android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+    bool is_software_datapath_supported_test =
+            android::sysprop::bluetooth::LeAudio::is_software_datapath_supported_test().value_or(
                     false);
-    const auto& selected_scenarios = is_gmap_supported_in_software_datapath
-                                             ? kLeAudioTestSetScenarios
-                                             : kLeAudioSetScenarios;
+    const auto& selected_scenarios =
+            is_software_datapath_supported_test ? kLeAudioTestSetScenarios : kLeAudioSetScenarios;
     log::info("Using set scenarios: {}", selected_scenarios.back().second);
 
     log::assert_that(LoadContent(kLeAudioSetConfigs, selected_scenarios, location),

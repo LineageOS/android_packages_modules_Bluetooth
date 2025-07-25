@@ -2710,7 +2710,7 @@
     {
       "system_properties": {
         "bluetooth.profile.gmap.enabled": "true",
-        "bluetooth.le_audio.gmap.software_datapath.enabled": "true",
+        "bluetooth.le_audio.software_datapath_test.enabled": "true",
         "bluetooth.leaudio.dual_bidirection_swb.supported": "true",
         "bluetooth.auto_connect_profiles.enabled": "true"
       },
