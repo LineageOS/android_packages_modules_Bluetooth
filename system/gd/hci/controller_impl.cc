@@ -1548,7 +1548,6 @@ uint64_t ControllerImpl::MaskLeEventMask(HciVersion version, uint64_t mask) {
 
 bool ControllerImpl::IsRpaGenerationSupported(void) const {
   static const bool rpa_supported =
-          com::android::bluetooth::flags::rpa_offload_to_bt_controller() &&
           os::GetSystemPropertyBool(kPropertyRpaOffload, kDefaultRpaOffload) &&
           IsSupported(OpCode::LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT_V2);
 
