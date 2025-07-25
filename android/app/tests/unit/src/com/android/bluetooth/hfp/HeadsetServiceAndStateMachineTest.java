@@ -206,6 +206,7 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(mVoiceRecognitionWakeLock).when(mSystemInterface).getVoiceRecognitionWakeLock();
         doReturn(true).when(mSystemInterface).isCallIdle();
         doReturn(false).when(mSystemInterface).isScoManagedByAudioEnabled();
+        doReturn(true).when(mSystemInterface).requestBluetoothAudio(any(BluetoothDevice.class));
         if (android.media.audio.Flags.scoManagedByAudio()) {
             doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
         }
@@ -2146,7 +2147,7 @@ public class HeadsetServiceAndStateMachineTest {
 
         verifyActiveDeviceChanged_scoManagement(device);
 
-        verify(mAudioManager).setCommunicationDevice(mAudioDeviceInfo);
+        verify(mSystemInterface).requestBluetoothAudio(device);
     }
 
     /*

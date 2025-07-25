@@ -400,4 +400,19 @@ class HeadsetSystemInterface {
         }
         return false;
     }
+
+    /**
+     * Request a call endpoint change.
+     *
+     * @return false on error, true once telecom api is called
+     */
+    boolean requestBluetoothAudio(BluetoothDevice device) {
+        BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
+        if (bluetoothInCallService == null) {
+            Log.e(TAG, "getNetworkOperator() failed: mBluetoothInCallService is null");
+            return false;
+        }
+        bluetoothInCallService.requestBluetoothAudio(device);
+        return true;
+    }
 }
