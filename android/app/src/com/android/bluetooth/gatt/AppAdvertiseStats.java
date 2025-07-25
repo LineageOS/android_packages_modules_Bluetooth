@@ -100,6 +100,7 @@ class AppAdvertiseStats {
     private boolean mAnonymous = false;
     private boolean mConnectable = false;
     private boolean mScannable = false;
+    private boolean mDiscoverable = false;
     private @Nullable AppAdvertiserData mAdvertisingData = null;
     private @Nullable AppAdvertiserData mScanResponseData = null;
     private @Nullable AppAdvertiserData mPeriodicAdvertisingData = null;
@@ -142,6 +143,7 @@ class AppAdvertiseStats {
             mAnonymous = parameters.isAnonymous();
             mConnectable = parameters.isConnectable();
             mScannable = parameters.isScannable();
+            mDiscoverable = parameters.isDiscoverable();
         }
 
         if (advertiseData != null) {
@@ -310,6 +312,7 @@ class AppAdvertiseStats {
             mAnonymous = parameters.isAnonymous();
             mConnectable = parameters.isConnectable();
             mScannable = parameters.isScannable();
+            mDiscoverable = parameters.isDiscoverable();
         }
     }
 
@@ -534,6 +537,8 @@ class AppAdvertiseStats {
                 .append(stats.mConnectable);
         sb.append("\n        └Scannable                                      : ")
                 .append(stats.mScannable);
+        sb.append("\n        └Discoverable                                   : ")
+                .append(stats.mDiscoverable);
 
         if (stats.mAdvertisingData != null) {
             sb.append("\n        └Advertise Data:");
