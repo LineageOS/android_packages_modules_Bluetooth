@@ -278,11 +278,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * <ul>
      *   <li>{@link BluetoothStatusCodes#SUCCESS},
      *   <li>{@link BluetoothStatusCodes#ERROR_UNKNOWN},
-     *   <li>{@link BluetoothStatusCodes#INSUFFICIENT_RESOURCES},
-     *   <li>{@link BluetoothStatusCodes#SDP_DISCOVERY_FAILED},
-     *   <li>{@link BluetoothStatusCodes#STREAM_CONNECTION_FAILED},
-     *   <li>{@link BluetoothStatusCodes#ROLE_SWITCH_FAILED},
-     *   <li>{@link BluetoothStatusCodes#AVDTP_DISCOVERY_FAILED}.
+     *   <li>{@link BluetoothStatusCodes#ERROR_INSUFFICIENT_RESOURCES},
+     *   <li>{@link BluetoothStatusCodes#ERROR_SDP_DISCOVERY_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ERROR_STREAM_CONNECTION_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ERROR_ROLE_SWITCH_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ERROR_AVDTP_DISCOVERY_FAILED}.
      * </ul>
      */
     @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)

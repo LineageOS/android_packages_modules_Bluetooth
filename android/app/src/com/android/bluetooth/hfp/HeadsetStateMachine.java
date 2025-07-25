@@ -2744,9 +2744,9 @@ class HeadsetStateMachine extends StateMachine {
     private static int reasonToBluetoothStatusCode(int reason) {
         return switch (reason) {
             case /* BTA_AG_SUCCESS */ 0 -> BluetoothStatusCodes.SUCCESS;
-            case /* BTA_AG_FAIL_SDP */ 1 -> BluetoothStatusCodes.SDP_DISCOVERY_FAILED;
-            case /* BTA_AG_FAIL_RFCOMM */ 2 -> BluetoothStatusCodes.RFCOMM_CONNECTION_FAILED;
-            case /* BTA_AG_FAIL_RESOURCES */ 3 -> BluetoothStatusCodes.INSUFFICIENT_RESOURCES;
+            case /* BTA_AG_FAIL_SDP */ 1 -> BluetoothStatusCodes.ERROR_SDP_DISCOVERY_FAILED;
+            case /* BTA_AG_FAIL_RFCOMM */ 2 -> BluetoothStatusCodes.ERROR_RFCOMM_CONNECTION_FAILED;
+            case /* BTA_AG_FAIL_RESOURCES */ 3 -> BluetoothStatusCodes.ERROR_INSUFFICIENT_RESOURCES;
             default -> BluetoothStatusCodes.ERROR_UNKNOWN;
         };
     }
