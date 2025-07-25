@@ -22,7 +22,6 @@ aconfig_declarations {
         "framework.aconfig",
         "gap.aconfig",
         "gatt.aconfig",
-        "hal.aconfig",
         "hap.aconfig",
         "hci.aconfig",
         "hearing_aid.aconfig",
