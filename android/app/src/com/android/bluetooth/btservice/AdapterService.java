@@ -4522,11 +4522,10 @@ public class AdapterService extends Service {
             DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffLowPowerWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
+    private Duration mScreenOffLowPowerWindow = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffLowPowerIntervalMillis =
-            ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
+    private Duration mScreenOffLowPowerInterval = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL;
 
     @GuardedBy("mDeviceConfigLock")
     private int mScreenOffBalancedWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
@@ -4591,6 +4590,20 @@ public class AdapterService extends Service {
         }
     }
 
+    /** Returns SCREEN_OFF low power scan window. */
+    public Duration getScreenOffLowPowerWindow() {
+        synchronized (mDeviceConfigLock) {
+            return mScreenOffLowPowerWindow;
+        }
+    }
+
+    /** Returns SCREEN_OFF low power scan interval. */
+    public Duration getScreenOffLowPowerInterval() {
+        synchronized (mDeviceConfigLock) {
+            return mScreenOffLowPowerInterval;
+        }
+    }
+
     /** Returns SCREEN_OFF_BALANCED scan window in millis. */
     public int getScreenOffBalancedWindowMillis() {
         synchronized (mDeviceConfigLock) {
@@ -4602,20 +4615,6 @@ public class AdapterService extends Service {
     public int getScreenOffBalancedIntervalMillis() {
         synchronized (mDeviceConfigLock) {
             return mScreenOffBalancedIntervalMillis;
-        }
-    }
-
-    /** Returns SCREEN_OFF low power scan window in millis. */
-    public int getScreenOffLowPowerWindowMillis() {
-        synchronized (mDeviceConfigLock) {
-            return mScreenOffLowPowerWindowMillis;
-        }
-    }
-
-    /** Returns SCREEN_OFF low power scan interval in millis. */
-    public int getScreenOffLowPowerIntervalMillis() {
-        synchronized (mDeviceConfigLock) {
-            return mScreenOffLowPowerIntervalMillis;
         }
     }
 
@@ -4704,14 +4703,21 @@ public class AdapterService extends Service {
                                         (int)
                                                 DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
                                                         .toMillis()));
-                mScreenOffLowPowerWindowMillis =
-                        properties.getInt(
-                                SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
-                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS);
-                mScreenOffLowPowerIntervalMillis =
-                        properties.getInt(
-                                SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
-                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS);
+                mScreenOffLowPowerWindow =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
+                                        (int)
+                                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW
+                                                        .toMillis()));
+
+                mScreenOffLowPowerInterval =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
+                                        (int)
+                                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL
+                                                        .toMillis()));
                 mScreenOffBalancedWindowMillis =
                         properties.getInt(
                                 SCREEN_OFF_BALANCED_WINDOW_MILLIS,

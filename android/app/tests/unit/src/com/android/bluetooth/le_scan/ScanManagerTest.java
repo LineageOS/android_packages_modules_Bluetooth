@@ -47,8 +47,8 @@ import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVA
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -188,15 +188,15 @@ public class ScanManagerTest {
                 .when(mAdapterService)
                 .getOffloadedScanResultStorage();
         doReturn(TEST_SCAN_QUOTA_COUNT).when(mAdapterService).getScanQuotaCount();
-        doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS)
+        doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW)
                 .when(mAdapterService)
-                .getScreenOffLowPowerWindowMillis();
+                .getScreenOffLowPowerWindow();
         doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS)
                 .when(mAdapterService)
                 .getScreenOffBalancedWindowMillis();
-        doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS)
+        doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL)
                 .when(mAdapterService)
-                .getScreenOffLowPowerIntervalMillis();
+                .getScreenOffLowPowerInterval();
         doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS)
                 .when(mAdapterService)
                 .getScreenOffBalancedIntervalMillis();
@@ -1584,8 +1584,8 @@ public class ScanManagerTest {
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                         eq(AppScanStats.convertScanMode(mostAggressiveClient.getScanModeApp())),
-                        eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS),
-                        eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS),
+                        eq(SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL.toMillis()),
+                        eq(SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW.toMillis()),
                         eq(false),
                         eq(scanTestDuration),
                         eq(IMPORTANCE_FOREGROUND_SERVICE + 1),

@@ -1439,7 +1439,7 @@ class ScanManager {
                                     Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
                                     SCAN_MODE_BALANCED_WINDOW_MS);
                     case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                            mAdapterService.getScreenOffLowPowerWindowMillis();
+                            (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
                     default ->
                             Settings.Global.getInt(
                                     resolver,
@@ -1460,7 +1460,7 @@ class ScanManager {
                                     Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
                                     SCAN_MODE_BALANCED_INTERVAL_MS);
                     case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                            mAdapterService.getScreenOffLowPowerIntervalMillis();
+                            (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
                     default ->
                             Settings.Global.getInt(
                                     resolver,
@@ -1894,7 +1894,7 @@ class ScanManager {
                             Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
                             SCAN_MODE_LOW_POWER_WINDOW_MS);
             case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    mAdapterService.getScreenOffLowPowerWindowMillis();
+                    (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
             case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
                     mAdapterService.getScreenOffBalancedWindowMillis();
             default ->
@@ -1930,7 +1930,7 @@ class ScanManager {
                             Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
                             SCAN_MODE_LOW_POWER_INTERVAL_MS);
             case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    mAdapterService.getScreenOffLowPowerIntervalMillis();
+                    (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
             case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
                     mAdapterService.getScreenOffBalancedIntervalMillis();
             default ->

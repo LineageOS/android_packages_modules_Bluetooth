@@ -19,6 +19,8 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanSettings
 import android.util.Log
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 private const val TAG = "ScanUtil"
 
@@ -32,8 +34,9 @@ object ScanUtil {
     const val SCAN_MODE_LOW_LATENCY_WINDOW_MS = 100
     const val SCAN_MODE_LOW_LATENCY_INTERVAL_MS = 100
 
-    const val SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS = 512
-    const val SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS = 10240
+    @JvmField val SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW = 512.milliseconds.toJavaDuration()
+    @JvmField val SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL = 10240.milliseconds.toJavaDuration()
+
     const val SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS = 183
     const val SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS = 730
 
