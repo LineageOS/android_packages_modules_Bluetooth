@@ -60,7 +60,7 @@ import java.util.concurrent.TimeoutException;
 public class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private static final String TAG = BluetoothServiceBinder.class.getSimpleName();
 
-    private final BluetoothManagerService mService;
+    private final BluetoothManagerServiceApi mApi;
     private final Context mContext;
     private final UserManager mUserManager;
     private final AppOpsManager mAppOpsManager;
@@ -70,8 +70,8 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final Messenger mMessenger;
 
     BluetoothServiceBinder(
-            Looper looper, BluetoothManagerService bms, Context ctx, UserManager userManager) {
-        mService = bms;
+            Looper looper, BluetoothManagerServiceApi api, Context ctx, UserManager userManager) {
+        mApi = api;
         mContext = ctx;
         mUserManager = userManager;
         mAppOpsManager = requireNonNull(ctx.getSystemService(AppOpsManager.class));
@@ -87,11 +87,11 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
                         mPermissionManager,
                         mAppOpsManager,
                         mContext.getAttributionSource());
-        mMessenger = new ServiceMessenger(looper, permissionChecker, mService).getMessenger();
+        mMessenger = new ServiceMessenger(looper, permissionChecker, mApi).getMessenger();
     }
 
     private void checkForStartedUsed(AttributionSource source) {
-        if (mService.mUserContext != null) {
+        if (mApi.getUserContext() != null) {
             return;
         }
         var callingPid = Binder.getCallingPid();
@@ -150,7 +150,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             throw new IllegalStateException("Binder call unavailable when using messenger");
         }
         requireNonNull(callback);
-        return postFromBinder(() -> mService.registerAdapter(callback));
+        return postFromBinder(() -> mApi.registerAdapter(callback));
     }
 
     @Override
@@ -159,12 +159,12 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             throw new IllegalStateException("Binder call unavailable when using messenger");
         }
         requireNonNull(callback);
-        postFromBinder(() -> mService.unregisterAdapter(callback));
+        postFromBinder(() -> mApi.unregisterAdapter(callback));
     }
 
     @Override
     public int getState() {
-        return mService.getState(); // This method is designed to work concurrently
+        return mApi.getState(); // This method is designed to work concurrently
     }
 
     @Override
@@ -191,7 +191,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return IBluetoothManager.DEFAULT_MAC_ADDRESS;
         }
 
-        return postFromBinder(() -> mService.getAddress());
+        return postFromBinder(() -> mApi.getAddress());
     }
 
     @Override
@@ -212,7 +212,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return null;
         }
 
-        return postFromBinder(() -> mService.getName());
+        return postFromBinder(() -> mApi.getName());
     }
 
     @Override
@@ -220,7 +220,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         if (Flags.systemServerMessenger()) {
             throw new IllegalStateException("Binder call unavailable when using messenger");
         }
-        return postFromBinder(() -> mService.isBleScanAvailable());
+        return postFromBinder(() -> mApi.isBleScanAvailable());
     }
 
     @Override
@@ -228,7 +228,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         if (Flags.systemServerMessenger()) {
             throw new IllegalStateException("Binder call unavailable when using messenger");
         }
-        return postFromBinder(() -> mService.isHearingAidProfileSupported());
+        return postFromBinder(() -> mApi.isHearingAidProfileSupported());
     }
 
     @Override
@@ -257,7 +257,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
         Log.d(TAG, "enable(" + reason + ", " + packageName + ")");
         checkForStartedUsed(source);
-        return postFromBinder(() -> mService.enable(reason, packageName));
+        return postFromBinder(() -> mApi.enable(reason, packageName));
     }
 
     @Override
@@ -286,7 +286,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
         Log.d(TAG, "enableBle(" + packageName + ", " + token + ")");
         checkForStartedUsed(source);
-        return postFromBinder(() -> mService.enableBle(packageName, token));
+        return postFromBinder(() -> mApi.enableBle(packageName, token));
     }
 
     @Override
@@ -318,7 +318,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
         Log.d(TAG, "enableNoAutoConnect(" + packageName + ")");
         checkForStartedUsed(source);
-        return postFromBinder(() -> mService.enableNoAutoConnect(packageName));
+        return postFromBinder(() -> mApi.enableNoAutoConnect(packageName));
     }
 
     @Override
@@ -349,7 +349,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         var packageName = source.getPackageName();
 
         Log.d(TAG, "disable(" + packageName + ", " + persist + ")");
-        return postFromBinder(() -> mService.disable(packageName, persist));
+        return postFromBinder(() -> mApi.disable(packageName, persist));
     }
 
     @Override
@@ -377,7 +377,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         var packageName = source.getPackageName();
 
         Log.d(TAG, "disableBle(" + packageName + ", " + token + ")");
-        return postFromBinder(() -> mService.disableBle(packageName, token));
+        return postFromBinder(() -> mApi.disableBle(packageName, token));
     }
 
     @Override
@@ -395,7 +395,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "factoryReset(0)");
-        return postFromBinder(() -> mService.factoryReset(0));
+        return postFromBinder(() -> mApi.factoryReset(0));
     }
 
     @Override
@@ -405,7 +405,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return postFromBinder(() -> mService.setBtHciSnoopLogMode(mode));
+        return postFromBinder(() -> mApi.setBtHciSnoopLogMode(mode));
     }
 
     @Override
@@ -415,7 +415,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return postFromBinder(() -> mService.getBtHciSnoopLogMode());
+        return postFromBinder(() -> mApi.getBtHciSnoopLogMode());
     }
 
     @Override
@@ -425,7 +425,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         BtPermissionUtils.enforcePrivileged(mContext);
         Log.d(TAG, "isAutoOnSupported()");
-        return postFromBinder(() -> mService.isAutoOnSupported());
+        return postFromBinder(() -> mApi.isAutoOnSupported());
     }
 
     @Override
@@ -435,7 +435,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         BtPermissionUtils.enforcePrivileged(mContext);
         Log.d(TAG, "isAutoOnEnabled()");
-        return postFromBinder(() -> mService.isAutoOnEnabled());
+        return postFromBinder(() -> mApi.isAutoOnEnabled());
     }
 
     @Override
@@ -445,7 +445,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         BtPermissionUtils.enforcePrivileged(mContext);
         Log.d(TAG, "setAutoOnEnabled(" + status + ")");
-        postFromBinder(() -> mService.setAutoOnEnabled(status));
+        postFromBinder(() -> mApi.setAutoOnEnabled(status));
     }
 
     @Override
@@ -454,7 +454,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             @NonNull ParcelFileDescriptor out,
             @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new ShellCommand(this, mMessenger, mService::waitForState)
+        return new ShellCommand(this, mMessenger, mApi::waitForState)
                 .exec(
                         this,
                         in.getFileDescriptor(),
@@ -471,6 +471,6 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return;
         }
 
-        postFromBinder(() -> mService.dump(fd, writer, args));
+        postFromBinder(() -> mApi.dump(fd, writer, args));
     }
 }
