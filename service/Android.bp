@@ -38,6 +38,7 @@ java_library {
     installable: false,
     srcs: [
         ":Bluetooth-binder-aidl-for-service",
+        ":bluetooth-system-server-messenger",
         ":statslog-bluetooth-java-gen",
         "src/**/*.java",
         "src/ActiveLogs.kt",
@@ -127,6 +128,7 @@ android_robolectric_test {
 
     srcs: [
         ":Bluetooth-binder-aidl-for-service",
+        ":bluetooth-system-server-messenger",
         ":statslog-bluetooth-java-gen",
         "src/ActiveLogs.kt",
         "src/ActiveLogsTest.kt",

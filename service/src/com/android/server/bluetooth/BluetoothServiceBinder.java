@@ -428,7 +428,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             @NonNull ParcelFileDescriptor out,
             @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new ShellCommand(this, mService::waitForState)
+        return new ShellCommand(this, mMessenger, mService::waitForState)
                 .exec(
                         this,
                         in.getFileDescriptor(),
