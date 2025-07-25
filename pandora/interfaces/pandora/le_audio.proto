@@ -46,6 +46,20 @@ enum AudioUsage {
   AUDIO_USAGE_CALL_ASSISTANT = 17;
 }
 
+enum AudioSource {
+  AUDIO_SOURCE_DEFAULT = 0;
+  AUDIO_SOURCE_MIC = 1;
+  AUDIO_SOURCE_VOICE_UPLINK = 2;
+  AUDIO_SOURCE_VOICE_DOWNLINK = 3;
+  AUDIO_SOURCE_VOICE_CALL = 4;
+  AUDIO_SOURCE_CAMCORDER = 5;
+  AUDIO_SOURCE_VOICE_RECOGNITION = 6;
+  AUDIO_SOURCE_VOICE_COMMUNICATION = 7;
+  AUDIO_SOURCE_REMOTE_SUBMIX = 8;
+  AUDIO_SOURCE_UNPROCESSED = 9;
+  AUDIO_SOURCE_VOICE_PERFORMANCE = 10;
+}
+
 message OpenRequest {
   Connection connection = 1;
 }
@@ -84,6 +98,7 @@ message LeAudioCaptureAudioResponse {
 // Request of the `LeAudioPrepareRecorder` method.
 message LeAudioPrepareRecorderRequest {
   Connection connection = 1;
+  AudioSource audioSource = 2;
 }
 
 // Request of the `LeAudioStopRecorder` method.

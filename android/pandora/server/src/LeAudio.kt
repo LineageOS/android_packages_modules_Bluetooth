@@ -112,6 +112,28 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         }
     }
 
+    fun mapAudioSource(audioSource: AudioSource): Int {
+        return when (audioSource) {
+            AudioSource.AUDIO_SOURCE_DEFAULT -> MediaRecorder.AudioSource.DEFAULT
+            AudioSource.AUDIO_SOURCE_MIC -> MediaRecorder.AudioSource.MIC
+            AudioSource.AUDIO_SOURCE_VOICE_UPLINK -> MediaRecorder.AudioSource.VOICE_UPLINK
+            AudioSource.AUDIO_SOURCE_VOICE_DOWNLINK -> MediaRecorder.AudioSource.VOICE_DOWNLINK
+            AudioSource.AUDIO_SOURCE_VOICE_CALL -> MediaRecorder.AudioSource.VOICE_CALL
+            AudioSource.AUDIO_SOURCE_CAMCORDER -> MediaRecorder.AudioSource.CAMCORDER
+            AudioSource.AUDIO_SOURCE_VOICE_RECOGNITION ->
+                MediaRecorder.AudioSource.VOICE_RECOGNITION
+            AudioSource.AUDIO_SOURCE_VOICE_COMMUNICATION ->
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION
+            AudioSource.AUDIO_SOURCE_REMOTE_SUBMIX -> MediaRecorder.AudioSource.REMOTE_SUBMIX
+            AudioSource.AUDIO_SOURCE_UNPROCESSED -> MediaRecorder.AudioSource.UNPROCESSED
+            AudioSource.AUDIO_SOURCE_VOICE_PERFORMANCE ->
+                MediaRecorder.AudioSource.VOICE_PERFORMANCE
+            else -> {
+                MediaRecorder.AudioSource.DEFAULT
+            }
+        }
+    }
+
     override fun close() {
         bluetoothAdapter.closeProfileProxy(BluetoothProfile.LE_AUDIO, bluetoothLeAudio)
         scope.cancel()
@@ -208,6 +230,7 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         request: LeAudioPrepareRecorderRequest,
         responseObserver: StreamObserver<Empty>,
     ) {
+        val audioSource: AudioSource = request.audioSource
         grpcUnary<Empty>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
             Log.i(TAG, "leAudioPrepareRecorder: device=$device")
@@ -236,7 +259,7 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
             )
             mediaRecorder =
                 MediaRecorder(context).apply {
-                    setAudioSource(MediaRecorder.AudioSource.VOICE_PERFORMANCE)
+                    setAudioSource(mapAudioSource(audioSource))
                     setAudioSamplingRate(16000)
                     setOutputFormat(MediaRecorder.OutputFormat.AMR_WB)
                     setOutputFile(filePath)
