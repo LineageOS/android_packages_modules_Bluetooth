@@ -37,7 +37,6 @@ import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
-import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
 import static com.android.bluetooth.Utils.getBytesFromAddress;
@@ -4511,10 +4510,10 @@ public class AdapterService extends Service {
     private int mScanQuotaCount = DeviceConfigListener.DEFAULT_SCAN_QUOTA_COUNT;
 
     @GuardedBy("mDeviceConfigLock")
-    private long mScanQuotaWindowMillis = DeviceConfigListener.DEFAULT_SCAN_QUOTA_WINDOW_MILLIS;
+    private Duration mScanQuotaWindow = DeviceConfigListener.DEFAULT_SCAN_QUOTA_WINDOW;
 
     @GuardedBy("mDeviceConfigLock")
-    private long mScanTimeoutMillis = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT_MILLIS;
+    private Duration mScanTimeout = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 
     @GuardedBy("mDeviceConfigLock")
     private int mScanUpgradeDurationMillis =
@@ -4566,17 +4565,17 @@ public class AdapterService extends Service {
         }
     }
 
-    /** Returns scan quota window in millis. */
-    public long getScanQuotaWindowMillis() {
+    /** Returns scan quota window. */
+    public Duration getScanQuotaWindow() {
         synchronized (mDeviceConfigLock) {
-            return mScanQuotaWindowMillis;
+            return mScanQuotaWindow;
         }
     }
 
-    /** Returns scan timeout in millis. */
-    public long getScanTimeoutMillis() {
+    /** Returns scan timeout. */
+    public Duration getScanTimeout() {
         synchronized (mDeviceConfigLock) {
-            return mScanTimeoutMillis;
+            return mScanTimeout;
         }
     }
 
@@ -4652,10 +4651,10 @@ public class AdapterService extends Service {
                 "⊈0016AAFE40/00FFFFFFF0,⊆0016AAFE/00FFFFFF,⊆00FF4C0002/00FFFFFFFF";
 
         private static final int DEFAULT_SCAN_QUOTA_COUNT = 5;
-        private static final long DEFAULT_SCAN_QUOTA_WINDOW_MILLIS = 30 * SECOND_IN_MILLIS;
+        private static final Duration DEFAULT_SCAN_QUOTA_WINDOW = Duration.ofSeconds(30);
 
         @VisibleForTesting
-        public static final long DEFAULT_SCAN_TIMEOUT_MILLIS = 10 * MINUTE_IN_MILLIS;
+        public static final Duration DEFAULT_SCAN_TIMEOUT = Duration.ofMinutes(10);
 
         @VisibleForTesting
         public static final int DEFAULT_SCAN_UPGRADE_DURATION_MILLIS = (int) SECOND_IN_MILLIS * 6;
@@ -4686,11 +4685,15 @@ public class AdapterService extends Service {
                                         LOCATION_DENYLIST_ADVERTISING_DATA,
                                         DEFAULT_LOCATION_DENYLIST_ADVERTISING_DATA));
                 mScanQuotaCount = properties.getInt(SCAN_QUOTA_COUNT, DEFAULT_SCAN_QUOTA_COUNT);
-                mScanQuotaWindowMillis =
-                        properties.getLong(
-                                SCAN_QUOTA_WINDOW_MILLIS, DEFAULT_SCAN_QUOTA_WINDOW_MILLIS);
-                mScanTimeoutMillis =
-                        properties.getLong(SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT_MILLIS);
+                mScanQuotaWindow =
+                        Duration.ofMillis(
+                                properties.getLong(
+                                        SCAN_QUOTA_WINDOW_MILLIS,
+                                        DEFAULT_SCAN_QUOTA_WINDOW.toMillis()));
+                mScanTimeout =
+                        Duration.ofMillis(
+                                properties.getLong(
+                                        SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT.toMillis()));
                 mScanUpgradeDurationMillis =
                         properties.getInt(
                                 SCAN_UPGRADE_DURATION_MILLIS, DEFAULT_SCAN_UPGRADE_DURATION_MILLIS);
