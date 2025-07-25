@@ -1675,6 +1675,12 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr, const RawAddres
           "SDP AVRCP DB Version 0x{:x}, browse supported {}, cover art supported "
           "{}",
           avrcp_peer_features, browsing_supported, coverart_supported);
+
+  if (avrcp_version < AVRC_REV_1_4) {
+    log::info("Reset Player App Settings Feature");
+    p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION] &= ~AVRCP_APP_SETTINGS_BITMASK;
+  }
+
   if (avrcp_version < AVRC_REV_1_4 || !browsing_supported) {
     log::info("Reset Browsing Feature");
     p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION] &= ~AVRCP_BROWSE_SUPPORT_BITMASK;
@@ -1684,6 +1690,11 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr, const RawAddres
   if (avrcp_version < AVRC_REV_1_6 || !coverart_supported) {
     log::info("Reset CoverArt Feature");
     p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION - 1] &= ~AVRCP_CA_SUPPORT_BITMASK;
+  }
+
+  if (avrcp_version >= AVRC_REV_1_4) {
+    log::info("Set Player App Settings Feature");
+    p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION] |= AVRCP_APP_SETTINGS_BITMASK;
   }
 
   if (avrcp_version >= AVRC_REV_1_4 && browsing_supported) {
