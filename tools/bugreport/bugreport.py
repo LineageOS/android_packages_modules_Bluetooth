@@ -65,7 +65,7 @@ def main():
 
     a2dp = subparsers.add_parser('a2dp', description='Extract A2DP profile information')
     a2dp.set_defaults(func=run_a2dp)
-    a2dp.add_argument("path", type=Path, help="path to the bugreport file")
+    a2dp.add_argument("path", type=Path, help="path to the bugreport or btsnoop file")
     a2dp.add_argument("--signal-lcid", type=lambda x: int(x,0), help="override the signaling channel LCID")
     a2dp.add_argument("--signal-rcid", type=lambda x: int(x,0), help="override the signaling channel RCID")
     a2dp.add_argument("--stream-cid", type=lambda x: int(x,0), help="override the stream CID")
@@ -74,7 +74,7 @@ def main():
 
     asha = subparsers.add_parser('asha', description='Extract ASHA profile information')
     asha.set_defaults(func=run_asha)
-    asha.add_argument("path", type=Path, help="path to the bugreport file")
+    asha.add_argument("path", type=Path, help="path to the bugreport or btsnoop file")
     asha.add_argument("--psm", type=lambda x: int(x,0), help="override the stream PSM")
 
     args = parser.parse_args()
