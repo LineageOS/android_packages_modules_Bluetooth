@@ -602,7 +602,7 @@ TEST_F(LeScanningManagerAndroidHciTest, scan_filter_add_ad_type_test) {
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, read_batch_scan_result) {
-  le_scanning_manager->BatchScanConifgStorage(100, 0, 95, 0x00);
+  le_scanning_manager->BatchScanConfigStorage(100, 0, 95, 0x00);
   sync_client_handler();
   ASSERT_EQ(OpCode::LE_BATCH_SCAN, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
