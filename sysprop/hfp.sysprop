@@ -58,3 +58,12 @@ prop {
     access: Readonly
     prop_name: "bluetooth.hfp.answer_call_with_video.enabled"
 }
+
+# Used to determine if incoming ring indication need to be sent to remote or not in DND mode
+prop {
+    api_name: "send_ringtone_on_dnd"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.hfp.send_ringtone_on_dnd.enabled"
+}
