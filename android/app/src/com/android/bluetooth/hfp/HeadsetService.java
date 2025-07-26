@@ -961,7 +961,7 @@ public class HeadsetService extends ConnectableProfile {
         }
 
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
-            if (startScoViaAudioManager(device)) {
+            if (mSystemInterface.requestBluetoothAudio(device)) {
                 logScoSessionMetric(
                         device,
                         BluetoothStatsLog
@@ -972,34 +972,6 @@ public class HeadsetService extends ConnectableProfile {
             }
         }
         enableSwbCodec(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX, true, device);
-        return true;
-    }
-
-    boolean startScoViaAudioManager(BluetoothDevice device) {
-        // when isScoManagedByAudio is on, tell AudioManager to connect SCO
-        AudioManager am = mSystemInterface.getAudioManager();
-        Optional<AudioDeviceInfo> audioDeviceInfo =
-                am.getAvailableCommunicationDevices().stream()
-                        .filter(
-                                x ->
-                                        x.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                                                && x.getAddress().equals(device.getAddress()))
-                        .findFirst();
-        if (audioDeviceInfo.isEmpty()) {
-            Log.w(
-                    TAG,
-                    "Cannot find audioDeviceInfo that matches device="
-                            + device
-                            + " to create the SCO");
-            return false;
-        }
-
-        mHandler.post(
-                () -> {
-                    am.setCommunicationDevice(audioDeviceInfo.get());
-
-                    Log.i(TAG, "Audio Manager will initiate the SCO");
-                });
         return true;
     }
 
@@ -1875,7 +1847,7 @@ public class HeadsetService extends ConnectableProfile {
                 }
                 mVoiceRecognitionStarted = false;
             }
-            if (!mSystemInterface.deactivateVoiceRecognition()) {
+            if (!mSystemInterface.deactivateVoiceRecognition(fromDevice)) {
                 Log.w(TAG, "stopVoiceRecognitionByHeadset: failed request from " + fromDevice);
                 return false;
             }
@@ -2415,7 +2387,7 @@ public class HeadsetService extends ConnectableProfile {
                                     TAG,
                                     "Starting pending sco connection for "
                                             + mPendingScoConnectionDevice);
-                            startScoViaAudioManager(mPendingScoConnectionDevice);
+                            mSystemInterface.requestBluetoothAudio(mPendingScoConnectionDevice);
                             mPendingScoConnectionDevice = null;
                         } else {
                             Log.d(
@@ -2709,7 +2681,7 @@ public class HeadsetService extends ConnectableProfile {
                 mPendingScoConnectionDevice = device;
             } else {
                 Log.i(TAG, "processAtBcc for device " + device);
-                startScoViaAudioManager(device);
+                mSystemInterface.requestBluetoothAudio(device);
             }
         }
     }

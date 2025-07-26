@@ -181,7 +181,8 @@ class Btsnoop:
                     )
 
                     if status == 0:
-                        remote_names[bd_addr] = remote_name.decode("utf-8")
+                        remote_name = remote_name.split(b'\x00')[0]
+                        remote_names[bd_addr] = remote_name.decode("utf-8", errors="replace")
 
         self.acl_connections = []
         self.le_acl_connections = []

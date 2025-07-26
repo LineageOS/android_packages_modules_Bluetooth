@@ -1721,7 +1721,7 @@ void LeScanningManagerImpl::ScanFilterAdd(
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan_filter_add, filter_index, filters);
 }
 
-void LeScanningManagerImpl::BatchScanConifgStorage(uint8_t batch_scan_full_max,
+void LeScanningManagerImpl::BatchScanConfigStorage(uint8_t batch_scan_full_max,
                                                    uint8_t batch_scan_truncated_max,
                                                    uint8_t batch_scan_notify_threshold,
                                                    ScannerId scanner_id) {

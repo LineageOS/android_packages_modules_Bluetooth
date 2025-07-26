@@ -378,8 +378,12 @@ class HeadsetSystemInterface {
      *     BluetoothHeadset#stopVoiceRecognition(BluetoothDevice)} callback that will then trigger
      *     {@link HeadsetService#stopVoiceRecognition(BluetoothDevice)}, false if failed to activate
      */
-    boolean deactivateVoiceRecognition() {
-        // TODO: need a method to deactivate voice recognition on Android
+    boolean deactivateVoiceRecognition(BluetoothDevice device) {
+        Intent intent = new Intent(Intent.ACTION_STOP_VOICE_COMMAND);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.putExtra(BluetoothProfile.EXTRA_PROFILE, BluetoothProfile.HEADSET);
+        Log.d(TAG, "deactivateVoiceRecognition, device: " + device);
+        mHeadsetService.sendBroadcast(intent);
         return true;
     }
 
@@ -399,5 +403,20 @@ class HeadsetSystemInterface {
             return mIsScoManagedByAudioEnabled;
         }
         return false;
+    }
+
+    /**
+     * Request a call endpoint change.
+     *
+     * @return false on error, true once telecom api is called
+     */
+    boolean requestBluetoothAudio(BluetoothDevice device) {
+        BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
+        if (bluetoothInCallService == null) {
+            Log.e(TAG, "getNetworkOperator() failed: mBluetoothInCallService is null");
+            return false;
+        }
+        bluetoothInCallService.requestBluetoothAudio(device);
+        return true;
     }
 }

@@ -351,7 +351,7 @@ void BleScannerInterfaceImpl::BatchScanConfigStorage(int client_if, int batch_sc
                                                      int batch_scan_trunc_max,
                                                      int batch_scan_notify_threshold, Callback cb) {
   log::info("in shim layer");
-  bluetooth::shim::GetScanning()->BatchScanConifgStorage(batch_scan_full_max, batch_scan_trunc_max,
+  bluetooth::shim::GetScanning()->BatchScanConfigStorage(batch_scan_full_max, batch_scan_trunc_max,
                                                          batch_scan_notify_threshold, client_if);
   do_in_jni_thread(base::BindOnce(cb, btm_status_value(tBTM_STATUS::BTM_SUCCESS)));
 }

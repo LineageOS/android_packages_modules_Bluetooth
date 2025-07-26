@@ -70,7 +70,7 @@ public:
                      std::vector<AdvertisingPacketContentFilterCommand> filters) override;
 
   /*Batch Scan*/
-  void BatchScanConifgStorage(uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max,
+  void BatchScanConfigStorage(uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max,
                               uint8_t batch_scan_notify_threshold, ScannerId scanner_id) override;
   void BatchScanEnable(BatchScanMode scan_mode, uint32_t duty_cycle_scan_window_slots,
                        uint32_t duty_cycle_scan_interval_slots,
