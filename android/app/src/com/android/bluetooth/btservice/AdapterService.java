@@ -164,6 +164,7 @@ import com.android.bluetooth.sdp.SdpManager;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
+import com.android.bluetooth.util.DeviceConfigUtils;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -4682,55 +4683,41 @@ public class AdapterService extends Service {
                                         DEFAULT_LOCATION_DENYLIST_ADVERTISING_DATA));
                 mScanQuotaCount = properties.getInt(SCAN_QUOTA_COUNT, DEFAULT_SCAN_QUOTA_COUNT);
                 mScanQuotaWindow =
-                        Duration.ofMillis(
-                                properties.getLong(
-                                        SCAN_QUOTA_WINDOW_MILLIS,
-                                        DEFAULT_SCAN_QUOTA_WINDOW.toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties, SCAN_QUOTA_WINDOW_MILLIS, DEFAULT_SCAN_QUOTA_WINDOW);
                 mScanTimeout =
-                        Duration.ofMillis(
-                                properties.getLong(
-                                        SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT.toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties, SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT);
                 mScanUpgradeDuration =
-                        Duration.ofMillis(
-                                properties.getInt(
-                                        SCAN_UPGRADE_DURATION_MILLIS,
-                                        (int) DEFAULT_SCAN_UPGRADE_DURATION.toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties,
+                                SCAN_UPGRADE_DURATION_MILLIS,
+                                DEFAULT_SCAN_UPGRADE_DURATION);
                 mScanDowngradeDuration =
-                        Duration.ofMillis(
-                                properties.getInt(
-                                        SCAN_DOWNGRADE_DURATION_MILLIS,
-                                        (int)
-                                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
-                                                        .toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties,
+                                SCAN_DOWNGRADE_DURATION_MILLIS,
+                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING);
                 mScreenOffLowPowerWindow =
-                        Duration.ofMillis(
-                                properties.getInt(
-                                        SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
-                                        (int)
-                                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW
-                                                        .toMillis()));
-
+                        DeviceConfigUtils.getDuration(
+                                properties,
+                                SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW);
                 mScreenOffLowPowerInterval =
-                        Duration.ofMillis(
-                                properties.getInt(
-                                        SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
-                                        (int)
-                                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL
-                                                        .toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties,
+                                SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL);
                 mScreenOffBalancedWindow =
-                        Duration.ofMillis(
-                                properties.getInt(
-                                        SCREEN_OFF_BALANCED_WINDOW_MILLIS,
-                                        (int)
-                                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW
-                                                        .toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties,
+                                SCREEN_OFF_BALANCED_WINDOW_MILLIS,
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW);
                 mScreenOffBalancedInterval =
-                        Duration.ofMillis(
-                                properties.getInt(
-                                        SCREEN_OFF_BALANCED_INTERVAL_MILLIS,
-                                        (int)
-                                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL
-                                                        .toMillis()));
+                        DeviceConfigUtils.getDuration(
+                                properties,
+                                SCREEN_OFF_BALANCED_INTERVAL_MILLIS,
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL);
                 mLeAudioAllowList = properties.getString(LE_AUDIO_ALLOW_LIST, "");
 
                 if (!mLeAudioAllowList.isEmpty()) {
