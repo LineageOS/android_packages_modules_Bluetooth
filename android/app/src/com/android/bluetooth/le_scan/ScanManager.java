@@ -91,6 +91,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -764,7 +765,7 @@ class ScanManager {
 
     @VisibleForTesting
     void handleConnectingState() {
-        if (mAdapterService.getScanDowngradeDurationMillis() == 0) {
+        if (mAdapterService.getScanDowngradeDuration() == Duration.ZERO) {
             return;
         }
         boolean updatedScanParams = false;
@@ -791,12 +792,12 @@ class ScanManager {
                     };
             mHandler.postDelayed(
                     mClearConnectingStateRunnable,
-                    mAdapterService.getScanDowngradeDurationMillis());
+                    mAdapterService.getScanDowngradeDuration().toMillis());
         } else {
             mClientHandler.removeMessages(MSG_STOP_CONNECTING);
             Message msg = mClientHandler.obtainMessage(MSG_STOP_CONNECTING);
             mClientHandler.sendMessageDelayed(
-                    msg, mAdapterService.getScanDowngradeDurationMillis());
+                    msg, mAdapterService.getScanDowngradeDuration().toMillis());
         }
     }
 
@@ -946,7 +947,7 @@ class ScanManager {
     }
 
     private boolean upgradeScanModeBeforeStart(ScanClient client) {
-        if (client.getStarted() || mAdapterService.getScanUpgradeDurationMillis() == 0) {
+        if (client.getStarted() || mAdapterService.getScanUpgradeDuration() == Duration.ZERO) {
             return false;
         }
         if (client.getAppScanStats().isEmpty() || client.getAppScanStats().get().hasRecentScan()) {
@@ -966,12 +967,12 @@ class ScanManager {
                         };
                 mRevertScanModeUpgradeRunnables.put(client, revertRunnable);
                 mHandler.postDelayed(
-                        revertRunnable, mAdapterService.getScanUpgradeDurationMillis());
+                        revertRunnable, mAdapterService.getScanUpgradeDuration().toMillis());
             } else {
                 Message msg = mClientHandler.obtainMessage(MSG_REVERT_SCAN_MODE_UPGRADE);
                 msg.obj = client;
                 mClientHandler.sendMessageDelayed(
-                        msg, mAdapterService.getScanUpgradeDurationMillis());
+                        msg, mAdapterService.getScanUpgradeDuration().toMillis());
             }
             final var scanModeString = getScanModeString(client.getSettings().getScanMode());
             Log.d(TAG, "Scan mode is upgraded to " + scanModeString + " for " + client);
@@ -1063,7 +1064,7 @@ class ScanManager {
 
     private boolean downgradeScanModeFromMaxDuty(ScanClient client) {
         if (client.getAppScanStats().isEmpty()
-                || mAdapterService.getScanDowngradeDurationMillis() == 0) {
+                || mAdapterService.getScanDowngradeDuration() == Duration.ZERO) {
             return false;
         }
         final int updatedScanMode =
@@ -1438,7 +1439,7 @@ class ScanManager {
                                     Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
                                     SCAN_MODE_BALANCED_WINDOW_MS);
                     case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                            mAdapterService.getScreenOffLowPowerWindowMillis();
+                            (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
                     default ->
                             Settings.Global.getInt(
                                     resolver,
@@ -1459,7 +1460,7 @@ class ScanManager {
                                     Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
                                     SCAN_MODE_BALANCED_INTERVAL_MS);
                     case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                            mAdapterService.getScreenOffLowPowerIntervalMillis();
+                            (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
                     default ->
                             Settings.Global.getInt(
                                     resolver,
@@ -1893,9 +1894,9 @@ class ScanManager {
                             Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
                             SCAN_MODE_LOW_POWER_WINDOW_MS);
             case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    mAdapterService.getScreenOffLowPowerWindowMillis();
+                    (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
             case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    mAdapterService.getScreenOffBalancedWindowMillis();
+                    (int) mAdapterService.getScreenOffBalancedWindow().toMillis();
             default ->
                     Settings.Global.getInt(
                             resolver,
@@ -1929,9 +1930,9 @@ class ScanManager {
                             Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
                             SCAN_MODE_LOW_POWER_INTERVAL_MS);
             case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    mAdapterService.getScreenOffLowPowerIntervalMillis();
+                    (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
             case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    mAdapterService.getScreenOffBalancedIntervalMillis();
+                    (int) mAdapterService.getScreenOffBalancedInterval().toMillis();
             default ->
                     Settings.Global.getInt(
                             resolver,

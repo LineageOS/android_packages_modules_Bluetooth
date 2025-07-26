@@ -37,7 +37,6 @@ import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
-import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
@@ -4516,26 +4515,23 @@ public class AdapterService extends Service {
     private Duration mScanTimeout = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScanUpgradeDurationMillis =
-            DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
+    private Duration mScanUpgradeDuration = DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScanDowngradeDurationMillis =
-            DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
+    private Duration mScanDowngradeDuration =
+            DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffLowPowerWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
+    private Duration mScreenOffLowPowerWindow = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffLowPowerIntervalMillis =
-            ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
+    private Duration mScreenOffLowPowerInterval = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffBalancedWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
+    private Duration mScreenOffBalancedWindow = ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffBalancedIntervalMillis =
-            ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
+    private Duration mScreenOffBalancedInterval = ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL;
 
     @GuardedBy("mDeviceConfigLock")
     private String mLeAudioAllowList;
@@ -4579,45 +4575,45 @@ public class AdapterService extends Service {
         }
     }
 
-    /** Returns scan upgrade duration in millis. */
-    public int getScanUpgradeDurationMillis() {
+    /** Returns scan upgrade duration. */
+    public Duration getScanUpgradeDuration() {
         synchronized (mDeviceConfigLock) {
-            return mScanUpgradeDurationMillis;
+            return mScanUpgradeDuration;
         }
     }
 
-    /** Returns scan downgrade duration in millis. */
-    public int getScanDowngradeDurationMillis() {
+    /** Returns scan downgrade duration. */
+    public Duration getScanDowngradeDuration() {
         synchronized (mDeviceConfigLock) {
-            return mScanDowngradeDurationMillis;
+            return mScanDowngradeDuration;
         }
     }
 
-    /** Returns SCREEN_OFF_BALANCED scan window in millis. */
-    public int getScreenOffBalancedWindowMillis() {
+    /** Returns SCREEN_OFF low power scan window. */
+    public Duration getScreenOffLowPowerWindow() {
         synchronized (mDeviceConfigLock) {
-            return mScreenOffBalancedWindowMillis;
+            return mScreenOffLowPowerWindow;
         }
     }
 
-    /** Returns SCREEN_OFF_BALANCED scan interval in millis. */
-    public int getScreenOffBalancedIntervalMillis() {
+    /** Returns SCREEN_OFF low power scan interval. */
+    public Duration getScreenOffLowPowerInterval() {
         synchronized (mDeviceConfigLock) {
-            return mScreenOffBalancedIntervalMillis;
+            return mScreenOffLowPowerInterval;
         }
     }
 
-    /** Returns SCREEN_OFF low power scan window in millis. */
-    public int getScreenOffLowPowerWindowMillis() {
+    /** Returns SCREEN_OFF_BALANCED scan window. */
+    public Duration getScreenOffBalancedWindow() {
         synchronized (mDeviceConfigLock) {
-            return mScreenOffLowPowerWindowMillis;
+            return mScreenOffBalancedWindow;
         }
     }
 
-    /** Returns SCREEN_OFF low power scan interval in millis. */
-    public int getScreenOffLowPowerIntervalMillis() {
+    /** Returns SCREEN_OFF_BALANCED scan interval. */
+    public Duration getScreenOffBalancedInterval() {
         synchronized (mDeviceConfigLock) {
-            return mScreenOffLowPowerIntervalMillis;
+            return mScreenOffBalancedInterval;
         }
     }
 
@@ -4657,11 +4653,11 @@ public class AdapterService extends Service {
         public static final Duration DEFAULT_SCAN_TIMEOUT = Duration.ofMinutes(10);
 
         @VisibleForTesting
-        public static final int DEFAULT_SCAN_UPGRADE_DURATION_MILLIS = (int) SECOND_IN_MILLIS * 6;
+        public static final Duration DEFAULT_SCAN_UPGRADE_DURATION = Duration.ofSeconds(6);
 
         @VisibleForTesting
-        public static final int DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS =
-                (int) SECOND_IN_MILLIS * 6;
+        public static final Duration DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING =
+                Duration.ofSeconds(6);
 
         public void start() {
             DeviceConfig.addOnPropertiesChangedListener(
@@ -4694,29 +4690,47 @@ public class AdapterService extends Service {
                         Duration.ofMillis(
                                 properties.getLong(
                                         SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT.toMillis()));
-                mScanUpgradeDurationMillis =
-                        properties.getInt(
-                                SCAN_UPGRADE_DURATION_MILLIS, DEFAULT_SCAN_UPGRADE_DURATION_MILLIS);
-                mScanDowngradeDurationMillis =
-                        properties.getInt(
-                                SCAN_DOWNGRADE_DURATION_MILLIS,
-                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS);
-                mScreenOffLowPowerWindowMillis =
-                        properties.getInt(
-                                SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
-                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS);
-                mScreenOffLowPowerIntervalMillis =
-                        properties.getInt(
-                                SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
-                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS);
-                mScreenOffBalancedWindowMillis =
-                        properties.getInt(
-                                SCREEN_OFF_BALANCED_WINDOW_MILLIS,
-                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS);
-                mScreenOffBalancedIntervalMillis =
-                        properties.getInt(
-                                SCREEN_OFF_BALANCED_INTERVAL_MILLIS,
-                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS);
+                mScanUpgradeDuration =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCAN_UPGRADE_DURATION_MILLIS,
+                                        (int) DEFAULT_SCAN_UPGRADE_DURATION.toMillis()));
+                mScanDowngradeDuration =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCAN_DOWNGRADE_DURATION_MILLIS,
+                                        (int)
+                                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
+                                                        .toMillis()));
+                mScreenOffLowPowerWindow =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
+                                        (int)
+                                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW
+                                                        .toMillis()));
+
+                mScreenOffLowPowerInterval =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
+                                        (int)
+                                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL
+                                                        .toMillis()));
+                mScreenOffBalancedWindow =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCREEN_OFF_BALANCED_WINDOW_MILLIS,
+                                        (int)
+                                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW
+                                                        .toMillis()));
+                mScreenOffBalancedInterval =
+                        Duration.ofMillis(
+                                properties.getInt(
+                                        SCREEN_OFF_BALANCED_INTERVAL_MILLIS,
+                                        (int)
+                                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL
+                                                        .toMillis()));
                 mLeAudioAllowList = properties.getString(LE_AUDIO_ALLOW_LIST, "");
 
                 if (!mLeAudioAllowList.isEmpty()) {
