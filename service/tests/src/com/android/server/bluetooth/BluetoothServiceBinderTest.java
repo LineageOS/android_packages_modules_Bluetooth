@@ -129,6 +129,7 @@ public class BluetoothServiceBinderTest {
         lenient().doReturn(TAG).when(mSource).getPackageName();
         mLooper = new TestLooper();
         mLooper.startAutoDispatch();
+        mManagerService.mUserContext = mContext;
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
