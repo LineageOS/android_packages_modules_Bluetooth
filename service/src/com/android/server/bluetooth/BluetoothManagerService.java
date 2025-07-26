@@ -823,6 +823,9 @@ class BluetoothManagerService {
     }
 
     boolean enableBle(String packageName, IBinder token) {
+        if (mUserContext == null) {
+            throw new IllegalStateException("Bluetooth can only start for foreground user.");
+        }
         Log.i(
                 TAG,
                 ("enableBle(" + packageName + ", " + token + "):")
@@ -991,6 +994,9 @@ class BluetoothManagerService {
     }
 
     boolean enable(int reason, String packageName) {
+        if (mUserContext == null) {
+            throw new IllegalStateException("Bluetooth can only start for foreground user.");
+        }
         Log.d(
                 TAG,
                 ("enable(" + packageName + "):")

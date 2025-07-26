@@ -23,7 +23,7 @@ from pandora.host_pb2 import PUBLIC, RANDOM
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer
 from pandora.gatt_grpc import GATT
-from pandora.le_audio_pb2 import LeAudioPlaybackAudioRequest, AUDIO_USAGE_GAME
+from pandora.le_audio_pb2 import LeAudioPlaybackAudioRequest, AUDIO_USAGE_GAME, AUDIO_SOURCE_VOICE_PERFORMANCE
 from pandora.le_audio_grpc import LeAudio
 
 AUDIO_SIGNAL_AMPLITUDE = 0.8
@@ -120,7 +120,8 @@ class GMAPProxy(ProfileProxy):
             self.audio.start()
         elif "SOURCE" in ase_role:
             capture_thread = threading.Thread(target=start_capture)
-            self.le_audio.LeAudioPrepareRecorder(connection=self.connection)
+            self.le_audio.LeAudioPrepareRecorder(connection=self.connection,
+                                                 audioSource=AUDIO_SOURCE_VOICE_PERFORMANCE)
             capture_thread.start()
         else:
             assert False
@@ -145,7 +146,8 @@ class GMAPProxy(ProfileProxy):
         capture_thread = threading.Thread(target=start_capture)
         playback_thread = threading.Thread(target=start_playback)
         self.le_audio.Open(connection=self.connection)
-        self.le_audio.LeAudioPrepareRecorder(connection=self.connection)
+        self.le_audio.LeAudioPrepareRecorder(connection=self.connection,
+                                             audioSource=AUDIO_SOURCE_VOICE_PERFORMANCE)
         self.le_audio.LeAudioStart(connection=self.connection,
                                    audioUsage=AUDIO_USAGE_GAME,
                                    metadataTag="VX_AOSP_bidirectional")

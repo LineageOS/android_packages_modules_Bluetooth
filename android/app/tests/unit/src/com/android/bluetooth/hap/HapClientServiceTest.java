@@ -72,7 +72,6 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
@@ -103,7 +102,6 @@ public class HapClientServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private HapClientNativeInterface mNativeInterface;
     @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private CsipSetCoordinatorService mCsipService;
@@ -137,10 +135,9 @@ public class HapClientServiceTest {
         doReturn(mDevice2).when(mAdapterService).getDeviceFromByte(eq(byteAddress2));
         final byte[] byteAddress3 = getByteAddress(mDevice3);
         doReturn(mDevice3).when(mAdapterService).getDeviceFromByte(eq(byteAddress3));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
         if (Flags.adapterServiceProfilesUseOptional()) {
@@ -182,7 +179,6 @@ public class HapClientServiceTest {
         doReturn(new ParcelUuid[] {BluetoothUuid.HAS})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();
@@ -212,7 +208,7 @@ public class HapClientServiceTest {
                         CONNECTION_POLICY_UNKNOWN,
                         CONNECTION_POLICY_FORBIDDEN,
                         CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(policy);
         }
     }
@@ -230,7 +226,7 @@ public class HapClientServiceTest {
                             CONNECTION_POLICY_ALLOWED,
                             badPolicyValue)) {
                 doReturn(bondState).when(mAdapterService).getBondState(any());
-                doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
                 assertThat(mService.okToConnect(mDevice1)).isFalse();
             }
         }
@@ -243,11 +239,11 @@ public class HapClientServiceTest {
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice1)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.okToConnect(mDevice1)).isTrue();
         }
     }
@@ -266,7 +262,7 @@ public class HapClientServiceTest {
     public void connectToDevice_whenPolicyForbid_returnFalse() {
         initTest();
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
         assertThat(mService.connect(mDevice1)).isFalse();
@@ -557,7 +553,7 @@ public class HapClientServiceTest {
     public void setConnectionPolicy() {
         initTest();
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_UNKNOWN)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.HAP_CLIENT, CONNECTION_POLICY_UNKNOWN);
     }

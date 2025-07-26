@@ -664,17 +664,15 @@ class ScanManager {
                         regularScanTimeout(client);
                     };
             mScanTimeoutRunnables.put(client, timeoutRunnable);
-            mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeoutMillis());
+            mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeout().toMillis());
         } else {
             Message msg = mClientHandler.obtainMessage(MSG_SCAN_TIMEOUT);
             msg.obj = client;
             // Only one timeout message should exist at any time
             mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
-            mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanTimeoutMillis());
+            mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanTimeout().toMillis());
         }
-        Log.d(
-                TAG,
-                "Apply scan timeout (" + mAdapterService.getScanTimeoutMillis() + ") to " + client);
+        Log.d(TAG, "Apply scan timeout (" + mAdapterService.getScanTimeout() + ") to " + client);
     }
 
     private void handleStopScan(ScanClient tmpClient) {
@@ -1555,7 +1553,7 @@ class ScanManager {
                                 stats.setScanTimeout(client.getScannerId());
                                 stats.recordScanTimeoutCountMetrics(
                                         client.getScannerId(),
-                                        mAdapterService.getScanTimeoutMillis());
+                                        mAdapterService.getScanTimeout().toMillis());
                             });
         }
 

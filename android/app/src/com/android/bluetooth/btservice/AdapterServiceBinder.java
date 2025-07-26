@@ -2123,7 +2123,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return -1;
         }
 
-        return service.getDatabaseManager().getKeyMissingCount(device);
+        return service.getKeyMissingCount(device);
     }
 
     @Override

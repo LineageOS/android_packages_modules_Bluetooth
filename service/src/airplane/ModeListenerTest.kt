@@ -72,9 +72,8 @@ import org.robolectric.shadows.ShadowToast
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
-class ModeListenerTest(flags: FlagsWrapper) {
+class ModeListenerTest(private val flags: FlagsWrapper) {
     @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
-
     @get:Rule val testName = TestName()
 
     private val looper: Looper = Looper.getMainLooper()

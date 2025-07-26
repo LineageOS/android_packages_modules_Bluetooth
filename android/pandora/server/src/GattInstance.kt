@@ -349,6 +349,17 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         return mGattInstanceValueWrote
     }
 
+    public fun writeCharacteristicNonBlocking(
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray,
+    ): Int {
+        return mGatt.writeCharacteristic(
+            characteristic,
+            value,
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+        )
+    }
+
     public suspend fun writeDescriptorBlocking(
         descriptor: BluetoothGattDescriptor,
         value: ByteArray,
@@ -362,6 +373,13 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
             waitForWriteEnd()
         }
         return mGattInstanceValueWrote
+    }
+
+    public fun writeDescriptorNonBlocking(
+        descriptor: BluetoothGattDescriptor,
+        value: ByteArray,
+    ): Int {
+        return mGatt.writeDescriptor(descriptor, value)
     }
 
     public fun disconnectInstance() {

@@ -44,8 +44,6 @@ import static android.bluetooth.BluetoothProfile.getProfileName;
 
 import static com.android.bluetooth.Utils.arrayContains;
 
-import static java.util.Objects.requireNonNull;
-
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
@@ -67,7 +65,7 @@ public abstract class ConnectableProfile extends ProfileService {
 
     protected ConnectableProfile(int id, AdapterService adapterService) {
         super(id, adapterService);
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabaseManager());
+        mDatabaseManager = mAdapterService.getDatabaseManager();
     }
 
     static boolean isSupported(AdapterService adapterService, BluetoothDevice device, int id) {
@@ -210,7 +208,7 @@ public abstract class ConnectableProfile extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
+        return mAdapterService.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

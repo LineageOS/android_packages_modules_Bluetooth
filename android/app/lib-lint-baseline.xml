@@ -244,6 +244,13 @@
     </issue>
 
     <issue
+        id="AnnotatedAidlCounter"
+        message="module BluetoothLib => Stat(unannotated=519, enforced=0, notRequired=0)">
+        <location
+            file="50dd3336804323d9913d544a92a5a6853760f618"/>
+    </issue>
+
+    <issue
         id="ExportedReceiver"
         message="Exported receiver does not require permission"
         errorLine1="        &lt;receiver android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.opp.BluetoothOppReceiver&quot; android:exported=&quot;true&quot; android:enabled=&quot;false&quot;>"
@@ -274,6 +281,13 @@
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/BluetoothLib/android_common_apex36/manifest_fixer/AndroidManifest.xml"
             line="97"
             column="10"/>
+    </issue>
+
+    <issue
+        id="PermissionAnnotationExemptAidlInterfaces"
+        message="&quot;android.bluetooth.IBluetoothA2dp&quot;,&#xA;&quot;android.bluetooth.IBluetoothA2dpSink&quot;,&#xA;&quot;android.bluetooth.IBluetoothAvrcpController&quot;,&#xA;&quot;android.bluetooth.le.IScannerCallback&quot;,&#xA;&quot;android.bluetooth.IBluetoothLeBroadcastAssistant&quot;,&#xA;&quot;android.bluetooth.IAdapter&quot;,&#xA;&quot;android.bluetooth.IBluetooth&quot;,&#xA;&quot;android.bluetooth.IBluetoothSocketManager&quot;,&#xA;&quot;android.bluetooth.IBluetoothCsipSetCoordinator&quot;,&#xA;&quot;android.bluetooth.IBluetoothGatt&quot;,&#xA;&quot;android.bluetooth.IBluetoothHapClient&quot;,&#xA;&quot;android.bluetooth.IBluetoothHearingAid&quot;,&#xA;&quot;android.bluetooth.IBluetoothHeadset&quot;,&#xA;&quot;android.bluetooth.IBluetoothHeadsetClient&quot;,&#xA;&quot;android.bluetooth.IBluetoothHidDevice&quot;,&#xA;&quot;android.bluetooth.IBluetoothHidHost&quot;,&#xA;&quot;android.bluetooth.IBluetoothLeAudio&quot;,&#xA;&quot;android.bluetooth.IBluetoothMap&quot;,&#xA;&quot;android.bluetooth.IBluetoothMapClient&quot;,&#xA;&quot;android.bluetooth.IBluetoothPan&quot;,&#xA;&quot;android.bluetooth.IBluetoothPbap&quot;,&#xA;&quot;android.bluetooth.IBluetoothPbapClient&quot;,&#xA;&quot;android.hardware.radio.sap.ISapCallback&quot;,&#xA;&quot;android.bluetooth.IBluetoothSap&quot;,&#xA;&quot;android.bluetooth.IBluetoothLeCallControl&quot;,&#xA;&quot;android.bluetooth.IBluetoothLeCallControlCallback&quot;,&#xA;&quot;android.bluetooth.IBluetoothVolumeControl&quot;,&#xA;&quot;android.bluetooth.IBluetoothAdvertise&quot;,&#xA;&quot;android.bluetooth.IDistanceMeasurement&quot;,&#xA;&quot;android.bluetooth.IBluetoothScan&quot;,">
+        <location
+            file="50dd3336804323d9913d544a92a5a6853760f618"/>
     </issue>
 
     <issue

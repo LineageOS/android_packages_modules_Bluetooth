@@ -632,8 +632,9 @@ public class ActiveDeviceManagerTest {
         when(mA2dpService.removeActiveDevice(anyBoolean())).thenReturn(true);
         when(mHeadsetService.getFallbackDevice()).thenReturn(mA2dpHeadsetDevice);
 
-        mDatabaseManager.setProfileConnectionPolicy(
-                mA2dpHeadsetDevice, BluetoothProfile.A2DP, CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mA2dpHeadsetDevice, BluetoothProfile.A2DP);
         a2dpDisconnected(mA2dpHeadsetDevice);
         mTestLooper.dispatchAll();
         verify(mHeadsetService, times(2)).setActiveDevice(mA2dpHeadsetDevice);
@@ -661,8 +662,9 @@ public class ActiveDeviceManagerTest {
         when(mA2dpService.getFallbackDevice()).thenReturn(mSecondaryAudioDevice);
         when(mHeadsetService.getFallbackDevice()).thenReturn(mA2dpHeadsetDevice);
 
-        mDatabaseManager.setProfileConnectionPolicy(
-                mSecondaryAudioDevice, BluetoothProfile.HEADSET, CONNECTION_POLICY_FORBIDDEN);
+        doReturn(CONNECTION_POLICY_FORBIDDEN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSecondaryAudioDevice, BluetoothProfile.HEADSET);
         headsetDisconnected(mSecondaryAudioDevice);
         mTestLooper.dispatchAll();
         verify(mHeadsetService, times(3)).setActiveDevice(mA2dpHeadsetDevice);
@@ -1916,10 +1918,9 @@ public class ActiveDeviceManagerTest {
 
     /** Helper to indicate A2dp connected for a device. */
     private void a2dpConnected(BluetoothDevice device, boolean supportHfp) {
-        mDatabaseManager.setProfileConnectionPolicy(
-                device,
-                BluetoothProfile.HEADSET,
-                supportHfp ? CONNECTION_POLICY_ALLOWED : CONNECTION_POLICY_UNKNOWN);
+        doReturn(supportHfp ? CONNECTION_POLICY_ALLOWED : CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
 
         mDeviceConnectionStack.add(device);
         mMostRecentDevice = device;
@@ -1951,10 +1952,9 @@ public class ActiveDeviceManagerTest {
 
     /** Helper to indicate Headset connected for a device. */
     private void headsetConnected(BluetoothDevice device, boolean supportA2dp) {
-        mDatabaseManager.setProfileConnectionPolicy(
-                device,
-                BluetoothProfile.A2DP,
-                supportA2dp ? CONNECTION_POLICY_ALLOWED : CONNECTION_POLICY_UNKNOWN);
+        doReturn(supportA2dp ? CONNECTION_POLICY_ALLOWED : CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(device, BluetoothProfile.A2DP);
 
         mDeviceConnectionStack.add(device);
         mMostRecentDevice = device;

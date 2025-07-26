@@ -92,7 +92,6 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -136,7 +135,6 @@ public class BassClientServiceTest {
     @Mock private BluetoothAdapter mAdapter;
     @Mock private PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothLeScannerWrapper mBluetoothLeScannerWrapper;
     @Mock private ServiceFactory mServiceFactory;
     @Mock private ScanController mScanController;
@@ -275,7 +273,6 @@ public class BassClientServiceTest {
         doReturn(BluetoothDevice.BOND_BONDED)
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doAnswer(
                         invocation -> {
                             Set<BluetoothDevice> keys = mStateMachines.keySet();
@@ -383,7 +380,7 @@ public class BassClientServiceTest {
     @Test
     public void testGetPolicyAfterStopped() {
         mBassClientService.cleanup();
-        when(mDatabaseManager.getProfileConnectionPolicy(
+        when(mAdapterService.getProfileConnectionPolicy(
                         mCurrentDevice, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT))
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
         assertThat(mBassClientService.getConnectionPolicy(mCurrentDevice))
@@ -396,7 +393,7 @@ public class BassClientServiceTest {
      */
     @Test
     public void testConnect() {
-        when(mDatabaseManager.getProfileConnectionPolicy(
+        when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
                         eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
@@ -420,7 +417,7 @@ public class BassClientServiceTest {
         if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
             assertThrows(NullPointerException.class, () -> mBassClientService.connect(null));
         } else {
-            when(mDatabaseManager.getProfileConnectionPolicy(
+            when(mAdapterService.getProfileConnectionPolicy(
                             any(BluetoothDevice.class),
                             eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                     .thenReturn(CONNECTION_POLICY_ALLOWED);
@@ -434,7 +431,7 @@ public class BassClientServiceTest {
     @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void testConnect_isQuietMode() {
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
-        when(mDatabaseManager.getProfileConnectionPolicy(
+        when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
                         eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
@@ -449,7 +446,7 @@ public class BassClientServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void testConnect_notBonded_bonding_bonded() {
-        when(mDatabaseManager.getProfileConnectionPolicy(
+        when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
                         eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
@@ -470,7 +467,7 @@ public class BassClientServiceTest {
      */
     @Test
     public void testConnect_whenConnectionPolicyIsForbidden() {
-        when(mDatabaseManager.getProfileConnectionPolicy(
+        when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
                         eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                 .thenReturn(CONNECTION_POLICY_FORBIDDEN);
@@ -516,7 +513,7 @@ public class BassClientServiceTest {
     }
 
     private void prepareConnectedDeviceGroup() {
-        when(mDatabaseManager.getProfileConnectionPolicy(
+        when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
                         eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);

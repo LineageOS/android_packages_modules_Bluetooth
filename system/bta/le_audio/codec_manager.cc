@@ -340,6 +340,7 @@ public:
                       : stream_map.streams_map_current;
       update_receiver(unicast_cfg, direction);
       stream_map.is_initial = false;
+      stream_map.has_changed = false;
     }
   }
 
@@ -358,6 +359,11 @@ public:
   void UpdateSelectedCodecConfig(
           const ::bluetooth::le_audio::types::AudioSetConfiguration& audio_set_conf) const {
     if (GetCodecLocation() != bluetooth::le_audio::types::CodecLocation::ADSP) {
+      return;
+    }
+
+    if (!codec_provider_info_.has_value()) {
+      log::debug("Codec extensions not enabled");
       return;
     }
 
@@ -890,6 +896,9 @@ public:
     }
 
     auto& stream_map = offloader_stream_maps.get(direction);
+    if (!stream_map.streams_map_target.empty() || !stream_map.streams_map_current.empty()) {
+      stream_map.has_changed = true;
+    }
     stream_map.streams_map_target.clear();
     stream_map.streams_map_current.clear();
   }

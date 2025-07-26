@@ -420,6 +420,14 @@ bool is_background_connection(const RawAddress& address) {
   return it->second.is_in_accept_list;
 }
 
+bool is_direct_connection(const RawAddress& address) {
+  auto it = bgconn_dev.find(address);
+  if (it == bgconn_dev.end()) {
+    return false;
+  }
+  return !it->second.doing_direct_conn.empty();
+}
+
 /** deregister all related background connetion device. */
 void on_app_deregistered(uint8_t app_id) {
   log::debug("app_id={}", static_cast<int>(app_id));

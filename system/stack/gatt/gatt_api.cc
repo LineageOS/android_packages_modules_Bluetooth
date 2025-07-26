@@ -1450,10 +1450,13 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
       ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport, initiating_phys);
     } else {
       log::verbose("Connecting without tcb to: {}", bd_addr);
+      bool has_direct_conn = connection_manager::is_direct_connection(bd_addr);
       ret = connection_manager::direct_connect_add(gatt_if, bd_addr, addr_type, prefer_relax_mode);
-      bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
+      if (!has_direct_conn && ret) {
+        bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */,
+                                                           true /* is_direct */);
+      }
     }
-
   } else {
     log::debug("Starting background connect gatt_if={} address={}", gatt_if, bd_addr);
     bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);

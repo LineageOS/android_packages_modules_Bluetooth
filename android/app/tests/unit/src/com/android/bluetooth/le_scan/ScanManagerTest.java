@@ -36,7 +36,7 @@ import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
-import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT_MILLIS;
+import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
 import static com.android.bluetooth.le_scan.ScanManager.MSFT_HCI_EXT_ENABLED;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
@@ -180,7 +180,7 @@ public class ScanManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(DEFAULT_SCAN_TIMEOUT_MILLIS).when(mAdapterService).getScanTimeoutMillis();
+        doReturn(DEFAULT_SCAN_TIMEOUT).when(mAdapterService).getScanTimeout();
         doReturn(DEFAULT_NUM_OFFLOAD_SCAN_FILTER)
                 .when(mAdapterService)
                 .getNumOfOffloadedScanFilterSupported();
@@ -706,7 +706,7 @@ public class ScanManagerTest {
                     startScan(client);
                     assertThat(client.getSettings().getScanMode()).isEqualTo(scanMode);
                     // Wait for scan timeout
-                    advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS);
+                    advanceTime(DEFAULT_SCAN_TIMEOUT);
                     mLooper.dispatchAll();
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
                     assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
@@ -744,7 +744,7 @@ public class ScanManagerTest {
                     startScan(client);
                     assertThat(client.getSettings().getScanMode()).isEqualTo(scanMode);
                     // Move time forward so scan timeout message can be dispatched
-                    advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS);
+                    advanceTime(DEFAULT_SCAN_TIMEOUT);
                     // Since we are using a TestLooper, need to mock AppScanStats.isScanningTooLong
                     // to return true because no real time is elapsed
                     doReturn(true).when(mMockAppScanStats).isScanningTooLong();
@@ -780,7 +780,8 @@ public class ScanManagerTest {
             // Put a timeout runnable in the map to emulate the scan being started already
             Runnable fakeTimeoutRunnable = () -> {};
             mScanManager.mScanTimeoutRunnables.put(client, fakeTimeoutRunnable);
-            mScanManager.mHandler.postDelayed(fakeTimeoutRunnable, DEFAULT_SCAN_TIMEOUT_MILLIS / 2);
+            mScanManager.mHandler.postDelayed(
+                    fakeTimeoutRunnable, DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis());
             // Start the scan. This should remove the fake runnable and post a new one.
             startScan(client);
         } else {
@@ -788,7 +789,7 @@ public class ScanManagerTest {
             Message timeoutMessage =
                     mScanManager.mClientHandler.obtainMessage(ScanManager.MSG_SCAN_TIMEOUT, client);
             mScanManager.mClientHandler.sendMessageDelayed(
-                    timeoutMessage, DEFAULT_SCAN_TIMEOUT_MILLIS / 2);
+                    timeoutMessage, DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis());
             mScanManager.mClientHandler.sendMessage(createStartStopScanMessage(true, client));
         }
 
@@ -800,12 +801,12 @@ public class ScanManagerTest {
             assertThat(mLooper.dispatchAll()).isEqualTo(1);
         }
 
-        advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS / 2);
+        advanceTime(DEFAULT_SCAN_TIMEOUT.dividedBy(2));
         // After restarting the scan, we can check that the initial timeout message is not triggered
         assertThat(mLooper.dispatchAll()).isEqualTo(0);
 
         // After timeout, the next message that is run should be a timeout message
-        advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS / 2);
+        advanceTime(DEFAULT_SCAN_TIMEOUT.dividedBy(2));
 
         if (Flags.scanControllerThread()) {
             // Dispatching should now execute the real timeout.

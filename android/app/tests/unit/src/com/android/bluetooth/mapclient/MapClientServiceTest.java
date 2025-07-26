@@ -54,7 +54,6 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -76,7 +75,6 @@ public class MapClientServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private MnsService mMnsService;
 
     private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
@@ -88,10 +86,9 @@ public class MapClientServiceTest {
     @Before
     public void setUp() throws Exception {
         doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         TestUtils.mockGetSystemService(mAdapterService, SubscriptionManager.class);
 
         mTestLooper = new TestLooper();
@@ -121,10 +118,10 @@ public class MapClientServiceTest {
 
     @Test
     public void setConnectionPolicy() {
-        doReturn(true).when(mDatabaseManager).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
 
         assertThat(mService.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_UNKNOWN)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mRemoteDevice, BluetoothProfile.MAP_CLIENT, CONNECTION_POLICY_UNKNOWN);
     }
@@ -136,7 +133,7 @@ public class MapClientServiceTest {
                         CONNECTION_POLICY_UNKNOWN,
                         CONNECTION_POLICY_FORBIDDEN,
                         CONNECTION_POLICY_ALLOWED)) {
-            doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
             assertThat(mService.getConnectionPolicy(mRemoteDevice)).isEqualTo(policy);
         }
     }
@@ -144,7 +141,7 @@ public class MapClientServiceTest {
     @Test
     public void connect_whenPolicyIsForbidden_returnsFalse() {
         doReturn(CONNECTION_POLICY_FORBIDDEN)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
         assertThat(mService.connect(mRemoteDevice)).isFalse();

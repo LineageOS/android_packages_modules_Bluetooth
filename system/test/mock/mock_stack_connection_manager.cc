@@ -82,3 +82,8 @@ bool connection_manager::is_background_connection(const RawAddress& /* address *
   inc_func_call_count(__func__);
   return false;
 }
+
+bool connection_manager::is_direct_connection(const RawAddress& /* address */) {
+  inc_func_call_count(__func__);
+  return false;
+}

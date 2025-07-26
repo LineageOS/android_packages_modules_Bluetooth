@@ -1266,8 +1266,8 @@ private:
 
 #ifdef CSIS_DEBUG
     auto irk = BTM_BleGetPeerIRK(address);
-    log::info("LTK {}", base::HexEncode(*pltk.data(), 16));
-    log::info("IRK {}", base::HexEncode(*irk.data(), 16));
+    log::info("LTK {}", base::HexEncode(pltk.value().data(), 16));
+    log::info("IRK {}", irk.has_value() ? base::HexEncode(irk.value().data(), 16) : 0x00);
 #endif
 
     /* Calculate salt CSIS d1.0r05 4.3 */
@@ -1282,7 +1282,7 @@ private:
 #ifdef CSIS_DEBUG
     log::info("s1 (le) {}", base::HexEncode(s1.data(), 16));
     /* Create K = LTK */
-    log::info("K (le) {}", base::HexEncode(*pltk.data(), 16));
+    log::info("K (le) {}", base::HexEncode(pltk.value().data(), 16));
 #endif
 
     Octet16 T = crypto_toolbox::aes_cmac(s1, *pltk);

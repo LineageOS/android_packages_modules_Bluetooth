@@ -43,6 +43,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.util.WorkSourceUtil;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -566,16 +567,20 @@ class AppScanStats {
             return false;
         }
 
-        return (mTimeProvider.elapsedRealtime() - mLastScans.get(0).mStartTimestamp)
-                < mAdapterService.getScanQuotaWindowMillis();
+        var oldestLastScanStartTimestamp = mLastScans.getFirst().mStartTimestamp;
+        return Duration.ofMillis(mTimeProvider.elapsedRealtime() - oldestLastScanStartTimestamp)
+                        .compareTo(mAdapterService.getScanQuotaWindow())
+                < 0;
     }
 
     synchronized boolean isScanningTooLong() {
         if (!isScanning()) {
             return false;
         }
-        return (mTimeProvider.elapsedRealtime() - mScanStartTimestamp)
-                >= mAdapterService.getScanTimeoutMillis();
+
+        return Duration.ofMillis(mTimeProvider.elapsedRealtime() - mScanStartTimestamp)
+                        .compareTo(mAdapterService.getScanTimeout())
+                >= 0;
     }
 
     synchronized boolean hasRecentScan() {
