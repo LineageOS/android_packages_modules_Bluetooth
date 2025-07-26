@@ -765,7 +765,7 @@ class ScanManager {
 
     @VisibleForTesting
     void handleConnectingState() {
-        if (mAdapterService.getScanDowngradeDuration() == Duration.ZERO) {
+        if (mAdapterService.getScanDowngradeDuration().equals(Duration.ZERO)) {
             return;
         }
         boolean updatedScanParams = false;
@@ -947,7 +947,7 @@ class ScanManager {
     }
 
     private boolean upgradeScanModeBeforeStart(ScanClient client) {
-        if (client.getStarted() || mAdapterService.getScanUpgradeDuration() == Duration.ZERO) {
+        if (client.getStarted() || mAdapterService.getScanUpgradeDuration().equals(Duration.ZERO)) {
             return false;
         }
         if (client.getAppScanStats().isEmpty() || client.getAppScanStats().get().hasRecentScan()) {
@@ -1064,7 +1064,7 @@ class ScanManager {
 
     private boolean downgradeScanModeFromMaxDuty(ScanClient client) {
         if (client.getAppScanStats().isEmpty()
-                || mAdapterService.getScanDowngradeDuration() == Duration.ZERO) {
+                || mAdapterService.getScanDowngradeDuration().equals(Duration.ZERO)) {
             return false;
         }
         final int updatedScanMode =
