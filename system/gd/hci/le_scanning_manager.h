@@ -60,7 +60,7 @@ public:
                              std::vector<AdvertisingPacketContentFilterCommand> filters) = 0;
 
   /*Batch Scan*/
-  virtual void BatchScanConifgStorage(uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max,
+  virtual void BatchScanConfigStorage(uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max,
                                       uint8_t batch_scan_notify_threshold,
                                       ScannerId scanner_id) = 0;
   virtual void BatchScanEnable(BatchScanMode scan_mode, uint32_t duty_cycle_scan_window_slots,
