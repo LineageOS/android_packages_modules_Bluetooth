@@ -21,7 +21,6 @@ import android.bluetooth.IBluetoothManagerCallback
 import android.bluetooth.State
 import android.content.AttributionSource
 import android.os.Binder
-import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
@@ -48,17 +47,16 @@ import org.robolectric.shadows.ShadowBinder
 
 @SmallTest
 @RunWith(ParameterizedRobolectricTestRunner::class)
-class ShellCommandTest(private val flags: FlagsWrapper) {
+class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue: Boolean) {
     @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 
     private lateinit var testBinder: FakeBinder
     private val testWaitForState: (Int) -> Boolean = {
         waitForStateCalledWith = it
-        waitForStateReturnValue
+        returnValue
     }
     private var waitForStateCalledWith: Int? = null
-    private var waitForStateReturnValue: Boolean = true
 
     private lateinit var shellCommand: ShellCommand
     private lateinit var outPipe: Array<ParcelFileDescriptor>
@@ -66,8 +64,9 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
     @Before
     fun setUp() {
         testBinder = FakeBinder()
+        testBinder.returnValue = returnValue
+
         waitForStateCalledWith = null
-        waitForStateReturnValue = true
         outPipe = ParcelFileDescriptor.createPipe()
 
         shellCommand = ShellCommand(testBinder, testBinder.messenger, testWaitForState)
@@ -89,19 +88,6 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
     }
 
     @Test
-    fun onCommand_enable() {
-        testBinder.returnValue = true
-        assertThat(shellCommand.onCommand("enable")).isEqualTo(0)
-        if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.enableMessageReceived).isTrue()
-            assertThat(testBinder.enableCalled).isFalse()
-        } else {
-            assertThat(testBinder.enableMessageReceived).isFalse()
-            assertThat(testBinder.enableCalled).isTrue()
-        }
-    }
-
-    @Test
     fun onHelp_doNotCrash() {
         shellCommand.onHelp()
     }
@@ -117,9 +103,8 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
     }
 
     @Test
-    fun onCommand_enable_returnsError() {
-        testBinder.returnValue = false
-        assertThat(shellCommand.onCommand("enable")).isEqualTo(-1)
+    fun onCommand_enable() {
+        assertThat(shellCommand.onCommand("enable")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
             assertThat(testBinder.enableMessageReceived).isTrue()
             assertThat(testBinder.enableCalled).isFalse()
@@ -130,9 +115,21 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
     }
 
     @Test
+    fun onCommand_enableBle() {
+        ShadowBinder.setCallingUid(Process.ROOT_UID)
+        assertThat(shellCommand.onCommand("enableBle")).isEqualTo(if (returnValue) 0 else -1)
+        if (Flags.systemServerMessenger()) {
+            assertThat(testBinder.enableBleMessageReceived).isTrue()
+            assertThat(testBinder.enableBleCalledWithBinder).isNull()
+        } else {
+            assertThat(testBinder.enableBleMessageReceived).isFalse()
+            assertThat(testBinder.enableBleCalledWithBinder).isSameInstanceAs(testBinder)
+        }
+    }
+
+    @Test
     fun onCommand_disable() {
-        testBinder.returnValue = true
-        assertThat(shellCommand.onCommand("disable")).isEqualTo(0)
+        assertThat(shellCommand.onCommand("disable")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
             assertThat(testBinder.disableMessageReceived).isTrue()
             assertThat(testBinder.disableCalledWithPersist).isNull()
@@ -143,15 +140,15 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
     }
 
     @Test
-    fun onCommand_disable_returnsError() {
-        testBinder.returnValue = false
-        assertThat(shellCommand.onCommand("disable")).isEqualTo(-1)
+    fun onCommand_disableBle() {
+        ShadowBinder.setCallingUid(Process.ROOT_UID)
+        assertThat(shellCommand.onCommand("disableBle")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.disableMessageReceived).isTrue()
-            assertThat(testBinder.disableCalledWithPersist).isNull()
+            assertThat(testBinder.disableBleMessageReceived).isTrue()
+            assertThat(testBinder.disableBleCalledWithBinder).isNull()
         } else {
-            assertThat(testBinder.disableMessageReceived).isFalse()
-            assertThat(testBinder.disableCalledWithPersist).isTrue()
+            assertThat(testBinder.disableBleMessageReceived).isFalse()
+            assertThat(testBinder.disableBleCalledWithBinder).isSameInstanceAs(testBinder)
         }
     }
 
@@ -164,29 +161,10 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
     }
 
     @Test
-    fun onCommand_privileged_asRoot() {
+    fun onCommand_factoryReset() {
         ShadowBinder.setCallingUid(Process.ROOT_UID)
-        testBinder.returnValue = true
 
-        assertThat(shellCommand.onCommand("enableBle")).isEqualTo(0)
-        if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.enableBleMessageReceived).isTrue()
-            assertThat(testBinder.enableBleCalledWithBinder).isNull()
-        } else {
-            assertThat(testBinder.enableBleMessageReceived).isFalse()
-            assertThat(testBinder.enableBleCalledWithBinder).isSameInstanceAs(testBinder)
-        }
-
-        assertThat(shellCommand.onCommand("disableBle")).isEqualTo(0)
-        if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.disableBleMessageReceived).isTrue()
-            assertThat(testBinder.disableBleCalledWithBinder).isNull()
-        } else {
-            assertThat(testBinder.disableBleMessageReceived).isFalse()
-            assertThat(testBinder.disableBleCalledWithBinder).isSameInstanceAs(testBinder)
-        }
-
-        assertThat(shellCommand.onCommand("factoryReset")).isEqualTo(0)
+        assertThat(shellCommand.onCommand("factoryReset")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
             assertThat(testBinder.factoryResetMessageReceived).isTrue()
             assertThat(testBinder.factoryResetCalled).isFalse()
@@ -198,23 +176,16 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
 
     @Test
     fun onCommand_waitForState_on() {
-        waitForStateReturnValue = true
-        assertThat(shellCommand.onCommand("wait-for-state:STATE_ON")).isEqualTo(0)
+        assertThat(shellCommand.onCommand("wait-for-state:STATE_ON"))
+            .isEqualTo(if (returnValue) 0 else -1)
         assertThat(waitForStateCalledWith).isEqualTo(State.ON)
     }
 
     @Test
     fun onCommand_waitForState_off() {
-        waitForStateReturnValue = true
-        assertThat(shellCommand.onCommand("wait-for-state:STATE_OFF")).isEqualTo(0)
+        assertThat(shellCommand.onCommand("wait-for-state:STATE_OFF"))
+            .isEqualTo(if (returnValue) 0 else -1)
         assertThat(waitForStateCalledWith).isEqualTo(State.OFF)
-    }
-
-    @Test
-    fun onCommand_waitForState_returnsError() {
-        waitForStateReturnValue = false
-        assertThat(shellCommand.onCommand("wait-for-state:STATE_ON")).isEqualTo(-1)
-        assertThat(waitForStateCalledWith).isEqualTo(State.ON)
     }
 
     @Test
@@ -244,44 +215,36 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
             object : Handler(handlerThread.looper) {
                 override fun handleMessage(msg: Message) {
                     val reply = Message.obtain()
-                    try {
-                        when (val received = msg.obj) {
-                            is SystemServiceMessage.Enable -> {
-                                if (received.bleToken != null) {
-                                    enableBleMessageReceived = true
-                                } else {
-                                    enableMessageReceived = true
-                                }
-                                reply.obj =
-                                    SystemServiceMessage.Enable.Reply().apply {
-                                        value = returnValue
-                                    }
+                    when (val received = msg.obj) {
+                        is SystemServiceMessage.Enable -> {
+                            if (received.bleToken != null) {
+                                enableBleMessageReceived = true
+                            } else {
+                                enableMessageReceived = true
                             }
-                            is SystemServiceMessage.Disable -> {
-                                if (received.bleToken != null) {
-                                    disableBleMessageReceived = true
-                                } else {
-                                    disableMessageReceived = true
-                                }
-                                reply.obj =
-                                    SystemServiceMessage.Disable.Reply().apply {
-                                        value = returnValue
-                                    }
-                            }
-                            is SystemServiceMessage.FactoryReset -> {
-                                factoryResetMessageReceived = true
-                                reply.obj =
-                                    SystemServiceMessage.FactoryReset.Reply().apply {
-                                        value = returnValue
-                                    }
-                            }
-                            else -> {
-                                super.handleMessage(msg)
-                                return
-                            }
+                            reply.obj =
+                                SystemServiceMessage.Enable.Reply().apply { value = returnValue }
                         }
-                    } catch (e: RuntimeException) {
-                        reply.data = Bundle().apply { putSerializable("exception", e) }
+                        is SystemServiceMessage.Disable -> {
+                            if (received.bleToken != null) {
+                                disableBleMessageReceived = true
+                            } else {
+                                disableMessageReceived = true
+                            }
+                            reply.obj =
+                                SystemServiceMessage.Disable.Reply().apply { value = returnValue }
+                        }
+                        is SystemServiceMessage.FactoryReset -> {
+                            factoryResetMessageReceived = true
+                            reply.obj =
+                                SystemServiceMessage.FactoryReset.Reply().apply {
+                                    value = returnValue
+                                }
+                        }
+                        else -> {
+                            super.handleMessage(msg)
+                            return
+                        }
                     }
 
                     try {
@@ -355,7 +318,10 @@ class ShellCommandTest(private val flags: FlagsWrapper) {
 
     companion object {
         @JvmStatic
-        @Parameters(name = "{0}")
-        fun getParams() = FlagsWrapper.progressionOf(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+        @Parameters(name = "{0}|{1}")
+        fun getParams() =
+            FlagsWrapper.progressionOf(Flags.FLAG_SYSTEM_SERVER_MESSENGER).flatMap { flag ->
+                listOf(arrayOf(flag, true), arrayOf(flag, false))
+            }
     }
 }
