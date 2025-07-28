@@ -3265,6 +3265,10 @@ public class BassClientService extends ConnectableProfile {
             }
             int sourceId = checkDuplicateSourceAdditionAndGetSourceId(device, sourceMetadata);
             if (sourceId != BassConstants.INVALID_SOURCE_ID) {
+                // Update metadata in case that it was changed
+                storeSinkMetadata(device, sourceMetadata.getBroadcastId(), sourceMetadata);
+
+                // sourceMetadata and pending operation were already checked a few lines above
                 updateSourceToResumeBroadcast(device, sourceId, sourceMetadata);
                 continue;
             }
@@ -3386,7 +3390,7 @@ public class BassClientService extends ConnectableProfile {
                 TAG,
                 "modifySource: "
                         + ("device: " + sink)
-                        + ("sourceId: " + sourceId)
+                        + (", sourceId: " + sourceId)
                         + (", updatedMetadata: " + updatedMetadata));
 
         Map<BluetoothDevice, Integer> devices = getGroupManagedDeviceSources(sink, sourceId).second;
@@ -3429,7 +3433,7 @@ public class BassClientService extends ConnectableProfile {
                     TAG,
                     "Modify Broadcast Source: "
                             + ("device: " + device)
-                            + ("sourceId: " + deviceSourceId)
+                            + (", sourceId: " + deviceSourceId)
                             + (", updatedBroadcastId: " + updatedMetadata.getBroadcastId())
                             + (", updatedBroadcastName: " + updatedMetadata.getBroadcastName()));
 

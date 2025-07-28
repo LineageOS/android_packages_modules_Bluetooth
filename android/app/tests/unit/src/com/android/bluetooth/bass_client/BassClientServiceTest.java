@@ -1891,6 +1891,60 @@ public class BassClientServiceTest {
         verifyAddSourceForGroup(mBroadcastMetadata2);
     }
 
+    @Test
+    public void testDuplicateAddSource() {
+        prepareSynchronizedPair();
+
+        BluetoothLeBroadcastMetadata.Builder builder =
+                new BluetoothLeBroadcastMetadata.Builder()
+                        .setEncrypted(true)
+                        .setSourceDevice(mSourceDevice, ADDRESS_TYPE_RANDOM)
+                        .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
+                        .setBroadcastId(TEST_BROADCAST_ID)
+                        .setBroadcastCode(new byte[] {1, 2, 2, 4})
+                        .setPaSyncInterval(TEST_PA_SYNC_INTERVAL)
+                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS);
+        // builder expect at least one subgroup
+        builder.addSubgroup(createBroadcastSubgroup());
+        BluetoothLeBroadcastMetadata meta = builder.build();
+
+        // Duplicate add source cause UPDATE_BCAST_SOURCE with passed metadata
+        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
+        assertThat(mStateMachines).hasSize(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+            Message msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(
+                                    m ->
+                                            (m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
+                                                    && (m.obj.equals(meta)))
+                            .findFirst()
+                            .orElse(null);
+            assertThat(msg).isNotNull();
+            clearInvocations(sm);
+        }
+
+        // Resume source cause UPDATE_BCAST_SOURCE with stored metadata
+        injectRemoteSourceStateChanged(meta, /* isPaSynced */ false, /* isBisSynced */ false);
+        mBassClientService.resumeReceiversSourceSynchronization();
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+            Message msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(
+                                    m ->
+                                            (m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
+                                                    && (m.obj.equals(meta)))
+                            .findFirst()
+                            .orElse(null);
+            assertThat(msg).isNotNull();
+            clearInvocations(sm);
+        }
+    }
+
     /**
      * Test that after multiple calls to service.addSource() with a group operation flag set, there
      * are two call to service.removeSource() needed to clear the flag
