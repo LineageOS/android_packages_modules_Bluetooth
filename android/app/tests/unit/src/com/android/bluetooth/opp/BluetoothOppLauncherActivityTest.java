@@ -27,20 +27,28 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevicePicker;
 import android.content.Context;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
+import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
+import android.provider.OpenableColumns;
 import android.provider.Settings;
 
 import androidx.lifecycle.Lifecycle;
@@ -51,6 +59,8 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
@@ -65,6 +75,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -85,6 +97,10 @@ public class BluetoothOppLauncherActivityTest {
 
     @Mock private BluetoothMethodProxy mMethodProxy;
     @Mock private BluetoothOppManager mBluetoothOppManager;
+    @Mock private ContentResolver mMockContentResolver;
+    @Mock private Cursor mMockCursor;
+    @Mock private MetricsLogger mMetricsLogger;
+    @Mock private PackageManager mPackageManager;
 
     private static final String CONTENT_TYPE = "image/png";
     private static final Context sContext =
@@ -110,6 +126,9 @@ public class BluetoothOppLauncherActivityTest {
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
         BluetoothOppManager.setInstanceForTesting(mBluetoothOppManager);
+        doReturn(mPackageManager).when(mMethodProxy).getPackageManager(any());
+        doReturn(mMockContentResolver).when(mMethodProxy).getContentResolver(any());
+        MetricsLogger.setInstanceForTesting(mMetricsLogger);
 
         mIntent = new Intent();
         mIntent.setClass(sContext, BluetoothOppLauncherActivity.class);
@@ -124,6 +143,7 @@ public class BluetoothOppLauncherActivityTest {
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppManager.setInstanceForTesting(null);
+        Mockito.clearAllCaches();
     }
 
     private static Intent createSendIntent(String uriString) {
@@ -138,6 +158,15 @@ public class BluetoothOppLauncherActivityTest {
                 .setClass(sContext, BluetoothOppLauncherActivity.class)
                 .setType(CONTENT_TYPE)
                 .putParcelableArrayListExtra(Intent.EXTRA_STREAM, new ArrayList<>(uriList));
+    }
+
+    private static Cursor createMockCursor(long size) {
+        Cursor mockCursor = Mockito.mock(Cursor.class);
+        doReturn(true).when(mockCursor).moveToFirst();
+        doReturn(0).when(mockCursor).getColumnIndexOrThrow(OpenableColumns.SIZE);
+        doReturn(false).when(mockCursor).isNull(0);
+        doReturn(size).when(mockCursor).getLong(0);
+        return mockCursor;
     }
 
     @Test
@@ -480,4 +509,132 @@ public class BluetoothOppLauncherActivityTest {
             assertThat(activityScenario.getState()).isEqualTo(Lifecycle.State.DESTROYED);
         }
     }
+
+    @Test
+    public void onCreate_withActionSend_logMetrics() throws Exception {
+        doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
+        doReturn(PackageManager.PERMISSION_GRANTED)
+                .when(mMethodProxy)
+                .componentCallerCheckContentUriPermission(any(), any(), anyInt());
+
+        String uriString = "content://test.provider/1";
+        Uri uri = Uri.parse(uriString);
+        int testUid = 12345;
+        long testFileSize = 2048L;
+        int expectedSizeCategory = BluetoothOppUtility.categorizeFileSize(testFileSize);
+
+        doReturn(mMockCursor).when(mMockContentResolver).query(eq(uri), any(), any(), any(), any());
+        doReturn(true).when(mMockCursor).moveToFirst();
+        doReturn(0).when(mMockCursor).getColumnIndexOrThrow(OpenableColumns.SIZE);
+        doReturn(false).when(mMockCursor).isNull(0);
+        doReturn(testFileSize).when(mMockCursor).getLong(0);
+
+        ProviderInfo providerInfo = new ProviderInfo();
+        providerInfo.applicationInfo = new ApplicationInfo();
+        providerInfo.applicationInfo.uid = testUid;
+        doReturn(providerInfo)
+                .when(mPackageManager)
+                .resolveContentProvider(eq("test.provider"), eq(0));
+
+        ActivityScenario.launch(createSendIntent(uriString));
+
+        verify(mMetricsLogger)
+                .logBluetoothOppLauncherCreated(eq(testUid), eq(1), eq(expectedSizeCategory));
+    }
+
+    @Test
+    public void onCreate_withActionSendMultiple_logMetrics() throws Exception {
+        doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
+        doReturn(PackageManager.PERMISSION_GRANTED)
+                .when(mMethodProxy)
+                .componentCallerCheckContentUriPermission(any(), any(), anyInt());
+
+        Uri uri1 = Uri.parse("content://test.provider/1");
+        Uri uri2 = Uri.parse("content://test.provider/2");
+        Uri uri3 = Uri.parse("content://test.provider/3");
+        List<Uri> uriList = Arrays.asList(uri1, uri2, uri3);
+
+        long fileSize1 = 1024L;
+        long fileSize2 = 2048L;
+        long fileSize3 = 4096L;
+        long totalSize = fileSize1 + fileSize2 + fileSize3;
+        int expectedSizeCategory = BluetoothOppUtility.categorizeFileSize(totalSize);
+
+        doReturn(createMockCursor(fileSize1))
+                .when(mMockContentResolver)
+                .query(eq(uri1), any(), any(), any(), any());
+        doReturn(createMockCursor(fileSize2))
+                .when(mMockContentResolver)
+                .query(eq(uri2), any(), any(), any(), any());
+        doReturn(createMockCursor(fileSize3))
+                .when(mMockContentResolver)
+                .query(eq(uri3), any(), any(), any(), any());
+
+        int testUid = 54321;
+        ProviderInfo providerInfo = new ProviderInfo();
+        providerInfo.applicationInfo = new ApplicationInfo();
+        providerInfo.applicationInfo.uid = testUid;
+        doReturn(providerInfo)
+                .when(mPackageManager)
+                .resolveContentProvider(eq("test.provider"), eq(0));
+
+        ActivityScenario.launch(createSendMultipleIntent(new ArrayList<>(uriList)));
+
+        verify(mMetricsLogger)
+                .logBluetoothOppLauncherCreated(
+                        eq(testUid), eq(uriList.size()), eq(expectedSizeCategory));
+    }
+
+    @Test
+    public void onCreate_withFileUri_logMetricsWithDefaultUid() throws Exception {
+        doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
+        doReturn(PackageManager.PERMISSION_GRANTED)
+                .when(mMethodProxy)
+                .componentCallerCheckContentUriPermission(any(), any(), anyInt());
+        String uriString = "file:///storage/emulated/0/image.png";
+
+        ActivityScenario.launch(createSendIntent(uriString));
+
+        verify(mPackageManager, never()).resolveContentProvider(anyString(), anyInt());
+        verify(mMetricsLogger)
+                .logBluetoothOppLauncherCreated(
+                        eq(-1), eq(1), eq(BluetoothOppUtility.categorizeFileSize(0)));
+    }
+
+    @Test
+    public void onCreate_resolveContentProviderFails_logMetricsWithDefaultUid() throws Exception {
+        doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
+        doReturn(PackageManager.PERMISSION_GRANTED)
+                .when(mMethodProxy)
+                .componentCallerCheckContentUriPermission(any(), any(), anyInt());
+        String uriString = "content://test.provider/1";
+        Uri uri = Uri.parse(uriString);
+        long testFileSize = 512L;
+        int expectedSizeCategory = BluetoothOppUtility.categorizeFileSize(testFileSize);
+
+        doReturn(createMockCursor(testFileSize))
+                .when(mMockContentResolver)
+                .query(eq(uri), any(), any(), any(), any());
+        doReturn(null).when(mPackageManager).resolveContentProvider(eq("test.provider"), eq(0));
+
+        ActivityScenario.launch(createSendIntent(uriString));
+
+        verify(mMetricsLogger)
+                .logBluetoothOppLauncherCreated(eq(-1), eq(1), eq(expectedSizeCategory));
+    }
+
+    @Test
+    public void onCreate_withActionSendMultiple_withNullList_doesNotLogMetrics() {
+        Intent intent =
+                new Intent(Intent.ACTION_SEND_MULTIPLE)
+                        .setClass(sContext, BluetoothOppLauncherActivity.class)
+                        .setType(CONTENT_TYPE)
+                        .putParcelableArrayListExtra(Intent.EXTRA_STREAM, null);
+
+        ActivityScenario.launch(intent);
+
+        verify(mMetricsLogger, never())
+                .logBluetoothOppLauncherCreated(anyInt(), anyInt(), anyInt());
+    }
+
 }

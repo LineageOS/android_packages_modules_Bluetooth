@@ -614,7 +614,7 @@ public class BluetoothOppUtility {
         return componentName.getPackageName();
     }
 
-    private static int mapStatusToMetricsStatus(int status) {
+    static int mapStatusToMetricsStatus(int status) {
         return switch (status) {
             case BluetoothShare.STATUS_PENDING ->
                     BluetoothStatsLog
@@ -670,7 +670,7 @@ public class BluetoothOppUtility {
         };
     }
 
-    private static int mapDirectionToMetricsDirection(int direction) {
+    static int mapDirectionToMetricsDirection(int direction) {
         return switch (direction) {
             case BluetoothShare.DIRECTION_INBOUND ->
                     BluetoothStatsLog
@@ -684,7 +684,7 @@ public class BluetoothOppUtility {
         };
     }
 
-    private static int categorizeMimeType(String mimeType) {
+    static int categorizeMimeType(String mimeType) {
         if (mimeType == null) {
             return BluetoothStatsLog
                     .BLUETOOTH_OPP_SHARE_STATUS_COMPLETE_REPORTED__MIME_TYPE_CATEGORY__OPP_MIME_TYPE_CATEGORY_UNSPECIFIED;
@@ -723,7 +723,7 @@ public class BluetoothOppUtility {
         };
     }
 
-    private static int categorizeFileSize(long bytes) {
+    static int categorizeFileSize(long bytes) {
         if (bytes <= 0)
             return BluetoothStatsLog
                     .BLUETOOTH_OPP_SHARE_STATUS_COMPLETE_REPORTED__FILE_SIZE__OPP_FILE_SIZE_UNSPECIFIED;
@@ -803,7 +803,7 @@ public class BluetoothOppUtility {
                 .BLUETOOTH_OPP_SHARE_STATUS_COMPLETE_REPORTED__FILE_SIZE__OPP_FILE_SIZE_ABOVE_8GB;
     }
 
-    private static int categorizeDuration(long millis) {
+    static int categorizeDuration(long millis) {
         if (millis <= 0)
             return BluetoothStatsLog
                     .BLUETOOTH_OPP_SHARE_STATUS_COMPLETE_REPORTED__TRANSFER_DURATION__OPP_TRANSFER_DURATION_UNSPECIFIED;
@@ -832,7 +832,7 @@ public class BluetoothOppUtility {
                 .BLUETOOTH_OPP_SHARE_STATUS_COMPLETE_REPORTED__TRANSFER_DURATION__OPP_TRANSFER_DURATION_ABOVE_30_MIN;
     }
 
-    private static int categorizeSpeed(double bytesPerSecond) {
+    static int categorizeSpeed(double bytesPerSecond) {
         if (bytesPerSecond <= 0)
             return BluetoothStatsLog
                     .BLUETOOTH_OPP_SHARE_STATUS_COMPLETE_REPORTED__TRANSFER_SPEED__OPP_TRANSFER_SPEED_UNSPECIFIED;
