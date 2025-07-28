@@ -438,18 +438,13 @@ class BluetoothManagerService {
     }
 
     // Call is coming from the systemServer main thread and need to be post to avoid race
-    void onSwitchUserFromService(UserHandle userHandle) {
-        Log.d(TAG, "BluetoothService.onSwitchUser: " + userHandle);
-        mHandler.post(() -> onSwitchUser(userHandle));
-    }
-
-    @VisibleForTesting
-    void onSwitchUser(UserHandle userHandle) {
+    void onUserSwitching(UserHandle userHandle) {
+        Log.d(TAG, "onUserSwitching(" + userHandle + ")");
         if (Flags.cleanupStartingUser()) {
             mNextUser = userHandle;
         }
         delayModeChangedIfNeeded(
-                ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(userHandle), "onSwitchUser");
+                ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(userHandle), "onUserSwitching");
     }
 
     private void forceToOffFromModeChange(int currentState, int reason) {
@@ -1105,12 +1100,6 @@ class BluetoothManagerService {
      * PHASE_SYSTEM_SERVICES_READY.
      */
     void handleOnBootPhase(UserHandle userHandle) {
-        Log.d(TAG, "BluetoothService.handleOnBootPhase: " + userHandle);
-        mHandler.post(() -> internalHandleOnBootPhase(userHandle));
-    }
-
-    @VisibleForTesting
-    void internalHandleOnBootPhase(UserHandle userHandle) {
         mUser = userHandle;
         mUserContext = mContext.createContextAsUser(userHandle, 0);
 
@@ -1135,19 +1124,19 @@ class BluetoothManagerService {
         }
 
         if (isBluetoothDisallowed()) {
-            Log.i(TAG, "internalHandleOnBootPhase: Bluetooth is disallowed");
+            Log.i(TAG, "handleOnBootPhase: Bluetooth is disallowed");
             return;
         }
         if (mContext.getPackageManager().isSafeMode()) {
-            Log.i(TAG, "internalHandleOnBootPhase: SafeMode prevent auto-enabling of Bluetooth");
+            Log.i(TAG, "handleOnBootPhase: SafeMode prevent auto-enabling of Bluetooth");
             return;
         }
         if (!mEnableExternal || !isBluetoothPersistedStateOnBluetooth()) {
-            Log.i(TAG, "internalHandleOnBootPhase: Bluetooth not started");
+            Log.i(TAG, "handleOnBootPhase: Bluetooth not started");
             autoOnSetupTimer();
             return;
         }
-        Log.i(TAG, "internalHandleOnBootPhase: Auto-enabling Bluetooth for " + mUser);
+        Log.i(TAG, "handleOnBootPhase: Auto-enabling Bluetooth for " + mUser);
         sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_SYSTEM_BOOT);
     }
 
