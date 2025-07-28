@@ -54,6 +54,13 @@
     <target_preparer class="com.android.tradefed.targetprep.FolderSaver">
         <option name="device-path" value="/data/vendor/ssrdump" />
     </target_preparer>
+    <!-- Expose /data/misc/bluedroid storage for testing purposes. -->
+    <target_preparer class="com.android.tradefed.targetprep.DisableSELinuxTargetPreparer" />
+    <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
+        <!-- Open up /data/misc/bluedroid for the test. -->
+        <option name="run-command" value="chmod a+rwx /data/misc/bluedroid" />
+        <option name="teardown-command" value="chmod o-rwx /data/misc/bluedroid" />
+    </target_preparer>
     <option name="test-tag" value="BluetoothJavaUnitTests" />
     <test class="com.android.tradefed.testtype.AndroidJUnitTest" >
         <option name="package" value="com.android.bluetooth.tests" />
