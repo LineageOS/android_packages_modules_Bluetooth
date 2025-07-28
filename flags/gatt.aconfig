@@ -49,3 +49,10 @@ flag {
     description: "Check messaging permission for ANCS"
     bug: "428743016"
 }
+
+flag {
+    name: "le_subrate_manager"
+    namespace: "bluetooth"
+    description: "Add subrate manager to control LE subrate parameters"
+    bug: "404175658"
+}

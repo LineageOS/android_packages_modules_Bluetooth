@@ -17,6 +17,7 @@
 package com.android.bluetooth.le_scan
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.util.Log
 import kotlin.time.Duration.Companion.milliseconds
@@ -234,6 +235,34 @@ object ScanUtil {
         Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
         client.appScanStats.ifPresent { appScanStats ->
             appScanStats.setAutoBatchScan(client.scannerId, false)
+        }
+    }
+
+    @JvmStatic
+    fun scanFilterToStringWithoutNullParam(filter: ScanFilter): String {
+        return buildString {
+            append("BluetoothLeScanFilter [")
+            filter.deviceName?.let { append(" DeviceName=").append(it) }
+            filter.deviceAddress?.let { append(" DeviceAddress=").append(it) }
+            filter.serviceUuid?.let { append(" ServiceUuid=").append(it) }
+            filter.serviceUuidMask?.let { append(" ServiceUuidMask=").append(it) }
+            filter.serviceSolicitationUuid?.let { append(" ServiceSolicitationUuid=").append(it) }
+            filter.serviceSolicitationUuidMask?.let {
+                append(" ServiceSolicitationUuidMask=").append(it)
+            }
+            filter.serviceDataUuid?.let { append(" ServiceDataUuid=").append(it) }
+            filter.serviceData?.let { append(" ServiceData=").append(it.contentToString()) }
+            filter.serviceDataMask?.let { append(" ServiceDataMask=").append(it.contentToString()) }
+            if (filter.manufacturerId >= 0) {
+                append(" ManufacturerId=").append(filter.manufacturerId)
+            }
+            filter.manufacturerData?.let {
+                append(" ManufacturerData=").append(it.contentToString())
+            }
+            filter.manufacturerDataMask?.let {
+                append(" ManufacturerDataMask=").append(it.contentToString())
+            }
+            append(" ]")
         }
     }
 }

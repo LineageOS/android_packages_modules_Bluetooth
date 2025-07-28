@@ -18,23 +18,31 @@ package com.android.server.bluetooth
 
 import android.content.Context
 import android.content.res.Resources
+import android.os.Handler
 import android.os.HandlerThread
 import android.os.UserManager
 import android.provider.Settings
 import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
 private const val SERVICE_NAME = "bluetooth_manager"
 
 class BluetoothService(context: Context) : SystemService(context) {
-    private val mHandlerThread: HandlerThread
+    private val looper = HandlerThread("BluetoothSystemServer").apply { start() }.looper
+    private val serviceDispatcher = Handler(looper).asCoroutineDispatcher()
+    private val scope = CoroutineScope(serviceDispatcher + SupervisorJob())
+
     private val mBluetoothManagerService: BluetoothManagerService
     private var mInitialized = false
 
     init {
-        mHandlerThread = HandlerThread("BluetoothManagerService")
-        mHandlerThread.start()
+        Log.d("Booting now")
         val hciInstance =
             if (Flags.hciInstanceNameUseInjected()) {
                 BluetoothHciInstance().getInstance()
@@ -48,23 +56,29 @@ class BluetoothService(context: Context) : SystemService(context) {
             } else {
                 null
             }
-
+        // Run BluetoothManagerService on the correct thread even during constructor
         mBluetoothManagerService =
-            BluetoothManagerService(context, mHandlerThread.looper, hciInstance, bluetoothComponent)
-
-        if (Flags.userRestrictionRefactor()) {
-            BluetoothRestriction.initialize(
-                context,
-                mHandlerThread.looper,
-                mBluetoothManagerService::onBluetoothDisallowed,
-            )
+            runBlocking(serviceDispatcher) {
+                BluetoothManagerService(context, looper, hciInstance, bluetoothComponent)
+            }
+        runOnBmsThread {
+            if (Flags.userRestrictionRefactor()) {
+                BluetoothRestriction.initialize(
+                    context,
+                    looper,
+                    mBluetoothManagerService::onBluetoothDisallowed,
+                )
+            }
         }
     }
+
+    // Run any lambda on the BluetoothSystemServer thread without waiting for its completion
+    private fun runOnBmsThread(block: suspend CoroutineScope.() -> Unit) = scope.launch { block() }
 
     private fun initialize(user: TargetUser) {
         if (!mInitialized) {
             Log.i("initialize($user)")
-            mBluetoothManagerService.handleOnBootPhase(user.userHandle)
+            runOnBmsThread { mBluetoothManagerService.handleOnBootPhase(user.userHandle) }
             mInitialized = true
         }
     }
@@ -125,7 +139,7 @@ class BluetoothService(context: Context) : SystemService(context) {
                 return
             }
             Log.i("onUserStarting($user) Initializing for foreground user ")
-            mBluetoothManagerService.handleOnBootPhase(user.userHandle)
+            runOnBmsThread { mBluetoothManagerService.handleOnBootPhase(user.userHandle) }
             mInitialized = true
             return
         }
@@ -143,13 +157,13 @@ class BluetoothService(context: Context) : SystemService(context) {
                     "Switching on a user when not initialized should never happen"
                 )
             }
-            mBluetoothManagerService.onSwitchUserFromService(to.userHandle)
+            runOnBmsThread { mBluetoothManagerService.onUserSwitching(to.userHandle) }
             return
         }
         if (!mInitialized) {
             initialize(to)
         } else {
-            mBluetoothManagerService.onSwitchUserFromService(to.userHandle)
+            runOnBmsThread { mBluetoothManagerService.onUserSwitching(to.userHandle) }
         }
     }
 
@@ -158,6 +172,6 @@ class BluetoothService(context: Context) : SystemService(context) {
             Log.d("onUserUnlocking($user): Nothing to do at unlock")
             return
         }
-        mBluetoothManagerService.handleOnUnlockUser(user.userHandle)
+        runOnBmsThread { mBluetoothManagerService.handleOnUnlockUser(user.userHandle) }
     }
 }
