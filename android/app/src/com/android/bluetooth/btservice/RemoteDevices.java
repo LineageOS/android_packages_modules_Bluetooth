@@ -1523,8 +1523,8 @@ public class RemoteDevices {
                             new String[] {BLUETOOTH_SCAN, pkg.permission()},
                             Utils.getTempBroadcastOptions());
                 } else {
-                    mAdapterService.sendBroadcastMultiplePermissions(
-                            intent, new String[] {BLUETOOTH_SCAN}, Utils.getTempBroadcastOptions());
+                    mAdapterService.sendBroadcast(
+                            intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
                 }
             }
         }
