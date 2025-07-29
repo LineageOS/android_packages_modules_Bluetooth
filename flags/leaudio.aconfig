@@ -316,3 +316,13 @@ flag {
     description: "LE Audio peripheral feature"
     bug: "428719427"
 }
+
+flag {
+    name: "leaudio_broadcast_simplify_set_bcast_code"
+    namespace: "bluetooth"
+    description: "Simplify the use of SET_BCAST_CODE"
+    bug: "434681485"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
