@@ -298,3 +298,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "skip_excess_name_discovery"
+    namespace: "bluetooth"
+    description: "Skip name discovery during BR/EDR pairing if the name is already known"
+    bug: "434973460"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
