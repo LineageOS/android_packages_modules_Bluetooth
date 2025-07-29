@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothLeCall;
-import android.bluetooth.IBluetoothLeCallControlCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,7 +29,6 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.ParcelUuid;
 import android.os.SystemProperties;
 import android.telecom.BluetoothCallQualityReport;
 import android.telecom.Call;
@@ -164,6 +162,9 @@ public class BluetoothInCallService extends InCallService {
     private TelecomManager mTelecomManager;
 
     @VisibleForTesting
+    final LeCallControlClient mLeCallControlClient = new LeCallControlClient();
+
+    @VisibleForTesting
     public final HashMap<Integer, CallStateCallback> mCallbacks = new HashMap<>();
 
     @VisibleForTesting
@@ -181,7 +182,6 @@ public class BluetoothInCallService extends InCallService {
 
     private final CallInfo mCallInfo;
 
-    private int mCcid = ContentControlIdKeeper.CCID_INVALID;
     private int mMaxNumberOfCalls = 0;
     private boolean mAllowVideoAnswer = false;
 
@@ -193,7 +193,7 @@ public class BluetoothInCallService extends InCallService {
                         intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 Log.d(TAG, "Bluetooth Adapter state: " + state);
                 if (state == BluetoothAdapter.STATE_ON) {
-                    registerBearer();
+                    mLeCallControlClient.registerBearer();
                     queryPhoneState(getHeadsetService());
                 } else if (state == BluetoothAdapter.STATE_TURNING_OFF) {
                     clear();
@@ -232,10 +232,9 @@ public class BluetoothInCallService extends InCallService {
                 return;
             }
 
-            final var tbs = getTbsService();
             Integer tbsCallState = getTbsCallState(call);
-            if (tbs.isPresent() && tbsCallState != null) {
-                tbs.get().callStateChanged(mCcid, call.getTbsCallId(), tbsCallState);
+            if (tbsCallState != null) {
+                mLeCallControlClient.callStateChanged(call.getTbsCallId(), tbsCallState);
             }
 
             // If a BluetoothCall is being put on hold because of a new connecting call, ignore the
@@ -378,16 +377,6 @@ public class BluetoothInCallService extends InCallService {
     }
 
     // TODO(b/422543753) Delete on flag cleanup
-    Optional<TbsService> getTbsService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
-                    .flatMap(AdapterService::getTbsService);
-        } else {
-            return Optional.ofNullable(TbsService.getTbsService());
-        }
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
     Optional<HeadsetService> getHeadsetService() {
         if (Flags.adapterServiceProfilesUseOptional()) {
             return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
@@ -476,7 +465,7 @@ public class BluetoothInCallService extends InCallService {
      * @return bearer technology as defined in Bluetooth Assigned Numbers
      */
     @VisibleForTesting
-    int getBearerTechnology() {
+    public int getBearerTechnology() {
         synchronized (LOCK) {
             Log.i(TAG, "getBearerTechnology");
             // Get the network name from telephony.
@@ -616,10 +605,9 @@ public class BluetoothInCallService extends InCallService {
                 }
                 updateHeadsetWithCallState(headset, false /* force */);
 
-                final var tbs = getTbsService();
-                BluetoothLeCall tbsCall = createTbsCall(call);
-                if (tbs.isPresent() && tbsCall != null) {
-                    tbs.get().callAdded(mCcid, tbsCall);
+                BluetoothLeCall leCall = toLeCall(call);
+                if (leCall != null) {
+                    mLeCallControlClient.callAdded(leCall);
                 }
             } else {
                 Log.i(TAG, "onCallAdded: call already exists");
@@ -727,10 +715,7 @@ public class BluetoothInCallService extends InCallService {
                 }
             }
 
-            final var tbs = getTbsService();
-            if (tbs.isPresent()) {
-                tbs.get().callRemoved(mCcid, call.getTbsCallId(), getTbsTerminationReason(call));
-            }
+            mLeCallControlClient.callRemoved(call.getTbsCallId(), getTbsTerminationReason(call));
         }
     }
 
@@ -762,7 +747,7 @@ public class BluetoothInCallService extends InCallService {
             IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
             registerReceiver(mBluetoothAdapterReceiver, intentFilter);
-            registerBearer();
+            mLeCallControlClient.registerBearer();
             sInstance = this;
         }
     }
@@ -789,8 +774,7 @@ public class BluetoothInCallService extends InCallService {
             unregisterReceiver(mBluetoothAdapterReceiver);
             mBluetoothAdapterReceiver = null;
         }
-        getTbsService().ifPresent(tbs -> tbs.unregisterBearer(TAG));
-        mCcid = ContentControlIdKeeper.CCID_INVALID;
+        mLeCallControlClient.unregisterBearer();
         sInstance = null;
         mCallbacks.clear();
         mBluetoothCallHashMap.clear();
@@ -1228,39 +1212,6 @@ public class BluetoothInCallService extends InCallService {
         return false;
     }
 
-    private void registerBearer() {
-        final var tbs = getTbsService();
-        if (tbs.isEmpty()) {
-            Log.i(TAG, "registerBearer skipped: No tbs service");
-            return;
-        }
-
-        tbs.get()
-                .registerBearer(
-                        TAG,
-                        mBluetoothLeCallControlCallback,
-                        TAG,
-                        List.of("tel"),
-                        Capability.HOLD_CALL,
-                        getNetworkOperator(),
-                        getBearerTechnology());
-
-        sendTbsCurrentCallsList(tbs.get());
-    }
-
-    private void sendTbsCurrentCallsList(TbsService tbsService) {
-        List<BluetoothLeCall> tbsCalls = new ArrayList<>();
-
-        for (BluetoothCall call : mBluetoothCallHashMap.values()) {
-            BluetoothLeCall tbsCall = createTbsCall(call);
-            if (tbsCall != null) {
-                tbsCalls.add(tbsCall);
-            }
-        }
-
-        tbsService.currentCallsList(mCcid, tbsCalls);
-    }
-
     /**
      * Sends an update of the current BluetoothCall state to the current Headset.
      *
@@ -1683,7 +1634,7 @@ public class BluetoothInCallService extends InCallService {
         };
     }
 
-    private BluetoothLeCall createTbsCall(BluetoothCall call) {
+    private BluetoothLeCall toLeCall(BluetoothCall call) {
         Integer state = getTbsCallState(call);
         boolean isConferenceWithNoChildren = isConferenceWithNoChildren(call);
 
@@ -1757,154 +1708,178 @@ public class BluetoothInCallService extends InCallService {
     }
 
     @VisibleForTesting
-    final IBluetoothLeCallControlCallback.Stub mBluetoothLeCallControlCallback =
-            new IBluetoothLeCallControlCallback.Stub() {
-                @Override
-                public void onBearerRegistered(int ccid) {
-                    synchronized (LOCK) {
-                        Log.d(TAG, "onBearerRegistered: ccid is " + ccid);
-                        mCcid = ccid;
+    class LeCallControlClient implements TbsService.Callback {
+        private int mCcid = ContentControlIdKeeper.CCID_INVALID;
+
+        // BluetoothInCallService
+        // TODO(b/422543753) Delete on flag cleanup
+        private static Optional<TbsService> getTbsService() {
+            if (Flags.adapterServiceProfilesUseOptional()) {
+                return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                        .flatMap(AdapterService::getTbsService);
+            } else {
+                return Optional.ofNullable(TbsService.getTbsService());
+            }
+        }
+
+        @Override
+        public void onBearerRegistered(int ccid) {
+            synchronized (BluetoothInCallService.this) {
+                Log.d(TAG, "onBearerRegistered: ccid is " + ccid);
+                mCcid = ccid;
+            }
+        }
+
+        @Override
+        public void onAcceptCall(int requestId, UUID callId) {
+            synchronized (LOCK) {
+                Log.i(TAG, "TBS - accept call=" + callId);
+                int result = Result.SUCCESS;
+                BluetoothCall call = mCallInfo.getCallByCallId(callId);
+                if (mCallInfo.isNullCall(call)) {
+                    result = Result.ERROR_UNKNOWN_CALL_ID;
+                } else {
+                    int callState =
+                            mAllowVideoAnswer
+                                    ? call.getVideoState()
+                                    : VideoProfile.STATE_AUDIO_ONLY;
+                    call.answer(callState);
+                }
+                requestResult(requestId, result);
+            }
+        }
+
+        @Override
+        public void onTerminateCall(int requestId, UUID callId) {
+            synchronized (LOCK) {
+                Log.i(TAG, "TBS - terminate call=" + callId);
+                int result = Result.SUCCESS;
+                BluetoothCall call = mCallInfo.getCallByCallId(callId);
+                if (mCallInfo.isNullCall(call)) {
+                    result = Result.ERROR_UNKNOWN_CALL_ID;
+                } else {
+                    mIsTerminatedByClient = true;
+                    call.disconnect();
+                }
+                requestResult(requestId, result);
+            }
+        }
+
+        @Override
+        public void onHoldCall(int requestId, UUID callId) {
+            synchronized (LOCK) {
+                Log.i(TAG, "TBS - hold call=" + callId);
+                int result = Result.SUCCESS;
+                BluetoothCall call = mCallInfo.getCallByCallId(callId);
+                if (mCallInfo.isNullCall(call)) {
+                    result = Result.ERROR_UNKNOWN_CALL_ID;
+                } else {
+                    call.hold();
+                }
+                requestResult(requestId, result);
+            }
+        }
+
+        @Override
+        public void onUnholdCall(int requestId, UUID callId) {
+            synchronized (LOCK) {
+                Log.i(TAG, "TBS - unhold call=" + callId);
+                int result = Result.SUCCESS;
+                BluetoothCall call = mCallInfo.getCallByCallId(callId);
+                if (mCallInfo.isNullCall(call)) {
+                    result = Result.ERROR_UNKNOWN_CALL_ID;
+                } else {
+                    call.unhold();
+                }
+                requestResult(requestId, result);
+            }
+        }
+
+        @Override
+        public void onPlaceCall(int requestId, UUID uuid, String uri) {
+            requestResult(requestId, Result.ERROR_APPLICATION);
+        }
+
+        @Override
+        public void onJoinCalls(int requestId, List<UUID> callIds) {
+            synchronized (LOCK) {
+                Log.i(TAG, "TBS - onJoinCalls");
+                List<UUID> alreadyJoinedCalls = new ArrayList<>();
+                BluetoothCall baseCallInstance = null;
+                if (callIds.size() < 2) {
+                    Log.e(TAG, "TBS - onJoinCalls, join call number is invalid: " + callIds.size());
+                    requestResult(requestId, Result.ERROR_UNKNOWN_CALL_ID);
+                    return;
+                }
+                for (UUID callToJoinUuid : callIds) {
+                    BluetoothCall callToJoinInstance = mCallInfo.getCallByCallId(callToJoinUuid);
+                    /* Skip invalid and already add device */
+                    if ((callToJoinInstance == null)
+                            || (alreadyJoinedCalls.contains(callToJoinUuid))) {
+                        continue;
                     }
-                }
-
-                @Override
-                public void onAcceptCall(int requestId, ParcelUuid uuid) {
-                    synchronized (LOCK) {
-                        final var callId = uuid.getUuid();
-                        Log.i(TAG, "TBS - accept call=" + callId);
-                        int result = Result.SUCCESS;
-                        BluetoothCall call = mCallInfo.getCallByCallId(callId);
-                        if (mCallInfo.isNullCall(call)) {
-                            result = Result.ERROR_UNKNOWN_CALL_ID;
-                        } else {
-                            int callState =
-                                    mAllowVideoAnswer
-                                            ? call.getVideoState()
-                                            : VideoProfile.STATE_AUDIO_ONLY;
-                            call.answer(callState);
-                        }
-                        final var resultFinal = result;
-                        getTbsService()
-                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
+                    /* Lets make first valid call the base call */
+                    if (baseCallInstance == null) {
+                        baseCallInstance = callToJoinInstance;
+                        alreadyJoinedCalls.add(callToJoinUuid);
+                        continue;
                     }
+                    baseCallInstance.conference(callToJoinInstance);
+                    alreadyJoinedCalls.add(callToJoinUuid);
                 }
-
-                @Override
-                public void onTerminateCall(int requestId, ParcelUuid uuid) {
-                    synchronized (LOCK) {
-                        final var callId = uuid.getUuid();
-                        Log.i(TAG, "TBS - terminate call=" + callId);
-                        int result = Result.SUCCESS;
-                        BluetoothCall call = mCallInfo.getCallByCallId(callId);
-                        if (mCallInfo.isNullCall(call)) {
-                            result = Result.ERROR_UNKNOWN_CALL_ID;
-                        } else {
-                            mIsTerminatedByClient = true;
-                            call.disconnect();
-                        }
-                        final var resultFinal = result;
-                        getTbsService()
-                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
-                    }
+                int result = Result.SUCCESS;
+                if ((baseCallInstance == null) || (alreadyJoinedCalls.size() < 2)) {
+                    result = Result.ERROR_UNKNOWN_CALL_ID;
                 }
+                requestResult(requestId, result);
+            }
+        }
 
-                @Override
-                public void onHoldCall(int requestId, ParcelUuid uuid) {
-                    synchronized (LOCK) {
-                        final var callId = uuid.getUuid();
-                        Log.i(TAG, "TBS - hold call=" + callId);
-                        int result = Result.SUCCESS;
-                        BluetoothCall call = mCallInfo.getCallByCallId(callId);
-                        if (mCallInfo.isNullCall(call)) {
-                            result = Result.ERROR_UNKNOWN_CALL_ID;
-                        } else {
-                            call.hold();
-                        }
-                        final var resultFinal = result;
-                        getTbsService()
-                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
-                    }
-                }
+        void registerBearer() {
+            Log.d(TAG, "registerBearer");
+            getTbsService()
+                    .ifPresent(
+                            t -> {
+                                t.registerBearer(
+                                        TAG,
+                                        this,
+                                        TAG,
+                                        List.of("tel"),
+                                        CAPABILITY_HOLD_CALL,
+                                        getNetworkOperator(),
+                                        getBearerTechnology());
 
-                @Override
-                public void onUnholdCall(int requestId, ParcelUuid uuid) {
-                    synchronized (LOCK) {
-                        final var callId = uuid.getUuid();
-                        Log.i(TAG, "TBS - unhold call=" + callId);
-                        int result = Result.SUCCESS;
-                        BluetoothCall call = mCallInfo.getCallByCallId(callId);
-                        if (mCallInfo.isNullCall(call)) {
-                            result = Result.ERROR_UNKNOWN_CALL_ID;
-                        } else {
-                            call.unhold();
-                        }
-                        final var resultFinal = result;
-                        getTbsService()
-                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
-                    }
-                }
+                                List<BluetoothLeCall> calls =
+                                        mBluetoothCallHashMap.values().stream()
+                                                .map(BluetoothInCallService.this::toLeCall)
+                                                .filter(Objects::nonNull)
+                                                .toList();
+                                t.currentCallsList(mCcid, calls);
+                            });
+        }
 
-                @Override
-                public void onPlaceCall(int requestId, ParcelUuid uuid, String uri) {
-                    getTbsService()
-                            .ifPresent(
-                                    tbs ->
-                                            tbs.requestResult(
-                                                    mCcid, requestId, Result.ERROR_APPLICATION));
-                }
+        void unregisterBearer() {
+            Log.d(TAG, "unregisterBearer");
+            getTbsService().ifPresent(t -> t.unregisterBearer(TAG));
+            mCcid = ContentControlIdKeeper.CCID_INVALID;
+        }
 
-                @Override
-                public void onJoinCalls(int requestId, List<ParcelUuid> parcelUuids) {
-                    synchronized (LOCK) {
-                        List<UUID> callIds = new ArrayList<>();
-                        for (ParcelUuid parcelUuid : parcelUuids) {
-                            callIds.add(parcelUuid.getUuid());
-                        }
-                        Log.i(TAG, "TBS - onJoinCalls");
-                        List<UUID> alreadyJoinedCalls = new ArrayList<>();
-                        BluetoothCall baseCallInstance = null;
+        void callAdded(BluetoothLeCall call) {
+            getTbsService().ifPresent(t -> t.callAdded(mCcid, call));
+        }
 
-                        if (callIds.size() < 2) {
-                            Log.e(
-                                    TAG,
-                                    "TBS - onJoinCalls, join call number is invalid: "
-                                            + callIds.size());
-                            final var result = Result.ERROR_UNKNOWN_CALL_ID;
-                            getTbsService()
-                                    .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, result));
-                            return;
-                        }
+        void callRemoved(UUID callId, int reason) {
+            getTbsService().ifPresent(t -> t.callRemoved(mCcid, callId, reason));
+        }
 
-                        for (UUID callToJoinUuid : callIds) {
-                            BluetoothCall callToJoinInstance =
-                                    mCallInfo.getCallByCallId(callToJoinUuid);
+        void callStateChanged(UUID callId, int state) {
+            getTbsService().ifPresent(t -> t.callStateChanged(mCcid, callId, state));
+        }
 
-                            /* Skip invalid and already add device */
-                            if ((callToJoinInstance == null)
-                                    || (alreadyJoinedCalls.contains(callToJoinUuid))) {
-                                continue;
-                            }
+        void requestResult(int requestId, int result) {
+            getTbsService().ifPresent(t -> t.requestResult(mCcid, requestId, result));
+        }
 
-                            /* Lets make first valid call the base call */
-                            if (baseCallInstance == null) {
-                                baseCallInstance = callToJoinInstance;
-                                alreadyJoinedCalls.add(callToJoinUuid);
-                                continue;
-                            }
-
-                            baseCallInstance.conference(callToJoinInstance);
-                            alreadyJoinedCalls.add(callToJoinUuid);
-                        }
-
-                        int result = Result.SUCCESS;
-                        if ((baseCallInstance == null) || (alreadyJoinedCalls.size() < 2)) {
-                            result = Result.ERROR_UNKNOWN_CALL_ID;
-                        }
-
-                        final var resultFinal = result;
-                        getTbsService()
-                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
-                    }
-                }
-            };
+        public static final int CAPABILITY_HOLD_CALL = 0x00000001;
+    }
 }

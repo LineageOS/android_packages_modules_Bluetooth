@@ -35,10 +35,7 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeCall;
-import android.bluetooth.IBluetoothLeCallControlCallback;
 import android.media.AudioManager;
-import android.os.ParcelUuid;
-import android.os.RemoteException;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -77,7 +74,7 @@ public class TbsGenericTest {
     @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private LeAudioService mLeAudioService;
     @Mock private TbsGatt mTbsGatt;
-    @Mock private IBluetoothLeCallControlCallback mIBluetoothLeCallControlCallback;
+    @Mock private TbsService.Callback mCallback;
     @Mock private AudioManager mAudioManager;
 
     @Captor private ArgumentCaptor<Integer> mGtbsCcidCaptor;
@@ -146,7 +143,7 @@ public class TbsGenericTest {
         assertThat(
                         mTbsGeneric.addBearer(
                                 "testBearer",
-                                mIBluetoothLeCallControlCallback,
+                                mCallback,
                                 uci,
                                 uriSchemes,
                                 capabilities,
@@ -155,12 +152,8 @@ public class TbsGenericTest {
                 .isTrue();
 
         ArgumentCaptor<Integer> ccidCaptor = ArgumentCaptor.forClass(Integer.class);
-        try {
-            // Check proper callback call on the profile's binder
-            verify(mIBluetoothLeCallControlCallback).onBearerRegistered(ccidCaptor.capture());
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
+        // Check proper callback call on the profile's binder
+        verify(mCallback).onBearerRegistered(ccidCaptor.capture());
 
         return ccidCaptor.getValue();
     }
@@ -397,14 +390,9 @@ public class TbsGenericTest {
                 .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
 
         ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<ParcelUuid> callUuidCaptor = ArgumentCaptor.forClass(ParcelUuid.class);
-        try {
-            verify(mIBluetoothLeCallControlCallback)
-                    .onAcceptCall(requestIdCaptor.capture(), callUuidCaptor.capture());
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-        assertThat(callUuidCaptor.getValue().getUuid()).isEqualTo(callUuid);
+        ArgumentCaptor<UUID> callUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(mCallback).onAcceptCall(requestIdCaptor.capture(), callUuidCaptor.capture());
+        assertThat(callUuidCaptor.getValue()).isEqualTo(callUuid);
         // Active device should be changed
         verify(mLeAudioService).setActiveDevice(mDevice);
 
@@ -453,14 +441,9 @@ public class TbsGenericTest {
                         mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE, args);
 
         ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<ParcelUuid> callUuidCaptor = ArgumentCaptor.forClass(ParcelUuid.class);
-        try {
-            verify(mIBluetoothLeCallControlCallback)
-                    .onTerminateCall(requestIdCaptor.capture(), callUuidCaptor.capture());
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-        assertThat(callUuidCaptor.getValue().getUuid()).isEqualTo(callUuid);
+        ArgumentCaptor<UUID> callUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(mCallback).onTerminateCall(requestIdCaptor.capture(), callUuidCaptor.capture());
+        assertThat(callUuidCaptor.getValue()).isEqualTo(callUuid);
 
         // Respond with requestComplete...
         mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
@@ -507,14 +490,9 @@ public class TbsGenericTest {
                         mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD, args);
 
         ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<ParcelUuid> callUuidCaptor = ArgumentCaptor.forClass(ParcelUuid.class);
-        try {
-            verify(mIBluetoothLeCallControlCallback)
-                    .onHoldCall(requestIdCaptor.capture(), callUuidCaptor.capture());
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-        assertThat(callUuidCaptor.getValue().getUuid()).isEqualTo(callUuid);
+        ArgumentCaptor<UUID> callUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(mCallback).onHoldCall(requestIdCaptor.capture(), callUuidCaptor.capture());
+        assertThat(callUuidCaptor.getValue()).isEqualTo(callUuid);
 
         // Respond with requestComplete...
         mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
@@ -561,14 +539,9 @@ public class TbsGenericTest {
                         mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE, args);
 
         ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<ParcelUuid> callUuidCaptor = ArgumentCaptor.forClass(ParcelUuid.class);
-        try {
-            verify(mIBluetoothLeCallControlCallback)
-                    .onUnholdCall(requestIdCaptor.capture(), callUuidCaptor.capture());
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-        assertThat(callUuidCaptor.getValue().getUuid()).isEqualTo(callUuid);
+        ArgumentCaptor<UUID> callUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(mCallback).onUnholdCall(requestIdCaptor.capture(), callUuidCaptor.capture());
+        assertThat(callUuidCaptor.getValue()).isEqualTo(callUuid);
 
         // Respond with requestComplete...
         mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
@@ -596,13 +569,8 @@ public class TbsGenericTest {
                         mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ORIGINATE, uri.getBytes());
 
         ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<ParcelUuid> callUuidCaptor = ArgumentCaptor.forClass(ParcelUuid.class);
-        try {
-            verify(mIBluetoothLeCallControlCallback)
-                    .onPlaceCall(requestIdCaptor.capture(), callUuidCaptor.capture(), eq(uri));
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
+        ArgumentCaptor<UUID> callUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(mCallback).onPlaceCall(requestIdCaptor.capture(), callUuidCaptor.capture(), eq(uri));
 
         // Active device should be changed
         verify(mLeAudioService).setActiveDevice(mDevice);
@@ -612,7 +580,7 @@ public class TbsGenericTest {
         mTbsGeneric.callAdded(
                 ccid,
                 new BluetoothLeCall(
-                        callUuidCaptor.getValue().getUuid(),
+                        callUuidCaptor.getValue(),
                         uri,
                         "anOutgoingCaller",
                         BluetoothLeCall.STATE_ALERTING,
@@ -667,17 +635,12 @@ public class TbsGenericTest {
                 .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_JOIN, args);
 
         ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<List<ParcelUuid>> callUuidCaptor = ArgumentCaptor.forClass(List.class);
-        try {
-            verify(mIBluetoothLeCallControlCallback)
-                    .onJoinCalls(requestIdCaptor.capture(), callUuidCaptor.capture());
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-        List<ParcelUuid> callParcelUuids = callUuidCaptor.getValue();
+        ArgumentCaptor<List<UUID>> callUuidCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mCallback).onJoinCalls(requestIdCaptor.capture(), callUuidCaptor.capture());
+        List<UUID> callParcelUuids = callUuidCaptor.getValue();
         assertThat(callParcelUuids).hasSize(2);
-        for (ParcelUuid callParcelUuid : callParcelUuids) {
-            assertThat(callUuids.contains(callParcelUuid.getUuid())).isTrue();
+        for (UUID callParcelUuid : callParcelUuids) {
+            assertThat(callUuids.contains(callParcelUuid)).isTrue();
         }
 
         // // Respond with requestComplete...
