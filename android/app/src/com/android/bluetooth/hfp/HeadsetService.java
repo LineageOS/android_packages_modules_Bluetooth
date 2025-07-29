@@ -2544,7 +2544,9 @@ public class HeadsetService extends ConnectableProfile {
                 Log.w(TAG, "isScoAcceptable: rejected SCO since audio route is not allowed");
                 return BluetoothStatusCodes.ERROR_AUDIO_ROUTE_BLOCKED;
             }
-            if (mVoiceRecognitionStarted || mVirtualCallStarted) {
+            if (mVoiceRecognitionStarted
+                    || mVirtualCallStarted
+                    || mSystemInterface.isScoManagedByAudioEnabled()) {
                 return BluetoothStatusCodes.SUCCESS;
             }
             if (shouldCallAudioBeActive()) {
