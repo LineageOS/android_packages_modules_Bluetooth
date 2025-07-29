@@ -55,7 +55,8 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   execution_wait_timer = alarm_new("btm.execution_wait_timer");
 
   security_mode = initial_security_mode;
-  pairing_bda = RawAddress::kAny;
+  link_spec = {};
+  link_spec.addrt.bda = RawAddress::kAny;
   sec_dev_rec = list_new([](void* ptr) {
     // Invoke destructor for all record objects and reset to default
     // initialized value so memory may be properly freed

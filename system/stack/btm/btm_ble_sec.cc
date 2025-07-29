@@ -1388,7 +1388,7 @@ void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
   if (BTM_GetRemoteDeviceName(p_dev_rec->ble.pseudo_addr, remote_name) &&
       interop_match_name(INTEROP_SUSPEND_ATT_TRAFFIC_DURING_PAIRING, (const char*)remote_name) &&
       (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_LE_ACTIVE) &&
-      btm_sec_cb.pairing_bda == p_dev_rec->ble.pseudo_addr) {
+      btm_sec_cb.link_spec.addrt.bda == p_dev_rec->ble.pseudo_addr) {
     log::info(
             "INTEROP_DELAY_ATT_TRAFFIC_DURING_PAIRING: Waiting for bonding to "
             "complete to notify enc complete");
@@ -1457,8 +1457,8 @@ static void btm_ble_get_auth_req(const tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_AUTH
   // peripheral, then we need to ensure that the authentication requirements
   // match what was agreed upon during bonding.
   if (com::android::bluetooth::flags::peripheral_auth_req() &&
-      btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
-      btm_sec_cb.pairing_bda != p_dev_rec->ble.pseudo_addr) {  // Not pairing
+      btm_sec_cb.link_spec.addrt.bda != p_dev_rec->bd_addr &&
+      btm_sec_cb.link_spec.addrt.bda != p_dev_rec->ble.pseudo_addr) {  // Not pairing
     if (!p_dev_rec->role_central && p_dev_rec->sec_rec.is_le_link_key_known() &&
         p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE &&
         p_dev_rec->sec_rec.le_link == tSECURITY_STATE::AUTHENTICATING) {
@@ -1675,8 +1675,9 @@ static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
   // 2) Link may get disconnected after the SMP security request was sent.
   //
   // Central role: SMP may generate a SMP_COMPLT_EVT if encryption refresh fails.
-  if (p_data->complt.reason != SMP_SUCCESS && btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
-      btm_sec_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
+  if (p_data->complt.reason != SMP_SUCCESS &&
+      btm_sec_cb.link_spec.addrt.bda != p_dev_rec->bd_addr &&
+      btm_sec_cb.link_spec.addrt.bda != p_dev_rec->ble.pseudo_addr &&
       p_dev_rec->sec_rec.is_le_link_key_known() &&
       p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE) {
     if (p_dev_rec->sec_rec.is_le_device_encrypted()) {
@@ -1703,7 +1704,8 @@ static void btm_ble_user_confirmation_req(const RawAddress& bd_addr, tBTM_SEC_DE
                                           tBTM_LE_EVT event, tBTM_LE_EVT_DATA* p_data) {
   p_dev_rec->sec_rec.sec_flags |= BTM_SEC_LE_AUTHENTICATED;
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::AUTHENTICATING;
-  btm_sec_cb.pairing_bda = bd_addr;
+  btm_sec_cb.link_spec.addrt.bda = bd_addr;
+  btm_sec_cb.link_spec.transport = BT_TRANSPORT_LE;
   btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;
   BTM_BLE_SEC_CALLBACK(event, bd_addr, p_data);
 }
@@ -1714,14 +1716,16 @@ static void btm_ble_sec_req(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_dev_r
     log::warn("Ignoring SMP Security request");
     return;
   }
-  btm_sec_cb.pairing_bda = bd_addr;
+  btm_sec_cb.link_spec.addrt.bda = bd_addr;
+  btm_sec_cb.link_spec.transport = BT_TRANSPORT_LE;
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::AUTHENTICATING;
   btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;
   BTM_BLE_SEC_CALLBACK(BTM_LE_SEC_REQUEST_EVT, bd_addr, p_data);
 }
 
 static void btm_ble_consent_req(const RawAddress& bd_addr, tBTM_LE_EVT_DATA* p_data) {
-  btm_sec_cb.pairing_bda = bd_addr;
+  btm_sec_cb.link_spec.addrt.bda = bd_addr;
+  btm_sec_cb.link_spec.transport = BT_TRANSPORT_LE;
   btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;
   BTM_BLE_SEC_CALLBACK(BTM_LE_CONSENT_REQ_EVT, bd_addr, p_data);
 }
@@ -1770,8 +1774,9 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_
           btm_sec_cb.pairing_state, btm_sec_cb.pairing_flags, btm_sec_cb.pin_code_len);
 
   /* Reset btm state only if the callback address matches pairing address */
-  if (bd_addr == btm_sec_cb.pairing_bda) {
-    btm_sec_cb.pairing_bda = RawAddress::kAny;
+  if (bd_addr == btm_sec_cb.link_spec.addrt.bda) {
+    btm_sec_cb.link_spec = {};
+    btm_sec_cb.link_spec.addrt.bda = RawAddress::kAny;
     btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;
     btm_sec_cb.pairing_flags = 0;
   }
@@ -1832,11 +1837,11 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
   if (p_dev_rec == nullptr) {
     log::warn("Unexpected event '{}' for unknown device.", smp_evt_to_text(event));
     if (com::android::bluetooth::flags::clear_pairing_state_when_no_devrec() &&
-                bd_addr == btm_sec_cb.pairing_bda &&
-                event == SMP_COMPLT_EVT) {
-        btm_sec_cb.pairing_bda = RawAddress::kAny;
-        btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;
-        btm_sec_cb.pairing_flags = 0;
+        bd_addr == btm_sec_cb.link_spec.addrt.bda && event == SMP_COMPLT_EVT) {
+      btm_sec_cb.link_spec = {};
+      btm_sec_cb.link_spec.addrt.bda = RawAddress::kAny;
+      btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;
+      btm_sec_cb.pairing_flags = 0;
     }
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
   }
