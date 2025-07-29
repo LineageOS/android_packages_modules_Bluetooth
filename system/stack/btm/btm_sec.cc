@@ -381,8 +381,8 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_le
     return;
   }
 
-  if (bd_addr != btm_sec_cb.pairing_bda) {
-    log::error("BTM_PINCodeReply() - Wrong BD Addr");
+  if (bd_addr != btm_sec_cb.link_spec.addrt.bda) {
+    log::error("Requested addr {} does not match pairing device {}", bd_addr, btm_sec_cb.link_spec);
     return;
   }
 
@@ -517,7 +517,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
     return tBTM_STATUS::BTM_NO_RESOURCES;
   }
 
-  btm_sec_cb.pairing_bda = bd_addr;
+  btm_sec_cb.link_spec = {.addrt = {.type = addr_type, .bda = bd_addr}, .transport = transport};
 
   btm_sec_cb.pairing_flags = BTM_PAIR_FLAGS_WE_STARTED_DD;
 
@@ -687,7 +687,7 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
   log::verbose("BTM_SecBondCancel()  State: {} flags:0x{:x}",
                btm_pair_state_descr(btm_sec_cb.pairing_state), btm_sec_cb.pairing_flags);
   p_dev_rec = btm_find_dev(bd_addr);
-  if (!p_dev_rec || btm_sec_cb.pairing_bda != bd_addr) {
+  if (!p_dev_rec || btm_sec_cb.link_spec.addrt.bda != bd_addr) {
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
   }
 
@@ -990,10 +990,10 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
                btm_pair_state_descr(btm_sec_cb.pairing_state), res);
 
   /* If timeout already expired or has been canceled, ignore the reply */
-  if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_WAIT_NUMERIC_CONFIRM) ||
-      (btm_sec_cb.pairing_bda != bd_addr)) {
-    log::warn("Unexpected pairing confirm for {}, pairing_state: {}, pairing_bda: {}", bd_addr,
-              btm_pair_state_descr(btm_sec_cb.pairing_state), btm_sec_cb.pairing_bda);
+  if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_WAIT_NUMERIC_CONFIRM ||
+      btm_sec_cb.link_spec.addrt.bda != bd_addr) {
+    log::warn("Unexpected pairing confirm for {}, pairing_state: {}, pairing device: {}", bd_addr,
+              btm_pair_state_descr(btm_sec_cb.pairing_state), btm_sec_cb.link_spec);
     return;
   }
 
@@ -1032,7 +1032,8 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t pa
   log::verbose("BTM_PasskeyReqReply: State: {}  res:{}",
                btm_pair_state_descr(btm_sec_cb.pairing_state), res);
 
-  if ((btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE) || (btm_sec_cb.pairing_bda != bd_addr)) {
+  if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE ||
+      btm_sec_cb.link_spec.addrt.bda != bd_addr) {
     return;
   }
 
@@ -1723,8 +1724,9 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   if (!com::android::bluetooth::flags::concurrent_incoming_outgoing_pairing()) {
     if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
         (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
-        (btm_sec_cb.pairing_bda == bda)) {
-      log::verbose("Security Manager: reject connect request from bonding device");
+        (btm_sec_cb.link_spec.addrt.bda == bda)) {
+          log::verbose("Security Manager: reject connect request from bonding device {}",
+            btm_sec_cb.link_spec);
 
       /* incoming connection from bonding device is rejected */
       btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_REJECTED_CONNECT;
@@ -1774,7 +1776,7 @@ static void btm_sec_bond_cancel_complete(void) {
      * btm_sec_connected would not know
      * this function also needs to do proper clean up.
      */
-    p_dev_rec = btm_find_dev(btm_sec_cb.pairing_bda);
+    p_dev_rec = btm_find_dev(btm_sec_cb.link_spec.addrt.bda);
     if (p_dev_rec != NULL) {
       p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
     }
@@ -1880,7 +1882,7 @@ static void btm_sec_check_pending_reqs(void) {
 
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
     log::warn("Busy state {} device {}", btm_pair_state_descr(btm_sec_cb.pairing_state),
-              btm_sec_cb.pairing_bda);
+              btm_sec_cb.link_spec);
     return;
   }
 
@@ -2158,8 +2160,8 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
 
   /* If we were delaying asking UI for a PIN because name was not resolved,
    * ask now */
-  if ((btm_sec_cb.pairing_state == BTM_PAIR_STATE_WAIT_LOCAL_PIN) &&
-      (btm_sec_cb.pairing_bda == bd_addr)) {
+  if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_WAIT_LOCAL_PIN &&
+      btm_sec_cb.link_spec.addrt.bda == bd_addr) {
     log::verbose("delayed pin now being requested flags:0x{:x}, (p_pin_callback=0x{})",
                  btm_sec_cb.pairing_flags, std::format_ptr(btm_sec_cb.api.p_pin_callback));
 
@@ -2180,13 +2182,14 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
 
   /* Check if we were delaying bonding because name was not resolved */
   if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_GET_REM_NAME) {
-    if (btm_sec_cb.pairing_bda != bd_addr) {
-      log::warn("wrong BDA, retry with pairing BDA");
+    if (btm_sec_cb.link_spec.addrt.bda != bd_addr) {
+      log::warn("wrong BDA {}, retry with pairing device {}", bd_addr, btm_sec_cb.link_spec);
       tBTM_STATUS btm_status = get_stack_rnr_interface().BTM_ReadRemoteDeviceName(
-              btm_sec_cb.pairing_bda, NULL, BT_TRANSPORT_BR_EDR);
+              btm_sec_cb.link_spec.addrt.bda, NULL, BT_TRANSPORT_BR_EDR);
       if (btm_status != tBTM_STATUS::BTM_CMD_STARTED) {
-        log::warn("failed ({}) to restart remote name request for pairing, must be already queued",
-                  btm_status_text(btm_status));
+        log::warn(
+                "failed ({}) to restart remote name request for pairing {}, must be already queued",
+                btm_status_text(btm_status), btm_sec_cb.link_spec);
       }
       return;
     }
@@ -2423,7 +2426,7 @@ void btm_io_capabilities_req(RawAddress p) {
     /* initiator, at this point it is expected to be dedicated bonding
     initiated by local device */
     case BTM_PAIR_STATE_WAIT_PIN_REQ:
-      if (evt_data.bd_addr == btm_sec_cb.pairing_bda) {
+      if (evt_data.bd_addr == btm_sec_cb.link_spec.addrt.bda) {
         evt_data.auth_req = BTM_AUTH_AP_YES;
       } else {
         err_code = HCI_ERR_HOST_BUSY_PAIRING;
@@ -2480,7 +2483,8 @@ void btm_io_capabilities_req(RawAddress p) {
   /* Notify L2CAP to increase timeout */
   l2c_pin_code_request(evt_data.bd_addr);
 
-  btm_sec_cb.pairing_bda = evt_data.bd_addr;
+  btm_sec_cb.link_spec.addrt.bda = evt_data.bd_addr;
+  btm_sec_cb.link_spec.transport = BT_TRANSPORT_BR_EDR;
 
   if (evt_data.bd_addr == btm_sec_cb.connecting_bda) {
     p_dev_rec->dev_class = btm_sec_cb.connecting_dc;
@@ -2562,7 +2566,8 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
 
   /* If no security is in progress, this indicates incoming security */
   if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
-    btm_sec_cb.pairing_bda = evt_data.bd_addr;
+    btm_sec_cb.link_spec.addrt.bda = evt_data.bd_addr;
+    btm_sec_cb.link_spec.transport = BT_TRANSPORT_BR_EDR;
 
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_INCOMING_SSP);
   }
@@ -2616,8 +2621,8 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
              btm_pair_state_descr(btm_sec_cb.pairing_state));
 
   p_dev_rec = btm_find_dev(p_bda);
-  if ((p_dev_rec != NULL) && (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (btm_sec_cb.pairing_bda == p_bda)) {
+  if (p_dev_rec != NULL && btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+      btm_sec_cb.link_spec.addrt.bda == p_bda) {
     evt_data.cfm_req.bd_addr = p_dev_rec->bd_addr;
     evt_data.cfm_req.dev_class = p_dev_rec->dev_class;
     log::info("CoD: evt_data.cfm_req.dev_class = {}", dev_class_text(evt_data.cfm_req.dev_class));
@@ -2764,7 +2769,7 @@ void btm_simple_pair_complete(const RawAddress bd_addr, uint8_t status) {
 
     /* Change the timer to 1 second */
     alarm_set_on_mloop(btm_sec_cb.pairing_timer, BT_1SEC_TIMEOUT_MS, btm_sec_pairing_timeout, NULL);
-  } else if (btm_sec_cb.pairing_bda == bd_addr) {
+  } else if (btm_sec_cb.link_spec.addrt.bda == bd_addr) {
     /* stop the timer */
     alarm_cancel(btm_sec_cb.pairing_timer);
 
@@ -3014,8 +3019,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     }
   }
 
-  if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (p_dev_rec->bd_addr == btm_sec_cb.pairing_bda)) {
+  if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+      p_dev_rec->bd_addr == btm_sec_cb.link_spec.addrt.bda) {
     if (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
       are_bonding = true;
     }
@@ -3491,7 +3496,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
     } else {
       /* If the device matches with stored paring address
        * reset the paring state to idle */
-      if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) && btm_sec_cb.pairing_bda == bda) {
+      if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+          btm_sec_cb.link_spec.addrt.bda == bda) {
         log::warn("Connection failed during bonding attempt peer:{} reason:{}", bda,
                   hci_error_code_text(status));
         btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
@@ -3512,8 +3518,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
     /* Update the timestamp for this device */
     p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
     if (p_dev_rec->sm4 & BTM_SM4_CONN_PEND) {
-      if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-          (btm_sec_cb.pairing_bda == p_dev_rec->bd_addr) &&
+      if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+          btm_sec_cb.link_spec.addrt.bda == p_dev_rec->bd_addr &&
           (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)) {
         /* if incoming acl connection failed while pairing, then try to connect
          * and continue */
@@ -3556,7 +3562,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
 
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
   bool is_pairing_device = false;
-  const bool addr_matched = (btm_sec_cb.pairing_bda == bda);
+  const bool addr_matched = (btm_sec_cb.link_spec.addrt.bda == bda);
 
   if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) && addr_matched) {
     /* if we rejected incoming connection from bonding device */
@@ -3747,8 +3753,8 @@ tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason, std::string 
 
   /* If we are in the process of bonding we need to tell client that auth failed
    */
-  if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (btm_sec_cb.pairing_bda == p_dev_rec->bd_addr) &&
+  if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+      btm_sec_cb.link_spec.addrt.bda == p_dev_rec->bd_addr &&
       (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)) {
     /* we are currently doing bonding.  Link will be disconnected when done */
     btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
@@ -3795,7 +3801,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
    */
   const uint8_t old_pairing_flags = btm_sec_cb.pairing_flags;
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
-      btm_sec_cb.pairing_bda == p_dev_rec->bd_addr && pairing_transport_matches) {
+      btm_sec_cb.link_spec.addrt.bda == p_dev_rec->bd_addr && pairing_transport_matches) {
     log::debug("Disconnected while pairing process active handle:0x{:04x}", handle);
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
     p_dev_rec->sec_rec.sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
@@ -3878,7 +3884,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   }
 
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
-      btm_sec_cb.pairing_bda == p_dev_rec->bd_addr && !pairing_transport_matches) {
+      btm_sec_cb.link_spec.addrt.bda == p_dev_rec->bd_addr && !pairing_transport_matches) {
     log::debug("Disconnection on the other transport while pairing");
     return;
   }
@@ -4013,7 +4019,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
   p_dev_rec->sec_rec.enc_key_size = 16;
   p_dev_rec->sec_rec.link_key = link_key;
 
-  if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) && (btm_sec_cb.pairing_bda == p_bda)) {
+  if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE && btm_sec_cb.link_spec.addrt.bda == p_bda) {
     if (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
       we_are_bonding = true;
     } else {
@@ -4149,7 +4155,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
           (btm_sec_cb.devcb.loc_io_caps == BTM_IO_CAP_NONE) ? BTM_AUTH_AP_NO : BTM_AUTH_AP_YES;
   BD_NAME name;
 
-  p_dev_rec = btm_find_dev(p_cb->pairing_bda);
+  p_dev_rec = btm_find_dev(p_cb->link_spec.addrt.bda);
 
   log::verbose("State: {}   Flags: {}", btm_pair_state_descr(p_cb->pairing_state),
                p_cb->pairing_flags);
@@ -4161,15 +4167,15 @@ static void btm_sec_pairing_timeout(void* /* data */) {
 
     case BTM_PAIR_STATE_WAIT_LOCAL_PIN:
       if ((btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_PRE_FETCH_PIN) == 0) {
-        btsnd_hcic_pin_code_neg_reply(p_cb->pairing_bda);
+        btsnd_hcic_pin_code_neg_reply(p_cb->link_spec.addrt.bda);
       }
       btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
       /* We need to notify the UI that no longer need the PIN */
       if (btm_sec_cb.api.p_auth_complete_callback) {
         if (p_dev_rec == nullptr) {
           name[0] = 0;
-          (*btm_sec_cb.api.p_auth_complete_callback)(p_cb->pairing_bda, kDevClassEmpty, name,
-                                                     HCI_ERR_CONNECTION_TOUT);
+          (*btm_sec_cb.api.p_auth_complete_callback)(p_cb->link_spec.addrt.bda, kDevClassEmpty,
+                                                     name, HCI_ERR_CONNECTION_TOUT);
         } else {
           NotifyBondingChange(*p_dev_rec, HCI_ERR_CONNECTION_TOUT);
         }
@@ -4177,13 +4183,13 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_NUMERIC_CONFIRM:
-      btsnd_hcic_user_conf_reply(p_cb->pairing_bda, false);
+      btsnd_hcic_user_conf_reply(p_cb->link_spec.addrt.bda, false);
       /* btm_sec_cb.change_pairing_state (BTM_PAIR_STATE_IDLE); */
       break;
 
     case BTM_PAIR_STATE_KEY_ENTRY:
       if (btm_sec_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
-        btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
+        btsnd_hcic_user_passkey_neg_reply(p_cb->link_spec.addrt.bda);
       } else {
         btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
       }
@@ -4191,13 +4197,13 @@ static void btm_sec_pairing_timeout(void* /* data */) {
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS:
       // TODO(optedoblivion): Inject OOB_DATA_PRESENT Flag
-      btsnd_hcic_io_cap_req_reply(p_cb->pairing_bda, btm_sec_cb.devcb.loc_io_caps, BTM_OOB_NONE,
-                                  auth_req);
+      btsnd_hcic_io_cap_req_reply(p_cb->link_spec.addrt.bda, btm_sec_cb.devcb.loc_io_caps,
+                                  BTM_OOB_NONE, auth_req);
       btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
       break;
 
     case BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP:
-      btsnd_hcic_rem_oob_neg_reply(p_cb->pairing_bda);
+      btsnd_hcic_rem_oob_neg_reply(p_cb->link_spec.addrt.bda);
       btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
       break;
 
@@ -4206,7 +4212,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
        * complete.
        * now it's time to tear down the ACL link*/
       if (p_dev_rec == nullptr) {
-        log::error("BTM_PAIR_STATE_WAIT_DISCONNECT unknown BDA: {}", p_cb->pairing_bda);
+        log::error("BTM_PAIR_STATE_WAIT_DISCONNECT unknown device: {}", p_cb->link_spec);
         break;
       }
       btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_AUTH_FAILURE, p_dev_rec->hci_handle,
@@ -4222,8 +4228,8 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       if (btm_sec_cb.api.p_auth_complete_callback) {
         if (p_dev_rec == nullptr) {
           name[0] = 0;
-          (*btm_sec_cb.api.p_auth_complete_callback)(p_cb->pairing_bda, kDevClassEmpty, name,
-                                                     HCI_ERR_CONNECTION_TOUT);
+          (*btm_sec_cb.api.p_auth_complete_callback)(p_cb->link_spec.addrt.bda, kDevClassEmpty,
+                                                     name, HCI_ERR_CONNECTION_TOUT);
         } else {
           NotifyBondingChange(*p_dev_rec, HCI_ERR_CONNECTION_TOUT);
         }
@@ -4265,12 +4271,12 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
   }
 
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
-    if ((p_bda == btm_sec_cb.pairing_bda) &&
-        (btm_sec_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE)) {
+    if (p_bda == btm_sec_cb.link_spec.addrt.bda &&
+        btm_sec_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE) {
       btsnd_hcic_pin_code_neg_reply(p_bda);
       return;
-    } else if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_WAIT_PIN_REQ) ||
-               p_bda != btm_sec_cb.pairing_bda) {
+    } else if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_WAIT_PIN_REQ ||
+               p_bda != btm_sec_cb.link_spec.addrt.bda) {
       log::warn("btm_sec_pin_code_request() rejected - state: {}",
                 btm_pair_state_descr(btm_sec_cb.pairing_state));
       btsnd_hcic_pin_code_neg_reply(p_bda);
@@ -4288,7 +4294,8 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
   p_dev_rec->sm4 = BTM_SM4_KNOWN;
 
   if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
-    btm_sec_cb.pairing_bda = p_bda;
+    btm_sec_cb.link_spec.addrt.bda = p_bda;
+    btm_sec_cb.link_spec.transport = BT_TRANSPORT_BR_EDR;
 
     btm_sec_cb.pairing_flags = BTM_PAIR_FLAGS_PEER_STARTED_DD;
   }
@@ -4711,7 +4718,7 @@ void tBTM_SEC_CB::change_pairing_state(tBTM_PAIRING_STATE new_state) {
              btm_pair_state_descr(pairing_state), btm_pair_state_descr(new_state), pairing_flags);
 
   if (pairing_state != new_state) {
-    BTM_LogHistory(kBtmLogTag, btm_sec_cb.pairing_bda, "Pairing state changed",
+    BTM_LogHistory(kBtmLogTag, btm_sec_cb.link_spec.addrt.bda, "Pairing state changed",
                    std::format("{} => {}", btm_pair_state_descr(pairing_state),
                                btm_pair_state_descr(new_state)));
   }
@@ -4724,16 +4731,17 @@ void tBTM_SEC_CB::change_pairing_state(tBTM_PAIRING_STATE new_state) {
     pin_code_len = 0;
 
     /* Make sure the the lcb shows we are not bonding */
-    l2cu_update_lcb_4_bonding(pairing_bda, false);
+    l2cu_update_lcb_4_bonding(link_spec.addrt.bda, false);
 
     btm_restore_mode();
     btm_sec_check_pending_reqs();
 
-    pairing_bda = RawAddress::kAny;
+    link_spec = {};
+    link_spec.addrt.bda = RawAddress::kAny;
   } else {
     /* If transitioning out of idle, mark the lcb as bonding */
     if (old_state == BTM_PAIR_STATE_IDLE) {
-      l2cu_update_lcb_4_bonding(pairing_bda, true);
+      l2cu_update_lcb_4_bonding(link_spec.addrt.bda, true);
     }
 
     alarm_set_on_mloop(btm_sec_cb.pairing_timer, BTM_SEC_TIMEOUT_VALUE * 1000,
