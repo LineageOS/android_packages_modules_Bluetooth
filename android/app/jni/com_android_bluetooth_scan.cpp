@@ -671,13 +671,13 @@ static void msft_monitor_remove_cb(int filter_index, uint8_t status) {
                                status);
 }
 
-static void msft_monitor_enable_cb(uint8_t status) {
+static void msft_monitor_enable_cb(bool enable, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mScanCallbacksObj) {
     return;
   }
-  sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onMsftAdvMonitorEnable, status);
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onMsftAdvMonitorEnable, enable, status);
 }
 
 static bool gattClientIsMsftSupportedNative(JNIEnv* /* env */, jobject /* object */) {
@@ -998,7 +998,7 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
           {"onScanParamSetupCompleted", "(II)V", &method_onScanParamSetupCompleted},
           {"onMsftAdvMonitorAdd", "(III)V", &method_onMsftAdvMonitorAdd},
           {"onMsftAdvMonitorRemove", "(II)V", &method_onMsftAdvMonitorRemove},
-          {"onMsftAdvMonitorEnable", "(I)V", &method_onMsftAdvMonitorEnable},
+          {"onMsftAdvMonitorEnable", "(ZI)V", &method_onMsftAdvMonitorEnable},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/le_scan/ScanNativeInterface", javaMethods);
   return 0;

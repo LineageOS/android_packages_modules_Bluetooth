@@ -97,7 +97,8 @@ public:
 
   using MsftAdvMonitorRemoveCallback = base::Callback<void(uint8_t /* status */)>;
 
-  using MsftAdvMonitorEnableCallback = base::Callback<void(uint8_t /* status */)>;
+  using MsftAdvMonitorEnableCallback =
+          base::Callback<void(bool /* enable */, uint8_t /* status */)>;
 
   /** Registers a scanner with the stack */
   virtual void RegisterScanner(const bluetooth::Uuid& app_uuid, RegisterCallback) = 0;

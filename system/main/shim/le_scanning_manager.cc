@@ -305,9 +305,10 @@ void BleScannerInterfaceImpl::OnMsftAdvMonitorEnable(bool enable,
     bluetooth::shim::GetScanning()->SetScanFilterPolicy(
             enable ? bluetooth::hci::LeScanningFilterPolicy::FILTER_ACCEPT_LIST_ONLY
                    : bluetooth::hci::LeScanningFilterPolicy::ACCEPT_ALL);
+    msft_adv_monitor_enabled_ = enable;
   }
 
-  do_in_jni_thread(base::BindOnce(msft_callbacks_.Enable, (uint8_t)status));
+  do_in_jni_thread(base::BindOnce(msft_callbacks_.Enable, enable, (uint8_t)status));
 }
 
 /** Sets the LE scan interval and window in units of N*0.625 msec */
@@ -492,7 +493,8 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
 
   // TODO: Remove when StartInquiry in GD part implemented
   if (!com::android::bluetooth::flags::support_passive_scanning() ||
-      !(event_type & kScannableMask) || (event_type & kScanResponseMask)) {
+      !(event_type & kScannableMask) || (event_type & kScanResponseMask) ||
+      msft_adv_monitor_enabled_) {
     btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
                                              secondary_phy, advertising_sid, tx_power, rssi,
                                              periodic_advertising_interval, advertising_data);

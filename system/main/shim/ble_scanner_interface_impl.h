@@ -40,7 +40,8 @@ public:
   using MsftAdvMonitorAddCallback =
           base::Callback<void(uint8_t /* monitor_handle */, uint8_t /* status */)>;
   using MsftAdvMonitorRemoveCallback = base::Callback<void(uint8_t /* status */)>;
-  using MsftAdvMonitorEnableCallback = base::Callback<void(uint8_t /* status */)>;
+  using MsftAdvMonitorEnableCallback =
+          base::Callback<void(bool /* enable */, uint8_t /* status */)>;
 
   MsftAdvMonitorAddCallback Add;
   MsftAdvMonitorRemoveCallback Remove;
@@ -126,6 +127,9 @@ public:
   void OnMsftAdvMonitorRemove(bluetooth::hci::ErrorCode status);
   void OnMsftAdvMonitorEnable(bool enable, bluetooth::hci::ErrorCode status);
   MsftCallbacks msft_callbacks_;
+
+private:
+  bool msft_adv_monitor_enabled_ = false;
 
 private:
   bool parse_filter_command(bluetooth::hci::AdvertisingPacketContentFilterCommand&

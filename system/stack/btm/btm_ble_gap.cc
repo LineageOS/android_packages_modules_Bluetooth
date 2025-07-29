@@ -961,7 +961,7 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint1
 }
 
 /* MSFT advertisement enable callback */
-static void msft_adv_mon_enable_cb(uint8_t status) {
+static void msft_adv_mon_enable_cb(bool /* enable */, uint8_t status) {
   if (status == MSFT_FILTER_ENABLE_SUCCESS) {
     return;
   }
