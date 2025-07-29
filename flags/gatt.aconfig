@@ -54,5 +54,5 @@ flag {
     name: "le_subrate_manager"
     namespace: "bluetooth"
     description: "Add subrate manager to control LE subrate parameters"
-    bug: "404175658"
+    bug: "433670627"
 }

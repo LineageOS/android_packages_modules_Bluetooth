@@ -344,19 +344,22 @@ class MediaBrowserWrapper {
             }
             mCallbacksExecuted = true;
             mRunHandler.removeCallbacks(mTimeoutRunnable);
-            for (GetFolderItemsCallback callback : mSubscribedIds.get(parentId)) {
-                Log.v(
-                        TAG,
-                        "getFolderItems for "
-                                + mPackageName
-                                + " and "
-                                + parentId
-                                + ": callback called with "
-                                + browsableContent.size()
-                                + " items.");
-                callback.run(parentId, browsableContent);
-            }
 
+            List<GetFolderItemsCallback> callbackList = mSubscribedIds.get(parentId);
+            if (callbackList != null) {
+                for (GetFolderItemsCallback callback : callbackList) {
+                    Log.v(
+                            TAG,
+                            "getFolderItems for "
+                                    + mPackageName
+                                    + " and "
+                                    + parentId
+                                    + ": callback called with "
+                                    + browsableContent.size()
+                                    + " items.");
+                    callback.run(parentId, browsableContent);
+                }
+            }
             mSubscribedIds.remove(parentId);
             mWrappedBrowser.unsubscribe(parentId);
         }

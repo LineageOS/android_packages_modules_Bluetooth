@@ -454,12 +454,37 @@ public class AvrcpControllerStateMachineTest {
         assertThat(mAvrcpStateMachine.getDevice()).isEqualTo(mDevice);
     }
 
-    /** Test that dumpsys will generate information about connected devices */
+    /** Test that dumpsys will generate information when cover art is disconnected */
     @Test
-    public void testDump() {
+    public void testDump_coverArtDisconnected() {
         StringBuilder sb = new StringBuilder();
         mAvrcpStateMachine.dump(sb);
-        assertThat(sb.toString()).isNotNull();
+        assertThat(sb.toString()).contains("Cover Art: false");
+    }
+
+    /** Test that dumpsys will generate information when cover art is connected */
+    @Test
+    public void testDump_coverArtConnected() {
+        when(mCoverArtManager.getState(mDevice)).thenReturn(STATE_CONNECTED);
+        StringBuilder sb = new StringBuilder();
+        mAvrcpStateMachine.dump(sb);
+        assertThat(sb.toString()).contains("Cover Art: true");
+    }
+
+    /** Test that dumpsys will generate information when cover art manager is null */
+    @Test
+    public void testDump_coverArtManagerNull() {
+        // Override the setup to return a null cover art manager
+        when(mAvrcpControllerService.getCoverArtManager()).thenReturn(null);
+        // Create a new state machine with this setup
+        AvrcpControllerStateMachine smWithNullManager = makeStateMachine(mDevice);
+
+        StringBuilder sb = new StringBuilder();
+        smWithNullManager.dump(sb);
+        assertThat(sb.toString()).contains("Cover Art: false, mCoverArtManager is null");
+
+        // Clean up the new state machine
+        destroyStateMachine(smWithNullManager);
     }
 
     /** Test media browser play command */
@@ -1614,7 +1639,7 @@ public class AvrcpControllerStateMachineTest {
     }
 
     /**
-     * Test receiving an audio focus gain event coming out of a transient loss where a stop command
+     * Test receiving an audio focus gain coming out of a transient loss where a stop command
      * has been sent
      */
     @Test

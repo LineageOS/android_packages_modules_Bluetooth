@@ -498,7 +498,7 @@ public final class BluetoothSocket implements Closeable {
         BluetoothSocket as = new BluetoothSocket(this);
         as.mSocketState = SocketState.CONNECTED;
         FileDescriptor[] fds = mSocket.getAncillaryFileDescriptors();
-        if (DBG) Log.d(TAG, "acceptSocket: socket fd passed by stack fds:" + Arrays.toString(fds));
+        Log.d(TAG, "acceptSocket: socket fd passed by stack fds:" + Arrays.toString(fds));
         if (fds == null || fds.length != 1) {
             Log.e(TAG, "socket fd passed from stack failed, fds: " + Arrays.toString(fds));
             as.close();
@@ -747,7 +747,7 @@ public final class BluetoothSocket implements Closeable {
             return -1;
         }
         try {
-            if (DBG) Log.d(TAG, "bindListen(): mPort=" + mPort + ", mType=" + mType);
+            Log.d(TAG, "bindListen(): mPort=" + mPort + ", mType=" + mType);
             IBluetoothSocketManager socketManager = bluetoothProxy.getSocketManager();
             if (socketManager == null) {
                 Log.e(TAG, "bindListen() bt get socket manager failed");
@@ -764,9 +764,7 @@ public final class BluetoothSocket implements Closeable {
         // read out port number
         try {
             synchronized (this) {
-                if (DBG) {
-                    Log.d(TAG, "bindListen(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
-                }
+                Log.d(TAG, "bindListen(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
                 if (mSocketState != SocketState.INIT) return EBADFD;
                 if (mPfd == null) return -1;
                 FileDescriptor fd = mPfd.getFileDescriptor();
@@ -775,20 +773,20 @@ public final class BluetoothSocket implements Closeable {
                     return -1;
                 }
 
-                if (DBG) Log.d(TAG, "bindListen(), Create LocalSocket");
+                Log.d(TAG, "bindListen(), Create LocalSocket");
                 mSocket = new LocalSocket(fd);
-                if (DBG) Log.d(TAG, "bindListen(), new LocalSocket.getInputStream()");
+                Log.d(TAG, "bindListen(), new LocalSocket.getInputStream()");
                 mSocketIS = mSocket.getInputStream();
                 mSocketOS = mSocket.getOutputStream();
             }
-            if (DBG) Log.d(TAG, "bindListen(), readInt mSocketIS: " + mSocketIS);
+            Log.d(TAG, "bindListen(), readInt mSocketIS: " + mSocketIS);
             int channel = readInt(mSocketIS);
             synchronized (this) {
                 if (mSocketState == SocketState.INIT) {
                     mSocketState = SocketState.LISTENING;
                 }
             }
-            if (DBG) Log.d(TAG, "bindListen(): channel=" + channel + ", mPort=" + mPort);
+            Log.d(TAG, "bindListen(): channel=" + channel + ", mPort=" + mPort);
             if (mPort <= -1) {
                 mPort = channel;
             }
@@ -825,7 +823,7 @@ public final class BluetoothSocket implements Closeable {
             return -1;
         }
         try {
-            if (DBG) Log.d(TAG, "bindListenWithOffload(): mPort=" + mPort + ", mType=" + mType);
+            Log.d(TAG, "bindListenWithOffload(): mPort=" + mPort + ", mType=" + mType);
             IBluetoothSocketManager socketManager = bluetoothProxy.getSocketManager();
             if (socketManager == null) {
                 Log.e(TAG, "bindListenWithOffload() bt get socket manager failed");
@@ -851,14 +849,12 @@ public final class BluetoothSocket implements Closeable {
         // read out port number
         try {
             synchronized (this) {
-                if (DBG) {
-                    Log.d(
-                            TAG,
-                            "bindListenWithOffload(), SocketState: "
-                                    + mSocketState
-                                    + ", mPfd: "
-                                    + mPfd);
-                }
+                Log.d(
+                        TAG,
+                        "bindListenWithOffload(), SocketState: "
+                                + mSocketState
+                                + ", mPfd: "
+                                + mPfd);
                 if (mSocketState != SocketState.INIT) return EBADFD;
                 if (mPfd == null) return -1;
                 FileDescriptor fd = mPfd.getFileDescriptor();
@@ -867,20 +863,20 @@ public final class BluetoothSocket implements Closeable {
                     return -1;
                 }
 
-                if (DBG) Log.d(TAG, "bindListenWithOffload(), Create LocalSocket");
+                Log.d(TAG, "bindListenWithOffload(), Create LocalSocket");
                 mSocket = new LocalSocket(fd);
-                if (DBG) Log.d(TAG, "bindListenWithOffload(), new LocalSocket.getInputStream()");
+                Log.d(TAG, "bindListenWithOffload(), new LocalSocket.getInputStream()");
                 mSocketIS = mSocket.getInputStream();
                 mSocketOS = mSocket.getOutputStream();
             }
-            if (DBG) Log.d(TAG, "bindListenWithOffload(), readInt mSocketIS: " + mSocketIS);
+            Log.d(TAG, "bindListenWithOffload(), readInt mSocketIS: " + mSocketIS);
             int channel = readInt(mSocketIS);
             synchronized (this) {
                 if (mSocketState == SocketState.INIT) {
                     mSocketState = SocketState.LISTENING;
                 }
             }
-            if (DBG) Log.d(TAG, "bindListenWithOffload(): channel=" + channel + ", mPort=" + mPort);
+            Log.d(TAG, "bindListenWithOffload(): channel=" + channel + ", mPort=" + mPort);
             if (mPort <= -1) {
                 mPort = channel;
             }
@@ -1066,7 +1062,7 @@ public final class BluetoothSocket implements Closeable {
                 }
                 mSocketState = SocketState.CLOSED;
                 if (mSocket != null) {
-                    if (DBG) Log.d(TAG, "Closing mSocket: " + mSocket);
+                    Log.d(TAG, "Closing mSocket: " + mSocket);
                     mSocket.shutdownInput();
                     mSocket.shutdownOutput();
                     mSocket.close();

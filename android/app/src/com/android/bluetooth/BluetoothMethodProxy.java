@@ -25,6 +25,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.net.Uri;
@@ -237,5 +238,15 @@ public class BluetoothMethodProxy {
         } catch (Exception e) {
             Log.e(TAG, "Exception happened:" + e);
         }
+    }
+
+    /** Proxies {@link Context#getPackageManager()}. } */
+    public PackageManager getPackageManager(Context context) {
+        return context.getPackageManager();
+    }
+
+    /** Proxies {@link Context#getContentResolver()}. */
+    public ContentResolver getContentResolver(Context context) {
+        return context.getContentResolver();
     }
 }
