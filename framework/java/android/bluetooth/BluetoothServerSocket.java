@@ -72,8 +72,6 @@ import java.io.IOException;
 public final class BluetoothServerSocket implements Closeable {
     private static final String TAG = BluetoothServerSocket.class.getSimpleName();
 
-    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
-
     @UnsupportedAppUsage(
             publicAlternatives = "Use public {@link BluetoothServerSocket} API instead.")
     /*package*/ final BluetoothSocket mSocket;
@@ -274,7 +272,7 @@ public final class BluetoothServerSocket implements Closeable {
      * BluetoothSocket} received from {@link #accept()}.
      */
     public void close() throws IOException {
-        if (DBG) Log.d(TAG, "BluetoothServerSocket:close() called. mChannel=" + mChannel);
+        Log.d(TAG, "BluetoothServerSocket:close() called. mChannel=" + mChannel);
         mSocket.close();
     }
 
