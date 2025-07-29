@@ -1821,7 +1821,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
             p_scb->PeerAddress(), bta_av_cb.sco_occupied, p_scb->role, p_scb->started, p_scb->wait);
   if (bta_av_cb.sco_occupied) {
     log::warn("A2dp stream start failed");
-    bta_av_start_failed(p_scb, p_data);
+    bta_av_start_failed(p_scb, nullptr);
     return;
   }
 
@@ -1875,7 +1875,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint16_t result = AVDT_StartReq(&p_scb->avdt_handle, 1);
   if (result != AVDT_SUCCESS) {
     log::error("AVDT_StartReq failed for peer {} result:{}", p_scb->PeerAddress(), result);
-    bta_av_start_failed(p_scb, p_data);
+    bta_av_start_failed(p_scb, nullptr);
   } else if (p_data) {
     bta_av_set_use_latency_mode(p_scb, p_data->do_start.use_latency_mode);
   }
@@ -2421,9 +2421,11 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_start_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
+  uint8_t err_code = p_data ? p_data->str_msg.msg.start_cfm.err_code : -1;
+
   log::error("peer {} bta_handle:0x{:x} audio_open_cnt:{} started:{} co_started:{} status:{}",
              p_scb->PeerAddress(), p_scb->hndl, bta_av_cb.audio_open_cnt, p_scb->started,
-             p_scb->co_started, p_data->str_msg.msg.start_cfm.err_code);
+             p_scb->co_started, err_code);
 
   if (!p_scb->started && !p_scb->co_started) {
     bta_sys_idle(BTA_ID_AV,
@@ -2432,7 +2434,7 @@ void bta_av_start_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                  p_scb->PeerAddress());
 
     if (com::android::bluetooth::flags::avdt_close_on_start_failure_bad_state() &&
-        p_data->str_msg.msg.start_cfm.err_code == AVDT_ERR_BAD_STATE) {
+        err_code == AVDT_ERR_BAD_STATE) {
       /* START failed. Close connection. */
       bta_av_ssm_execute(p_scb, BTA_AV_API_CLOSE_EVT, NULL);
     }
