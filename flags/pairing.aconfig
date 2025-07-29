@@ -288,3 +288,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "role_switch_after_encryption"
+    namespace: "bluetooth"
+    description: "Role switch after encryption if security procedure was initiated locally"
+    bug: "431669341"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
