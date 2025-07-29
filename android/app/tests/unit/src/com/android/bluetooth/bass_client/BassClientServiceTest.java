@@ -1468,11 +1468,8 @@ public class BassClientServiceTest {
     /** Test whether service.addSource() source id can be propagated through callback correctly */
     @Test
     public void testAddSourceCallbackForGroup() throws RemoteException {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        injectRemoteSourceStateSourceAdded(
-                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        prepareSynchronizedPair();
+
         // verify source id
         verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
                 .onSourceAdded(
@@ -1492,11 +1489,7 @@ public class BassClientServiceTest {
      */
     @Test
     public void testModifySourceForGroup() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        prepareSynchronizedPair();
 
         // Update broadcast source using other member of the same group
         BluetoothLeBroadcastMetadata metaUpdate =
@@ -1533,11 +1526,7 @@ public class BassClientServiceTest {
      */
     @Test
     public void testRemoveSourceForGroup() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        prepareSynchronizedPair();
 
         // Remove broadcast source using other member of the same group
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID + 1);
@@ -1783,11 +1772,7 @@ public class BassClientServiceTest {
     /** Test whether the group operation flag is set on addSource() and removed on removeSource */
     @Test
     public void testGroupStickyFlagSetUnset() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        prepareSynchronizedPair();
 
         // Remove broadcast source
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
@@ -1822,11 +1807,7 @@ public class BassClientServiceTest {
     /** Test switch source will be triggered if adding new source when sink has source */
     @Test
     public void testSwitchSourceAfterSourceAdded() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        prepareSynchronizedPair();
 
         // Add another new broadcast source
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
@@ -3797,16 +3778,7 @@ public class BassClientServiceTest {
 
     @Test
     public void testSuspendResumeSourceSynchronization() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
-
-        injectRemoteSourceStateChanged(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
-        verify(mLeAudioService).activeBroadcastAssistantNotification(eq(true));
-        Mockito.clearInvocations(mLeAudioService);
+        prepareSynchronizedPair();
 
         /* Imitate broadcast source stop, sink notify about loosing PA and BIS sync */
         injectRemoteSourceStateChanged(
@@ -3821,17 +3793,10 @@ public class BassClientServiceTest {
 
     @Test
     public void testHandleUnicastSourceStreamStatusChange() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-
         /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
         doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
 
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
-
-        verify(mLeAudioService).activeBroadcastAssistantNotification(eq(true));
+        prepareSynchronizedPair();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -3850,17 +3815,10 @@ public class BassClientServiceTest {
 
     @Test
     public void testHandleUnicastSourceStreamStatusChange_MultipleRequests() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-
         /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
         doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
 
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
-
-        verify(mLeAudioService).activeBroadcastAssistantNotification(eq(true));
+        prepareSynchronizedPair();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -6808,11 +6766,7 @@ public class BassClientServiceTest {
 
     @Test
     public void multipleSinkMetadata_clearWhenSourceAddFailed() throws RemoteException {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
-                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        prepareSynchronizedPair();
         mBassClientService.stopSearchingForSources();
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
