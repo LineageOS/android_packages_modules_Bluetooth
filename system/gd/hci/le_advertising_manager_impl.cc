@@ -1547,7 +1547,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   std::recursive_mutex id_mutex_;
   size_t num_instances_;
   std::vector<hci::EnabledSet> enabled_sets_;
-  // map to mapping the id from java layer and advertier id
+  // map to mapping the id from java layer and advertiser id
   std::map<uint8_t, int> id_map_;
 
   AdvertisingApiType advertising_api_type_{0};

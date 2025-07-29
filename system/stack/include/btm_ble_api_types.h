@@ -170,7 +170,7 @@ typedef uint8_t tBTM_BLE_SFP;
 #endif
 #endif
 
-/* default connectino interval max */
+/* default connection interval max */
 #ifndef BTM_BLE_CONN_INT_MAX_DEF
 /* recommended max: 50 ms = 56 * 1.25 */
 #ifndef BTM_BLE_CONN_INT_MAX_DEF

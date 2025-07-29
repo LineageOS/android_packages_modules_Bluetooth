@@ -194,12 +194,12 @@ void Stack::StartEverything() {
   log::info("init_status == {}", int(init_status));
 
   if (init_status != std::future_status::ready) {
-    /* Crash stuck thread and print it's stack trace, so that we know why starartup is taking too
+    /* Crash stuck thread and print it's stack trace, so that we know why startup is taking too
      * long */
     management_thread_->Abort();
 
     /* Crashed thread should take whole stack with it, but main thread is being executed
-     * simulteanously. This sleep ensures that main thread doesn't execute any logic below, and
+     * simultaneously. This sleep ensures that main thread doesn't execute any logic below, and
      * nicely dies with rest of stack.  */
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 

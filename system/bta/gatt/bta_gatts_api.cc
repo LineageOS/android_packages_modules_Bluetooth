@@ -353,7 +353,7 @@ void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda, bool
  *
  * Description      Close a connection  a remote device.
  *
- * Parameters       conn_id: connectino ID to be closed.
+ * Parameters       conn_id: connection ID to be closed.
  *
  * Returns          void
  *

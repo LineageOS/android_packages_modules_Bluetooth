@@ -332,7 +332,7 @@ struct HciLayer::impl {
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_time_out, op_code),
                                  getHciTimeoutRestartMs());
     } else {
-      log::warn("Unable to schedul abort timer");
+      log::warn("Unable to schedule abort timer");
     }
   }
 
@@ -466,7 +466,7 @@ struct HciLayer::impl {
     }
     power_telemetry::GetInstance().LogHciEvtDetail();
     EventCode event_code = event.GetEventCode();
-    // Root Inflamation is a special case, since it aborts here
+    // Root Inflammation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
       auto view = VendorSpecificEventView::Create(event);
       log::assert_that(view.IsValid(), "assert failed: view.IsValid()");

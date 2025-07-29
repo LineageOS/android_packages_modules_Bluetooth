@@ -201,7 +201,7 @@ pkg_config("pkd_fmtlib") {
   pkg_deps = [ "fmt" ]
 }
 
-# To include ChroemOS-specific libraries and build dependencies.
+# To include ChromeOS-specific libraries and build dependencies.
 if (target_os == "chromeos") {
   config("external_chromeos") {
     configs = [ ":pkgpkg_libstructuredmetrics" ]

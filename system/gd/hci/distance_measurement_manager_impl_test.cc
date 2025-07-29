@@ -1185,7 +1185,7 @@ TEST_F(DistanceMeasurementManagerTest, b2b_conflict_before_requester_stop) {
   cs_requester_.RespondTillProcedureEnableComplete(params);
   cs_requester_.sync_client_handler();
 
-  // make sure the reponder still can handle the subevent
+  // make sure the responder still can handle the subevent
   EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
               OnRasFragmentReady(params.requester_addr, 0, /*is_last=*/true, _));
 
@@ -1205,7 +1205,7 @@ TEST_F(DistanceMeasurementManagerTest, b2b_conflict_after_requester_stop) {
   // inject the responder event
   cs_requester_.RespondTillProcedureEnableComplete(params);
 
-  // make sure the reponder still can handle the subevent
+  // make sure the responder still can handle the subevent
   EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
               OnRasFragmentReady(params.requester_addr, 0, /*is_last=*/true, _));
 
@@ -1758,8 +1758,8 @@ TEST_P(DistanceMeasurementManagerGetSupportedSessionTypesTest, VerifyOffloadCall
   EXPECT_CALL(cs_requester_.mock_dm_callbacks_, OnRangingHardwareOffloadEnabled())
           .Times(params.expect_offload_enabled_called ? 1 : 0);
 
-  StartMeasurementParameters measuremet_params;
-  cs_requester_.StartMeasurementTillRasConnectedEvent(measuremet_params);
+  StartMeasurementParameters measurement_params;
+  cs_requester_.StartMeasurementTillRasConnectedEvent(measurement_params);
 
   cs_requester_.sync_client_handler();
 }
