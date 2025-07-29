@@ -424,9 +424,7 @@ public class SapService extends ConnectableProfile
                         mIsWaitingAuthorization = true;
                         setUserTimeoutAlarm();
                         SapService.this.sendBroadcast(
-                                intent,
-                                BLUETOOTH_CONNECT,
-                                Utils.getTempBroadcastOptions().toBundle());
+                                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
 
                         Log.v(
                                 TAG,
@@ -539,7 +537,7 @@ public class SapService extends ConnectableProfile
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
     }
 

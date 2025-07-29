@@ -3942,7 +3942,7 @@ public class AdapterService extends Service {
                 new Intent(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
                         .putExtra(BluetoothAdapter.EXTRA_SCAN_MODE, mScanMode)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastOptions().toBundle());
+        sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
         return true;
     }
 

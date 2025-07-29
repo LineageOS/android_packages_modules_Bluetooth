@@ -404,7 +404,7 @@ public class BluetoothMapService extends ConnectableProfile {
                             BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                             BluetoothDevice.REQUEST_TYPE_MESSAGE_ACCESS);
                     BluetoothMapService.this.sendBroadcast(
-                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                     cancelUserTimeoutAlarm();
                     mIsWaitingAuthorization = false;
                     stopObexServerSessions(-1);
@@ -552,7 +552,7 @@ public class BluetoothMapService extends ConnectableProfile {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
     }
 
@@ -889,7 +889,7 @@ public class BluetoothMapService extends ConnectableProfile {
             sendOrderedBroadcast(
                     intent,
                     BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle(),
+                    Utils.getTempBroadcastBundle(),
                     null,
                     null,
                     Activity.RESULT_OK,

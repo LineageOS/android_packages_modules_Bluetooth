@@ -174,10 +174,7 @@ public class PbapStateMachine extends StateMachine {
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
             intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
             mService.sendBroadcastAsUser(
-                    intent,
-                    UserHandle.ALL,
-                    BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle());
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
 
         /** Broadcast connection state change for this state machine */
