@@ -336,7 +336,7 @@ public class PanService extends ConnectableProfile {
             intent.putExtra(
                     BluetoothPan.EXTRA_TETHERING_STATE,
                     mTetherOn ? BluetoothPan.TETHERING_STATE_ON : BluetoothPan.TETHERING_STATE_OFF);
-            sendBroadcast(intent, null, Utils.getTempBroadcastOptions().toBundle());
+            sendBroadcast(intent, null, Utils.getTempBroadcastBundle());
         }
     }
 

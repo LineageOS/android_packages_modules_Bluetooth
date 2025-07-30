@@ -365,8 +365,7 @@ public class HeadsetClientStateMachine extends StateMachine {
             intent.putExtra(BluetoothHeadsetClient.EXTRA_CALL, c);
         }
 
-        mService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         HfpClientConnectionService.onCallChanged(c.getDevice(), c);
     }
 
@@ -1545,9 +1544,7 @@ public class HeadsetClientStateMachine extends StateMachine {
 
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                             sendNetworkStateChangedIntent(event.device);
 
                             if (mIndicatorNetworkState
@@ -1567,9 +1564,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                                     BluetoothHeadsetClient.EXTRA_NETWORK_ROAMING, event.valueInt);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                             sendNetworkStateChangedIntent(event.device);
                         }
                         case StackEvent.EVENT_TYPE_NETWORK_SIGNAL -> {
@@ -1581,9 +1576,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                                     event.valueInt);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                             sendNetworkStateChangedIntent(event.device);
                         }
                         case StackEvent.EVENT_TYPE_BATTERY_LEVEL -> {
@@ -1595,9 +1588,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                                     BluetoothHeadsetClient.EXTRA_BATTERY_LEVEL, event.valueInt);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                         }
                         case StackEvent.EVENT_TYPE_OPERATOR_NAME -> {
                             mOperatorName = event.valueString;
@@ -1607,9 +1598,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                                     BluetoothHeadsetClient.EXTRA_OPERATOR_NAME, event.valueString);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                             sendNetworkStateChangedIntent(event.device);
                         }
                         case StackEvent.EVENT_TYPE_VR_STATE_CHANGED -> {
@@ -1697,9 +1686,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                                     BluetoothHeadsetClient.EXTRA_SUBSCRIBER_INFO, mSubscriberInfo);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                         }
                         case StackEvent.EVENT_TYPE_IN_BAND_RINGTONE -> {
                             intent = new Intent(BluetoothHeadsetClient.ACTION_AG_EVENT);
@@ -1708,9 +1695,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                                     BluetoothHeadsetClient.EXTRA_IN_BAND_RING, event.valueInt);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, event.device);
                             mService.sendBroadcast(
-                                    intent,
-                                    BLUETOOTH_CONNECT,
-                                    Utils.getTempBroadcastOptions().toBundle());
+                                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                             debug(event.device.toString() + "onInBandRing" + event.valueInt);
                         }
                         // Ringing is not handled at this indication and rather should be
@@ -1744,8 +1729,7 @@ public class HeadsetClientStateMachine extends StateMachine {
             Intent intent = new Intent(BluetoothHeadsetClient.ACTION_AG_EVENT);
             intent.putExtra(BluetoothHeadsetClient.EXTRA_VOICE_RECOGNITION, newState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-            mService.sendBroadcast(
-                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+            mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
 
         // in Connected state
@@ -2112,8 +2096,7 @@ public class HeadsetClientStateMachine extends StateMachine {
             intent.putExtra(BluetoothHeadsetClient.EXTRA_AUDIO_WBS, mAudioWbs);
         }
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-        mService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
 
         debug("Audio state " + device + ": " + prevState + "->" + newState);
         HfpClientConnectionService.onAudioStateChanged(device, newState, prevState);

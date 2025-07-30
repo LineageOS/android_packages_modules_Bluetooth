@@ -61,6 +61,7 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
@@ -1104,6 +1105,10 @@ public final class Utils {
             Binder.restoreCallingIdentity(ident);
         }
         return bOptions;
+    }
+
+    public static @NonNull Bundle getTempBroadcastBundle() {
+        return getTempBroadcastOptions().toBundle();
     }
 
     /**

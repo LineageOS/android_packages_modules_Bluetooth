@@ -251,10 +251,7 @@ public class SilenceDeviceManager {
         Intent intent = new Intent(BluetoothDevice.ACTION_SILENCE_MODE_CHANGED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         mAdapterService.sendBroadcastAsUser(
-                intent,
-                UserHandle.ALL,
-                BLUETOOTH_CONNECT,
-                Utils.getTempBroadcastOptions().toBundle());
+                intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     boolean getSilenceMode(BluetoothDevice device) {

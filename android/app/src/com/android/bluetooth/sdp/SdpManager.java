@@ -496,8 +496,7 @@ public class SdpManager {
          * Keep in mind that the MAP client needs to use this as well,
          * hence to make it call-backs, the MAP client profile needs to be
          * part of the Bluetooth APK. */
-        mAdapterService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
 
         if (!moreResults) {
             // Remove the outstanding UUID request

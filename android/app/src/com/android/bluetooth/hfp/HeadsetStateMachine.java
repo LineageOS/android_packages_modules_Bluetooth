@@ -369,10 +369,7 @@ class HeadsetStateMachine extends StateMachine {
             }
             intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
             mHeadsetService.sendBroadcastAsUser(
-                    intent,
-                    UserHandle.ALL,
-                    BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle());
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
 
         // Should not be called from enter() method
@@ -393,10 +390,7 @@ class HeadsetStateMachine extends StateMachine {
             intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
             mHeadsetService.sendBroadcastAsUser(
-                    intent,
-                    UserHandle.ALL,
-                    BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle());
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
 
         /**
@@ -1795,10 +1789,7 @@ class HeadsetStateMachine extends StateMachine {
                         + "."
                         + Integer.toString(companyId));
         mHeadsetService.sendBroadcastAsUser(
-                intent,
-                UserHandle.ALL,
-                BLUETOOTH_CONNECT,
-                Utils.getTempBroadcastOptions().toBundle());
+                intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private void setAudioParameters() {
@@ -2575,8 +2566,7 @@ class HeadsetStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothHeadset.EXTRA_HF_INDICATORS_IND_ID, indId);
         intent.putExtra(BluetoothHeadset.EXTRA_HF_INDICATORS_IND_VALUE, indValue);
-        mHeadsetService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mHeadsetService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private void processAtBind(String atString, BluetoothDevice device) {
