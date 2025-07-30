@@ -504,6 +504,7 @@ void HfpClientInterface::Offload::StopSession() {
   log::info("offload");
   get_encode_client_interface()->EndSession();
   if (get_encode_transport_instance()) {
+    get_encode_transport_instance()->SuspendRequest();
     get_encode_transport_instance()->ResetPendingCmd();
     get_encode_transport_instance()->ResetPresentationPosition();
   }
