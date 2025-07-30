@@ -35,7 +35,6 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.os.Looper;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -1056,14 +1055,26 @@ public class MediaControlGattServiceTest {
     }
 
     @Test
-    public void testMediaControlPointeRequest_OpcodePlayCallLeAudioServiceSetActiveDevice() {
+    public void testMediaControlPointeRequest_OpcodePlayCallDuringBroadcast() {
+        when(mLeAudioService.isBroadcastActive()).thenReturn(true);
         initAllFeaturesGattService();
         prepareConnectedDevice();
         mMediaControlGattService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
         verifyMediaControlPointRequest(Request.Opcodes.PLAY, null, BluetoothGatt.GATT_SUCCESS, 1);
 
-        final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
-        when(mLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
+        verify(mLeAudioService, times(0)).setActiveDevice(any(BluetoothDevice.class));
+        verify(mCallback).onMediaControlRequest(any(Request.class));
+    }
+
+    @Test
+    public void testMediaControlPointeRequest_OpcodePlayCallLeAudioServiceSetActiveDevice() {
+        when(mLeAudioService.isBroadcastActive()).thenReturn(false);
+        initAllFeaturesGattService();
+        prepareConnectedDevice();
+        mMediaControlGattService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
+        verifyMediaControlPointRequest(Request.Opcodes.PLAY, null, BluetoothGatt.GATT_SUCCESS, 1);
+
+        verify(mLeAudioService).setActiveDevice(any(BluetoothDevice.class));
         verify(mCallback).onMediaControlRequest(any(Request.class));
     }
 
