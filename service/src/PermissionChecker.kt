@@ -155,17 +155,6 @@ class PermissionChecker(
 
         val callingAppId = UserHandle.getAppId(uid)
 
-        // TODO: b/280890575 - Is this systemUi exception still needed ??
-        if (
-            callingAppId ==
-                packageManager.getPackageUid(
-                    "com.android.systemui",
-                    PackageManager.PackageInfoFlags.of(PackageManager.MATCH_SYSTEM_ONLY.toLong()),
-                )
-        ) {
-            Log.e(TAG, "Detected systemUi package call, will call go threw ??")
-        }
-
         if (callingUser != foregroundUser && parentUser != foregroundUser) {
             throw BluetoothPermissionException(
                 "Not allowed for non-active and non system user." +
