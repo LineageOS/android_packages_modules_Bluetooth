@@ -225,6 +225,12 @@ public class RemoteDevices {
                                         + bluetoothDevice.isConnected());
 
                         if (bluetoothDevice.isConnected()) {
+                            Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+                            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
+                            intent.addFlags(
+                                    Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                                            | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+
                             if (deviceProperties.getConnectionHandle(TRANSPORT_BREDR)
                                     != BluetoothDevice.ERROR) {
                                 if (Flags.linkStatusApi()) {
@@ -232,6 +238,11 @@ public class RemoteDevices {
                                 }
                                 mAdapterService.notifyAclDisconnected(
                                         bluetoothDevice, TRANSPORT_BREDR);
+                                if (Flags.broadcastTransportTypeOnReset()) {
+                                    intent.putExtra(
+                                            BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
+                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                                }
                             }
                             if (deviceProperties.getConnectionHandle(TRANSPORT_LE)
                                     != BluetoothDevice.ERROR) {
@@ -240,13 +251,14 @@ public class RemoteDevices {
                                 }
                                 mAdapterService.notifyAclDisconnected(
                                         bluetoothDevice, TRANSPORT_LE);
+                                if (Flags.broadcastTransportTypeOnReset()) {
+                                    intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
+                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                                }
                             }
-                            Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-                            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
-                            intent.addFlags(
-                                    Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
-                                            | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-                            mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                            if (!Flags.broadcastTransportTypeOnReset()) {
+                                mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                            }
                         }
                     });
             mDevices.clear();
