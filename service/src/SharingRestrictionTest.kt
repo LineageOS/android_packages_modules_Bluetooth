@@ -39,7 +39,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
-import org.robolectric.shadows.ShadowPackageManager
 import org.robolectric.shadows.ShadowSystemProperties
 
 @RunWith(RobolectricTestRunner::class)
@@ -51,11 +50,10 @@ class SharingRestrictionTest {
     private val user = UserHandle.of(0)
     private lateinit var bluetoothComponent: BluetoothComponent
     private lateinit var restriction: SharingRestriction
-    private lateinit var pm: ShadowPackageManager
 
     @Before
     fun setUp() {
-        pm = Shadows.shadowOf(context.packageManager)
+        val pm = Shadows.shadowOf(context.packageManager)
 
         val packageName = "com.android.bluetooth"
         val className = "com.android.bluetooth.btservice.AdapterService"
