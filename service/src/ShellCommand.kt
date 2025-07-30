@@ -60,7 +60,7 @@ class ShellCommand(
                             messenger.send(
                                 SystemServiceMessage.Enable().apply { attributionSource = source }
                             )
-                        if (reply?.value == true) 0 else -1
+                        if (reply.value == true) 0 else -1
                     } else {
                         if (binder.enable(source)) 0 else -1
                     }
@@ -81,7 +81,7 @@ class ShellCommand(
                                     persist = true
                                 }
                             )
-                        if (reply?.value == true) 0 else -1
+                        if (reply.value == true) 0 else -1
                     } else {
                         if (binder.disable(source, true)) 0 else -1
                     }
@@ -103,7 +103,7 @@ class ShellCommand(
                                     bleToken = binder
                                 }
                             )
-                        if (reply?.value == true) 0 else -1
+                        if (reply.value == true) 0 else -1
                     } else {
                         if (binder.enableBle(source, binder)) 0 else -1
                     }
@@ -125,7 +125,7 @@ class ShellCommand(
                                     bleToken = binder
                                 }
                             )
-                        if (reply?.value == true) 0 else -1
+                        if (reply.value == true) 0 else -1
                     } else {
                         if (binder.disableBle(source, binder)) 0 else -1
                     }
@@ -146,7 +146,7 @@ class ShellCommand(
                                     attributionSource = source
                                 }
                             )
-                        if (reply?.value == true) 0 else -1
+                        if (reply.value == true) 0 else -1
                     } else {
                         if (binder.factoryReset(source)) 0 else -1
                     }
@@ -187,6 +187,7 @@ class ShellCommand(
         }
     }
 
+    @Throws(RemoteException::class)
     override fun onCommand(cmd: String?): Int {
         if (cmd == null) {
             return handleDefaultCommands(null)
@@ -202,26 +203,19 @@ class ShellCommand(
         if (command.isPrivileged && Binder.getCallingUid() != Process.ROOT_UID) {
             throw SecurityException("Command $cmd requires a Root shell")
         }
-        try {
-            outPrintWriter.println("$TAG: Exec $cmd")
-            Log.d(TAG, "Exec $cmd")
-            val ret = command.exec(cmd)
-            if (ret == 0) {
-                val msg = "$cmd: Success"
-                Log.d(TAG, msg)
-                outPrintWriter.println(msg)
-            } else {
-                val msg = "$cmd: Failed with status=$ret"
-                Log.e(TAG, msg)
-                errPrintWriter.println("$TAG: $msg")
-            }
-            return ret
-        } catch (e: RemoteException) {
-            Log.w(TAG, "$cmd: error", e)
-            errPrintWriter.println("$cmd: error\nException: ${e.message}")
-            e.rethrowFromSystemServer()
+        outPrintWriter.println("$TAG: Exec $cmd")
+        Log.d(TAG, "Exec $cmd")
+        val ret = command.exec(cmd)
+        if (ret == 0) {
+            val msg = "$cmd: Success"
+            Log.d(TAG, msg)
+            outPrintWriter.println(msg)
+        } else {
+            val msg = "$cmd: Failed with status=$ret"
+            Log.e(TAG, msg)
+            errPrintWriter.println("$TAG: $msg")
         }
-        return handleDefaultCommands(cmd)
+        return ret
     }
 
     private fun printHelp(pw: PrintWriter) {
