@@ -1653,7 +1653,7 @@ static PeriodicAdvertisingParameters parsePeriodicParams(JNIEnv* env, jobject i)
   p.enable = true;
   p.include_adi = true;
   p.min_interval = interval;
-  p.max_interval = interval + 16; /* 20ms difference betwen min and max */
+  p.max_interval = interval + 16; /* 20ms difference between min and max */
   uint16_t props = 0;
   if (includeTxPower) {
     props |= 0x40;

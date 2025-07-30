@@ -550,7 +550,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                             BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                             BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS);
                     BluetoothPbapService.this.sendBroadcast(
-                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                     stateMachine.sendMessage(PbapStateMachine.REJECTED);
                 }
                 case MSG_ACQUIRE_WAKE_LOCK -> {
@@ -789,7 +789,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
             sendOrderedBroadcast(
                     intent,
                     BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle(),
+                    Utils.getTempBroadcastBundle(),
                     null /* resultReceiver */,
                     null /* scheduler */,
                     Activity.RESULT_OK /* initialCode */,

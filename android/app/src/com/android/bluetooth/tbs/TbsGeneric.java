@@ -26,7 +26,6 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeCall;
-import android.bluetooth.IBluetoothLeCallControlCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -34,7 +33,6 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelUuid;
-import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -100,7 +98,7 @@ public class TbsGeneric {
     /* Application-registered TBS instance */
     private static class Bearer {
         final String token;
-        final IBluetoothLeCallControlCallback callback;
+        final TbsService.Callback callback;
         final List<String> mUriSchemes;
         final int capabilities;
         final int ccid;
@@ -111,7 +109,7 @@ public class TbsGeneric {
 
         Bearer(
                 String token,
-                IBluetoothLeCallControlCallback callback,
+                TbsService.Callback callback,
                 List<String> uriSchemes,
                 int capabilities,
                 String providerName,
@@ -312,7 +310,7 @@ public class TbsGeneric {
 
     public synchronized boolean addBearer(
             String token,
-            IBluetoothLeCallControlCallback callback,
+            TbsService.Callback callback,
             String uci,
             List<String> uriSchemes,
             int capabilities,
@@ -368,11 +366,7 @@ public class TbsGeneric {
 
         if (callback != null) {
             Log.d(TAG, "ccid=" + bearer.ccid);
-            try {
-                callback.onBearerRegistered(bearer.ccid);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
+            callback.onBearerRegistered(bearer.ccid);
         }
 
         return isCcidValid(bearer.ccid);
@@ -747,12 +741,7 @@ public class TbsGeneric {
                 return TbsGatt.CALL_CONTROL_POINT_RESULT_INVALID_OUTGOING_URI;
             }
 
-            try {
-                bearer.callback.onPlaceCall(requestId, new ParcelUuid(callId), uri);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-                return TbsGatt.CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-            }
+            bearer.callback.onPlaceCall(requestId, callId, uri);
 
             bearer.mRequestMap.put(requestId, request);
             mLastIndexAssigned = requestId;
@@ -849,45 +838,27 @@ public class TbsGeneric {
                                 UUID callId = entry.getKey();
                                 int requestId = mLastRequestIdAssigned + 1;
                                 Request request = new Request(device, callId, opcode, callIndex);
-                                try {
-                                    if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT) {
-                                        setActiveLeDevice(device);
-                                        bearer.callback.onAcceptCall(
-                                                requestId, new ParcelUuid(callId));
-                                    } else if (opcode
-                                            == TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE) {
-                                        bearer.callback.onTerminateCall(
-                                                requestId, new ParcelUuid(callId));
-                                    } else if (opcode
-                                            == TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD) {
-                                        if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
-                                            result =
-                                                    TbsGatt
-                                                            .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
-                                            break;
-                                        }
-                                        bearer.callback.onHoldCall(
-                                                requestId, new ParcelUuid(callId));
-                                    } else {
-                                        if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
-                                            result =
-                                                    TbsGatt
-                                                            .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
-                                            break;
-                                        }
-                                        bearer.callback.onUnholdCall(
-                                                requestId, new ParcelUuid(callId));
+                                if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT) {
+                                    setActiveLeDevice(device);
+                                    bearer.callback.onAcceptCall(requestId, callId);
+                                } else if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE) {
+                                    bearer.callback.onTerminateCall(requestId, callId);
+                                } else if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD) {
+                                    if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
+                                        result =
+                                                TbsGatt
+                                                        .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
+                                        break;
                                     }
-                                } catch (RemoteException e) {
-                                    Log.e(
-                                            TAG,
-                                            e.toString()
-                                                    + "\n"
-                                                    + Log.getStackTraceString(new Throwable()));
-                                    result =
-                                            TbsGatt
-                                                    .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-                                    break;
+                                    bearer.callback.onHoldCall(requestId, callId);
+                                } else {
+                                    if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
+                                        result =
+                                                TbsGatt
+                                                        .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
+                                        break;
+                                    }
+                                    bearer.callback.onUnholdCall(requestId, callId);
                                 }
 
                                 bearer.mRequestMap.put(requestId, request);
@@ -943,22 +914,15 @@ public class TbsGeneric {
                                     break;
                                 }
 
+                                List<UUID> callUuids = new ArrayList<>();
+                                for (ParcelUuid parcelUuid : parcelUuids) {
+                                    callUuids.add(parcelUuid.getUuid());
+                                }
+
                                 Bearer bearer = firstEntry.getValue();
                                 Request request = new Request(device, parcelUuids, opcode, args[0]);
                                 int requestId = mLastRequestIdAssigned + 1;
-                                try {
-                                    bearer.callback.onJoinCalls(requestId, parcelUuids);
-                                } catch (RemoteException e) {
-                                    Log.e(
-                                            TAG,
-                                            e.toString()
-                                                    + "\n"
-                                                    + Log.getStackTraceString(new Throwable()));
-                                    result =
-                                            TbsGatt
-                                                    .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-                                    break;
-                                }
+                                bearer.callback.onJoinCalls(requestId, callUuids);
 
                                 bearer.mRequestMap.put(requestId, request);
                                 mLastIndexAssigned = requestId;

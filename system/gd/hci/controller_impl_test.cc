@@ -130,11 +130,11 @@ public:
       case (OpCode::READ_LOCAL_EXTENDED_FEATURES): {
         ReadLocalExtendedFeaturesView read_command = ReadLocalExtendedFeaturesView::Create(command);
         ASSERT_TRUE(read_command.IsValid());
-        uint8_t page_bumber = read_command.GetPageNumber();
+        uint8_t page_number = read_command.GetPageNumber();
         uint64_t lmp_features = 0x012345678abcdef;
-        lmp_features += page_bumber;
+        lmp_features += page_number;
         event_builder = ReadLocalExtendedFeaturesCompleteBuilder::Create(
-                num_packets, ErrorCode::SUCCESS, page_bumber, 0x02, lmp_features);
+                num_packets, ErrorCode::SUCCESS, page_number, 0x02, lmp_features);
       } break;
       case (OpCode::READ_BUFFER_SIZE): {
         event_builder = ReadBufferSizeCompleteBuilder::Create(

@@ -196,7 +196,7 @@ void BTA_GATTC_CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool
  *
  * Description      Close a connection to a GATT server.
  *
- * Parameters       conn_id: connectino ID to be closed.
+ * Parameters       conn_id: connection ID to be closed.
  *
  * Returns          void
  *
@@ -358,7 +358,7 @@ void BTA_GATTC_GetGattDb(tCONN_ID conn_id, uint16_t start_handle, uint16_t end_h
  * Description      This function is called to read a characteristics value
  *
  * Parameters       conn_id - connection ID.
- *                  handle - characteritic handle to read.
+ *                  handle - characteristic handle to read.
  *
  * Returns          None
  *
@@ -505,7 +505,7 @@ void BTA_GATTC_WriteCharValue(tCONN_ID conn_id, uint16_t handle, tGATT_WRITE_TYP
  * Description      This function is called to write descriptor value.
  *
  * Parameters       conn_id - connection ID
- *                  handle - descriptor hadle to write.
+ *                  handle - descriptor handle to write.
  *                  value - the value to be written.
  *
  * Returns          None
@@ -541,7 +541,7 @@ void BTA_GATTC_WriteCharDescr(tCONN_ID conn_id, uint16_t handle, std::vector<uin
  *                  value.
  *
  * Parameters       conn_id - connection ID.
- *                  p_char_id - GATT characteritic ID of the service.
+ *                  p_char_id - GATT characteristic ID of the service.
  *                  offset - offset of the write value.
  *                  value - the value to be written.
  *

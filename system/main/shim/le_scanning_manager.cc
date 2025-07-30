@@ -696,7 +696,7 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
     return;
   }
 
-  // skip anonymous advertisment
+  // skip anonymous advertisement
   if (addr_type == BLE_ADDR_ANONYMOUS) {
     return;
   }

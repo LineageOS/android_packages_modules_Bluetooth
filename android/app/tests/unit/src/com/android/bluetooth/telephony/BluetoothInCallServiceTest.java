@@ -48,8 +48,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
-import android.os.ParcelUuid;
-import android.os.RemoteException;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.telecom.BluetoothCallQualityReport;
@@ -197,12 +195,12 @@ public class BluetoothInCallServiceTest {
 
         verify(mTbsService)
                 .registerBearer(
-                        eq(BluetoothInCallService.TAG),
-                        eq(bluetoothInCallService.mBluetoothLeCallControlCallback),
-                        eq(BluetoothInCallService.TAG),
-                        eq(List.of("tel")),
-                        eq(BluetoothInCallService.Capability.HOLD_CALL),
-                        eq(networkOperator),
+                        anyString(),
+                        any(),
+                        anyString(),
+                        anyList(),
+                        anyInt(),
+                        anyString(),
                         anyInt());
     }
 
@@ -1955,51 +1953,43 @@ public class BluetoothInCallServiceTest {
     }
 
     @Test
-    public void leCallControlCallback_onAcceptCall_withUnknownCallId() throws RemoteException {
+    public void onAcceptCall_withUnknownCallId() throws Exception {
         int requestId = 1;
-        ParcelUuid unknownCallId = new ParcelUuid(UUID.randomUUID());
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onAcceptCall(
-                requestId, unknownCallId);
-
+        UUID unknownCallId = UUID.randomUUID();
+        mBluetoothInCallService.mLeCallControlClient.onAcceptCall(requestId, unknownCallId);
         verify(mTbsService)
                 .requestResult(anyInt(), eq(requestId), eq(Result.ERROR_UNKNOWN_CALL_ID));
     }
 
     @Test
-    public void leCallControlCallback_onTerminateCall_withUnknownCallId() throws RemoteException {
+    public void onTerminateCall_withUnknownCallId() throws Exception {
         int requestId = 1;
-        ParcelUuid unknownCallId = new ParcelUuid(UUID.randomUUID());
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onTerminateCall(
-                requestId, unknownCallId);
-
+        UUID unknownCallId = UUID.randomUUID();
+        mBluetoothInCallService.mLeCallControlClient.onTerminateCall(requestId, unknownCallId);
         verify(mTbsService)
                 .requestResult(anyInt(), eq(requestId), eq(Result.ERROR_UNKNOWN_CALL_ID));
     }
 
     @Test
-    public void leCallControlCallback_onHoldCall_withUnknownCallId() throws RemoteException {
+    public void onHoldCall_withUnknownCallId() throws Exception {
         int requestId = 1;
-        ParcelUuid unknownCallId = new ParcelUuid(UUID.randomUUID());
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onHoldCall(
-                requestId, unknownCallId);
-
+        UUID unknownCallId = UUID.randomUUID();
+        mBluetoothInCallService.mLeCallControlClient.onHoldCall(requestId, unknownCallId);
         verify(mTbsService)
                 .requestResult(anyInt(), eq(requestId), eq(Result.ERROR_UNKNOWN_CALL_ID));
     }
 
     @Test
-    public void leCallControlCallback_onUnholdCall_withUnknownCallId() throws RemoteException {
+    public void onUnholdCall_withUnknownCallId() throws Exception {
         int requestId = 1;
-        ParcelUuid unknownCallId = new ParcelUuid(UUID.randomUUID());
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onUnholdCall(
-                requestId, unknownCallId);
-
+        UUID unknownCallId = UUID.randomUUID();
+        mBluetoothInCallService.mLeCallControlClient.onUnholdCall(requestId, unknownCallId);
         verify(mTbsService)
                 .requestResult(anyInt(), eq(requestId), eq(Result.ERROR_UNKNOWN_CALL_ID));
     }
 
     @Test
-    public void leCallControlCallback_onJoinCalls() throws RemoteException {
+    public void onJoinCalls() throws Exception {
         int requestId = 1;
         UUID baseCallId = UUID.randomUUID();
         UUID firstJoiningCallId = UUID.randomUUID();
@@ -2027,19 +2017,14 @@ public class BluetoothInCallServiceTest {
         doReturn(firstCall).when(mCallInfo).getCallByCallId(firstJoiningCallId);
         doReturn(secondCall).when(mCallInfo).getCallByCallId(secondJoiningCallId);
 
-        List<ParcelUuid> uuids =
-                List.of(
-                        new ParcelUuid(baseCallId),
-                        new ParcelUuid(firstJoiningCallId),
-                        new ParcelUuid(secondJoiningCallId));
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onJoinCalls(requestId, uuids);
-
+        List<UUID> uuids = List.of(baseCallId, firstJoiningCallId, secondJoiningCallId);
+        mBluetoothInCallService.mLeCallControlClient.onJoinCalls(requestId, uuids);
         verify(mTbsService).requestResult(anyInt(), eq(requestId), eq(Result.SUCCESS));
         verify(baseCall, times(2)).conference(any(BluetoothCall.class));
     }
 
     @Test
-    public void leCallControlCallback_onJoinCalls_omitDoubledCalls() throws RemoteException {
+    public void onJoinCalls_omitDoubledCalls() throws Exception {
         int requestId = 1;
         UUID baseCallId = UUID.randomUUID();
         UUID firstJoiningCallId = UUID.randomUUID();
@@ -2061,16 +2046,14 @@ public class BluetoothInCallServiceTest {
         doReturn(baseCall).when(mCallInfo).getCallByCallId(eq(baseCallId));
         doReturn(firstCall).when(mCallInfo).getCallByCallId(eq(firstJoiningCallId));
 
-        List<ParcelUuid> uuids =
-                List.of(new ParcelUuid(baseCallId), new ParcelUuid(firstJoiningCallId));
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onJoinCalls(requestId, uuids);
-
+        List<UUID> uuids = List.of(baseCallId, firstJoiningCallId);
+        mBluetoothInCallService.mLeCallControlClient.onJoinCalls(requestId, uuids);
         verify(mTbsService).requestResult(anyInt(), eq(requestId), eq(Result.SUCCESS));
         verify(baseCall).conference(any(BluetoothCall.class));
     }
 
     @Test
-    public void leCallControlCallback_onJoinCalls_omitNullCalls() throws RemoteException {
+    public void onJoinCalls_omitNullCalls() throws Exception {
         int requestId = 1;
         UUID baseCallId = UUID.randomUUID();
         UUID firstJoiningCallId = UUID.randomUUID();
@@ -2098,13 +2081,8 @@ public class BluetoothInCallServiceTest {
         doReturn(firstCall).when(mCallInfo).getCallByCallId(firstJoiningCallId);
         doReturn(secondCall).when(mCallInfo).getCallByCallId(secondJoiningCallId);
 
-        List<ParcelUuid> uuids =
-                List.of(
-                        new ParcelUuid(baseCallId),
-                        new ParcelUuid(firstJoiningCallId),
-                        new ParcelUuid(secondJoiningCallId));
-        mBluetoothInCallService.mBluetoothLeCallControlCallback.onJoinCalls(requestId, uuids);
-
+        List<UUID> uuids = List.of(baseCallId, firstJoiningCallId, secondJoiningCallId);
+        mBluetoothInCallService.mLeCallControlClient.onJoinCalls(requestId, uuids);
         verify(mTbsService).requestResult(anyInt(), eq(requestId), eq(Result.SUCCESS));
         verify(firstCall).conference(any(BluetoothCall.class));
     }

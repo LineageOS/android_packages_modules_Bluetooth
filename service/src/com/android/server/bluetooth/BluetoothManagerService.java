@@ -582,6 +582,8 @@ class BluetoothManagerService {
                 }
             };
 
+    private final BluetoothManagerServiceApi mApi = new Api();
+
     BluetoothManagerService(
             @NonNull Context context,
             @NonNull Looper looper,
@@ -599,7 +601,7 @@ class BluetoothManagerService {
                         mContext.getSystemService(UserManager.class),
                         "UserManager system service cannot be null");
 
-        mBinder = new BluetoothServiceBinder(mLooper, this, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper, mApi, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
         mBleAppManager = new BleAppManager(mLooper, this::bleOnToOffIfNeeded);
 
@@ -679,6 +681,181 @@ class BluetoothManagerService {
         mConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
         Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
+    }
+
+    private class Api implements BluetoothManagerServiceApi {
+        private void enforceCorrectThread() {
+            if (mLooper == Looper.myLooper()) {
+                return;
+            }
+            throw new IllegalThreadStateException("Must be called on BluetoothSystemServer looper");
+        }
+
+        @Override
+        public IBinder registerAdapter(IBluetoothManagerCallback callback) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.registerAdapter(callback);
+        }
+
+        @Override
+        public void unregisterAdapter(IBluetoothManagerCallback callback) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.unregisterAdapter(callback);
+        }
+
+        @Override
+        public int getState() {
+            // This method is designed to work concurrently
+            return BluetoothManagerService.this.getState();
+        }
+
+        @Override
+        public boolean waitForState(int state) {
+            // This method is designed to work concurrently
+            return BluetoothManagerService.this.waitForState(state);
+        }
+
+        @Override
+        public String getAddress() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.getAddress();
+        }
+
+        @Override
+        public String getName() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.getName();
+        }
+
+        @Override
+        public boolean isBleScanAvailable() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.isBleScanAvailable();
+        }
+
+        @Override
+        public boolean isHearingAidProfileSupported() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.isHearingAidProfileSupported();
+        }
+
+        @Override
+        public boolean enable(int reason, String packageName) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.enable(reason, packageName);
+        }
+
+        @Override
+        public boolean enableBle(String packageName, IBinder token) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.enableBle(packageName, token);
+        }
+
+        @Override
+        public boolean enableNoAutoConnect(String packageName) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.enableNoAutoConnect(packageName);
+        }
+
+        @Override
+        public boolean disable(String packageName, boolean persist) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.disable(packageName, persist);
+        }
+
+        @Override
+        public boolean disableBle(String packageName, IBinder token) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.disableBle(packageName, token);
+        }
+
+        @Override
+        public boolean factoryReset(int count) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.factoryReset(count);
+        }
+
+        @Override
+        public int setBtHciSnoopLogMode(int mode) {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.setBtHciSnoopLogMode(mode);
+        }
+
+        @Override
+        public int getBtHciSnoopLogMode() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.getBtHciSnoopLogMode();
+        }
+
+        @Override
+        public boolean isAutoOnSupported() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.isAutoOnSupported();
+        }
+
+        @Override
+        public boolean isAutoOnEnabled() {
+            enforceCorrectThread();
+            return BluetoothManagerService.this.isAutoOnEnabled();
+        }
+
+        @Override
+        public void setAutoOnEnabled(boolean status) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.setAutoOnEnabled(status);
+        }
+
+        @Override
+        public void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.dump(fd, writer, args);
+        }
+
+        @Override
+        public void onUserRestrictionsChanged(UserHandle userHandle) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.onUserRestrictionsChanged(userHandle);
+        }
+
+        @Override
+        public void onBluetoothDisallowed() {
+            enforceCorrectThread();
+            BluetoothManagerService.this.onBluetoothDisallowed();
+        }
+
+        @Override
+        public void onBleScanDisabled() {
+            enforceCorrectThread();
+            BluetoothManagerService.this.onBleScanDisabled();
+        }
+
+        @Override
+        public Context getUserContext() {
+            // Allow getter from concurrent thread
+            return BluetoothManagerService.this.getUserContext();
+        }
+
+        @Override
+        public void handleOnBootPhase(UserHandle userHandle) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.handleOnBootPhase(userHandle);
+        }
+
+        @Override
+        public void onUserSwitching(UserHandle userHandle) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.onUserSwitching(userHandle);
+        }
+
+        @Override
+        public void handleOnUnlockUser(UserHandle userHandle) {
+            enforceCorrectThread();
+            BluetoothManagerService.this.handleOnUnlockUser(userHandle);
+        }
+    }
+
+    BluetoothManagerServiceApi getApi() {
+        return mApi;
     }
 
     Unit onBluetoothDisallowed() {

@@ -34,7 +34,7 @@ private const val TAG = "Messenger"
 internal class ServiceMessenger(
     looper: Looper,
     private val checker: PermissionChecker,
-    private val managerService: BluetoothManagerService,
+    private val api: BluetoothManagerServiceApi,
 ) : Handler(looper) {
     val messenger = Messenger(this)
 
@@ -58,11 +58,11 @@ internal class ServiceMessenger(
         return when (obj) {
             is SystemServiceMessage.RegisterAdapter -> {
                 SystemServiceMessage.RegisterAdapter.Reply().apply {
-                    value = managerService.registerAdapter(obj.binder)
+                    value = api.registerAdapter(obj.binder)
                 }
             }
             is SystemServiceMessage.UnregisterAdapter -> {
-                managerService.unregisterAdapter(obj.binder)
+                api.unregisterAdapter(obj.binder)
                 SystemServiceMessage.UnregisterAdapter.Reply()
             }
             is SystemServiceMessage.Enable -> {
@@ -76,13 +76,13 @@ internal class ServiceMessenger(
                         try {
                             checker.enableAllowed(sendingUid, source, foregroundRequired)
                             if (bleToken != null) {
-                                managerService.enableBle(source.getPackageName(), bleToken)
+                                api.enableBle(source.packageName, bleToken)
                             } else if (isQuiet) {
-                                managerService.enableNoAutoConnect(source.getPackageName())
+                                api.enableNoAutoConnect(source.packageName)
                             } else {
-                                managerService.enable(
+                                api.enable(
                                     ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                                    source.getPackageName(),
+                                    source.packageName,
                                 )
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
@@ -101,9 +101,9 @@ internal class ServiceMessenger(
                         try {
                             checker.disableAllowed(sendingUid, source, foregroundRequired)
                             if (bleToken != null) {
-                                managerService.disableBle(source.getPackageName(), bleToken)
+                                api.disableBle(source.packageName, bleToken)
                             } else {
-                                managerService.disable(source.getPackageName(), persist)
+                                api.disable(source.packageName, persist)
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
@@ -119,7 +119,7 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.factoryResetAllowed(source)
-                            managerService.factoryReset(0)
+                            api.factoryReset(0)
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
                             false
@@ -133,7 +133,7 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.getAddressAllowed(sendingUid, source)
-                            managerService.getAddress()
+                            api.getAddress()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
                             IBluetoothManager.DEFAULT_MAC_ADDRESS
@@ -147,7 +147,7 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.getNameAllowed(sendingUid, source)
-                            managerService.getName()
+                            api.getName()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
                             null
@@ -156,12 +156,12 @@ internal class ServiceMessenger(
             }
             is SystemServiceMessage.IsBleScanAvailable -> {
                 SystemServiceMessage.IsBleScanAvailable.Reply().apply {
-                    value = managerService.isBleScanAvailable()
+                    value = api.isBleScanAvailable()
                 }
             }
             is SystemServiceMessage.IsHearingAidSupported -> {
                 SystemServiceMessage.IsHearingAidSupported.Reply().apply {
-                    value = managerService.isHearingAidProfileSupported()
+                    value = api.isHearingAidProfileSupported()
                 }
             }
             is SystemServiceMessage.SetSnoopLog -> {
@@ -199,19 +199,17 @@ internal class ServiceMessenger(
             is SystemServiceMessage.IsAutoSupported -> {
                 checker.enforcePrivileged(sendingUid)
                 SystemServiceMessage.IsAutoSupported.Reply().apply {
-                    value = managerService.isAutoOnSupported()
+                    value = api.isAutoOnSupported()
                 }
             }
             is SystemServiceMessage.SetAutoOnEnabled -> {
                 checker.enforcePrivileged(sendingUid)
-                managerService.setAutoOnEnabled(obj.enabledStatus)
+                api.setAutoOnEnabled(obj.enabledStatus)
                 SystemServiceMessage.SetAutoOnEnabled.Reply()
             }
             is SystemServiceMessage.IsAutoEnabled -> {
                 checker.enforcePrivileged(sendingUid)
-                SystemServiceMessage.IsAutoEnabled.Reply().apply {
-                    value = managerService.isAutoOnEnabled()
-                }
+                SystemServiceMessage.IsAutoEnabled.Reply().apply { value = api.isAutoOnEnabled() }
             }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
         }

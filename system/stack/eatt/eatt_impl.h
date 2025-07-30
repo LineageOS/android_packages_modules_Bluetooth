@@ -467,7 +467,7 @@ struct eatt_impl {
     eatt_device* eatt_dev = find_device_by_address(channel->bda_);
     switch (channel->state_) {
       case EattChannelState::EATT_CHANNEL_PENDING:
-        log::warn("Channel for cid: 0x{:x} is not extablished, reason: 0x{:x}", lcid, reason);
+        log::warn("Channel for cid: 0x{:x} is not established, reason: 0x{:x}", lcid, reason);
         remove_channel_by_cid(eatt_dev, lcid);
         break;
       case EattChannelState::EATT_CHANNEL_RECONFIGURING:

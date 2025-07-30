@@ -39,6 +39,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     private val scope = CoroutineScope(serviceDispatcher + SupervisorJob())
 
     private val mBluetoothManagerService: BluetoothManagerService
+    private val serviceApi: BluetoothManagerServiceApi
     private var mInitialized = false
 
     init {
@@ -61,13 +62,10 @@ class BluetoothService(context: Context) : SystemService(context) {
             runBlocking(serviceDispatcher) {
                 BluetoothManagerService(context, looper, hciInstance, bluetoothComponent)
             }
+        serviceApi = mBluetoothManagerService.api
         runOnBmsThread {
             if (Flags.userRestrictionRefactor()) {
-                BluetoothRestriction.initialize(
-                    context,
-                    looper,
-                    mBluetoothManagerService::onBluetoothDisallowed,
-                )
+                BluetoothRestriction.initialize(context, looper, serviceApi::onBluetoothDisallowed)
             }
         }
     }
@@ -78,7 +76,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     private fun initialize(user: TargetUser) {
         if (!mInitialized) {
             Log.i("initialize($user)")
-            runOnBmsThread { mBluetoothManagerService.handleOnBootPhase(user.userHandle) }
+            runOnBmsThread { serviceApi.handleOnBootPhase(user.userHandle) }
             mInitialized = true
         }
     }
@@ -139,7 +137,7 @@ class BluetoothService(context: Context) : SystemService(context) {
                 return
             }
             Log.i("onUserStarting($user) Initializing for foreground user ")
-            runOnBmsThread { mBluetoothManagerService.handleOnBootPhase(user.userHandle) }
+            runOnBmsThread { serviceApi.handleOnBootPhase(user.userHandle) }
             mInitialized = true
             return
         }
@@ -157,13 +155,13 @@ class BluetoothService(context: Context) : SystemService(context) {
                     "Switching on a user when not initialized should never happen"
                 )
             }
-            runOnBmsThread { mBluetoothManagerService.onUserSwitching(to.userHandle) }
+            runOnBmsThread { serviceApi.onUserSwitching(to.userHandle) }
             return
         }
         if (!mInitialized) {
             initialize(to)
         } else {
-            runOnBmsThread { mBluetoothManagerService.onUserSwitching(to.userHandle) }
+            runOnBmsThread { serviceApi.onUserSwitching(to.userHandle) }
         }
     }
 
@@ -172,6 +170,6 @@ class BluetoothService(context: Context) : SystemService(context) {
             Log.d("onUserUnlocking($user): Nothing to do at unlock")
             return
         }
-        runOnBmsThread { mBluetoothManagerService.handleOnUnlockUser(user.userHandle) }
+        runOnBmsThread { serviceApi.handleOnUnlockUser(user.userHandle) }
     }
 }

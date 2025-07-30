@@ -131,7 +131,7 @@ pub trait IBluetooth {
     fn set_discoverable(&mut self, mode: BtDiscMode, duration: u32) -> bool;
 
     /// Returns whether multi-advertisement is supported.
-    /// A minimum number of 5 advertising instances is required for multi-advertisment support.
+    /// A minimum number of 5 advertising instances is required for multi-advertisement support.
     fn is_multi_advertisement_supported(&self) -> bool;
 
     /// Returns whether LE extended advertising is supported.

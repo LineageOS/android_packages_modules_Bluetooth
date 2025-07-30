@@ -119,7 +119,7 @@ struct HearingDevice {
   bool switch_to_background_connection_after_failure;
 
   /* For two hearing aids, you must update their parameters one after another,
-   * not simulteanously, to ensure start of connection events for both devices
+   * not simultaneously, to ensure start of connection events for both devices
    * are far from each other. This status tracks whether this device is waiting
    * for update of parameters, that should happen after "LE Connection Update
    * Complete" event
@@ -270,7 +270,7 @@ struct CodecConfiguration {
    * should match how often we grab data from audio source, optionally we can
    * grab data every 2 or 3 intervals, but this would increase latency.
    *
-   * Value is provided in ms, must be divisable by 1.25 to make sure the
+   * Value is provided in ms, must be divisible by 1.25 to make sure the
    * connection interval is integer.
    */
   uint16_t data_interval_ms;

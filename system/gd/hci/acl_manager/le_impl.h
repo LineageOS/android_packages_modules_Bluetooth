@@ -1390,7 +1390,7 @@ public:
   std::unordered_set<AddressWithType> background_connections_;
   /* This is content of controller "Filter Accept List"*/
   std::unordered_set<AddressWithType> accept_list;
-  AddressWithType connection_peer_address_with_type_;  // Direct peer address UNSUPPORTEDD
+  AddressWithType connection_peer_address_with_type_;  // Direct peer address UNSUPPORTED
   bool address_manager_registered = false;
   bool ready_to_unregister = false;
   bool pause_connection = false;

@@ -860,7 +860,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   }
   adv_data.push_back(name_data);
   for (int i = 0; i != 5; ++i) {
-    adv_data.push_back({});  // pad with a few insigificant zeros
+    adv_data.push_back({});  // pad with a few insignificant zeros
   }
   advertisement_report.advertising_data_ = adv_data;
 
@@ -874,7 +874,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   }
   adv_data = {extra_data};
   for (int i = 0; i != 5; ++i) {
-    adv_data.push_back({});  // pad with a few insigificant zeros
+    adv_data.push_back({});  // pad with a few insignificant zeros
   }
   scan_response_report.advertising_data_ = adv_data;
 

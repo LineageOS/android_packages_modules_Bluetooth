@@ -46,7 +46,7 @@ public:
 
   LeScanningReassembler& operator=(const LeScanningReassembler&) = delete;
 
-  /// Process an incoming advertsing report, extracted from any of the
+  /// Process an incoming advertising report, extracted from any of the
   /// HCI LE Advertising Report or the HCI LE Extended Advertising Report
   /// events.
   /// Returns the completed advertising data if the event was complete, or the

@@ -95,7 +95,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
         std::chrono::milliseconds maximum_rotation_time) {
   // Handle repeated calls to the function for IRK rotation
   if (address_policy_ != AddressPolicy::POLICY_NOT_SET) {
-    // Need to update some parameteres like IRK if privacy is supported
+    // Need to update some parameters like IRK if privacy is supported
     if (supports_ble_privacy) {
       log::info("Updating rotation parameters.");
       handler_->CallOn(

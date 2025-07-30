@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <list>
 
+#include "ble_address_with_type.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
@@ -64,7 +65,8 @@ public:
   PIN_CODE pin_code;                                     /* for legacy devices */
   tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
   uint8_t pairing_flags{0};                              /* The current pairing flags    */
-  RawAddress pairing_bda;                                /* The device currently pairing */
+  tAclLinkSpec link_spec;                                /* The device currently pairing.
+                                                            Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
   list_t* sec_dev_rec{nullptr};                          /* list of tBTM_SEC_DEV_REC */

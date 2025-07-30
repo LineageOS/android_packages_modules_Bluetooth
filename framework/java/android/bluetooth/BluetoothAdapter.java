@@ -841,8 +841,6 @@ public final class BluetoothAdapter {
                                     BluetoothProfile.CSIP_SET_COORDINATOR,
                                     BluetoothCsipSetCoordinator::new),
                             Map.entry(
-                                    BluetoothProfile.LE_CALL_CONTROL, BluetoothLeCallControl::new),
-                            Map.entry(
                                     BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
                                     BluetoothLeBroadcastAssistant::new));
 
@@ -3542,10 +3540,6 @@ public final class BluetoothAdapter {
         synchronized (sProfileLock) {
             ProfileConnection connection = mProfileConnections.remove(proxy);
             if (connection != null) {
-                if (proxy instanceof BluetoothLeCallControl callControl) {
-                    callControl.unregisterBearer();
-                }
-
                 connection.disconnect(proxy);
             }
         }

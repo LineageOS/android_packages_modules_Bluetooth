@@ -1330,9 +1330,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 } else {
                     HearingAidService.getHearingAidService().removeActiveDevice(false);
                 }
-            } else {
-                getLeAudioService().ifPresent(leAudio -> leAudio.setActiveDevice(device));
             }
+            getLeAudioService().ifPresent(leAudio -> leAudio.setActiveDevice(device));
         }
         mCallbacks.onMediaControlRequest(req);
 

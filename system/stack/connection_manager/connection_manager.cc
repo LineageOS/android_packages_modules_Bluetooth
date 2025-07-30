@@ -428,7 +428,7 @@ bool is_direct_connection(const RawAddress& address) {
   return !it->second.doing_direct_conn.empty();
 }
 
-/** deregister all related background connetion device. */
+/** deregister all related background connection device. */
 void on_app_deregistered(uint8_t app_id) {
   log::debug("app_id={}", static_cast<int>(app_id));
   auto it = bgconn_dev.begin();
