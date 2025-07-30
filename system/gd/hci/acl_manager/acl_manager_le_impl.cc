@@ -143,8 +143,8 @@ void AclManagerLeImpl::OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode
   handler_->CallOn(&le_impl_, &le_impl::on_le_disconnect, handle, reason);
 }
 
-void AclManagerLeImpl::SetSystemSuspendState(bool suspended) {
-  handler_->CallOn(&le_impl_, &le_impl::set_system_suspend_state, suspended);
+void AclManagerLeImpl::SetSystemSuspendState(bool suspended, std::promise<void> promise) {
+  handler_->CallOn(&le_impl_, &le_impl::set_system_suspend_state, suspended, std::move(promise));
 }
 
 LeAddressManager* AclManagerLeImpl::GetLeAddressManager() { return le_impl_.le_address_manager_; }

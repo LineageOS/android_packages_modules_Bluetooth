@@ -73,7 +73,8 @@ public:
   MOCK_METHOD(LeAddressManager*, GetLeAddressManager, (), (override));
   MOCK_METHOD(void, OnLeSuspendInitiatedDisconnect, (uint16_t handle, ErrorCode reason),
               (override));
-  MOCK_METHOD(void, SetSystemSuspendState, (bool suspended), (override));
+  MOCK_METHOD(void, SetSystemSuspendState, (bool suspended, std::promise<void> promise),
+              (override));
   MOCK_METHOD(Address, HACK_GetLeAddress, (uint16_t connection_handle), (override));
 };
 
