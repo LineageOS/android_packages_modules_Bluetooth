@@ -64,7 +64,7 @@ const CommandPdu kCommandPduVal[] = {CommandPdu::GET_CAPABILITIES,
 class FakeMediaInterface : public MediaInterface {
 public:
   FakeMediaInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void SendKeyEvent(uint8_t /* key */, KeyState /* state */) { return; }
+  void SendKeyEvent(const RawAddress&, uint8_t /* key */, KeyState /* state */) { return; }
   using SongInfoCallback = base::Callback<void(SongInfo)>;
   void GetSongInfo(SongInfoCallback info_cb) {
     SongInfo sInfo;

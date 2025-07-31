@@ -63,7 +63,7 @@ static std::shared_timed_mutex interface_mutex;
 static std::shared_timed_mutex callbacks_mutex;
 
 // Forward Declarations
-static void sendMediaKeyEvent(int, KeyState);
+static void sendMediaKeyEvent(const RawAddress& address, int, KeyState);
 static std::string getCurrentMediaId();
 static SongInfo getSongInfo();
 static PlayStatus getCurrentPlayStatus();
@@ -128,7 +128,9 @@ void copyJavaArraytoCppVector(JNIEnv* env, const jbyteArray& jArray, std::vector
 // as it is hard to get a handle on the JNI thread from here.
 class AvrcpMediaInterfaceImpl : public MediaInterface {
 public:
-  void SendKeyEvent(uint8_t key, KeyState state) { sendMediaKeyEvent(key, state); }
+  void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) {
+    sendMediaKeyEvent(bdaddr, key, state);
+  }
 
   void GetSongInfo(SongInfoCallback cb) override {
     auto info = getSongInfo();
@@ -358,14 +360,15 @@ static jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */, jstrin
   return sServiceInterface->DisconnectDevice(bdaddr) == true ? JNI_TRUE : JNI_FALSE;
 }
 
-static void sendMediaKeyEvent(int key, KeyState state) {
+static void sendMediaKeyEvent(const RawAddress& address, int key, KeyState state) {
   log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) {
     return;
   }
-  sCallbackEnv->CallVoidMethod(mJavaInterface, method_sendMediaKeyEvent, key,
+  jstring j_bdaddr = sCallbackEnv->NewStringUTF(address.ToString().c_str());
+  sCallbackEnv->CallVoidMethod(mJavaInterface, method_sendMediaKeyEvent, j_bdaddr, key,
                                state == KeyState::PUSHED ? JNI_TRUE : JNI_FALSE);
 }
 
@@ -1103,7 +1106,7 @@ int register_com_android_bluetooth_avrcp_target(JNIEnv* env) {
            &method_getCurrentSongInfo},
           {"getPlayStatus", "()Lcom/android/bluetooth/audio_util/PlayStatus;",
            &method_getPlaybackStatus},
-          {"sendMediaKeyEvent", "(IZ)V", &method_sendMediaKeyEvent},
+          {"sendMediaKeyEvent", "(Ljava/lang/String;IZ)V", &method_sendMediaKeyEvent},
           {"getCurrentMediaId", "()Ljava/lang/String;", &method_getCurrentMediaId},
           {"getNowPlayingList", "()Ljava/util/List;", &method_getNowPlayingList},
           {"getCurrentPlayerId", "()I", &method_getCurrentPlayerId},

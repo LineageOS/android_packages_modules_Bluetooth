@@ -519,17 +519,16 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     /** Informs {@link AudioManager} of an incoming key event from a remote device. */
-    void sendMediaKeyEvent(int key, boolean pushed) {
+    void sendMediaKeyEvent(BluetoothDevice device, int key, boolean pushed) {
         MediaPlayerWrapper activePlayer = mMediaPlayerList.getActivePlayer();
 
         boolean voiceCommunicationActive = isVoiceCommunicationActive();
-        BluetoothDevice activeDevice = getA2dpActiveDevice();
         int keyCode = AvrcpPassthrough.toKeyCode(key);
 
         String keyEventLog =
                 "sendMediaKeyEvent:"
                         + " device="
-                        + activeDevice
+                        + device
                         + " key="
                         + KeyEvent.keyCodeToString(keyCode)
                         + " pushed="
@@ -566,9 +565,24 @@ public class AvrcpTargetService extends ProfileService {
         }
 
         Log.d(TAG, "KeyEvent dispatched to AudioManager");
+
+        if (isA2dpConnectionForbidden(device)) {
+            Log.e(TAG, "Ignore passthrough key as media profiles disabled");
+            return;
+        }
+
         int action = pushed ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
         KeyEvent event = new KeyEvent(action, keyCode);
         mAudioManager.dispatchMediaKeyEvent(event);
+    }
+
+    /** Returns {@code true} if A2DP connection policy is forbidden. */
+    private boolean isA2dpConnectionForbidden(BluetoothDevice device) {
+        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+                == mAdapterService
+                        .getA2dpService()
+                        .map(a2dp -> a2dp.getConnectionPolicy(device))
+                        .orElse(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
     }
 
     /**
