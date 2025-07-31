@@ -487,6 +487,29 @@ static void bta_hh_bredr_conn(tBTA_HH_DEV_CB* p_cb) {
 
 /*******************************************************************************
  *
+ * Function         bta_hh_le_connect_upgrade
+ *
+ * Description      Upgrade ongoing LE background connection to direct
+ *                  connection. This function is called only in
+ *                  BTA_HH_W4_CONN_ST state.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_hh_connect_upgrade(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
+  const tBTA_HH_API_CONN& api_conn = p_data->api_conn;
+  if (api_conn.link_spec.transport != BT_TRANSPORT_LE || !api_conn.direct) {
+    log::info("Already connecting to {}", api_conn.link_spec);
+    return;
+  }
+
+  log::info("Upgrading to direct connection {}", api_conn.link_spec);
+  p_cb->mode = p_data->api_conn.mode;
+  bta_hh_le_open_conn(p_cb, true);
+}
+
+/*******************************************************************************
+ *
  * Function         bta_hh_connect
  *
  * Description      Start HID host connection.
