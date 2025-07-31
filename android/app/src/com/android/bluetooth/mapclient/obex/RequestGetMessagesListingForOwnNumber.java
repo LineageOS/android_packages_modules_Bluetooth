@@ -81,7 +81,7 @@ class RequestGetMessagesListingForOwnNumber extends Request {
         }
 
         /** Returns false if start of window exceeds range; o.w. returns true. */
-        public boolean moveWindow() {
+        boolean moveWindow() {
             if (mListStartOffset > sListStartOffsetUpperLimit) {
                 return false;
             }
@@ -97,16 +97,16 @@ class RequestGetMessagesListingForOwnNumber extends Request {
             return true;
         }
 
-        public void reset() {
+        void reset() {
             mListStartOffset = LIST_START_OFFSET_INITIAL;
             mMaxListCount = MAX_LIST_COUNT_INITIAL;
         }
 
-        public int getStartOffset() {
+        int getStartOffset() {
             return mListStartOffset;
         }
 
-        public int getMaxCount() {
+        int getMaxCount() {
             return mMaxListCount;
         }
     }

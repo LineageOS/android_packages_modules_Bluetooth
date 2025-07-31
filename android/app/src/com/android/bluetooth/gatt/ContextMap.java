@@ -157,15 +157,15 @@ class ContextMap<C extends IInterface> {
     }
 
     private class AppRecord {
-        public final UUID uuid;
-        public final String packageName;
-        public final int transport;
-        @Nullable public final String attributionTag;
-        public final Instant registerTime;
+        final UUID uuid;
+        final String packageName;
+        final int transport;
+        @Nullable final String attributionTag;
+        final Instant registerTime;
 
-        public int clientIf;
-        public RemoveReason reason;
-        @Nullable public Instant unregisterTime;
+        int clientIf;
+        RemoveReason reason;
+        @Nullable Instant unregisterTime;
 
         AppRecord(App app) {
             uuid = app.uuid;

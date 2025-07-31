@@ -186,7 +186,7 @@ public class MapClientStateMachineTest {
             }
         }
 
-        public boolean isActionReceived(long timeout) {
+        boolean isActionReceived(long timeout) {
             boolean result = false;
             try {
                 result = mActionReceivedLatch.await(timeout, TimeUnit.MILLISECONDS);

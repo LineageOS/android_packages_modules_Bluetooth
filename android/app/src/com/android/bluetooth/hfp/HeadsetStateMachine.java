@@ -493,7 +493,7 @@ class HeadsetStateMachine extends StateMachine {
          * @param message the current message for the event
          * @param state connection state to transition to
          */
-        public void processConnectionEvent(Message message, int state) {
+        void processConnectionEvent(Message message, int state) {
             stateLogD(
                     "processConnectionEvent, state="
                             + HeadsetHalConstants.getConnectionStateName(state)
@@ -521,7 +521,7 @@ class HeadsetStateMachine extends StateMachine {
          */
         abstract int getAudioStateInt();
 
-        protected void setAptxVoice(HeadsetCallState callState) {
+        void setAptxVoice(HeadsetCallState callState) {
             if (!mHeadsetService.isAptXSwbEnabled()) {
                 return;
             }
@@ -1191,7 +1191,7 @@ class HeadsetStateMachine extends StateMachine {
          *
          * @param state audio state
          */
-        public abstract void processAudioEvent(int state);
+        abstract void processAudioEvent(int state);
 
         void processIntentScoVolume(Intent intent, BluetoothDevice device) {
             int volumeValue = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0);

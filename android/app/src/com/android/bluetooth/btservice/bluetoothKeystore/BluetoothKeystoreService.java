@@ -813,7 +813,7 @@ public class BluetoothKeystoreService {
             infoLog("ComputeDataThread: Stop, doEncrypt: " + mDoEncrypt);
         }
 
-        public void setWaitQueueEmptyForStop() {
+        void setWaitQueueEmptyForStop() {
             mWaitQueueEmptyForStop = true;
             if (mPendingEncryptKey.isEmpty()) {
                 interrupt();

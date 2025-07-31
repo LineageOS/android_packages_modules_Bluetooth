@@ -484,7 +484,7 @@ public class PbapClientObexClientTest {
             super();
         }
 
-        public void setPhonebook(
+        void setPhonebook(
                 String phonebook,
                 long dbIdentifier,
                 long primaryVersion,

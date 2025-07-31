@@ -382,7 +382,7 @@ public class ObexServerSockets {
          * BluetoothSockets to disconnect, hence do not call until all all accepted connections are
          * ready to be disconnected.
          */
-        public void shutdown() {
+        void shutdown() {
             if (!mStopped) {
                 mStopped = true;
                 // TODO: According to the documentation, this should not close the accepted

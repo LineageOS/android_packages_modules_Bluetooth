@@ -253,7 +253,7 @@ public class TestUtils {
             }
         }
 
-        public void waitForComplete() {
+        void waitForComplete() {
             synchronized (this) {
                 while (!mComplete) {
                     try {
@@ -306,7 +306,7 @@ public class TestUtils {
                 return false;
             }
 
-            public synchronized void waitForIdle() {
+            synchronized void waitForIdle() {
                 while (!mIdle) {
                     try {
                         wait();

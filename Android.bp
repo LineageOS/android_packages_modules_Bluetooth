@@ -134,6 +134,7 @@ java_defaults {
             "-Xep:DateFormatConstant:ERROR",
             "-Xep:DirectInvocationOnMock:ERROR",
             "-Xep:DuplicateBranches:ERROR",
+            "-Xep:EffectivelyPrivate:ERROR",
             "-Xep:EmptyBlockTag:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:EnumOrdinal:ERROR",

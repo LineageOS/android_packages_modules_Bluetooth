@@ -62,26 +62,26 @@ class AppScanStats {
     private static final AtomicBoolean sIsScreenOn = new AtomicBoolean(false);
 
     private static class LastScan {
-        public final StringBuilder filterString = new StringBuilder();
-        public final int scannerId;
-        public final int scanMode;
-        public final int scanCallbackType;
-        public final boolean isBackgroundScan;
-        public final boolean isBatchScan;
-        public final boolean isCallbackScan;
-        public final boolean isFilterScan;
-        public final boolean isOpportunisticScan;
-        public final long reportDelayMillis;
-        public final int appImportanceOnStart;
-        @Nullable public final String attributionTag;
+        final StringBuilder filterString = new StringBuilder();
+        final int scannerId;
+        final int scanMode;
+        final int scanCallbackType;
+        final boolean isBackgroundScan;
+        final boolean isBatchScan;
+        final boolean isCallbackScan;
+        final boolean isFilterScan;
+        final boolean isOpportunisticScan;
+        final long reportDelayMillis;
+        final int appImportanceOnStart;
+        @Nullable final String attributionTag;
 
-        public long suspendDuration;
-        public long suspendStartTime;
-        public boolean isSuspended;
-        public boolean isTimeout;
-        public boolean isDowngraded;
-        public boolean isAutoBatchScan;
-        public int results;
+        long suspendDuration;
+        long suspendStartTime;
+        boolean isSuspended;
+        boolean isTimeout;
+        boolean isDowngraded;
+        boolean isAutoBatchScan;
+        int results;
 
         private final long mStartTimestamp;
         private long mEndTimestamp;

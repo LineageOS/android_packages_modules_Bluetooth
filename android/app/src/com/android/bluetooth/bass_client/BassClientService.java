@@ -569,7 +569,7 @@ public class BassClientService extends ConnectableProfile {
     private record SourceSyncRequest(
             ScanResult scanResult, boolean hasPriority, int syncFailureCounter) {
 
-        public int getRssi() {
+        int getRssi() {
             return scanResult.getRssi();
         }
 

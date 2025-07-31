@@ -3801,7 +3801,7 @@ public class BluetoothMapContentObserver {
     }
 
     private class SmsBroadcastReceiver extends BroadcastReceiver {
-        public void register() {
+        void register() {
             Handler handler = new Handler(Looper.getMainLooper());
 
             IntentFilter intentFilter = new IntentFilter();
@@ -3821,7 +3821,7 @@ public class BluetoothMapContentObserver {
             mContext.registerReceiver(this, intentFilter, null, handler);
         }
 
-        public void unregister() {
+        void unregister() {
             try {
                 mContext.unregisterReceiver(this);
             } catch (IllegalArgumentException e) {
@@ -3971,7 +3971,7 @@ public class BluetoothMapContentObserver {
     }
 
     private class CeBroadcastReceiver extends BroadcastReceiver {
-        public void register() {
+        void register() {
             UserManager manager = mContext.getSystemService(UserManager.class);
             if (manager == null || manager.isUserUnlocked()) {
                 mStorageUnlocked = true;
@@ -3985,7 +3985,7 @@ public class BluetoothMapContentObserver {
             mContext.registerReceiver(this, intentFilter, null, handler);
         }
 
-        public void unregister() {
+        void unregister() {
             try {
                 mContext.unregisterReceiver(this);
             } catch (IllegalArgumentException e) {
