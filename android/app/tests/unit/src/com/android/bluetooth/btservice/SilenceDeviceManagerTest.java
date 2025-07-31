@@ -182,17 +182,30 @@ public class SilenceDeviceManagerTest {
     }
 
     private void verifyNoIntentSent() {
-        mInOrder.verify(mAdapterService, never()).sendBroadcastAsUser(any(), any(), any(), any());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService, never()).sendBroadcast(any(), any(), any());
+        } else {
+            mInOrder.verify(mAdapterService, never())
+                    .sendBroadcastAsUser(any(), any(), any(), any());
+        }
     }
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        mInOrder.verify(mAdapterService)
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                        eq(UserHandle.ALL),
-                        eq(BLUETOOTH_CONNECT),
-                        any(Bundle.class));
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService)
+                    .sendBroadcast(
+                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                            eq(BLUETOOTH_CONNECT),
+                            any(Bundle.class));
+        } else {
+            mInOrder.verify(mAdapterService)
+                    .sendBroadcastAsUser(
+                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                            eq(UserHandle.ALL),
+                            eq(BLUETOOTH_CONNECT),
+                            any(Bundle.class));
+        }
     }
 
     private void verifySilenceStateIntent() {
