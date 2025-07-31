@@ -65,7 +65,7 @@ public:
     bool AssignCisIds(LeAudioDevice* leAudioDevice);
     void AssignCisConnHandles(const std::vector<uint16_t>& conn_handles);
     void UnassignCis(LeAudioDevice* leAudioDevice, uint16_t conn_handle);
-
+    types::BidirectionalPair<bool> GetConnectedCisDirections(void);
     std::vector<struct types::cis> cises;
 
   private:

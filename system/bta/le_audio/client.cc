@@ -6829,6 +6829,19 @@ public:
                   std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
                             std::placeholders::_1, std::placeholders::_2),
                   bluetooth::le_audio::types::kLeAudioDirectionSource);
+        } else if (!audio_hal_is_capable_to_send_empty_metadata_) {
+          log::info("Audio HAL which is not able to set empty metadata");
+          if (group->GetConfigurationContextType() != LeAudioContextType::CONVERSATIONAL &&
+              group->cig.GetConnectedCisDirections().source) {
+            /* If in some way, Bluetooth started bidirectional stream without Resume on the DECODING
+             * Session, and this is not a CONVERSATIONAL context type, let makes sure that fall
+             * back to unidirectional scenario.
+             * CONVERSATIONAL context type is used also during Ringtone, and in this case DECODING
+             * session might be not used, which is perfectly fine and fallback to unidirectional
+             * is not expected.
+             */
+            StartVbcCloseTimeout();
+          }
         }
 
         speed_stop_setup(group_id);

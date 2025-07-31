@@ -1875,6 +1875,35 @@ void LeAudioDeviceGroup::CigConfiguration::UnassignCis(LeAudioDevice* leAudioDev
   }
 }
 
+types::BidirectionalPair<bool> LeAudioDeviceGroup::CigConfiguration::GetConnectedCisDirections(
+        void) {
+  types::BidirectionalPair<bool> response = {false, false};
+
+  for (struct bluetooth::le_audio::types::cis& cis_entry : cises) {
+    if (cis_entry.addr.IsEmpty()) {
+      continue;
+    }
+
+    switch (cis_entry.type) {
+      case CisType::CIS_TYPE_UNIDIRECTIONAL_SINK:
+        response.sink = true;
+        break;
+      case CisType::CIS_TYPE_UNIDIRECTIONAL_SOURCE:
+        response.source = true;
+        break;
+      case CisType::CIS_TYPE_BIDIRECTIONAL:
+        response.sink = true;
+        response.source = true;
+        break;
+    }
+
+    if (response.sink && response.source) {
+      return response;
+    }
+  }
+  return response;
+}
+
 static bool CheckIfStrategySupported(types::LeAudioConfigurationStrategy strategy,
                                      const types::AseConfiguration& conf, uint8_t direction,
                                      const LeAudioDevice& device) {
