@@ -19,10 +19,13 @@ package com.android.server.bluetooth.test
 import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.Application
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.IBluetoothManager.ACTION_AUTO_ON_STATE_CHANGED
+import android.bluetooth.IBluetoothManager.AUTO_ON_STATE_DISABLED
+import android.bluetooth.IBluetoothManager.AUTO_ON_STATE_ENABLED
+import android.bluetooth.IBluetoothManager.EXTRA_AUTO_ON_STATE
+import android.bluetooth.State
 import android.content.Context
 import android.content.Intent
-import android.os.IpcDataCache
 import android.os.Looper
 import android.os.UserHandle
 import android.provider.Settings
@@ -142,11 +145,11 @@ class AutoOnTest {
 
     @Test
     fun setupTimer_whenBtOn_isNotScheduled() {
-        state.set(BluetoothAdapter.STATE_ON)
+        state.set(State.ON)
 
         setupTimer()
 
-        state.set(BluetoothAdapter.STATE_OFF)
+        state.set(State.OFF)
         expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
     }
@@ -296,11 +299,9 @@ class AutoOnTest {
         setEnabled(false)
 
         assertThat(shadowOf(context as Application).getBroadcastIntents().get(0)).run {
-            hasAction(BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED)
+            hasAction(ACTION_AUTO_ON_STATE_CHANGED)
             hasFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-            extras()
-                .integer(BluetoothAdapter.EXTRA_AUTO_ON_STATE)
-                .isEqualTo(BluetoothAdapter.AUTO_ON_STATE_DISABLED)
+            extras().integer(EXTRA_AUTO_ON_STATE).isEqualTo(AUTO_ON_STATE_DISABLED)
         }
     }
 
@@ -310,11 +311,9 @@ class AutoOnTest {
         setEnabled(true)
 
         assertThat(shadowOf(context as Application).getBroadcastIntents().get(0)).run {
-            hasAction(BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED)
+            hasAction(ACTION_AUTO_ON_STATE_CHANGED)
             hasFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-            extras()
-                .integer(BluetoothAdapter.EXTRA_AUTO_ON_STATE)
-                .isEqualTo(BluetoothAdapter.AUTO_ON_STATE_ENABLED)
+            extras().integer(EXTRA_AUTO_ON_STATE).isEqualTo(AUTO_ON_STATE_ENABLED)
         }
     }
 
@@ -509,13 +508,15 @@ class AutoOnTest {
         @BeforeClass
         @JvmStatic
         fun beforeClass() {
-            IpcDataCache.setTestMode(true)
+            BluetoothAdapterState.disableCacheForTesting = true
+            // IpcDataCache.setTestMode(true)
         }
 
         @AfterClass
         @JvmStatic
         fun afterClass() {
-            IpcDataCache.setTestMode(false)
+            BluetoothAdapterState.disableCacheForTesting = false
+            // IpcDataCache.setTestMode(false)
         }
     }
 }
