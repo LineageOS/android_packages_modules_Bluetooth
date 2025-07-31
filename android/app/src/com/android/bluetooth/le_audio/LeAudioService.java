@@ -3398,7 +3398,7 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
-    boolean isOutputCodecOfSampleFrequencyChanged(
+    boolean isOutputCodecOrSampleFrequencyChanged(
             BluetoothLeAudioCodecStatus previous, BluetoothLeAudioCodecStatus next) {
         if ((previous == null) && (next == null)) {
             return false;
@@ -3429,26 +3429,32 @@ public class LeAudioService extends ConnectableProfile {
             Log.d(
                     TAG,
                     "Different output codec type: "
-                            + (previous.getOutputCodecConfig().getCodecType()
+                            + (previous.getOutputCodecConfig().getCodecName()
+                                    + "( "
+                                    + (previous.getOutputCodecConfig().getCodecType() + ")")
                                     + " != "
-                                    + next.getOutputCodecConfig().getCodecType()));
+                                    + (next.getOutputCodecConfig().getCodecName())
+                                    + "( "
+                                    + next.getOutputCodecConfig().getCodecType()
+                                    + ")"));
             return true;
         }
+
         if (previous.getOutputCodecConfig().getSampleRate()
                 != next.getOutputCodecConfig().getSampleRate()) {
             Log.d(
                     TAG,
                     "Different output sampleRate: "
-                            + (previous.getOutputCodecConfig().getSampleRate()
+                            + (previous.getOutputCodecConfig()
                                     + " != "
-                                    + next.getOutputCodecConfig().getSampleRate()));
+                                    + next.getOutputCodecConfig()));
             return true;
         }
 
         return false;
     }
 
-    boolean isInputCodecOfSampleFrequencyChanged(
+    boolean isInputCodecOrSampleFrequencyChanged(
             BluetoothLeAudioCodecStatus previous, BluetoothLeAudioCodecStatus next) {
         if ((previous == null) && (next == null)) {
             return false;
@@ -3478,10 +3484,15 @@ public class LeAudioService extends ConnectableProfile {
                 != next.getInputCodecConfig().getCodecType()) {
             Log.d(
                     TAG,
-                    "Different input codec type: "
-                            + (previous.getInputCodecConfig().getCodecType()
+                    "Different Input codec type: "
+                            + (previous.getInputCodecConfig().getCodecName()
+                                    + "( "
+                                    + (previous.getInputCodecConfig().getCodecType() + ")")
                                     + " != "
-                                    + next.getInputCodecConfig().getCodecType()));
+                                    + (next.getInputCodecConfig().getCodecName())
+                                    + "( "
+                                    + next.getInputCodecConfig().getCodecType()
+                                    + ")"));
             return true;
         }
 
@@ -3490,9 +3501,9 @@ public class LeAudioService extends ConnectableProfile {
             Log.d(
                     TAG,
                     "Different input sampleRate: "
-                            + (previous.getInputCodecConfig().getSampleRate()
+                            + (previous.getInputCodecConfig()
                                     + " != "
-                                    + next.getInputCodecConfig().getSampleRate()));
+                                    + next.getInputCodecConfig()));
             return true;
         }
 
@@ -3647,9 +3658,9 @@ public class LeAudioService extends ConnectableProfile {
                             descriptor.mOutputSelectableConfig);
 
             boolean outputCodecOrFreqChanged =
-                    isOutputCodecOfSampleFrequencyChanged(descriptor.mCodecStatus, status);
+                    isOutputCodecOrSampleFrequencyChanged(descriptor.mCodecStatus, status);
             boolean inputCodecOrFreqChanged =
-                    isInputCodecOfSampleFrequencyChanged(descriptor.mCodecStatus, status);
+                    isInputCodecOrSampleFrequencyChanged(descriptor.mCodecStatus, status);
 
             Log.d(
                     TAG,
