@@ -38,6 +38,7 @@ import android.util.Log;
 import android.view.Display;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.FileDescriptor;
@@ -232,10 +233,15 @@ public class AdapterSuspend {
         long leMask = 0;
 
         mAllowWakeByHid = allowWakeByHid;
-        mScanModeOnLastSuspend = mAdapterService.getScanMode();
-        if (mScanModeNoneOnSuspend && mScanModeOnLastSuspend != SCAN_MODE_NONE) {
-            mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
+        if (mScanModeNoneOnSuspend) {
+            if (Flags.adapterSuspendDiscoverability()) {
+                mAdapterService.setSuspendState(true /* suspend */);
+            } else if (mScanModeOnLastSuspend != SCAN_MODE_NONE) {
+                mScanModeOnLastSuspend = mAdapterService.getScanMode();
+                mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
+            }
         }
+
         if (mDisconnectAclOnSuspend) {
             mAdapterService
                     .getLeAudioService()
@@ -277,8 +283,13 @@ public class AdapterSuspend {
                 mDisconnectProfileDevices.clear();
             }
         }
-        if (mScanModeNoneOnSuspend && (mAdapterService.getScanMode() != mScanModeOnLastSuspend)) {
-            mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
+
+        if (mScanModeNoneOnSuspend) {
+            if (Flags.adapterSuspendDiscoverability()) {
+                mAdapterService.setSuspendState(false /* suspend */);
+            } else if (mAdapterService.getScanMode() != mScanModeOnLastSuspend) {
+                mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
+            }
         }
     }
 
@@ -365,7 +376,6 @@ public class AdapterSuspend {
         writer.println(TAG);
         writer.println("  " + "Disconnect ACL on suspend: " + mDisconnectAclOnSuspend);
         writer.println("  " + "Set scan mode to none on suspend: " + mScanModeNoneOnSuspend);
-        writer.println("  " + "Scan mode on last suspend: " + mScanModeOnLastSuspend);
         writer.println();
         mSuspendStateMachine.dump(fd, writer, args);
     }
