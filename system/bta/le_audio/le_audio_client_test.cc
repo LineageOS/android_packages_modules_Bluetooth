@@ -1655,6 +1655,7 @@ protected:
     init_message_loop_thread();
     init_delayed_message_loop_thread();
     reset_mock_function_count_map();
+    reset_alarm_mock_function_count_map();
     hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectedIsochronousStreamCentral)
@@ -5173,7 +5174,7 @@ TEST_F(UnicastTest, HandleResumeWithoutMetadataUpdateOnLocalSink) {
   SyncOnMainLoop();
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(1);
@@ -5824,7 +5825,7 @@ TEST_F(UnicastTest, ChangeAvailableContextTypeWhenInCodecConfigured) {
   SyncOnMainLoop();
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // Simulate state Configured
@@ -8564,7 +8565,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenIdleForBothMediaAndConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8613,7 +8614,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenIdleForMediaNotForConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8662,7 +8663,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenIdleNotForMediaForConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8711,7 +8712,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenIdleNotForBothMediaAndConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8761,7 +8762,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenMediaForBothMediaAndConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   log::info("simulate suspend timeout passed, alarm executing");
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   log::info("SetInCall is used by GTBS - and only then we can expect CCID to be set.");
@@ -8811,7 +8812,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenMediaForMediaNotForConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8861,7 +8862,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenMediaNotForMediaForConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8911,7 +8912,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenMediaNotForBothMediaAndConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // SetInCall is used by GTBS - and only then we can expect CCID to be set.
@@ -8950,7 +8951,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenConvForBothMediaAndConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // This codec can be used by media and conv
@@ -8999,7 +9000,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenConvForMediaNotForConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // This codec can be used by media but not by conv
@@ -9048,7 +9049,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenConvNotForMediaForConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // This codec can not be used by media but by conv
@@ -9097,7 +9098,7 @@ TEST_F(UnicastTest, TwoEarbudsSetPreferenceWhenConvNotForBothMediaAndConv) {
                          is_using_set_while_media_codec_during_media, is_reconfig);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // This codec can not be used by media and conv
@@ -9580,7 +9581,7 @@ TEST_F(UnicastTest, TwoEarbudsStopConversational_StartStreamSonification) {
   StopStreaming(group_id, true);
   SyncOnMainLoop();
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
   auto reconfigure_context = types::LeAudioContextType::ALERTS;
@@ -10249,7 +10250,7 @@ TEST_F(UnicastTest, LateStreamConnectBasedOnContextTypeNotFullyConnected) {
 
   // Stop streaming - simulate suspend timeout passed, alarm executing
   StopStreaming(group_id);
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // Second earbud connects and is set to Getting Ready state
@@ -10756,7 +10757,7 @@ TEST_F(UnicastTest, ModifyContextTypeOnDeviceA_WhileDeviceB_IsDisconnected) {
   // Stop
   StopStreaming(group_id);
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
   // Device B got disconnected and will not reconnect.
@@ -11255,7 +11256,7 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
   /* Stop stream */
   StopStreaming(group_id);
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -12404,7 +12405,7 @@ TEST_F(UnicastTest, UpdateDisableLocalAudioSinkOnGame) {
   EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(0);
   LocalAudioSinkSuspend();
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
 }
@@ -12582,7 +12583,7 @@ TEST_F(UnicastTest, MusicDuringCallContextTypes_SpeedUpReconfigFlagEnabled) {
   LocalAudioSourceSuspend();
   LocalAudioSinkSuspend();
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
 
   LeAudioClient::Get()->SetInCall(false);
   SyncOnMainLoop();
@@ -13142,7 +13143,7 @@ TEST_F(UnicastTest, StopMediaBlockMediaStartSoundEffect) {
   LocalAudioSourceSuspend();
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 
   // Allow only MEDIA
@@ -14414,7 +14415,7 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsActive) {
   StopStreaming(group_id, true);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 }
 
@@ -14484,7 +14485,7 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsInactive) {
   StopStreaming(group_id, true);
 
   // simulate suspend timeout passed, alarm executing
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 }
 
@@ -16847,7 +16848,7 @@ TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_Timeo
   EXPECT_CALL(mock_stack_l2cap_interface_,
               L2CA_LockBleConnParamsForProfileConnection(test_address0, false))
           .Times(1);
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
   SyncOnMainLoop();
 }
 
@@ -17175,6 +17176,156 @@ TEST_F(UnicastTest, RequestConfigurationOpusHiRes) {
   // Verify the Audio Framework configuration was updated to Opus Hi-Rez
   ASSERT_EQ(opus_preference_capture_out.codec_type, opus_preference.codec_type);
   ASSERT_EQ(opus_preference_capture_out.sample_rate, opus_preference.sample_rate);
+}
+
+TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata) {
+  /* Scenario
+   * 1. Make device active
+   * 2. Simulated Audio HAL set metadata for decoding session and this is not cleared.
+   * 3. Check that BT stack found that out and keep this information
+   */
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 0);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  SyncOnMainLoop();
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 1);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+
+  // simulate suspend timeout passed, alarm executing
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
+
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_UNKNOWN);
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  // Verify Data transfer on one audio source cis
+  uint8_t cis_count_out = 2;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 0);
+  SyncOnMainLoop();
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 1);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+}
+
+TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_FallbackToMedia) {
+  /* Scenario
+   * 1. Make device active
+   * 2. Simulated Audio HAL set metadata for decoding session and this is not cleared.
+   * 3. After that BT Stack sets `audio_hal_is_capable_to_send_empty_metadata_` to false
+   * 4. Simulate Audio HAL sets again data on both sessions but Resumes only Local Source (MEDIA  +
+   * LIVE)
+   * 5. Check if after stream is started there will schedule a fallback to unidirectional
+   */
+
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 0);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  SyncOnMainLoop();
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 1);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+
+  // simulate suspend timeout passed, alarm executing
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
+
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_UNKNOWN);
+  SyncOnMainLoop();
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 2);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  log::debug("Stream should be started on both directions");
+  /* Verify Data transfer  - here DECODING diretion is not enabled so we
+   * expect */
+  uint8_t cis_count_out = 2;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
+  SyncOnMainLoop();
+
+  /* Lets check streaming groups */
+  auto group = streaming_groups.at(group_id);
+  auto cis_directions = group->cig.GetConnectedCisDirections();
+  ASSERT_TRUE(cis_directions.sink);
+  ASSERT_TRUE(cis_directions.source);
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 3);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
+
+  log::debug("Audio HAL is not resuming the direction ");
+  EXPECT_CALL(mock_state_machine_, StopStream(_));
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
+  SyncOnMainLoop();
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  cis_count_out = 2;
+  cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 0);
+  SyncOnMainLoop();
+
+  cis_directions = group->cig.GetConnectedCisDirections();
+  ASSERT_TRUE(cis_directions.sink);
+  ASSERT_FALSE(cis_directions.source);
+
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 3);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
+}
+
+TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_Conversational) {
+  /* Scenario
+   * 1. Make device active
+   * 2. Simulated Audio HAL set metadata for decoding session and this is not cleared.
+   * 3. After that BT Stack sets `audio_hal_is_capable_to_send_empty_metadata_` to false
+   * 4. Simulate Audio HAL sets RINGTONE on Encoding session and SetInCall(true) is called which
+   * indicates Conversational
+   * 5. Check if after stream is started there will NOT schedule a fallback to unidirectional.
+   */
+
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 0);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  SyncOnMainLoop();
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 1);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 0);
+
+  // simulate suspend timeout passed, alarm executing
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
+
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE,
+                            AUDIO_CONTENT_TYPE_UNKNOWN);
+  SyncOnMainLoop();
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 2);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  log::debug("Stream should be started on both directions");
+  /* Verify Data transfer  - here DECODING diretion is not enabled so we
+   * expect */
+  uint8_t cis_count_out = 2;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
+  SyncOnMainLoop();
+
+  /* Lets check streaming groups */
+  auto group = streaming_groups.at(group_id);
+  auto cis_directions = group->cig.GetConnectedCisDirections();
+  ASSERT_TRUE(cis_directions.sink);
+  ASSERT_TRUE(cis_directions.source);
+
+  /*  LeAudioCloseVbcTimeout shall not be scheduled as this is Conversational */
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 2);
+  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
 }
 
 class UnicastDsaTest : public UnicastTest,

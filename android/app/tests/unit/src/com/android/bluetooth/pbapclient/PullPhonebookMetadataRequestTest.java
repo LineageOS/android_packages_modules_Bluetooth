@@ -142,11 +142,11 @@ public class PullPhonebookMetadataRequestTest {
             super();
         }
 
-        public void setResponseCode(int responseCode) {
+        void setResponseCode(int responseCode) {
             mResponseCode = responseCode;
         }
 
-        public void setSize(short size) {
+        void setSize(short size) {
             mSize = size;
         }
 
@@ -167,7 +167,7 @@ public class PullPhonebookMetadataRequestTest {
             return sendResponse(op, replyHeaders, null);
         }
 
-        public static byte[] shortToByteArray(short s) {
+        static byte[] shortToByteArray(short s) {
             ByteBuffer ret = ByteBuffer.allocate(2);
             ret.putShort(s);
             return ret.array();

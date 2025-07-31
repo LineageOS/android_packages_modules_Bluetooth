@@ -73,14 +73,14 @@ public class TbsGeneric {
         final int mRequestedOpcode;
         final int mCallIndex;
 
-        public Request(BluetoothDevice device, UUID callId, int requestedOpcode, int callIndex) {
+        Request(BluetoothDevice device, UUID callId, int requestedOpcode, int callIndex) {
             this.mDevice = device;
             this.mCallIdList = Arrays.asList(callId);
             this.mRequestedOpcode = requestedOpcode;
             this.mCallIndex = callIndex;
         }
 
-        public Request(
+        Request(
                 BluetoothDevice device,
                 List<ParcelUuid> callIds,
                 int requestedOpcode,

@@ -898,7 +898,7 @@ class MapClientContent {
             String handle, Uri uri, long timestamp, long threadId, Type type)
             implements Comparable<MessageDumpElement> {
 
-        public static String getFormattedColumnNames() {
+        static String getFormattedColumnNames() {
             return String.format(
                     "%-19s %s %-16s %s %s", "Timestamp", "ThreadId", "Handle", "Type", "Uri");
         }

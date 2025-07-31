@@ -74,3 +74,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "prevent_storage_access_without_gd_running"
+    namespace: "bluetooth"
+    description: "Prevent read and write to storage when gd is not running"
+    bug: "434749707"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

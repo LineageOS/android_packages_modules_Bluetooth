@@ -368,8 +368,13 @@ class HeadsetStateMachine extends StateMachine {
                 intent.putExtra(BluetoothHeadset.EXTRA_DISCONNECTED_REASON, mReason);
             }
             intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-            mHeadsetService.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            if (Flags.onlyBroadcastToLocalUser()) {
+                mHeadsetService.sendBroadcast(
+                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            } else {
+                mHeadsetService.sendBroadcastAsUser(
+                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            }
         }
 
         // Should not be called from enter() method
@@ -389,8 +394,13 @@ class HeadsetStateMachine extends StateMachine {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-            mHeadsetService.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            if (Flags.onlyBroadcastToLocalUser()) {
+                mHeadsetService.sendBroadcast(
+                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            } else {
+                mHeadsetService.sendBroadcastAsUser(
+                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            }
         }
 
         /**
@@ -493,7 +503,7 @@ class HeadsetStateMachine extends StateMachine {
          * @param message the current message for the event
          * @param state connection state to transition to
          */
-        public void processConnectionEvent(Message message, int state) {
+        void processConnectionEvent(Message message, int state) {
             stateLogD(
                     "processConnectionEvent, state="
                             + HeadsetHalConstants.getConnectionStateName(state)
@@ -521,7 +531,7 @@ class HeadsetStateMachine extends StateMachine {
          */
         abstract int getAudioStateInt();
 
-        protected void setAptxVoice(HeadsetCallState callState) {
+        void setAptxVoice(HeadsetCallState callState) {
             if (!mHeadsetService.isAptXSwbEnabled()) {
                 return;
             }
@@ -1191,7 +1201,7 @@ class HeadsetStateMachine extends StateMachine {
          *
          * @param state audio state
          */
-        public abstract void processAudioEvent(int state);
+        abstract void processAudioEvent(int state);
 
         void processIntentScoVolume(Intent intent, BluetoothDevice device) {
             int volumeValue = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0);
@@ -1788,8 +1798,13 @@ class HeadsetStateMachine extends StateMachine {
                 BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_COMPANY_ID_CATEGORY
                         + "."
                         + Integer.toString(companyId));
-        mHeadsetService.sendBroadcastAsUser(
-                intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mHeadsetService.sendBroadcast(
+                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        } else {
+            mHeadsetService.sendBroadcastAsUser(
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        }
     }
 
     private void setAudioParameters() {

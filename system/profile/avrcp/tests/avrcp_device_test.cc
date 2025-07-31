@@ -1279,7 +1279,7 @@ TEST_F(AvrcpDeviceTest, playPushedActiveDeviceTest) {
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
 
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::PUSHED)).Times(1);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(1);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
   play_pushed->Serialize(play_pushed_pkt);
@@ -1307,7 +1307,7 @@ TEST_F(AvrcpDeviceTest, playPushedInactiveDeviceTest) {
   // No play command should be sent since the music is already playing
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::PUSHED)).Times(0);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(0);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
   play_pushed->Serialize(play_pushed_pkt);
@@ -1331,7 +1331,7 @@ TEST_F(AvrcpDeviceTest, mediaKeyActiveDeviceTest) {
 
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
 
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::RELEASED)).Times(1);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::RELEASED)).Times(1);
 
   auto play_released_pkt = TestAvrcpPacket::Make();
   play_released->Serialize(play_released_pkt);
@@ -1356,7 +1356,7 @@ TEST_F(AvrcpDeviceTest, mediaKeyInactiveDeviceTest) {
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
 
   // Expect that the key event wont be sent to the media interface
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::RELEASED)).Times(0);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::RELEASED)).Times(0);
 
   auto play_released_pkt = TestAvrcpPacket::Make();
   play_released->Serialize(play_released_pkt);

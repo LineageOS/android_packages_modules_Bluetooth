@@ -293,7 +293,7 @@ public class HidDeviceService extends ConnectableProfile {
             mService.unregisterApp();
         }
 
-        public void cleanup() {
+        void cleanup() {
             mService.unregisterApp();
             mService = null;
         }

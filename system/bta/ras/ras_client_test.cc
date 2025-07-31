@@ -478,7 +478,7 @@ TEST_F(RasClientTestNoInit, SetFirstSegmentTimeoutInLowPowerMode) {
 
   EXPECT_CALL(mock_ras_client_callbacks_, OnRemoteDataTimeout(test_address_));
 
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
 
   DisconnectGatt();
 }

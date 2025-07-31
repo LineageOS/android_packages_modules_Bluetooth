@@ -80,9 +80,11 @@ public class AvrcpNativeInterface {
         return mAvrcpService.getPlayState();
     }
 
-    void sendMediaKeyEvent(int keyEvent, boolean pushed) {
+    void sendMediaKeyEvent(String bdaddr, int keyEvent, boolean pushed) {
         d("sendMediaKeyEvent: keyEvent=" + keyEvent + " pushed=" + pushed);
-        mAvrcpService.sendMediaKeyEvent(keyEvent, pushed);
+        BluetoothDevice device =
+                mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
+        mAvrcpService.sendMediaKeyEvent(device, keyEvent, pushed);
     }
 
     String getCurrentMediaId() {

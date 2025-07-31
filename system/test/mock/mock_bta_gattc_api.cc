@@ -156,3 +156,7 @@ void bta_gattc_continue_discovery_if_needed(const RawAddress& /* bd_addr */,
   inc_func_call_count(__func__);
 }
 void bta_gatt_client_dump(int /* fd */) { inc_func_call_count(__func__); }
+
+void bta_gattc_link_cache_for_bonded_device(const RawAddress& /*bd_addr*/) {
+  inc_func_call_count(__func__);
+}

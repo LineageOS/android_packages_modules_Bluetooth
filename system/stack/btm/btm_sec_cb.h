@@ -20,7 +20,6 @@
 #include <cstdint>
 #include <list>
 
-#include "ble_address_with_type.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
@@ -29,6 +28,7 @@
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/security_client_callbacks.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 class tBTM_SEC_CB {

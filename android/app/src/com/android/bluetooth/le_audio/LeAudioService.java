@@ -533,11 +533,11 @@ public class LeAudioService extends ConnectableProfile {
             mDevInbandRingtoneEnabled = isInbandRingtoneEnabled;
         }
 
-        public boolean mAclConnected;
-        public LeAudioStateMachine mStateMachine;
-        public Integer mGroupId;
-        public Integer mSinkAudioLocation;
-        public Integer mDirection;
+        boolean mAclConnected;
+        LeAudioStateMachine mStateMachine;
+        Integer mGroupId;
+        Integer mSinkAudioLocation;
+        Integer mDirection;
         Boolean mDevInbandRingtoneEnabled;
     }
 
@@ -548,9 +548,9 @@ public class LeAudioService extends ConnectableProfile {
             mRequestedForDetails = false;
         }
 
-        public Integer mState;
-        public BluetoothLeBroadcastMetadata mMetadata;
-        public Boolean mRequestedForDetails;
+        Integer mState;
+        BluetoothLeBroadcastMetadata mMetadata;
+        Boolean mRequestedForDetails;
     }
 
     private static class LeAudioBroadcastSessionStats {
@@ -576,24 +576,24 @@ public class LeAudioService extends ConnectableProfile {
                             .BROADCAST_AUDIO_SESSION_REPORTED__SESSION_SETUP_STATUS__SETUP_STATUS_REQUESTED;
         }
 
-        public void updateSessionCreatedTime(long createdTime) {
+        void updateSessionCreatedTime(long createdTime) {
             if (mSessionCreatedTime == 0) {
                 mSessionCreatedTime = createdTime;
             }
         }
 
-        public void updateSessionStreamingTime(long streamingTime) {
+        void updateSessionStreamingTime(long streamingTime) {
             if (mSessionStreamingTime == 0) {
                 // Only record the 1st STREAMING EVENT
                 mSessionStreamingTime = streamingTime;
             }
         }
 
-        public void updateGroupSize(int groupSize) {
+        void updateGroupSize(int groupSize) {
             mSessionGroupSize = groupSize;
         }
 
-        public void updateSessionStatus(int status) {
+        void updateSessionStatus(int status) {
             if (mSessionStatus
                     != BluetoothStatsLog
                             .BROADCAST_AUDIO_SESSION_REPORTED__SESSION_SETUP_STATUS__SETUP_STATUS_STREAMING) {
@@ -607,7 +607,7 @@ public class LeAudioService extends ConnectableProfile {
             }
         }
 
-        public void logBroadcastSessionMetrics(int broadcastId, long sessionStopTime) {
+        void logBroadcastSessionMetrics(int broadcastId, long sessionStopTime) {
             long sessionDurationMs =
                     (mSessionCreatedTime > 0) ? (sessionStopTime - mSessionCreatedTime) : 0;
             long latencySessionConfiguredMs =
@@ -1993,8 +1993,12 @@ public class LeAudioService extends ConnectableProfile {
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        sendBroadcastAsUser(
-                intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        } else {
+            sendBroadcastAsUser(
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        }
     }
 
     void sendActiveDeviceChangeIntent(BluetoothDevice device) {
@@ -2003,9 +2007,14 @@ public class LeAudioService extends ConnectableProfile {
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        createContextAsUser(UserHandle.ALL, /* flags= */ 0)
-                .sendBroadcastWithMultiplePermissions(
-                        intent, new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED});
+        if (Flags.onlyBroadcastToLocalUser()) {
+            sendBroadcastWithMultiplePermissions(
+                    intent, new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED});
+        } else {
+            createContextAsUser(UserHandle.ALL, /* flags= */ 0)
+                    .sendBroadcastWithMultiplePermissions(
+                            intent, new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED});
+        }
         mEventLogger.logd(
                 TAG, "[Intent] Active Device Changed:" + mExposedActiveDevice + " -> " + device);
         mExposedActiveDevice = device;

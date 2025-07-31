@@ -569,7 +569,7 @@ public class BassClientService extends ConnectableProfile {
     private record SourceSyncRequest(
             ScanResult scanResult, boolean hasPriority, int syncFailureCounter) {
 
-        public int getRssi() {
+        int getRssi() {
             return scanResult.getRssi();
         }
 
@@ -3259,8 +3259,12 @@ public class BassClientService extends ConnectableProfile {
                                 + device
                                 + ", broadcastId: "
                                 + sourceMetadata.getBroadcastId());
-                mCallbacks.notifySourceAddFailed(
-                        device, sourceMetadata, BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                if (!stateMachine.hasPendingSourceOperation(sourceMetadata.getBroadcastId())) {
+                    mCallbacks.notifySourceAddFailed(
+                            device,
+                            sourceMetadata,
+                            BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                }
                 continue;
             }
             int sourceId = checkDuplicateSourceAdditionAndGetSourceId(device, sourceMetadata);

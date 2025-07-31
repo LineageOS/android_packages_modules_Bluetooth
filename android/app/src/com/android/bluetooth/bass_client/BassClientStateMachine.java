@@ -222,19 +222,19 @@ class BassClientStateMachine extends StateMachine {
                             .BROADCAST_AUDIO_SYNC_REPORTED__SYNC_STATUS__SYNC_STATUS_SYNC_REQUESTED;
         }
 
-        public void updatePaSyncedTime(long paSyncedTime) {
+        void updatePaSyncedTime(long paSyncedTime) {
             if (mSourcePaSyncedTime == 0) {
                 mSourcePaSyncedTime = paSyncedTime;
             }
         }
 
-        public void updateBisSyncedTime(long bisSyncedTime) {
+        void updateBisSyncedTime(long bisSyncedTime) {
             if (mSourceBisSyncedTime == 0) {
                 mSourceBisSyncedTime = bisSyncedTime;
             }
         }
 
-        public void updateSyncStatus(int status) {
+        void updateSyncStatus(int status) {
             if (mSyncStatus
                     != BluetoothStatsLog
                             .BROADCAST_AUDIO_SYNC_REPORTED__SYNC_STATUS__SYNC_STATUS_AUDIO_SYNC_SUCCESS) {
@@ -248,7 +248,7 @@ class BassClientStateMachine extends StateMachine {
             }
         }
 
-        public void logBroadcastSyncMetrics(long stopTime) {
+        void logBroadcastSyncMetrics(long stopTime) {
             long syncDurationMs =
                     (mSourceBisSyncedTime > 0) ? (stopTime - mSourceBisSyncedTime) : 0;
             long latencyPaSyncedMs =
