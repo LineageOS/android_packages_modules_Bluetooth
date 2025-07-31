@@ -1221,10 +1221,10 @@ public class BluetoothPbapVcardManager {
             NICKNAME(23, "NICKNAME", false, true),
             DATETIME(28, "X-IRMC-CALL-DATETIME", false, false);
 
-            public final int pos;
-            public final String prop;
-            public final boolean onlyCheckV21;
-            public final boolean excludeForV21;
+            final int pos;
+            final String prop;
+            final boolean onlyCheckV21;
+            final boolean excludeForV21;
 
             FilterBit(int pos, String prop, boolean onlyCheckV21, boolean excludeForV21) {
                 this.pos = pos;
@@ -1323,8 +1323,8 @@ public class BluetoothPbapVcardManager {
             NICKNAME(23, "NICKNAME"),
             DATETIME(28, "DATETIME");
 
-            public final int mBitPosition;
-            public final String mProperty;
+            final int mBitPosition;
+            final String mProperty;
 
             PropertyMask(int bitPosition, String property) {
                 this.mBitPosition = bitPosition;

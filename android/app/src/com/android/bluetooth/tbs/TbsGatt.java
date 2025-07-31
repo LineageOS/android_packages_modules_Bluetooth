@@ -413,18 +413,17 @@ public class TbsGatt {
 
     /** Class that handles GATT characteristic notifications */
     private class BluetoothGattCharacteristicNotifier {
-        public int setSubscriptionConfiguration(
-                BluetoothDevice device, UUID uuid, byte[] configuration) {
+        int setSubscriptionConfiguration(BluetoothDevice device, UUID uuid, byte[] configuration) {
             setCcc(device, uuid, configuration);
 
             return BluetoothGatt.GATT_SUCCESS;
         }
 
-        public byte[] getSubscriptionConfiguration(BluetoothDevice device, UUID uuid) {
+        byte[] getSubscriptionConfiguration(BluetoothDevice device, UUID uuid) {
             return getCccBytes(device, uuid);
         }
 
-        public boolean isSubscribed(BluetoothDevice device, UUID uuid) {
+        boolean isSubscribed(BluetoothDevice device, UUID uuid) {
             return Arrays.equals(
                     getCccBytes(device, uuid), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         }
@@ -443,20 +442,20 @@ public class TbsGatt {
             mBluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
         }
 
-        public void notifyWithValue(
+        void notifyWithValue(
                 BluetoothDevice device, BluetoothGattCharacteristic characteristic, byte[] value) {
             if (isSubscribed(device, characteristic.getUuid())) {
                 notifyCharacteristicChanged(device, characteristic, value);
             }
         }
 
-        public void notify(BluetoothDevice device, BluetoothGattCharacteristic characteristic) {
+        void notify(BluetoothDevice device, BluetoothGattCharacteristic characteristic) {
             if (isSubscribed(device, characteristic.getUuid())) {
                 notifyCharacteristicChanged(device, characteristic);
             }
         }
 
-        public void notifyAll(BluetoothGattCharacteristic characteristic) {
+        void notifyAll(BluetoothGattCharacteristic characteristic) {
             for (BluetoothDevice device : mCccDescriptorValues.keySet()) {
                 notify(device, characteristic);
             }
@@ -466,9 +465,9 @@ public class TbsGatt {
     /** Wrapper class for BluetoothGattCharacteristic */
     private class GattCharacteristic extends BluetoothGattCharacteristic {
 
-        protected final BluetoothGattCharacteristicNotifier mNotifier;
+        final BluetoothGattCharacteristicNotifier mNotifier;
 
-        public GattCharacteristic(UUID uuid, int properties, int permissions) {
+        GattCharacteristic(UUID uuid, int properties, int permissions) {
             super(uuid, properties, permissions);
             if ((properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
                 mNotifier = new BluetoothGattCharacteristicNotifier();
@@ -478,12 +477,11 @@ public class TbsGatt {
             }
         }
 
-        public byte[] getSubscriptionConfiguration(BluetoothDevice device, UUID uuid) {
+        byte[] getSubscriptionConfiguration(BluetoothDevice device, UUID uuid) {
             return mNotifier.getSubscriptionConfiguration(device, uuid);
         }
 
-        public int setSubscriptionConfiguration(
-                BluetoothDevice device, UUID uuid, byte[] configuration) {
+        int setSubscriptionConfiguration(BluetoothDevice device, UUID uuid, byte[] configuration) {
             return mNotifier.setSubscriptionConfiguration(device, uuid, configuration);
         }
 
@@ -521,11 +519,11 @@ public class TbsGatt {
             return success;
         }
 
-        public boolean setValueNoNotify(byte[] value) {
+        boolean setValueNoNotify(byte[] value) {
             return super.setValue(value);
         }
 
-        public boolean notifyWithValue(BluetoothDevice device, byte[] value) {
+        boolean notifyWithValue(BluetoothDevice device, byte[] value) {
             if (isNotifiable()) {
                 mNotifier.notifyWithValue(device, this, value);
                 return true;
@@ -533,13 +531,13 @@ public class TbsGatt {
             return false;
         }
 
-        public void notify(BluetoothDevice device) {
+        void notify(BluetoothDevice device) {
             if (isNotifiable() && super.getValue() != null) {
                 mNotifier.notify(device, this);
             }
         }
 
-        public boolean clearValue(boolean notify) {
+        boolean clearValue(boolean notify) {
             boolean success = super.setValue(new byte[0]);
             if (success && notify && isNotifiable()) {
                 mNotifier.notifyAll(this);
@@ -548,7 +546,7 @@ public class TbsGatt {
             return success;
         }
 
-        public void handleWriteRequest(
+        void handleWriteRequest(
                 BluetoothDevice device, int requestId, boolean responseNeeded, byte[] value) {
             if (responseNeeded) {
                 mBluetoothGattServer.sendResponse(
@@ -559,7 +557,7 @@ public class TbsGatt {
 
     private class CallControlPointCharacteristic extends GattCharacteristic {
 
-        public CallControlPointCharacteristic() {
+        CallControlPointCharacteristic() {
             super(
                     UUID_CALL_CONTROL_POINT,
                     PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE | PROPERTY_NOTIFY,
@@ -590,7 +588,7 @@ public class TbsGatt {
                     device, opcode, Arrays.copyOfRange(value, 1, value.length));
         }
 
-        public void setResult(
+        void setResult(
                 BluetoothDevice device, int requestedOpcode, int callIndex, int requestResult) {
             byte[] value = new byte[3];
             value[0] = (byte) (requestedOpcode);
@@ -612,7 +610,7 @@ public class TbsGatt {
                     PERMISSION_WRITE_ENCRYPTED | PERMISSION_READ_ENCRYPTED);
         }
 
-        public byte[] getValue(BluetoothDevice device) {
+        byte[] getValue(BluetoothDevice device) {
             GattCharacteristic characteristic = (GattCharacteristic) getCharacteristic();
             byte[] value =
                     characteristic.getSubscriptionConfiguration(device, characteristic.getUuid());
@@ -623,7 +621,7 @@ public class TbsGatt {
             return value;
         }
 
-        public int setValue(BluetoothDevice device, byte[] value) {
+        int setValue(BluetoothDevice device, byte[] value) {
             GattCharacteristic characteristic = (GattCharacteristic) getCharacteristic();
             int properties = characteristic.getProperties();
 

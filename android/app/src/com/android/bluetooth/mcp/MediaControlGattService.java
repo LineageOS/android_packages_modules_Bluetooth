@@ -2130,11 +2130,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private static final class CharacteristicData {
-        public final int id;
-        public final int properties;
-        public final int permissions;
-        public final long featureFlag;
-        public final long ntfFeatureFlag;
+        final int id;
+        final int properties;
+        final int permissions;
+        final long featureFlag;
+        final long ntfFeatureFlag;
 
         private CharacteristicData(
                 int id, long featureFlag, long ntfFeatureFlag, int properties, int permissions) {
@@ -2147,52 +2147,43 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private static final class CharId {
-        public static final int PLAYER_NAME =
-                Long.numberOfTrailingZeros(ServiceFeature.PLAYER_NAME);
-        public static final int PLAYER_ICON_OBJ_ID =
+        static final int PLAYER_NAME = Long.numberOfTrailingZeros(ServiceFeature.PLAYER_NAME);
+        static final int PLAYER_ICON_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.PLAYER_ICON_OBJ_ID);
-        public static final int PLAYER_ICON_URL =
+        static final int PLAYER_ICON_URL =
                 Long.numberOfTrailingZeros(ServiceFeature.PLAYER_ICON_URL);
-        public static final int TRACK_CHANGED =
-                Long.numberOfTrailingZeros(ServiceFeature.TRACK_CHANGED);
-        public static final int TRACK_TITLE =
-                Long.numberOfTrailingZeros(ServiceFeature.TRACK_TITLE);
-        public static final int TRACK_DURATION =
-                Long.numberOfTrailingZeros(ServiceFeature.TRACK_DURATION);
-        public static final int TRACK_POSITION =
-                Long.numberOfTrailingZeros(ServiceFeature.TRACK_POSITION);
-        public static final int PLAYBACK_SPEED =
-                Long.numberOfTrailingZeros(ServiceFeature.PLAYBACK_SPEED);
-        public static final int SEEKING_SPEED =
-                Long.numberOfTrailingZeros(ServiceFeature.SEEKING_SPEED);
-        public static final int CURRENT_TRACK_SEGMENT_OBJ_ID =
+        static final int TRACK_CHANGED = Long.numberOfTrailingZeros(ServiceFeature.TRACK_CHANGED);
+        static final int TRACK_TITLE = Long.numberOfTrailingZeros(ServiceFeature.TRACK_TITLE);
+        static final int TRACK_DURATION = Long.numberOfTrailingZeros(ServiceFeature.TRACK_DURATION);
+        static final int TRACK_POSITION = Long.numberOfTrailingZeros(ServiceFeature.TRACK_POSITION);
+        static final int PLAYBACK_SPEED = Long.numberOfTrailingZeros(ServiceFeature.PLAYBACK_SPEED);
+        static final int SEEKING_SPEED = Long.numberOfTrailingZeros(ServiceFeature.SEEKING_SPEED);
+        static final int CURRENT_TRACK_SEGMENT_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.CURRENT_TRACK_SEGMENT_OBJ_ID);
-        public static final int CURRENT_TRACK_OBJ_ID =
+        static final int CURRENT_TRACK_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.CURRENT_TRACK_OBJ_ID);
-        public static final int NEXT_TRACK_OBJ_ID =
+        static final int NEXT_TRACK_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.NEXT_TRACK_OBJ_ID);
-        public static final int CURRENT_GROUP_OBJ_ID =
+        static final int CURRENT_GROUP_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.CURRENT_GROUP_OBJ_ID);
-        public static final int PARENT_GROUP_OBJ_ID =
+        static final int PARENT_GROUP_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.PARENT_GROUP_OBJ_ID);
-        public static final int PLAYING_ORDER =
-                Long.numberOfTrailingZeros(ServiceFeature.PLAYING_ORDER);
-        public static final int PLAYING_ORDER_SUPPORTED =
+        static final int PLAYING_ORDER = Long.numberOfTrailingZeros(ServiceFeature.PLAYING_ORDER);
+        static final int PLAYING_ORDER_SUPPORTED =
                 Long.numberOfTrailingZeros(ServiceFeature.PLAYING_ORDER_SUPPORTED);
-        public static final int MEDIA_STATE =
-                Long.numberOfTrailingZeros(ServiceFeature.MEDIA_STATE);
-        public static final int MEDIA_CONTROL_POINT =
+        static final int MEDIA_STATE = Long.numberOfTrailingZeros(ServiceFeature.MEDIA_STATE);
+        static final int MEDIA_CONTROL_POINT =
                 Long.numberOfTrailingZeros(ServiceFeature.MEDIA_CONTROL_POINT);
-        public static final int MEDIA_CONTROL_POINT_OPCODES_SUPPORTED =
+        static final int MEDIA_CONTROL_POINT_OPCODES_SUPPORTED =
                 Long.numberOfTrailingZeros(ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
-        public static final int SEARCH_RESULT_OBJ_ID =
+        static final int SEARCH_RESULT_OBJ_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.SEARCH_RESULT_OBJ_ID);
-        public static final int SEARCH_CONTROL_POINT =
+        static final int SEARCH_CONTROL_POINT =
                 Long.numberOfTrailingZeros(ServiceFeature.SEARCH_CONTROL_POINT);
-        public static final int CONTENT_CONTROL_ID =
+        static final int CONTENT_CONTROL_ID =
                 Long.numberOfTrailingZeros(ServiceFeature.CONTENT_CONTROL_ID);
 
-        public static int FromFeature(long feature) {
+        static int FromFeature(long feature) {
             return Long.numberOfTrailingZeros(feature);
         }
     }

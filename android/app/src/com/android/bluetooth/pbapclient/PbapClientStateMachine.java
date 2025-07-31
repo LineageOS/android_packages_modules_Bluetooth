@@ -139,26 +139,26 @@ class PbapClientStateMachine extends StateMachine {
             mNumDownloadedWithImages = 0;
         }
 
-        public void setMetadata(PbapPhonebookMetadata metadata) {
+        void setMetadata(PbapPhonebookMetadata metadata) {
             mMetadata = metadata;
         }
 
-        public void onContactsDownloaded(int numDownloaded, int numWithImages) {
+        void onContactsDownloaded(int numDownloaded, int numWithImages) {
             mNumDownloaded += numDownloaded;
             mNumDownloadedWithImages += numWithImages;
         }
 
-        public int getTotalNumberOfContacts() {
+        int getTotalNumberOfContacts() {
             return (mMetadata == null || mMetadata.size() == PbapPhonebookMetadata.INVALID_SIZE)
                     ? 0
                     : mMetadata.size();
         }
 
-        public int getNumberOfContactsDownloaded() {
+        int getNumberOfContactsDownloaded() {
             return mNumDownloaded;
         }
 
-        public int getNumberOfContactsDownloadedWithImages() {
+        int getNumberOfContactsDownloadedWithImages() {
             return mNumDownloadedWithImages;
         }
 

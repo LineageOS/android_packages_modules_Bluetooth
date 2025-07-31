@@ -128,11 +128,11 @@ public class PullPhonebookRequestTest {
             super();
         }
 
-        public void setResponseCode(int responseCode) {
+        void setResponseCode(int responseCode) {
             mResponseCode = responseCode;
         }
 
-        public void addContact(String vcard) {
+        void addContact(String vcard) {
             mPhonebook.add(vcard);
         }
 

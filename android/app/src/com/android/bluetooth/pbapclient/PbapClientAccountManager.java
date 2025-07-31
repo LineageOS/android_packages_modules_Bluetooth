@@ -271,8 +271,8 @@ class PbapClientAccountManager {
         // TODO(233361365): Remove this pattern when the framework solves their race condition
         private static final int ACCOUNT_ADD_RETRY_MS = 1000;
 
-        public static final int MSG_USER_UNLOCKED = 0;
-        public static final int MSG_ACCOUNT_CHECK = 1;
+        static final int MSG_USER_UNLOCKED = 0;
+        static final int MSG_ACCOUNT_CHECK = 1;
 
         AccountHandler(Looper looper) {
             super(looper);
