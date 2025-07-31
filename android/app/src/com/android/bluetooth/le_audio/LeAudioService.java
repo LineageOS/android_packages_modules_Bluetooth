@@ -4570,7 +4570,11 @@ public class LeAudioService extends ConnectableProfile {
 
         final var hapClient = getHapClientService();
         if (hapClient.isPresent() && Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
-            hapClient.get().setConnectionPolicy(device, connectionPolicy);
+            if (Flags.hapOnMainLooper()) {
+                hapClient.get().post(h -> h.setConnectionPolicy(device, connectionPolicy));
+            } else {
+                hapClient.get().setConnectionPolicy(device, connectionPolicy);
+            }
         }
 
         final var csipSetCoordinator = getCsipSetCoordinatorService();

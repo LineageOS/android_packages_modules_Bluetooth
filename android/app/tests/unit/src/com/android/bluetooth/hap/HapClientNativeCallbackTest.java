@@ -89,7 +89,7 @@ public class HapClientNativeCallbackTest {
                             return null;
                         })
                 .when(mService)
-                .syncPost(any());
+                .post(any());
         mNativeCallback = new HapClientNativeCallback(mAdapterService, mService);
     }
 
