@@ -942,6 +942,78 @@ public class BassClientServiceTest {
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
     }
 
+    @Test
+    public void sourceAddFailed_alreadyPending() throws RemoteException {
+        prepareConnectedDeviceGroup();
+
+        // Use both as local to not need sync bass with them
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+        doReturn(mBroadcastMetadata2)
+                .when(mLeAudioService)
+                .getBroadcastMetadata(TEST_BROADCAST_ID_2);
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID_2);
+
+        // Fake already pending operation for TEST_BROADCAST_ID but not for TEST_BROADCAST_ID_2
+        doReturn(true).when(mStateMachines.get(mCurrentDevice)).hasPendingSourceOperation();
+        doReturn(true)
+                .when(mStateMachines.get(mCurrentDevice))
+                .hasPendingSourceOperation(TEST_BROADCAST_ID);
+        doReturn(false)
+                .when(mStateMachines.get(mCurrentDevice))
+                .hasPendingSourceOperation(TEST_BROADCAST_ID_2);
+
+        // Add same broadcast as already pending not cause onSourceAddFailed
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        InOrder inOrder = inOrder(mCallback);
+        inOrder.verify(mCallback, never())
+                .onSourceAddFailed(
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1),
+                        eq(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE));
+        verify(mStateMachines.get(mCurrentDevice), never()).sendMessage(any());
+
+        // Add source for different broadcast during another pending cause onSourceAddFailed
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ false);
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        inOrder.verify(mCallback)
+                .onSourceAddFailed(
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata2),
+                        eq(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE));
+        verify(mStateMachines.get(mCurrentDevice), never()).sendMessage(any());
+
+        // Not pending
+        doReturn(false).when(mStateMachines.get(mCurrentDevice)).hasPendingSourceOperation();
+        doReturn(false)
+                .when(mStateMachines.get(mCurrentDevice))
+                .hasPendingSourceOperation(TEST_BROADCAST_ID);
+        doReturn(false)
+                .when(mStateMachines.get(mCurrentDevice))
+                .hasPendingSourceOperation(TEST_BROADCAST_ID_2);
+
+        // Add broadcast while not pending cause ADD_BCAST_SOURCE msg to SM
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        inOrder.verify(mCallback, never())
+                .onSourceAddFailed(
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1),
+                        eq(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE));
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        verify(mStateMachines.get(mCurrentDevice), atLeast(1)).sendMessage(messageCaptor.capture());
+        Message msg =
+                messageCaptor.getAllValues().stream()
+                        .filter(
+                                m ->
+                                        (m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                                                && (m.obj == mBroadcastMetadata1))
+                        .findFirst()
+                        .orElse(null);
+        assertThat(msg).isNotNull();
+    }
+
     private void checkNoTimeout(int broadcastId, int message) {
         assertThat(mBassClientService.mTimeoutHandler.isStarted(broadcastId, message)).isFalse();
     }

@@ -3259,8 +3259,12 @@ public class BassClientService extends ConnectableProfile {
                                 + device
                                 + ", broadcastId: "
                                 + sourceMetadata.getBroadcastId());
-                mCallbacks.notifySourceAddFailed(
-                        device, sourceMetadata, BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                if (!stateMachine.hasPendingSourceOperation(sourceMetadata.getBroadcastId())) {
+                    mCallbacks.notifySourceAddFailed(
+                            device,
+                            sourceMetadata,
+                            BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                }
                 continue;
             }
             int sourceId = checkDuplicateSourceAdditionAndGetSourceId(device, sourceMetadata);
