@@ -73,6 +73,7 @@ import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IpcDataCache;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
@@ -255,6 +256,7 @@ public class AdapterServiceTest {
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
         Log.e(TAG, "setUp()");
+        IpcDataCache.setCacheTestMode(true);
 
         doReturn(mJniCallbacks).when(mNativeInterface).getCallbacks();
         doReturn(true).when(mMockLeAudioService).isAvailable();
@@ -361,6 +363,7 @@ public class AdapterServiceTest {
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
         MetricsLogger.setInstanceForTesting(null);
+        IpcDataCache.setCacheTestMode(false);
     }
 
     private void syncHandler(int... what) {
