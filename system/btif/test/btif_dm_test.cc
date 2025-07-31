@@ -23,7 +23,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "ble_address_with_type.h"
 #include "bta/include/bta_api_data_types.h"
 #include "btif/include/mock_core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
@@ -36,6 +35,7 @@
 #include "storage/storage_module.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_osi_properties.h"
+#include "types/ble_address_with_type.h"
 
 using bluetooth::core::testing::MockCoreInterface;
 using ::testing::ElementsAre;
