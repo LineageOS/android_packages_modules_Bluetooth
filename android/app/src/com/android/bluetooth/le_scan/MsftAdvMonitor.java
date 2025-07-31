@@ -112,13 +112,23 @@ class MsftAdvMonitor {
             pattern.pattern = new byte[] {bb.get(3), bb.get(2)};
 
             mPatterns.add(pattern);
-        } else if (filter.getAdvertisingData() != null
+        }
+
+        if (filter.getAdvertisingData() != null
                 && filter.getAdvertisingData().length != 0
                 && dataMaskIsEmpty(filter.getAdvertisingDataMask())) {
             Pattern pattern = new Pattern();
             pattern.ad_type = (byte) filter.getAdvertisingDataType();
             pattern.start_byte = FILTER_PATTERN_START_POSITION;
             pattern.pattern = filter.getAdvertisingData();
+            mPatterns.add(pattern);
+        }
+
+        if (filter.getDeviceName() != null) {
+            Pattern pattern = new Pattern();
+            pattern.ad_type = (byte) 0x09; // Assigned Numbers Document, Section 2.3
+            pattern.start_byte = FILTER_PATTERN_START_POSITION;
+            pattern.pattern = filter.getDeviceName().getBytes();
             mPatterns.add(pattern);
         }
     }
