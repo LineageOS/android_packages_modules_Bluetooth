@@ -221,8 +221,7 @@ bool A2DP_AddRecord(uint16_t service_uuid, char* p_service_name, char* p_provide
 
   /* add profile descriptor list   */
   result &= get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-          sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION,
-          com::android::bluetooth::flags::a2dp_version_1_4() ? A2DP_VERSION_V1_4 : A2DP_VERSION_V1_3);
+          sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION, A2DP_VERSION_V1_4);
 
   /* add supported feature */
   if (features != 0) {
