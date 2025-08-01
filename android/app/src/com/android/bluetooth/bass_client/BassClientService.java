@@ -99,6 +99,8 @@ import java.util.stream.Collectors;
 public class BassClientService extends ConnectableProfile {
     static final String TAG = BassClientService.class.getSimpleName();
 
+    private static final int THREAD_JOIN_TIMEOUT_MS = 1000;
+
     private static final int MAX_ACTIVE_SYNCED_SOURCES_NUM = 4;
     private static final int MAX_BIS_DISCOVERY_TRIES_NUM = 5;
 
@@ -817,8 +819,19 @@ public class BassClientService extends ConnectableProfile {
             }
             mStateMachines.clear();
         }
-        mCallbackHandlerThread.quitSafely();
-        mStateMachinesThread.quitSafely();
+
+        try {
+            mStateMachinesThread.quitSafely();
+            mStateMachinesThread.join(THREAD_JOIN_TIMEOUT_MS);
+        } catch (InterruptedException e) {
+            // Do not rethrow as we are shutting down anyway
+        }
+        try {
+            mCallbackHandlerThread.quitSafely();
+            mCallbackHandlerThread.join(THREAD_JOIN_TIMEOUT_MS);
+        } catch (InterruptedException e) {
+            // Do not rethrow as we are shutting down anyway
+        }
 
         mHandler.removeCallbacksAndMessages(null);
         mTimeoutHandler.stopAll();
