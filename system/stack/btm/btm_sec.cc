@@ -43,6 +43,7 @@
 
 #include "bta/dm/bta_dm_act.h"
 #include "bta/dm/bta_dm_sec_int.h"
+#include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
 #include "btm_sec_utils.h"
 #include "common/time_util.h"
@@ -1747,6 +1748,16 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
     return;
   }
   p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
+
+  // CoD may be missing for devices bonded without BR/EDR device discovery
+  if (com::android::bluetooth::flags::update_cod_if_missing() && p_dev_rec->sec_rec.is_bonded() &&
+      (p_dev_rec->dev_class == kDevClassEmpty || p_dev_rec->dev_class == kDevClassUnclassified)) {
+    log::debug("Updating CoD for bonded device {} to [0x{:x}, 0x{:x}, 0x{:x}]", bda, dc[0], dc[1],
+               dc[2]);
+    p_dev_rec->dev_class = dc;
+    btif_update_remote_properties(bda, p_dev_rec->sec_bd_name, p_dev_rec->dev_class,
+                                  p_dev_rec->device_type);
+  }
 }
 
 /*******************************************************************************
