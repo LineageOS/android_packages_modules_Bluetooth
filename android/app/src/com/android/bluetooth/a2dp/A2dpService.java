@@ -1112,17 +1112,6 @@ public class A2dpService extends ConnectableProfile {
         mHandler.post(() -> bondStateChanged(device, toState));
     }
 
-    // TODO: b/395691070 delete this method
-    @VisibleForTesting
-    void bondStateChangedFromTest(BluetoothDevice device, int bondState) {
-        Log.d(
-                TAG,
-                ("bondStateChangedFromTest(" + device + ", " + bondState + "): ")
-                        + "called while A2DP_CLEANUP_ON_REMOVE_DEVICE is set to "
-                        + Flags.a2dpCleanupOnRemoveDevice());
-        bondStateChanged(device, bondState);
-    }
-
     /**
      * Process a change in the bonding state for a device.
      *
@@ -1148,15 +1137,6 @@ public class A2dpService extends ConnectableProfile {
             A2dpStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
                 Log.d(TAG, "bondStateChanged: SM is null, return ");
-                return;
-            }
-
-            // Bond removal implies that the ACL is disconnected and device properties are removed.
-            // If pseudo address is not same as the identity address, all further events from the
-            // native stack would get ignored. So the state machine must be removed right away.
-            if (!Flags.a2dpCleanupOnRemoveDevice()
-                    && sm.getConnectionState() != STATE_DISCONNECTED) {
-                Log.d(TAG, "bondStateChanged: not in STATE_DISCONNECTED, return ");
                 return;
             }
         }

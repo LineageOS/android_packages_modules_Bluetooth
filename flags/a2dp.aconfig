@@ -10,16 +10,6 @@ flag {
 }
 
 flag {
-    name: "a2dp_cleanup_on_remove_device"
-    namespace: "bluetooth"
-    description: "Always remove A2DP state machine when device is removed"
-    bug: "381313622"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "avdt_wait_for_initial_delay_report_as_initiator"
     namespace: "bluetooth"
     description: "As signaling initiator wait for delay report for peer sink and only then send open command"
