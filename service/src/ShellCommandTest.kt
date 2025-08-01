@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.server.bluetooth
+package com.android.server.bluetooth.test
 
 import android.bluetooth.IBluetoothManager
 import android.bluetooth.IBluetoothManagerCallback
@@ -32,6 +32,8 @@ import android.os.RemoteException
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.flags.Flags
+import com.android.server.bluetooth.ShellCommand
+import com.android.server.bluetooth.SystemServiceMessage
 import com.android.tests.bluetooth.FlagsWrapper
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
