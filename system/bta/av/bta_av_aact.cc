@@ -1959,8 +1959,7 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if (p_data && p_data->api_stop.suspend) {
     log::verbose("peer {} suspending: {}, sup:{}, suspending: {}", p_scb->PeerAddress(), start,
                  p_scb->suspend_sup, p_scb->suspending);
-    if ((start) && (p_scb->suspend_sup) &&
-        ((!p_scb->suspending) || !com::android::bluetooth::flags::avdtp_prevent_double_suspend())) {
+    if ((start) && (p_scb->suspend_sup) && !p_scb->suspending) {
       sus_evt = false;
       p_scb->suspending = true;
       p_scb->l2c_bufs = 0;
