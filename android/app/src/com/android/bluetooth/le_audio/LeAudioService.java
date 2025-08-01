@@ -869,6 +869,8 @@ public class LeAudioService extends ConnectableProfile {
             // Do not rethrow as we are shutting down anyway
         }
 
+        mHandler.removeCallbacksAndMessages(null);
+
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
     }
 
