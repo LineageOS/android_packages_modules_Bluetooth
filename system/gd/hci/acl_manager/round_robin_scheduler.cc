@@ -39,6 +39,7 @@ RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller& contr
   le_hci_mtu_ = le_buffer_size.le_data_packet_length_;
   controller_.RegisterCompletedAclPacketsCallback(
           handler->BindOn(this, &RoundRobinScheduler::incoming_acl_credits));
+  log::verbose("module started !!");
 }
 
 RoundRobinScheduler::~RoundRobinScheduler() {
@@ -49,6 +50,8 @@ RoundRobinScheduler::~RoundRobinScheduler() {
     handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
     delete handler_;
   }
+
+  log::verbose("module stopped !!");
 }
 
 void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t handle,

@@ -67,9 +67,13 @@ struct LppOffloadManager::impl {
 
 LppOffloadManager::LppOffloadManager(os::Handler* handler, hal::SocketHal* socket_hal) {
   pimpl_ = std::make_unique<impl>(handler, socket_hal);
+
+  log::verbose("module started !!");
 }
 
-LppOffloadManager::~LppOffloadManager() = default;
+LppOffloadManager::~LppOffloadManager() {
+  log::verbose("module stopped !!");
+};
 
 bool LppOffloadManager::RegisterSocketHalCallback(hal::SocketHalCallback* callbacks) {
   return pimpl_->register_socket_hal_callbacks(callbacks);

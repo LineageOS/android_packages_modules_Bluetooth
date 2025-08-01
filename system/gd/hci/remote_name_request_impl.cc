@@ -38,6 +38,7 @@ RemoteNameRequestModuleImpl::RemoteNameRequestModuleImpl(os::Handler* handler,
   hci_layer_.RegisterEventHandler(
           EventCode::REMOTE_NAME_REQUEST_COMPLETE,
           handler_->BindOn(this, &RemoteNameRequestModuleImpl::on_remote_name_request_complete));
+  log::verbose("RemoteNameRequest module started !!");
 }
 
 RemoteNameRequestModuleImpl::~RemoteNameRequestModuleImpl() {
@@ -49,6 +50,8 @@ RemoteNameRequestModuleImpl::~RemoteNameRequestModuleImpl() {
     handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
     delete handler_;
   }
+
+  log::verbose("RemoteNameRequest module stopped !!");
 }
 
 void RemoteNameRequestModuleImpl::StartRemoteNameRequest(

@@ -951,6 +951,8 @@ HciLayer::HciLayer(Handler* handler, hal::HciHal* hal, storage::StorageModule* s
   StartWithNoHalDependencies(handler);
   hal->registerIncomingPacketCallback(hal_callbacks_);
   EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
+
+  log::verbose("module started !!");
 }
 
 HciLayer::HciLayer(Handler*) { impl_ = nullptr; }
@@ -982,6 +984,8 @@ HciLayer::~HciLayer() {
   impl_->sco_queue_.GetDownEnd()->UnregisterDequeue();
   impl_->iso_queue_.GetDownEnd()->UnregisterDequeue();
   delete impl_;
+
+  log::verbose("module stopped !!");
 }
 
 // Function to stop sending and handling incoming packets
