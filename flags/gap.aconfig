@@ -295,3 +295,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "update_cod_if_missing"
+    namespace: "bluetooth"
+    description: "Update CoD on incoming connection for the bonded devices if it is missing."
+    bug: "435690191"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
