@@ -165,11 +165,12 @@ class A2dpSinkTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Discover remote endpoints")
             await avdtp_protocol.discover_remote_endpoints()
 
-        source = a2dp_ext.find_local_source_by_codec(avdtp_protocol, a2dp.A2DP_SBC_CODEC_TYPE)
-        if source is None:
+        sources = a2dp_ext.find_local_endpoints_by_codec(avdtp_protocol, a2dp.A2DP_SBC_CODEC_TYPE,
+                                                         avdtp.LocalSource)
+        if not sources:
             self.fail("No A2DP local SBC source found")
 
-        if not (stream := source.stream):
+        if not (stream := sources[0].stream):
             # If there is only one source, DUT will automatically create a stream.
             self.fail("No A2DP SBC stream found")
 

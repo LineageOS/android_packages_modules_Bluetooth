@@ -26,6 +26,7 @@ from navi.tests.smoke import hfp_hf_test
 from navi.tests.smoke import hid_test
 from navi.tests.smoke import hogp_test
 from navi.tests.smoke import l2cap_test
+from navi.tests.smoke import le_audio_unicast_client_test
 from navi.tests.smoke import le_host_test
 from navi.tests.smoke import map_test
 from navi.tests.smoke import opp_test
@@ -33,6 +34,7 @@ from navi.tests.smoke import pan_test
 from navi.tests.smoke import pbap_test
 from navi.tests.smoke import rfcomm_test
 from navi.tests.functionality import a2dp_sink_test
+from navi.tests.functionality import le_pairing_test
 
 if __name__ == "__main__":
     # Take test args
@@ -58,4 +60,6 @@ if __name__ == "__main__":
         pan_test.PanTest,
         pbap_test.PbapTest,
         rfcomm_test.RfcommTest,
+        le_audio_unicast_client_test.LeAudioUnicastClientTest,
+        le_pairing_test.LePairingTest,
     ])
