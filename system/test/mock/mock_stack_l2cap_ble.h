@@ -28,10 +28,10 @@
 
 // Original included files, if any
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/hci_role.h>
 
 #include "stack/l2cap/l2c_int.h"
-#include "types/ble_address_with_type.h"
 
 // Mocked compile conditionals, if any
 namespace test {

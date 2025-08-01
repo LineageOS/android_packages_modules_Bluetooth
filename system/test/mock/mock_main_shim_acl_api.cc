@@ -20,6 +20,7 @@
  */
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 #include <string>
@@ -28,7 +29,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
 #include "test/common/mock_functions.h"
-#include "types/ble_address_with_type.h"
 
 void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);

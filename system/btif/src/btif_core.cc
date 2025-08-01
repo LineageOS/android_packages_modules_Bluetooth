@@ -33,6 +33,7 @@
 #include <base/functional/bind.h>
 #include <base/threading/platform_thread.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <signal.h>
@@ -64,7 +65,6 @@
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "storage/config_keys.h"
-#include "types/ble_address_with_type.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

@@ -19,12 +19,11 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
 
 #include <vector>
-
-#include "types/ble_address_with_type.h"
 
 namespace bluetooth::asha {
 struct HearingDevice;

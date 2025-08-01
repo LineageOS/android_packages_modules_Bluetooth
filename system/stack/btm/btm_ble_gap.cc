@@ -29,6 +29,7 @@
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/ble_scanner.h>
 
@@ -74,7 +75,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/inq_hci_link_interface.h"
 #include "stack/rnr/remote_name_request.h"
-#include "types/ble_address_with_type.h"
 
 using namespace bluetooth;
 

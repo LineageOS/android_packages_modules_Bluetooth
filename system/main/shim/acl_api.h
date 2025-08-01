@@ -17,13 +17,13 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <optional>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace shim {

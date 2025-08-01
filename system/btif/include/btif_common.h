@@ -23,6 +23,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <hardware/bluetooth.h>
 #include <stdlib.h>
 
@@ -32,7 +33,6 @@
 #include "bta/include/bta_api.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
-#include "types/ble_address_with_type.h"
 
 /*******************************************************************************
  *  Constants & Macros
