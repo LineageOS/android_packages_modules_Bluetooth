@@ -3047,8 +3047,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   /* If this is a bonding procedure can disconnect the link now */
   if (are_bonding) {
     tHCI_ROLE role = HCI_ROLE_UNKNOWN;
-    if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, &role) !=
-        tBTM_STATUS::BTM_SUCCESS) {
+    if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR,
+                                                           &role) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get link role peer:{}", p_dev_rec->bd_addr);
     }
     p_dev_rec->switch_role_after_encryption = false;
@@ -3260,8 +3260,8 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     }
 
     tHCI_ROLE role = HCI_ROLE_UNKNOWN;
-    if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, &role) !=
-        tBTM_STATUS::BTM_SUCCESS) {
+    if (get_btm_client_interface().link_policy.BTM_GetRole(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR,
+                                                           &role) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get link policy role peer:{}", p_dev_rec->bd_addr);
     }
 

@@ -58,8 +58,8 @@ struct btm_client_interface_t default_btm_client_interface = {
                                                         tBT_TRANSPORT /* transport */) -> bool {
                   return false;
                 },
-                .BTM_GetConnectedTransportAddress = [](RawAddress /* remote_bda */)
-                                                       -> std::pair<RawAddress, RawAddress> {
+                .BTM_GetConnectedTransportAddress =
+                        [](RawAddress /* remote_bda */) -> std::pair<RawAddress, RawAddress> {
                   return std::pair<RawAddress, RawAddress>();
                 },
                 .BTM_ReadRemoteFeatures = [](const RawAddress& /* addr */) -> uint8_t* {
@@ -89,7 +89,8 @@ struct btm_client_interface_t default_btm_client_interface = {
                                            tBT_TRANSPORT /* transport */) -> uint16_t { return 0; },
         },
         .link_policy = {
-                .BTM_GetRole = [](const RawAddress& /* remote_bd_addr */, tHCI_ROLE* /* p_role */)
+                .BTM_GetRole = [](const RawAddress& /* remote_bd_addr */,
+                                  tBT_TRANSPORT /* transport */, tHCI_ROLE* /* p_role */)
                         -> tBTM_STATUS { return tBTM_STATUS::BTM_SUCCESS; },
                 .BTM_SetPowerMode = [](uint8_t /* pm_id */, const RawAddress& /* remote_bda */,
                                        const tBTM_PM_PWR_MD* /* p_mode */) -> tBTM_STATUS {
