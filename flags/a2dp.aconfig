@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "a2dp_ignore_started_when_responder"
-    namespace: "bluetooth"
-    description: "Ignore the event BTA_AV_START_EVT when source and responder"
-    bug : "341178856"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_avdt_rconfig_not_setting_l2cap"
     namespace: "bluetooth"
     description: "Set L2CAP flushable and high priority after A2DP reconfigure"
