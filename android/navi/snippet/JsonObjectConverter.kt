@@ -21,6 +21,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothQualityReport
+import android.bluetooth.OobData
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.AdvertisingSetParameters
@@ -167,6 +168,28 @@ class JsonObjectConverter : SnippetObjectConverter {
                 }
                 put(SnippetConstants.FIELD_COMMON, commonObj)
             }
+        }
+
+    private fun OobData.toJson(): JSONObject =
+        JSONObject().apply {
+            put(
+                SnippetConstants.OOB_DATA_CONFIRMATION_HASH,
+                JSONArray(confirmationHash.map { it.toInt() and 0xFF }),
+            )
+            put(
+                SnippetConstants.OOB_DATA_RANDOMIZER_HASH,
+                JSONArray(randomizerHash.map { it.toInt() and 0xFF }),
+            )
+            if (leTemporaryKey != null) {
+                this.put(
+                    SnippetConstants.OOB_DATA_LE_TEMPORARY_KEY,
+                    JSONArray(leTemporaryKey?.map { byte -> byte.toInt() and 0xFF }),
+                )
+            }
+            put(
+                SnippetConstants.OOB_DATA_DEVICE_ADDRESS_WITH_TYPE,
+                JSONArray(deviceAddressWithType.map { it.toInt() and 0xFF }),
+            )
         }
 
     private fun JSONObject.toAdvertiseSettings() =
@@ -381,6 +404,42 @@ class JsonObjectConverter : SnippetObjectConverter {
             }
             .build()
 
+    private fun JSONObject.toOobData(): OobData {
+        val confirmationHash =
+            getJSONArray(SnippetConstants.OOB_DATA_CONFIRMATION_HASH).toList<Byte>().toByteArray()
+        val deviceAddressWithType =
+            getJSONArray(SnippetConstants.OOB_DATA_DEVICE_ADDRESS_WITH_TYPE)
+                .toList<Byte>()
+                .toByteArray()
+        val leDeviceRole = getOrNull<Int>(SnippetConstants.OOB_DATA_LE_DEVICE_ROLE)
+        val classicLength = getOrNull<Int>(SnippetConstants.OOB_DATA_CLASSIC_LENGTH)
+        val randomizerHash =
+            getOrNull<JSONArray>(SnippetConstants.OOB_DATA_RANDOMIZER_HASH)
+                ?.toList<Byte>()
+                ?.toByteArray()
+        if (leDeviceRole != null) {
+            return OobData.LeBuilder(confirmationHash, deviceAddressWithType, leDeviceRole)
+                .apply {
+                    optJSONArray(SnippetConstants.OOB_DATA_LE_TEMPORARY_KEY)
+                        ?.toList<Byte>()
+                        ?.toByteArray()
+                        ?.let { setLeTemporaryKey(it) }
+                    randomizerHash?.let { setRandomizerHash(it) }
+                }
+                .build()
+        }
+        if (classicLength != null) {
+            return OobData.ClassicBuilder(
+                    confirmationHash,
+                    byteArrayOf((classicLength / 0xFF).toByte(), (classicLength % 0xFF).toByte()),
+                    deviceAddressWithType,
+                )
+                .apply { randomizerHash?.let { setRandomizerHash(it) } }
+                .build()
+        }
+        throw IllegalArgumentException("OobData must have either leDeviceRole or classicLength")
+    }
+
     /**
      * Serializes JVM object [parameter] to a [JSONObject], or returns null if there is no viable
      * conversion.
@@ -399,6 +458,9 @@ class JsonObjectConverter : SnippetObjectConverter {
             return parameter.toJson()
         }
         if (parameter is BluetoothQualityReport) {
+            return parameter.toJson()
+        }
+        if (parameter is OobData) {
             return parameter.toJson()
         }
         return null
@@ -430,6 +492,9 @@ class JsonObjectConverter : SnippetObjectConverter {
         }
         if (type === AudioAttributes::class.java) {
             return jsonObject?.toAudioAttributes()
+        }
+        if (type === OobData::class.java) {
+            return jsonObject?.toOobData()
         }
         return null
     }

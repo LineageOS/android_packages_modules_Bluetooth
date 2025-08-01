@@ -407,7 +407,7 @@ class TelecomSnippet : Snippet {
 
     private companion object {
         const val TAG = "TelecomSnippet"
-        val CALL_CONTROL_TIMEOUT = 3.seconds
+        val CALL_CONTROL_TIMEOUT = 5.seconds
 
         class DeferredOutcomeReceiver<T, E : Exception>() : OutcomeReceiver<T, E> {
             val deferred = CompletableDeferred<T>()

@@ -83,12 +83,12 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
         """Tests Classic SSP pairing.
 
     Test steps:
-    1. Setup configurations.
-    2. Make ACL connections.
-    3. Start pairing.
-    4. Wait for pairing requests and verify pins.
-    5. Make actions corresponding to variants.
-    6. Verify final states.
+      1. Setup configurations.
+      2. Make ACL connections.
+      3. Start pairing.
+      4. Wait for pairing requests and verify pins.
+      5. Make actions corresponding to variants.
+      6. Verify final states.
 
     Args:
       variant: Action to perform in the pairing procedure.
@@ -614,6 +614,28 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
             timeout=_DEFAULT_STEP_TIMEOUT,
         )).state
         self.assertEqual(actual_state, android_constants.BondState.BONDED)
+
+    async def test_remove_bond(self) -> None:
+        """Tests removing bond.
+
+    Test steps:
+      1. Pair DUT and REF.
+      2. Remove bond on DUT.
+      3. Verify bond state change on DUT.
+    """
+        # Prepair pairing.
+        await self.classic_connect_and_pair()
+
+        with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
+            self.logger.info("[DUT] Remove bond.")
+            self.dut.bt.removeBond(self.ref.address)
+
+            self.logger.info("[DUT] Wait for bond state change.")
+            await dut_cb.wait_for_event(
+                bl4a_api.BondStateChanged(address=self.ref.address,
+                                          state=android_constants.BondState.NONE),
+                timeout=_DEFAULT_STEP_TIMEOUT,
+            )
 
 
 if __name__ == "__main__":

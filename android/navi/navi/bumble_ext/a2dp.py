@@ -19,14 +19,17 @@ module majorly refers to the implementation of AOSP:
 * packages/modules/Bluetooth/system/stack/include/
 """
 
+from collections.abc import Sequence
 import dataclasses
 import enum
 import struct
-from typing import ClassVar
+from typing import ClassVar, TypeVar
 
 from bumble import a2dp
 from bumble import avdtp
+from bumble import avrcp
 from bumble import codecs
+from bumble import device as bumble_device
 
 from navi.bumble_ext import ogg
 from navi.utils import constants
@@ -240,6 +243,39 @@ class A2dpCodec(constants.ShortReprEnum):
             return 'ogg'
         return self.name.lower()
 
+    @property
+    def codec_id(self) -> int:
+        return {
+            A2dpCodec.SBC: 0,
+            A2dpCodec.AAC: 0,
+            A2dpCodec.APTX: AptxCodecInformation.CODEC_ID,
+            A2dpCodec.APTX_HD: AptxHdCodecInformation.CODEC_ID,
+            A2dpCodec.LDAC: LdacCodecInformation.CODEC_ID,
+            A2dpCodec.OPUS: a2dp.OpusMediaCodecInformation.CODEC_ID,
+        }[self]
+
+    @property
+    def vendor_id(self) -> int:
+        return {
+            A2dpCodec.SBC: 0,
+            A2dpCodec.AAC: 0,
+            A2dpCodec.APTX: AptxCodecInformation.VENDOR_ID,
+            A2dpCodec.APTX_HD: AptxHdCodecInformation.VENDOR_ID,
+            A2dpCodec.LDAC: LdacCodecInformation.VENDOR_ID,
+            A2dpCodec.OPUS: a2dp.OpusMediaCodecInformation.VENDOR_ID,
+        }[self]
+
+    @property
+    def codec_type(self) -> int:
+        return {
+            A2dpCodec.SBC: a2dp.A2DP_SBC_CODEC_TYPE,
+            A2dpCodec.AAC: a2dp.A2DP_MPEG_2_4_AAC_CODEC_TYPE,
+            A2dpCodec.APTX: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+            A2dpCodec.APTX_HD: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+            A2dpCodec.LDAC: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+            A2dpCodec.OPUS: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+        }[self]
+
 
 def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray | None:
     """Registers the sink buffer to receive the packets.
@@ -315,22 +351,90 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
     return buffer
 
 
-def find_local_source_by_codec(
-    protocol: avdtp.Protocol,
+def _endpoint_supports_codec(
+    endpoint: avdtp.LocalStreamEndPoint,
     codec_type: int,
     vendor_id: int = 0,
     codec_id: int = 0,
-) -> avdtp.LocalSource | None:
-    """Finds the local source by codec type and vendor/codec ID."""
-    for endpoint in protocol.local_endpoints:
-        if not isinstance(endpoint, avdtp.LocalSource):
+) -> bool:
+    """Checks if the endpoint supports the codec."""
+    for capability in endpoint.capabilities:
+        if not (isinstance(capability, avdtp.MediaCodecCapabilities) and capability.media_type
+                == avdtp.AVDTP_AUDIO_MEDIA_TYPE and capability.media_codec_type == codec_type):
             continue
-        for capability in endpoint.capabilities:
-            if not (isinstance(capability, avdtp.MediaCodecCapabilities) and capability.media_type
-                    == avdtp.AVDTP_AUDIO_MEDIA_TYPE and capability.media_codec_type == codec_type):
-                continue
-            codec_info = capability.media_codec_information
-            if not isinstance(codec_info, avdtp.VendorSpecificMediaCodecInformation) or (
-                    codec_info.vendor_id == vendor_id and codec_info.codec_id == codec_id):
-                return endpoint
-    return None
+        codec_info = capability.media_codec_information
+        if not isinstance(codec_info, avdtp.VendorSpecificMediaCodecInformation) or (
+                codec_info.vendor_id == vendor_id and codec_info.codec_id == codec_id):
+            return True
+    return False
+
+
+_ENDPOINT = TypeVar('_ENDPOINT', bound=avdtp.LocalStreamEndPoint)
+
+
+def find_local_endpoints_by_codec(
+    protocol: avdtp.Protocol,
+    codec_type: int,
+    endpoint_type: type[_ENDPOINT],
+    vendor_id: int = 0,
+    codec_id: int = 0,
+) -> list[_ENDPOINT]:
+    """Finds the local source by codec type and vendor/codec ID."""
+    return [
+        endpoint for endpoint in protocol.local_endpoints if isinstance(endpoint, endpoint_type) and
+        _endpoint_supports_codec(endpoint, codec_type, vendor_id, codec_id)
+    ]
+
+
+def setup_sink_server(
+    device: bumble_device.Device,
+    supported_capabilities: Sequence[avdtp.MediaCodecCapabilities],
+    a2dp_sink_handle: int,
+) -> avdtp.Listener:
+    """Sets up the sink server on the device.
+
+  Args:
+    device: The device to set up the sink server on.
+    supported_capabilities: The capabilities of the sink server.
+    a2dp_sink_handle: The handle of the A2DP sink service record.
+
+  Returns:
+    The AVDTP listener.
+  """
+    listener = avdtp.Listener.for_device(device)
+
+    @listener.on(listener.EVENT_CONNECTION)
+    def _(server: avdtp.Protocol) -> None:
+        for capability in supported_capabilities:
+            server.add_sink(capability)
+
+    device.sdp_service_records.update({
+        a2dp_sink_handle: a2dp.make_audio_sink_service_sdp_records(a2dp_sink_handle),
+    })
+    return listener
+
+
+def setup_avrcp_server(
+    device: bumble_device.Device,
+    avrcp_controller_handle: int,
+    avrcp_target_handle: int,
+    delegate: avrcp.Delegate | None = None,
+) -> avrcp.Protocol:
+    """Sets up the AVRCP server on the device.
+
+  Args:
+    device: The device to set up the AVRCP server on.
+    avrcp_controller_handle: The handle of the AVRCP service record.
+    avrcp_target_handle: The handle of the AVRCP target service record.
+    delegate: The delegate to handle AVRCP events.
+
+  Returns:
+    The AVRCP protocol.
+  """
+    avrcp_protocol = avrcp.Protocol(delegate)
+    avrcp_protocol.listen(device)
+    device.sdp_service_records.update({
+        avrcp_controller_handle: avrcp.make_controller_service_sdp_records(avrcp_controller_handle),
+        avrcp_target_handle: avrcp.make_target_service_sdp_records(avrcp_target_handle),
+    })
+    return avrcp_protocol

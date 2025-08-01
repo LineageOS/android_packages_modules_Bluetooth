@@ -801,6 +801,15 @@ class BluetoothQualityReportId(enum.IntEnum):
     RF_STATS = 0x09
 
 
+class ConnectionPriority(enum.IntEnum):
+    """android.bluetooth.BluetoothGatt.connectionPriority."""
+
+    BALANCED = 0
+    HIGH = 1
+    LOW_POWER = 2
+    DCK = 3
+
+
 class LeSubrateMode(enum.IntEnum):
     """android.bluetooth.BluetoothGatt.SubrateMode."""
 

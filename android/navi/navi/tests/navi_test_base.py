@@ -14,6 +14,7 @@
 """Base classes for Bluetooth tests."""
 
 import asyncio
+import collections
 from collections.abc import AsyncGenerator, Callable, Coroutine, Sequence
 import contextlib
 import dataclasses
@@ -59,6 +60,7 @@ _SETUP_TIMEOUT_SECONDS = 10.0
 # 100 * 0.625ms = 62.5ms
 _DEFAULT_ADVERTISING_INTERVAL = 100
 RECORD_FULL_DATA = "record_full_data"
+DUMP_CROWN_LOG_ON_FAIL = "dump_crown_log_on_fail"
 _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 
 
@@ -416,22 +418,35 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
 
     @override
     def _get_test_methods(self, test_names: list[str]) -> list[tuple[str, Callable[..., Any]]]:
-        methods = list[tuple[str, Callable[..., Any]]]()
+        methods = collections.OrderedDict[str, Callable[..., Any]]()
         for test_name in test_names:
-            if not test_name.startswith("test_") and not test_name.startswith("r:"):
+            if not test_name.startswith(("test_", "r:", "shard:")):
                 raise base_test.Error(
                     f"Test method name {test_name} does not follow naming convention"
                     " test_* or regex matcher r:(regex pattern), abort.")
 
             if test_name.startswith("r:"):
                 test_name_pattern = re.compile(test_name[2:])
-                methods.extend((test_name, test_method)
+                methods.update((test_name, test_method)
                                for test_name, test_method in self._generated_test_table.items()
                                if test_name_pattern.fullmatch(test_name))
+            elif test_name.startswith("shard:"):
+                m = re.fullmatch(r"(\d+)/(\d+)", test_name[6:])
+                if not m:
+                    raise ValueError(f"Invalid shard format: {test_name}")
+                shard_index = int(m.group(1)) - 1  # 1-index to 0-index
+                shard_count = int(m.group(2))
+                test_count = len(self._generated_test_table)
+                test_per_shard = test_count // shard_count + min(test_count % shard_count, 1)
+                methods.update({
+                    test_name: test_method
+                    for test_name, test_method in list(self._generated_test_table.items())
+                    [test_per_shard * shard_index:test_per_shard * (shard_index + 1)]
+                })
             elif test_method := self._generated_test_table.get(test_name):
-                methods.append((test_name, test_method))
+                methods[test_name] = test_method
 
-        return methods
+        return list(methods.items())
 
     @override
     def get_existing_test_names(self) -> list[str]:
@@ -771,6 +786,8 @@ class AndroidBumbleTestBase(BaseTestBase):
                 self.dut.reload_snippet()
             else:
                 raise signals.TestAbortAll("DUT is disconnected, cannot continue the test.") from e
+        # Collect logcat.
+        self.dut.device.services.create_output_excerpts_all(self.current_test_info)
         await super().async_teardown_test()
 
     @override
@@ -779,16 +796,19 @@ class AndroidBumbleTestBase(BaseTestBase):
 
     @override
     def on_pass(self, record: records.TestResultRecord) -> None:
-        if self.user_params.get("record_full_data"):
+        if self.user_params.get(RECORD_FULL_DATA):
             self._get_btsnoop_and_dumpsys()
 
     @override
     async def async_teardown_class(self) -> None:
-        if (self.results.failed or self.results.error or self.user_params.get("record_full_data")):
+        has_error_or_fail = self.results.failed or self.results.error
+        if has_error_or_fail or self.user_params.get(RECORD_FULL_DATA):
             self.dut.device.take_bug_report()
         await super().async_teardown_class()
         for ref in self._refs:
             ref.adapter.stop()
+            if self.user_params.get(DUMP_CROWN_LOG_ON_FAIL) and has_error_or_fail:
+                ref.adapter.dump_debug_logs(self.log_path)
 
     @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
     async def classic_connect_and_pair(
