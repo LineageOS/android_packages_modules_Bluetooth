@@ -50,6 +50,8 @@ public final class BluetoothGattConnectionSettings {
     /** Determine if this GATT client connection is opportunistic or not */
     private final boolean mOpportunisticEnabled;
 
+    /** Negotiate MTU at the beginning of the connection, using Android's default MTU value */
+    private final boolean mAutomaticMtuEnabled;
 
     /** Transport to be used for GATT connection. */
     private final @Transport int mTransport;
@@ -81,6 +83,14 @@ public final class BluetoothGattConnectionSettings {
         return mTransport;
     }
 
+    /**
+     * Returns true if the automatic MTU exchange is enabled for this connection or false otherwise.
+     */
+    @RequiresNoPermission
+    public boolean isAutomaticMtuEnabled() {
+        return mAutomaticMtuEnabled;
+    }
+
     /** Returns callback handle to receive the Bluetooth Gatt related callbacks. */
     public @NonNull BluetoothGattCallback getBluetoothGattCallback() {
         return mBluetoothGattCallback;
@@ -105,6 +115,8 @@ public final class BluetoothGattConnectionSettings {
                 .append(mOpportunisticEnabled)
                 .append(", mTransport=")
                 .append(mTransport)
+                .append(", mAutomaticMtuEnabled=")
+                .append(mAutomaticMtuEnabled)
                 .append(", mBluetoothGattCallback=")
                 .append(mBluetoothGattCallback)
                 .append(", mCallbackExecutor=")
@@ -117,11 +129,13 @@ public final class BluetoothGattConnectionSettings {
             boolean isAutoConnectEnabled,
             boolean isOpportunisticEnabled,
             @Transport int transport,
+            boolean automaticMtuEnabled,
             @CallbackExecutor Executor executor,
             BluetoothGattCallback bluetoothGattCallback) {
         mAutoConnectEnabled = isAutoConnectEnabled;
         mOpportunisticEnabled = isOpportunisticEnabled;
         mTransport = transport;
+        mAutomaticMtuEnabled = automaticMtuEnabled;
         mBluetoothGattCallback = bluetoothGattCallback;
         mCallbackExecutor = executor;
     }
@@ -131,6 +145,7 @@ public final class BluetoothGattConnectionSettings {
         private boolean mAutoConnectEnabled = false;
         private boolean mOpportunisticEnabled = false;
         private @Transport int mTransport = BluetoothDevice.TRANSPORT_LE;
+        private boolean mAutomaticMtuEnabled = true;
         private @NonNull BluetoothGattCallback mBluetoothGattCallback;
         private @NonNull Executor mExecutor;
 
@@ -151,7 +166,7 @@ public final class BluetoothGattConnectionSettings {
          * Setting this to true will enable the automatic connection to remote device when It is
          * available. Setting it to False would trigger direct connect to remote device
          *
-         * @param autoConnectEnabled true if auto connection enabled, false otherwise.
+         * @param autoConnectEnabled true if auto connection is enabled, false otherwise.
          * @return This builder.
          */
         @NonNull
@@ -190,6 +205,25 @@ public final class BluetoothGattConnectionSettings {
         }
 
         /**
+         * Sets if the MTU (Maximum Transmission Unit) needs to be negotiated for given
+         * connection or not. This is set to true by default so that MTU exchange happens
+         * after the connection. Applications have to set it to false to disable the automatic
+         * negotiation. Setting this to false does not prevent MTU negotiation if a client
+         * explicitly requests it using {@link BluetoothGatt#requestMtu} or if it's triggered
+         * internally by other profiles.
+         *
+         * @param automaticMtuEnabled true if Default MTU setting needs to be applied on this
+         *     connection, false otherwise.
+         * @return This builder.
+         */
+        @NonNull
+        @RequiresNoPermission
+        public Builder setAutomaticMtuEnabled(boolean automaticMtuEnabled) {
+            mAutomaticMtuEnabled = automaticMtuEnabled;
+            return this;
+        }
+
+        /**
          * Builds a {@link BluetoothGattConnectionSettings} object.
          *
          * @return A new {@link BluetoothGattConnectionSettings} object with the configured
@@ -203,6 +237,7 @@ public final class BluetoothGattConnectionSettings {
                     mAutoConnectEnabled,
                     mOpportunisticEnabled,
                     mTransport,
+                    mAutomaticMtuEnabled,
                     mExecutor,
                     mBluetoothGattCallback);
         }

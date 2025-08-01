@@ -212,7 +212,7 @@ typedef struct {
   /** Create a connection to a remote LE or dual-mode device */
   bt_status_t (*connect)(int client_if, const RawAddress& bd_addr, uint8_t addr_type,
                          bool is_direct, int transport, bool opportunistic, int preferred_mtu,
-                         bool prefer_relax_mode);
+                         bool prefer_relax_mode, bool auto_mtu_enabled);
 
   /** Disconnect a remote device or cancel a pending connection */
   bt_status_t (*disconnect)(int client_if, const RawAddress& bd_addr, int conn_id);

@@ -3069,6 +3069,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 new BluetoothUtils.SynchronousExecutor(), callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(TRANSPORT_AUTO)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3098,6 +3099,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 new BluetoothUtils.SynchronousExecutor(), callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3135,6 +3137,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 new BluetoothUtils.SynchronousExecutor(), callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3178,6 +3181,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3224,6 +3228,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
                         .setOpportunisticEnabled(opportunistic)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 

@@ -138,6 +138,27 @@ class GattClientTest {
     }
 
     @Test
+    fun fullGattClientLifecycleWithGattSettings(@TestParameter autoConnect: Boolean) {
+        // val autoConnect = false
+        if (autoConnect) {
+            createLeBondAndWaitBonding(remoteLeDevice)
+        }
+        val gattCallback = mock(BluetoothGattCallback::class.java)
+
+        val gattSettings =
+            BluetoothGattConnectionSettings.Builder(context.mainExecutor, gattCallback)
+                .setTransport(BluetoothDevice.TRANSPORT_LE)
+                .setAutomaticMtuEnabled(true)
+                .setAutoConnectEnabled(false)
+                .setOpportunisticEnabled(false)
+                .build()
+
+        val gatt =
+            connectGattAndWaitConnectionWithGattSettings(gattCallback, autoConnect, gattSettings)
+        disconnectAndWaitDisconnection(gatt, gattCallback)
+    }
+
+    @Test
     fun reconnectExistingClient() {
         advertiseWithBumble()
 
@@ -535,6 +556,22 @@ class GattClientTest {
         verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), eq(status), eq(state))
 
         return gatt
+    }
+
+    private fun connectGattAndWaitConnectionWithGattSettings(
+        callback: BluetoothGattCallback,
+        autoConnect: Boolean,
+        gattConnectionSettings: BluetoothGattConnectionSettings,
+    ): BluetoothGatt {
+        val status = GATT_SUCCESS
+        val state = STATE_CONNECTED
+
+        advertiseWithBumble()
+
+        val gatt: BluetoothGatt? = remoteLeDevice.connectGatt(gattConnectionSettings)
+        verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), eq(status), eq(state))
+
+        return gatt!!
     }
 
     /** Tries to connect GATT, it could fail and return null. */

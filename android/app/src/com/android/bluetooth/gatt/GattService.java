@@ -1016,6 +1016,7 @@ public class GattService extends ProfileService {
             boolean isDirect,
             int transport,
             boolean opportunistic,
+            boolean autoMtuEnabled,
             AttributionSource source) {
         enforceGattThread();
         var clientApp = mClientMap.getByCallbackId(callback);
@@ -1028,14 +1029,15 @@ public class GattService extends ProfileService {
                 TAG,
                 ("clientConnect(): device=" + device)
                         + (", transport=" + transportToString(transport))
-                        + (", addressType=" + addressType + ", isDirect=" + isDirect)
-                        + (", opportunistic=" + opportunistic));
+                        + (", addressType=" + addressType)
+                        + (", isDirect=" + isDirect)
+                        + (", opportunistic=" + opportunistic)
+                        + (", autoMtuEnabled=" + autoMtuEnabled));
         mMetricsReporter.logAppPackage(clientIf, device, source.getUid());
         mMetricsReporter.logClientForegroundInfo(source.getUid(), isDirect);
         mMetricsReporter.logGattConnectionStateChange(
                 device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_CONNECTING, -1);
         mMetricsReporter.logConnect(device, isDirect, source.getUid());
-
         int preferredMtu = 0;
 
         final var packageName = source.getPackageName();
@@ -1085,7 +1087,8 @@ public class GattService extends ProfileService {
                 transport,
                 opportunistic,
                 preferredMtu,
-                preferRelaxMode);
+                preferRelaxMode,
+                autoMtuEnabled);
     }
 
     void clientDisconnect(

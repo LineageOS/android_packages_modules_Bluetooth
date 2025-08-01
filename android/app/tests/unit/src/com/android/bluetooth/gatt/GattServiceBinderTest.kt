@@ -108,6 +108,7 @@ class GattServiceBinderTest {
         val isDirect = true
         val transport = 2
         val opportunistic = true
+        val isAutomaticMtuEnabled = false
 
         binder.clientConnect(
             callback,
@@ -116,6 +117,7 @@ class GattServiceBinderTest {
             isDirect,
             transport,
             opportunistic,
+            isAutomaticMtuEnabled,
             source,
         )
         verify(service)
@@ -126,6 +128,7 @@ class GattServiceBinderTest {
                 isDirect,
                 transport,
                 opportunistic,
+                isAutomaticMtuEnabled,
                 source,
             )
     }

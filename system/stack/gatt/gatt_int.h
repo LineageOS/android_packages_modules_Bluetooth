@@ -199,6 +199,7 @@ typedef struct {
   bool eatt_support{false};
   std::string name;
   std::map<RawAddress, uint16_t> mtu_prefs;
+  std::map<RawAddress, bool> auto_mtu_enabled;
 } tGATT_REG;
 
 struct tGATT_CLCB;
@@ -726,6 +727,7 @@ tGATT_TCB* gatt_get_tcb_by_idx(uint8_t tcb_idx);
 tGATT_TCB* gatt_find_tcb_by_addr(const RawAddress& bda, tBT_TRANSPORT transport);
 bool gatt_send_ble_burst_data(const RawAddress& remote_bda, BT_HDR* p_buf);
 uint16_t gatt_get_mtu_pref(const tGATT_REG* p_reg, const RawAddress& bda);
+bool is_app_prefer_auto_mtu(tGATT_REG* p_reg, const RawAddress& bda);
 uint16_t gatt_get_apps_preferred_mtu(const RawAddress& bda);
 void gatt_remove_apps_mtu_prefs(const RawAddress& bda);
 
