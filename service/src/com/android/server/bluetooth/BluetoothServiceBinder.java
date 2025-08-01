@@ -68,11 +68,10 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final Handler mHandler;
     private final Messenger mMessenger;
 
-    BluetoothServiceBinder(
-            Looper looper, BluetoothManagerServiceApi api, Context ctx, UserManager userManager) {
+    BluetoothServiceBinder(Looper looper, BluetoothManagerServiceApi api, Context ctx) {
         mApi = api;
         mContext = ctx;
-        mUserManager = userManager;
+        mUserManager = requireNonNull(ctx.getSystemService(UserManager.class));
         mAppOpsManager = requireNonNull(ctx.getSystemService(AppOpsManager.class));
         mPermissionManager = requireNonNull(ctx.getSystemService(PermissionManager.class));
         var packageManager = ctx.createContextAsUser(UserHandle.SYSTEM, 0).getPackageManager();

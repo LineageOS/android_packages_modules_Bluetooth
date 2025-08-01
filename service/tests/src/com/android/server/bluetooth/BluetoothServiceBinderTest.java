@@ -140,7 +140,7 @@ public class BluetoothServiceBinderTest {
         doReturn(mDevicePolicyManager).when(mContext).getSystemService(eq(devicePolicy));
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
 
-        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext);
     }
 
     @After
