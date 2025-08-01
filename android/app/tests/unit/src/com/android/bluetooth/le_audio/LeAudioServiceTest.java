@@ -246,6 +246,7 @@ public class LeAudioServiceTest {
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
                 Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
+                Flags.FLAG_ONLY_BROADCAST_TO_LOCAL_USER,
                 Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK);
     }
 
@@ -3507,6 +3508,12 @@ public class LeAudioServiceTest {
     }
 
     private void verifyNoIntentSent() {
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService, never()).sendBroadcast(any(), any(), any());
+            mInOrder.verify(mAdapterService, never())
+                    .sendBroadcastWithMultiplePermissions(any(), any());
+            return;
+        }
         mInOrder.verify(mAdapterService, never()).sendBroadcastAsUser(any(), any(), any(), any());
         mInOrder.verify(mAdapterService, never())
                 .sendBroadcastWithMultiplePermissions(any(), any());
@@ -3520,6 +3527,11 @@ public class LeAudioServiceTest {
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService, timeout(2000))
+                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
+            return;
+        }
         mInOrder.verify(mAdapterService, timeout(2000))
                 .sendBroadcastAsUser(
                         MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any(), any());

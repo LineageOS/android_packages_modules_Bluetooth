@@ -2008,8 +2008,9 @@ public class LeAudioService extends ConnectableProfile {
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         if (Flags.onlyBroadcastToLocalUser()) {
-            sendBroadcastWithMultiplePermissions(
-                    intent, new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED});
+            getBaseContext()
+                    .sendBroadcastWithMultiplePermissions(
+                            intent, new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED});
         } else {
             createContextAsUser(UserHandle.ALL, /* flags= */ 0)
                     .sendBroadcastWithMultiplePermissions(
