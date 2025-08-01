@@ -85,7 +85,6 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
                         mUserManager,
                         packageManager,
                         mPermissionManager,
-                        mAppOpsManager,
                         mContext.getAttributionSource());
         mMessenger = new ServiceMessenger(looper, permissionChecker, mApi).getMessenger();
     }
