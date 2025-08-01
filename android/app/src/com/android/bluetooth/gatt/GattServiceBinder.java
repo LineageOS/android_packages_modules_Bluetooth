@@ -22,6 +22,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.checkConnectPermissionForDataDelivery;
+import static com.android.bluetooth.gatt.GattUtil.isHidCharUuid;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,8 +47,7 @@ import java.util.Collections;
 import java.util.List;
 
 class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBinder {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + GattServiceBinder.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + GattServiceBinder.class.getSimpleName();
 
     private GattService mService;
 
@@ -244,7 +244,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
 
         try {
-            if (service.isHidCharUuid(uuid.getUuid())) {
+            if (isHidCharUuid(uuid.getUuid())) {
                 service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
             }
         } catch (SecurityException ex) {

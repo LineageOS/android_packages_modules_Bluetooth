@@ -29,7 +29,7 @@ import java.util.UUID;
 /** Manages information of apps that registered distance measurement */
 class DistanceMeasurementTracker {
     private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + DistanceMeasurementTracker.class.getSimpleName();
+            GattUtil.TAG_PREFIX + DistanceMeasurementTracker.class.getSimpleName();
 
     final int mAppUid;
     final BluetoothDevice mDevice;

@@ -59,7 +59,7 @@ import java.util.concurrent.TimeoutException;
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
     private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + DistanceMeasurementManager.class.getSimpleName();
+            GattUtil.TAG_PREFIX + DistanceMeasurementManager.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
