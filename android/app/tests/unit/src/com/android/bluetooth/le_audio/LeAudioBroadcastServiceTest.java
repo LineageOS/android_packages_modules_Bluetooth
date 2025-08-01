@@ -241,7 +241,6 @@ public class LeAudioBroadcastServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        ;
         assertThat(LeAudioService.getLeAudioService()).isNull();
         MetricsLogger.setInstanceForTesting(null);
     }
