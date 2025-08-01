@@ -171,6 +171,7 @@ android_library {
         "framework-media.stubs.module_lib",
         "framework-mediaprovider.stubs.module_lib",
         "framework-statsd.stubs.module_lib",
+        "framework-telecom.stubs.module_lib",
         "framework-tethering.stubs.module_lib",
         "framework-wifi.stubs.module_lib",
         "modules-utils-build",
