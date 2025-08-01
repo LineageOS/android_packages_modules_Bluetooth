@@ -1978,14 +1978,14 @@ LinkLayerController::LinkLayerController(const Address& address,
   controller_ops_ = {
           .user_pointer = this,
           .get_handle =
-                  [](void* user, const uint8_t(*address)[6]) {
+                  [](void* user, const uint8_t (*address)[6]) {
                     auto controller = static_cast<LinkLayerController*>(user);
 
                     return controller->connections_.GetHandleOnlyAddress(Address(*address));
                   },
 
           .get_address =
-                  [](void* user, uint16_t handle, uint8_t(*result)[6]) {
+                  [](void* user, uint16_t handle, uint8_t (*result)[6]) {
                     auto controller = static_cast<LinkLayerController*>(user);
 
                     auto address_opt = controller->connections_.GetAddressSafe(handle);
@@ -2023,7 +2023,7 @@ LinkLayerController::LinkLayerController(const Address& address,
                   },
 
           .send_lmp_packet =
-                  [](void* user, const uint8_t(*to)[6], const uint8_t* data, uintptr_t len) {
+                  [](void* user, const uint8_t (*to)[6], const uint8_t* data, uintptr_t len) {
                     auto controller = static_cast<LinkLayerController*>(user);
 
                     Address source = controller->GetAddress();
@@ -2566,7 +2566,7 @@ void LinkLayerController::IncomingDisconnectPacket(model::packets::LinkLayerPack
 
   uint8_t reason = disconnect.GetReason();
   if (is_br_edr) {
-    ASSERT(link_manager_remove_link(lm_.get(), reinterpret_cast<uint8_t(*)[6]>(peer.data())));
+    ASSERT(link_manager_remove_link(lm_.get(), reinterpret_cast<uint8_t (*)[6]>(peer.data())));
   } else {
     // Will optionally notify CIS disconnections.
     ASSERT(link_layer_remove_link(ll_.get(), handle, reason));
@@ -3121,14 +3121,6 @@ void LinkLayerController::ConnectIncomingLeLegacyAdvertisingPdu(
       break;
   }
 
-  if (!connections_.CreatePendingLeConnection(advertising_address,
-                                              resolved_advertising_address != advertising_address
-                                                      ? resolved_advertising_address
-                                                      : AddressWithType{},
-                                              initiating_address)) {
-    WARNING(id_, "CreatePendingLeConnection failed for connection to {}", advertising_address);
-  }
-
   initiator_.pending_connect_request = advertising_address;
   initiator_.initiating_address = initiating_address.GetAddress();
 
@@ -3542,14 +3534,6 @@ void LinkLayerController::ConnectIncomingLeExtendedAdvertisingPdu(
       break;
   }
 
-  if (!connections_.CreatePendingLeConnection(advertising_address,
-                                              resolved_advertising_address != advertising_address
-                                                      ? resolved_advertising_address
-                                                      : AddressWithType{},
-                                              initiating_address)) {
-    WARNING(id_, "CreatePendingLeConnection failed for connection to {}", advertising_address);
-  }
-
   initiator_.pending_connect_request = advertising_address;
   initiator_.initiating_address = initiating_address.GetAddress();
 
@@ -3843,7 +3827,7 @@ void LinkLayerController::IncomingLmpPacket(model::packets::LinkLayerPacketView 
   auto payload = request.GetPayload();
   auto packet = std::vector(payload.begin(), payload.end());
 
-  ASSERT(link_manager_ingest_lmp(lm_.get(), reinterpret_cast<uint8_t(*)[6]>(address.data()),
+  ASSERT(link_manager_ingest_lmp(lm_.get(), reinterpret_cast<uint8_t (*)[6]>(address.data()),
                                  packet.data(), packet.size()));
 }
 
@@ -4036,14 +4020,14 @@ void LinkLayerController::HandleIso(bluetooth::hci::IsoView iso) {
 }
 
 uint16_t LinkLayerController::HandleLeConnection(
-        AddressWithType address, AddressWithType own_address, bluetooth::hci::Role role,
-        uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout,
-        bool send_le_channel_selection_algorithm_event) {
+        AddressWithType address, AddressWithType resolved_address, AddressWithType own_address,
+        bluetooth::hci::Role role, uint16_t connection_interval, uint16_t connection_latency,
+        uint16_t supervision_timeout, bool send_le_channel_selection_algorithm_event) {
   // Note: the HCI_LE_Connection_Complete event is not sent if the
   // HCI_LE_Enhanced_Connection_Complete event (see Section 7.7.65.10) is
   // unmasked.
 
-  uint16_t handle = connections_.CreateLeConnection(address, own_address, role);
+  uint16_t handle = connections_.CreateLeConnection(address, resolved_address, own_address, role);
   if (handle == kReservedHandle) {
     WARNING(id_, "No pending connection for connection from {}", address);
     return kReservedHandle;
@@ -4078,7 +4062,7 @@ uint16_t LinkLayerController::HandleLeConnection(
 
   // Update the link layer with the new link.
   ASSERT(link_layer_add_link(ll_.get(), handle,
-                             reinterpret_cast<const uint8_t(*)[6]>(address.GetAddress().data()),
+                             reinterpret_cast<const uint8_t (*)[6]>(address.GetAddress().data()),
                              static_cast<uint8_t>(role)));
 
   // Note: the HCI_LE_Connection_Complete event is immediately followed by
@@ -4179,20 +4163,12 @@ bool LinkLayerController::ProcessIncomingLegacyConnectRequest(
        "address {}",
        resolved_initiating_address);
 
-  if (!connections_.CreatePendingLeConnection(initiating_address,
-                                              resolved_initiating_address != initiating_address
-                                                      ? resolved_initiating_address
-                                                      : AddressWithType{},
-                                              advertising_address)) {
-    WARNING(id_, "CreatePendingLeConnection failed for connection from {}",
-            initiating_address.GetAddress());
-    return false;
-  }
-
-  (void)HandleLeConnection(initiating_address, advertising_address,
-                           bluetooth::hci::Role::PERIPHERAL, connect_ind.GetConnInterval(),
-                           connect_ind.GetConnPeripheralLatency(),
-                           connect_ind.GetConnSupervisionTimeout(), false);
+  (void)HandleLeConnection(
+          initiating_address,
+          resolved_initiating_address != initiating_address ? resolved_initiating_address
+                                                            : AddressWithType{},
+          advertising_address, bluetooth::hci::Role::PERIPHERAL, connect_ind.GetConnInterval(),
+          connect_ind.GetConnPeripheralLatency(), connect_ind.GetConnSupervisionTimeout(), false);
 
   SendLeLinkLayerPacket(model::packets::LeConnectCompleteBuilder::Create(
           advertising_address.GetAddress(), initiating_address.GetAddress(),
@@ -4287,22 +4263,14 @@ bool LinkLayerController::ProcessIncomingExtendedConnectRequest(
        "address {}",
        advertiser.advertising_handle, resolved_initiating_address);
 
-  if (!connections_.CreatePendingLeConnection(initiating_address,
-                                              resolved_initiating_address != initiating_address
-                                                      ? resolved_initiating_address
-                                                      : AddressWithType{},
-                                              advertising_address)) {
-    WARNING(id_, "CreatePendingLeConnection failed for connection from {}",
-            initiating_address.GetAddress());
-    return false;
-  }
-
   advertiser.Disable();
 
   uint16_t connection_handle = HandleLeConnection(
-          initiating_address, advertising_address, bluetooth::hci::Role::PERIPHERAL,
-          connect_ind.GetConnInterval(), connect_ind.GetConnPeripheralLatency(),
-          connect_ind.GetConnSupervisionTimeout(), false);
+          initiating_address,
+          resolved_initiating_address != initiating_address ? resolved_initiating_address
+                                                            : AddressWithType{},
+          advertising_address, bluetooth::hci::Role::PERIPHERAL, connect_ind.GetConnInterval(),
+          connect_ind.GetConnPeripheralLatency(), connect_ind.GetConnSupervisionTimeout(), false);
 
   SendLeLinkLayerPacket(model::packets::LeConnectCompleteBuilder::Create(
           advertising_address.GetAddress(), initiating_address.GetAddress(),
@@ -4353,7 +4321,12 @@ void LinkLayerController::IncomingLeConnectCompletePacket(
   INFO(id_, "Received LE Connect complete response with advertising address {}",
        advertising_address);
 
-  HandleLeConnection(advertising_address,
+  AddressWithType resolved_advertising_address =
+          advertising_address.IsRpa()
+                  ? ResolvePrivateAddress(advertising_address).value_or(AddressWithType{})
+                  : AddressWithType{};
+
+  HandleLeConnection(advertising_address, resolved_advertising_address,
                      AddressWithType(incoming.GetDestinationAddress(),
                                      static_cast<bluetooth::hci::AddressType>(
                                              complete.GetInitiatingAddressType())),
@@ -4924,7 +4897,7 @@ void LinkLayerController::IncomingPageResponsePacket(model::packets::LinkLayerPa
   connection.SetRole(role);
   page_ = {};
 
-  ASSERT(link_manager_add_link(lm_.get(), reinterpret_cast<const uint8_t(*)[6]>(bd_addr.data())));
+  ASSERT(link_manager_add_link(lm_.get(), reinterpret_cast<const uint8_t (*)[6]>(bd_addr.data())));
 
   // Role change event before connection complete generates an HCI Role Change
   // event on the initiator side if accepted; the event is sent before the
@@ -5079,7 +5052,7 @@ void LinkLayerController::MakePeripheralConnection(const Address& bd_addr, bool 
   connection.SetLinkPolicySettings(default_link_policy_settings_);
   connection.SetRole(role);
 
-  ASSERT(link_manager_add_link(lm_.get(), reinterpret_cast<const uint8_t(*)[6]>(bd_addr.data())));
+  ASSERT(link_manager_add_link(lm_.get(), reinterpret_cast<const uint8_t (*)[6]>(bd_addr.data())));
 
   // Role change event before connection complete generates an HCI Role Change
   // event on the acceptor side if accepted; the event is sent before the
@@ -5247,7 +5220,7 @@ ErrorCode LinkLayerController::Disconnect(uint16_t handle, ErrorCode host_reason
   SendDisconnectionCompleteEvent(handle, controller_reason);
   if (is_br_edr) {
     ASSERT(link_manager_remove_link(lm_.get(),
-                                    reinterpret_cast<uint8_t(*)[6]>(remote.GetAddress().data())));
+                                    reinterpret_cast<uint8_t (*)[6]>(remote.GetAddress().data())));
   } else {
     ASSERT(link_layer_remove_link(ll_.get(), handle, static_cast<uint8_t>(controller_reason)));
   }

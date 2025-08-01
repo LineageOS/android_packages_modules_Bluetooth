@@ -184,9 +184,10 @@ public:
                                                     uint16_t maximum_ce_length);
   ErrorCode LeRemoteConnectionParameterRequestNegativeReply(uint16_t connection_handle,
                                                             bluetooth::hci::ErrorCode reason);
-  uint16_t HandleLeConnection(AddressWithType addr, AddressWithType own_addr,
-                              bluetooth::hci::Role role, uint16_t connection_interval,
-                              uint16_t connection_latency, uint16_t supervision_timeout,
+  uint16_t HandleLeConnection(AddressWithType addr, AddressWithType resolved_addr,
+                              AddressWithType own_addr, bluetooth::hci::Role role,
+                              uint16_t connection_interval, uint16_t connection_latency,
+                              uint16_t supervision_timeout,
                               bool send_le_channel_selection_algorithm_event);
 
   bool ResolvingListBusy();

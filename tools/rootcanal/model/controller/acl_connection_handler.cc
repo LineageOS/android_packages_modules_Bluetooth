@@ -93,48 +93,6 @@ bool AclConnectionHandler::CancelPendingConnection(Address addr) {
   }
   classic_connection_pending_ = false;
   pending_connection_address_ = Address::kEmpty;
-  pending_le_connection_resolved_address_ = AddressWithType();
-  return true;
-}
-
-bool AclConnectionHandler::CreatePendingLeConnection(AddressWithType peer,
-                                                     AddressWithType resolved_peer,
-                                                     AddressWithType local_address) {
-  for (auto pair : acl_connections_) {
-    auto connection = std::get<AclConnection>(pair);
-    if (connection.GetAddress() == peer || connection.GetResolvedAddress() == resolved_peer) {
-      INFO("{}: {} is already connected", __func__, peer);
-      if (connection.GetResolvedAddress() == resolved_peer) {
-        INFO("{}: allowing a second connection with {}", __func__, resolved_peer);
-      } else {
-        return false;
-      }
-    }
-  }
-  if (le_connection_pending_) {
-    INFO("{}: connection already pending", __func__);
-    return false;
-  }
-  le_connection_pending_ = true;
-  pending_le_connection_address_ = peer;
-  pending_le_connection_own_address_ = local_address;
-  pending_le_connection_resolved_address_ = resolved_peer;
-  return true;
-}
-
-bool AclConnectionHandler::HasPendingLeConnection(AddressWithType addr) const {
-  return le_connection_pending_ && pending_le_connection_address_ == addr;
-}
-
-bool AclConnectionHandler::CancelPendingLeConnection(AddressWithType addr) {
-  if (!le_connection_pending_ || pending_le_connection_address_ != addr) {
-    return false;
-  }
-  le_connection_pending_ = false;
-  pending_le_connection_address_ =
-          AddressWithType{Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS};
-  pending_le_connection_resolved_address_ =
-          AddressWithType{Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS};
   return true;
 }
 
@@ -151,16 +109,14 @@ uint16_t AclConnectionHandler::CreateConnection(Address addr, Address own_addr, 
   return kReservedHandle;
 }
 
-uint16_t AclConnectionHandler::CreateLeConnection(AddressWithType addr, AddressWithType own_addr,
+uint16_t AclConnectionHandler::CreateLeConnection(AddressWithType addr,
+                                                  AddressWithType resolved_peer,
+                                                  AddressWithType own_addr,
                                                   bluetooth::hci::Role role) {
-  AddressWithType resolved_peer = pending_le_connection_resolved_address_;
-  if (CancelPendingLeConnection(addr)) {
-    uint16_t handle = GetUnusedHandle();
-    acl_connections_.emplace(
-            handle, AclConnection{addr, own_addr, resolved_peer, Phy::Type::LOW_ENERGY, role});
-    return handle;
-  }
-  return kReservedHandle;
+  uint16_t handle = GetUnusedHandle();
+  acl_connections_.emplace(
+          handle, AclConnection{addr, own_addr, resolved_peer, Phy::Type::LOW_ENERGY, role});
+  return handle;
 }
 
 bool AclConnectionHandler::Disconnect(uint16_t handle, std::function<void(TaskId)> stopStream) {
