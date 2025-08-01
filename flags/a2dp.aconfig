@@ -2,26 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "a2dp_ignore_started_when_responder"
-    namespace: "bluetooth"
-    description: "Ignore the event BTA_AV_START_EVT when source and responder"
-    bug : "341178856"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_avdt_rconfig_not_setting_l2cap"
-    namespace: "bluetooth"
-    description: "Set L2CAP flushable and high priority after A2DP reconfigure"
-    bug: "361717220"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_lhdc_api"
     namespace: "bluetooth"
     description: "API change for LHDC codec support"
@@ -30,40 +10,10 @@ flag {
 }
 
 flag {
-    name: "a2dp_cleanup_on_remove_device"
-    namespace: "bluetooth"
-    description: "Always remove A2DP state machine when device is removed"
-    bug: "381313622"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "avdt_wait_for_initial_delay_report_as_initiator"
     namespace: "bluetooth"
     description: "As signaling initiator wait for delay report for peer sink and only then send open command"
     bug: "394553654"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_version_1_4"
-    namespace: "bluetooth"
-    description: "Update the supported A2DP version to v1.4"
-    bug: "400784026"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "avdtp_prevent_double_suspend"
-    namespace: "bluetooth"
-    description: "Add state to prevent sending multiple AVDTP Suspend command in a row"
-    bug: "402241316"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

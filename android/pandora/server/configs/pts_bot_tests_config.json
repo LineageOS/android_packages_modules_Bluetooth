@@ -2596,7 +2596,6 @@
   "flags": [
     {
       "flags": [
-        "a2dp_version_1_4",
         "a2dp_set_configuration_during_discovery"
       ],
       "tests": [
