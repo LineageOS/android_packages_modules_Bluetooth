@@ -1,8 +1,22 @@
 use crate::state_machine::{RealHciIndex, VirtualHciIndex};
 
+use num_derive::{FromPrimitive, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+
+/// File which includes the system release info.
+#[cfg(not(test))]
+const LSB_RELEASE: &str = "/etc/lsb-release";
+
+/// lsb-release key used for release description entry.
+const LSB_RELEASE_CHROMEOS_RELEASE_DESCRIPTION_KEY: &str = "CHROMEOS_RELEASE_DESCRIPTION";
+
+/// File which includes the Aflags that should be enabled on the unstable channels.
+const UNSTABLE_AFLAGS_SOURCE: &str = "/var/lib/bluetooth/unstable_aflags.conf";
+
+/// File to store the Aflags that should be enabled on the unstable channels.
+const UNSTABLE_AFLAGS_CONF: &str = "/var/lib/bluetooth/sysprops.conf.d/unstable_aflags.conf";
 
 /// Directory for Bluetooth hci devices.
 const HCI_DEVICES_DIR: &str = "/sys/class/bluetooth";
@@ -52,6 +66,8 @@ pub fn write_floss_enabled(enabled: bool) -> bool {
 struct BluetoothManagerConfig {
     #[serde(default)]
     default_adapter: VirtualHciIndex,
+    #[serde(default)]
+    unstable_aflags_use_mode: UnstableAflagsUseMode,
     #[serde(flatten, default)]
     hci: HashMap<String, BluetoothManagerHciConfig>,
 }
@@ -231,6 +247,112 @@ pub fn write_floss_address_privacy_enabled(enabled: bool) -> std::io::Result<()>
     std::fs::write(format!("{}", FLOSS_ADDRESS_PRIVACY_CONFIG_SAVE), data.clone())
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, FromPrimitive, ToPrimitive, Serialize, Deserialize)]
+#[repr(u32)]
+pub enum UnstableAflagsUseMode {
+    Auto = 0,
+    ForceUse = 1,
+    ForceNoUse = 2,
+}
+
+impl Default for UnstableAflagsUseMode {
+    fn default() -> Self {
+        UnstableAflagsUseMode::Auto
+    }
+}
+
+pub fn get_unstable_aflags_use_mode() -> UnstableAflagsUseMode {
+    read_config().unstable_aflags_use_mode
+}
+
+pub fn set_unstable_aflags_use_mode(mode: UnstableAflagsUseMode) -> bool {
+    let mut conf = read_config();
+    conf.unstable_aflags_use_mode = mode;
+    write_config(&conf)
+}
+
+pub fn setup_unstable_aflags() -> bool {
+    let mode = get_unstable_aflags_use_mode();
+    let use_unstable = match mode {
+        UnstableAflagsUseMode::Auto => {
+            [ReleaseChannel::Dev, ReleaseChannel::Beta].contains(&get_release_channel())
+        }
+        UnstableAflagsUseMode::ForceUse => true,
+        UnstableAflagsUseMode::ForceNoUse => false,
+    };
+    log::info!("Setting up unstable Aflags, mode: {:?}, use_unstable: {}", mode, use_unstable);
+
+    if use_unstable {
+        std::fs::copy(UNSTABLE_AFLAGS_SOURCE, UNSTABLE_AFLAGS_CONF)
+            .inspect_err(|e| log::error!("Failed to copy unstable Aflags config: {}", e))
+            .is_ok()
+    } else {
+        match std::fs::remove_file(UNSTABLE_AFLAGS_CONF) {
+            // Success: The file was either removed or didn't exist to begin with.
+            Ok(()) => true,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => true,
+
+            // Failure: An unexpected error occurred.
+            Err(e) => {
+                log::error!("Failed to remove unstable Aflags config: {}", e);
+                false
+            }
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+enum ReleaseChannel {
+    Dev,
+    Beta,
+    Stable,
+    Unknown,
+}
+
+#[cfg(test)]
+static FAKE_LSB_RELEASE: std::sync::LazyLock<std::sync::Mutex<String>> =
+    std::sync::LazyLock::new(|| Default::default());
+
+fn get_release_channel() -> ReleaseChannel {
+    #[cfg(not(test))]
+    let s = std::fs::read_to_string(LSB_RELEASE);
+
+    #[cfg(test)]
+    let s = std::io::Result::Ok(FAKE_LSB_RELEASE.lock().unwrap().clone());
+
+    let desc = match s.and_then(|lsb_release| {
+        lsb_release
+            .as_str()
+            .lines()
+            .find_map(|line| match line.split_once('=') {
+                Some((lhs, rhs)) if lhs.trim() == LSB_RELEASE_CHROMEOS_RELEASE_DESCRIPTION_KEY => {
+                    Some(rhs.trim().to_owned())
+                }
+                _ => None,
+            })
+            .ok_or(std::io::Error::other("release description not found"))
+    }) {
+        Err(e) => {
+            log::error!("Failed to get the release description: {}", e);
+            return ReleaseChannel::Unknown;
+        }
+        Ok(desc) => desc,
+    };
+    match desc.split(' ').find(|tok| tok.ends_with("-channel")) {
+        Some("dev-channel") => ReleaseChannel::Dev,
+        Some("beta-channel") => ReleaseChannel::Beta,
+        Some("stable-channel") => ReleaseChannel::Stable,
+        Some(other) => {
+            log::warn!("Unknown channel name found in the release description: {}", other);
+            ReleaseChannel::Unknown
+        }
+        None => {
+            log::error!("Channel not found in the release description");
+            ReleaseChannel::Unknown
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -291,5 +413,66 @@ mod tests {
         assert_ne!(get_default_adapter(), VirtualHciIndex(1));
         assert!(set_default_adapter(VirtualHciIndex(1)));
         assert_eq!(get_default_adapter(), VirtualHciIndex(1));
+    }
+
+    #[test]
+    fn parse_unstable_aflags_use_mode() {
+        let _guard = TEST_LOCK.lock().unwrap();
+
+        *FAKE_CONF.lock().unwrap() = "{}".to_string();
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::Auto);
+
+        *FAKE_CONF.lock().unwrap() = "{\"unstable_aflags_use_mode\": \"Auto\"}".to_string();
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::Auto);
+
+        *FAKE_CONF.lock().unwrap() = "{\"unstable_aflags_use_mode\": \"ForceUse\"}".to_string();
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::ForceUse);
+
+        *FAKE_CONF.lock().unwrap() = "{\"unstable_aflags_use_mode\": \"ForceNoUse\"}".to_string();
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::ForceNoUse);
+    }
+
+    #[test]
+    fn modify_unstable_aflags_use_mode() {
+        let _guard = TEST_LOCK.lock().unwrap();
+
+        *FAKE_CONF.lock().unwrap() = "{}".to_string();
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::Auto);
+        assert!(set_unstable_aflags_use_mode(UnstableAflagsUseMode::ForceUse));
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::ForceUse);
+        assert!(set_unstable_aflags_use_mode(UnstableAflagsUseMode::Auto));
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::Auto);
+        assert!(set_unstable_aflags_use_mode(UnstableAflagsUseMode::ForceNoUse));
+        assert_eq!(get_unstable_aflags_use_mode(), UnstableAflagsUseMode::ForceNoUse);
+    }
+
+    #[test]
+    fn parse_release_channel() {
+        let _guard = TEST_LOCK.lock().unwrap();
+
+        *FAKE_LSB_RELEASE.lock().unwrap() =
+            "CHROMEOS_RELEASE_DESCRIPTION=16366.0.0 (Official Build) dev-channel zork test\n"
+                .to_string();
+        assert_eq!(get_release_channel(), ReleaseChannel::Dev);
+
+        *FAKE_LSB_RELEASE.lock().unwrap() =
+            "CHROMEOS_RELEASE_DESCRIPTION=16295.51.0 (Official Build) beta-channel rauru\n"
+                .to_string();
+        assert_eq!(get_release_channel(), ReleaseChannel::Beta);
+
+        *FAKE_LSB_RELEASE.lock().unwrap() =
+            "CHROMEOS_RELEASE_DESCRIPTION=16295.54.0 (Official Build) stable-channel brya\n"
+                .to_string();
+        assert_eq!(get_release_channel(), ReleaseChannel::Stable);
+
+        *FAKE_LSB_RELEASE.lock().unwrap() =
+            "CHROMEOS_RELEASE_DESCRIPTION=16295.54.0 (Official Build) ???-channel brya\n"
+                .to_string();
+        assert_eq!(get_release_channel(), ReleaseChannel::Unknown);
+
+        *FAKE_LSB_RELEASE.lock().unwrap() =
+            "CHROMEOS_RELEASE_DESCRIPTION=16373.0.0 (Test Build - root) developer-build zork"
+                .to_string();
+        assert_eq!(get_release_channel(), ReleaseChannel::Unknown);
     }
 }
