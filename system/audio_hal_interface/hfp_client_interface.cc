@@ -53,8 +53,8 @@ static HfpDecodingTransport* get_decode_transport_instance() {
   return HfpDecodingTransport::instance_;
 }
 
-static HfpDecodingTransport* get_encode_transport_instance() {
-  return HfpDecodingTransport::instance_;
+static HfpEncodingTransport* get_encode_transport_instance() {
+  return HfpEncodingTransport::instance_;
 }
 
 static PcmConfiguration get_default_pcm_configuration() {
