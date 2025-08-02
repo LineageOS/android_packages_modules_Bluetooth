@@ -1959,8 +1959,7 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if (p_data && p_data->api_stop.suspend) {
     log::verbose("peer {} suspending: {}, sup:{}, suspending: {}", p_scb->PeerAddress(), start,
                  p_scb->suspend_sup, p_scb->suspending);
-    if ((start) && (p_scb->suspend_sup) &&
-        ((!p_scb->suspending) || !com::android::bluetooth::flags::avdtp_prevent_double_suspend())) {
+    if ((start) && (p_scb->suspend_sup) && !p_scb->suspending) {
       sus_evt = false;
       p_scb->suspending = true;
       p_scb->l2c_bufs = 0;
@@ -2623,20 +2622,18 @@ void bta_av_rcfg_str_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->p_cos->update_mtu(p_scb->hndl, p_scb->PeerAddress(), p_scb->stream_mtu);
   }
 
-  if (com::android::bluetooth::flags::fix_avdt_rconfig_not_setting_l2cap()) {
-    /* Set the media channel as high priority */
-    if (!stack::l2cap::get_interface().L2CA_SetTxPriority(p_scb->l2c_cid,
-                                                          L2CAP_CHNL_PRIORITY_HIGH)) {
-      log::warn("Unable to set L2CAP Tx priority peer:{} cid:{}", p_scb->PeerAddress(),
-                p_scb->l2c_cid);
-    }
-
-    if (!stack::l2cap::get_interface().L2CA_SetChnlFlushability(p_scb->l2c_cid, true)) {
-      log::warn("Unable to set L2CAP flush peer:{} cid:{}", p_scb->PeerAddress(), p_scb->l2c_cid);
-    }
-
-    stack::l2cap::get_interface().L2CA_SetMediaStreamChannel(p_scb->l2c_cid, true);
+  /* Set the media channel as high priority */
+  if (!stack::l2cap::get_interface().L2CA_SetTxPriority(p_scb->l2c_cid,
+                                                        L2CAP_CHNL_PRIORITY_HIGH)) {
+    log::warn("Unable to set L2CAP Tx priority peer:{} cid:{}", p_scb->PeerAddress(),
+              p_scb->l2c_cid);
   }
+
+  if (!stack::l2cap::get_interface().L2CA_SetChnlFlushability(p_scb->l2c_cid, true)) {
+    log::warn("Unable to set L2CAP flush peer:{} cid:{}", p_scb->PeerAddress(), p_scb->l2c_cid);
+  }
+
+  stack::l2cap::get_interface().L2CA_SetMediaStreamChannel(p_scb->l2c_cid, true);
 
   /* rc listen */
   bta_av_st_rc_timer(p_scb, NULL);

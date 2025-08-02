@@ -1856,9 +1856,12 @@ LeAdvertisingManagerImpl::LeAdvertisingManagerImpl(
         hci::LeAddressManager* le_address_manager,
         hci::OnAdvertisingSetTerminatedInterface* on_set_terminated) {
   pimpl_ = std::make_unique<impl>(handler, hci, controller, le_address_manager, on_set_terminated);
+  log::verbose("LeAdvertisingManager module started !!");
 }
 
-LeAdvertisingManagerImpl::~LeAdvertisingManagerImpl() = default;
+LeAdvertisingManagerImpl::~LeAdvertisingManagerImpl() {
+  log::verbose("LeAdvertisingManager module stopped !!");
+};
 
 size_t LeAdvertisingManagerImpl::GetNumberOfAdvertisingInstances() const {
   return pimpl_->GetNumberOfAdvertisingInstances();

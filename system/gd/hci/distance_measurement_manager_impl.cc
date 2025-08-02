@@ -2986,9 +2986,12 @@ DistanceMeasurementManagerImpl::DistanceMeasurementManagerImpl(os::Handler* hand
                                                                hci::AclManagerLe* acl_manager,
                                                                hal::RangingHal* ranging_hal) {
   pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, acl_manager, ranging_hal);
+  log::verbose("DistanceMeasurementManager module started !!");
 }
 
-DistanceMeasurementManagerImpl::~DistanceMeasurementManagerImpl() = default;
+DistanceMeasurementManagerImpl::~DistanceMeasurementManagerImpl() {
+  log::verbose("DistanceMeasurementManager module stopped !!");
+};
 
 void DistanceMeasurementManagerImpl::RegisterDistanceMeasurementCallbacks(
         DistanceMeasurementCallbacks* callbacks) {

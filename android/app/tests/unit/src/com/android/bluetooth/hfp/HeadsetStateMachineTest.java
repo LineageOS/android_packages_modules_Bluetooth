@@ -1289,7 +1289,6 @@ public class HeadsetStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_ShowUiFlagEnabled() {
         mockSystemPropertyGet(HFP_VOLUME_CONTROL_ENABLED, true);
 
@@ -1309,7 +1308,6 @@ public class HeadsetStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_ShowUiFlagDisabled() {
         mockSystemPropertyGet(HFP_VOLUME_CONTROL_ENABLED, false);
 

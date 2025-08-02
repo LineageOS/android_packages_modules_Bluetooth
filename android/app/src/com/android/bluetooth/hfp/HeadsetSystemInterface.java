@@ -24,6 +24,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.media.AudioDeviceInfo;
 import android.media.AudioDeviceVolumeManager;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -413,10 +414,32 @@ class HeadsetSystemInterface {
     boolean requestBluetoothAudio(BluetoothDevice device) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
-            Log.e(TAG, "getNetworkOperator() failed: mBluetoothInCallService is null");
-            return false;
+            Log.d(TAG, "Call is not active, start SCO via audio manager");
+            return startScoViaAudioManager(device);
         }
         bluetoothInCallService.requestBluetoothAudio(device);
         return true;
+    }
+
+    private boolean startScoViaAudioManager(BluetoothDevice device) {
+        AudioManager am = getAudioManager();
+        Optional<AudioDeviceInfo> audioDeviceInfo =
+                am.getAvailableCommunicationDevices().stream()
+                        .filter(
+                                x ->
+                                        x.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                                                && x.getAddress().equals(device.getAddress()))
+                        .findFirst();
+        if (audioDeviceInfo.isEmpty()) {
+            Log.w(
+                    TAG,
+                    "Cannot find audioDeviceInfo that matches device="
+                            + device
+                            + " to create the SCO");
+            return false;
+        }
+
+        Log.i(TAG, "Audio Manager will initiate the SCO");
+        return am.setCommunicationDevice(audioDeviceInfo.get());
     }
 }

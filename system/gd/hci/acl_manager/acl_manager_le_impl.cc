@@ -16,8 +16,6 @@
 
 #include "hci/acl_manager/acl_manager_le_impl.h"
 
-#include <bluetooth/log.h>
-
 #include <format>
 #include <string>
 
@@ -46,8 +44,8 @@ AclManagerLeImpl::AclManagerLeImpl(os::Handler* handler, hci::HciInterface& hci,
       round_robin_scheduler_(round_robin_scheduler),
       le_impl_(hci, controller, handler_, round_robin_scheduler, storage_module,
                crash_on_unknown_handle, classic_acl_count_provider) {
-  log::info("constructing AclManagerLeImpl");
   hci.SetLeAclDataConsumer(this);
+  log::verbose("AclManagerLe module started !!");
 }
 
 void AclManagerLeImpl::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {

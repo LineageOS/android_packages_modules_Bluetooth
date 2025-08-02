@@ -46,8 +46,7 @@ import java.util.Map;
 
 /** AdvStats class helps keep track of information about advertising on a per application basis. */
 class AppAdvertiseStats {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + AppAdvertiseStats.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + AppAdvertiseStats.class.getSimpleName();
 
     static final String[] PHY_LE_STRINGS = {"LE_1M", "LE_2M", "LE_CODED"};
     static final int UUID_STRING_FILTER_LEN = 8;

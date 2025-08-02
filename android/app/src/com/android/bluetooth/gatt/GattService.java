@@ -26,6 +26,12 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.Utils.transportToString;
+import static com.android.bluetooth.gatt.GattUtil.isAndroidTvRemoteSrvcUuid;
+import static com.android.bluetooth.gatt.GattUtil.isAppleNotificationCenterSrvcUuid;
+import static com.android.bluetooth.gatt.GattUtil.isFidoSrvcUuid;
+import static com.android.bluetooth.gatt.GattUtil.isHidCharUuid;
+import static com.android.bluetooth.gatt.GattUtil.isHidSrvcUuid;
+import static com.android.bluetooth.gatt.GattUtil.isLeAudioSrvcUuid;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
 import static java.util.Objects.requireNonNull;
@@ -81,38 +87,7 @@ import java.util.stream.Collectors;
 
 /** Provides Bluetooth Gatt profile, as a service in the Bluetooth application. */
 public class GattService extends ProfileService {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + GattService.class.getSimpleName();
-
-    private static final UUID HID_SERVICE_UUID =
-            UUID.fromString("00001812-0000-1000-8000-00805F9B34FB");
-
-    private static final UUID[] HID_UUIDS = {
-        UUID.fromString("00002A4A-0000-1000-8000-00805F9B34FB"),
-        UUID.fromString("00002A4B-0000-1000-8000-00805F9B34FB"),
-        UUID.fromString("00002A4C-0000-1000-8000-00805F9B34FB"),
-        UUID.fromString("00002A4D-0000-1000-8000-00805F9B34FB")
-    };
-
-    private static final UUID ANDROID_TV_REMOTE_SERVICE_UUID =
-            UUID.fromString("AB5E0001-5A21-4F05-BC7D-AF01F617B664");
-
-    private static final UUID FIDO_SERVICE_UUID =
-            UUID.fromString("0000FFFD-0000-1000-8000-00805F9B34FB"); // U2F
-
-    private static final UUID[] LE_AUDIO_SERVICE_UUIDS = {
-        UUID.fromString("00001844-0000-1000-8000-00805F9B34FB"), // VCS
-        UUID.fromString("00001845-0000-1000-8000-00805F9B34FB"), // VOCS
-        UUID.fromString("00001843-0000-1000-8000-00805F9B34FB"), // AICS
-        UUID.fromString("00001850-0000-1000-8000-00805F9B34FB"), // PACS
-        UUID.fromString("0000184E-0000-1000-8000-00805F9B34FB"), // ASCS
-        UUID.fromString("0000184F-0000-1000-8000-00805F9B34FB"), // BASS
-        UUID.fromString("00001854-0000-1000-8000-00805F9B34FB"), // HAP
-        UUID.fromString("00001846-0000-1000-8000-00805F9B34FB"), // CSIS
-    };
-
-    private static final UUID APPLE_NOTIFICATION_CENTER_SERVICE_UUID =
-            UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0");
+    private static final String TAG = GattUtil.TAG_PREFIX + GattService.class.getSimpleName();
 
     private final int[] mSubrateHighParameters;
     private final int[] mSubrateBalancedParameters;
@@ -2552,42 +2527,8 @@ public class GattService extends ProfileService {
      * Private functions
      *************************************************************************/
 
-    private static boolean isHidSrvcUuid(final UUID uuid) {
-        return HID_SERVICE_UUID.equals(uuid);
-    }
-
-    static boolean isHidCharUuid(final UUID uuid) {
-        for (UUID hidUuid : HID_UUIDS) {
-            if (hidUuid.equals(uuid)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isAndroidTvRemoteSrvcUuid(final UUID uuid) {
-        return ANDROID_TV_REMOTE_SERVICE_UUID.equals(uuid);
-    }
-
-    private static boolean isFidoSrvcUuid(final UUID uuid) {
-        return FIDO_SERVICE_UUID.equals(uuid);
-    }
-
-    private static boolean isLeAudioSrvcUuid(final UUID uuid) {
-        for (UUID leAudioUuid : LE_AUDIO_SERVICE_UUIDS) {
-            if (leAudioUuid.equals(uuid)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static boolean isAndroidHeadtrackerSrvcUuid(final UUID uuid) {
         return HidHostService.ANDROID_HEADTRACKER_UUID.getUuid().equals(uuid);
-    }
-
-    private static boolean isAppleNotificationCenterSrvcUuid(final UUID uuid) {
-        return APPLE_NOTIFICATION_CENTER_SERVICE_UUID.equals(uuid);
     }
 
     private boolean isRestrictedSrvcUuid(final UUID uuid, BluetoothDevice device) {

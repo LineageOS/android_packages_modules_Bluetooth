@@ -28,8 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class HandleMap {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + HandleMap.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + HandleMap.class.getSimpleName();
 
     // Prepared writes can be requested by a client, requesting that a server implementation hold
     // all write requests until the client commits or executes the write. This execution is meant to

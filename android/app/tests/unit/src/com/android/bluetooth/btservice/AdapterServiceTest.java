@@ -73,6 +73,7 @@ import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IpcDataCache;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
@@ -255,6 +256,7 @@ public class AdapterServiceTest {
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
         Log.e(TAG, "setUp()");
+        IpcDataCache.setCacheTestMode(true);
 
         doReturn(mJniCallbacks).when(mNativeInterface).getCallbacks();
         doReturn(true).when(mMockLeAudioService).isAvailable();
@@ -361,6 +363,7 @@ public class AdapterServiceTest {
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
         MetricsLogger.setInstanceForTesting(null);
+        IpcDataCache.setCacheTestMode(false);
     }
 
     private void syncHandler(int... what) {
@@ -1381,5 +1384,58 @@ public class AdapterServiceTest {
         verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
         assertThat(mLooper.nextMessage()).isNull();
+    }
+
+    @Test
+    public void testSuspendWithoutPendingSetScanRequest() {
+        InOrder order = inOrder(mNativeInterface);
+        final int scanModeNone =
+                AdapterService.convertScanModeToHal(BluetoothAdapter.SCAN_MODE_NONE);
+        final int scanModeConnectable =
+                AdapterService.convertScanModeToHal(BluetoothAdapter.SCAN_MODE_CONNECTABLE);
+
+        doReturn(true).when(mNativeInterface).setScanMode(anyInt());
+
+        // When suspending, we should set the scan state to none.
+        mAdapterService.setScanMode(BluetoothAdapter.SCAN_MODE_CONNECTABLE, "test");
+        order.verify(mNativeInterface).setScanMode(eq(scanModeConnectable));
+        mAdapterService.setSuspendState(true);
+        order.verify(mNativeInterface).setScanMode(eq(scanModeNone));
+
+        // Extraneous call to suspend won't trigger another setScanMode.
+        mAdapterService.setSuspendState(true);
+        order.verify(mNativeInterface, never()).setScanMode(anyInt());
+
+        // When resuming, we should restore the scan state.
+        mAdapterService.setSuspendState(false);
+        order.verify(mNativeInterface).setScanMode(eq(scanModeConnectable));
+    }
+
+    @Test
+    public void testSuspendWithPendingSetScanRequest() {
+        InOrder order = inOrder(mNativeInterface);
+        final int scanModeNone =
+                AdapterService.convertScanModeToHal(BluetoothAdapter.SCAN_MODE_NONE);
+        final int scanModeConnectable =
+                AdapterService.convertScanModeToHal(BluetoothAdapter.SCAN_MODE_CONNECTABLE);
+        final int scanModeDiscoverable =
+                AdapterService.convertScanModeToHal(
+                        BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+
+        doReturn(true).when(mNativeInterface).setScanMode(anyInt());
+
+        // When suspending, we should set the scan state to none.
+        mAdapterService.setScanMode(BluetoothAdapter.SCAN_MODE_CONNECTABLE, "test");
+        order.verify(mNativeInterface).setScanMode(eq(scanModeConnectable));
+        mAdapterService.setSuspendState(true);
+        order.verify(mNativeInterface).setScanMode(eq(scanModeNone));
+
+        // If during suspending process we receive a set scan request, we should not carry it out.
+        mAdapterService.setScanMode(BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE, "test");
+        order.verify(mNativeInterface, never()).setScanMode(eq(scanModeDiscoverable));
+
+        // The pending request shall be carried out during resume.
+        mAdapterService.setSuspendState(false);
+        order.verify(mNativeInterface).setScanMode(eq(scanModeDiscoverable));
     }
 }

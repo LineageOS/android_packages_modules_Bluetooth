@@ -33,6 +33,8 @@ public:
 
 class LinkClocker {
 public:
+  LinkClocker();
+  ~LinkClocker();
   void OnHciEvent(const HciPacket& packet);
 
   static void Register(ReadClockHandler*);

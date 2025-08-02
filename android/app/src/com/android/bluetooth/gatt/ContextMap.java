@@ -53,8 +53,7 @@ import java.util.function.Predicate;
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
 class ContextMap<C extends IInterface> {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + ContextMap.class.getSimpleName();
 
     private static final int MAX_LAST_RECORDS = 5;
 
