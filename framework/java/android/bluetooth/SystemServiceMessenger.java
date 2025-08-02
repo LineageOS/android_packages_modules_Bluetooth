@@ -171,6 +171,6 @@ public class SystemServiceMessenger {
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
-        return future.orTimeout(1, TimeUnit.SECONDS).join();
+        return future.orTimeout(10, TimeUnit.SECONDS).join();
     }
 }
