@@ -21,6 +21,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothQualityReport
+import android.bluetooth.OobData
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
@@ -320,6 +321,59 @@ class BluetoothAdapterSnippet : Snippet {
         }.createBond(transport)
     }
 
+    /** Creates bond to a remote device using out of band data, and returns true if successful. */
+    @Rpc(description = "Create bond to a device using out of band data")
+    fun createBondOutOfBand(
+        address: String,
+        transport: Int,
+        @RpcOptional addressType: Int?,
+        @RpcOptional remoteP192data: OobData?,
+        @RpcOptional remoteP256data: OobData?,
+    ): Boolean {
+        return when (transport) {
+            BluetoothDevice.TRANSPORT_LE ->
+                bluetoothAdapter.getRemoteLeDevice(
+                    address,
+                    addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
+                )
+            BluetoothDevice.TRANSPORT_BREDR -> bluetoothAdapter.getRemoteDevice(address)
+            BluetoothDevice.TRANSPORT_AUTO ->
+                if (addressType == null) {
+                    bluetoothAdapter.getRemoteDevice(address)
+                } else {
+                    bluetoothAdapter.getRemoteLeDevice(address, addressType)
+                }
+            else -> throw IllegalArgumentException("Invalid transport type $transport")
+        }.createBondOutOfBand(transport, remoteP192data, remoteP256data)
+    }
+
+    /** Creates bond to a remote device using out of band data, and returns true if successful. */
+    @Rpc(description = "Create bond to a device using out of band data")
+    fun generateLocalOobData(transport: Int): OobData {
+        val deferred = CompletableDeferred<OobData>()
+        val callback =
+            object : BluetoothAdapter.OobDataCallback {
+                override fun onOobData(transport: Int, data: OobData) {
+                    Log.i(TAG, "onOobData transport: $transport, data: $data")
+                    deferred.complete(data)
+                }
+
+                override fun onError(errorCode: Int) {
+                    Log.i(TAG, "onError errorCode: $errorCode")
+                    deferred.completeExceptionally(
+                        RuntimeException("Failed to generate local OobData, errorCode=$errorCode")
+                    )
+                }
+            }
+        bluetoothAdapter.generateLocalOobData(transport, context.mainExecutor, callback)
+        return runBlocking {
+            withTimeoutOrNull(OOB_DATA_GENERATION_TIMEOUT) { deferred.await() }
+                ?: throw RuntimeException(
+                    "Failed to generate local OobData after ${OOB_DATA_GENERATION_TIMEOUT}"
+                )
+        }
+    }
+
     @Rpc(description = "Remove bond to a device")
     fun removeBond(address: String): Boolean =
         bluetoothAdapter.getRemoteDevice(address).removeBond()
@@ -599,5 +653,6 @@ class BluetoothAdapterSnippet : Snippet {
         const val TAG = "BluetoothAdapterSnippet"
         private val BLUETOOTH_ON_OFF_TIMEOUT = 12.seconds
         private val ADVERTISING_START_TIMEOUT = 3.seconds
+        private val OOB_DATA_GENERATION_TIMEOUT = 10.seconds
     }
 }

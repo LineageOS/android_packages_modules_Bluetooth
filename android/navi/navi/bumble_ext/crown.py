@@ -195,6 +195,10 @@ class CrownAdapter:
         """Stops the adapter."""
         # Doesn't need to do anything here.
 
+    def dump_debug_logs(self, output_dir: str) -> None:
+        """Dumps debug logs from the adapter."""
+        # Doesn't need to do anything here.
+
 
 class AndroidCrownAdapter(CrownAdapter):
     """Adapter launching HCI proxy on Android to adapt Bumble.
@@ -271,6 +275,11 @@ class AndroidCrownAdapter(CrownAdapter):
         self._hci_proxy_process.kill()
         # Disable Satellite Mode.
         self.ad.adb.shell(['settings', 'put', 'global', 'satellite_mode_enabled', '0'])
+
+    @override
+    def dump_debug_logs(self, output_dir: str) -> None:
+        """Dumps debug logs from the HCI Proxy."""
+        self.ad.take_bug_report(test_name='crown', destination=output_dir)
 
 
 class NetsimCrownAdapter(CrownAdapter):

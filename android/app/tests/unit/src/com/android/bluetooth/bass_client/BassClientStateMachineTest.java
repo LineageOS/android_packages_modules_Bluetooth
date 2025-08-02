@@ -921,7 +921,9 @@ public class BassClientStateMachineTest {
                 BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED;
         value[BassConstants.BCAST_RCVR_STATE_ENC_STATUS_IDX] =
                 BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED;
-        mStateMachine.mSetBroadcastCodePending = true;
+        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
+            mStateMachine.mSetBroadcastCodePending = true;
+        }
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
         inOrderCallbacks
@@ -929,7 +931,9 @@ public class BassClientStateMachineTest {
                 .notifySourceModified(
                         any(), eq(sourceId), eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
         assertThat(mStateMachine.mMsgWhats).contains(SET_BCAST_CODE);
-        assertThat(mStateMachine.mMsgAgr1).isEqualTo(BassClientStateMachine.ARGTYPE_RCVSTATE);
+        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
+            assertThat(mStateMachine.mMsgAgr1).isEqualTo(BassClientStateMachine.ARGTYPE_RCVSTATE);
+        }
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -1492,6 +1496,14 @@ public class BassClientStateMachineTest {
         mLooper.dispatchAll();
         mStateMachine.mShouldHandleMessage = true;
 
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattCharacteristic scanControlPoint =
+                Mockito.mock(BluetoothGattCharacteristic.class);
+        mStateMachine.mBroadcastScanControlPoint = scanControlPoint;
+
+        // Not set bcast code as source id is different
         BluetoothLeBroadcastReceiveState recvState =
                 new BluetoothLeBroadcastReceiveState(
                         2,
@@ -1505,10 +1517,17 @@ public class BassClientStateMachineTest {
                         0,
                         Arrays.asList(new Long[0]),
                         Arrays.asList(new BluetoothLeAudioContentMetadata[0]));
-        mStateMachine.mSetBroadcastCodePending = false;
+        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
+            mStateMachine.mSetBroadcastCodePending = false;
+        }
         mStateMachine.sendMessage(SET_BCAST_CODE, recvState);
         mLooper.dispatchAll();
-        assertThat(mStateMachine.mSetBroadcastCodePending).isTrue();
+        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
+            assertThat(mStateMachine.mSetBroadcastCodePending).isTrue();
+        } else {
+            verify(btGatt, never()).writeCharacteristic(any());
+            verify(scanControlPoint, never()).setValue(any(byte[].class));
+        }
 
         recvState =
                 new BluetoothLeBroadcastReceiveState(
@@ -1523,15 +1542,6 @@ public class BassClientStateMachineTest {
                         0,
                         Arrays.asList(new Long[0]),
                         Arrays.asList(new BluetoothLeAudioContentMetadata[0]));
-        mStateMachine.sendMessage(SET_BCAST_CODE, recvState);
-        mLooper.dispatchAll();
-        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
-                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
-        mStateMachine.mBluetoothGatt = btGatt;
-        BluetoothGattCharacteristic scanControlPoint =
-                Mockito.mock(BluetoothGattCharacteristic.class);
-        mStateMachine.mBroadcastScanControlPoint = scanControlPoint;
-
         sendMessageAndVerifyTransition(
                 mStateMachine.obtainMessage(SET_BCAST_CODE, recvState),
                 BassClientStateMachine.ConnectedProcessing.class);
