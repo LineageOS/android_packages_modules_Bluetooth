@@ -67,17 +67,12 @@ public:
   ScoConnectionParameters GetScoConnectionParameters(bluetooth::hci::Address addr) const;
   ScoLinkParameters GetScoLinkParameters(bluetooth::hci::Address addr) const;
 
-  bool CreatePendingLeConnection(bluetooth::hci::AddressWithType peer,
-                                 bluetooth::hci::AddressWithType resolved_peer,
-                                 bluetooth::hci::AddressWithType local_address);
-  bool HasPendingLeConnection(bluetooth::hci::AddressWithType addr) const;
-  bool CancelPendingLeConnection(bluetooth::hci::AddressWithType addr);
-
   // \p pending is true if the connection is expected to be
   // in pending state.
   uint16_t CreateConnection(bluetooth::hci::Address addr, bluetooth::hci::Address own_addr,
                             bool pending = true);
   uint16_t CreateLeConnection(bluetooth::hci::AddressWithType addr,
+                              bluetooth::hci::AddressWithType resolved_addr,
                               bluetooth::hci::AddressWithType own_addr, bluetooth::hci::Role role);
   bool Disconnect(uint16_t handle, std::function<void(TaskId)> stopStream);
   bool HasHandle(uint16_t handle) const;
@@ -130,13 +125,6 @@ private:
   bluetooth::hci::Address pending_connection_address_{bluetooth::hci::Address::kEmpty};
   bool authenticate_pending_classic_connection_{false};
   bool pending_classic_connection_allow_role_switch_{false};
-  bool le_connection_pending_{false};
-  bluetooth::hci::AddressWithType pending_le_connection_address_{
-          bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS};
-  bluetooth::hci::AddressWithType pending_le_connection_own_address_{
-          bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS};
-  bluetooth::hci::AddressWithType pending_le_connection_resolved_address_{
-          bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS};
 
   uint16_t GetUnusedHandle();
   uint16_t last_handle_{kReservedHandle - 2};
