@@ -70,7 +70,8 @@ struct btm_client_interface_t {
   } peer;
 
   struct {
-    [[nodiscard]] tBTM_STATUS (*BTM_GetRole)(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role);
+    [[nodiscard]] tBTM_STATUS (*BTM_GetRole)(const RawAddress& remote_bd_addr,
+                                             tBT_TRANSPORT transport, tHCI_ROLE* p_role);
     [[nodiscard]] tBTM_STATUS (*BTM_SetPowerMode)(uint8_t pm_id, const RawAddress& bd_addr,
                                                   const tBTM_PM_PWR_MD* p_mode);
     [[nodiscard]] tBTM_STATUS (*BTM_SetSsrParams)(const RawAddress& bd_addr, uint16_t max_lat,
