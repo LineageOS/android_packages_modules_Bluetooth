@@ -55,6 +55,7 @@
 #include "mock_device_groups.h"
 #include "mock_state_machine.h"
 #include "osi/include/properties.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
 #include "storage_helper.h"
@@ -3118,6 +3119,12 @@ protected:
     EXPECT_CALL(mock_hal_2_1_verifier, Call()).Times(1);
     EXPECT_CALL(mock_storage_load, Call()).Times(1);
 
+    ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+            .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
+              *role = HCI_ROLE_CENTRAL;
+              return tBTM_STATUS::BTM_SUCCESS;
+            });
+
     ON_CALL(mock_btm_interface_, GetHCIConnHandle(_, _))
             .WillByDefault(
                     [this](RawAddress const& bd_addr, tBT_TRANSPORT /*transport*/) -> uint16_t {
@@ -3462,6 +3469,31 @@ TEST_F(UnicastTest, CleanupWhenConnected) {
   LeAudioClient::Cleanup();
   SyncOnMainLoop();
 
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
+}
+
+TEST_F(UnicastTest, ConnectAsPeripheral) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  uint16_t conn_id = 1;
+
+  SetSampleDatabaseEarbudsValid(1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+                                default_channel_cnt, 0x0004,
+                                /* source sample freq 16khz */ true, /*add_csis*/
+                                true,                                /*add_cas*/
+                                true,                                /*add_pacs*/
+                                default_ase_cnt /*add_ascs*/);
+
+  ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+          .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
+            *role = HCI_ROLE_PERIPHERAL;
+            return tBTM_STATUS::BTM_SUCCESS;
+          });
+
+  EXPECT_CALL(mock_gatt_interface_, Close(_)).Times(1);
+
+  ConnectLeAudio(test_address0, false, false);
+  SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
 }
 

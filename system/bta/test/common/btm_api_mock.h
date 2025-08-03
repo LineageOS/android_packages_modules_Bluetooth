@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
 #include <gmock/gmock.h>
 
 #include <cstdint>
@@ -62,6 +63,8 @@ public:
                                               uint8_t* p_static_addr_type) = 0;
   virtual bool AclPeerSupportsBleConnectionSubrating(const RawAddress& random_pseudo) = 0;
   virtual bool AclPeerSupportsBleConnectionSubratingHost(const RawAddress& random_pseudo) = 0;
+  virtual tBTM_STATUS BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport,
+                                  tHCI_ROLE* role) = 0;
 
   virtual ~BtmInterface() = default;
 };
@@ -109,6 +112,8 @@ public:
               (RawAddress* random_pseudo, uint8_t* p_static_addr_type), (override));
   MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubrating, (const RawAddress& bd_addr), (override));
   MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubratingHost, (const RawAddress& bd_addr), (override));
+  MOCK_METHOD((tBTM_STATUS), BTM_GetRole,
+              (const RawAddress& address, tBT_TRANSPORT transport, tHCI_ROLE* role), (override));
 };
 
 /**
