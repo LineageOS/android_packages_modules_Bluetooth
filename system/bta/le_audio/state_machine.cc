@@ -794,13 +794,12 @@ public:
             kLogSetDataPathOp + "cis_h:" + loghex(conn_handle) + " STATUS=" + loghex(status));
 
     /* Find ASE and later update state for the given cis.*/
-    auto ase = leAudioDevice->GetFirstActiveAseByCisAndDataPathState(CisState::CONNECTED,
-                                                                     DataPathState::CONFIGURING);
+    auto ase = leAudioDevice->GetAseWaitingForDataPathByConnHandle(conn_handle);
 
     if (status) {
       log::error("Failed to setup data path for {}, cis handle: {:#x}, error: {:#x}",
                  leAudioDevice->address_, conn_handle, status);
-      if (ase && ase->cis_conn_hdl == conn_handle) {
+      if (ase) {
         ase->data_path_state = DataPathState::IDLE;
       }
       StopStream(group);
@@ -816,7 +815,7 @@ public:
       return;
     }
 
-    if (!ase || ase->cis_conn_hdl != conn_handle) {
+    if (!ase) {
       log::error("Cannot find ase by handle {}", conn_handle);
       return;
     }
