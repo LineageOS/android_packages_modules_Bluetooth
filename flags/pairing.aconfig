@@ -308,3 +308,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "conclude_le_pairing_immediately"
+    namespace: "bluetooth"
+    description: "Do add unnecessary delay to conclude LE pairing"
+    bug: "436319185"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
