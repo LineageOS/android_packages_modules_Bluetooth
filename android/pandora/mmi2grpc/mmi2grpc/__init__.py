@@ -43,6 +43,7 @@ from mmi2grpc.pbap import PBAPProxy
 from mmi2grpc.rfcomm import RFCOMMProxy
 from mmi2grpc.sdp import SDPProxy
 from mmi2grpc.sm import SMProxy
+from mmi2grpc.tmap import TMAPProxy
 from mmi2grpc.vcp import VCPProxy
 from pandora.host_grpc import Host
 
@@ -96,6 +97,7 @@ class IUT:
         self._rfcomm = None
         self._sdp = None
         self._sm = None
+        self._tmap = None
         self._vcp = None
 
     def __enter__(self):
@@ -148,6 +150,7 @@ class IUT:
         self._rfcomm = None
         self._sdp = None
         self._sm = None
+        self._tmap = None
         self._vcp = None
 
     def _retry(self, func):
@@ -330,6 +333,13 @@ class IUT:
                 self._sm = SMProxy(grpc.insecure_channel(f"localhost:{self.pandora_server_port}"),
                                    self.rootcanal)
             return self._sm.interact(test, interaction, description, pts_address)
+        # Handles TMAP MMIs.
+        if profile in ("TMAP",):
+            if not self._tmap:
+                self._tmap = TMAPProxy(
+                    grpc.insecure_channel(f"localhost:{self.pandora_server_port}"), self.rootcanal,
+                    self.modem)
+            return self._tmap.interact(test, interaction, description, pts_address)
         # HandlesVCP MMIs.
         if profile in ("VCP"):
             if not self._vcp:
