@@ -82,7 +82,7 @@ class ContextMap<C extends IInterface> {
         final int mUid;
         private final String mPackageName;
         private final int mTransport;
-        @Nullable public final String attributionTag;
+        @Nullable final String mAttributionTag;
 
         public int id;
 
@@ -107,7 +107,7 @@ class ContextMap<C extends IInterface> {
             mUid = appUid;
             mPackageName = packageName;
             mTransport = transport;
-            attributionTag = getLastAttributionTag(source);
+            mAttributionTag = getLastAttributionTag(source);
         }
 
         C getCallback() {
@@ -163,8 +163,8 @@ class ContextMap<C extends IInterface> {
         private final UUID mUuid;
         private final String mPackageName;
         private final int mTransport;
-        @Nullable final String attributionTag;
-        final Instant registerTime;
+        @Nullable private final String mAttributionTag;
+        private final Instant mRegisterTime;
 
         int clientIf;
         RemoveReason reason;
@@ -174,8 +174,8 @@ class ContextMap<C extends IInterface> {
             mUuid = app.mUuid;
             mPackageName = app.mPackageName;
             mTransport = app.getTransport();
-            attributionTag = app.attributionTag;
-            registerTime = Instant.now();
+            mAttributionTag = app.mAttributionTag;
+            mRegisterTime = Instant.now();
         }
 
         private static final DateTimeFormatter sDateFormat =
@@ -185,7 +185,7 @@ class ContextMap<C extends IInterface> {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("AppRecord<")
-                    .append(sDateFormat.format(registerTime))
+                    .append(sDateFormat.format(mRegisterTime))
                     .append(" ~ ")
                     .append(sDateFormat.format(unregisterTime))
                     .append(" app_if: ")
@@ -194,8 +194,8 @@ class ContextMap<C extends IInterface> {
                     .append(mPackageName)
                     .append(", transport: ")
                     .append(transportToString(mTransport));
-            if (attributionTag != null) {
-                sb.append(", tag: ").append(attributionTag);
+            if (mAttributionTag != null) {
+                sb.append(", tag: ").append(mAttributionTag);
             }
             sb.append(", reason: ").append(reason).append(">");
             return sb.toString();

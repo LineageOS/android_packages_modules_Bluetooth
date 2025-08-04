@@ -2705,7 +2705,7 @@ public class GattService extends ProfileService {
                     ("    app_if: " + appId)
                             + (", appName: " + app.getPackageName())
                             + (", transport: " + transportToString(app.getTransport()))
-                            + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
+                            + (app.mAttributionTag == null ? "" : ", tag: " + app.mAttributionTag));
             final List<ContextMap.Connection> clientConnections =
                     mClientMap.getConnectionByApp(appId);
             for (ContextMap.Connection connection : clientConnections) {
@@ -2720,7 +2720,7 @@ public class GattService extends ProfileService {
                     ("    app_if: " + appId)
                             + (", appName: " + app.getPackageName())
                             + (", transport: " + transportToString(app.getTransport()))
-                            + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
+                            + (app.mAttributionTag == null ? "" : ", tag: " + app.mAttributionTag));
             final List<ContextMap.Connection> serverConnections =
                     mServerMap.getConnectionByApp(appId);
             for (ContextMap.Connection connection : serverConnections) {
