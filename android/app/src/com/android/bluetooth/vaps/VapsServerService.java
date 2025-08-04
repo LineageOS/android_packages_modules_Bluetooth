@@ -44,6 +44,10 @@ import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
 import android.util.Log;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.provider.Settings;
+import android.database.ContentObserver;
+import android.net.Uri;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
@@ -67,6 +71,7 @@ public class VapsServerService extends ProfileService {
     private static final String TAG = VapsServerService.class.getSimpleName();
 
     private static VapsServerService sVapsServer;
+    private final AssistantSettingObserver mAssistantSettingObserver;
     private final Handler mHandler;
     private final VapsServerNativeInterface mNativeInterface;
 
@@ -127,6 +132,10 @@ public class VapsServerService extends ProfileService {
 
         // Mark service as started
         setVapsServer(this);
+
+        mAssistantSettingObserver = new AssistantSettingObserver();
+        getContentResolver().registerContentObserver(
+            Settings.Secure.getUriFor("assistant"), false, mAssistantSettingObserver);
     }
 
     @Override
@@ -151,6 +160,22 @@ public class VapsServerService extends ProfileService {
 
         // Cleanup GATT interface
         mNativeInterface.cleanup();
+
+        getContentResolver().unregisterContentObserver(mAssistantSettingObserver);
+    }
+
+    private class AssistantSettingObserver extends ContentObserver {
+        private AssistantSettingObserver() {
+            super(mHandler);
+        }
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+            String vaeName = getCurrentVaeName();
+            Log.d(TAG, " Voice Assistant changed");
+            mNativeInterface.setVaeName(vaeName);
+        }
     }
 
     /** Process a change in the bonding state for a device */
@@ -184,6 +209,29 @@ public class VapsServerService extends ProfileService {
         }
         Log.d(TAG, "CCID acquired: " + ccid);
         mNativeInterface.setCcid(ccid);
+    }
+
+    public void setVaeName() {
+        String vaeName = getCurrentVaeName();
+        mNativeInterface.setVaeName(vaeName);
+    }
+
+    public String getCurrentVaeName() {
+        //Get Default Digital Assistant from Settings
+        String assistantName =
+            Settings.Secure.getString(getApplicationContext().getContentResolver(), "assistant");
+        Log.d(TAG, " assistantName"+ assistantName);
+        if (assistantName != null) {
+            Log.d(TAG, " component Name:"+ ComponentName.unflattenFromString(assistantName));
+        }
+        String vaeName = assistantName;
+        String[] parts = assistantName.split("/");
+
+        if (parts.length == 2) {
+            vaeName = parts[0];
+        }
+        Log.d(TAG, " vae Name:"+ vaeName);
+        return vaeName;
     }
 
     public boolean activateVoiceRecognition(BluetoothDevice device) {
@@ -222,6 +270,8 @@ public class VapsServerService extends ProfileService {
             case VapsServerStackEvent.EVENT_TYPE_ON_INITIALIZED -> {
                 Log.d(TAG, "onInitialized");
                 setCcid();
+                Log.d(TAG, "Calling setVaeName after initialization");
+                setVaeName();
             }
             case VapsServerStackEvent.EVENT_TYPE_ON_START_VA_SESSION -> {
                 Log.d(TAG, "start VA session by remote Headset:" + device);

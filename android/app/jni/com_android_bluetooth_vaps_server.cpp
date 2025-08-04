@@ -179,10 +179,31 @@
    }
  }
 
+ static void setVaeNameNative(JNIEnv* env, jobject /* object */, jstring vaeName) {
+   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
+
+   if (!sVapsServerInterface) {
+     log::error("Failed to get Bluetooth VAPS Server Interface");
+     return;
+   }
+
+   const char* vae_name = nullptr;
+   if (vaeName) {
+     vae_name = env->GetStringUTFChars(vaeName, nullptr);
+   }
+
+   sVapsServerInterface->SetVaeName(vae_name ? vae_name : "");
+
+   if (vae_name) {
+     env->ReleaseStringUTFChars(vaeName, vae_name);
+   }
+ }
+
  int register_com_android_bluetooth_vaps_server(JNIEnv* env) {
    const JNINativeMethod methods[] = {
            {"initNative", "()V", reinterpret_cast<void*>(initNative)},
            {"setCcidNative", "(I)V", reinterpret_cast<void*>(setCcidNative)},
+           {"setVaeNameNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(setVaeNameNative)},
            {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
    };
    const int result = REGISTER_NATIVE_METHODS(

@@ -48,6 +48,9 @@
    /** Set the CCID for the VAPS Server profile */
    virtual void SetCcid(int ccid) = 0;
 
+   /** Set VAE name */
+   virtual void SetVaeName(std::string vae_name) = 0;
+
    /** Closes the interface */
    virtual void Cleanup(void) = 0;
  };

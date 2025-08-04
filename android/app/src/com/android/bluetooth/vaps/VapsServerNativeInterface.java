@@ -53,10 +53,16 @@ public class VapsServerNativeInterface {
         cleanupNative();
     }
 
+    void setVaeName(String vaeName) {
+        setVaeNameNative(vaeName);
+    }
+
     // Native methods that call into the JNI interface
     private native void initNative();
 
     private native void setCcidNative(int ccid);
 
     private native void cleanupNative();
+
+    private native void setVaeNameNative(String vaeName);
 }

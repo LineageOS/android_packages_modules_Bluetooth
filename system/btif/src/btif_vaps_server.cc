@@ -55,6 +55,10 @@
      bluetooth::vaps::GetVapsServer()->SetCcid(ccid);
    }
 
+   void SetVaeName(std::string vae_name) override {
+     bluetooth::vaps::GetVapsServer()->SetVaeName(vae_name);
+   }
+
    void Cleanup(void) override {
      bluetooth::vaps::GetVapsServer()->Cleanup();
    }
