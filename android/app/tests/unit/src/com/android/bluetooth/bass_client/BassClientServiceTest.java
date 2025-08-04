@@ -222,6 +222,38 @@ public class BassClientServiceTest {
         return builder.build();
     }
 
+    BluetoothLeBroadcastSubgroup createBroadcastSubgroupBisNotSelected() {
+        BluetoothLeAudioCodecConfigMetadata codecMetadata =
+                new BluetoothLeAudioCodecConfigMetadata.Builder()
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
+                        .build();
+        BluetoothLeAudioContentMetadata contentMetadata =
+                new BluetoothLeAudioContentMetadata.Builder()
+                        .setProgramInfo(TEST_PROGRAM_INFO)
+                        .setLanguage(TEST_LANGUAGE)
+                        .build();
+        BluetoothLeBroadcastSubgroup.Builder builder =
+                new BluetoothLeBroadcastSubgroup.Builder()
+                        .setCodecId(TEST_CODEC_ID)
+                        .setCodecSpecificConfig(codecMetadata)
+                        .setContentMetadata(contentMetadata);
+
+        BluetoothLeAudioCodecConfigMetadata channelCodecMetadata =
+                new BluetoothLeAudioCodecConfigMetadata.Builder()
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_RIGHT)
+                        .build();
+
+        // builder expect at least one channel
+        BluetoothLeBroadcastChannel channel =
+                new BluetoothLeBroadcastChannel.Builder()
+                        .setSelected(false)
+                        .setChannelIndex(TEST_CHANNEL_INDEX)
+                        .setCodecMetadata(channelCodecMetadata)
+                        .build();
+        builder.addChannel(channel);
+        return builder.build();
+    }
+
     BluetoothLeBroadcastMetadata createBroadcastMetadata(int broadcastId) {
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()
@@ -234,6 +266,21 @@ public class BassClientServiceTest {
                         .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS);
         // builder expect at least one subgroup
         builder.addSubgroup(createBroadcastSubgroup());
+        return builder.build();
+    }
+
+    BluetoothLeBroadcastMetadata createBroadcastMetadataBisNotSelected(int broadcastId) {
+        BluetoothLeBroadcastMetadata.Builder builder =
+                new BluetoothLeBroadcastMetadata.Builder()
+                        .setEncrypted(false)
+                        .setSourceDevice(mSourceDevice, ADDRESS_TYPE_RANDOM)
+                        .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
+                        .setBroadcastId(broadcastId)
+                        .setBroadcastCode(null)
+                        .setPaSyncInterval(TEST_PA_SYNC_INTERVAL)
+                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS);
+        // builder expect at least one subgroup
+        builder.addSubgroup(createBroadcastSubgroupBisNotSelected());
         return builder.build();
     }
 
@@ -7490,6 +7537,128 @@ public class BassClientServiceTest {
                 .verify(mPeriodicAdvertisingManager)
                 .unregisterSync(any());
         checkNoResumeSynchronizationByBig();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_STOP_BIG_MONITORING_BASED_ON_BIS_SYNC)
+    public void broadcastMonitoring_stopOnSuspendedByHost() {
+        prepareSynchronizedPairAndStopSearching();
+
+        BluetoothLeBroadcastMetadata mBroadcastMetadata1BisNotSelected =
+                createBroadcastMetadataBisNotSelected(TEST_BROADCAST_ID);
+
+        // deselect all BISes - we are stopping listening to broadcast
+        mBassClientService.modifySource(
+                mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1BisNotSelected);
+
+        // Inject Receiver State without synchronized PA. With BIG MONITORING,
+        // we'd expect this to cause resynchronization attempt.
+        // Assure BIG MONITORING is off
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1BisNotSelected, /* isPaSynced */ false, /* isBisSynced */ false);
+        verifyStopBroadcastMonitoringWithoutUnsync();
+        checkNoResumeSynchronizationByHost();
+        checkNoResumeSynchronizationByBig();
+        checkNoTimeout(TEST_SOURCE_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+
+        // Reselect all BISes - we are resuming stream
+        // Update broadcast source - sync again to BISes
+        mBassClientService.modifySource(mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1);
+
+        // Simulate BIS and PA sync lost, BIG MONITORING is on
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        mInOrderPeriodicAdvertisingManager
+                .verify(mPeriodicAdvertisingManager)
+                .registerSync(any(), anyInt(), anyInt(), any(), any());
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_STOP_BIG_MONITORING_BASED_ON_BIS_SYNC)
+    public void broadcastMonitoring_stopOnSuspendedByHost_handoverToUnicast() {
+        prepareSynchronizedPairAndStopSearching();
+
+        BluetoothLeBroadcastMetadata mBroadcastMetadata1BisNotSelected =
+                createBroadcastMetadataBisNotSelected(TEST_BROADCAST_ID);
+
+        // deselect all BISes - we are stopping listening to broadcast
+        mBassClientService.modifySource(
+                mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1BisNotSelected);
+
+        // Inject Receiver State without synchronized PA. With BIG MONITORING,
+        // we'd expect this to cause resynchronization attempt.
+        // Assure BIG MONITORING is off
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1BisNotSelected, /* isPaSynced */ false, /* isBisSynced */ false);
+        verifyStopBroadcastMonitoringWithoutUnsync();
+        checkNoResumeSynchronizationByHost();
+        checkNoResumeSynchronizationByBig();
+        checkNoTimeout(TEST_SOURCE_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+
+        // Handover to unicast
+        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Handover to broadcast
+        mBassClientService.resumeReceiversSourceSynchronization();
+        checkNoResumeSynchronizationByHost();
+        checkNoResumeSynchronizationByBig();
+        checkNoTimeout(TEST_SOURCE_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+
+        // Reselect all BISes - we are resuming stream
+        // Update broadcast source - sync again to BISes
+        mBassClientService.modifySource(mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1);
+
+        // Inject Receiver State with synchronized BIS and PA
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        // Simulate BIS and PA sync lost, BIG MONITORING is on
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        mInOrderPeriodicAdvertisingManager
+                .verify(mPeriodicAdvertisingManager)
+                .registerSync(any(), anyInt(), anyInt(), any(), any());
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_STOP_BIG_MONITORING_BASED_ON_BIS_SYNC)
+    public void broadcastMonitoring_stopOnSuspendedByHost_resumeFromRemote() {
+        prepareSynchronizedPairAndStopSearching();
+
+        BluetoothLeBroadcastMetadata mBroadcastMetadata1BisNotSelected =
+                createBroadcastMetadataBisNotSelected(TEST_BROADCAST_ID);
+
+        // deselect all BISes - we are stopping listening to broadcast
+        mBassClientService.modifySource(
+                mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1BisNotSelected);
+
+        // Inject Receiver State without synchronized PA. With BIG MONITORING,
+        // we'd expect this to cause resynchronization attempt.
+        // Assure BIG MONITORING is off
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1BisNotSelected, /* isPaSynced */ false, /* isBisSynced */ false);
+        verifyStopBroadcastMonitoringWithoutUnsync();
+        checkNoResumeSynchronizationByHost();
+        checkNoResumeSynchronizationByBig();
+        checkNoTimeout(TEST_SOURCE_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+
+        // Inject Receiver State with synchronized BIS and PA
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        // Simulate BIS and PA sync lost, BIG MONITORING is on
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        mInOrderPeriodicAdvertisingManager
+                .verify(mPeriodicAdvertisingManager)
+                .registerSync(any(), anyInt(), anyInt(), any(), any());
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
     }
 
     private void verifyUpdateMetadataAndNoOthers() {
