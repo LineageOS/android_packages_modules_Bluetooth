@@ -80,7 +80,7 @@ class ContextMap<C extends IInterface> {
         final UUID mUuid;
         private final C mCallback;
         final int mUid;
-        public final String packageName;
+        private final String mPackageName;
         private final int mTransport;
         @Nullable public final String attributionTag;
 
@@ -105,13 +105,17 @@ class ContextMap<C extends IInterface> {
             mUuid = uuid;
             mCallback = callback;
             mUid = appUid;
-            this.packageName = packageName;
-            this.mTransport = transport;
+            mPackageName = packageName;
+            mTransport = transport;
             attributionTag = getLastAttributionTag(source);
         }
 
         C getCallback() {
             return mCallback;
+        }
+
+        String getPackageName() {
+            return mPackageName;
         }
 
         int getTransport() {
@@ -157,8 +161,8 @@ class ContextMap<C extends IInterface> {
 
     private class AppRecord {
         private final UUID mUuid;
-        final String packageName;
-        final int transport;
+        private final String mPackageName;
+        private final int mTransport;
         @Nullable final String attributionTag;
         final Instant registerTime;
 
@@ -168,8 +172,8 @@ class ContextMap<C extends IInterface> {
 
         AppRecord(App app) {
             mUuid = app.mUuid;
-            packageName = app.packageName;
-            transport = app.getTransport();
+            mPackageName = app.mPackageName;
+            mTransport = app.getTransport();
             attributionTag = app.attributionTag;
             registerTime = Instant.now();
         }
@@ -187,9 +191,9 @@ class ContextMap<C extends IInterface> {
                     .append(" app_if: ")
                     .append(clientIf)
                     .append(", appName: ")
-                    .append(packageName)
+                    .append(mPackageName)
                     .append(", transport: ")
-                    .append(transportToString(transport));
+                    .append(transportToString(mTransport));
             if (attributionTag != null) {
                 sb.append(", tag: ").append(attributionTag);
             }
