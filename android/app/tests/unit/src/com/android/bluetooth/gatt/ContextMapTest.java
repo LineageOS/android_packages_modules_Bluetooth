@@ -84,7 +84,7 @@ public class ContextMapTest {
         App contextMapById = contextMap.getById(APP_ID1);
         assertThat(contextMapById.packageName).isEqualTo(APP_NAME);
         assertThat(contextMapById.getCallback()).isEqualTo(mMockCallback);
-        assertThat(contextMapById.uuid).isEqualTo(RANDOM_UUID1);
+        assertThat(contextMapById.mUuid).isEqualTo(RANDOM_UUID1);
         App contextMapByUuid = contextMap.getByUuid(RANDOM_UUID1);
         assertThat(contextMapByUuid.packageName).isEqualTo(APP_NAME);
         App contextMapByConn = contextMap.getByConnId(CONN_ID1);

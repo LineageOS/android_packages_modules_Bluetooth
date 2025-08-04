@@ -77,7 +77,7 @@ class ContextMap<C extends IInterface> {
 
     /** Application entry mapping UUIDs to appIDs and callbacks. */
     class App {
-        public final UUID uuid;
+        final UUID mUuid;
         private final C mCallback;
         public final int uid;
         public final String packageName;
@@ -102,7 +102,7 @@ class ContextMap<C extends IInterface> {
                 String packageName,
                 int transport,
                 AttributionSource source) {
-            this.uuid = uuid;
+            mUuid = uuid;
             this.mCallback = callback;
             this.uid = appUid;
             this.packageName = packageName;
@@ -156,7 +156,7 @@ class ContextMap<C extends IInterface> {
     }
 
     private class AppRecord {
-        final UUID uuid;
+        private final UUID mUuid;
         final String packageName;
         final int transport;
         @Nullable final String attributionTag;
@@ -167,7 +167,7 @@ class ContextMap<C extends IInterface> {
         @Nullable Instant unregisterTime;
 
         AppRecord(App app) {
-            uuid = app.uuid;
+            mUuid = app.mUuid;
             packageName = app.packageName;
             transport = app.getTransport();
             attributionTag = app.attributionTag;
@@ -256,7 +256,7 @@ class ContextMap<C extends IInterface> {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
                 App entry = i.next();
-                if (entry.uuid.equals(uuid)) {
+                if (entry.mUuid.equals(uuid)) {
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
@@ -365,7 +365,7 @@ class ContextMap<C extends IInterface> {
 
     /** Get an application context by UUID. */
     public App getByUuid(UUID uuid) {
-        App app = getAppByPredicate(entry -> entry.uuid.equals(uuid));
+        App app = getAppByPredicate(entry -> entry.mUuid.equals(uuid));
         if (app == null) {
             Log.e(TAG, "Context not found for UUID " + uuid);
         }
@@ -505,7 +505,7 @@ class ContextMap<C extends IInterface> {
     @GuardedBy("mAppsLock")
     private void recordUnregisterApp(App app, RemoveReason reason) {
         for (int i = 0; i < mOngoingRecords.size(); i++) {
-            if (app.uuid.equals(mOngoingRecords.get(i).uuid)) {
+            if (app.mUuid.equals(mOngoingRecords.get(i).mUuid)) {
                 AppRecord record = mOngoingRecords.remove(i);
                 record.clientIf = app.id;
                 record.reason = reason;
