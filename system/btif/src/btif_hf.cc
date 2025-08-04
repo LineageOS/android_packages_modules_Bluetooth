@@ -35,6 +35,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
@@ -69,7 +70,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"
-#include "types/raw_address.h"
 
 #define PRIVATE_CELL(number)                                        \
   (number.replace(0, (number.size() > 2) ? number.size() - 2 : 0,   \

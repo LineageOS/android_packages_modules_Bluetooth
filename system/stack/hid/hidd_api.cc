@@ -29,6 +29,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +47,6 @@
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;

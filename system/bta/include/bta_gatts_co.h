@@ -16,6 +16,6 @@
 
 #pragma once
 
-#include "types/raw_address.h"
+#include <bluetooth/types/address.h>
 
 void btif_gatts_add_bonded_dev_from_nv(const RawAddress& bda);

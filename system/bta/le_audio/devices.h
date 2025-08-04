@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <memory>
 #include <utility>  // for std::pair
 #include <vector>
@@ -28,7 +30,6 @@
 #include "le_audio_types.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::le_audio {
 

@@ -19,11 +19,12 @@
  *   Functions generated:26
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/avdt/avdt_int.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 uint16_t AVDT_CloseReq(uint8_t /* handle */) {
   inc_func_call_count(__func__);

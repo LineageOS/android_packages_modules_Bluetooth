@@ -18,10 +18,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
 #include "gatt_api.h"
-#include "types/raw_address.h"
 
 typedef enum { BTIF_DEBUG_CONNECTED = 1, BTIF_DEBUG_DISCONNECTED } btif_debug_conn_state_t;
 

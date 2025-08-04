@@ -19,10 +19,9 @@
 #define BLE_SCANNER_HCI_INTERFACE_H
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
 #include <vector>
-
-#include "types/raw_address.h"
 
 class BleScannerHciInterface {
 public:

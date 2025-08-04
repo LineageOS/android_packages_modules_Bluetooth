@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "stack/btm/security_device_record.h"
-#include "types/raw_address.h"
 
 void btm_ble_resolving_list_init(uint8_t max_irk_list_sz);
 

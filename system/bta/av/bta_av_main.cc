@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
@@ -64,7 +65,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -860,8 +860,8 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
 
   /* restore role switch policy, if role switch failed */
   if ((HCI_SUCCESS != hci_status) &&
-      (get_btm_client_interface().link_policy.BTM_GetRole(peer_addr, &cur_role) ==
-       tBTM_STATUS::BTM_SUCCESS) &&
+      (get_btm_client_interface().link_policy.BTM_GetRole(peer_addr, BT_TRANSPORT_BR_EDR,
+                                                          &cur_role) == tBTM_STATUS::BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_PERIPHERAL)) {
     get_btm_client_interface().link_policy.BTM_unblock_role_switch_for(peer_addr);
   }
@@ -981,7 +981,7 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* /*p_scb*/) {
     if (p_scbi && (p_scb->hdi != i) &&   /* not the original channel */
         ((bta_av_cb.conn_audio & mask))) /* connected audio */
     {
-      get_btm_client_interface().link_policy.BTM_GetRole(p_scbi->PeerAddress(), &role);
+      get_btm_client_interface().link_policy.BTM_GetRole(p_scbi->PeerAddress(), BT_TRANSPORT_BR_EDR, &role);
       /* this channel is open - clear the role switch link policy for this link
        */
       if (HCI_ROLE_CENTRAL != role) {
@@ -1018,8 +1018,8 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* /*p_scb*/) {
  ******************************************************************************/
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   tHCI_ROLE role;
-  if (get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(), &role) !=
-      tBTM_STATUS::BTM_SUCCESS) {
+  if (get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR,
+                                                         &role) != tBTM_STATUS::BTM_SUCCESS) {
     log::warn("Unable to find link role for device:{}", p_scb->PeerAddress());
     return true;
   }

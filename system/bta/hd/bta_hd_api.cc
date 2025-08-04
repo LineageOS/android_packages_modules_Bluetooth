@@ -37,12 +37,12 @@
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "bta/hd/bta_hd_int.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

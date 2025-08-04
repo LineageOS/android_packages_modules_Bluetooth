@@ -21,11 +21,11 @@
 #ifndef BTIF_SOCK_L2CAP_H
 #define BTIF_SOCK_L2CAP_H
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
 
 #include "btif_uid.h"
-#include "types/raw_address.h"
 
 bt_status_t btsock_l2cap_init(int handle, uid_set_t* set);
 bt_status_t btsock_l2cap_cleanup();

@@ -18,8 +18,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "device/include/interop.h"
-#include "types/raw_address.h"
 
 typedef struct {
   RawAddress addr;

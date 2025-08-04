@@ -17,13 +17,13 @@
 #pragma once
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
 #include <ostream>
 
 #include "device_groups.h"
 #include "devices.h"
 #include "hardware/bt_le_audio.h"
-#include "types/raw_address.h"
 
 using bluetooth::le_audio::LeAudioHealthBasedAction;
 

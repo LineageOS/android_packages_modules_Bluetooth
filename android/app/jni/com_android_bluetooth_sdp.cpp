@@ -17,6 +17,7 @@
 #define LOG_TAG "BluetoothSdpJni"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
@@ -29,7 +30,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_sdp.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 

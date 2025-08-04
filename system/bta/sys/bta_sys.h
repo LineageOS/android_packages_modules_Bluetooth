@@ -25,6 +25,7 @@
 #define BTA_SYS_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <bluetooth/types/uuid.h>
 
@@ -37,7 +38,6 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

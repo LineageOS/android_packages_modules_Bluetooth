@@ -17,6 +17,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/scoped_local_ref.h>
@@ -33,7 +34,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_av.h"
-#include "types/raw_address.h"
 
 namespace android {
 

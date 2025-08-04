@@ -29,6 +29,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <cstring>
@@ -40,7 +41,6 @@
 #include "bta_api_data_types.h"
 #include "bta_sys.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

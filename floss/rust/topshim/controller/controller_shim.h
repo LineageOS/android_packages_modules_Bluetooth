@@ -16,12 +16,13 @@
 #ifndef GD_RUST_TOPSHIM_CONTROLLER_SHIM
 #define GD_RUST_TOPSHIM_CONTROLLER_SHIM
 
+#include <bluetooth/types/address.h>
+
 #include <memory>
 
 #include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "rust/cxx.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace topshim {

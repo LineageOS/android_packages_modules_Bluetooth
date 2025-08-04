@@ -16,6 +16,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 
 #include <vector>
@@ -30,7 +31,6 @@
 #include "stack/include/hci_mode.h"
 #include "stack/include/hcidefs.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 

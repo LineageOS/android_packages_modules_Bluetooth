@@ -18,13 +18,13 @@
 #define ANDROID_INCLUDE_BLE_ADVERTISER_H
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
 #include <stdint.h>
 
 #include <vector>
 
 #include "bt_common_types.h"
 #include "bt_gatt_types.h"
-#include "types/raw_address.h"
 
 constexpr uint8_t kAdvertiserClientIdJni = 0xff;
 constexpr uint8_t kAdvertiserClientIdLeAudio = 0x1;

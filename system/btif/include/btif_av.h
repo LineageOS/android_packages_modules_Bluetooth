@@ -23,12 +23,13 @@
 #ifndef BTIF_AV_H
 #define BTIF_AV_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <vector>
 
 #include "bta/include/bta_av_api.h"
 #include "include/hardware/bt_av.h"
-#include "types/raw_address.h"
 
 /** Callback for connection state change.
  *  state will have one of the values from btav_connection_state_t

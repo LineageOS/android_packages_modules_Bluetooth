@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -39,7 +40,6 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

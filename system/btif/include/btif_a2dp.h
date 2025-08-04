@@ -20,11 +20,11 @@
 #ifndef BTIF_A2DP_H
 #define BTIF_A2DP_H
 
+#include <bluetooth/types/address.h>
 #include <stdbool.h>
 
 #include "bta/include/bta_av_api.h"
 #include "btif_av.h"
-#include "types/raw_address.h"
 
 // Process 'idle' request from the BTIF state machine during initialization.
 void btif_a2dp_on_idle(const RawAddress& peer_addr, const A2dpType local_a2dp_type);

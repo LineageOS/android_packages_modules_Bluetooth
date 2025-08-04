@@ -26,6 +26,7 @@
 #define LOG_TAG "devctl"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,7 +52,6 @@
 #include "stack/include/dev_hci_link_interface.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_controller_interface.h"
-#include "types/raw_address.h"
 
 using namespace ::bluetooth;
 

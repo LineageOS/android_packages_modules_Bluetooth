@@ -18,6 +18,7 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <base/location.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -40,7 +41,6 @@
 #include "stack/include/rnr_interface.h"
 #include "stack/rnr/remote_name_request.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 #ifndef PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED
 #define PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED \
   "bluetooth.core.gap.le.privacy.own_address_type.enabled"

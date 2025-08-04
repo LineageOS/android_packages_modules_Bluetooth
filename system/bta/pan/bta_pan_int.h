@@ -24,6 +24,8 @@
 #ifndef BTA_PAN_INT_H
 #define BTA_PAN_INT_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_api.h"
@@ -33,7 +35,6 @@
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/pan_api.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

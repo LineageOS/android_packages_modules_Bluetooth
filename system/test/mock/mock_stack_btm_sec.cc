@@ -22,6 +22,8 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_btm_sec.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
@@ -31,7 +33,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Original usings
 

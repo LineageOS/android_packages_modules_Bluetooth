@@ -25,6 +25,7 @@
 #define LOG_TAG "rfcomm"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -34,7 +35,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/port_ext.h"
 #include "stack/rfcomm/rfc_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

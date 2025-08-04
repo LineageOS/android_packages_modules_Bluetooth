@@ -27,6 +27,7 @@
 #include "bta_pan_co.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <cstring>
@@ -36,7 +37,6 @@
 #include "btif_pan_internal.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

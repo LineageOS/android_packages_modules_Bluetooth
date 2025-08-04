@@ -275,20 +275,18 @@ class ScanManager {
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        final var elapsed = mTimeProvider.elapsedRealtime();
-                        final var elapsedReadable = Utils.formatElapsedRealtime(elapsed);
-                        Log.d(TAG, "Awakened up at=" + elapsedReadable + " (" + elapsed + "ms)");
-                        String action = intent.getAction();
-
-                        if (action.equals(ACTION_REFRESH_BATCHED_SCAN)) {
-                            if (mBatchClients.isEmpty()) {
-                                return;
-                            }
-                            // Note this actually flushes all pending batch data.
-                            if (mBatchClients.iterator().hasNext()) {
-                                flushBatchScanResults(mBatchClients.iterator().next());
-                            }
-                        }
+                        var elapsed = mTimeProvider.elapsedRealtime();
+                        var time = Utils.formatElapsedRealtime(elapsed);
+                        Log.d(TAG, "Awakened up at=" + time + " (" + elapsed + "ms)");
+                        var isActionRefreshBatchedScan =
+                                intent.getAction().equals(ACTION_REFRESH_BATCHED_SCAN);
+                        mScanController.doOnScanThread(
+                                () -> {
+                                    if (isActionRefreshBatchedScan && !mBatchClients.isEmpty()) {
+                                        // Note this actually flushes all pending batch data.
+                                        flushBatchScanResults(mBatchClients.iterator().next());
+                                    }
+                                });
                     }
                 });
         mAdapterService.registerReceiver(mBatchAlarmReceiver.get(), filter);

@@ -16,8 +16,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "hardware/bt_sock.h"
-#include "types/raw_address.h"
 
 void btif_sock_connection_logger(const RawAddress& address, int port, int type, int state, int role,
                                  int uid, int server_port, int64_t tx_bytes, int64_t rx_bytes,

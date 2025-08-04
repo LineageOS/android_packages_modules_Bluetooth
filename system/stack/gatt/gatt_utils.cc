@@ -24,6 +24,7 @@
 #define LOG_TAG "gatt_utils"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -48,7 +49,6 @@
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/sdp_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

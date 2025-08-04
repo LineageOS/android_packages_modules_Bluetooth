@@ -19,6 +19,7 @@
 #include "btif/include/bta_av_co_peer.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -31,7 +32,6 @@
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

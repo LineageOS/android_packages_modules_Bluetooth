@@ -18,6 +18,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -28,7 +29,6 @@
 #include "common/strings.h"
 #include "main/shim/dumpsys.h"
 #include "stack/btm/btm_int_types.h"
-#include "types/raw_address.h"
 
 namespace {
 TimestampedStringCircularBuffer gatt_history_{50};

@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <string.h>
 
@@ -44,7 +45,6 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

@@ -19,6 +19,7 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
@@ -62,7 +63,6 @@
 #include "osi/include/properties.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 using base::Closure;
 using bluetooth::Uuid;

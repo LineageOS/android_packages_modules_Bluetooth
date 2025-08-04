@@ -33,6 +33,7 @@
 #include <base/location.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -60,7 +61,6 @@
 #include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/include/smp_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::hci::IsoManager;

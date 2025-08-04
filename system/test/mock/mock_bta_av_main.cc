@@ -19,12 +19,13 @@
  *   Functions generated:21
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/av/bta_av_int.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool bta_av_chk_start(tBTA_AV_SCB* /* p_scb */) {
   inc_func_call_count(__func__);

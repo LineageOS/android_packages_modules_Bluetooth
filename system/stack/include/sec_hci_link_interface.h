@@ -17,10 +17,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/include/btm_sec_api_types.h"
-#include "types/raw_address.h"
 
 // This header contains functions for HCIF-Security Management to invoke
 //

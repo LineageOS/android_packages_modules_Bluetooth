@@ -17,12 +17,13 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <algorithm>
 #include <deque>
 #include <memory>
 
 #include "stack/gatt/gatt_int.h"
-#include "types/raw_address.h"
 
 #define EATT_MIN_MTU_MPS (64)
 #define EATT_DEFAULT_MTU (256)

@@ -18,7 +18,9 @@
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
@@ -91,6 +93,7 @@
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
@@ -98,7 +101,6 @@
 #include "stack/include/main_thread.h"
 #include "state_machine.h"
 #include "storage_helper.h"
-#include "types/raw_address.h"
 
 #ifdef TARGET_FLOSS
 #include <audio_hal_interface/audio_linux.h>
@@ -2674,6 +2676,16 @@ public:
 
     if (transport != BT_TRANSPORT_LE) {
       log::warn("Only LE connection is allowed (transport {})", bt_transport_text(transport));
+      BTA_GATTC_Close(conn_id);
+      return;
+    }
+
+    /* To be a Unicast Source device, this device shall be a Central device. */
+    tHCI_ROLE role;
+    auto role_status = BTM_GetRole(address, BT_TRANSPORT_LE, &role);
+    if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_CENTRAL) {
+      log::warn("Unicast client is not available for this connection. {}, status: {}, AclRole: {}",
+                address, btm_status_text(role_status), hci_role_text(role));
       BTA_GATTC_Close(conn_id);
       return;
     }

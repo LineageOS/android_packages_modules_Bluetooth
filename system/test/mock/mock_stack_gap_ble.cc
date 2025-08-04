@@ -19,12 +19,13 @@
  *   Functions generated:6
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/gap/gap_int.h"
 #include "stack/include/gap_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool GAP_BleCancelReadPeerDevName(const RawAddress& /* peer_bda */) {
   inc_func_call_count(__func__);

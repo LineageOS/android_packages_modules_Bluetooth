@@ -20,6 +20,7 @@
 #include <base/strings/string_number_conversions.h>
 #include <base/strings/string_util.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
@@ -52,7 +53,6 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 #include "vc/types.h"
 
 using base::Closure;

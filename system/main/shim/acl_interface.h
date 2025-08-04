@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
@@ -25,7 +26,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace shim {

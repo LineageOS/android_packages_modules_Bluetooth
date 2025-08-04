@@ -24,13 +24,14 @@
 
 #include "bta/include/bta_pan_ci.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstddef>
 #include <cstdint>
 
 #include "bta/pan/bta_pan_int.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *

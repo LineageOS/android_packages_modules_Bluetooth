@@ -23,6 +23,7 @@
 
 #include <assert.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <hardware/bluetooth.h>
@@ -45,7 +46,6 @@
 #include "osi/include/config.h"
 #include "osi/include/list.h"
 #include "osi/include/osi.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

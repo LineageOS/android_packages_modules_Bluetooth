@@ -16,9 +16,10 @@
 
 #include "topshim/metrics/metrics_shim.h"
 
+#include <bluetooth/types/address.h>
+
 #include "metrics/metrics.h"
 #include "src/metrics.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

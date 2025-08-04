@@ -16,6 +16,8 @@
 
 #include "topshim/btav/btav_shim.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstdio>
 #include <map>
 #include <memory>
@@ -27,7 +29,6 @@
 #include "rust/cxx.h"
 #include "src/profiles/a2dp.rs.h"
 #include "src/profiles/avrcp.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

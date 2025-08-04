@@ -27,6 +27,7 @@
 #include "stack/include/sdp_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <string.h>
 
@@ -40,7 +41,6 @@
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/internal/sdp_api.h"
 #include "stack/sdp/sdpint.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

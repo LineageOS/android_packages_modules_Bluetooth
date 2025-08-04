@@ -19,9 +19,10 @@
  *   Functions generated:11
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/include/smp_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool SMP_PairCancel(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);

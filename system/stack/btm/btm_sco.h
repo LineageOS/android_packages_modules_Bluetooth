@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -27,7 +28,6 @@
 #include "macros.h"
 #include "stack/btm/sco_pkt_status.h"
 #include "stack/include/btm_api_types.h"
-#include "types/raw_address.h"
 
 #define BTM_MSBC_CODE_SIZE 240
 #define BTM_LC3_CODE_SIZE 480

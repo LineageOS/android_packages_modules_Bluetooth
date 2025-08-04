@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
@@ -27,7 +28,6 @@
 
 #include "btif/include/btif_bqr.h"
 #include "hci/address.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::metrics {
 

@@ -33,6 +33,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <fcntl.h>
 #include <linux/if_ether.h>
 #include <linux/if_tun.h>
@@ -67,7 +68,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/pan_api.h"
-#include "types/raw_address.h"
 
 #ifdef __ANDROID__
 #include <android/sysprop/BluetoothProperties.sysprop.h>

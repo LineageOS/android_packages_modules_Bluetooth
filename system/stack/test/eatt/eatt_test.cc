@@ -16,6 +16,7 @@
  */
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -33,7 +34,6 @@
 #include "stack/test/common/mock_l2cap_layer.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/raw_address.h"
 
 using testing::_;
 using testing::DoAll;

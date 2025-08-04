@@ -16,13 +16,14 @@
 
 #include "topshim/btav_sink/btav_sink_shim.h"
 
+#include <bluetooth/types/address.h>
+
 #include <memory>
 
 #include "btif/include/btif_av.h"
 #include "include/hardware/bluetooth.h"
 #include "rust/cxx.h"
 #include "src/profiles/a2dp.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

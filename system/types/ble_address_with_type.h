@@ -16,12 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 
 #include <cstdint>
 #include <string>
-
-#include "types/raw_address.h"
 
 #define BLE_ADDR_PUBLIC 0x00
 #define BLE_ADDR_RANDOM 0x01

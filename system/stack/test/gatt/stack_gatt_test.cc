@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
@@ -34,7 +35,6 @@
 #include "stack/include/l2cap_types.h"
 #include "stack/sdp/internal/sdp_api.h"
 #include "test/mock/mock_stack_sdp_legacy_api.h"
-#include "types/raw_address.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

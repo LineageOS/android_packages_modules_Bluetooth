@@ -18,6 +18,7 @@
 
 #include <base/cancelable_callback.h>
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 
 #include <iostream>
 #include <memory>
@@ -44,7 +45,6 @@
 #include "packet/avrcp/set_player_application_setting_value.h"
 #include "packet/avrcp/vendor_packet.h"
 #include "profile/avrcp/media_id_map.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {

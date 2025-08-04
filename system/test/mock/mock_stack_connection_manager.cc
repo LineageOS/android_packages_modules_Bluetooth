@@ -19,11 +19,12 @@
  *   Functions generated:16
  */
 
+#include <bluetooth/types/address.h>
+
 #include <set>
 
 #include "stack/connection_manager/connection_manager.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 using namespace connection_manager;
 

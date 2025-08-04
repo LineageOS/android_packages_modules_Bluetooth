@@ -22,13 +22,13 @@
 #include "test/mock/mock_bta_hearing_aid_audio_source.h"
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hearing_aid_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 namespace {
 bluetooth::testing::stack::hearing_aid_audio_source::Mock mock_hearing_aid_audio_source_interface;

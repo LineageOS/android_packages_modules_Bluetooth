@@ -24,6 +24,7 @@
 #ifndef BTA_JV_INT_H
 #define BTA_JV_INT_H
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <memory>
@@ -35,7 +36,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/rfcdefs.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

@@ -20,6 +20,7 @@
  */
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <vector>
@@ -33,7 +34,6 @@
 #include "stack/include/rnr_interface.h"
 #include "test/common/mock_functions.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 using StartSyncCb = base::Callback<void(
         uint8_t /*status*/, uint16_t /*sync_handle*/, uint8_t /*advertising_sid*/,

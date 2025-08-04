@@ -17,6 +17,7 @@
 
 #include <aics/api.h>
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
@@ -38,7 +39,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 struct alarm_t {
   alarm_callback_t cb = nullptr;

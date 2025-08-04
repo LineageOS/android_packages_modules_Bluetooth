@@ -24,6 +24,7 @@
 #ifndef BTA_SDP_API_H
 #define BTA_SDP_API_H
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -32,7 +33,6 @@
 #include "include/hardware/bt_sdp.h"  // bluetooth_sdp_record
 #include "macros.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 

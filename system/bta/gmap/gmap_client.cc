@@ -21,6 +21,7 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -31,7 +32,6 @@
 #include "bta_gatt_queue.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::le_audio::GmapClient;

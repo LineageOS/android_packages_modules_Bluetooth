@@ -26,11 +26,12 @@
 #ifndef BTA_AR_API_H
 #define BTA_AR_API_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/sys/bta_sys.h"
 #include "stack/include/avdt_api.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

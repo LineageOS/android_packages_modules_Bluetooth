@@ -21,12 +21,12 @@
 #define BTIF_HD_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hd.h>
 #include <stdint.h>
 
 #include "bta/include/bta_hd_api.h"
-#include "types/raw_address.h"
 
 typedef enum { BTIF_HD_DISABLED = 0, BTIF_HD_ENABLED, BTIF_HD_DISABLING } BTIF_HD_STATUS;
 

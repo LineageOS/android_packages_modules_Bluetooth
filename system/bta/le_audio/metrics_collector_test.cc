@@ -17,6 +17,7 @@
 #include "metrics_collector.h"
 
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -25,7 +26,6 @@
 #include <vector>
 
 #include "metrics/mock/metrics_mock.h"
-#include "types/raw_address.h"
 
 using testing::_;
 using testing::AnyNumber;

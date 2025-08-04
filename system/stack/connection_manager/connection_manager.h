@@ -18,10 +18,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <set>
 
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /* Must be provided by stack to connection manager, so it can dump nice client names in dumpsys */
 std::string get_client_name(uint8_t gatt_if);

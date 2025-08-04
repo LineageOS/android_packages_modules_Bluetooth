@@ -26,8 +26,9 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "btif/include/btif_profile_queue.h"
-#include "types/raw_address.h"
 
 // Original usings
 

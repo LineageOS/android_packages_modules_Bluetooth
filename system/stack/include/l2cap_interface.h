@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 #include <stdbool.h>
@@ -26,7 +27,6 @@
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_types.h"
-#include "types/raw_address.h"
 
 /* result code for L2CA_DataWrite() */
 enum class tL2CAP_DW_RESULT : uint8_t {

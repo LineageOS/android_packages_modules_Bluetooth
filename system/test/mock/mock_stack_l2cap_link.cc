@@ -18,6 +18,8 @@
  * Generated mock file from original source file
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/include/bt_hdr.h"
@@ -28,7 +30,6 @@
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/l2cap/l2c_int.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool l2c_link_hci_disc_comp(uint16_t /* handle */, tHCI_REASON /* reason */) {
   inc_func_call_count(__func__);

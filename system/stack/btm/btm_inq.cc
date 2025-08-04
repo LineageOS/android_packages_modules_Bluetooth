@@ -28,6 +28,7 @@
 #include "stack/include/btm_inq.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stddef.h>
@@ -69,7 +70,6 @@
 #include "stack/include/hcimsgs.h"
 #include "stack/include/inq_hci_link_interface.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 /* MACRO to set the service bit mask in a bit stream */
 #define BTM_EIR_SET_SERVICE(p, service)                              \

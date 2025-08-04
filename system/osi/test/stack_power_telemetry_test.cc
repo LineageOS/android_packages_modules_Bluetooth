@@ -1,10 +1,10 @@
 #include "osi/src/stack_power_telemetry.cc"
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 class PowerTelemetryTest : public ::testing::Test {
 protected:

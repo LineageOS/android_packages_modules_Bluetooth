@@ -18,11 +18,11 @@
 
 #include "device/include/interop.h"
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include "btcore/include/module.h"
 #include "device/include/interop_config.h"
-#include "types/raw_address.h"
 
 #ifndef __ANDROID__
 #include <base/files/file_util.h>

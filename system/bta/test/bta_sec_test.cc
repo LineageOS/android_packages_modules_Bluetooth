@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/socket.h>
@@ -23,7 +24,6 @@
 #include "stack/include/btm_status.h"
 #include "test/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_stack_rnr_interface.h"
-#include "types/raw_address.h"
 
 using ::testing::_;
 using ::testing::ElementsAre;

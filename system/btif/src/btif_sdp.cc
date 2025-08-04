@@ -31,6 +31,7 @@
 #include "btif/include/btif_sdp.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sdp.h>
@@ -40,7 +41,6 @@
 #include "bta/include/bta_sdp_api.h"
 #include "bta_api.h"
 #include "btif_common.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

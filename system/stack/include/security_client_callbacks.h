@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 
 #include <cstdint>
@@ -27,7 +28,6 @@
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
-#include "types/raw_address.h"
 
 /****************************************
  *  Security Manager Callback Functions

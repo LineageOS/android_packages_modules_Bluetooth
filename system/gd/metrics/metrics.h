@@ -15,9 +15,9 @@
  */
 #pragma once
 
-#include <cstdint>
+#include <bluetooth/types/address.h>
 
-#include "types/raw_address.h"
+#include <cstdint>
 
 namespace bluetooth {
 namespace metrics {

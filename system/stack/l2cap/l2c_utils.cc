@@ -24,6 +24,7 @@
 #define LOG_TAG "l2c_utils"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -50,7 +51,6 @@
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

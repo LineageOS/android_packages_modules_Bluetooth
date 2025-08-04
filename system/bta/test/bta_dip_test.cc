@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
@@ -24,7 +25,6 @@
 #include "btif/include/btif_sock_sdp.h"
 #include "stack/include/sdpdefs.h"
 #include "test/mock/mock_stack_sdp_api.h"
-#include "types/raw_address.h"
 
 namespace {
 const RawAddress bdaddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
