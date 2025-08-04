@@ -326,3 +326,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_use_game_sonification_as_regular_sonification"
+    namespace: "bluetooth"
+    description: "GAME sonifications will not impact on the main use case i.e. will not force context type change."
+    bug: "436171822"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
