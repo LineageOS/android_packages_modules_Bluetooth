@@ -79,7 +79,7 @@ class ContextMap<C extends IInterface> {
     class App {
         final UUID mUuid;
         private final C mCallback;
-        public final int uid;
+        final int mUid;
         public final String packageName;
         private final int mTransport;
         @Nullable public final String attributionTag;
@@ -103,8 +103,8 @@ class ContextMap<C extends IInterface> {
                 int transport,
                 AttributionSource source) {
             mUuid = uuid;
-            this.mCallback = callback;
-            this.uid = appUid;
+            mCallback = callback;
+            mUid = appUid;
             this.packageName = packageName;
             this.mTransport = transport;
             attributionTag = getLastAttributionTag(source);
@@ -455,7 +455,7 @@ class ContextMap<C extends IInterface> {
     /** Counts the number of applications that have a given app UID. */
     public int countByAppUid(int appUid) {
         synchronized (mAppsLock) {
-            return (int) (mApps.stream().filter(app -> app.uid == appUid).count());
+            return (int) (mApps.stream().filter(app -> app.mUid == appUid).count());
         }
     }
 
