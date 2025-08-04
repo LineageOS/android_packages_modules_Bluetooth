@@ -63,6 +63,8 @@ typedef enum : uint8_t {
 } tSMP_ASSO_MODEL;
 
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
+
+/* TODO(b/436319185): Remove when the flag conclude_le_pairing_immediately is shipped */
 #define SMP_DELAYED_AUTH_TIMEOUT_MS 500
 
 /* SMP command code */

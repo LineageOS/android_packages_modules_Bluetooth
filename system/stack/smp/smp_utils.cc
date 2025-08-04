@@ -435,6 +435,7 @@ void smp_rsp_timeout(void* /* data */) {
  * Returns          void
  *
  ******************************************************************************/
+/* TODO(b/436319185): Remove when the flag conclude_le_pairing_immediately is shipped */
 void smp_delayed_auth_complete_timeout(void* /* data */) {
   /*
    * Waited for potential pair failure. Send SMP_AUTH_CMPL_EVT if

@@ -1366,14 +1366,19 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       }
 
       if (p_cb->total_tx_unacked == 0) {
-        /*
-         * Instead of declaring authorization complete immediately,
-         * delay the event from being sent by SMP_DELAYED_AUTH_TIMEOUT_MS.
-         * This allows the peripheral to send over Pairing Failed if the
-         * last key is rejected.  During this waiting window, the
-         * state should remain in SMP_STATE_BOND_PENDING.
-         */
-        if (!alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {
+        if (com::android::bluetooth::flags::conclude_le_pairing_immediately()) {
+          log::verbose("SMP pairing concluded {}", p_cb->pairing_bda);
+          tSMP_INT_DATA smp_int_data;
+          smp_int_data.status = SMP_SUCCESS;
+          smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+        } else if (!alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {
+          /*
+           * Instead of declaring authorization complete immediately,
+           * delay the event from being sent by SMP_DELAYED_AUTH_TIMEOUT_MS.
+           * This allows the peripheral to send over Pairing Failed if the
+           * last key is rejected.  During this waiting window, the
+           * state should remain in SMP_STATE_BOND_PENDING.
+           */
           log::verbose("delaying auth complete");
           alarm_set_on_mloop(p_cb->delayed_auth_timer_ent, SMP_DELAYED_AUTH_TIMEOUT_MS,
                              smp_delayed_auth_complete_timeout, NULL);
