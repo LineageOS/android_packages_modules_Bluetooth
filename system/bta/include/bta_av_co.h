@@ -24,6 +24,8 @@
 #ifndef BTA_AV_CO_H
 #define BTA_AV_CO_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_av_api.h"
@@ -31,7 +33,6 @@
 #include "stack/include/a2dp_constants.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

@@ -18,6 +18,7 @@
 #include "a2dp_encoding_hidl.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <vector>
 
@@ -25,7 +26,6 @@
 #include "client_interface_hidl.h"
 #include "codec_status_hidl.h"
 #include "osi/include/properties.h"
-#include "types/raw_address.h"
 
 typedef enum {
   A2DP_CTRL_CMD_NONE,

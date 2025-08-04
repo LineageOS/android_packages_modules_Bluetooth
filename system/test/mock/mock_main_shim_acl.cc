@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -31,7 +33,6 @@
 #include "os/handler.h"
 #include "stack/acl/acl.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

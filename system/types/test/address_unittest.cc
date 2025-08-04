@@ -16,8 +16,7 @@
  *
  ******************************************************************************/
 
-#include "types/raw_address.h"
-
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 static const char* test_addr = "12:34:56:78:9a:bc";

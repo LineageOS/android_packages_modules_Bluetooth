@@ -26,8 +26,9 @@
 #include <string>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "stack/include/pan_api.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 namespace test {

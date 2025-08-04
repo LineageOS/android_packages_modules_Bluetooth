@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -25,7 +26,6 @@
 #include "gd/common/circular_buffer.h"
 #include "include/hardware/bt_common_types.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "types/raw_address.h"
 
 //
 // Interface as a GATT client for bta clients

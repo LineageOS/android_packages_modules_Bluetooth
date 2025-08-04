@@ -21,6 +21,7 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -29,7 +30,6 @@
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_ag_swb_aptx.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* /* p_cback */) {
   inc_func_call_count(__func__);

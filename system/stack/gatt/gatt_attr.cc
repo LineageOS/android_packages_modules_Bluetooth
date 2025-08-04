@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <deque>
@@ -40,7 +41,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_sec_api.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

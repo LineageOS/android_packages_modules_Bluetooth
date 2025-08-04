@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /** stack/gatt/att_protocol.cc */
 BT_HDR* attp_build_sr_msg(tGATT_TCB& /*tcb*/, uint8_t /*op_code*/, tGATT_SR_MSG* /*p_msg*/,

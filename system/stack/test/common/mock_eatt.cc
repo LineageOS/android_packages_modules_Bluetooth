@@ -17,7 +17,7 @@
 
 #include "mock_eatt.h"
 
-#include "types/raw_address.h"
+#include <bluetooth/types/address.h>
 
 namespace {
 MockEattExtension* mock_pimpl_;

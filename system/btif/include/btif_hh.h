@@ -20,6 +20,7 @@
 #define BTIF_HH_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hh.h>
 #include <pthread.h>
@@ -32,7 +33,6 @@
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *  Constants & Macros

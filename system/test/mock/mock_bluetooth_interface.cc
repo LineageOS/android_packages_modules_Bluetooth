@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
 #include <sys/types.h>
 
 #include <cstdint>
@@ -23,7 +24,6 @@
 #include "btif/include/stack_manager_t.h"
 #include "hardware/bluetooth.h"
 #include "stack/include/bt_octets.h"
-#include "types/raw_address.h"
 
 void invoke_adapter_state_changed_cb(bt_state_t /* state */) {}
 void invoke_adapter_properties_cb(bt_status_t /* status */, int /* num_properties */,

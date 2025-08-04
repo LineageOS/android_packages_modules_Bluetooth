@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <string>
 
@@ -24,7 +25,6 @@
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 typedef enum : uint8_t {
   BTM_BLE_SEC_REQ_ACT_NONE = 0,

@@ -16,10 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "bluetooth.h"
 #include "bluetooth_headset_callbacks.h"
 #include "bt_hf.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace headset {

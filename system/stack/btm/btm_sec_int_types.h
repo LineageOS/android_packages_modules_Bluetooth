@@ -18,6 +18,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -25,7 +26,6 @@
 #include "stack/include/btm_api_types.h"  // tBTM_CMPL_CB
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
-#include "types/raw_address.h"
 
 /*
  * Local device configuration

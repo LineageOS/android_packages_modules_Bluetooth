@@ -25,6 +25,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -34,7 +35,6 @@
 #include "bta_api.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/port_api.h"
-#include "types/raw_address.h"
 
 /* Event mask for RfCOMM port callback */
 #define BTA_AG_PORT_EV_MASK PORT_EV_RXCHAR

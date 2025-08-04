@@ -19,14 +19,14 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
 
-#include "stack/btm/btm_sec_int_types.h"
 #include "macros.h"
+#include "stack/btm/btm_sec_int_types.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

@@ -16,12 +16,13 @@
 
 #include "topshim/controller/controller_shim.h"
 
+#include <bluetooth/types/address.h>
+
 #include <memory>
 
 #include "main/shim/helpers.h"
 #include "rust/cxx.h"
 #include "src/controller.rs.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace topshim {

@@ -18,6 +18,7 @@
 
 #include <base/functional/bind.h>
 #include <base/memory/weak_ptr.h>
+#include <bluetooth/types/address.h>
 
 #include <map>
 #include <memory>
@@ -27,7 +28,6 @@
 #include "packet/base/packet.h"
 #include "profile/avrcp/device.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {

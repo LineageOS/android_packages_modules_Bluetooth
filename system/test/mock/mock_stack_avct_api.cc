@@ -19,10 +19,11 @@
  *   Functions generated:9
  */
 
+#include <bluetooth/types/address.h>
+
 #include "avct_api.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 uint16_t AVCT_CreateBrowse(uint8_t /* handle */, tAVCT_ROLE /* role */) {
   inc_func_call_count(__func__);

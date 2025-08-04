@@ -33,6 +33,7 @@
 //       may need attention to prune from (or add to ) the inclusion set.
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -50,7 +51,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 // Original usings
 using HfpInterface = bluetooth::audio::hfp::HfpClientInterface;

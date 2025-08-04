@@ -19,6 +19,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
@@ -50,7 +51,6 @@
 #include "hardware/distance_measurement_interface.h"
 #include "rust/cxx.h"
 #include "src/gatt/ffi.rs.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 

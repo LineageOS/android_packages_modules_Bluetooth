@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "btif/include/btif_dm.h"
@@ -50,7 +51,6 @@
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
-#include "types/raw_address.h"
 
 using bluetooth::eatt::EattExtension;
 using namespace bluetooth;

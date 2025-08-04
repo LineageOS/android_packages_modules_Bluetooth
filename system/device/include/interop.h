@@ -18,12 +18,12 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <stdbool.h>
 
 #include "include/hardware/bluetooth.h"
 #include "osi/include/list.h"
-#include "types/raw_address.h"
 
 static const char INTEROP_MODULE[] = "interop_module";
 

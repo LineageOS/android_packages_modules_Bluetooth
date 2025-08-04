@@ -27,10 +27,11 @@
 #include <vector>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "base/callback.h"
 #include "hcimsgs.h"
 #include "stack/include/bt_octets.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 

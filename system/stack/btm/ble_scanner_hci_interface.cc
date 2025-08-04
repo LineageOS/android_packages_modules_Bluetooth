@@ -19,13 +19,13 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/hcimsgs.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

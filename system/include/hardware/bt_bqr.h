@@ -16,11 +16,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <stdint.h>
 
 #include <vector>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace bqr {

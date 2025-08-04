@@ -18,6 +18,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <string>
@@ -37,7 +38,6 @@
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"  // is_sdp_pbap_pce_disabled
 #include "storage/config_keys.h"
-#include "types/raw_address.h"
 
 #ifdef TARGET_FLOSS
 #include "stack/include/srvc_api.h"

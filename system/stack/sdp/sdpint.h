@@ -25,6 +25,7 @@
 #pragma once
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -37,7 +38,6 @@
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/sdp_callback.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/raw_address.h"
 
 /* Continuation length - we use a 2-byte offset */
 #define SDP_CONTINUATION_LEN 2

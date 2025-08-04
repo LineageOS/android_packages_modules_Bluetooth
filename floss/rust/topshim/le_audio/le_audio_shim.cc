@@ -17,13 +17,13 @@
 #include "topshim/le_audio/le_audio_shim.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
 #include <vector>
 
 #include "bta/le_audio/le_audio_types.h"
 #include "src/profiles/le_audio.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

@@ -24,11 +24,12 @@
 #ifndef BTA_PAN_CI_H
 #define BTA_PAN_CI_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_pan_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Function Declarations

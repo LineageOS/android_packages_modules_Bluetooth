@@ -16,13 +16,13 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include <memory>
 
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "test/fake/fake_osi.h"
-#include "types/raw_address.h"
 
 namespace {
 const RawAddress bdaddr1({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});

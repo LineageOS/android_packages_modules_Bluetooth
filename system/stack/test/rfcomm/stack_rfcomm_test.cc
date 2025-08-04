@@ -15,8 +15,11 @@
  */
 
 #include <allocator.h>
+#include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "stack/include/bt_psm_types.h"
@@ -26,7 +29,6 @@
 #include "stack/test/common/stack_test_packet_utils.h"
 #include "stack/test/rfcomm/stack_rfcomm_test_utils.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/raw_address.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

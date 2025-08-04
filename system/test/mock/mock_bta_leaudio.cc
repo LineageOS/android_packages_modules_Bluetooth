@@ -21,13 +21,13 @@
 
 #include <base/bind_helpers.h>
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_le_audio.h>
 
 #include <memory>
 
 #include "bta/include/bta_le_audio_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 /* Empty class to satisfy compiler */
 namespace bluetooth {

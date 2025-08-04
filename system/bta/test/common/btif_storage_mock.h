@@ -16,10 +16,10 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 
 #include "include/hardware/bluetooth.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::asha {
 struct HearingDevice;

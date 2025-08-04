@@ -20,6 +20,7 @@
 
 #include <base/functional/callback_forward.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_hearing_aid.h>
 
 #include <cstdint>
@@ -29,7 +30,6 @@
 
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/gap_api.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::asha {
 

@@ -25,6 +25,8 @@
 #ifndef HIDH_INT_H
 #define HIDH_INT_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
@@ -32,7 +34,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hidh_api.h"
 #include "stack/include/l2cap_types.h"
-#include "types/raw_address.h"
 
 typedef enum {
   HIDH_DEV_UNUSED,

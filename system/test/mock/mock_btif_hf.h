@@ -22,10 +22,11 @@
  *  mockcify.pl ver 0.7.0
  */
 
+#include <bluetooth/types/address.h>
+
 #include <functional>
 
 #include "include/hardware/bluetooth_headset_interface.h"
-#include "types/raw_address.h"
 
 // Original included files, if any
 // NOTE: Since this is a mock file with mock definitions some number of

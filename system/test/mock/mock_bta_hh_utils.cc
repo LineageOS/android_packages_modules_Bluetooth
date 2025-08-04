@@ -23,10 +23,11 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_bta_hh_utils.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Mocked internal structures, if any
 

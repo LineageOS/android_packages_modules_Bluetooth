@@ -26,6 +26,7 @@
 #define BTA_AG_API_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <string>
 #include <vector>
@@ -34,7 +35,6 @@
 #include "bta_api.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

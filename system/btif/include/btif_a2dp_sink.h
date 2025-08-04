@@ -21,13 +21,13 @@
 #define BTIF_A2DP_SINK_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <future>
 
 #include "bta/include/bta_av_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 //
 // Audio focus state for audio track.

@@ -27,9 +27,8 @@
 #ifndef BTIF_PROFILE_QUEUE_H
 #define BTIF_PROFILE_QUEUE_H
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
-
-#include "types/raw_address.h"
 
 typedef bt_status_t (*btif_connect_cb_t)(RawAddress bda, uint16_t uuid);
 

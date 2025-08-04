@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <memory>
 
 #include "include/hardware/bt_vc.h"
 #include "rust/cxx.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace topshim {

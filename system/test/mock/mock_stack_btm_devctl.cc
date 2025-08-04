@@ -20,6 +20,7 @@
  */
 #include "test/mock/mock_stack_btm_devctl.h"
 
+#include <bluetooth/types/address.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -30,7 +31,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/dev_hci_link_interface.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* /* bd_addr */, tBTM_CMPL_CB* /* p_cb */) {
   inc_func_call_count(__func__);

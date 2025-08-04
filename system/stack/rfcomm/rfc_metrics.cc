@@ -19,6 +19,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/rfcomm/enums.pb.h>
 
 #include "bta/include/bta_jv_api.h"
@@ -29,7 +30,6 @@
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_event.h"
 #include "stack/rfcomm/rfc_state.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

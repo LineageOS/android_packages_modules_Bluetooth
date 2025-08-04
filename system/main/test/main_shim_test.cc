@@ -15,6 +15,7 @@
  */
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <fcntl.h>
 #include <gmock/gmock.h>
@@ -69,7 +70,6 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 using ::testing::_;
 

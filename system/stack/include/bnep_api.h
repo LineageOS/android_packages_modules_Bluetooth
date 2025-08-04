@@ -25,13 +25,13 @@
 #ifndef BNEP_API_H
 #define BNEP_API_H
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_types.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

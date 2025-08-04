@@ -25,6 +25,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include "device/include/esco_parameters.h"
@@ -39,7 +40,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
-#include "types/raw_address.h"
 
 /* Message by message.... */
 

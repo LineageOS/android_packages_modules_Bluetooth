@@ -24,6 +24,8 @@
 #ifndef AVCT_INT_H
 #define AVCT_INT_H
 
+#include <bluetooth/types/address.h>
+
 #include <string>
 
 #include "avct_api.h"
@@ -32,7 +34,6 @@
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  * constants

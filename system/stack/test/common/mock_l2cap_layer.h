@@ -17,13 +17,13 @@
  ******************************************************************************/
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 
 #include <vector>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace l2cap {

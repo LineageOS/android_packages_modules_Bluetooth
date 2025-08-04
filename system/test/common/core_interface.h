@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include "bta/include/bta_api.h"
 #include "btif/include/core_callbacks.h"
-#include "types/raw_address.h"
 
 void InitializeCoreInterface();
 void CleanCoreInterface();

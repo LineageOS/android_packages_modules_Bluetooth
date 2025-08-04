@@ -16,12 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <vector>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace ras {

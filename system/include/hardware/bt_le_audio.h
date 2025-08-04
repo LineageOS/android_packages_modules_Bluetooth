@@ -18,6 +18,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <array>
 #include <bitset>
@@ -25,8 +26,6 @@
 #include <optional>
 #include <ostream>
 #include <vector>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace le_audio {

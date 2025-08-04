@@ -17,13 +17,13 @@
 #include "topshim/hfp/hfp_shim.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "btif/include/btif_hf.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
 #include "include/hardware/bt_hf.h"
 #include "src/profiles/hfp.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

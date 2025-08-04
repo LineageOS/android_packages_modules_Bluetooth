@@ -36,6 +36,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 
 #include "bta/hd/bta_hd_int.h"
 #include "include/hardware/bt_hd.h"
@@ -44,7 +45,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/hidd_api.h"
 #include "stack/include/sdp_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

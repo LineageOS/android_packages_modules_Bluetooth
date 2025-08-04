@@ -25,6 +25,7 @@
 #define LOG_TAG "smp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "internal_include/bt_target.h"
@@ -35,7 +36,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

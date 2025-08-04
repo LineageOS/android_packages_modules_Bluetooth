@@ -19,9 +19,10 @@
  *   Functions generated:5
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/sdp/sdpint.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tCONN_CB* sdp_conn_originate(const RawAddress& /* p_bd_addr */) {
   inc_func_call_count(__func__);

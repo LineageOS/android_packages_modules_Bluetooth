@@ -19,6 +19,7 @@
 #define LOG_TAG "BluetoothCsipSetCoordinatorJni"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
@@ -33,7 +34,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_csis.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using bluetooth::csis::ConnectionState;

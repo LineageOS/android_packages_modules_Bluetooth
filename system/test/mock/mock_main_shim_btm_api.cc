@@ -19,12 +19,13 @@
  *   Functions generated:85
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "main/shim/btm_api.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tBTM_STATUS bluetooth::shim::BTM_ClearEventFilter() {
   inc_func_call_count(__func__);

@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <vector>
 
 #include "a2dp_constants.h"
@@ -24,7 +26,6 @@
 #include "common/message_loop_thread.h"
 #include "hardware/bt_av.h"
 #include "osi/include/properties.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace audio {

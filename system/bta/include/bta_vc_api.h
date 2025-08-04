@@ -18,11 +18,10 @@
 #pragma once
 
 #include <aics/api.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_vc.h>
 
 #include <string>
-
-#include "types/raw_address.h"
 
 class VolumeControl {
 public:

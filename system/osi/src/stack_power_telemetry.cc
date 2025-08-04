@@ -19,6 +19,7 @@
 #include "osi/include/stack_power_telemetry.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -32,7 +33,6 @@
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

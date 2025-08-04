@@ -27,6 +27,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 
@@ -46,7 +47,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sdp_device_id.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /*
  * Service ID

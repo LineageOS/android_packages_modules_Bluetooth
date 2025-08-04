@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -35,7 +36,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

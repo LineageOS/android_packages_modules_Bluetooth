@@ -19,13 +19,14 @@
  *   Functions generated:10
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/include/srvc_api.h"
 #include "stack/srvc/srvc_dis_int.h"
 #include "stack/srvc/srvc_eng_int.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool DIS_ReadDISInfo(const RawAddress& /* peer_bda */, tDIS_READ_CBACK* /* p_cback */,
                      tDIS_ATTR_MASK /* mask */) {

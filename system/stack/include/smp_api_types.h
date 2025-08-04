@@ -20,6 +20,7 @@
 #define SMP_API_TYPES_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -29,7 +30,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/smp_status.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /* SMP event type */
 typedef enum : uint8_t {

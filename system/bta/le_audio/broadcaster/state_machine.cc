@@ -19,6 +19,7 @@
 
 #include <bind_helpers.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <algorithm>
 #include <array>
@@ -45,7 +46,6 @@
 #include "hcidefs.h"
 #include "main/shim/le_advertising_manager.h"
 #include "stack/include/btm_iso_api.h"
-#include "types/raw_address.h"
 
 using bluetooth::common::ToString;
 using bluetooth::hci::IsoManager;

@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -43,7 +44,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace bqr {

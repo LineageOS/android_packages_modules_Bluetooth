@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -22,7 +23,6 @@
 #include "bta_groups.h"
 #include "gd/os/rand.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace groups {

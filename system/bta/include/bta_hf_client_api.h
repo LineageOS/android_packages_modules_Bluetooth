@@ -25,11 +25,12 @@
 #ifndef BTA_HF_CLIENT_API_H
 #define BTA_HF_CLIENT_API_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta_api.h"
 #include "bta_hfp_api.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

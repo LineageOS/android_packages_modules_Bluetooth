@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
@@ -64,7 +65,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
