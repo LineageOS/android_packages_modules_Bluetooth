@@ -18,7 +18,6 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
 
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
@@ -49,6 +48,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -142,8 +142,7 @@ public final class BluetoothSocket implements Closeable {
     /*package*/ static final String DEFAULT_SOCKET_NAME = "default_name";
 
     private final int mType; /* one of TYPE_RFCOMM etc */
-    private BluetoothDevice mDevice; /* remote device */
-    private String mAddress; /* remote address */
+    private final Optional<BluetoothDevice> mRemoteDevice;
     private final boolean mAuth;
     private final boolean mEncrypt;
     private final BluetoothInputStream mInputStream;
@@ -209,7 +208,6 @@ public final class BluetoothSocket implements Closeable {
      * @param uuid SDP uuid
      * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS})
     /*package*/ BluetoothSocket(int type, boolean auth, boolean encrypt, int port, ParcelUuid uuid)
             throws IOException {
         this(type, auth, encrypt, port, uuid, false, false);
@@ -227,7 +225,6 @@ public final class BluetoothSocket implements Closeable {
      * @param min16DigitPin enforce a minimum length of 16 digits for a sec mode 2 connection
      * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS})
     /*package*/ BluetoothSocket(
             int type,
             boolean auth,
@@ -257,7 +254,6 @@ public final class BluetoothSocket implements Closeable {
      * @param maximumPacketSize The maximum size (in bytes) of a single data packet
      * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS})
     /*package*/ BluetoothSocket(
             int type,
             boolean auth,
@@ -292,8 +288,7 @@ public final class BluetoothSocket implements Closeable {
         mMin16DigitPin = min16DigitPin;
         mEncrypt = encrypt;
         mPort = port;
-        // this constructor to be called only from BluetoothServerSocket
-        mDevice = null;
+        mRemoteDevice = Optional.empty(); // Only when this is for BluetoothServerSocket
         mDataPath = dataPath;
         mSocketName = socketName;
         mHubId = hubId;
@@ -301,8 +296,6 @@ public final class BluetoothSocket implements Closeable {
         mMaximumPacketSize = maximumPacketSize;
 
         mSocketState = SocketState.INIT;
-
-        mAddress = BluetoothAdapter.getDefaultAdapter().getAddress();
 
         mInputStream = new BluetoothInputStream(this);
         mOutputStream = new BluetoothOutputStream(this);
@@ -422,7 +415,7 @@ public final class BluetoothSocket implements Closeable {
         mAuthPitm = pitm;
         mMin16DigitPin = min16DigitPin;
         mEncrypt = encrypt;
-        mDevice = device;
+        mRemoteDevice = Optional.of(device);
         mPort = port;
         mDataPath = dataPath;
         mSocketName = socketName;
@@ -431,9 +424,6 @@ public final class BluetoothSocket implements Closeable {
         mMaximumPacketSize = maximumPacketSize;
 
         mSocketState = SocketState.INIT;
-
-        // Remote socket
-        mAddress = device.getAddress();
 
         mInputStream = new BluetoothInputStream(this);
         mOutputStream = new BluetoothOutputStream(this);
@@ -467,8 +457,9 @@ public final class BluetoothSocket implements Closeable {
         return bluetoothSocket;
     }
 
-    private BluetoothSocket(BluetoothSocket s) {
+    private BluetoothSocket(BluetoothSocket s, BluetoothDevice device) {
         if (VDBG) Log.d(TAG, "Creating new Private BluetoothSocket of type: " + s.mType);
+        mRemoteDevice = Optional.of(device);
         mUuid = s.mUuid;
         mType = s.mType;
         mAuth = s.mAuth;
@@ -495,7 +486,8 @@ public final class BluetoothSocket implements Closeable {
     }
 
     private BluetoothSocket acceptSocket(String remoteAddr) throws IOException {
-        BluetoothSocket as = new BluetoothSocket(this);
+        BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(remoteAddr);
+        BluetoothSocket as = new BluetoothSocket(this, device);
         as.mSocketState = SocketState.CONNECTED;
         FileDescriptor[] fds = mSocket.getAncillaryFileDescriptors();
         Log.d(TAG, "acceptSocket: socket fd passed by stack fds:" + Arrays.toString(fds));
@@ -509,8 +501,6 @@ public final class BluetoothSocket implements Closeable {
         as.mSocket = new LocalSocket(fds[0]);
         as.mSocketIS = as.mSocket.getInputStream();
         as.mSocketOS = as.mSocket.getOutputStream();
-        as.mAddress = remoteAddr;
-        as.mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(remoteAddr);
         return as;
     }
 
@@ -552,7 +542,7 @@ public final class BluetoothSocket implements Closeable {
      */
     @RequiresNoPermission
     public BluetoothDevice getRemoteDevice() {
-        return mDevice;
+        return mRemoteDevice.orElse(null);
     }
 
     /**
@@ -633,9 +623,10 @@ public final class BluetoothSocket implements Closeable {
             throw new BluetoothSocketException(BluetoothSocketException.BLUETOOTH_OFF_FAILURE);
         }
         try {
-            if (mDevice == null) {
+            if (!mRemoteDevice.isPresent()) {
                 throw new BluetoothSocketException(BluetoothSocketException.NULL_DEVICE);
             }
+            BluetoothDevice remoteDevice = mRemoteDevice.get();
             if (mSocketState == SocketState.CLOSED) {
                 throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
             }
@@ -647,12 +638,17 @@ public final class BluetoothSocket implements Closeable {
 
             if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
                 mPfd =
-                    socketManager.connectSocket(
-                                    mDevice, mType, mUuid, mPort, getSecurityFlags());
+                        socketManager.connectSocket(
+                                remoteDevice,
+                                mType,
+                                mUuid,
+                                mPort,
+                                getSecurityFlags(),
+                                AttributionSource.myAttributionSource());
             } else {
                 mPfd =
-                    socketManager.connectSocketWithOffload(
-                                mDevice,
+                        socketManager.connectSocketWithOffload(
+                                remoteDevice,
                                 mType,
                                 mUuid,
                                 mPort,
@@ -661,7 +657,8 @@ public final class BluetoothSocket implements Closeable {
                                 mSocketName,
                                 mHubId,
                                 mEndpointId,
-                                mMaximumPacketSize);
+                                mMaximumPacketSize,
+                                AttributionSource.myAttributionSource());
             }
 
             synchronized (this) {
@@ -701,7 +698,7 @@ public final class BluetoothSocket implements Closeable {
                     e.getErrorCode(),
                     socketConnectionTimeNanos,
                     mType,
-                    mDevice,
+                    mRemoteDevice.orElse(null),
                     mPort,
                     mAuth,
                     mSocketCreationTimeNanos,
@@ -713,7 +710,7 @@ public final class BluetoothSocket implements Closeable {
                     BluetoothSocketException.RPC_FAILURE,
                     socketConnectionTimeNanos,
                     mType,
-                    mDevice,
+                    mRemoteDevice.orElse(null),
                     mPort,
                     mAuth,
                     mSocketCreationTimeNanos,
@@ -725,7 +722,7 @@ public final class BluetoothSocket implements Closeable {
                 SocketMetrics.SOCKET_NO_ERROR,
                 socketConnectionTimeNanos,
                 mType,
-                mDevice,
+                mRemoteDevice.orElse(null),
                 mPort,
                 mAuth,
                 mSocketCreationTimeNanos,
@@ -755,7 +752,12 @@ public final class BluetoothSocket implements Closeable {
             }
             mPfd =
                     socketManager.createSocketChannel(
-                            mType, mServiceName, mUuid, mPort, getSecurityFlags());
+                            mType,
+                            mServiceName,
+                            mUuid,
+                            mPort,
+                            getSecurityFlags(),
+                            AttributionSource.myAttributionSource());
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             return -1;
@@ -840,7 +842,8 @@ public final class BluetoothSocket implements Closeable {
                             mSocketName,
                             mHubId,
                             mEndpointId,
-                            mMaximumPacketSize);
+                            mMaximumPacketSize,
+                            AttributionSource.myAttributionSource());
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             return -1;
@@ -906,9 +909,9 @@ public final class BluetoothSocket implements Closeable {
             mSocket.setSoTimeout(timeout);
         }
         sendSocketAcceptSignal(mSocketOS, true);
-        String RemoteAddr;
+        String remoteAddr;
         try {
-            RemoteAddr = waitSocketSignal(mSocketIS);
+            remoteAddr = waitSocketSignal(mSocketIS);
         } finally {
             sendSocketAcceptSignal(mSocketOS, false);
         }
@@ -919,7 +922,7 @@ public final class BluetoothSocket implements Closeable {
             if (mSocketState != SocketState.LISTENING) {
                 throw new IOException("bt socket is not in listen state");
             }
-            acceptedSocket = acceptSocket(RemoteAddr);
+            acceptedSocket = acceptSocket(remoteAddr);
             // quick drop the reference of the file handle
         }
         return acceptedSocket;
@@ -1149,7 +1152,7 @@ public final class BluetoothSocket implements Closeable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void requestMaximumTxDataLength() throws IOException {
-        if (mDevice == null) {
+        if (!mRemoteDevice.isPresent()) {
             throw new IOException("requestMaximumTxDataLength is called on null device");
         }
 
@@ -1165,7 +1168,8 @@ public final class BluetoothSocket implements Closeable {
             if (DBG) Log.d(TAG, "requestMaximumTxDataLength");
             IBluetoothSocketManager socketManager = bluetoothProxy.getSocketManager();
             if (socketManager == null) throw new IOException("bt get socket manager failed");
-            socketManager.requestMaximumTxDataLength(mDevice);
+            socketManager.requestMaximumTxDataLength(
+                    mRemoteDevice.get(), AttributionSource.myAttributionSource());
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             throw new IOException("unable to send RPC: " + e.getMessage());
@@ -1431,6 +1435,6 @@ public final class BluetoothSocket implements Closeable {
 
     @Override
     public String toString() {
-        return BluetoothUtils.toAnonymizedAddress(mAddress);
+        return mRemoteDevice.map(Object::toString).orElse("Local Socket");
     }
 }

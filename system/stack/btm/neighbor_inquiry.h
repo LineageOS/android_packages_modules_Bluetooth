@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 
@@ -28,7 +29,6 @@
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
 
 /* Discoverable modes */
 enum : uint16_t {

@@ -490,13 +490,13 @@ public final class Utils {
 
     @PermissionMethod
     private static boolean checkPermissionForPreflight(
-            Context context, @PermissionName String permission) {
+            Context context, @PermissionName String permission, AttributionSource source) {
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
             return false;
         }
-        final int result =
-                pm.checkPermissionForPreflight(permission, context.getAttributionSource());
+        requireNonNull(source);
+        final int result = pm.checkPermissionForPreflight(permission, source);
         if (result == PERMISSION_GRANTED) {
             return true;
         }
@@ -519,8 +519,6 @@ public final class Utils {
         if (isInstrumentationTestMode()) {
             return true;
         }
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
         AttributionSource currentAttribution =
                 new AttributionSource.Builder(context.getAttributionSource())
                         .setNext(requireNonNull(source))
@@ -555,8 +553,9 @@ public final class Utils {
      */
     @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForPreflight(Context context) {
-        return checkPermissionForPreflight(context, BLUETOOTH_CONNECT);
+    public static boolean checkConnectPermissionForPreflight(
+            Context context, AttributionSource source) {
+        return checkPermissionForPreflight(context, BLUETOOTH_CONNECT, source);
     }
 
     /**

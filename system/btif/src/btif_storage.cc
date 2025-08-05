@@ -37,6 +37,7 @@
 #ifndef TARGET_FLOSS
 #include <cutils/multiuser.h>
 #endif
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,7 +64,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_uuid16.h"
 #include "storage/config_keys.h"
-#include "types/ble_address_with_type.h"
 
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF

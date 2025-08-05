@@ -17,11 +17,11 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <vector>
 
 #include "stack/btm/security_device_record.h"
-#include "types/ble_address_with_type.h"
 
 /** Free resources associated with the device associated with |bd_addr| address.
  *

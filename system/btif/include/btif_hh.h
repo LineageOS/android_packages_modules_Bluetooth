@@ -21,6 +21,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hh.h>
 #include <pthread.h>
@@ -32,7 +33,6 @@
 #include "macros.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
-#include "types/ble_address_with_type.h"
 
 /*******************************************************************************
  *  Constants & Macros

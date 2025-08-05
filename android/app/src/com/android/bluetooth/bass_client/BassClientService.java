@@ -3277,7 +3277,7 @@ public class BassClientService extends ConnectableProfile {
                     mCallbacks.notifySourceAddFailed(
                             device,
                             sourceMetadata,
-                            BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                            BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_REQUEST);
                 }
                 continue;
             }
@@ -3442,7 +3442,7 @@ public class BassClientService extends ConnectableProfile {
                                 + ", broadcastId: "
                                 + updatedMetadata.getBroadcastId());
                 mCallbacks.notifySourceModifyFailed(
-                        device, deviceSourceId, BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                        device, deviceSourceId, BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_REQUEST);
                 continue;
             }
 

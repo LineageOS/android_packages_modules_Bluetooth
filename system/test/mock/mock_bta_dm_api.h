@@ -28,6 +28,7 @@
 // Original included files, if any
 #include <base/functional/bind.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <vector>
 
@@ -36,7 +37,6 @@
 #include "hci/le_rand_callback.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
-#include "types/ble_address_with_type.h"
 
 // Original usings
 

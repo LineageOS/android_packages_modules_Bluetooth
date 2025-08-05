@@ -971,7 +971,7 @@ public class BassClientServiceTest {
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
                         eq(mBroadcastMetadata1),
-                        eq(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE));
+                        eq(BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_REQUEST));
         verify(mStateMachines.get(mCurrentDevice), never()).sendMessage(any());
 
         // Add source for different broadcast during another pending cause onSourceAddFailed
@@ -981,7 +981,7 @@ public class BassClientServiceTest {
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
                         eq(mBroadcastMetadata2),
-                        eq(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE));
+                        eq(BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_REQUEST));
         verify(mStateMachines.get(mCurrentDevice), never()).sendMessage(any());
 
         // Not pending
@@ -1000,7 +1000,7 @@ public class BassClientServiceTest {
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
                         eq(mBroadcastMetadata1),
-                        eq(BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE));
+                        eq(BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_REQUEST));
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(mStateMachines.get(mCurrentDevice), atLeast(1)).sendMessage(messageCaptor.capture());
         Message msg =

@@ -90,7 +90,11 @@ class PermissionChecker(
             return
         }
 
-        source.packageName?.let { checkPackageName(uid, it) } // null package belongs to any uid
+        val packageName = source.packageName
+        if (packageName == null) {
+            throw BluetoothPermissionException("Null package name from $uid")
+        }
+        checkPackageName(UserHandle.getAppId(uid), packageName)
 
         if (foregroundRequired) {
             enforceCallerIsForegroundUser(uid)
@@ -115,22 +119,19 @@ class PermissionChecker(
         }
     }
 
-    /** Check if the packageName belongs to uid */
-    private fun checkPackageName(uid: Int, name: String) {
-        val callingUser = UserHandle.getUserHandleForUid(uid)
-        val trustedUid =
-            try {
-                packageManager.getPackageUidAsUser(
-                    name,
-                    PackageManager.PackageInfoFlags.of(PackageManager.MATCH_ALL.toLong()),
-                    callingUser.getIdentifier(),
-                )
-            } catch (e: PackageManager.NameNotFoundException) {
-                Log.w(TAG, "checkPackageName($uid, $name): $callingUser", e)
-                throw SecurityException(e.message)
-            }
-        if (trustedUid != uid) {
-            throw SecurityException("$name belong to $trustedUid and not to $uid for $callingUser")
+    /** Check if the packageName belongs to the calling app */
+    private fun checkPackageName(appId: Int, name: String) {
+        val trustedAppId =
+            UserHandle.getAppId(
+                try {
+                    packageManager.getPackageUid(name, PackageManager.MATCH_ANY_USER)
+                } catch (e: PackageManager.NameNotFoundException) {
+                    Log.w(TAG, "checkPackageName($appId, $name): Failed", e)
+                    throw SecurityException(e.message)
+                }
+            )
+        if (trustedAppId != appId) {
+            throw SecurityException("$name does not belong to $appId (expected $trustedAppId)")
         }
     }
 

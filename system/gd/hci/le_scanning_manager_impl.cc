@@ -16,6 +16,7 @@
 #include "hci/le_scanning_manager_impl.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <memory>
@@ -34,7 +35,6 @@
 #include "os/system_properties.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_sec_api.h"
-#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace hci {
