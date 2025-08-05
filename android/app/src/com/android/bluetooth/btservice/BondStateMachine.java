@@ -118,7 +118,7 @@ final class BondStateMachine extends StateMachine {
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         setInitialState(mStableState);
 
-        start();
+        start(false);
     }
 
     BondStateMachine(AdapterService service, AdapterProperties prop, RemoteDevices remoteDevices) {
@@ -135,7 +135,7 @@ final class BondStateMachine extends StateMachine {
     }
 
     public synchronized void doQuit() {
-        quitNow();
+        quitNow(!Flags.bondStateMachineLooper());
     }
 
     private class StableState extends State {

@@ -244,6 +244,7 @@ public class AdapterServiceTest {
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
                 Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
+                Flags.FLAG_BOND_STATE_MACHINE_LOOPER,
                 Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
     }
 
@@ -359,8 +360,6 @@ public class AdapterServiceTest {
     public void tearDown() {
         Log.e(TAG, "tearDown()");
 
-        mAdapterService.cleanup();
-        mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
         MetricsLogger.setInstanceForTesting(null);
         IpcDataCache.setCacheTestMode(false);
     }
@@ -580,6 +579,16 @@ public class AdapterServiceTest {
         initTest();
         doEnable(false);
         assertThat(mLooper.nextMessage()).isNull();
+    }
+
+    @Test
+    public void enableCleanup() {
+        initTest();
+        doEnable(false);
+        assertThat(mLooper.nextMessage()).isNull();
+
+        mAdapterService.cleanup();
+        mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
     }
 
     @Test
