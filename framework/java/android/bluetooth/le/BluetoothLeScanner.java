@@ -236,12 +236,15 @@ public final class BluetoothLeScanner {
             final WorkSource workSource,
             final ScanCallback callback,
             final PendingIntent callbackIntent) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
         if (callback == null && callbackIntent == null) {
             throw new IllegalArgumentException("callback is null");
         }
         if (settings == null) {
             throw new IllegalArgumentException("settings is null");
+        }
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return postCallbackErrorOrReturn(callback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
         }
         synchronized (mLeScanClients) {
             if (callback != null && mLeScanClients.containsKey(callback)) {
@@ -293,7 +296,10 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(ScanCallback callback) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return;
+        }
         synchronized (mLeScanClients) {
             BleScanCallbackWrapper wrapper = mLeScanClients.remove(callback);
             if (wrapper == null) {
@@ -316,7 +322,10 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(PendingIntent callbackIntent) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return;
+        }
         try {
             IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
             if (scan == null) {
@@ -341,7 +350,10 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void flushPendingScanResults(ScanCallback callback) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return;
+        }
         if (callback == null) {
             throw new IllegalArgumentException("callback cannot be null!");
         }
