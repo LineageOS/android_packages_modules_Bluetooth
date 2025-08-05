@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_race_in_orphaned_acls"
+    namespace: "bluetooth"
+    description: "Fix race in CheckForOrphanedAclConnections"
+    bug: "436611420"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
