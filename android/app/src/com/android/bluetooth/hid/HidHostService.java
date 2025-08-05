@@ -352,8 +352,7 @@ public class HidHostService extends ConnectableProfile {
             };
 
     private void handleMessageSendData(Message msg) {
-        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
         Bundle data = msg.getData();
         String report = data.getString(BluetoothHidHost.EXTRA_REPORT);
 
