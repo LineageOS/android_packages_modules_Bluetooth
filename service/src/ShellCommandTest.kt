@@ -17,23 +17,18 @@
 package com.android.server.bluetooth.test
 
 import android.bluetooth.IBluetoothManager
-import android.bluetooth.IBluetoothManagerCallback
 import android.bluetooth.State
-import android.content.AttributionSource
 import android.os.Binder
-import android.os.Handler
 import android.os.HandlerThread
-import android.os.IBinder
-import android.os.Message
-import android.os.Messenger
 import android.os.ParcelFileDescriptor
 import android.os.Process
-import android.os.RemoteException
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.flags.Flags
+import com.android.server.bluetooth.BluetoothManagerServiceApi
+import com.android.server.bluetooth.PermissionChecker
+import com.android.server.bluetooth.ServiceMessenger
 import com.android.server.bluetooth.ShellCommand
-import com.android.server.bluetooth.SystemServiceMessage
 import com.android.tests.bluetooth.FlagsWrapper
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
@@ -43,6 +38,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.shadows.ShadowBinder
@@ -53,7 +54,10 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 
-    private lateinit var testBinder: FakeBinder
+    private val mockApi: BluetoothManagerServiceApi = mock()
+    private val mockPermissionChecker: PermissionChecker = mock()
+    private val mockBinder: IBluetoothManager.Stub = mock()
+
     private val testWaitForState: (Int) -> Boolean = {
         waitForStateCalledWith = it
         returnValue
@@ -62,16 +66,17 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
 
     private lateinit var shellCommand: ShellCommand
     private lateinit var outPipe: Array<ParcelFileDescriptor>
+    private lateinit var handlerThread: HandlerThread
 
     @Before
     fun setUp() {
-        testBinder = FakeBinder()
-        testBinder.returnValue = returnValue
-
         waitForStateCalledWith = null
         outPipe = ParcelFileDescriptor.createPipe()
+        handlerThread = HandlerThread("ShellCommandTestHandler").apply { start() }
 
-        shellCommand = ShellCommand(testBinder, testBinder.messenger, testWaitForState)
+        val serviceMessenger =
+            ServiceMessenger(handlerThread.looper, mockPermissionChecker, mockApi)
+        shellCommand = ShellCommand(mockBinder, serviceMessenger.messenger, testWaitForState)
 
         shellCommand.init(
             Binder(),
@@ -81,12 +86,25 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
             arrayOf(),
             -1,
         )
+
+        // Mock API and Binder calls to return the parameterized value
+        doReturn(returnValue).whenever(mockApi).enable(any(), any())
+        doReturn(returnValue).whenever(mockApi).enableBle(any(), any())
+        doReturn(returnValue).whenever(mockApi).enableNoAutoConnect(any())
+        doReturn(returnValue).whenever(mockApi).disable(any(), any())
+        doReturn(returnValue).whenever(mockApi).disableBle(any(), any())
+        doReturn(returnValue).whenever(mockApi).factoryReset(any())
+        doReturn(returnValue).whenever(mockBinder).enable(any())
+        doReturn(returnValue).whenever(mockBinder).disable(any(), any())
+        doReturn(returnValue).whenever(mockBinder).enableBle(any(), any())
+        doReturn(returnValue).whenever(mockBinder).disableBle(any(), any())
+        doReturn(returnValue).whenever(mockBinder).factoryReset(any())
     }
 
     @After
     fun tearDown() {
         outPipe.forEach { it.close() }
-        testBinder.cleanup()
+        handlerThread.quitSafely()
     }
 
     @Test
@@ -108,11 +126,9 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     fun onCommand_enable() {
         assertThat(shellCommand.onCommand("enable")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.enableMessageReceived).isTrue()
-            assertThat(testBinder.enableCalled).isFalse()
+            verify(mockApi).enable(any(), any())
         } else {
-            assertThat(testBinder.enableMessageReceived).isFalse()
-            assertThat(testBinder.enableCalled).isTrue()
+            verify(mockBinder).enable(any())
         }
     }
 
@@ -121,11 +137,9 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
         ShadowBinder.setCallingUid(Process.ROOT_UID)
         assertThat(shellCommand.onCommand("enableBle")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.enableBleMessageReceived).isTrue()
-            assertThat(testBinder.enableBleCalledWithBinder).isNull()
+            verify(mockApi).enableBle(any(), eq(mockBinder))
         } else {
-            assertThat(testBinder.enableBleMessageReceived).isFalse()
-            assertThat(testBinder.enableBleCalledWithBinder).isSameInstanceAs(testBinder)
+            verify(mockBinder).enableBle(any(), eq(mockBinder))
         }
     }
 
@@ -133,11 +147,9 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     fun onCommand_disable() {
         assertThat(shellCommand.onCommand("disable")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.disableMessageReceived).isTrue()
-            assertThat(testBinder.disableCalledWithPersist).isNull()
+            verify(mockApi).disable(any(), eq(true))
         } else {
-            assertThat(testBinder.disableMessageReceived).isFalse()
-            assertThat(testBinder.disableCalledWithPersist).isTrue()
+            verify(mockBinder).disable(any(), eq(true))
         }
     }
 
@@ -146,11 +158,9 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
         ShadowBinder.setCallingUid(Process.ROOT_UID)
         assertThat(shellCommand.onCommand("disableBle")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.disableBleMessageReceived).isTrue()
-            assertThat(testBinder.disableBleCalledWithBinder).isNull()
+            verify(mockApi).disableBle(any(), eq(mockBinder))
         } else {
-            assertThat(testBinder.disableBleMessageReceived).isFalse()
-            assertThat(testBinder.disableBleCalledWithBinder).isSameInstanceAs(testBinder)
+            verify(mockBinder).disableBle(any(), eq(mockBinder))
         }
     }
 
@@ -168,11 +178,9 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
 
         assertThat(shellCommand.onCommand("factoryReset")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            assertThat(testBinder.factoryResetMessageReceived).isTrue()
-            assertThat(testBinder.factoryResetCalled).isFalse()
+            verify(mockApi).factoryReset(any())
         } else {
-            assertThat(testBinder.factoryResetMessageReceived).isFalse()
-            assertThat(testBinder.factoryResetCalled).isTrue()
+            verify(mockBinder).factoryReset(any())
         }
     }
 
@@ -194,128 +202,6 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     fun onCommand_waitForState_invalidState() {
         assertThat(shellCommand.onCommand("wait-for-state:STATE_INVALID")).isEqualTo(-1)
         assertThat(waitForStateCalledWith).isNull()
-    }
-
-    class FakeBinder : IBluetoothManager.Stub() {
-        var returnValue: Boolean = true
-
-        var enableCalled: Boolean = false
-        var disableCalledWithPersist: Boolean? = null
-        var enableBleCalledWithBinder: IBinder? = null
-        var disableBleCalledWithBinder: IBinder? = null
-        var factoryResetCalled: Boolean = false
-
-        var enableMessageReceived = false
-        var disableMessageReceived = false
-        var enableBleMessageReceived = false
-        var disableBleMessageReceived = false
-        var factoryResetMessageReceived = false
-
-        private val handlerThread = HandlerThread("FakeBinderHandler").apply { start() }
-
-        private val handler =
-            object : Handler(handlerThread.looper) {
-                override fun handleMessage(msg: Message) {
-                    val reply = Message.obtain()
-                    when (val received = msg.obj) {
-                        is SystemServiceMessage.Enable -> {
-                            if (received.bleToken != null) {
-                                enableBleMessageReceived = true
-                            } else {
-                                enableMessageReceived = true
-                            }
-                            reply.obj =
-                                SystemServiceMessage.Enable.Reply().apply { value = returnValue }
-                        }
-                        is SystemServiceMessage.Disable -> {
-                            if (received.bleToken != null) {
-                                disableBleMessageReceived = true
-                            } else {
-                                disableMessageReceived = true
-                            }
-                            reply.obj =
-                                SystemServiceMessage.Disable.Reply().apply { value = returnValue }
-                        }
-                        is SystemServiceMessage.FactoryReset -> {
-                            factoryResetMessageReceived = true
-                            reply.obj =
-                                SystemServiceMessage.FactoryReset.Reply().apply {
-                                    value = returnValue
-                                }
-                        }
-                        else -> {
-                            super.handleMessage(msg)
-                            return
-                        }
-                    }
-
-                    try {
-                        msg.replyTo?.send(reply)
-                    } catch (e: RemoteException) {
-                        // Ignore
-                    }
-                }
-            }
-
-        val messenger = Messenger(handler)
-
-        fun cleanup() {
-            handlerThread.quitSafely()
-        }
-
-        override fun getServiceMessenger() = if (Flags.systemServerMessenger()) messenger else null
-
-        override fun enable(source: AttributionSource): Boolean {
-            enableCalled = true
-            return returnValue
-        }
-
-        override fun disable(source: AttributionSource, persist: Boolean): Boolean {
-            disableCalledWithPersist = persist
-            return returnValue
-        }
-
-        override fun enableBle(source: AttributionSource, token: IBinder): Boolean {
-            enableBleCalledWithBinder = token
-            return returnValue
-        }
-
-        override fun disableBle(source: AttributionSource, token: IBinder): Boolean {
-            disableBleCalledWithBinder = token
-            return returnValue
-        }
-
-        override fun factoryReset(source: AttributionSource): Boolean {
-            factoryResetCalled = true
-            return returnValue
-        }
-
-        // Other method that we do not care about
-        override fun registerAdapter(callback: IBluetoothManagerCallback) = null
-
-        override fun unregisterAdapter(callback: IBluetoothManagerCallback) {}
-
-        override fun getState() = State.OFF
-
-        override fun getAddress(source: AttributionSource) = null
-
-        override fun getName(source: AttributionSource) = null
-
-        override fun isHearingAidProfileSupported() = false
-
-        override fun isBleScanAvailable() = false
-
-        override fun setBtHciSnoopLogMode(mode: Int) = 0
-
-        override fun getBtHciSnoopLogMode() = 0
-
-        override fun isAutoOnSupported() = false
-
-        override fun isAutoOnEnabled() = false
-
-        override fun setAutoOnEnabled(status: Boolean) {}
-
-        override fun enableNoAutoConnect(source: AttributionSource) = false
     }
 
     companion object {
