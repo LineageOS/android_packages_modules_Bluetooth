@@ -1751,7 +1751,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
     private void notifyCharacteristic(
             @NonNull BluetoothDevice device, @NonNull BluetoothGattCharacteristic characteristic) {
-        if (!mBluetoothGattServer.isDeviceConnected(device)) return;
+        if (mBluetoothGattServer == null || !mBluetoothGattServer.isDeviceConnected(device)) return;
         if (getDeviceAuthorization(device) != BluetoothDevice.ACCESS_ALLOWED) return;
 
         Map<UUID, Short> charCccMap = mCccDescriptorValues.get(device.getAddress());
@@ -1773,6 +1773,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     private void notifyCharacteristic(
             @NonNull BluetoothGattCharacteristic characteristic,
             @Nullable BluetoothDevice originDevice) {
+        if (mBluetoothGattServer == null) return;
+
         for (BluetoothDevice device : mBluetoothGattServer.getConnectedDevices()) {
             // Skip the origin device who changed the characteristic
             if (device.equals(originDevice)) {
