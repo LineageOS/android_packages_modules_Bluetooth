@@ -257,13 +257,21 @@ public interface BluetoothProfile {
      */
     int GMAP = 31;
 
+
+    /**
+     * Voice Assistant Profile and Service
+     *
+     * @hide
+     */
+    int VAPS_SERVER = 32;
+
     /**
      * Max profile ID. This value should be updated whenever a new profile is added to match the
      * largest value assigned to a profile.
      *
      * @hide
      */
-    int MAX_PROFILE_ID = 31;
+    int MAX_PROFILE_ID = 32;
 
     /**
      * Default priority for devices that we try to auto-connect to and allow incoming connections
@@ -469,6 +477,7 @@ public interface BluetoothProfile {
             case HAP_CLIENT -> "HAP_CLIENT";
             case LE_AUDIO_BROADCAST_ASSISTANT -> "LE_AUDIO_BROADCAST_ASSISTANT";
             case BATTERY -> "BATTERY";
+            case VAPS_SERVER -> "VAPS_SERVER";
             default -> "UNKNOWN_PROFILE (" + profile + ")";
         };
     }

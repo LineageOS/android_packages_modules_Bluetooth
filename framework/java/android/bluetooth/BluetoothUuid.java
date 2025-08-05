@@ -363,6 +363,15 @@ public final class BluetoothUuid {
     public static final ParcelUuid TMAP =
             ParcelUuid.fromString("00001855-0000-1000-8000-00805F9B34FB");
 
+    /**
+     * UUID corresponding to the Voice Assistant Profile (VAPS).
+     *
+     * @hide
+     */
+    @NonNull
+    public static final ParcelUuid VAPS =
+            ParcelUuid.fromString("00007F64-0000-1000-8000-00805F9B34FB");
+
     /** @hide */
     @NonNull @SystemApi
     public static final ParcelUuid BASE_UUID =

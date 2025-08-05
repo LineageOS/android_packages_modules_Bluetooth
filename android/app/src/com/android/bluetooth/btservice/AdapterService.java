@@ -166,6 +166,7 @@ import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.bluetooth.util.DeviceConfigUtils;
 import com.android.bluetooth.vc.VolumeControlService;
+import com.android.bluetooth.vaps.VapsServerService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
@@ -899,6 +900,10 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.VOLUME_CONTROL, VolumeControlService.class);
     }
 
+    public Optional<VapsServerService> getVapsServerService() {
+        return getStartedProfile(BluetoothProfile.VAPS_SERVER, VapsServerService.class);
+    }
+
     Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
     }
@@ -1244,7 +1249,8 @@ public class AdapterService extends Service {
                             Map.entry(BluetoothProfile.PBAP, BluetoothPbapService::new),
                             Map.entry(BluetoothProfile.PBAP_CLIENT, PbapClientService::new),
                             Map.entry(BluetoothProfile.SAP, SapService::new),
-                            Map.entry(BluetoothProfile.VOLUME_CONTROL, VolumeControlService::new));
+                            Map.entry(BluetoothProfile.VOLUME_CONTROL, VolumeControlService::new),
+                            Map.entry(BluetoothProfile.VAPS_SERVER, VapsServerService::new));
 
     /**
      * Constructs a {@link ProfileService} instance for the given profile ID.
@@ -1289,6 +1295,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.SAP -> new SapService(this);
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
             case BluetoothProfile.LE_AUDIO -> new LeAudioService(this);
+            case BluetoothProfile.VAPS_SERVER -> new VapsServerService(this);
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }
