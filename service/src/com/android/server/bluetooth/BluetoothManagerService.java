@@ -835,12 +835,6 @@ class BluetoothManagerService {
         }
 
         @Override
-        public Context getUserContext() {
-            // Allow getter from concurrent thread
-            return BluetoothManagerService.this.getUserContext();
-        }
-
-        @Override
         public void handleOnBootPhase(UserHandle userHandle) {
             enforceCorrectThread();
             BluetoothManagerService.this.handleOnBootPhase(userHandle);
@@ -974,6 +968,9 @@ class BluetoothManagerService {
     }
 
     boolean isBleScanAvailable() {
+        if (mUser == null) {
+            return false;
+        }
         if (AirplaneModeListener.isOn() && !mEnable) {
             return false;
         }
@@ -1014,6 +1011,11 @@ class BluetoothManagerService {
 
         if (isSatelliteModeOn()) {
             Log.d(TAG, "enableBle: not enabling - Satellite mode is on.");
+            return false;
+        }
+
+        if (mUser == null) {
+            Log.e(TAG, "enableBle: No user found to enable for");
             return false;
         }
 
@@ -1156,6 +1158,11 @@ class BluetoothManagerService {
             return false;
         }
 
+        if (mUser == null) {
+            Log.e(TAG, "enableNoAutoConnect: No user found to enable for");
+            return false;
+        }
+
         if (mNextUser != null) {
             Log.d(TAG, "enableNoAutoConnect: user switch in progress");
             return false;
@@ -1177,6 +1184,11 @@ class BluetoothManagerService {
 
         if (isSatelliteModeOn()) {
             Log.d(TAG, "enable: not enabling - satellite mode is on.");
+            return false;
+        }
+
+        if (mUser == null) {
+            Log.e(TAG, "enable: No user found to enable for");
             return false;
         }
 

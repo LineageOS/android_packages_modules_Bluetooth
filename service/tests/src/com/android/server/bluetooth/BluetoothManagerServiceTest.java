@@ -256,7 +256,6 @@ public class BluetoothManagerServiceTest {
         mManagerService.handleOnBootPhase(mUser);
 
         mManagerService.registerAdapter(mManagerCallback);
-
     }
 
     @After
