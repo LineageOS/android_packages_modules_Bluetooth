@@ -316,9 +316,9 @@ void bnepu_send_peer_our_multi_filters(tBNEP_CONN* p_bcb) {
 
   UINT16_TO_BE_STREAM(p, (2 * BD_ADDR_LEN * p_bcb->sent_mcast_filters));
   for (xx = 0; xx < p_bcb->sent_mcast_filters; xx++) {
-    memcpy(p, p_bcb->sent_mcast_filter_start[xx].address, BD_ADDR_LEN);
+    memcpy(p, p_bcb->sent_mcast_filter_start[xx].address.data(), BD_ADDR_LEN);
     p += BD_ADDR_LEN;
-    memcpy(p, p_bcb->sent_mcast_filter_end[xx].address, BD_ADDR_LEN);
+    memcpy(p, p_bcb->sent_mcast_filter_end[xx].address.data(), BD_ADDR_LEN);
     p += BD_ADDR_LEN;
   }
 
@@ -464,10 +464,10 @@ void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
     case BNEP_FRAME_GENERAL_ETHERNET:
       p = bnepu_init_hdr(p_buf, 15, (uint8_t)(ext_bit | BNEP_FRAME_GENERAL_ETHERNET));
 
-      memcpy(p, dest_addr.address, BD_ADDR_LEN);
+      memcpy(p, dest_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
 
-      memcpy(p, source_addr.address, BD_ADDR_LEN);
+      memcpy(p, source_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
       break;
 
@@ -478,14 +478,14 @@ void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
     case BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY:
       p = bnepu_init_hdr(p_buf, 9, (uint8_t)(ext_bit | BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY));
 
-      memcpy(p, source_addr.address, BD_ADDR_LEN);
+      memcpy(p, source_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
       break;
 
     case BNEP_FRAME_COMPRESSED_ETHERNET_DEST_ONLY:
       p = bnepu_init_hdr(p_buf, 9, (uint8_t)(ext_bit | BNEP_FRAME_COMPRESSED_ETHERNET_DEST_ONLY));
 
-      memcpy(p, dest_addr.address, BD_ADDR_LEN);
+      memcpy(p, dest_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
       break;
   }
@@ -1033,7 +1033,7 @@ static void bnepu_process_peer_multicast_filter_set(tBNEP_CONN* p_bcb, uint8_t* 
                                                     uint16_t len) {
   uint16_t resp_code = BNEP_FILTER_CRL_OK;
   uint16_t num_filters, xx;
-  uint8_t *p_temp_filters, null_bda[BD_ADDR_LEN] = {0, 0, 0, 0, 0, 0};
+  uint8_t *p_temp_filters;
 
   if ((p_bcb->con_state != BNEP_STATE_CONNECTED) &&
       (!(p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED))) {
@@ -1076,14 +1076,15 @@ static void bnepu_process_peer_multicast_filter_set(tBNEP_CONN* p_bcb, uint8_t* 
   p_bcb->rcvd_mcast_filters = num_filters;
   p_temp_filters = p_filters;
   for (xx = 0; xx < num_filters; xx++) {
-    memcpy(p_bcb->rcvd_mcast_filter_start[xx].address, p_temp_filters, BD_ADDR_LEN);
-    memcpy(p_bcb->rcvd_mcast_filter_end[xx].address, p_temp_filters + BD_ADDR_LEN, BD_ADDR_LEN);
+    memcpy(p_bcb->rcvd_mcast_filter_start[xx].address.data(), p_temp_filters, BD_ADDR_LEN);
+    memcpy(p_bcb->rcvd_mcast_filter_end[xx].address.data(), p_temp_filters + BD_ADDR_LEN,
+           BD_ADDR_LEN);
     p_temp_filters += (BD_ADDR_LEN * 2);
 
     /* Check if any of the ranges have all zeros as both starting and ending
      * addresses */
-    if ((memcmp(null_bda, p_bcb->rcvd_mcast_filter_start[xx].address, BD_ADDR_LEN) == 0) &&
-        (memcmp(null_bda, p_bcb->rcvd_mcast_filter_end[xx].address, BD_ADDR_LEN) == 0)) {
+    if (p_bcb->rcvd_mcast_filter_start[xx] == RawAddress::kEmpty &&
+        p_bcb->rcvd_mcast_filter_end[xx] == RawAddress::kEmpty) {
       p_bcb->rcvd_mcast_filters = 0xFFFF;
       break;
     }
@@ -1242,10 +1243,8 @@ tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb, const RawAddress& dest_ad
     if (p_bcb->rcvd_mcast_filters != 0xFFFF) {
       /* Check if the address is mentioned in the filter range */
       for (i = 0; i < p_bcb->rcvd_mcast_filters; i++) {
-        if ((memcmp(p_bcb->rcvd_mcast_filter_start[i].address, dest_addr.address, BD_ADDR_LEN) <=
-             0) &&
-            (memcmp(p_bcb->rcvd_mcast_filter_end[i].address, dest_addr.address, BD_ADDR_LEN) >=
-             0)) {
+        if (p_bcb->rcvd_mcast_filter_start[i] <= dest_addr &&
+            p_bcb->rcvd_mcast_filter_end[i] >= dest_addr) {
           break;
         }
       }

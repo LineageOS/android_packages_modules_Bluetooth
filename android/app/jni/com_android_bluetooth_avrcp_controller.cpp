@@ -91,7 +91,8 @@ static void btavrcp_connection_state_callback(bool rc_connect, bool br_connect,
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onConnectionStateChanged, (jboolean)rc_connect,
                                (jboolean)br_connect, addr.get());
 }
@@ -125,7 +126,8 @@ static void btavrcp_playerapplicationsetting_callback(const RawAddress& bd_addr,
     log::error("Failed to allocate a new byte array");
     return;
   }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   /* TODO ext attrs
    * Flattening defined attributes: <id,num_values,values[]>
    */
@@ -175,7 +177,8 @@ static void btavrcp_playerapplicationsetting_changed_callback(const RawAddress& 
     log::error("Failed to allocate a new byte array");
     return;
   }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   int arraylen = vals.num_attr * 2;
   ScopedLocalRef<jbyteArray> playerattribs(sCallbackEnv.get(),
@@ -217,7 +220,8 @@ static void btavrcp_set_abs_vol_cmd_callback(const RawAddress& bd_addr, uint8_t 
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleSetAbsVolume, addr.get(), (jbyte)abs_vol,
                                (jbyte)label);
 }
@@ -242,7 +246,8 @@ static void btavrcp_register_notification_absvol_callback(const RawAddress& bd_a
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleRegisterNotificationAbsVol, addr.get(),
                                (jbyte)label);
 }
@@ -276,7 +281,8 @@ static void btavrcp_track_changed_callback(const RawAddress& bd_addr, uint8_t nu
     log::error("failed to set new array for attribIds");
     return;
   }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   jclass strclazz = sCallbackEnv->FindClass("java/lang/String");
   ScopedLocalRef<jobjectArray> stringArray(
@@ -320,7 +326,8 @@ static void btavrcp_play_position_changed_callback(const RawAddress& bd_addr, ui
     log::error("Failed to allocate a new byte array");
     return;
   }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleplaypositionchanged, addr.get(),
                                (jint)(song_len), (jint)song_pos);
 }
@@ -344,7 +351,8 @@ static void btavrcp_play_status_changed_callback(const RawAddress& bd_addr,
     log::error("Failed to allocate a new byte array");
     return;
   }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleplaystatuschanged, addr.get(),
                                (jbyte)play_status);
 }
@@ -374,7 +382,8 @@ static void btavrcp_get_folder_items_callback(const RawAddress& bd_addr, btrc_st
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   // Inspect if the first element is a folder/item or player listing. They are
   // always exclusive.
@@ -534,7 +543,8 @@ static void btavrcp_change_path_callback(const RawAddress& bd_addr, uint32_t cou
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleChangeFolderRsp, addr.get(),
                                (jint)count);
@@ -559,7 +569,8 @@ static void btavrcp_set_browsed_player_callback(const RawAddress& bd_addr, uint8
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleSetBrowsedPlayerRsp, addr.get(),
                                (jint)num_items, (jint)depth);
@@ -583,7 +594,8 @@ static void btavrcp_set_addressed_player_callback(const RawAddress& bd_addr, uin
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleSetAddressedPlayerRsp, addr.get(),
                                (jint)status);
@@ -607,7 +619,8 @@ static void btavrcp_addressed_player_changed_callback(const RawAddress& bd_addr,
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleAddressedPlayerChanged, addr.get(),
                                (jint)id);
@@ -627,7 +640,8 @@ static void btavrcp_now_playing_content_changed_callback(const RawAddress& bd_ad
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
 
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_handleNowPlayingContentChanged, addr.get());
 }
@@ -651,7 +665,8 @@ static void btavrcp_available_player_changed_callback(const RawAddress& bd_addr)
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onAvailablePlayerChanged, addr.get());
 }
 
@@ -674,7 +689,8 @@ static void btavrcp_get_rcpsm_callback(const RawAddress& bd_addr, uint16_t psm) 
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)&bd_addr.address);
+  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(sCallbacksObj, method_getRcPsm, addr.get(), (jint)psm);
 }
 

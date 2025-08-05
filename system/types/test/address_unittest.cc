@@ -193,9 +193,6 @@ TEST(RawAddressTest, BdAddrFromArray) {
 
   std::string ret = bdaddr.ToString();
   ASSERT_STREQ("11:22:33:44:55:66", ret.c_str());
-
-  std::array<uint8_t, 6> mac2 = bdaddr.ToArray();
-  ASSERT_EQ(mac, mac2);
 }
 
 TEST(RawAddress, ToStringForLoggingTest) {

@@ -30,11 +30,11 @@ static_assert(sizeof(RawAddress) == 6, "RawAddress must be 6 bytes long!");
 const RawAddress RawAddress::kAny{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 const RawAddress RawAddress::kEmpty{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
-RawAddress::RawAddress(const uint8_t (&addr)[6]) { std::copy(addr, addr + kLength, address); }
-
-RawAddress::RawAddress(const std::array<uint8_t, kLength> mac) {
-  std::copy(mac.begin(), mac.end(), address);
+RawAddress::RawAddress(const uint8_t (&addr)[6]) {
+  std::copy(addr, addr + kLength, address.begin());
 }
+
+RawAddress::RawAddress(const std::array<uint8_t, kLength> mac) : address(mac) {}
 
 std::string RawAddress::ToString() const { return ToColonSepHexString(); }
 
@@ -62,12 +62,6 @@ std::string RawAddress::ToRedactedStringForLogging() const {
   addr << std::setw(2) << +address[4] << ":";
   addr << std::setw(2) << +address[5];
   return addr.str();
-}
-
-std::array<uint8_t, RawAddress::kLength> RawAddress::ToArray() const {
-  std::array<uint8_t, kLength> mac;
-  std::copy(std::begin(address), std::end(address), std::begin(mac));
-  return mac;
 }
 
 bool RawAddress::FromString(const std::string& from, RawAddress& to) {
@@ -111,7 +105,7 @@ bool RawAddress::FromString(const std::string& from, RawAddress& to) {
 }
 
 size_t RawAddress::FromOctets(const uint8_t* from) {
-  std::copy(from, from + kLength, address);
+  std::copy(from, from + kLength, address.begin());
   return kLength;
 }
 
