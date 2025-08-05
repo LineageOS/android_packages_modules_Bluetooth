@@ -72,4 +72,19 @@ public final class MsftAdvMonitorTest {
         assertThat(mPattern.start_byte).isEqualTo(FILTER_PATTERN_START_POSITION);
         assertThat(mPattern.pattern).isEqualTo(new byte[] {(byte) 0x2c, (byte) 0xfe});
     }
+
+    @Test
+    public void testDeviceNameScanFilter() {
+        String deviceName = "testDevice";
+        ScanFilter filter = new ScanFilter.Builder().setDeviceName(deviceName).build();
+        MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
+
+        assertMonitorConstants(monitor);
+        assertThat(monitor.getPatterns()).hasLength(1);
+        MsftAdvMonitor.Pattern mPattern = monitor.getPatterns()[0];
+        assertThat(mPattern.ad_type)
+                .isEqualTo((byte) 0x09); // Assigned Numbers Document, Section 2.3
+        assertThat(mPattern.start_byte).isEqualTo(FILTER_PATTERN_START_POSITION);
+        assertThat(mPattern.pattern).isEqualTo(deviceName.getBytes());
+    }
 }
