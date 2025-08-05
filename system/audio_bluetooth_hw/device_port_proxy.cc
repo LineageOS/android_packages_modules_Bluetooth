@@ -308,7 +308,8 @@ void BluetoothAudioPortAidl::ControlResultHandler(const BluetoothAudioStatus& st
                  << " for session_type=" << toString(session_type_)
                  << ", cookie=" << StringPrintf("%#hx", cookie_)
                  << ", previous_state=" << previous_state;
-      return;
+
+      break;
   }
   port_lock.unlock();
   internal_cv_.notify_all();
