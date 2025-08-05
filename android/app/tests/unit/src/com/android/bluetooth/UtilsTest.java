@@ -155,7 +155,7 @@ public class UtilsTest {
         try {
             Utils.checkAdvertisePermissionForDataDelivery(context, null, "message");
             Utils.checkCallerHasWriteSmsPermission(context);
-            Utils.checkConnectPermissionForPreflight(context);
+            Utils.checkConnectPermissionForPreflight(context, context.getAttributionSource());
         } catch (SecurityException e) {
             // SecurityException could happen.
         }
