@@ -17,11 +17,9 @@
 package com.android.server.bluetooth
 
 import android.content.Context
-import android.content.res.Resources
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.UserManager
-import android.provider.Settings
 import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
 import kotlinx.coroutines.CoroutineScope
@@ -85,91 +83,30 @@ class BluetoothService(context: Context) : SystemService(context) {
         publishBinderService(SERVICE_NAME, mBluetoothManagerService.binder)
     }
 
-    private fun shouldInitializeBluetooth(): Boolean {
-        // HSUM can be simulated on phone with:
-        // adb shell cmd user set-system-user-mode-emulation headless
-        // and it can be restored with:
-        // adb shell cmd user set-system-user-mode-emulation default
-
-        // Not HSUM, we can initialize Bluetooth on system user
-        if (!UserManager.isHeadlessSystemUserMode()) {
-            Log.i("shouldInitializeBluetooth() -> true: Not HSUM")
-            return true
-        }
-
-        try {
-            // In HSUM, refer to config_hsumBootStrategy to see if we can boot on system user for
-            // provisioned device
-            val r = Resources.getSystem()
-            if (
-                r.getInteger(r.getIdentifier("config_hsumBootStrategy", "integer", "android")) ==
-                    1 &&
-                    Settings.Global.getInt(
-                        context.contentResolver,
-                        Settings.Global.DEVICE_PROVISIONED,
-                        0,
-                    ) == 1
-            ) {
-                Log.i("shouldInitializeBluetooth() -> true: HSUM provisioned")
-                return true
-            }
-        } catch (_e: Resources.NotFoundException) {
-            // Config not found, assuming it's 0 so no need to initialize Bluetooth
-        }
-
-        Log.i("shouldInitializeBluetooth() -> false: HSUM")
-        return false
-    }
-
     override fun onUserStarting(user: TargetUser) {
-        if (Flags.cleanupStartingUser()) {
-            if (mInitialized) {
-                Log.i("onUserStarting($user) but already initialized")
-                return
-            }
-            val isForeground =
-                context
-                    .createContextAsUser(user.userHandle, 0)
-                    .getSystemService(android.os.UserManager::class.java)!!
-                    .isUserForeground
-            if (!isForeground) {
-                Log.i("onUserStarting($user) Skipping non foreground user ")
-                return
-            }
-            Log.i("onUserStarting($user) Initializing for foreground user ")
-            runOnBmsThread { serviceApi.handleOnBootPhase(user.userHandle) }
-            mInitialized = true
+        if (mInitialized) {
+            Log.i("onUserStarting($user) but already initialized")
             return
         }
-        Log.d("onUserStarting($user)")
-        if (shouldInitializeBluetooth()) {
-            initialize(user)
+        val isForeground =
+            context
+                .createContextAsUser(user.userHandle, 0)
+                .getSystemService(android.os.UserManager::class.java)!!
+                .isUserForeground
+        if (!isForeground) {
+            Log.i("onUserStarting($user) Skipping non foreground user ")
+            return
         }
+        Log.i("onUserStarting($user) Initializing for foreground user ")
+        runOnBmsThread { serviceApi.handleOnBootPhase(user.userHandle) }
+        mInitialized = true
     }
 
     override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
         Log.d("onUserSwitching($to)")
-        if (Flags.cleanupStartingUser()) {
-            if (!mInitialized) {
-                throw IllegalStateException(
-                    "Switching on a user when not initialized should never happen"
-                )
-            }
-            runOnBmsThread { serviceApi.onUserSwitching(to.userHandle) }
-            return
-        }
         if (!mInitialized) {
-            initialize(to)
-        } else {
-            runOnBmsThread { serviceApi.onUserSwitching(to.userHandle) }
+            throw IllegalStateException("Initialize did not happen")
         }
-    }
-
-    override fun onUserUnlocking(user: TargetUser) {
-        if (Flags.cleanupStartingUser()) {
-            Log.d("onUserUnlocking($user): Nothing to do at unlock")
-            return
-        }
-        runOnBmsThread { serviceApi.handleOnUnlockUser(user.userHandle) }
+        runOnBmsThread { serviceApi.onUserSwitching(to.userHandle) }
     }
 }

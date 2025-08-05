@@ -135,7 +135,6 @@ class BluetoothManagerService {
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_STATE_CHANGE = 60;
     @VisibleForTesting static final int MESSAGE_TIMEOUT_BIND = 100;
     @VisibleForTesting static final int MESSAGE_USER_SWITCHED = 300;
-    @VisibleForTesting static final int MESSAGE_USER_UNLOCKED = 301;
     @VisibleForTesting static final int MESSAGE_RESTORE_USER_SETTING_OFF = 501;
     @VisibleForTesting static final int MESSAGE_RESTORE_USER_SETTING_ON = 502;
 
@@ -445,9 +444,7 @@ class BluetoothManagerService {
     // Call is coming from the systemServer main thread and need to be post to avoid race
     void onUserSwitching(UserHandle userHandle) {
         Log.d(TAG, "onUserSwitching(" + userHandle + ")");
-        if (Flags.cleanupStartingUser()) {
-            mNextUser = userHandle;
-        }
+        mNextUser = userHandle;
         delayModeChangedIfNeeded(
                 ON_SWITCH_USER_TOKEN, () -> handleSwitchUser(userHandle), "onUserSwitching");
     }
@@ -850,12 +847,6 @@ class BluetoothManagerService {
         public void onUserSwitching(UserHandle userHandle) {
             enforceCorrectThread();
             BluetoothManagerService.this.onUserSwitching(userHandle);
-        }
-
-        @Override
-        public void handleOnUnlockUser(UserHandle userHandle) {
-            enforceCorrectThread();
-            BluetoothManagerService.this.handleOnUnlockUser(userHandle);
         }
     }
 
@@ -1326,17 +1317,7 @@ class BluetoothManagerService {
     @VisibleForTesting
     void handleSwitchUser(UserHandle userHandle) {
         Log.d(TAG, "handleSwitchUser(" + userHandle + ")");
-        if (Flags.cleanupStartingUser()) {
-            handleSwitchMessage(userHandle, 0);
-        } else {
-            mHandler.obtainMessage(MESSAGE_USER_SWITCHED, userHandle).sendToTarget();
-        }
-    }
-
-    /** Called when user is unlocked. */
-    void handleOnUnlockUser(UserHandle userHandle) {
-        Log.d(TAG, "handleOnUnlockUser(" + userHandle + ")");
-        mHandler.obtainMessage(MESSAGE_USER_UNLOCKED, userHandle).sendToTarget();
+        handleSwitchMessage(userHandle, 0);
     }
 
     @FunctionalInterface
@@ -1595,18 +1576,6 @@ class BluetoothManagerService {
 
                     handleSwitchMessage(userTo, msg.arg1);
                 }
-                case MESSAGE_USER_UNLOCKED -> {
-                    Log.d(TAG, "MESSAGE_USER_UNLOCKED");
-                    mHandler.removeMessages(MESSAGE_USER_SWITCHED);
-
-                    if (mEnable && !isBinding() && (mAdapter == null)) {
-                        // We should be connected, but we gave up for some
-                        // reason; maybe the Bluetooth service wasn't encryption
-                        // aware, so try binding again.
-                        Log.d(TAG, "Enabled but not bound; retrying after unlock");
-                        handleEnable();
-                    }
-                }
                 default -> {} // Nothing to do
             }
         }
@@ -1765,7 +1734,7 @@ class BluetoothManagerService {
     }
 
     private void handleSwitchMessage(UserHandle userTo, int attempt) {
-        if (Flags.cleanupStartingUser() && mUser.equals(mNextUser)) {
+        if (mUser.equals(mNextUser)) {
             Log.d(TAG, "Skip fast switch on same user=" + userTo);
             return;
         }
@@ -1813,9 +1782,6 @@ class BluetoothManagerService {
 
     private void prepareUserSwitch(UserHandle userTo) {
         Log.d(TAG, "prepareUserSwitch for " + userTo);
-        if (!Flags.cleanupStartingUser()) {
-            mNextUser = userTo;
-        }
 
         // Clear registered LE apps to force shut-off
         mBleAppManager.clearBleApps();

@@ -80,6 +80,4 @@ interface BluetoothManagerServiceApi {
     fun handleOnBootPhase(userHandle: UserHandle)
 
     fun onUserSwitching(userHandle: UserHandle)
-
-    fun handleOnUnlockUser(userHandle: UserHandle)
 }
