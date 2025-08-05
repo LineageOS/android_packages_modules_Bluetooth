@@ -1890,7 +1890,9 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetHalConstants.AUDIO_STATE_DISCONNECTED,
                         device));
         mTestLooper.dispatchAll();
-        verify(mLeAudioService, atLeastOnce()).setActiveAfterHfpHandover();
+        if (!android.media.audio.Flags.scoManagedByAudio()) {
+            verify(mLeAudioService, atLeastOnce()).setActiveAfterHfpHandover();
+        }
     }
 
     @Test

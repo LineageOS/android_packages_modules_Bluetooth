@@ -2213,19 +2213,24 @@ public class HeadsetService extends ConnectableProfile {
                     if (mActiveDevice != null
                             && !mActiveDevice.equals(device)
                             && shouldPersistAudio()) {
-                        int connectStatus = connectAudio(mActiveDevice);
-                        if (connectStatus != BluetoothStatusCodes.SUCCESS) {
-                            Log.w(
-                                    TAG,
-                                    "onAudioStateChangedFromStateMachine, failed to connect"
-                                            + " audio to new "
-                                            + "active device "
-                                            + mActiveDevice
-                                            + ", after "
-                                            + device
-                                            + " is disconnected from SCO due to"
-                                            + " status code "
-                                            + connectStatus);
+                        if (mSystemInterface.isScoManagedByAudioEnabled()) {
+                            Log.d(TAG, "request bluetooth audio change");
+                            mSystemInterface.requestBluetoothAudio(mActiveDevice);
+                        } else {
+                            int connectStatus = connectAudio(mActiveDevice);
+                            if (connectStatus != BluetoothStatusCodes.SUCCESS) {
+                                Log.w(
+                                        TAG,
+                                        "onAudioStateChangedFromStateMachine, failed to connect"
+                                                + " audio to new "
+                                                + "active device "
+                                                + mActiveDevice
+                                                + ", after "
+                                                + device
+                                                + " is disconnected from SCO due to"
+                                                + " status code "
+                                                + connectStatus);
+                            }
                         }
                     }
                 }
@@ -2245,9 +2250,12 @@ public class HeadsetService extends ConnectableProfile {
                                         + "voice call");
                     }
                 }
+
+                if (mSystemInterface.isScoManagedByAudioEnabled()) return;
                 // Resumes LE audio previous active device if HFP handover happened before.
                 // Do it here because some controllers cannot handle SCO and CIS
                 // co-existence see {@link LeAudioService#setInactiveForHfpHandover}
+
                 final var leAudio = getLeAudioService();
                 boolean isLeAudioConnectedDeviceNotActive =
                         leAudio.isPresent()
