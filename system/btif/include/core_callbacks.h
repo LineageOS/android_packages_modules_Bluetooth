@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <bluetooth/types/ble_address_with_type.h>
+
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_hh_api.h"
 #include "include/hardware/bluetooth.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace core {

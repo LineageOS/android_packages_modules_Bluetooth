@@ -24,6 +24,8 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_bta_dm_act.h"
 
+#include <bluetooth/types/ble_address_with_type.h>
+
 #include <cstdint>
 
 #include "bta/dm/bta_dm_act.h"
@@ -32,7 +34,6 @@
 #include "bta/include/bta_dm_acl.h"
 #include "bta/include/bta_dm_api.h"
 #include "test/common/mock_functions.h"
-#include "types/ble_address_with_type.h"
 
 // Mocked internal structures, if any
 

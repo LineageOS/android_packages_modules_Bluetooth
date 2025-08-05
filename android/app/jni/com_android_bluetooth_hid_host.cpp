@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_transport.h>
 #include <jni.h>
 #include <nativehelper/scoped_local_ref.h>
@@ -30,7 +31,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_hh.h"
-#include "types/ble_address_with_type.h"
 #include "utils/Log.h"
 
 namespace android {

@@ -25,6 +25,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <list>
@@ -38,7 +39,6 @@
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "macros.h"
-#include "types/ble_address_with_type.h"
 
 /*****************************************************************************
  *  Constants and data types

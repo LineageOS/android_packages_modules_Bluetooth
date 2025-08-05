@@ -18,6 +18,7 @@
 #ifndef ANDROID_INCLUDE_BLUETOOTH_H
 #define ANDROID_INCLUDE_BLUETOOTH_H
 
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -27,7 +28,6 @@
 #include <vector>
 
 #include "avrcp/avrcp.h"
-#include "types/ble_address_with_type.h"
 
 /**
  * The Bluetooth Hardware Module ID

@@ -18,6 +18,7 @@
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 
@@ -40,7 +41,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/main_thread.h"
-#include "types/ble_address_with_type.h"
 
 using namespace bluetooth;
 using namespace ::ras;

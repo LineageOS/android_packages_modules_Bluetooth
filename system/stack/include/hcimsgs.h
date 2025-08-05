@@ -21,6 +21,7 @@
 
 #include <base/functional/callback_forward.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 #include <vector>
@@ -30,7 +31,6 @@
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
-#include "types/ble_address_with_type.h"
 
 /* Message by message.... */
 

@@ -74,7 +74,9 @@ inline bool is_identity_type(const tBLE_ADDR_TYPE& type) { return type & BLE_ADD
     (p) += sizeof(tBLE_ADDR_TYPE);       \
   }
 #define BLE_ADDR_TYPE_TO_STREAM(p, type) \
-  { *(p)++ = (tBLE_ADDR_TYPE)(type); }
+  {                                      \
+    *(p)++ = (tBLE_ADDR_TYPE)(type);     \
+  }
 
 #ifdef __cplusplus
 constexpr uint8_t kBleAddressPublicDevice = BLE_ADDR_PUBLIC;

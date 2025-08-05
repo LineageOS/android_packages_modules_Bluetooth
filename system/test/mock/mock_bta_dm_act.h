@@ -25,12 +25,13 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/ble_address_with_type.h>
+
 #include <cstdint>
 
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"
-#include "types/ble_address_with_type.h"
 
 // Mocked compile conditionals, if any
 

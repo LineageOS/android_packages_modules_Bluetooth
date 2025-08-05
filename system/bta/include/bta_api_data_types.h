@@ -20,13 +20,13 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 #include <string>
 
 #include "macros.h"
 #include "stack/btm/btm_sec_int_types.h"
-#include "types/ble_address_with_type.h"
 
 /*****************************************************************************
  *  Constants and data types

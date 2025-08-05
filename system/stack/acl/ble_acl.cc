@@ -17,6 +17,7 @@
 #define LOG_TAG "acl"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -33,7 +34,6 @@
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_hci_link_interface.h"
-#include "types/ble_address_with_type.h"
 
 using namespace bluetooth;
 
