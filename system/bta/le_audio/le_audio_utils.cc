@@ -87,6 +87,10 @@ LeAudioContextType AudioContentToLeAudioContext(audio_content_type_t content_typ
 
       return LeAudioContextType::SOUNDEFFECTS;
     case AUDIO_USAGE_GAME:
+      if (content_type == AUDIO_CONTENT_TYPE_SONIFICATION &&
+          com::android::bluetooth::flags::leaudio_use_game_sonification_as_regular_sonification()) {
+        return LeAudioContextType::SOUNDEFFECTS;
+      }
       return LeAudioContextType::GAME;
     case AUDIO_USAGE_NOTIFICATION:
     case AUDIO_USAGE_NOTIFICATION_EVENT:
