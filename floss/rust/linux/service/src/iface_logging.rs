@@ -8,8 +8,6 @@ use dbus_projection::prelude::*;
 use num_traits::cast::{FromPrimitive, ToPrimitive};
 
 use crate::dbus_arg::DBusArgError;
-use dbus::nonblock::SyncConnection;
-use std::sync::Arc;
 
 #[allow(dead_code)]
 struct IBluetoothLoggingDBus {}

@@ -27,6 +27,7 @@ use btstack::bluetooth_media::{IBluetoothMedia, IBluetoothTelephony};
 use btstack::bluetooth_qa::IBluetoothQA;
 use btstack::socket_manager::{IBluetoothSocketManager, SocketResult};
 use btstack::uuid::{Profile, UuidHelper};
+use manager_service::config_util::UnstableAflagsUseMode;
 use manager_service::iface_bluetooth_manager::IBluetoothManager;
 
 const INDENT_CHAR: &str = " ";
@@ -408,6 +409,17 @@ fn build_commands() -> HashMap<String, CommandOption> {
             ],
             description: String::from("Get/set log level"),
             function_pointer: CommandHandler::cmd_log,
+        },
+    );
+    command_options.insert(
+        String::from("unstable-aflags"),
+        CommandOption {
+            rules: vec![
+                String::from("unstable-aflags set-mode <auto|force-use|force-no-use>"),
+                String::from("unstable-aflags get-mode"),
+            ],
+            description: String::from("Get/set unstable Aflags use mode"),
+            function_pointer: CommandHandler::cmd_unstable_aflags,
         },
     );
     command_options
@@ -2413,6 +2425,35 @@ impl CommandHandler {
             }
         }
 
+        Ok(())
+    }
+
+    fn cmd_unstable_aflags(&mut self, args: &[String]) -> CommandResult {
+        match &get_arg(args, 0)?[..] {
+            "set-mode" => {
+                if self.lock_context().is_restricted {
+                    return Err("You are not allowed to configure unstable Aflags use mode".into());
+                }
+                let mode = match &get_arg(args, 1)?[..] {
+                    "auto" => UnstableAflagsUseMode::Auto,
+                    "force-use" => UnstableAflagsUseMode::ForceUse,
+                    "force-no-use" => UnstableAflagsUseMode::ForceNoUse,
+                    _ => {
+                        return Err("Failed to parse mode".into());
+                    }
+                };
+                if !self.lock_context().manager_dbus.set_unstable_aflags_use_mode(mode) {
+                    return Err("Failed to set mode".into());
+                }
+            }
+            "get-mode" => {
+                let mode = self.lock_context().manager_dbus.get_unstable_aflags_use_mode();
+                print_info!("mode: {:?}", mode);
+            }
+            other => {
+                return Err(format!("Invalid argument '{}'", other).into());
+            }
+        }
         Ok(())
     }
 }
