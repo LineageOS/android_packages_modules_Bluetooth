@@ -129,7 +129,6 @@ public class BluetoothServiceBinderTest {
         lenient().doReturn(TAG).when(mSource).getPackageName();
         mLooper = new TestLooper();
         mLooper.startAutoDispatch();
-        lenient().doReturn(mContext).when(mApi).getUserContext();
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
@@ -187,7 +186,6 @@ public class BluetoothServiceBinderTest {
         doReturn(true).when(mApi).enable(anyInt(), any());
         checkGranted(() -> mBinder.enable(mSource), true);
         verify(mUserManager).getProfileParent(any());
-        verify(mApi).getUserContext();
         verify(mApi).enable(eq(ENABLE_DISABLE_REASON_APPLICATION_REQUEST), eq(TAG));
         verifyMock();
     }
@@ -337,7 +335,6 @@ public class BluetoothServiceBinderTest {
         checkHardDenied(() -> mBinder.enableBle(mSource, token), false);
         doReturn(true).when(mApi).enableBle(eq(TAG), eq(token));
         checkGranted(() -> mBinder.enableBle(mSource, token), true);
-        verify(mApi).getUserContext();
         verify(mApi).enableBle(eq(TAG), eq(token));
         verifyMock();
     }
