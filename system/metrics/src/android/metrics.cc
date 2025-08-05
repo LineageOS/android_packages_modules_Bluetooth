@@ -491,14 +491,20 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
   }
 }
 
-void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
+void LogMetricBluetoothQualityReport(const RawAddress& remote_addr,
+                                     const bqr::BqrLinkQualityEvent& event) {
+  int32_t metric_id = 0;
+  if (!remote_addr.IsEmpty()) {
+    metric_id = MetricIdManager::GetInstance().AllocateId(remote_addr);
+  }
   int ret = stats_write(
           BLUETOOTH_QUALITY_REPORT_REPORTED, event.quality_report_id, event.packet_types,
           event.connection_handle, event.connection_role, event.tx_power_level, event.rssi,
           event.snr, event.unused_afh_channel_count, event.afh_select_unideal_channel_count,
           event.lsto, event.connection_piconet_clock, event.retransmission_count, event.no_rx_count,
           event.nak_count, event.last_tx_ack_timestamp, event.flow_off_count,
-          event.last_flow_on_timestamp, event.buffer_overflow_bytes, event.buffer_underflow_bytes);
+          event.last_flow_on_timestamp, event.buffer_overflow_bytes, event.buffer_underflow_bytes,
+          metric_id);
   if (ret < 0) {
     log::warn("failed to log BQR event to statsd, error {}", ret);
   }
