@@ -28,6 +28,7 @@
 #include "bluetooth_audio_port_impl.h"
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
 #include "bta/le_audio/le_audio_types.h"
+#include "common/message_loop_thread.h"
 #include "transport_instance.h"
 
 namespace bluetooth {
@@ -64,7 +65,8 @@ using DataMQDesc = MQDescriptor<MqDataType, MqDataMode>;
  ***/
 class BluetoothAudioClientInterface {
 public:
-  BluetoothAudioClientInterface(IBluetoothTransportInstance* instance);
+  BluetoothAudioClientInterface(IBluetoothTransportInstance* instance,
+                                bluetooth::common::MessageLoopThread* message_loop);
   virtual ~BluetoothAudioClientInterface() = default;
 
   bool IsValid() const;
@@ -138,6 +140,8 @@ protected:
    ***/
   static void binderDiedCallbackAidl(void* cookie_ptr);
 
+  bluetooth::common::MessageLoopThread* death_handler_thread_ = nullptr;
+
   std::shared_ptr<IBluetoothAudioProvider> provider_;
 
   std::shared_ptr<IBluetoothAudioProviderFactory> provider_factory_;
@@ -168,7 +172,8 @@ public:
    * Constructs an BluetoothAudioSinkClientInterface to communicate to
    * BluetoothAudio HAL. |sink| is the implementation for the transport.
    ***/
-  BluetoothAudioSinkClientInterface(IBluetoothSinkTransportInstance* sink);
+  BluetoothAudioSinkClientInterface(IBluetoothSinkTransportInstance* sink,
+                                    bluetooth::common::MessageLoopThread* message_loop);
   virtual ~BluetoothAudioSinkClientInterface();
 
   IBluetoothSinkTransportInstance* GetTransportInstance() const { return sink_; }
@@ -191,7 +196,8 @@ public:
    * Constructs an BluetoothAudioSourceClientInterface to communicate to
    * BluetoothAudio HAL. |source| is the implementation for the transport.
    ***/
-  BluetoothAudioSourceClientInterface(IBluetoothSourceTransportInstance* source);
+  BluetoothAudioSourceClientInterface(IBluetoothSourceTransportInstance* source,
+                                      bluetooth::common::MessageLoopThread* message_loop);
   virtual ~BluetoothAudioSourceClientInterface();
 
   IBluetoothSourceTransportInstance* GetTransportInstance() const { return source_; }

@@ -316,8 +316,10 @@ std::ostream& operator<<(std::ostream& os, const BluetoothAudioCtrlAck& ack) {
 }  // namespace hidl
 
 namespace aidl {
-BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransportInstance* instance)
-    : provider_(nullptr),
+BluetoothAudioClientInterface::BluetoothAudioClientInterface(
+        IBluetoothTransportInstance* instance, bluetooth::common::MessageLoopThread* message_loop)
+    : death_handler_thread_(message_loop),
+      provider_(nullptr),
       provider_factory_(nullptr),
       session_started_(false),
       data_mq_(nullptr),
@@ -325,8 +327,8 @@ BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransport
       latency_modes_({LatencyMode::FREE}) {}
 
 BluetoothAudioSinkClientInterface::BluetoothAudioSinkClientInterface(
-        IBluetoothSinkTransportInstance* sink)
-    : BluetoothAudioClientInterface{sink}, sink_(sink) {}
+        IBluetoothSinkTransportInstance* sink, bluetooth::common::MessageLoopThread* message_loop)
+    : BluetoothAudioClientInterface{sink, message_loop}, sink_(sink) {}
 BluetoothAudioSinkClientInterface::~BluetoothAudioSinkClientInterface() {}
 
 size_t BluetoothAudioSinkClientInterface::ReadAudioData(uint8_t* p_buf, uint32_t len) {
@@ -340,8 +342,9 @@ size_t BluetoothAudioSinkClientInterface::ReadAudioData(uint8_t* p_buf, uint32_t
 void BluetoothAudioClientInterface::SetCodecPriority(CodecId /*codec_id*/, int32_t /*priority*/) {}
 
 BluetoothAudioSourceClientInterface::BluetoothAudioSourceClientInterface(
-        IBluetoothSourceTransportInstance* source)
-    : BluetoothAudioClientInterface{source}, source_(source) {}
+        IBluetoothSourceTransportInstance* source,
+        bluetooth::common::MessageLoopThread* message_loop)
+    : BluetoothAudioClientInterface{source, message_loop}, source_(source) {}
 BluetoothAudioSourceClientInterface::~BluetoothAudioSourceClientInterface() {}
 
 size_t BluetoothAudioSourceClientInterface::WriteAudioData(const uint8_t* p_buf, uint32_t len) {
