@@ -1113,7 +1113,14 @@ public class PairingTest {
                     hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
         }
         // delete keys at  bumble side
-        mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
+        byte[] address = Utils.addressBytesFromString(sAdapter.getAddress());
+        mBumble.securityStorageBlocking()
+                .deleteBond(
+                        DeleteBondRequest.newBuilder()
+                                .setPublic(ByteString.copyFrom(address))
+                                .build());
+        mBumble.hostBlocking().reset(Empty.getDefaultInstance());
+        Thread.sleep(100);
         // Read fresh address
         HostProto.ReadLocalAddressResponse readLocalAddressResponse =
                 mBumble.hostBlocking().readLocalAddress(Empty.getDefaultInstance());
