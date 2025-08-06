@@ -62,8 +62,6 @@ import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import com.google.protobuf.ByteString;
 
-import io.grpc.stub.StreamObserver;
-
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
 import org.junit.After;
@@ -87,8 +85,6 @@ import pandora.HostProto.DiscoverabilityMode;
 import pandora.HostProto.OwnAddressType;
 import pandora.HostProto.SetConnectabilityModeRequest;
 import pandora.HostProto.SetDiscoverabilityModeRequest;
-import pandora.SecurityProto.PairingEvent;
-import pandora.SecurityProto.PairingEventAnswer;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -114,8 +110,6 @@ public class PairingWithDiscoveryTest {
     private final BluetoothAdapter mAdapter = mManager.getAdapter();
 
     private final Map<String, Integer> mActionRegistrationCounts = new HashMap<>();
-    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
-            new StreamObserverSpliterator<>();
 
     @Rule(order = 0)
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
@@ -267,10 +261,6 @@ public class PairingWithDiscoveryTest {
         // Start Device Discovery from Android
         testStepStartDiscovery();
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         // Start pairing from Android with Auto transport
         assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
@@ -293,10 +283,6 @@ public class PairingWithDiscoveryTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // Ensure that pairing succeeds
         verifyIntentReceived(
@@ -353,10 +339,6 @@ public class PairingWithDiscoveryTest {
         // Start Device Discovery from Android
         testStepStartDiscovery();
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         // Start pairing from Android with Auto transport
         assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
@@ -379,10 +361,6 @@ public class PairingWithDiscoveryTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // Ensure that pairing succeeds
         verifyIntentReceived(
@@ -1113,10 +1091,6 @@ public class PairingWithDiscoveryTest {
                                 BluetoothDevice.ACTION_ACL_CONNECTED,
                                 BluetoothDevice.ACTION_PAIRING_REQUEST));
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
         // Create bond
         assertThat(device.createBond(transport)).isTrue();
 
@@ -1138,11 +1112,6 @@ public class PairingWithDiscoveryTest {
 
         // Approve pairing from Android
         assertThat(device.setPairingConfirmation(true)).isTrue();
-
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
