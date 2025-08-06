@@ -43,7 +43,7 @@ class BluetoothComponent(context: Context) {
         val intent = Intent(IAdapter::class.java.name)
 
         // The Bluetooth UID is shared by a very limited number of packages.
-        // We can optimize the discovery by looking only at those packages.
+        // We can optimize the resolveService lookup by only considering those packages.
         val bluetoothPackages = pm.getPackagesForUid(Process.BLUETOOTH_UID)
         if (bluetoothPackages != null && bluetoothPackages.size == 1) {
             intent.setPackage(bluetoothPackages[0])
@@ -58,5 +58,9 @@ class BluetoothComponent(context: Context) {
         packageName = serviceInfo.packageName
         componentName = ComponentName(serviceInfo.packageName, serviceInfo.name)
         Log.i(TAG, "Found Bluetooth component: $componentName")
+    }
+
+    companion object {
+        val ADAPTER_CLASS = "com.android.bluetooth.btservice.AdapterService"
     }
 }

@@ -142,6 +142,7 @@ android_robolectric_test {
         "src/BleScanSettingListener.kt",
         "src/BleScanSettingListenerTest.kt",
         "src/BluetoothComponent.kt",
+        "src/BluetoothComponentTest.kt",
         "src/BluetoothManagerServiceApi.kt",
         "src/BluetoothRestriction.kt",
         "src/BluetoothRestrictionTest.kt",
