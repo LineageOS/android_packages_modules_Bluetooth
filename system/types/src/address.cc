@@ -29,12 +29,6 @@ static_assert(sizeof(RawAddress) == 6, "RawAddress must be 6 bytes long!");
 const RawAddress RawAddress::kAny{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 const RawAddress RawAddress::kEmpty{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
-RawAddress::RawAddress(const uint8_t (&addr)[6]) {
-  std::copy(addr, addr + kLength, address.begin());
-}
-
-RawAddress::RawAddress(const std::array<uint8_t, kLength> mac) : address(mac) {}
-
 std::string RawAddress::ToString() const {
   return std::format("{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", address[0], address[1],
                      address[2], address[3], address[4], address[5]);
