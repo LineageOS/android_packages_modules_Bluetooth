@@ -1141,10 +1141,7 @@ TEST_F(StateMachineTest, GetMetadataBeforeGettingAddress) {
               OnStateMachineEvent(_, BroadcastStateMachine::State::CONFIGURED, _))
           .WillOnce([this](uint32_t broadcast_id, BroadcastStateMachine::State /*state*/,
                            const void* /*data*/) {
-            RawAddress test_address;
-
-            RawAddress::FromString("00:00:00:00:00:00", test_address);
-            ASSERT_NE(test_address, this->broadcasts_[broadcast_id]->GetOwnAddress());
+            ASSERT_NE(RawAddress::kEmpty, this->broadcasts_[broadcast_id]->GetOwnAddress());
           });
 
   broadcast_id = InstantiateStateMachine();

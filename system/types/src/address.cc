@@ -48,44 +48,46 @@ std::string RawAddress::ToRedactedStringForLogging() const {
   return std::format("xx:xx:xx:xx:{:02x}:{:02x}", address[4], address[5]);
 }
 
-bool RawAddress::FromString(const std::string& from, RawAddress& to) {
-  RawAddress new_addr;
+std::optional<RawAddress> RawAddress::FromString(const std::string& from) {
   if (from.length() != 17) {
-    return false;
+    return std::nullopt;
   }
 
+  std::array<uint8_t, 6> address;
   std::istringstream stream(from);
   std::string token;
   int index = 0;
+
   while (getline(stream, token, ':')) {
     if (index >= 6) {
-      return false;
+      return std::nullopt;
     }
 
     if (token.length() != 2) {
-      return false;
+      return std::nullopt;
     }
 
     char* temp = nullptr;
-    new_addr.address[index] = std::strtol(token.c_str(), &temp, 16);
+    address[index] = std::strtol(token.c_str(), &temp, 16);
+
     if (temp == token.c_str()) {
       // string token is empty or has wrong format
-      return false;
+      return std::nullopt;
     }
+
     if (temp != (token.c_str() + token.size())) {
       // cannot parse whole string
-      return false;
+      return std::nullopt;
     }
 
     index++;
   }
 
   if (index != 6) {
-    return false;
+    return std::nullopt;
   }
 
-  to = new_addr;
-  return true;
+  return RawAddress(address);
 }
 
 size_t RawAddress::FromOctets(const uint8_t* from) {
@@ -94,6 +96,5 @@ size_t RawAddress::FromOctets(const uint8_t* from) {
 }
 
 bool RawAddress::IsValidAddress(const std::string& address) {
-  RawAddress tmp;
-  return RawAddress::FromString(address, tmp);
+  return RawAddress::FromString(address).has_value();
 }

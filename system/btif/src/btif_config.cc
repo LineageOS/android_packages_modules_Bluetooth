@@ -290,10 +290,10 @@ std::vector<RawAddress> btif_config_get_paired_devices() {
   std::vector<RawAddress> result;
   result.reserve(names.size());
   for (const auto& name : names) {
-    RawAddress addr = {};
+    auto addr = RawAddress::FromString(name);
     // Gather up known devices from configuration section names
-    if (RawAddress::FromString(name, addr)) {
-      result.emplace_back(addr);
+    if (addr.has_value()) {
+      result.emplace_back(addr.value());
     }
   }
   return result;

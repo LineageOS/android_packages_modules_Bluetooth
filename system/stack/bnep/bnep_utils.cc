@@ -1033,7 +1033,7 @@ static void bnepu_process_peer_multicast_filter_set(tBNEP_CONN* p_bcb, uint8_t* 
                                                     uint16_t len) {
   uint16_t resp_code = BNEP_FILTER_CRL_OK;
   uint16_t num_filters, xx;
-  uint8_t *p_temp_filters;
+  uint8_t* p_temp_filters;
 
   if ((p_bcb->con_state != BNEP_STATE_CONNECTED) &&
       (!(p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED))) {

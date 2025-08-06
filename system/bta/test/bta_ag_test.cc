@@ -74,7 +74,7 @@ protected:
     bta_sys_register(BTA_ID_AG, &bta_ag_reg);
 
     bta_ag_cb.p_cback = [](tBTA_AG_EVT /*event*/, tBTA_AG* /*p_data*/) {};
-    RawAddress::FromString("00:11:22:33:44:55", addr);
+    addr = RawAddress::FromString("00:11:22:33:44:55").value();
     test::mock::device_esco_parameters::esco_parameters_for_codec.body = [this](esco_codec_t codec,
                                                                                 bool /*offload*/) {
       this->codec = codec;

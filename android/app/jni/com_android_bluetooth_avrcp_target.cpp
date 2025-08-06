@@ -329,15 +329,14 @@ static jboolean connectDeviceNative(JNIEnv* env, jobject /* object */, jstring a
   }
 
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return JNI_FALSE;
   }
 
-  return sServiceInterface->ConnectDevice(bdaddr) == true ? JNI_TRUE : JNI_FALSE;
+  return sServiceInterface->ConnectDevice(bdaddr.value()) == true ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */, jstring address) {
@@ -349,15 +348,14 @@ static jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */, jstrin
   }
 
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return JNI_FALSE;
   }
 
-  return sServiceInterface->DisconnectDevice(bdaddr) == true ? JNI_TRUE : JNI_FALSE;
+  return sServiceInterface->DisconnectDevice(bdaddr.value()) == true ? JNI_TRUE : JNI_FALSE;
 }
 
 static void sendMediaKeyEvent(const RawAddress& address, int key, KeyState state) {
@@ -893,18 +891,17 @@ static void volumeDeviceDisconnected(const RawAddress& address) {
 static void sendVolumeChangedNative(JNIEnv* env, jobject /* object */, jstring address,
                                     jint volume) {
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return;
   }
 
   log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
-  if (volumeCallbackMap.find(bdaddr) != volumeCallbackMap.end()) {
-    volumeCallbackMap.find(bdaddr)->second.Run(volume & 0x7F);
+  if (volumeCallbackMap.find(bdaddr.value()) != volumeCallbackMap.end()) {
+    volumeCallbackMap.find(bdaddr.value())->second.Run(volume & 0x7F);
   }
 }
 
@@ -928,16 +925,15 @@ static void setBipClientStatusNative(JNIEnv* env, jobject /* object */, jstring 
   }
 
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return;
   }
 
   bool status = (connected == JNI_TRUE);
-  sServiceInterface->SetBipClientStatus(bdaddr, status);
+  sServiceInterface->SetBipClientStatus(bdaddr.value(), status);
 }
 
 // Called from native to list available player settings

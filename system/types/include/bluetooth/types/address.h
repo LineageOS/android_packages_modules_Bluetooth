@@ -21,6 +21,7 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <string>
 
 /** Bluetooth Address */
@@ -56,7 +57,7 @@ public:
   // Converts |string| to RawAddress and places it in |to|. If |from| does
   // not represent a Bluetooth address, |to| is not modified and this function
   // returns false. Otherwise, it returns true.
-  static bool FromString(const std::string& from, RawAddress& to);
+  static std::optional<RawAddress> FromString(const std::string& from);
 
   // Copies |from| raw Bluetooth address octets to the local object.
   // Returns the number of copied octets - should be always RawAddress::kLength
