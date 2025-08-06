@@ -246,7 +246,8 @@ private:
 ///   - btif_a2dp_source_audio_handle_timer
 ///   - btif_a2dp_source_read_callback
 ///   - btif_a2dp_source_enqueue_callback
-static bluetooth::common::MessageLoopThread btif_a2dp_source_thread("bt_a2dp_source_worker_thread");
+static bluetooth::common::MessageLoopThread btif_a2dp_source_thread(
+        "bt_a2dp_source_worker_thread", bluetooth::os::Thread::Priority::REAL_TIME);
 
 static BtifA2dpSource btif_a2dp_source_cb;
 static uint8_t btif_a2dp_source_dynamic_audio_buffer_size = MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ;
@@ -844,14 +845,14 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
                    "assert failed: btif_a2dp_source_cb.encoder_interface != nullptr");
 
   log::info("starting media encoder timer with interval {}ms",
-               btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms());
+            btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms());
 
   wakelock_acquire();
   btif_a2dp_source_cb.encoder_interface->feeding_reset();
   btif_a2dp_source_cb.tx_flush = false;
   btif_a2dp_source_cb.sw_audio_is_encoding = true;
   btif_a2dp_source_cb.media_alarm.SchedulePeriodic(
-          btif_a2dp_source_thread.GetWeakPtr(),
+          &btif_a2dp_source_thread,
           base::BindRepeating(&btif_a2dp_source_audio_handle_timer),
           std::chrono::milliseconds(
                   btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms()));
@@ -911,7 +912,7 @@ static void btif_a2dp_source_audio_handle_timer(void) {
   {
     static uint64_t previous_timestamp_us = 0;
     log::verbose("timestamp_us={} delta_us={:08} tx_queue_len={}", timestamp_us,
-              timestamp_us - previous_timestamp_us, tx_queue_len);
+                 timestamp_us - previous_timestamp_us, tx_queue_len);
     previous_timestamp_us = timestamp_us;
   }
 

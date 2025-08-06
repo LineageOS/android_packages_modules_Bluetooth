@@ -41,21 +41,10 @@ cc_defaults {
     name: "libbluetooth_gd_defaults",
     defaults: [
         "gd_defaults",
+        "libbluetooth_gd_os_defaults",
     ],
     host_supported: true,
     target: {
-        linux: {
-            srcs: [
-                "os/linux_generic/alarm.cc",
-                "os/linux_generic/boottime_clock.cc",
-                "os/linux_generic/files.cc",
-                "os/linux_generic/reactive_semaphore.cc",
-                "os/linux_generic/reactor.cc",
-                "os/linux_generic/repeating_alarm.cc",
-                "os/linux_generic/thread.cc",
-                "os/linux_generic/wakelock_manager.cc",
-            ],
-        },
         host: {
             srcs: [
                 "hal/hci_hal_impl_host_rootcanal.cc",
@@ -132,7 +121,6 @@ cc_defaults {
         "hci/remote_name_request_impl.cc",
         "hci/uuid.cc",
         "lpp/lpp_offload_manager.cc",
-        "os/handler.cc",
         "os/system_properties_common.cc",
         "storage/classic_device.cc",
         "storage/config_cache.cc",
@@ -166,6 +154,54 @@ cc_defaults {
         "libbluetooth_metrics",
         "libbluetooth_types",
         "libbt-common",
+        "libcom.android.sysprop.bluetooth.wrapped",
+        "libosi",
+        "server_configurable_flags",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system/include",
+        "packages/modules/Bluetooth/system/stack/include",
+    ],
+}
+
+cc_library_static {
+    name: "libbluetooth_gd_os",
+    defaults: [
+        "libbluetooth_gd_os_defaults",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+    ],
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "36",
+    static_libs: [
+        "bluetooth_flags_c_lib",
+        "libchrome",
+    ],
+}
+
+cc_defaults {
+    name: "libbluetooth_gd_os_defaults",
+    host_supported: true,
+    srcs: [
+        "os/handler.cc",
+        "os/linux_generic/alarm.cc",
+        "os/linux_generic/boottime_clock.cc",
+        "os/linux_generic/files.cc",
+        "os/linux_generic/reactive_semaphore.cc",
+        "os/linux_generic/reactor.cc",
+        "os/linux_generic/repeating_alarm.cc",
+        "os/linux_generic/thread.cc",
+        "os/linux_generic/wakelock_manager.cc",
+    ],
+    static_libs: [
+        "bluetooth_flags_c_lib",
+        "libaconfig_storage_read_api_cc",
+        "libbase",
+        "libbluetooth_crypto_toolbox",
+        "libbluetooth_log",
+        "libbluetooth_metrics",
+        "libbluetooth_types",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libosi",
         "server_configurable_flags",

@@ -242,7 +242,8 @@ void SourceImpl::SendAudioData() {
 bool SourceImpl::InitAudioSinkThread() {
   const std::string thread_name = is_broadcaster_ ? "bt_le_audio_broadcast_sink_worker_thread"
                                                   : "bt_le_audio_unicast_sink_worker_thread";
-  worker_thread_ = new bluetooth::common::MessageLoopThread(thread_name);
+  worker_thread_ = new bluetooth::common::MessageLoopThread(
+          thread_name, bluetooth::os::Thread::Priority::REAL_TIME);
 
   worker_thread_->StartUp();
   if (!worker_thread_->IsRunning()) {
@@ -269,7 +270,7 @@ void SourceImpl::StartAudioTicks() {
           worker_thread_, source_codec_config_.num_channels, source_codec_config_.sample_rate,
           source_codec_config_.bits_per_sample, source_codec_config_.data_interval_us);
   audio_timer_.SchedulePeriodic(
-          worker_thread_->GetWeakPtr(),
+          worker_thread_,
           base::BindRepeating(&SourceImpl::SendAudioData, weak_factory_.GetWeakPtr()),
           std::chrono::microseconds(source_codec_config_.data_interval_us));
 }

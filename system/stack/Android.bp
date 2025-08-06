@@ -19,6 +19,7 @@ cc_library_static {
         "packages/modules/Bluetooth/system/stack/include",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbluetooth_log",
         "libbluetooth_types",
     ],
@@ -1885,8 +1886,10 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libbluetooth_crypto_toolbox",
+        "libbluetooth_gd_os",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",

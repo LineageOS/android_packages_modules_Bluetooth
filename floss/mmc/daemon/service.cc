@@ -38,6 +38,7 @@
 #include "mmc/daemon/constants.h"
 #include "mmc/mmc_interface/mmc_interface.h"
 #include "mmc/proto/mmc_service.pb.h"
+#include "os/thread.h"
 
 #if !defined(EXCLUDE_NONSTANDARD_CODECS)
 #include "mmc/codec_server/a2dp_aac_mmc_encoder.h"
@@ -270,7 +271,8 @@ bool Service::StartWorkerThread(int fd, struct sockaddr_un addr,
   // Each thread has its associated future to indicate task completion.
   std::promise<void> task_ended;
   thread_pool_.push_back(
-          std::make_pair(std::make_unique<bluetooth::common::MessageLoopThread>(kWorkerThreadName),
+          std::make_pair(std::make_unique<bluetooth::common::MessageLoopThread>(
+                                 kWorkerThreadName, os::Thread::Priority::REAL_TIME),
                          std::make_unique<std::future<void>>(task_ended.get_future())));
 
   // Start up thread and assign task to it.

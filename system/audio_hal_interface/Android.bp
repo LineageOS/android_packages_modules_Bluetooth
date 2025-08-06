@@ -343,6 +343,7 @@ cc_test {
         "hfp_client_interface_unittest.cc",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib_for_test",
         "server_configurable_flags",
     ],
     header_libs: ["libbluetooth_headers"],

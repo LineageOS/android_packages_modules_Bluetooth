@@ -24,6 +24,7 @@ cc_fuzz {
     static_libs: [
         "bluetooth_flags_c_lib",
         "libaconfig_storage_read_api_cc",
+        "libbluetooth_gd_os",
         "libbluetooth_log",
         "libbt-common",
         "libchrome",
