@@ -7141,11 +7141,19 @@ public:
         if (is_active_group_operation) {
           /** Stop Audio but don't release all the Audio resources */
           SuspendAudio();
+          if (com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
+            notifyAudioLocalSink(UnicastMonitorModeStatus::SUSPENDED);
+            notifyAudioLocalSource(UnicastMonitorModeStatus::SUSPENDED);
+          }
         }
         break;
       case GroupStreamStatus::CONFIGURED_BY_USER:
         if (is_active_group_operation) {
           reconfigurationComplete();
+          if (com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
+            notifyAudioLocalSink(UnicastMonitorModeStatus::SUSPENDED);
+            notifyAudioLocalSource(UnicastMonitorModeStatus::SUSPENDED);
+          }
         }
         break;
       case GroupStreamStatus::CONFIGURED_AUTONOMOUS:
@@ -7174,12 +7182,16 @@ public:
         if (group) {
           handleAsymmetricPhyForUnicast(group);
           UpdateLocationsAndContextsAvailability(group);
-          if (!group->IsPendingConfiguration()) {
-            if (is_active_group_operation) {
+
+          if (is_active_group_operation) {
+            if (com_android_bluetooth_flags_leaudio_improve_unicast_monitor() ||
+                !group->IsPendingConfiguration()) {
               notifyAudioLocalSink(UnicastMonitorModeStatus::SUSPENDED);
               notifyAudioLocalSource(UnicastMonitorModeStatus::SUSPENDED);
             }
-          } else {
+          }
+
+          if (group->IsPendingConfiguration()) {
             if (!is_active_group_operation) {
               log::info("Clear pending configuration flag for group {}", group->group_id_);
               group->ClearPendingConfiguration();
@@ -7195,9 +7207,11 @@ public:
                               ? bluetooth::le_audio::types::kLeAudioDirectionSource
                               : bluetooth::le_audio::types::kLeAudioDirectionSink;
 
-              /* Reconfiguration to non requiring source scenario */
-              if (remote_direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
-                notifyAudioLocalSink(UnicastMonitorModeStatus::SUSPENDED);
+              if (!com_android_bluetooth_flags_leaudio_improve_unicast_monitor()) {
+                /* Reconfiguration to non requiring source scenario */
+                if (remote_direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
+                  notifyAudioLocalSink(UnicastMonitorModeStatus::SUSPENDED);
+                }
               }
 
               auto config = DirectionalRealignMetadataAudioContexts(group, remote_direction);
