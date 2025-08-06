@@ -104,9 +104,11 @@ struct tAPPS_CONNECTING {
 
 namespace {
 // Maps address to apps trying to connect to it
-std::map<RawAddress, tAPPS_CONNECTING> bgconn_dev;
+std::map<RawAddress, tAPPS_CONNECTING> bgconn_dev; // Guarded by bgconn_dev_mutex
+std::recursive_mutex bgconn_dev_mutex;
 
 int num_of_targeted_announcements_users(void) {
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   return std::count_if(bgconn_dev.begin(), bgconn_dev.end(), [](const auto& pair) {
     return !pair.second.is_in_accept_list && !pair.second.doing_targeted_announcements_conn.empty();
   });
@@ -128,6 +130,8 @@ bool is_anyone_connecting(const std::map<RawAddress, tAPPS_CONNECTING>::iterator
 static bool accept_list_is_full() {
   uint8_t accept_list_size = shim::GetController()->GetLeFilterAcceptListSize();
 
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
+
   int num_entries = 0;
   for (const auto& entry : bgconn_dev) {
     if (entry.second.is_in_accept_list) {
@@ -147,6 +151,7 @@ static bool accept_list_is_full() {
 /** Return all apps interested in device, or empty set if not found. */
 std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& address) {
   log::debug("address={}", address);
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     return std::set<tAPP_ID>();
@@ -200,6 +205,7 @@ static void schedule_direct_connect_add(uint8_t app_id, const RawAddress& addres
 static void target_announcement_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
                                                    uint16_t eir_len) {
   auto addr = p_inq->remote_bd_addr;
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(addr);
   if (it == bgconn_dev.end() || it->second.doing_targeted_announcements_conn.empty()) {
     return;
@@ -250,7 +256,7 @@ bool background_connect_targeted_announcement_add(tAPP_ID app_id, const RawAddre
   log::info("app_id={}, address={}", static_cast<int>(app_id), address);
 
   bool disable_accept_list = false;
-
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it != bgconn_dev.end()) {
     // check if filtering already enabled
@@ -295,6 +301,7 @@ bool background_connect_targeted_announcement_add(tAPP_ID app_id, const RawAddre
  * added to the list, or already in list, false otherwise */
 bool background_connect_add(uint8_t app_id, const RawAddress& address) {
   log::debug("app_id={}, address={}", static_cast<int>(app_id), address);
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   bool in_acceptlist = false;
   bool is_targeted_announcement_enabled = false;
@@ -343,6 +350,7 @@ bool background_connect_add(uint8_t app_id, const RawAddress& address) {
  * Returns true if anything was removed, false otherwise */
 bool remove_unconditional(const RawAddress& address) {
   log::debug("address={}", address);
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   int count = bgconn_dev.erase(address);
   if (count == 0) {
     log::info("address {} is not found", address);
@@ -357,6 +365,7 @@ bool remove_unconditional(const RawAddress& address) {
  * successfully removed */
 bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
   log::debug("app_id={}, address={}", static_cast<int>(app_id), address);
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     log::warn("address {} is not found", address);
@@ -413,6 +422,7 @@ bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
 }
 
 bool is_background_connection(const RawAddress& address) {
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     return false;
@@ -421,6 +431,7 @@ bool is_background_connection(const RawAddress& address) {
 }
 
 bool is_direct_connection(const RawAddress& address) {
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     return false;
@@ -431,6 +442,7 @@ bool is_direct_connection(const RawAddress& address) {
 /** deregister all related background connection device. */
 void on_app_deregistered(uint8_t app_id) {
   log::debug("app_id={}", static_cast<int>(app_id));
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.begin();
   auto end = bgconn_dev.end();
   /* update the BG conn device list */
@@ -451,6 +463,7 @@ void on_app_deregistered(uint8_t app_id) {
 
 static void remove_all_clients_with_pending_connections(const RawAddress& address) {
   log::debug("address={}", address);
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   while (it != bgconn_dev.end() && !it->second.doing_direct_conn.empty()) {
     uint8_t app_id = it->second.doing_direct_conn.begin()->first;
@@ -473,6 +486,7 @@ void on_connection_timed_out_from_shim(const RawAddress& address) {
 /** Reset bg device list. If called after controller reset, set |after_reset|
  * to true, as there is no need to wipe controller acceptlist in this case. */
 void reset(bool after_reset) {
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   bgconn_dev.clear();
   if (!after_reset) {
     target_announcements_filtering_set(false);
@@ -526,6 +540,7 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
              address_with_type, AddressTypeText(addr_type));
 
   bool in_acceptlist = false;
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it != bgconn_dev.end()) {
     const tAPPS_CONNECTING& info = it->second;
@@ -587,6 +602,7 @@ static void schedule_direct_connect_add(uint8_t app_id, const RawAddress& addres
 bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool connection_timeout) {
   log::debug("app_id={}, address={}, connection_timeout={}", static_cast<int>(app_id), address,
              connection_timeout);
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     log::warn("unable to find entry to remove: {}", address);
@@ -632,6 +648,7 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
 
 void dump(int fd) {
   dprintf(fd, "\nconnection_manager state:\n");
+  std::lock_guard<std::recursive_mutex> lock(bgconn_dev_mutex);
   if (bgconn_dev.empty()) {
     dprintf(fd, "\tno Low Energy connection attempts\n");
     return;
