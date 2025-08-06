@@ -321,3 +321,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_conn_manager_api"
+    namespace: "bluetooth"
+    description: "APIs for Le Acl connecion Management"
+    bug: "450085002"
+}
