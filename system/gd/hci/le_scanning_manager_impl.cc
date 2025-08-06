@@ -214,6 +214,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     if (address_manager_registered_) {
       le_address_manager_->Unregister(this);
     }
+
     if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
       handler_->Clear();
       handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
@@ -222,9 +223,15 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   void stop() {
-    for (auto subevent_code : LeScanningEvents) {
-      hci_layer_->UnregisterLeEventHandler(subevent_code);
+    if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+      hci_layer_->ReleaseLeScanningInterface();
     }
+    else {
+      for (auto subevent_code : LeScanningEvents) {
+        hci_layer_->UnregisterLeEventHandler(subevent_code);
+      }
+    }
+
     if (is_batch_scan_supported_) {
       // TODO implete vse module
       // hci_layer_->UnregisterVesEventHandler(VseSubeventCode::BLE_THRESHOLD);

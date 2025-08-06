@@ -890,12 +890,24 @@ LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(
   return &le_advertising_interface;
 }
 
+void HciLayer::ReleaseLeAdvertisingInterface() {
+  for (const auto subevent : LeAdvertisingEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
+}
+
 LeScanningInterface* HciLayer::GetLeScanningInterface(
         ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeScanningEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
   return &le_scanning_interface;
+}
+
+void HciLayer::ReleaseLeScanningInterface() {
+  for (const auto subevent : LeScanningEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
 }
 
 LeIsoInterface* HciLayer::GetLeIsoInterface(
@@ -912,6 +924,12 @@ DistanceMeasurementInterface* HciLayer::GetDistanceMeasurementInterface(
     RegisterLeEventHandler(subevent, event_handler);
   }
   return &distance_measurement_interface;
+}
+
+void HciLayer::ReleaseDistanceMeasurementInterface() {
+  for (const auto subevent : DistanceMeasurementEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
 }
 
 std::unique_ptr<InquiryInterface> HciLayer::GetInquiryInterface(
