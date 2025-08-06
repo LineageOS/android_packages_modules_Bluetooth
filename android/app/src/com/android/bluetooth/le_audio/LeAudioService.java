@@ -1413,7 +1413,7 @@ public class LeAudioService extends ConnectableProfile {
      *
      * @param broadcastId broadcast instance identifier
      */
-    public void startBroadcast(int broadcastId) {
+    private void startBroadcast(int broadcastId) {
         if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
             Log.w(TAG, "Native interface not available.");
             return;
@@ -1473,7 +1473,7 @@ public class LeAudioService extends ConnectableProfile {
      *
      * @param broadcastId broadcast instance identifier
      */
-    public void pauseBroadcast(Integer broadcastId) {
+    private void pauseBroadcast(Integer broadcastId) {
         if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
             Log.w(TAG, "Native interface not available.");
             return;
@@ -1534,7 +1534,7 @@ public class LeAudioService extends ConnectableProfile {
      *
      * @param broadcastId broadcast instance identifier
      */
-    public void destroyBroadcast(int broadcastId) {
+    private void destroyBroadcast(int broadcastId) {
         if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
             Log.w(TAG, "Native interface not available.");
             return;
@@ -3079,7 +3079,7 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private void handleSinkStreamStatusChange(int status) {
-        Log.d(TAG, "status: " + status);
+        Log.d(TAG, "handleSinkStreamStatusChange status: " + status);
 
         /* Streaming request of Unicast Sink stream should result in pausing broadcast and
          * activating Unicast group.
