@@ -94,7 +94,7 @@ class PermissionChecker(
         if (packageName == null) {
             throw BluetoothPermissionException("Null package name from $uid")
         }
-        checkPackageName(UserHandle.getAppId(uid), packageName)
+        checkPackageName(callingAppId, packageName)
 
         if (foregroundRequired) {
             enforceCallerIsForegroundUser(uid)
