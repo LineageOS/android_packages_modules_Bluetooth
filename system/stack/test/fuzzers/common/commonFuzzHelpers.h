@@ -57,7 +57,7 @@ RawAddress generateRawAddress(FuzzedDataProvider* fdp) {
 
   // Read as much as we can from the buffer and copy it in
   std::vector<uint8_t> bytes = fdp->ConsumeBytes<uint8_t>(retval.kLength);
-  memcpy(retval.address, bytes.data(), bytes.size());
+  memcpy(retval.address.data(), bytes.data(), bytes.size());
 
   return retval;
 }

@@ -304,7 +304,7 @@ static int tap_if_up(const char* devname, const RawAddress& addr) {
   }
 
   osi_strlcpy(ifr.ifr_name, devname, IFNAMSIZ);
-  memcpy(ifr.ifr_hwaddr.sa_data, addr.address, 6);
+  memcpy(ifr.ifr_hwaddr.sa_data, addr.address.data(), 6);
 
   /* The IEEE has specified that the most significant bit of the most
    * significant byte is used to

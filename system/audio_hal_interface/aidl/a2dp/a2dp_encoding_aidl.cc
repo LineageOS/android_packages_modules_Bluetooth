@@ -647,7 +647,7 @@ provider::get_a2dp_configuration(
 
   // Convert the user preferences into a configuration hint.
   A2dpConfigurationHint hint;
-  hint.bdAddr = peer_address.ToArray();
+  hint.bdAddr = peer_address.address;
   auto& codecParameters = hint.codecParameters.emplace();
   switch (user_preferences.channel_mode) {
     case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:

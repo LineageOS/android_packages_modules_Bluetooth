@@ -127,7 +127,7 @@ struct tBLE_BD_ADDR {
 
   tBLE_BD_ADDR_SERIALIZED ToSerialized() const {
     tBLE_BD_ADDR_SERIALIZED serialized;
-    memcpy(serialized.data(), bda.address, RawAddress::kLength);
+    memcpy(serialized.data(), bda.address.data(), RawAddress::kLength);
     serialized[RawAddress::kLength] = type;
     return serialized;
   }
@@ -138,7 +138,7 @@ struct std::hash<tBLE_BD_ADDR> {
   std::size_t operator()(const tBLE_BD_ADDR& val) const {
     static_assert(sizeof(uint64_t) >= (RawAddress::kLength + sizeof(tBLE_ADDR_TYPE)));
     uint64_t int_addr = 0;
-    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.bda.address, RawAddress::kLength);
+    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.bda.address.data(), RawAddress::kLength);
     memcpy(reinterpret_cast<uint8_t*>(&int_addr) + RawAddress::kLength, (const void*)&val.type,
            sizeof(tBLE_ADDR_TYPE));
     return std::hash<uint64_t>{}(int_addr);
