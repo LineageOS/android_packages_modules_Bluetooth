@@ -22,6 +22,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
@@ -2856,6 +2857,9 @@ static void btif_report_connection_state(const RawAddress& peer_address,
     if (peer->IsSink()) {
       do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->connection_state_cb, peer_address,
                                       state, btav_error_t{}));
+      if (error_code != BTA_AV_SUCCESS) {
+        bluetooth::metrics::LogA2dpBtifAvStateChangeEvent(peer_address, error_code);
+      }
     } else if (peer->IsSource()) {
       do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->connection_state_cb, peer_address,
                                       state, btav_error_t{}));
@@ -2867,6 +2871,9 @@ static void btif_report_connection_state(const RawAddress& peer_address,
     do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->connection_state_cb, peer_address,
                                     state,
                                     btav_error_t{.status = status, .error_code = error_code}));
+    if (error_code != BTA_AV_SUCCESS) {
+      bluetooth::metrics::LogA2dpBtifAvStateChangeEvent(peer_address, error_code);
+    }
   } else if (btif_av_sink.Enabled()) {
     do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->connection_state_cb, peer_address,
                                     state,
