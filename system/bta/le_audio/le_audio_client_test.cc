@@ -1656,6 +1656,7 @@ protected:
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
     com::android::bluetooth::flags::provider_->leaudio_connection_subrating(true);
     com::android::bluetooth::flags::provider_->start_leaudio_subrate_for_active_set_only(true);
+    com::android::bluetooth::flags::provider_->leaudio_improve_unicast_monitor(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
@@ -14557,6 +14558,14 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsActive) {
   uint8_t cis_count_in = 2;
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
 
+  if (com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+    // Stop streaming and expect Service to be informed about streaming
+    EXPECT_CALL(mock_audio_hal_client_callbacks_,
+                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                           UnicastMonitorModeStatus::STREAMING))
+            .Times(1);
+  }
+
   // Imitate activation of monitor mode
   do_in_main_thread(base::BindOnce(
           &LeAudioClient::SetUnicastMonitorMode, base::Unretained(LeAudioClient::Get()),
@@ -14564,10 +14573,10 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsActive) {
 
   ASSERT_NE(0lu, streaming_groups.count(group_id));
 
-  // Stop streaming and expect Service to be informed about straming suspension
+  // Stop streaming and expect Service to be informed about streaming suspension
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Stop
@@ -14609,22 +14618,38 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsInactive) {
   // Start streaming
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+
+  // Expect no monitor status  when group is active and not resumed
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnUnicastMonitorModeStatus(_, _)).Times(0);
+
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
-  // Expect no streaming request on stream resume when group is already active
-  EXPECT_CALL(mock_audio_hal_client_callbacks_,
-              OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
-                                         UnicastMonitorModeStatus::STREAMING_REQUESTED))
-          .Times(0);
+  if (!com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+    // Expect no streaming request on stream resume when group is already active
+    EXPECT_CALL(mock_audio_hal_client_callbacks_,
+                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                           UnicastMonitorModeStatus::STREAMING_REQUESTED))
+            .Times(0);
+  } else {
+    /* Expect  STREAMING state when group is moving to streaming on the Local Sink.
+     * Because when AUDIO HAL calls SinkResume, the bidirectional stream is already in place
+     */
+    EXPECT_CALL(mock_audio_hal_client_callbacks_,
+                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                           UnicastMonitorModeStatus::STREAMING))
+            .Times(1);
+  }
 
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
 
+  SyncOnMainLoop();
+
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-  SyncOnMainLoop();
 
   // Verify Data transfer on two peer sinks and one source
   uint8_t cis_count_out = 2;
@@ -14633,10 +14658,10 @@ TEST_F(UnicastTestHandoverMode, SetSinkMonitorModeWhileUnicastIsInactive) {
 
   ASSERT_NE(0lu, streaming_groups.count(group_id));
 
-  // Stop streaming and expect Service to be informed about straming suspension
+  // Stop streaming and expect Service to be informed about streaming suspension
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Stop
@@ -14678,22 +14703,37 @@ TEST_F(UnicastTestHandoverMode, ClearSinkMonitorModeWhileUnicastIsActive) {
   // Start streaming
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+
+  // Expect no monitor mode status when group is Active and Idle
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnUnicastMonitorModeStatus(_, _)).Times(0);
+
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
 
-  // Expect no streaming request on stream resume when group is already active
+  /* Note: In this test environment and usually what Audio HAL does, the Encoding sessions is open
+   * first for the conversational mode. When it is there and user accepts the phone call, the
+   * DECODING sessions is open. This is why Sink monitor session will go directly to STREAMING state
+   */
+
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
                                          UnicastMonitorModeStatus::STREAMING_REQUESTED))
           .Times(0);
 
+  if (com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+    EXPECT_CALL(mock_audio_hal_client_callbacks_,
+                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                           UnicastMonitorModeStatus::STREAMING))
+            .Times(1);
+  }
+
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
+  SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-  SyncOnMainLoop();
 
   // Verify Data transfer on two peer sinks and one source
   uint8_t cis_count_out = 2;
@@ -14703,6 +14743,9 @@ TEST_F(UnicastTestHandoverMode, ClearSinkMonitorModeWhileUnicastIsActive) {
   ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
+  // Don't expext Monitor Mode status when disabled.
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnUnicastMonitorModeStatus(_, _)).Times(0);
+
   // De-activate monitoring mode
   do_in_main_thread(base::BindOnce(
           &LeAudioClient::SetUnicastMonitorMode, base::Unretained(LeAudioClient::Get()),
@@ -14710,6 +14753,7 @@ TEST_F(UnicastTestHandoverMode, ClearSinkMonitorModeWhileUnicastIsActive) {
 
   // Stop
   StopStreaming(group_id, true);
+  SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
   // Check if cache configuration is still present
@@ -14764,11 +14808,11 @@ TEST_F(UnicastTestHandoverMode, SetAndClearSinkMonitorModeWhileUnicastIsInactive
 
 TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsInactive) {
   /* Enabling monitor mode for source while group is not active should result in
-   * sending STREAMING_SUSPENDED notification.
+   * sending SUSPENDED notification.
    */
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Imitate activation of monitor mode
@@ -14781,11 +14825,11 @@ TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsInactive) {
 
 TEST_F(UnicastTestHandoverMode, SetTwiceSourceMonitorModeWhileUnicastIsInactive) {
   /* Enabling monitor mode for source while group is not active should result in
-   * sending STREAMING_SUSPENDED notification.
+   * sending SUSPENDED notification.
    */
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Imitate activation of monitor mode
@@ -14806,11 +14850,11 @@ TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsNotStreaming) 
   LeAudioClient::Get()->GroupSetActive(group_id);
 
   /* Enabling monitor mode for source while group is not active should result in
-   * sending STREAMING_SUSPENDED notification.
+   * sending SUSPENDED notification.
    */
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Imitate activation of monitor mode
@@ -14879,10 +14923,10 @@ TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsActive) {
   ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
-  // Stop streaming and expect Service to be informed about straming suspension
+  // Stop streaming and expect Service to be informed about streaming suspension
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Stop
@@ -14924,6 +14968,12 @@ TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsActive) {
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
                                          UnicastMonitorModeStatus::STREAMING_REQUESTED))
           .Times(1);
+  if (com::android::bluetooth::flags::leaudio_improve_unicast_monitor()) {
+    EXPECT_CALL(mock_audio_hal_client_callbacks_,
+                OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
+                                           UnicastMonitorModeStatus::STREAMING))
+            .Times(1);
+  }
 
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
@@ -14937,10 +14987,10 @@ TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsActive) {
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
   Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
 
-  // Stop streaming and expect Service to be informed about straming suspension
+  // Stop streaming and expect Service to be informed about streaming suspension
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(1);
 
   // Stop
@@ -14961,7 +15011,7 @@ TEST_F(UnicastTestHandoverMode, SetSourceMonitorModeWhileUnicastIsActive) {
   // De-activate monitoring mode
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
-                                         UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+                                         UnicastMonitorModeStatus::SUSPENDED))
           .Times(0);
 
   do_in_main_thread(base::BindOnce(
