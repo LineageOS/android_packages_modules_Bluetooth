@@ -43,18 +43,12 @@ public:
 
   bool IsEmpty() const { return *this == kEmpty; }
 
-  // TODO (b/258090765): remove it and
-  // replace its usage with ToColonSepHexString
-  std::string ToString() const;
-
   // Return a string representation in the form of
   // hexadecimal string separated by colon (:), e.g.,
   // "12:34:56:ab:cd:ef"
-  std::string ToColonSepHexString() const;
-  // same as ToColonSepHexString
-  std::string ToStringForLogging() const;
+  std::string ToString() const;
 
-  // Similar with ToColonHexString, ToRedactedStringForLogging returns a
+  // Similar with ToString, ToRedactedStringForLogging returns a
   // colon separated hexadecimal reprentation of the address but, with the
   // leftmost 4 bytes masked with "xx", e.g., "xx:xx:xx:xx:ab:cd".
   std::string ToRedactedStringForLogging() const;
@@ -73,11 +67,6 @@ public:
   static const RawAddress kEmpty;  // 00:00:00:00:00:00
   static const RawAddress kAny;    // FF:FF:FF:FF:FF:FF
 };
-
-inline std::ostream& operator<<(std::ostream& os, const RawAddress& a) {
-  os << a.ToString();
-  return os;
-}
 
 template <>
 struct std::hash<RawAddress> {

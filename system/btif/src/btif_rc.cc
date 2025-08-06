@@ -3484,7 +3484,7 @@ static void start_transaction_timer(btif_rc_device_cb_t* p_dev, uint8_t label,
   }
 
   std::stringstream ss;
-  ss << "btif_rc." << p_dev->rc_addr.ToColonSepHexString() << "." << transaction->label;
+  ss << "btif_rc." << p_dev->rc_addr.ToRedactedStringForLogging() << "." << transaction->label;
   alarm_free(transaction->timer);
   transaction->timer = alarm_new(ss.str().c_str());
   alarm_set_on_mloop(transaction->timer, timeout_ms, btif_rc_transaction_timer_timeout,
