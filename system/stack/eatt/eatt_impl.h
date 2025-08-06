@@ -101,7 +101,7 @@ struct eatt_impl {
   }
 
   bool is_channel_connection_pending(eatt_device* eatt_dev) {
-    for (const std::pair<uint16_t, std::shared_ptr<EattChannel>>& el : eatt_dev->eatt_channels) {
+    for (const std::pair<uint16_t, std::shared_ptr<EattChannel>> el : eatt_dev->eatt_channels) {
       if (el.second->state_ == EattChannelState::EATT_CHANNEL_PENDING) {
         return true;
       }
@@ -211,7 +211,7 @@ struct eatt_impl {
       auto chan = find_channel_by_cid(cid);
       mtu = chan->tx_mtu_;
     } else {
-      for (const std::pair<uint16_t, std::shared_ptr<EattChannel>>& el : eatt_dev->eatt_channels) {
+      for (const std::pair<uint16_t, std::shared_ptr<EattChannel>> el : eatt_dev->eatt_channels) {
         if (el.second->state_ == EattChannelState::EATT_CHANNEL_OPENED) {
           cid = el.first;
           mtu = el.second->tx_mtu_;
