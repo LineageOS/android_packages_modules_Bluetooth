@@ -1218,7 +1218,7 @@ public class BassClientServiceTest {
                 syncHandle, testDevice, TEST_ADVERTISER_SID, 0, 200, BluetoothGatt.GATT_FAILURE);
     }
 
-    private void verifyAddSourceForGroup(BluetoothLeBroadcastMetadata meta) {
+    private void addSourceAndVerify(BluetoothLeBroadcastMetadata meta) {
         // Add broadcast source
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
 
@@ -1543,7 +1543,7 @@ public class BassClientServiceTest {
     public void testAddSourceForGroup() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
     }
 
     /** Test whether service.addSource() source id can be propagated through callback correctly */
@@ -1642,7 +1642,7 @@ public class BassClientServiceTest {
     public void testRemoveSourceForGroupAndTriggerModifySource() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             injectRemoteSourceStateSourceAdded(
                     sm,
@@ -1943,14 +1943,14 @@ public class BassClientServiceTest {
         }
 
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
 
         // Add another new broadcast source
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
         onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
-        verifyAddSourceForGroup(mBroadcastMetadata2);
+        addSourceAndVerify(mBroadcastMetadata2);
     }
 
     @Test
@@ -2047,7 +2047,7 @@ public class BassClientServiceTest {
         }
 
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         assertThat(mStateMachines).hasSize(2);
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
@@ -2055,7 +2055,7 @@ public class BassClientServiceTest {
         // Add another broadcast source
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
         onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
-        verifyAddSourceForGroup(mBroadcastMetadata2);
+        addSourceAndVerify(mBroadcastMetadata2);
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
@@ -2209,7 +2209,7 @@ public class BassClientServiceTest {
             verify(sm, never()).sendMessage(any());
         }
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
 
@@ -2280,7 +2280,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, unknown quality, broadcast HQ only
-        verifyAddSourceForGroup(metadataHighQuality);
+        addSourceAndVerify(metadataHighQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Remotes do not support high quality
@@ -2299,7 +2299,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, group id does not support HQ, broadcast no Q set
-        verifyAddSourceForGroup(metadataNoQuality);
+        addSourceAndVerify(metadataNoQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Broadcast has standard quality only
@@ -2310,7 +2310,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, group id does not support HQ, broadcast SQ only
-        verifyAddSourceForGroup(metadataStandardQuality);
+        addSourceAndVerify(metadataStandardQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Verify add source fail, group id does not support HQ, broadcast HQ only
@@ -2335,7 +2335,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, group id does not support HQ, broadcast SQ and HQ
-        verifyAddSourceForGroup(metadataBothQuality);
+        addSourceAndVerify(metadataBothQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Remotes support high quality
@@ -2347,11 +2347,11 @@ public class BassClientServiceTest {
                 .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice1);
 
         // Verify add source pass, group id supports HQ, broadcast SQ and HQ
-        verifyAddSourceForGroup(metadataBothQuality);
+        addSourceAndVerify(metadataBothQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Verify add source pass, group id supports HQ, broadcast HQ only
-        verifyAddSourceForGroup(metadataHighQuality);
+        addSourceAndVerify(metadataHighQuality);
     }
 
     /**
@@ -2945,7 +2945,7 @@ public class BassClientServiceTest {
 
         // Add source 1
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(broadcastId1);
-        verifyAddSourceForGroup(meta);
+        addSourceAndVerify(meta);
         prepareRemoteSourceState(meta, /* isPaSynced */ true, /* isBisSynced */ true);
 
         // Scan 5 cause removing first element which is not synced to any sink
@@ -3992,7 +3992,7 @@ public class BassClientServiceTest {
     public void testIsAnyReceiverActive() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -4028,7 +4028,7 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
         BluetoothLeBroadcastMetadata metaNoBroadcast = createEmptyBroadcastMetadata();
 
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         prepareRemoteSourceState(metaNoBroadcast, /* isPaSynced */ true, /* isBisSynced */ false);
 
         // Verify getSyncedBroadcastSinks returns empty device list if no broadcast ID
@@ -4068,7 +4068,7 @@ public class BassClientServiceTest {
     private void prepareTwoSynchronizedDevicesForLocalBroadcast() throws RemoteException {
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         prepareConnectedDeviceGroup();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         // verify source id
@@ -4989,7 +4989,7 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
 
         // Add source
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
 
         // Bis synced
         prepareRemoteSourceState(
@@ -6120,7 +6120,7 @@ public class BassClientServiceTest {
 
         // Verify add source clear the SUSPENDED_BY_HOST
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         checkAllowBroadcastMonitoring();
     }
 
@@ -6926,7 +6926,7 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenSwitch() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6957,7 +6957,7 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenSwitch_duringSuspend() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -7053,7 +7053,7 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenAllDisconnected() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
@@ -7104,7 +7104,7 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenAllDisconnected_duringSuspend() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
