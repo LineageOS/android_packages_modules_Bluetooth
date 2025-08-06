@@ -91,6 +91,7 @@ import pandora.HostProto.ScanningResponse;
 import pandora.HostProto.SetConnectabilityModeRequest;
 import pandora.RfcommProto;
 import pandora.RfcommProto.StartServerRequest;
+import pandora.SecurityProto.DeleteBondRequest;
 import pandora.SecurityProto.LESecurityLevel;
 import pandora.SecurityProto.PairingEvent;
 import pandora.SecurityProto.PairingEventAnswer;
@@ -1081,7 +1082,14 @@ public class PairingTest {
                     hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
         }
         // delete keys at  bumble side
-        mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
+        byte[] address = Utils.addressBytesFromString(sAdapter.getAddress());
+        mBumble.securityStorageBlocking()
+                .deleteBond(
+                        DeleteBondRequest.newBuilder()
+                                .setPublic(ByteString.copyFrom(address))
+                                .build());
+        mBumble.hostBlocking().reset(Empty.getDefaultInstance());
+        Thread.sleep(100);
         // Read fresh address
         HostProto.ReadLocalAddressResponse readLocalAddressResponse =
                 mBumble.hostBlocking().readLocalAddress(Empty.getDefaultInstance());
