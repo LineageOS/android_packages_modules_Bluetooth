@@ -62,7 +62,6 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 import io.grpc.Deadline;
-import io.grpc.stub.StreamObserver;
 
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -93,14 +92,11 @@ import pandora.RfcommProto;
 import pandora.RfcommProto.StartServerRequest;
 import pandora.SecurityProto.DeleteBondRequest;
 import pandora.SecurityProto.LESecurityLevel;
-import pandora.SecurityProto.PairingEvent;
-import pandora.SecurityProto.PairingEventAnswer;
 import pandora.SecurityProto.SecureRequest;
 import pandora.SecurityProto.SecureResponse;
 import pandora.SecurityProto.SecurityLevel;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -116,7 +112,6 @@ import java.util.concurrent.TimeoutException;
 public class PairingTest {
     private static final String TAG = PairingTest.class.getSimpleName();
     private static final int DEVICE_NAME_MAX = 26;
-    private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final int TEST_DELAY_MS = 2000;
     private static final int TEST_PSM = 5;
     private static final int TIMEOUT_ADVERTISING_MS = 1000;
@@ -149,8 +144,6 @@ public class PairingTest {
     public final EnableBluetoothRule mEnableBluetoothRule =
             new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
 
-    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
-            new StreamObserverSpliterator<>();
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
     /* Util instance for common test steps with current Context reference */
@@ -253,10 +246,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         assertThat(mBumbleDevice.createBond()).isTrue();
         intentReceiver.verifyReceivedOrdered(
@@ -272,10 +261,6 @@ public class PairingTest {
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
         mBumbleDevice.setPairingConfirmation(true);
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -309,10 +294,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         assertThat(mBumbleDevice.createBond()).isTrue();
         intentReceiver.verifyReceivedOrdered(
@@ -331,10 +312,6 @@ public class PairingTest {
         assertThat(fakeUnintendedDevice.cancelBondProcess()).isTrue();
         mBumbleDevice.setPairingConfirmation(true);
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -367,10 +344,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         // Start SDP.  This will create an ACL connection before the bonding starts.
         assertThat(mBumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
@@ -393,10 +366,6 @@ public class PairingTest {
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
         mBumbleDevice.setPairingConfirmation(true);
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -957,10 +926,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                         .build();
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         BluetoothSocket bluetoothSocket = mBumbleDevice.createL2capChannel(TEST_PSM);
 
@@ -1016,10 +981,6 @@ public class PairingTest {
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
         mBumbleDevice.setPairingConfirmation(true);
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -1197,10 +1158,6 @@ public class PairingTest {
                                 BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED,
                                 BluetoothDevice.ACTION_ACL_DISCONNECTED)
                         .build();
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
         // Read fresh address
         HostProto.ReadLocalAddressResponse readLocalAddressResponse =
                 mBumble.hostBlocking().readLocalAddress(Empty.getDefaultInstance());
@@ -1244,10 +1201,6 @@ public class PairingTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // connect and disconnect the Classic link
         testStep_ConnectDisconnectBredr(intentReceiver);
@@ -1303,10 +1256,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_BOND_STATE_CHANGED,
                                 BluetoothDevice.ACTION_ACL_DISCONNECTED)
                         .build();
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
         // Read fresh address
         HostProto.ReadLocalAddressResponse readLocalAddressResponse =
                 mBumble.hostBlocking().readLocalAddress(Empty.getDefaultInstance());
@@ -1350,10 +1299,6 @@ public class PairingTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // connect and disconnect the LE link
         testStep_ConnectDisconnectLE(intentReceiver);
@@ -1571,10 +1516,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_ACL_CONNECTED,
                                 BluetoothDevice.ACTION_PAIRING_REQUEST));
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
 
@@ -1596,10 +1537,6 @@ public class PairingTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
@@ -1749,10 +1686,6 @@ public class PairingTest {
                                 .setOwnAddressType(ownAddressType)
                                 .build());
 
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
 
         assertThat(device.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue();
 
@@ -1774,10 +1707,6 @@ public class PairingTest {
         // Approve pairing from Android
         assertThat(device.setPairingConfirmation(true)).isTrue();
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
