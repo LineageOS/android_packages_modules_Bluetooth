@@ -374,6 +374,8 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_on,
   ASSERT_TRUE(p_scb->is_aptx_swb_codec);
   ASSERT_EQ(p_scb->sco_codec, BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
   ASSERT_TRUE(enable_aptx_voice_property(false));
+
+  bta_ag_deregister(p_scb, tBTA_AG_DATA::kEmpty);
 }
 
 TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
@@ -394,6 +396,8 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
   ASSERT_FALSE(p_scb->is_aptx_swb_codec);
   ASSERT_EQ(p_scb->sco_codec, BTM_SCO_CODEC_MSBC);
   ASSERT_TRUE(enable_aptx_voice_property(false));
+
+  bta_ag_deregister(p_scb, tBTA_AG_DATA::kEmpty);
 }
 
 TEST_F(BtaAgScoTest, codec_negotiate__aptx_disabled) {
@@ -412,6 +416,8 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_disabled) {
   ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
   ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
   ASSERT_FALSE(p_scb->codec_updated);
+
+  bta_ag_deregister(p_scb, tBTA_AG_DATA::kEmpty);
 }
 
 TEST_F_WITH_FLAGS(BtaAgScoTest, ag_sco_shutdown,
