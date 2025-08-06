@@ -2680,16 +2680,6 @@ public:
       return;
     }
 
-    /* To be a Unicast Source device, this device shall be a Central device. */
-    tHCI_ROLE role;
-    auto role_status = BTM_GetRole(address, BT_TRANSPORT_LE, &role);
-    if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_CENTRAL) {
-      log::warn("Unicast client is not available for this connection. {}, status: {}, AclRole: {}",
-                address, btm_status_text(role_status), hci_role_text(role));
-      BTA_GATTC_Close(conn_id);
-      return;
-    }
-
     if (!leAudioDevice) {
       return;
     }
@@ -2720,6 +2710,16 @@ public:
       bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
               leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
               bluetooth::le_audio::ConnectionStatus::FAILED);
+      return;
+    }
+
+    /* To be a Unicast Source device, this device shall be a Central device. */
+    tHCI_ROLE role;
+    auto role_status = BTM_GetRole(address, BT_TRANSPORT_LE, &role);
+    if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_CENTRAL) {
+      log::warn("Unicast client is not available for this connection. {}, status: {}, AclRole: {}",
+                address, btm_status_text(role_status), hci_role_text(role));
+      BTA_GATTC_Close(conn_id);
       return;
     }
 
