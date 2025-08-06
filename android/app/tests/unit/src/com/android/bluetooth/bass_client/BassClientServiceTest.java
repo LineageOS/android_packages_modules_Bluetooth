@@ -8020,6 +8020,46 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.isAnySearchInProgress()).isTrue();
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
+    public void syncRequestForMetadata_scannerOff_notSynced_notCached_anotherOOR() {
+        prepareConnectedDeviceGroup();
+
+        // Add source to first device
+        prepareSyncToSourceAndVerify();
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        prepareRemoteSourceState(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        mBassClientService.stopSearchingForSources();
+
+        // Autonomous sync on second device and different broadcast id causes background scan
+        injectRemoteSourceStateSourceAdded(
+                mStateMachines.get(mCurrentDevice1),
+                mBroadcastMetadata2,
+                TEST_SOURCE_ID + 1,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                null,
+                1L,
+                true);
+
+        // Trigger OOR monitor
+        prepareRemoteSourceState(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        mInOrderPeriodicAdvertisingManager
+                .verify(mPeriodicAdvertisingManager)
+                .registerSync(any(), anyInt(), anyInt(), any(), any());
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Scan result from OOR broadcast should cause sync registering
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        mInOrderPeriodicAdvertisingManager
+                .verify(mPeriodicAdvertisingManager)
+                .registerSync(any(), anyInt(), anyInt(), any(), any());
+    }
+
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
         verifyIntentSent(
                 hasAction(BluetoothLeBroadcastAssistant.ACTION_CONNECTION_STATE_CHANGED),
