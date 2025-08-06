@@ -248,7 +248,7 @@ public class LeAudioBroadcastServiceTest {
         assertThat(LeAudioService.getLeAudioService()).isEqualTo(mService);
     }
 
-    void verifyBroadcastStarted(int broadcastId, BluetoothLeBroadcastSettings settings)
+    void startBroadcastAndVerify(int broadcastId, BluetoothLeBroadcastSettings settings)
             throws RemoteException {
         mService.createBroadcast(settings);
 
@@ -305,7 +305,7 @@ public class LeAudioBroadcastServiceTest {
                 .onBroadcastStarted(eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST), anyInt());
     }
 
-    void verifyBroadcastStopped(int broadcastId) throws RemoteException {
+    void stopBroadcastAndVerify(int broadcastId) throws RemoteException {
         Mockito.clearInvocations(mMetricsLogger);
 
         mService.stopBroadcast(broadcastId);
@@ -356,7 +356,7 @@ public class LeAudioBroadcastServiceTest {
                         .setProgramInfo("Subgroup broadcast info")
                         .build();
 
-        verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
+        startBroadcastAndVerify(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
     }
 
     @Test
@@ -374,7 +374,7 @@ public class LeAudioBroadcastServiceTest {
                         .setProgramInfo("Subgroup broadcast info")
                         .build();
 
-        verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 3));
+        startBroadcastAndVerify(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 3));
     }
 
     @Test
@@ -553,8 +553,8 @@ public class LeAudioBroadcastServiceTest {
                         .setProgramInfo("Subgroup broadcast info")
                         .build();
 
-        verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
-        verifyBroadcastStopped(broadcastId);
+        startBroadcastAndVerify(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
+        stopBroadcastAndVerify(broadcastId);
     }
 
     @Test
@@ -871,7 +871,7 @@ public class LeAudioBroadcastServiceTest {
 
         mLooper.dispatchAll();
 
-        verifyBroadcastStarted(broadcastId, settings);
+        startBroadcastAndVerify(broadcastId, settings);
         Mockito.clearInvocations(mCallbacks);
 
         // verify creating another broadcast will fail
@@ -1365,12 +1365,12 @@ public class LeAudioBroadcastServiceTest {
                         .setProgramInfo("Subgroup broadcast info")
                         .build();
 
-        verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
+        startBroadcastAndVerify(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
         when(mBassClientService.getSyncedBroadcastSinks(broadcastId)).thenReturn(List.of(mDevice1));
         assertThat(mService.getLocalBroadcastReceivers().size()).isEqualTo(1);
         assertThat(mService.getLocalBroadcastReceivers()).containsExactly(mDevice1);
 
-        verifyBroadcastStopped(broadcastId);
+        stopBroadcastAndVerify(broadcastId);
         assertThat(mService.getLocalBroadcastReceivers()).isEmpty();
     }
 
@@ -1511,7 +1511,7 @@ public class LeAudioBroadcastServiceTest {
         /* Start broadcast without prior unicast to broadcast handover, broadcast device should be
          * exposed to AudioManager
          */
-        verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
+        startBroadcastAndVerify(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
         verify(mAudioManager)
                 .handleBluetoothActiveDeviceChanged(
                         eq(mBroadcastDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
@@ -1519,7 +1519,7 @@ public class LeAudioBroadcastServiceTest {
         /* Stop broadcast without prior broadcast to unicast handover, broadcast device should be
          * cleaned in AudioManager
          */
-        verifyBroadcastStopped(broadcastId);
+        stopBroadcastAndVerify(broadcastId);
         verify(mAudioManager)
                 .handleBluetoothActiveDeviceChanged(
                         eq(null), eq(mBroadcastDevice), any(BluetoothProfileConnectionInfo.class));
@@ -1710,7 +1710,7 @@ public class LeAudioBroadcastServiceTest {
         assertThat(activeGroup).isEqualTo(groupId);
 
         /* Broadcast Stopped during Audio mode driven Broadcast switch*/
-        verifyBroadcastStopped(broadcastId);
+        stopBroadcastAndVerify(broadcastId);
 
         /* mBroadcastIdDeactivatedForUnicastTransition should be cleared after stop broadcast */
         assertThat(mService.mBroadcastIdDeactivatedForUnicastTransition.isPresent()).isFalse();
