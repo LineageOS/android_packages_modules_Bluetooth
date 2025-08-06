@@ -47,7 +47,6 @@ import android.annotation.Nullable;
 import android.app.BroadcastOptions;
 import android.bluetooth.IAdapter;
 import android.bluetooth.IBluetoothCallback;
-import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.bluetooth.State;
 import android.content.BroadcastReceiver;
@@ -161,7 +160,6 @@ class BluetoothManagerService {
     private final List<Long> mCrashTimestamps = new ArrayList<>();
     private final RemoteCallbackList<IBluetoothManagerCallback> mCallbacks =
             new RemoteCallbackList<>();
-    private final BluetoothServiceBinder mBinder;
     @VisibleForTesting final BluetoothHandler mHandler;
     private final ContentResolver mContentResolver;
     private final Context mContext;
@@ -606,7 +604,6 @@ class BluetoothManagerService {
                         mContext.getSystemService(UserManager.class),
                         "UserManager system service cannot be null");
 
-        mBinder = new BluetoothServiceBinder(mLooper, mApi, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
         mBleAppManager = new BleAppManager(mLooper, this::bleOnToOffIfNeeded);
 
@@ -896,10 +893,6 @@ class BluetoothManagerService {
             Log.i(TAG, "onBleScanDisabled: Bluetooth is not in BLE_ON, staying on");
         }
         return Unit.INSTANCE;
-    }
-
-    IBluetoothManager.Stub getBinder() {
-        return mBinder;
     }
 
     /** Returns true if satellite mode is turned on. */

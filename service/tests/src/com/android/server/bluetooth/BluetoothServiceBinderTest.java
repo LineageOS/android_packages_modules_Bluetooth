@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,7 +140,7 @@ public class BluetoothServiceBinderTest {
         doReturn(mDevicePolicyManager).when(mContext).getSystemService(eq(devicePolicy));
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
 
-        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext);
     }
 
     @After
