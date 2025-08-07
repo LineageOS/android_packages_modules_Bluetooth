@@ -318,3 +318,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "avoid_ctkd_for_temp_pairing"
+    namespace: "bluetooth"
+    description: "Do not perform CTKD for temporary pairing"
+    bug: "436957985"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
