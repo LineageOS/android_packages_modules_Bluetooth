@@ -37,8 +37,8 @@ protected:
   }
 
   void TearDown() override {
-    BtaWithHwOnTest::TearDown();
     bluetooth::hci::testing::mock_controller_.reset();
+    BtaWithHwOnTest::TearDown();
   }
 };
 
