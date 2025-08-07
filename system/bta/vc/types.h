@@ -213,7 +213,7 @@ public:
     int n = Size();
     stream << "     == number of inputs: " << n << " == \n";
 
-    for (auto const v : volume_audio_inputs) {
+    for (auto const& v : volume_audio_inputs) {
       stream << "   id: " << +v.id << "\n"
              << "    description: " << v.description << "\n"
              << "    type: " << static_cast<int>(v.type) << "\n"
@@ -303,7 +303,7 @@ public:
     int n = Size();
     stream << "     == number of offsets: " << n << " == \n";
 
-    for (auto const v : volume_offsets) {
+    for (auto const& v : volume_offsets) {
       stream << "   id: " << +v.id << "\n"
              << "    offset: " << +v.offset << "\n"
              << "    changeCnt: " << +v.change_counter << "\n"
