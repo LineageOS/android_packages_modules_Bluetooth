@@ -288,7 +288,7 @@ std::string BqrVseSubEvt::ToString() const {
      << ", OverFlow: " << std::to_string(bqr_link_quality_event_.buffer_overflow_bytes)
      << ", UndFlow: " << std::to_string(bqr_link_quality_event_.buffer_underflow_bytes);
   if (vendor_cap_supported_version >= kBqrVersion5_0) {
-    ss << ", RemoteDevAddr: " << bqr_link_quality_event_.bdaddr.ToColonSepHexString()
+    ss << ", RemoteDevAddr: " << bqr_link_quality_event_.bdaddr.ToRedactedStringForLogging()
        << ", CalFailedItems: " << std::to_string(bqr_link_quality_event_.cal_failed_item_count);
   }
   if (vendor_cap_supported_version >= kBqrIsoVersion) {

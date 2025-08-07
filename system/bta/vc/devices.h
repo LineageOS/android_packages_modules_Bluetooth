@@ -84,8 +84,6 @@ public:
 
   ~VolumeControlDevice() = default;
 
-  std::string ToStringForLogging() const { return address.ToStringForLogging(); }
-
   std::string ToRedactedStringForLogging() const { return address.ToRedactedStringForLogging(); }
 
   void DebugDump(int fd) {

@@ -85,7 +85,6 @@ public:
     return ss.str();
   }
 
-  std::string ToStringForLogging() const { return ToString(); }
   std::string ToRedactedStringForLogging() const {
     std::stringstream ss;
     ss << address_.ToRedactedStringForLogging() << "[" << FilterAcceptListAddressTypeText(type_)

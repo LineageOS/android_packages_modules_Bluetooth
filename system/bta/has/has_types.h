@@ -117,7 +117,7 @@ public:
   };
 
   void Dump(std::ostream& os) const {
-    os << "\"addr\": \"" << addr << "\"";
+    os << "\"addr\": \"" << addr.ToRedactedStringForLogging() << "\"";
     os << ", \"conn_id\": " << conn_id;
     os << ", \"is_gatt_service_valid\": "
        << (gatt_svc_validation_steps == 0 ? "\"True\"" : "\"False\"") << "("

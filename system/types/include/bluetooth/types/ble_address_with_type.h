@@ -114,10 +114,6 @@ struct tBLE_BD_ADDR {
     return std::string(bda.ToString() + "[" + AddressTypeText(type) + "]");
   }
 
-  std::string ToStringForLogging() const {
-    return bda.ToStringForLogging() + "[" + AddressTypeText(type) + "]";
-  }
-
   std::string ToRedactedStringForLogging() const {
     return bda.ToRedactedStringForLogging() + "[" + AddressTypeText(type) + "]";
   }
@@ -169,10 +165,6 @@ struct tAclLinkSpec {
 
   std::string ToString() const {
     return std::string(addrt.ToString() + "[" + bt_transport_text(transport) + "]");
-  }
-
-  std::string ToStringForLogging() const {
-    return addrt.ToStringForLogging() + "[" + bt_transport_text(transport) + "]";
   }
 
   std::string ToRedactedStringForLogging() const {

@@ -1118,9 +1118,9 @@ uint8_t LeAudioDevice::GetPhyBitmask(void) const {
 void LeAudioDevice::PrintDebugState(void) {
   std::stringstream debug_str;
 
-  debug_str << " Address: " << address_ << ", " << bluetooth::common::ToString(connection_state_)
-            << ", conn_id: " << +conn_id_ << ", mtu: " << +mtu_
-            << ", num_of_ase: " << static_cast<int>(ases_.size());
+  debug_str << " Address: " << address_.ToRedactedStringForLogging() << ", "
+            << bluetooth::common::ToString(connection_state_) << ", conn_id: " << +conn_id_
+            << ", mtu: " << +mtu_ << ", num_of_ase: " << static_cast<int>(ases_.size());
 
   if (ases_.size() > 0) {
     debug_str << "\n  == ASEs == ";
@@ -1685,7 +1685,7 @@ void LeAudioDevices::Dump(std::stringstream& stream, int group_id) const {
     if (device->group_id_ == group_id) {
       device->Dump(stream);
 
-      stream << "\tAddress: " << device->address_ << "\n";
+      stream << "\tAddress: " << device->address_.ToRedactedStringForLogging() << "\n";
       device->DumpPacsDebugState(stream);
       stream << "\n";
     }

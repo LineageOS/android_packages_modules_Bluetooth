@@ -511,8 +511,7 @@ static bool interop_config_add_or_remove(interop_db_entry_t* db_entry, bool add)
     case INTEROP_BL_TYPE_ADDR: {
       interop_addr_entry_t addr_entry = db_entry->entry_type.addr_entry;
 
-      const std::string bdstr =
-              addr_entry.addr.ToColonSepHexString().substr(0, addr_entry.length * 3 - 1);
+      const std::string bdstr = addr_entry.addr.ToString().substr(0, addr_entry.length * 3 - 1);
 
       feature = db_entry->entry_type.addr_entry.feature;
       key.assign(bdstr);
@@ -554,7 +553,7 @@ static bool interop_config_add_or_remove(interop_db_entry_t* db_entry, bool add)
       interop_hid_ssr_max_lat_t ssr_entry = db_entry->entry_type.ssr_max_lat_entry;
       char m_ssr_max_lat[KEY_MAX_LENGTH] = {'\0'};
 
-      const std::string bdstr = ssr_entry.addr.ToColonSepHexString().substr(0, 3 * 3 - 1);
+      const std::string bdstr = ssr_entry.addr.ToString().substr(0, 3 * 3 - 1);
 
       snprintf(m_ssr_max_lat, sizeof(m_ssr_max_lat), "%s-0x%04x", bdstr.c_str(),
                db_entry->entry_type.ssr_max_lat_entry.max_lat);
@@ -578,7 +577,7 @@ static bool interop_config_add_or_remove(interop_db_entry_t* db_entry, bool add)
     case INTEROP_BL_TYPE_LMP_VERSION: {
       interop_lmp_version_t lmp_version_entry = db_entry->entry_type.lmp_version_entry;
       char m_lmp_version[KEY_MAX_LENGTH] = {'\0'};
-      const std::string bdstr = lmp_version_entry.addr.ToColonSepHexString().substr(0, 3 * 3 - 1);
+      const std::string bdstr = lmp_version_entry.addr.ToString().substr(0, 3 * 3 - 1);
 
       snprintf(m_lmp_version, sizeof(m_lmp_version), "%s-0x%02x-0x%04x", bdstr.c_str(),
                db_entry->entry_type.lmp_version_entry.lmp_ver,
