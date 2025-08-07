@@ -331,7 +331,8 @@ void LogMetricLeAudioConnectionSessionReported(
 
 void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos);
 
-void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event);
+void LogMetricBluetoothQualityReport(const RawAddress& remote_addr,
+                                     const bqr::BqrLinkQualityEvent& event);
 
 void LogMetricsChannelSoundingRequesterSessionReported(
         const hci::Address& remote_addr, const std::vector<int32_t>& app_uids,

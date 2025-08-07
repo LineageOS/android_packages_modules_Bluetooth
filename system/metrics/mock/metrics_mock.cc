@@ -285,9 +285,10 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
   }
 }
 
-void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
+void LogMetricBluetoothQualityReport(const RawAddress& remote_addr,
+                                     const bqr::BqrLinkQualityEvent& event) {
   if (metricsInstance) {
-    metricsInstance->LogMetricBluetoothQualityReport(event);
+    metricsInstance->LogMetricBluetoothQualityReport(remote_addr, event);
   }
 }
 
