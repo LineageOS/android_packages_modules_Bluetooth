@@ -1526,7 +1526,7 @@ void btif_storage_migrate_services() {
                                remote_uuids);
     btif_storage_get_remote_device_property(&mac_address, &remote_uuids_prop);
 
-    log::info("Will migrate Services => ServicesLe for {}", mac_address.ToStringForLogging());
+    log::info("Will migrate Services => ServicesLe for {}", mac_address);
 
     std::vector<uint8_t> property_value;
     for (auto& uuid : remote_uuids) {
@@ -1544,7 +1544,7 @@ void btif_storage_migrate_services() {
 
     /* Write LE services to storage */
     btif_storage_set_remote_device_property(&mac_address, &le_uuids_prop);
-    log::info("Migration finished for {}", mac_address.ToStringForLogging());
+    log::info("Migration finished for {}", mac_address);
   }
 }
 

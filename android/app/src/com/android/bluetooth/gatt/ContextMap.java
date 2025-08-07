@@ -166,9 +166,9 @@ class ContextMap<C extends IInterface> {
         @Nullable private final String mAttributionTag;
         private final Instant mRegisterTime;
 
-        int clientIf;
-        RemoveReason reason;
-        @Nullable Instant unregisterTime;
+        private int mClientIf;
+        private RemoveReason mReason;
+        @Nullable private Instant mUnregisterTime;
 
         AppRecord(App app) {
             mUuid = app.mUuid;
@@ -187,9 +187,9 @@ class ContextMap<C extends IInterface> {
             sb.append("AppRecord<")
                     .append(sDateFormat.format(mRegisterTime))
                     .append(" ~ ")
-                    .append(sDateFormat.format(unregisterTime))
+                    .append(sDateFormat.format(mUnregisterTime))
                     .append(" app_if: ")
-                    .append(clientIf)
+                    .append(mClientIf)
                     .append(", appName: ")
                     .append(mPackageName)
                     .append(", transport: ")
@@ -197,7 +197,7 @@ class ContextMap<C extends IInterface> {
             if (mAttributionTag != null) {
                 sb.append(", tag: ").append(mAttributionTag);
             }
-            sb.append(", reason: ").append(reason).append(">");
+            sb.append(", reason: ").append(mReason).append(">");
             return sb.toString();
         }
     }
@@ -511,9 +511,9 @@ class ContextMap<C extends IInterface> {
         for (int i = 0; i < mOngoingRecords.size(); i++) {
             if (app.mUuid.equals(mOngoingRecords.get(i).mUuid)) {
                 AppRecord record = mOngoingRecords.remove(i);
-                record.clientIf = app.id;
-                record.reason = reason;
-                record.unregisterTime = Instant.now();
+                record.mClientIf = app.id;
+                record.mReason = reason;
+                record.mUnregisterTime = Instant.now();
 
                 if (mLastRecords.size() >= MAX_LAST_RECORDS) {
                     mLastRecords.remove(0);

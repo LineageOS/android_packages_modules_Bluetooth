@@ -1674,11 +1674,11 @@ public:
   }
 
   bool isOutputPreferenceLeAudio(const RawAddress& address) {
-    log::info("address: {}, active_group_id_: {}", address.ToStringForLogging(), active_group_id_);
+    log::info("address: {}, active_group_id_: {}", address, active_group_id_);
     std::vector<RawAddress> active_leaudio_devices = GetGroupDevices(active_group_id_);
     if (std::find(active_leaudio_devices.begin(), active_leaudio_devices.end(), address) ==
         active_leaudio_devices.end()) {
-      log::info("Device {} is not active for LE Audio", address.ToStringForLogging());
+      log::info("Device {} is not active for LE Audio", address);
       return false;
     }
 
@@ -1689,11 +1689,11 @@ public:
   }
 
   bool isDuplexPreferenceLeAudio(const RawAddress& address) {
-    log::info("address: {}, active_group_id_: {}", address.ToStringForLogging(), active_group_id_);
+    log::info("address: {}, active_group_id_: {}", address, active_group_id_);
     std::vector<RawAddress> active_leaudio_devices = GetGroupDevices(active_group_id_);
     if (std::find(active_leaudio_devices.begin(), active_leaudio_devices.end(), address) ==
         active_leaudio_devices.end()) {
-      log::info("Device {} is not active for LE Audio", address.ToStringForLogging());
+      log::info("Device {} is not active for LE Audio", address);
       return false;
     }
 

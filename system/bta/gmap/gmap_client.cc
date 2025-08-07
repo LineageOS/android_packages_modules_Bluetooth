@@ -50,7 +50,8 @@ void GmapClient::DebugDump(std::stringstream &stream) {
     stream << "GmapClient not enabled\n";
     return;
   }
-  stream << "GmapClient device: " << addr_ << ", Role: " << role_ << ", ";
+  stream << "GmapClient device: " << addr_.ToRedactedStringForLogging() << ", Role: " << role_
+         << ", ";
   stream << "UGT Feature: " << UGT_feature_ << "\n";
 }
 

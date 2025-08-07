@@ -176,8 +176,16 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   ~impl() {
+    if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+      hci_->ReleaseLeAdvertisingInterface();
+    }
+
     if (address_manager_registered) {
-      le_address_manager_->Unregister(this);
+      if (com::android::bluetooth::flags::fix_use_after_object_destroyed()) {
+        le_address_manager_->UnregisterSync(this);
+      } else {
+        le_address_manager_->Unregister(this);
+      }
     }
     advertising_sets_.clear();
 

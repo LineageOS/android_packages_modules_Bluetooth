@@ -288,7 +288,7 @@ std::string BqrVseSubEvt::ToString() const {
      << ", OverFlow: " << std::to_string(bqr_link_quality_event_.buffer_overflow_bytes)
      << ", UndFlow: " << std::to_string(bqr_link_quality_event_.buffer_underflow_bytes);
   if (vendor_cap_supported_version >= kBqrVersion5_0) {
-    ss << ", RemoteDevAddr: " << bqr_link_quality_event_.bdaddr.ToColonSepHexString()
+    ss << ", RemoteDevAddr: " << bqr_link_quality_event_.bdaddr.ToRedactedStringForLogging()
        << ", CalFailedItems: " << std::to_string(bqr_link_quality_event_.cal_failed_item_count);
   }
   if (vendor_cap_supported_version >= kBqrIsoVersion) {
@@ -779,8 +779,6 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-  metrics::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
-
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
   if (bqrItf != NULL) {
@@ -801,6 +799,8 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
   } else {
     log::warn("failed to deliver BQR, bqrItf is NULL");
   }
+
+  metrics::LogMetricBluetoothQualityReport(bd_addr, p_bqr_event->bqr_link_quality_event_);
 
   kpBqrEventQueue.Enqueue(p_bqr_event.release());
 }

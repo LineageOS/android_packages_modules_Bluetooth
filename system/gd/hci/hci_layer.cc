@@ -39,6 +39,7 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "packet/raw_builder.h"
 #include "storage/storage_module.h"
+#include "com_android_bluetooth_flags.h"
 
 namespace bluetooth {
 namespace hci {
@@ -890,12 +891,24 @@ LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(
   return &le_advertising_interface;
 }
 
+void HciLayer::ReleaseLeAdvertisingInterface() {
+  for (const auto subevent : LeAdvertisingEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
+}
+
 LeScanningInterface* HciLayer::GetLeScanningInterface(
         ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeScanningEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
   return &le_scanning_interface;
+}
+
+void HciLayer::ReleaseLeScanningInterface() {
+  for (const auto subevent : LeScanningEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
 }
 
 LeIsoInterface* HciLayer::GetLeIsoInterface(
@@ -912,6 +925,12 @@ DistanceMeasurementInterface* HciLayer::GetDistanceMeasurementInterface(
     RegisterLeEventHandler(subevent, event_handler);
   }
   return &distance_measurement_interface;
+}
+
+void HciLayer::ReleaseDistanceMeasurementInterface() {
+  for (const auto subevent : DistanceMeasurementEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
 }
 
 std::unique_ptr<InquiryInterface> HciLayer::GetInquiryInterface(
@@ -970,6 +989,15 @@ void HciLayer::StartWithNoHalDependencies(Handler* handler) {
                        handler->BindOn(this, &HciLayer::on_connection_request));
 }
 
+// Unregister event handlers that don't depend on the HAL
+void HciLayer::StopWithNoHalDependencies() {
+  UnregisterEventHandler(EventCode::DISCONNECTION_COMPLETE);
+  UnregisterEventHandler(EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE);
+  UnregisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE);
+  UnregisterEventHandler(EventCode::MAX_SLOTS_CHANGE);
+  UnregisterEventHandler(EventCode::CONNECTION_REQUEST);
+}
+
 HciLayer::~HciLayer() {
   std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
   life_cycle_stopped = true;
@@ -979,6 +1007,10 @@ HciLayer::~HciLayer() {
 
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
+
+  if(com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+    StopWithNoHalDependencies();
+  }
 
   impl_->acl_queue_.GetDownEnd()->UnregisterDequeue();
   impl_->sco_queue_.GetDownEnd()->UnregisterDequeue();

@@ -268,27 +268,33 @@ public final class BluetoothSocket implements Closeable {
             long endpointId,
             int maximumPacketSize)
             throws IOException {
-        if (VDBG) Log.d(TAG, "Creating new BluetoothSocket of type: " + type);
         mSocketCreationTimeNanos = System.nanoTime();
+        mType = type;
+        if (VDBG) Log.d(TAG, "Creating new BluetoothSocket of type: " + type);
+        mRemoteDevice = Optional.empty(); // Only when this is for BluetoothServerSocket
         if (type == BluetoothSocket.TYPE_RFCOMM
                 && uuid == null
-                && port != BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP) {
-            if (port < 1 || port > MAX_RFCOMM_CHANNEL) {
-                throw new IOException("Invalid RFCOMM channel: " + port);
-            }
+                && port != BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
+                && (port < 1 || port > MAX_RFCOMM_CHANNEL)) {
+            mSocketState = SocketState.CLOSED;
+            // WARNING: BluetoothSocket implements finalize
+            // Please read and understand: Effective Java Item 8, "Avoid finalizers and cleaners"
+            // TL:DR;
+            //      Throwing an exception from a constructor should be sufficient to prevent an
+            //      object from coming into existence; in the presence of finalizers, it is not.
+            throw new IOException("Invalid RFCOMM channel: " + port);
         }
+
         if (uuid != null) {
             mUuid = uuid;
         } else {
             mUuid = new ParcelUuid(new UUID(0, 0));
         }
-        mType = type;
         mAuth = auth;
         mAuthPitm = pitm;
         mMin16DigitPin = min16DigitPin;
         mEncrypt = encrypt;
         mPort = port;
-        mRemoteDevice = Optional.empty(); // Only when this is for BluetoothServerSocket
         mDataPath = dataPath;
         mSocketName = socketName;
         mHubId = hubId;
@@ -396,26 +402,32 @@ public final class BluetoothSocket implements Closeable {
             long endpointId,
             int maximumPacketSize)
             throws IOException {
-        if (VDBG) Log.d(TAG, "Creating new BluetoothSocket of type: " + type);
         mSocketCreationTimeNanos = System.nanoTime();
+        mType = type;
+        if (VDBG) Log.d(TAG, "Creating new BluetoothSocket of type: " + type);
+        mRemoteDevice = Optional.of(device);
         if (type == BluetoothSocket.TYPE_RFCOMM
                 && uuid == null
-                && port != BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP) {
-            if (port < 1 || port > MAX_RFCOMM_CHANNEL) {
-                throw new IOException("Invalid RFCOMM channel: " + port);
-            }
+                && port != BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
+                && (port < 1 || port > MAX_RFCOMM_CHANNEL)) {
+            mSocketState = SocketState.CLOSED;
+            // WARNING: BluetoothSocket implements finalize
+            // Please read and understand: Effective Java Item 8, "Avoid finalizers and cleaners"
+            // TL:DR;
+            //      Throwing an exception from a constructor should be sufficient to prevent an
+            //      object from coming into existence; in the presence of finalizers, it is not.
+            throw new IOException("Invalid RFCOMM channel: " + port);
         }
+
         if (uuid != null) {
             mUuid = uuid;
         } else {
             mUuid = new ParcelUuid(new UUID(0, 0));
         }
-        mType = type;
         mAuth = auth;
         mAuthPitm = pitm;
         mMin16DigitPin = min16DigitPin;
         mEncrypt = encrypt;
-        mRemoteDevice = Optional.of(device);
         mPort = port;
         mDataPath = dataPath;
         mSocketName = socketName;
@@ -900,7 +912,6 @@ public final class BluetoothSocket implements Closeable {
     }
 
     /*package*/ BluetoothSocket accept(int timeout) throws IOException {
-        BluetoothSocket acceptedSocket;
         if (mSocketState != SocketState.LISTENING) {
             throw new IOException("bt socket is not in listen state");
         }
@@ -922,10 +933,8 @@ public final class BluetoothSocket implements Closeable {
             if (mSocketState != SocketState.LISTENING) {
                 throw new IOException("bt socket is not in listen state");
             }
-            acceptedSocket = acceptSocket(remoteAddr);
-            // quick drop the reference of the file handle
+            return acceptSocket(remoteAddr);
         }
-        return acceptedSocket;
     }
 
     /*package*/ int available() throws IOException {
@@ -1042,42 +1051,36 @@ public final class BluetoothSocket implements Closeable {
 
     @Override
     public void close() throws IOException {
+        if (mSocketState == SocketState.CLOSED) {
+            Log.v(TAG, "close() " + this + ": Already closed");
+            return;
+        }
         Log.d(
                 TAG,
-                "close() this: "
-                        + this
-                        + ", channel: "
-                        + mPort
-                        + ", mSocketIS: "
-                        + mSocketIS
-                        + ", mSocketOS: "
-                        + mSocketOS
-                        + ", mSocket: "
-                        + mSocket
-                        + ", mSocketState: "
-                        + mSocketState);
-        if (mSocketState == SocketState.CLOSED) {
-            return;
-        } else {
-            synchronized (this) {
-                if (mSocketState == SocketState.CLOSED) {
-                    return;
-                }
-                mSocketState = SocketState.CLOSED;
-                if (mSocket != null) {
-                    Log.d(TAG, "Closing mSocket: " + mSocket);
-                    mSocket.shutdownInput();
-                    mSocket.shutdownOutput();
-                    mSocket.close();
-                    mSocket = null;
-                }
-                if (mPfd != null) {
-                    mPfd.close();
-                    mPfd = null;
-                }
-                mConnectionUuid = null;
-                mSocketId = INVALID_SOCKET_ID;
+                ("close() " + this)
+                        + (" channel=" + mPort)
+                        + (" mSocketIS=" + mSocketIS)
+                        + (" mSocketOS=" + mSocketOS)
+                        + (" mSocket=" + mSocket)
+                        + (" mSocketState=" + mSocketState));
+        synchronized (this) {
+            if (mSocketState == SocketState.CLOSED) {
+                return;
             }
+            mSocketState = SocketState.CLOSED;
+            if (mSocket != null) {
+                Log.d(TAG, "Closing mSocket: " + mSocket);
+                mSocket.shutdownInput();
+                mSocket.shutdownOutput();
+                mSocket.close();
+                mSocket = null;
+            }
+            if (mPfd != null) {
+                mPfd.close();
+                mPfd = null;
+            }
+            mConnectionUuid = null;
+            mSocketId = INVALID_SOCKET_ID;
         }
     }
 

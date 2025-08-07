@@ -740,7 +740,7 @@ AudioConfiguration stream_config_to_hal_audio_config(
     LeAudioConfiguration::StreamMap::BluetoothDeviceAddress aidl_device_address;
     // The address should be set only if stream is active
     if (info.is_stream_active) {
-      aidl_device_address.deviceAddress = info.address.ToArray();
+      aidl_device_address.deviceAddress = info.address.address;
       aidl_device_address.deviceAddressType =
               (info.address_type == BLE_ADDR_PUBLIC || info.address_type == BLE_ADDR_PUBLIC_ID)
                       ? LeAudioConfiguration::StreamMap::BluetoothDeviceAddress::DeviceAddressType::

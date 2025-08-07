@@ -85,7 +85,6 @@ public:
     return ss.str();
   }
 
-  std::string ToStringForLogging() const { return ToString(); }
   std::string ToRedactedStringForLogging() const {
     std::stringstream ss;
     ss << address_.ToRedactedStringForLogging() << "[" << FilterAcceptListAddressTypeText(type_)
@@ -1044,6 +1043,25 @@ struct shim::Acl::impl {
 
   void clear_acceptlist() { GetAclManagerLe()->ClearFilterAcceptList(); }
 
+  void check_for_orphaned_acl_connections(std::promise<bool> promise) {
+    for (const auto& connection : handle_to_classic_connection_map_) {
+      log::error("Orphaned classic ACL handle:0x{:04x} bd_addr:{} created:{}",
+                 connection.second->Handle(), connection.second->GetRemoteAddress(),
+                 common::StringFormatTimeWithMilliseconds(kConnectionDescriptorTimeFormat,
+                                                          connection.second->GetCreationTime()));
+    }
+
+    for (const auto& connection : handle_to_le_connection_map_) {
+      log::error("Orphaned le ACL handle:0x{:04x} bd_addr:{} created:{}",
+                 connection.second->Handle(), connection.second->GetRemoteAddressWithType(),
+                 common::StringFormatTimeWithMilliseconds(kConnectionDescriptorTimeFormat,
+                                                          connection.second->GetCreationTime()));
+    }
+
+    promise.set_value(!handle_to_classic_connection_map_.empty() ||
+                      !handle_to_le_connection_map_.empty());
+  }
+
   void SetSystemSuspendState(bool suspended) {
     GetAclManagerLe()->SetSystemSuspendState(suspended);
   }
@@ -1195,6 +1213,14 @@ shim::Acl::~Acl() {
 }
 
 bool shim::Acl::CheckForOrphanedAclConnections() const {
+  if (com::android::bluetooth::flags::fix_race_in_orphaned_acls()) {
+    std::promise<bool> promise;
+    auto future = promise.get_future();
+    handler_->CallOn(pimpl_.get(), &Acl::impl::check_for_orphaned_acl_connections,
+                     std::move(promise));
+    return future.get();
+  }
+
   bool orphaned_acl_connections = false;
 
   if (!pimpl_->handle_to_classic_connection_map_.empty()) {

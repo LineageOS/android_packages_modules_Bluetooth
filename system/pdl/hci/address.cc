@@ -70,8 +70,6 @@ std::string Address::ToString() const { return _ToMaskedColonSepHexString(0); }
 
 std::string Address::ToColonSepHexString() const { return _ToMaskedColonSepHexString(0); }
 
-std::string Address::ToStringForLogging() const { return _ToMaskedColonSepHexString(0); }
-
 std::string Address::ToRedactedStringForLogging() const { return _ToMaskedColonSepHexString(4); }
 
 std::string Address::ToLegacyConfigString() const { return ToString(); }

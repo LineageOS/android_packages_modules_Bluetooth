@@ -53,7 +53,6 @@ public:
   // storage::Serializable methods
   std::string ToString() const override;
   std::string ToColonSepHexString() const;
-  std::string ToStringForLogging() const;
   std::string ToRedactedStringForLogging() const;
   std::string ToLegacyConfigString() const override;
   static std::optional<Address> FromString(const std::string& from);

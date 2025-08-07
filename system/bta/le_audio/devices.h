@@ -184,6 +184,7 @@ public:
                                                             types::DataPathState data_path_state);
   struct types::ase* GetFirstInactiveAse(uint8_t direction, bool reconnect = false);
   struct types::ase* GetFirstAseWithState(uint8_t direction, types::AseState state);
+  struct types::ase* GetAseWaitingForDataPathByConnHandle(uint16_t conn_handle);
   struct types::ase* GetNextActiveAse(struct types::ase* ase);
   struct types::ase* GetAseToMatchBidirectionCis(struct types::ase* ase);
   types::BidirectionalPair<struct types::ase*> GetAsesByCisConnHdl(uint16_t conn_hdl);

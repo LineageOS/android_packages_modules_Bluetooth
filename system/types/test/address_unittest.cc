@@ -193,17 +193,14 @@ TEST(RawAddressTest, BdAddrFromArray) {
 
   std::string ret = bdaddr.ToString();
   ASSERT_STREQ("11:22:33:44:55:66", ret.c_str());
-
-  std::array<uint8_t, 6> mac2 = bdaddr.ToArray();
-  ASSERT_EQ(mac, mac2);
 }
 
-TEST(RawAddress, ToStringForLoggingTest) {
+TEST(RawAddress, ToStringTest) {
   std::array<uint8_t, 6> addr_bytes = {0x11, 0x22, 0x33, 0x44, 0x55, 0xab};
   RawAddress addr(addr_bytes);
   const std::string redacted_loggable_str = "xx:xx:xx:xx:55:ab";
   const std::string loggbable_str = "11:22:33:44:55:ab";
-  std::string ret1 = addr.ToStringForLogging();
+  std::string ret1 = addr.ToString();
   ASSERT_STREQ(ret1.c_str(), loggbable_str.c_str());
   std::string ret2 = addr.ToRedactedStringForLogging();
   ASSERT_STREQ(ret2.c_str(), redacted_loggable_str.c_str());

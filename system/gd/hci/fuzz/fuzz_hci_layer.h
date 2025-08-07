@@ -140,14 +140,20 @@ public:
   hci::LeAdvertisingInterface* GetLeAdvertisingInterface(
           common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
 
+  void ReleaseLeAdvertisingInterface() override {}
+
   hci::LeScanningInterface* GetLeScanningInterface(
           common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
+
+  void ReleaseLeScanningInterface() override {}
 
   hci::LeIsoInterface* GetLeIsoInterface(
           common::ContextualCallback<void(LeMetaEventView)> event_handler) override;
 
   hci::DistanceMeasurementInterface* GetDistanceMeasurementInterface(
           common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
+
+  void ReleaseDistanceMeasurementInterface() override {}
 
   void injectArbitrary(FuzzedDataProvider& fdp);
 

@@ -693,6 +693,19 @@ struct ase* LeAudioDevice::GetNextActiveAseWithDifferentDirection(struct ase* ba
   return &(*iter);
 }
 
+struct ase* LeAudioDevice::GetAseWaitingForDataPathByConnHandle(uint16_t conn_handle) {
+  auto iter = std::find_if(ases_.begin(), ases_.end(), [conn_handle](const auto& ase) {
+    log::verbose("ase_id: {}, active: {}, data: {} cis state {}, cis_conn_handle: {}", ase.id,
+                 ase.active, bluetooth::common::ToString(ase.data_path_state),
+                 bluetooth::common::ToString(ase.cis_state), ase.cis_conn_hdl);
+
+    return ase.active && (ase.data_path_state == DataPathState::CONFIGURING) &&
+           (ase.cis_state == CisState::CONNECTED) && (ase.cis_conn_hdl == conn_handle);
+  });
+
+  return (iter == ases_.end()) ? nullptr : &(*iter);
+}
+
 struct ase* LeAudioDevice::GetFirstActiveAseByCisAndDataPathState(CisState cis_state,
                                                                   DataPathState data_path_state) {
   auto iter =
@@ -1105,9 +1118,9 @@ uint8_t LeAudioDevice::GetPhyBitmask(void) const {
 void LeAudioDevice::PrintDebugState(void) {
   std::stringstream debug_str;
 
-  debug_str << " Address: " << address_ << ", " << bluetooth::common::ToString(connection_state_)
-            << ", conn_id: " << +conn_id_ << ", mtu: " << +mtu_
-            << ", num_of_ase: " << static_cast<int>(ases_.size());
+  debug_str << " Address: " << address_.ToRedactedStringForLogging() << ", "
+            << bluetooth::common::ToString(connection_state_) << ", conn_id: " << +conn_id_
+            << ", mtu: " << +mtu_ << ", num_of_ase: " << static_cast<int>(ases_.size());
 
   if (ases_.size() > 0) {
     debug_str << "\n  == ASEs == ";
@@ -1672,7 +1685,7 @@ void LeAudioDevices::Dump(std::stringstream& stream, int group_id) const {
     if (device->group_id_ == group_id) {
       device->Dump(stream);
 
-      stream << "\tAddress: " << device->address_ << "\n";
+      stream << "\tAddress: " << device->address_.ToRedactedStringForLogging() << "\n";
       device->DumpPacsDebugState(stream);
       stream << "\n";
     }

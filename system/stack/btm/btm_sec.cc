@@ -593,12 +593,20 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
       BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4)) {
     /* local is 2.1 and peer is unknown */
     if ((p_dev_rec->sm4 & BTM_SM4_CONN_PEND) == 0) {
-      /* we are not accepting connection request from peer
-       * -> RNR (to learn if peer is 2.1)
-       * RNR when no ACL causes HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT */
-      btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_GET_REM_NAME);
-      status = get_stack_rnr_interface().BTM_ReadRemoteDeviceName(bd_addr, NULL,
-                                                                  BT_TRANSPORT_BR_EDR);
+      if (com::android::bluetooth::flags::skip_excess_name_discovery() &&
+          btif_storage_get_stored_remote_name(bd_addr,
+                                              reinterpret_cast<char*>(&p_dev_rec->sec_bd_name))) {
+        /* Skip name discovery if the name is already known */
+        p_dev_rec->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
+        status = btm_sec_dd_create_conn(p_dev_rec);
+      } else {
+        /* we are not accepting connection request from peer
+         * -> RNR (to learn if peer is 2.1)
+         * RNR when no ACL causes HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT */
+        btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_GET_REM_NAME);
+        status = get_stack_rnr_interface().BTM_ReadRemoteDeviceName(bd_addr, NULL,
+                                                                    BT_TRANSPORT_BR_EDR);
+      }
     } else {
       /* We are accepting connection request from peer */
       btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
@@ -3447,13 +3455,8 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
 
   if (status != HCI_SUCCESS && encr_enable == 0) {
     log::error("Encryption failure {}, disconnecting {}", status, handle);
-    if (!com::android::bluetooth::flags::disconnect_reason_for_encryption_failure()) {
-      btm_sec_disconnect(handle, HCI_ERR_AUTH_FAILURE,
-                         "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");
-    } else {
-      btm_sec_disconnect(handle, status,
-                         "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");
-    }
+    btm_sec_disconnect(handle, status,
+                       "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");
   }
 
   btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status), encr_enable);

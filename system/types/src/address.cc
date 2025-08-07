@@ -17,57 +17,35 @@
  ******************************************************************************/
 
 #include <bluetooth/types/address.h>
-#include <stdint.h>
 
 #include <algorithm>
 #include <array>
-#include <iomanip>
+#include <cstdint>
+#include <format>
 #include <sstream>
-#include <vector>
 
 static_assert(sizeof(RawAddress) == 6, "RawAddress must be 6 bytes long!");
 
 const RawAddress RawAddress::kAny{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 const RawAddress RawAddress::kEmpty{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
-RawAddress::RawAddress(const uint8_t (&addr)[6]) { std::copy(addr, addr + kLength, address); }
-
-RawAddress::RawAddress(const std::array<uint8_t, kLength> mac) {
-  std::copy(mac.begin(), mac.end(), address);
+RawAddress::RawAddress(const uint8_t (&addr)[6]) {
+  std::copy(addr, addr + kLength, address.begin());
 }
 
-std::string RawAddress::ToString() const { return ToColonSepHexString(); }
+RawAddress::RawAddress(const std::array<uint8_t, kLength> mac) : address(mac) {}
 
-std::string RawAddress::ToColonSepHexString() const {
-  std::stringstream addr;
-  addr << std::hex << std::setfill('0');
-  for (size_t i = 0; i < 6; i++) {
-    addr << std::setw(2) << +address[i];
-    if (i != 5) {
-      addr << ":";
-    }
-  }
-  return addr.str();
+std::string RawAddress::ToString() const {
+  return std::format("{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", address[0], address[1],
+                     address[2], address[3], address[4], address[5]);
 }
-
-std::string RawAddress::ToStringForLogging() const { return ToColonSepHexString(); }
 
 std::string RawAddress::ToRedactedStringForLogging() const {
   if (*this == RawAddress::kAny || *this == RawAddress::kEmpty) {
-    return ToStringForLogging();
+    return ToString();
   }
-  std::stringstream addr;
-  addr << std::hex << std::setfill('0');
-  addr << "xx:xx:xx:xx:";
-  addr << std::setw(2) << +address[4] << ":";
-  addr << std::setw(2) << +address[5];
-  return addr.str();
-}
 
-std::array<uint8_t, RawAddress::kLength> RawAddress::ToArray() const {
-  std::array<uint8_t, kLength> mac;
-  std::copy(std::begin(address), std::end(address), std::begin(mac));
-  return mac;
+  return std::format("xx:xx:xx:xx:{:02x}:{:02x}", address[4], address[5]);
 }
 
 bool RawAddress::FromString(const std::string& from, RawAddress& to) {
@@ -111,7 +89,7 @@ bool RawAddress::FromString(const std::string& from, RawAddress& to) {
 }
 
 size_t RawAddress::FromOctets(const uint8_t* from) {
-  std::copy(from, from + kLength, address);
+  std::copy(from, from + kLength, address.begin());
   return kLength;
 }
 
