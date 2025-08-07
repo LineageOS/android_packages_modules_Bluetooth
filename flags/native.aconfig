@@ -84,3 +84,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_use_after_object_destroyed"
+    namespace: "bluetooth"
+    description: "Fix use of object passed to handler bind after the object is destroyed."
+    bug: "433736221"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
