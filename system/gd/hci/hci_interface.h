@@ -111,8 +111,12 @@ public:
   virtual LeAdvertisingInterface* GetLeAdvertisingInterface(
           common::ContextualCallback<void(LeMetaEventView)> event_handler) = 0;
 
+  virtual void ReleaseLeAdvertisingInterface() = 0;
+
   virtual LeScanningInterface* GetLeScanningInterface(
           common::ContextualCallback<void(LeMetaEventView)> event_handler) = 0;
+
+  virtual void ReleaseLeScanningInterface() = 0;
 
   virtual void RegisterForScoConnectionRequests(
           common::ContextualCallback<void(Address, ClassOfDevice, ConnectionRequestLinkType)>
@@ -123,6 +127,8 @@ public:
 
   virtual DistanceMeasurementInterface* GetDistanceMeasurementInterface(
           common::ContextualCallback<void(LeMetaEventView)> event_handler) = 0;
+
+  virtual void ReleaseDistanceMeasurementInterface() = 0;
 
   virtual std::unique_ptr<InquiryInterface> GetInquiryInterface(
           common::ContextualCallback<void(EventView)> event_handler) = 0;

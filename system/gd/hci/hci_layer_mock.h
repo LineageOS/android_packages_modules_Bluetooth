@@ -91,14 +91,20 @@ public:
   MOCK_METHOD((LeAdvertisingInterface*), GetLeAdvertisingInterface,
               (common::ContextualCallback<void(LeMetaEventView)> event_handler), (override));
 
+  MOCK_METHOD((void), ReleaseLeAdvertisingInterface, (), (override));
+
   MOCK_METHOD((LeScanningInterface*), GetLeScanningInterface,
               (common::ContextualCallback<void(LeMetaEventView)> event_handler), (override));
+
+  MOCK_METHOD((void), ReleaseLeScanningInterface, (), (override));
 
   MOCK_METHOD((LeIsoInterface*), GetLeIsoInterface,
               (common::ContextualCallback<void(LeMetaEventView)> event_handler), (override));
 
   MOCK_METHOD((DistanceMeasurementInterface*), GetDistanceMeasurementInterface,
               (common::ContextualCallback<void(LeMetaEventView)> event_handler), (override));
+
+  MOCK_METHOD((void), ReleaseDistanceMeasurementInterface, (), (override));
 
   MOCK_METHOD((std::unique_ptr<InquiryInterface>), GetInquiryInterface,
               (common::ContextualCallback<void(EventView)> event_handler), (override));
