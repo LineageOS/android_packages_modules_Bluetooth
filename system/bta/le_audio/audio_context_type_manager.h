@@ -63,7 +63,9 @@ public:
    * The configuration context type is the use case context type based on the Audio Hal metadata.
    */
   virtual std::pair<types::LeAudioContextType, types::BidirectionalPair<types::AudioContexts>>
-  GetAudioContextsForTheGroup(const LeAudioDeviceGroup* group) = 0;
+  GetAudioContextsForTheGroup(
+          const LeAudioDeviceGroup* group,
+          uint8_t remote_directions = bluetooth::le_audio::types::kLeAudioDirectionBoth) = 0;
 
   /* This returns remote directions availability for given context.
    * Note: this should be used only when Audio Framework did not set any metadata.

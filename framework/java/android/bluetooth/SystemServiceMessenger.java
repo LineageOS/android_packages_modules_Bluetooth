@@ -34,6 +34,7 @@ import android.os.RemoteException;
 import com.android.server.bluetooth.SystemServiceMessage;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 /** @hide */
@@ -171,6 +172,15 @@ public class SystemServiceMessenger {
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
-        return future.orTimeout(10, TimeUnit.SECONDS).join();
+        try {
+            return future.orTimeout(10, TimeUnit.SECONDS).join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                // Rethrow initial exception while removing the CompletionException wrapper
+                throw (RuntimeException) cause;
+            }
+            throw e;
+        }
     }
 }

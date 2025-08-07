@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,6 @@ public class BluetoothServiceBinderTest {
         lenient().doReturn(TAG).when(mSource).getPackageName();
         mLooper = new TestLooper();
         mLooper.startAutoDispatch();
-        lenient().doReturn(mContext).when(mApi).getUserContext();
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
@@ -141,7 +140,7 @@ public class BluetoothServiceBinderTest {
         doReturn(mDevicePolicyManager).when(mContext).getSystemService(eq(devicePolicy));
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
 
-        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext);
     }
 
     @After
@@ -187,7 +186,6 @@ public class BluetoothServiceBinderTest {
         doReturn(true).when(mApi).enable(anyInt(), any());
         checkGranted(() -> mBinder.enable(mSource), true);
         verify(mUserManager).getProfileParent(any());
-        verify(mApi).getUserContext();
         verify(mApi).enable(eq(ENABLE_DISABLE_REASON_APPLICATION_REQUEST), eq(TAG));
         verifyMock();
     }
@@ -337,7 +335,6 @@ public class BluetoothServiceBinderTest {
         checkHardDenied(() -> mBinder.enableBle(mSource, token), false);
         doReturn(true).when(mApi).enableBle(eq(TAG), eq(token));
         checkGranted(() -> mBinder.enableBle(mSource, token), true);
-        verify(mApi).getUserContext();
         verify(mApi).enableBle(eq(TAG), eq(token));
         verifyMock();
     }

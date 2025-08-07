@@ -1323,6 +1323,7 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbluetooth_types",
         "libbt-common",
         "libchrome",

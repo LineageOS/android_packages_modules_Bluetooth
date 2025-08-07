@@ -17,16 +17,25 @@
 java_library {
     name: "bluetooth-common-java-tests",
     srcs: [
-        "FlagsWrapper.kt",
         "MockitoRule.kt",
         "StaticMockitoRule.kt",
     ],
 
     static_libs: [
+        "bluetooth-common-flagwrapper-tests",
         "flag-junit",
         "mockito-kotlin2",
         "mockito-target-extended",
     ],
+    sdk_version: "module_current",
+    min_sdk_version: "36",
+    target_sdk_version: "current",
+}
+
+java_library {
+    name: "bluetooth-common-flagwrapper-tests",
+    srcs: ["FlagsWrapper.kt"],
+    static_libs: ["flag-junit"],
     sdk_version: "module_current",
     min_sdk_version: "36",
     target_sdk_version: "current",

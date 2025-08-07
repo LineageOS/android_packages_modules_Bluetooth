@@ -82,7 +82,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onStart() {
-        publishBinderService(SERVICE_NAME, mBluetoothManagerService.binder)
+        publishBinderService(SERVICE_NAME, BluetoothServiceBinder(looper, serviceApi, context))
     }
 
     private fun shouldInitializeBluetooth(): Boolean {

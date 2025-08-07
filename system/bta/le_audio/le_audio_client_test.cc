@@ -1649,6 +1649,8 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+    com::android::bluetooth::flags::provider_
+            ->leaudio_use_game_sonification_as_regular_sonification(true);
 
     // Enable flags
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
@@ -17249,7 +17251,7 @@ TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_FallbackToMedia)
    * 3. After that BT Stack sets `audio_hal_is_capable_to_send_empty_metadata_` to false
    * 4. Simulate Audio HAL sets again data on both sessions but Resumes only Local Source (MEDIA  +
    * LIVE)
-   * 5. Check if after stream is started there will schedule a fallback to unidirectional
+   * 5. Check if after stream is started only with Sink metadata
    */
 
   int group_id = 1;
@@ -17270,6 +17272,13 @@ TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_FallbackToMedia)
   SyncOnMainLoop();
   ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 2);
   ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
+
+  auto scenario = types::LeAudioContextType::MEDIA;
+  types::BidirectionalPair<types::AudioContexts> metadata_contexts = {
+          .sink = AudioContexts(types::LeAudioContextType::MEDIA), .source = AudioContexts()};
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+
   LocalAudioSourceResume();
   SyncOnMainLoop();
 
@@ -17285,27 +17294,8 @@ TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_FallbackToMedia)
   auto group = streaming_groups.at(group_id);
   auto cis_directions = group->cig.GetConnectedCisDirections();
   ASSERT_TRUE(cis_directions.sink);
-  ASSERT_TRUE(cis_directions.source);
-  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 3);
-  ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
-
-  log::debug("Audio HAL is not resuming the direction ");
-  EXPECT_CALL(mock_state_machine_, StopStream(_));
-  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
-  SyncOnMainLoop();
-  LocalAudioSourceResume();
-  SyncOnMainLoop();
-
-  cis_count_out = 2;
-  cis_count_in = 0;
-  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 0);
-  SyncOnMainLoop();
-
-  cis_directions = group->cig.GetConnectedCisDirections();
-  ASSERT_TRUE(cis_directions.sink);
   ASSERT_FALSE(cis_directions.source);
-
-  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 3);
+  ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 2);
   ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
 }
 
@@ -17358,6 +17348,40 @@ TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_Conversational) 
   /*  LeAudioCloseVbcTimeout shall not be scheduled as this is Conversational */
   ASSERT_EQ(get_alarm_set_on_mloop_call_count("LeAudioCloseVbcTimeout"), 2);
   ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
+}
+
+TEST_F(UnicastTest, testGameSonificationHandling) {
+  /* Scenario
+   * 1. Start Media stream
+   * 2. Simulated GAME Sonification sound
+   * 3. Verify Media stream is not reconfigured
+   */
+
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+
+  auto scenario = types::LeAudioContextType::MEDIA;
+  types::BidirectionalPair<types::AudioContexts> metadata_contexts = {
+          .sink = AudioContexts(types::LeAudioContextType::MEDIA), .source = AudioContexts()};
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  /* Simulate metadata update, expect upadate , metadata */
+  metadata_contexts.sink.set(types::LeAudioContextType::SOUNDEFFECTS);
+
+  EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+  std::vector<struct playback_track_metadata> tracks = {
+          {{AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, 0},
+           {AUDIO_USAGE_GAME, AUDIO_CONTENT_TYPE_SONIFICATION, 0}}};
+  UpdateLocalSourceMetadata(tracks);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
 }
 
 class UnicastDsaTest : public UnicastTest,

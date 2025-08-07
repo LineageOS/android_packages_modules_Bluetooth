@@ -349,7 +349,9 @@ public class BassClientService extends ConnectableProfile {
 
             synchronized (mSearchScanCallbackLock) {
                 if (!mIsForegroundScan
-                        && (!mIsBackgroundScan || !isWaitingForMetadata(broadcastId))) {
+                        && (!mIsBackgroundScan
+                                || (!isWaitingForMetadata(broadcastId)
+                                        && !isOorMonitoringPauseReason(broadcastId)))) {
                     return;
                 }
 

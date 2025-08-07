@@ -19,6 +19,8 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.ACTION_ACL_CONNECTED
+import android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED
 import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
 import android.bluetooth.BluetoothDevice.ACTION_PAIRING_REQUEST
 import android.bluetooth.BluetoothDevice.BOND_BONDED
@@ -189,6 +191,10 @@ class HidHostTest {
                 Log.i(TAG, "onReceive(): device $device reportBufferSize $reportBufferSize")
                 isReportUpdated?.complete(true)
             }
+            BluetoothDevice.ACTION_ACL_CONNECTED -> {
+                device = intent.getParcelableExtra(EXTRA_DEVICE, BluetoothDevice::class.java)
+                Log.i(TAG, "onReceive(): ACL Connected with device: $device")
+            }
             BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                 device = intent.getParcelableExtra(EXTRA_DEVICE, BluetoothDevice::class.java)
                 Log.i(TAG, "onReceive(): ACL Disconnected with device: $device")
@@ -218,6 +224,7 @@ class HidHostTest {
                 addAction(BluetoothHidHost.ACTION_REPORT)
                 addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
                 addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
             }
         context.registerReceiver(receiver, filter)
         // Get profile proxies
@@ -246,6 +253,12 @@ class HidHostTest {
             hasExtra(EXTRA_DEVICE, device),
             hasExtra(EXTRA_BOND_STATE, BOND_BONDING),
         )
+        verifyIntentReceived(
+            hasAction(ACTION_ACL_CONNECTED),
+            hasExtra(EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
+        )
+        restartSettingsApp()
         verifyIntentReceived(hasAction(ACTION_PAIRING_REQUEST), hasExtra(EXTRA_DEVICE, device))
         verifyIntentReceived(
             hasAction(ACTION_BOND_STATE_CHANGED),
@@ -694,6 +707,13 @@ class HidHostTest {
             hasAction(BluetoothAdapter.ACTION_STATE_CHANGED),
             hasExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON),
         )
+    }
+
+    private fun restartSettingsApp() {
+        // Restart settings and system UI after ACL connection to avoid auto profile connection
+        // which leads test failure
+        Runtime.getRuntime().exec("am crash com.android.systemui").waitFor()
+        Runtime.getRuntime().exec("am crash com.android.settings").waitFor()
     }
 
     private fun removeBond(device: BluetoothDevice) {

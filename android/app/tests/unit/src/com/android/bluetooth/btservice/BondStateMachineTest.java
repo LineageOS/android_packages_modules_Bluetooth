@@ -17,6 +17,9 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothDevice.BOND_BONDED;
+import static android.bluetooth.BluetoothDevice.BOND_BONDING;
+import static android.bluetooth.BluetoothDevice.BOND_NONE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 
 import static com.android.bluetooth.TestUtils.getRealDevice;
@@ -34,15 +37,12 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.companion.CompanionDeviceManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.HandlerThread;
-import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
 import android.platform.test.annotations.DisableFlags;
@@ -52,6 +52,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
@@ -68,7 +69,6 @@ import com.android.bluetooth.vc.VolumeControlService;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -117,15 +117,11 @@ public class BondStateMachineTest {
         ParcelUuid.fromString("0000111E-0000-1000-8000-00805F9B34FB")
     };
 
-    private static final int BOND_NONE = BluetoothDevice.BOND_NONE;
-    private static final int BOND_BONDING = BluetoothDevice.BOND_BONDING;
-    private static final int BOND_BONDED = BluetoothDevice.BOND_BONDED;
-
     private AdapterProperties mAdapterProperties;
     private BluetoothDevice mDevice;
     private RemoteDevices mRemoteDevices;
-    private BondStateMachine mBondStateMachine;
-    private HandlerThread mHandlerThread;
+    private BondStateMachine mStateMachine;
+    private TestLooper mLooper;
     private RemoteDevices.DeviceProperties mDeviceProperties;
     private int mVerifyCount = 0;
 
@@ -140,38 +136,28 @@ public class BondStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
+        mLooper = new TestLooper();
+
         doReturn(mNativeInterface).when(mAdapterService).getNative();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
-        mHandlerThread = new HandlerThread("BondStateMachineTestHandlerThread");
-        mHandlerThread.start();
 
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
-        mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
-        mRemoteDevices.reset();
+        mRemoteDevices = new RemoteDevices(mAdapterService, mLooper.getLooper());
 
-        final var context = InstrumentationRegistry.getInstrumentation().getContext();
-        when(mAdapterService.getResources()).thenReturn(context.getResources());
+        var context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getResources()).when(mAdapterService).getResources();
         mAdapterProperties =
-                new AdapterProperties(mAdapterService, mRemoteDevices, mHandlerThread.getLooper());
+                new AdapterProperties(mAdapterService, mRemoteDevices, mLooper.getLooper());
         mAdapterProperties.init();
-        mBondStateMachine =
+        mStateMachine =
                 new BondStateMachine(
-                        mAdapterService,
-                        mHandlerThread.getLooper(),
-                        mAdapterProperties,
-                        mRemoteDevices);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        mHandlerThread.quit();
+                        mAdapterService, mLooper.getLooper(), mAdapterProperties, mRemoteDevices);
     }
 
     @Test
     public void testCreateBondAfterRemoveBond() {
         // Set up two devices already bonded.
-        mRemoteDevices.reset();
         RemoteDevices.DeviceProperties deviceProperties1, deviceProperties2;
         deviceProperties1 = mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
         deviceProperties2 = mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES_2);
@@ -187,33 +173,22 @@ public class BondStateMachineTest {
                 .createBond(any(byte[].class), eq(BluetoothDevice.ADDRESS_TYPE_PUBLIC), anyInt());
 
         // The removeBond() request for a bonded device should invoke the removeBondNative() call.
-        Message removeBondMsg1 = mBondStateMachine.obtainMessage(BondStateMachine.REMOVE_BOND);
-        removeBondMsg1.obj = device1;
-        mBondStateMachine.sendMessage(removeBondMsg1);
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
-        Message removeBondMsg2 = mBondStateMachine.obtainMessage(BondStateMachine.REMOVE_BOND);
-        removeBondMsg2.obj = device2;
-        mBondStateMachine.sendMessage(removeBondMsg2);
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
+        sendAndDispatchMessage(BondStateMachine.REMOVE_BOND, device1);
+        sendAndDispatchMessage(BondStateMachine.REMOVE_BOND, device2);
 
         verify(mNativeInterface).removeBond(eq(TEST_BT_ADDR_BYTES));
         verify(mNativeInterface).removeBond(eq(TEST_BT_ADDR_BYTES_2));
 
-        mBondStateMachine.bondStateChangeCallback(
+        mStateMachine.bondStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS, TEST_BT_ADDR_BYTES, BOND_NONE, 0);
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
-        mBondStateMachine.bondStateChangeCallback(
+        syncHandler(BondStateMachine.BONDING_STATE_CHANGE);
+        mStateMachine.bondStateChangeCallback(
                 AbstractionLayer.BT_STATUS_SUCCESS, TEST_BT_ADDR_BYTES_2, BOND_NONE, 0);
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
+        syncHandler(BondStateMachine.BONDING_STATE_CHANGE);
 
         // Try to pair these two devices again, createBondNative() should be invoked.
-        Message createBondMsg1 = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);
-        createBondMsg1.obj = device1;
-        mBondStateMachine.sendMessage(createBondMsg1);
-        Message createBondMsg2 = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);
-        createBondMsg2.obj = device2;
-        mBondStateMachine.sendMessage(createBondMsg2);
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
+        sendAndDispatchMessage(BondStateMachine.CREATE_BOND, device1);
+        sendAndDispatchMessage(BondStateMachine.CREATE_BOND, device2);
 
         verify(mNativeInterface)
                 .createBond(
@@ -227,8 +202,7 @@ public class BondStateMachineTest {
 
     @Test
     public void testCreateBondWithLeDevice() {
-        mRemoteDevices.reset();
-        mBondStateMachine.mPendingBondedDevices.clear();
+        mStateMachine.mPendingBondedDevices.clear();
 
         BluetoothDevice device1 =
                 getRealDevice(
@@ -240,13 +214,8 @@ public class BondStateMachineTest {
                         BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         // The createBond() request for two devices with different address types.
-        Message createBondMsg1 = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);
-        createBondMsg1.obj = device1;
-        mBondStateMachine.sendMessage(createBondMsg1);
-        Message createBondMsg2 = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);
-        createBondMsg2.obj = device2;
-        mBondStateMachine.sendMessage(createBondMsg2);
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
+        sendAndDispatchMessage(BondStateMachine.CREATE_BOND, device1);
+        sendAndDispatchMessage(BondStateMachine.CREATE_BOND, device2);
 
         verify(mNativeInterface)
                 .createBond(
@@ -261,13 +230,13 @@ public class BondStateMachineTest {
     @Test
     public void testUuidUpdateWithPendingDevice() {
         mRemoteDevices.reset();
-        mBondStateMachine.mPendingBondedDevices.clear();
+        mStateMachine.mPendingBondedDevices.clear();
 
         RemoteDevices.DeviceProperties pendingDeviceProperties =
                 mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES_2);
         BluetoothDevice pendingDevice = pendingDeviceProperties.getDevice();
         assertThat(pendingDevice).isNotNull();
-        mBondStateMachine.sendIntent(pendingDevice, BOND_BONDED, TEST_BOND_REASON, false);
+        mStateMachine.sendIntent(pendingDevice, BOND_BONDED, TEST_BOND_REASON, false);
 
         RemoteDevices.DeviceProperties testDeviceProperties =
                 mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
@@ -275,26 +244,26 @@ public class BondStateMachineTest {
         BluetoothDevice testDevice = testDeviceProperties.getDevice();
         assertThat(testDevice).isNotNull();
 
-        Message bondingMsg = mBondStateMachine.obtainMessage(BondStateMachine.BONDING_STATE_CHANGE);
-        bondingMsg.obj = testDevice;
-        bondingMsg.arg1 = BOND_BONDING;
-        bondingMsg.arg2 = AbstractionLayer.BT_STATUS_RMT_DEV_DOWN;
-        mBondStateMachine.sendMessage(bondingMsg);
+        sendAndDispatchMessage(
+                BondStateMachine.BONDING_STATE_CHANGE,
+                BOND_BONDING,
+                AbstractionLayer.BT_STATUS_RMT_DEV_DOWN,
+                testDevice);
 
         pendingDeviceProperties.mUuidsBrEdr = TEST_UUIDS;
-        Message uuidUpdateMsg = mBondStateMachine.obtainMessage(BondStateMachine.UUID_UPDATE);
-        uuidUpdateMsg.obj = pendingDevice;
+        syncHandler(BondStateMachine.BONDING_STATE_CHANGE); // message was deferred
 
-        mBondStateMachine.sendMessage(uuidUpdateMsg);
+        sendAndDispatchMessage(BondStateMachine.UUID_UPDATE, pendingDevice);
+        sendAndDispatchMessage(
+                BondStateMachine.BONDING_STATE_CHANGE,
+                BOND_BONDED,
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                testDevice);
 
-        Message bondedMsg = mBondStateMachine.obtainMessage(BondStateMachine.BONDING_STATE_CHANGE);
-        bondedMsg.obj = testDevice;
-        bondedMsg.arg1 = BOND_BONDED;
-        bondedMsg.arg2 = AbstractionLayer.BT_STATUS_SUCCESS;
-        mBondStateMachine.sendMessage(bondedMsg);
+        syncHandler(BondStateMachine.UUID_UPDATE); // message was deferred
 
-        TestUtils.waitForLooperToFinishScheduledTask(mBondStateMachine.getHandler().getLooper());
-        assertThat(mBondStateMachine.mPendingBondedDevices).isEmpty();
+        assertThat(mLooper.nextMessage()).isNull();
+        assertThat(mStateMachine.mPendingBondedDevices).isEmpty();
     }
 
     private void resetRemoteDevice(int deviceType) {
@@ -304,7 +273,7 @@ public class BondStateMachineTest {
         mDevice = mDeviceProperties.getDevice();
         assertThat(mDevice).isNotNull();
         mDeviceProperties.mDeviceType = deviceType;
-        mBondStateMachine.mPendingBondedDevices.clear();
+        mStateMachine.mPendingBondedDevices.clear();
     }
 
     @Test
@@ -639,7 +608,7 @@ public class BondStateMachineTest {
         // Random profile intentionally left out to test empty case
         doReturn(Optional.empty()).when(mAdapterService).getHapClientService();
 
-        mBondStateMachine.clearProfilePriority(mDevice);
+        mStateMachine.clearProfilePriority(mDevice);
 
         InOrder inOrder =
                 inOrder(
@@ -685,7 +654,7 @@ public class BondStateMachineTest {
         HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
         A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
 
-        mBondStateMachine.clearProfilePriority(mDevice);
+        mStateMachine.clearProfilePriority(mDevice);
 
         InOrder inOrder = inOrder(mHeadsetService, mHeadsetClientService, mA2dpSinkService);
 
@@ -724,7 +693,7 @@ public class BondStateMachineTest {
         mDeviceProperties.mBondState = oldState;
 
         try {
-            mBondStateMachine.sendIntent(
+            mStateMachine.sendIntent(
                     mDevice, newState, TEST_BOND_REASON, isTriggerFromDelayMessage);
         } catch (IllegalArgumentException e) {
             // Do nothing.
@@ -759,12 +728,10 @@ public class BondStateMachineTest {
         }
 
         if (shouldDelayMessageExist) {
-            assertThat(mBondStateMachine.hasMessage(mBondStateMachine.BONDED_INTENT_DELAY))
-                    .isTrue();
-            mBondStateMachine.removeMessage(mBondStateMachine.BONDED_INTENT_DELAY);
+            assertThat(mStateMachine.hasMessage(mStateMachine.BONDED_INTENT_DELAY)).isTrue();
+            mStateMachine.removeMessage(mStateMachine.BONDED_INTENT_DELAY);
         } else {
-            assertThat(mBondStateMachine.hasMessage(mBondStateMachine.BONDED_INTENT_DELAY))
-                    .isFalse();
+            assertThat(mStateMachine.hasMessage(mStateMachine.BONDED_INTENT_DELAY)).isFalse();
         }
     }
 
@@ -782,7 +749,7 @@ public class BondStateMachineTest {
         for (int deviceType : DEVICE_TYPES) {
             resetRemoteDevice(deviceType);
             if (pendingBondedDevice != null) {
-                mBondStateMachine.mPendingBondedDevices.add(mDevice);
+                mStateMachine.mPendingBondedDevices.add(mDevice);
             }
             if (uuids != null) {
                 // Add dummy UUID for the device.
@@ -902,5 +869,18 @@ public class BondStateMachineTest {
         } else {
             assertThat(intent.getIntExtra(BluetoothDevice.EXTRA_UNBOND_REASON, -1)).isEqualTo(-1);
         }
+    }
+
+    private void syncHandler(int what) {
+        TestUtils.syncHandler(mLooper, what);
+    }
+
+    private void sendAndDispatchMessage(int what, Object obj) {
+        sendAndDispatchMessage(what, 0, 0, obj);
+    }
+
+    private void sendAndDispatchMessage(int what, int arg1, int arg2, Object obj) {
+        mStateMachine.sendMessage(what, arg1, arg2, obj);
+        syncHandler(what);
     }
 }
