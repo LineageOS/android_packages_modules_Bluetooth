@@ -693,6 +693,19 @@ struct ase* LeAudioDevice::GetNextActiveAseWithDifferentDirection(struct ase* ba
   return &(*iter);
 }
 
+struct ase* LeAudioDevice::GetAseWaitingForDataPathByConnHandle(uint16_t conn_handle) {
+  auto iter = std::find_if(ases_.begin(), ases_.end(), [conn_handle](const auto& ase) {
+    log::verbose("ase_id: {}, active: {}, data: {} cis state {}, cis_conn_handle: {}", ase.id,
+                 ase.active, bluetooth::common::ToString(ase.data_path_state),
+                 bluetooth::common::ToString(ase.cis_state), ase.cis_conn_hdl);
+
+    return ase.active && (ase.data_path_state == DataPathState::CONFIGURING) &&
+           (ase.cis_state == CisState::CONNECTED) && (ase.cis_conn_hdl == conn_handle);
+  });
+
+  return (iter == ases_.end()) ? nullptr : &(*iter);
+}
+
 struct ase* LeAudioDevice::GetFirstActiveAseByCisAndDataPathState(CisState cis_state,
                                                                   DataPathState data_path_state) {
   auto iter =

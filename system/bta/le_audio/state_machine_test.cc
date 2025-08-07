@@ -3617,6 +3617,69 @@ TEST_F(StateMachineTest, testDisableBidirectional) {
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
 }
 
+TEST_F(StateMachineTest, testTwoBidirectionalAses) {
+  /* Device is banded headphones with 2x snk + 2x src ase
+   * (2x bidirectional)
+   */
+  additional_snk_ases = 1;
+  additional_src_ases = 1;
+  const auto context_type = kContextTypeConversational;
+  const int leaudio_group_id = 4;
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
+
+  /* Since we prepared device with Conversional context in mind, Sink and Source
+   * ASEs should have been configured.
+   */
+  PrepareConfigureCodecHandler(group, 4);
+  PrepareConfigureQosHandler(group, 4);
+  PrepareEnableHandler(group, 4);
+  PrepareDisableHandler(group, 4);
+  PrepareReceiverStartReadyHandler(group, 2);
+  PrepareReceiverStopReady(group, 2);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                  GATT_WRITE_NO_RSP, _, _))
+          .Times(AtLeast(4));
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _)).Times(1);
+  EXPECT_CALL(*mock_iso_manager_, EstablishCis(_)).Times(1);
+  EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath(_, _)).Times(4);
+
+  /* Just store requested CIS HANDLES and simulate that all the ASEs do have CIS in CONNECTED state
+   * and data_path_state in CONFIGURING state which triggers the issue
+   */
+  std::vector<uint16_t> cis_handles_vec;
+  ON_CALL(*mock_iso_manager_, SetupIsoDataPath)
+          .WillByDefault(
+                  [&cis_handles_vec](uint16_t conn_handle,
+                                     bluetooth::hci::iso_manager::iso_data_path_params /*p*/) {
+                    log::debug("SetupIsoDataPath");
+                    ASSERT_NE(conn_handle, kInvalidCisConnHandle);
+                    cis_handles_vec.push_back(conn_handle);
+                  });
+
+  // Start the configuration and stream Media content
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  for (auto& cis_handle : cis_handles_vec) {
+    log::debug("[TESTING] ProcessHciNotifSetupIsoDataPath. Expect StatusReportCb to be called");
+    LeAudioGroupStateMachine::Get()->ProcessHciNotifSetupIsoDataPath(group, leAudioDevice, 0,
+                                                                     cis_handle);
+  }
+
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  reset_mock_function_count_map();
+}
+
 TEST_F(StateMachineTest, testReleaseSingle) {
   /* Device is banded headphones with 1x snk + 0x src ase
    * (1xunidirectional CIS) with channel count 2 (for stereo)
