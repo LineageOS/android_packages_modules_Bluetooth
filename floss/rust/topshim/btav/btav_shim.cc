@@ -35,7 +35,7 @@ namespace rusty = ::bluetooth::topshim::rust;
 namespace bluetooth::avrcp {
 class AvrcpMediaInterfaceImpl : public MediaInterface {
 public:
-  void SendKeyEvent(uint8_t key, KeyState state) {
+  void SendKeyEvent(const RawAddress&, uint8_t key, KeyState state) {
     rusty::avrcp_send_key_event(key, state == KeyState::PUSHED);
   }
 
