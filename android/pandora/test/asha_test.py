@@ -138,7 +138,7 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         result = await device.aio.host.ConnectLE(own_address_type=own_address_type,
                                                  **scan_result.address_asdict())
-
+        assert result.connection
         return result.connection
 
     async def accept_pairing(self, device: PandoraDevice, connection: Connection):
