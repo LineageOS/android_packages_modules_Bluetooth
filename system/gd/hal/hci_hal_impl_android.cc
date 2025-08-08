@@ -67,6 +67,7 @@ public:
     log::assert_that(callback_ == &kNullCallbacks, "callbacks already set");
     log::assert_that(callback != nullptr, "callback != nullptr");
     std::lock_guard<std::mutex> lock(mutex_);
+    log::info("callbacks have been set!");
     callback_ = callback;
   }
 
@@ -169,13 +170,17 @@ HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLog
   log::assert_that(backend_ == nullptr,
                    "Start can't be called more than once before Stop is called.");
 
+  log::info("Initializing HCI HAL backend and callbacks !!");
   if (com::android::bluetooth::flags::hci_instance_name_use_injected()) {
     backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
   } else {
     backend_ = HciBackend::CreateAidl();
   }
   if (!backend_) {
+    log::info("AIDL backend not available, falling back to HIDL");
     backend_ = HciBackend::CreateHidl(handler);
+  } else {
+    log::info("AIDL backend available");
   }
 
   log::assert_that(backend_ != nullptr, "No backend available");
@@ -184,6 +189,7 @@ HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLog
 
   backend_->initialize(callbacks_);
   callbacks_->init_promise->get_future().wait();
+  log::info("HCI HAL initialization completed !!");
 }
 
 HciHalImpl::~HciHalImpl() {

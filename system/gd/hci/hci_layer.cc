@@ -85,9 +85,10 @@ static std::chrono::milliseconds getHciTimeoutRestartMs() {
 static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
   auto reset_complete = ResetCompleteView::Create(complete);
   log::assert_that(reset_complete.IsValid(), "assert failed: reset_complete.IsValid()");
-  log::debug("Reset completed with status: {}", ErrorCodeText(ErrorCode::SUCCESS));
   log::assert_that(reset_complete.GetStatus() == ErrorCode::SUCCESS,
                    "assert failed: reset_complete.GetStatus() == ErrorCode::SUCCESS");
+
+  log::info("HciLayer::reset is completed");
 }
 
 static void abort_after_time_out(OpCode op_code) {
