@@ -457,6 +457,9 @@ public:
     return false;
   }
 
+  void StartConnSubrateIfNeeded();
+  void StopConnSubrateIfNeeded();
+
 private:
   bool is_enabled_;
 
