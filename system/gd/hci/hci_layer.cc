@@ -313,7 +313,13 @@ struct HciLayer::impl {
 
     bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
-    log::error("Flushing {} waiting commands", command_queue_.size());
+    log::error("Flushing #{} waiting commands", command_queue_.size());
+    for (auto& command : command_queue_) {
+      log::debug("Flushing command: opcode:{}, waiting for: {}",
+                 OpCodeText(command.command_view->GetOpCode()),
+                 std::to_string(static_cast<uint8_t>(command.waiting_for_)));
+    }
+
     // Clear any waiting commands (there is an abort coming anyway)
     command_queue_.clear();
     command_credits_ = 1;
