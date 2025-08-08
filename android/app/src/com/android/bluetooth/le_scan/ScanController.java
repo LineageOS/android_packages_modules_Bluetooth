@@ -140,6 +140,7 @@ public class ScanController {
 
     private volatile boolean mIsAvailable = true;
     private volatile boolean mTestModeEnabled = false;
+    private volatile boolean mIsMsftAdvMonitorEnabled = false;
     private Handler mTestModeHandler;
 
     public ScanController(
@@ -480,7 +481,11 @@ public class ScanController {
             final ScanSettings settings = client.getSettings();
             final byte[] scanRecordData;
             boolean isScanResponse = (eventType & ET_SCAN_RESPONSE_MASK) != 0;
-            boolean requiresScanResponse = (eventType & ET_SCANNABLE_MASK) != 0 && !isScanResponse;
+            boolean requiresScanResponse =
+                    (eventType & ET_SCANNABLE_MASK) != 0
+                            && !isScanResponse
+                            && !mIsMsftAdvMonitorEnabled;
+
             if (Flags.supportPassiveScanning()
                     && ((settings.getScanType() == ScanSettings.SCAN_TYPE_ACTIVE
                                     && requiresScanResponse)
@@ -1167,10 +1172,12 @@ public class ScanController {
         mFilterIndexToMsftAdvMonitorMap.remove(filterIndex);
     }
 
-    void onMsftAdvMonitorEnable(int status) {
+    void onMsftAdvMonitorEnable(boolean enable, int status) {
         enforceScanThread();
         if (status != 0) {
             Log.e(TAG, "Error enabling advertisement monitor");
+        } else {
+            mIsMsftAdvMonitorEnabled = enable;
         }
     }
 

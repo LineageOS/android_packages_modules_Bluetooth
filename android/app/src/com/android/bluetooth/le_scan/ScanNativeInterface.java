@@ -383,7 +383,7 @@ public class ScanNativeInterface {
         doOnScanThread(() -> mScanController.onMsftAdvMonitorRemove(filter_index, status));
     }
 
-    void onMsftAdvMonitorEnable(int status) {
-        doOnScanThread(() -> mScanController.onMsftAdvMonitorEnable(status));
+    void onMsftAdvMonitorEnable(boolean enable, int status) {
+        doOnScanThread(() -> mScanController.onMsftAdvMonitorEnable(enable, status));
     }
 }
