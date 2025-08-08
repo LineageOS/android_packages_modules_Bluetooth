@@ -71,7 +71,8 @@ using ::testing::SetArgPointee;
 using ::testing::WithArg;
 
 std::atomic<int> num_async_tasks;
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   // Wrap the task with task counter so we could later know if there are

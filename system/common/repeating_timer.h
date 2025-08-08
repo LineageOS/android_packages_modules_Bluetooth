@@ -59,7 +59,7 @@ public:
    * @param period period for the task to be executed
    * @return true iff task is scheduled successfully
    */
-  bool SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread, base::RepeatingClosure task,
+  bool SchedulePeriodic(MessageLoopThread* thread, base::RepeatingClosure task,
                         std::chrono::microseconds period);
 
   /**
@@ -80,7 +80,8 @@ public:
   bool IsScheduled() const;
 
 private:
-  base::WeakPtr<MessageLoopThread> message_loop_thread_;
+  base::WeakPtr<MessageLoopThread> message_loop_thread_weak_ptr_;
+  MessageLoopThread* message_loop_thread_;
   base::CancelableClosure task_wrapper_;
   base::RepeatingClosure task_;
   std::chrono::microseconds period_;

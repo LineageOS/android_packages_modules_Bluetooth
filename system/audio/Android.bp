@@ -72,6 +72,7 @@ cc_library_host_shared {
     static_libs: [
         "bluetooth_flags_c_lib",
         "libbase",
+        "libbluetooth_gd_os",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",

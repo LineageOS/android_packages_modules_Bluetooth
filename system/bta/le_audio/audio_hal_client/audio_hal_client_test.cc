@@ -52,7 +52,8 @@ using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 
 using namespace bluetooth;
 
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   if (!message_loop_thread.DoInThread(std::move(task))) {

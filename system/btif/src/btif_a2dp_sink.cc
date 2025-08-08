@@ -95,7 +95,7 @@ typedef struct {
 class BtifA2dpSinkControlBlock {
 public:
   explicit BtifA2dpSinkControlBlock(const std::string& thread_name)
-      : worker_thread(thread_name),
+      : worker_thread(thread_name, os::Thread::Priority::REAL_TIME),
         rx_audio_queue(nullptr),
         rx_flush(false),
         decode_alarm(nullptr),

@@ -503,8 +503,8 @@ std::ostream& operator<<(std::ostream& os, const BroadcastConfiguration&) { retu
 
 namespace {
 
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
-static base::MessageLoop* message_loop_;
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 
 static void init_message_loop_thread() {
   message_loop_thread.StartUp();
@@ -516,14 +516,14 @@ static void init_message_loop_thread() {
     bluetooth::log::warn("Unable to set real time scheduling");
   }
 
-  message_loop_ = message_loop_thread.message_loop();
-  if (message_loop_ == nullptr) {
-    FAIL() << "unable to get message loop.";
+  if (!com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    if (message_loop_thread.message_loop() == nullptr) {
+      FAIL() << "unable to get message loop.";
+    }
   }
 }
 
 static void cleanup_message_loop_thread() {
-  message_loop_ = nullptr;
   message_loop_thread.ShutDown();
 }
 

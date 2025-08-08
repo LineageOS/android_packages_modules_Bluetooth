@@ -119,7 +119,8 @@ extern "C" const char* __asan_default_options() { return "detect_container_overf
 
 std::atomic<int> num_async_tasks;
 std::atomic<int> num_delayed_tasks;
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 bluetooth::common::MessageLoopThread delayed_message_loop_thread("test delayed message loop");
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
 std::vector<base::OnceClosure> pending_tasks_;
