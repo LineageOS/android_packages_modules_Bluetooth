@@ -17,7 +17,7 @@
 package com.android.bluetooth.gatt;
 
 import static com.android.bluetooth.Utils.transportToString;
-import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
+import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
