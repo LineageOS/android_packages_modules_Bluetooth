@@ -557,7 +557,6 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* /*p_srcb*/, tCONN_ID co
 bool bta_gattc_mark_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda_ptr, bool add) {
   tBTA_GATTC_BG_TCK* p_bg_tck = &bta_gattc_cb.bg_track[0];
   uint8_t i = 0;
-  tBTA_GATTC_CIF_MASK* p_cif_mask;
 
   for (i = 0; i < ble_acceptlist_size(); i++, p_bg_tck++) {
     if (p_bg_tck->in_use &&

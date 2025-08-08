@@ -473,7 +473,6 @@ void bta_dm_disc_gattc_register(void) {
   get_gatt_interface().BTA_GATTC_AppRegister(
           "bta_dm_disc_gatt", bta_dm_gattc_callback,
           base::Bind([](uint8_t client_id, uint8_t status) {
-            tGATT_STATUS gatt_status = static_cast<tGATT_STATUS>(status);
             if (static_cast<tGATT_STATUS>(status) == GATT_SUCCESS) {
               log::info("Registered device discovery search gatt client tGATT_IF:{}", client_id);
               bta_dm_discovery_cb.client_if = client_id;

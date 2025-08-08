@@ -474,7 +474,6 @@ public:
     uint16_t write_req_handle = p_data->req_data.p_data->write_req.handle;
     uint16_t len = p_data->req_data.p_data->write_req.len;
     bool need_rsp = p_data->req_data.p_data->write_req.need_rsp;
-    RawAddress remote_bda = p_data->req_data.remote_bda;
     log::info("conn_id:{}, write_req_handle:0x{:04x}, need_rsp{}, len:{}", conn_id,
               write_req_handle, need_rsp, len);
 
