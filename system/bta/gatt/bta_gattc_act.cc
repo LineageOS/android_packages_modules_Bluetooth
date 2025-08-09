@@ -123,8 +123,6 @@ static void bta_gattc_enable() {
 /** Disable GATTC module by cleaning up all active connections and deregister
  * all application */
 void bta_gattc_disable() {
-  uint8_t i;
-
   log::verbose("");
 
   if (bta_gattc_cb.state != BTA_GATTC_STATE_ENABLED) {

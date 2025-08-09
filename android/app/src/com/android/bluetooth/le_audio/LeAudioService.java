@@ -1228,31 +1228,14 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     /**
-     * Get all the devices within a given group.
+     * Get all the devices within a group for given device.
      *
      * @param device the device for which we want to get all devices in its group
      * @return all devices within a given group or empty list
      */
     public List<BluetoothDevice> getGroupDevices(BluetoothDevice device) {
-        List<BluetoothDevice> result = new ArrayList<>();
         int groupId = getGroupId(device);
-
-        if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
-            return result;
-        }
-
-        mGroupReadLock.lock();
-        try {
-            for (Map.Entry<BluetoothDevice, LeAudioDeviceDescriptor> entry :
-                    mDeviceDescriptors.entrySet()) {
-                if (entry.getValue().mGroupId == groupId) {
-                    result.add(entry.getKey());
-                }
-            }
-        } finally {
-            mGroupReadLock.unlock();
-        }
-        return result;
+        return (getGroupDevices(groupId));
     }
 
     /** Get the active device group id */

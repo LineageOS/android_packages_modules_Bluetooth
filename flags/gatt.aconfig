@@ -56,3 +56,13 @@ flag {
     description: "Add subrate manager to control LE subrate parameters"
     bug: "433670627"
 }
+
+flag {
+    name: "br_edr_discover_gatt_services_over_gatt"
+    namespace: "bluetooth"
+    description: "Do GATT service discovery over GATT rather than SDP"
+    bug: "426086352"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
