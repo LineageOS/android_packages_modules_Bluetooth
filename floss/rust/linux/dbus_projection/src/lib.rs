@@ -260,10 +260,10 @@ macro_rules! impl_dbus_arg_enum {
             type DBusType = u32;
             fn from_dbus(
                 data: u32,
-                _conn: Option<Arc<SyncConnection>>,
+                _conn: Option<std::sync::Arc<dbus::nonblock::SyncConnection>>,
                 _remote: Option<dbus::strings::BusName<'static>>,
                 _disconnect_watcher: Option<
-                    Arc<std::sync::Mutex<dbus_projection::DisconnectWatcher>>,
+                    std::sync::Arc<std::sync::Mutex<dbus_projection::DisconnectWatcher>>,
                 >,
             ) -> Result<$enum_type, Box<dyn std::error::Error>> {
                 match <$enum_type>::from_u32(data) {

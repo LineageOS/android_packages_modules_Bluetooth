@@ -15,7 +15,6 @@ use btstack::{RPCProxy, SuspendMode};
 
 use dbus::arg::RefArg;
 
-use dbus::nonblock::SyncConnection;
 use dbus::strings::Path;
 
 use dbus_macros::{dbus_method, dbus_propmap, dbus_proxy_obj, generate_dbus_exporter};
@@ -25,7 +24,6 @@ use dbus_projection::prelude::*;
 use num_traits::cast::{FromPrimitive, ToPrimitive};
 
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::dbus_arg::{DBusArg, DBusArgError, RefArgToRust};
 

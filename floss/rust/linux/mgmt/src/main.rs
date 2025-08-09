@@ -13,8 +13,10 @@ use log::LevelFilter;
 use log_panics;
 use manager_service::bluetooth_manager::BluetoothManager;
 use manager_service::powerd_suspend_manager::PowerdSuspendManager;
-use manager_service::{bluetooth_experimental_dbus, iface_bluetooth_manager};
-use manager_service::{bluetooth_manager_dbus, config_util, state_machine};
+use manager_service::{
+    bluetooth_experimental_dbus, bluetooth_manager_dbus, config_util, iface_bluetooth_manager,
+    state_machine,
+};
 use std::sync::{Arc, Mutex};
 use syslog::{BasicLogger, Facility, Formatter3164};
 
@@ -55,11 +57,11 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let logger = syslog::unix(formatter).expect("could not connect to syslog");
         let _ = log::set_boxed_logger(Box::new(BasicLogger::new(logger)))
-            .map(|()| log::set_max_level(config_util::get_log_level().unwrap_or(level_filter)));
+            .map(|()| log::set_max_level(level_filter));
     }
 
     // Initialize config util
-    config_util::fix_config_file_format();
+    config_util::setup_unstable_aflags();
 
     // Connect to the D-Bus system bus (this is blocking, unfortunately).
     let (resource, conn) = connection::new_system_sync()?;
