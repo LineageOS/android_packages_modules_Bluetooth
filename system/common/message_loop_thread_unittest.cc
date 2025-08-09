@@ -29,6 +29,8 @@
 #include <thread>
 #include <utility>
 
+#include <com_android_bluetooth_flags.h>
+
 using bluetooth::common::MessageLoopThread;
 using namespace bluetooth;
 
@@ -167,7 +169,7 @@ TEST_F(MessageLoopThreadTest, test_set_realtime_priority_fail_before_start) {
 
 TEST_F(MessageLoopThreadTest, test_set_realtime_priority_success) {
   std::string name = "test_thread";
-  MessageLoopThread message_loop_thread(name);
+  MessageLoopThread message_loop_thread(name, os::Thread::Priority::REAL_TIME);
   message_loop_thread.StartUp();
   bool ret = message_loop_thread.EnableRealTimeScheduling();
   if (!ret) {
@@ -210,12 +212,18 @@ TEST_F(MessageLoopThreadTest, test_set_realtime_priority_success) {
 }
 
 TEST_F(MessageLoopThreadTest, test_message_loop_null_before_start) {
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    GTEST_SKIP() << "Skipping this test, as flag replace_message_loop_thread_with_gd_handler is enabled.";
+  }
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   ASSERT_EQ(message_loop_thread.message_loop(), nullptr);
 }
 
 TEST_F(MessageLoopThreadTest, test_message_loop_not_null_start) {
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    GTEST_SKIP() << "Skipping this test, as flag replace_message_loop_thread_with_gd_handler is enabled.";
+  }
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
@@ -223,6 +231,10 @@ TEST_F(MessageLoopThreadTest, test_message_loop_not_null_start) {
 }
 
 TEST_F(MessageLoopThreadTest, test_message_loop_null_after_stop) {
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    GTEST_SKIP() << "Skipping this test, as flag replace_message_loop_thread_with_gd_handler is enabled.";
+  }
+
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();

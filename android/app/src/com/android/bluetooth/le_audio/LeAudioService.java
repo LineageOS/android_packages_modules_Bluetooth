@@ -3401,7 +3401,85 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
-    boolean isOutputCodecOfSampleFrequencyChanged(
+    boolean isCodecChangedForTheStream(
+            BluetoothLeAudioCodecStatus previous, BluetoothLeAudioCodecStatus next) {
+        /* This function checks if in general CodecType has changed. */
+        if ((previous == null) && (next == null)) {
+            return false;
+        }
+
+        if ((previous == null) || (next == null)) {
+            Log.d(TAG, previous + " != " + next);
+            return true;
+        }
+
+        if (previous.getOutputCodecConfig().getCodecType()
+                        != next.getOutputCodecConfig().getCodecType()
+                && previous.getOutputCodecConfig().getCodecType()
+                        != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID
+                && next.getOutputCodecConfig().getCodecType()
+                        != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
+            Log.d(
+                    TAG,
+                    "Different output codec type: "
+                            + (previous.getOutputCodecConfig().getCodecName()
+                                    + "( "
+                                    + (previous.getOutputCodecConfig().getCodecType() + ")")
+                                    + " != "
+                                    + (next.getOutputCodecConfig().getCodecName())
+                                    + "( "
+                                    + next.getOutputCodecConfig().getCodecType()
+                                    + ")"));
+
+            return true;
+        }
+
+        if (previous.getInputCodecConfig().getCodecType()
+                        != next.getInputCodecConfig().getCodecType()
+                && previous.getInputCodecConfig().getCodecType()
+                        != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID
+                && next.getInputCodecConfig().getCodecType()
+                        != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
+            Log.d(
+                    TAG,
+                    "Different Input codec type: "
+                            + (previous.getInputCodecConfig().getCodecName()
+                                    + "( "
+                                    + (previous.getInputCodecConfig().getCodecType() + ")")
+                                    + " != "
+                                    + (next.getInputCodecConfig().getCodecName())
+                                    + "( "
+                                    + next.getInputCodecConfig().getCodecType()
+                                    + ")"));
+            return true;
+        }
+
+        if (next.getOutputCodecConfig().getCodecType()
+                != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
+            Log.d(TAG, "Current output codec is " + previous.getOutputCodecConfig().getCodecName());
+        }
+
+        if (next.getInputCodecConfig().getCodecType()
+                != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
+            Log.d(TAG, "Current input codec is " + previous.getInputCodecConfig().getCodecName());
+        }
+
+        return false;
+    }
+
+    boolean isUsingLc3(BluetoothLeAudioCodecStatus codecStatus) {
+        if (codecStatus == null) {
+            return false;
+        }
+
+        /* For now on both directions we use same codec. */
+        return codecStatus.getOutputCodecConfig().getCodecType()
+                        == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3
+                || codecStatus.getInputCodecConfig().getCodecType()
+                        == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3;
+    }
+
+    boolean isOutputCodecOrSampleFrequencyChanged(
             BluetoothLeAudioCodecStatus previous, BluetoothLeAudioCodecStatus next) {
         if ((previous == null) && (next == null)) {
             return false;
@@ -3432,26 +3510,32 @@ public class LeAudioService extends ConnectableProfile {
             Log.d(
                     TAG,
                     "Different output codec type: "
-                            + (previous.getOutputCodecConfig().getCodecType()
+                            + (previous.getOutputCodecConfig().getCodecName()
+                                    + "( "
+                                    + (previous.getOutputCodecConfig().getCodecType() + ")")
                                     + " != "
-                                    + next.getOutputCodecConfig().getCodecType()));
+                                    + (next.getOutputCodecConfig().getCodecName())
+                                    + "( "
+                                    + next.getOutputCodecConfig().getCodecType()
+                                    + ")"));
             return true;
         }
+
         if (previous.getOutputCodecConfig().getSampleRate()
                 != next.getOutputCodecConfig().getSampleRate()) {
             Log.d(
                     TAG,
                     "Different output sampleRate: "
-                            + (previous.getOutputCodecConfig().getSampleRate()
+                            + (previous.getOutputCodecConfig()
                                     + " != "
-                                    + next.getOutputCodecConfig().getSampleRate()));
+                                    + next.getOutputCodecConfig()));
             return true;
         }
 
         return false;
     }
 
-    boolean isInputCodecOfSampleFrequencyChanged(
+    boolean isInputCodecOrSampleFrequencyChanged(
             BluetoothLeAudioCodecStatus previous, BluetoothLeAudioCodecStatus next) {
         if ((previous == null) && (next == null)) {
             return false;
@@ -3481,10 +3565,15 @@ public class LeAudioService extends ConnectableProfile {
                 != next.getInputCodecConfig().getCodecType()) {
             Log.d(
                     TAG,
-                    "Different input codec type: "
-                            + (previous.getInputCodecConfig().getCodecType()
+                    "Different Input codec type: "
+                            + (previous.getInputCodecConfig().getCodecName()
+                                    + "( "
+                                    + (previous.getInputCodecConfig().getCodecType() + ")")
                                     + " != "
-                                    + next.getInputCodecConfig().getCodecType()));
+                                    + (next.getInputCodecConfig().getCodecName())
+                                    + "( "
+                                    + next.getInputCodecConfig().getCodecType()
+                                    + ")"));
             return true;
         }
 
@@ -3493,9 +3582,9 @@ public class LeAudioService extends ConnectableProfile {
             Log.d(
                     TAG,
                     "Different input sampleRate: "
-                            + (previous.getInputCodecConfig().getSampleRate()
+                            + (previous.getInputCodecConfig()
                                     + " != "
-                                    + next.getInputCodecConfig().getSampleRate()));
+                                    + next.getInputCodecConfig()));
             return true;
         }
 
@@ -3650,21 +3739,33 @@ public class LeAudioService extends ConnectableProfile {
                             descriptor.mOutputSelectableConfig);
 
             boolean outputCodecOrFreqChanged =
-                    isOutputCodecOfSampleFrequencyChanged(descriptor.mCodecStatus, status);
+                    isOutputCodecOrSampleFrequencyChanged(descriptor.mCodecStatus, status);
             boolean inputCodecOrFreqChanged =
-                    isInputCodecOfSampleFrequencyChanged(descriptor.mCodecStatus, status);
+                    isInputCodecOrSampleFrequencyChanged(descriptor.mCodecStatus, status);
+            boolean codecTypeHasChanged =
+                    isCodecChangedForTheStream(descriptor.mCodecStatus, status);
 
             Log.d(
                     TAG,
                     ("Codec update for group:" + groupId)
+                            + (", codecTypeHasChanged: " + codecTypeHasChanged)
                             + (", outputCodecOrFreqChanged: " + outputCodecOrFreqChanged)
                             + (", inputCodecOrFreqChanged: " + inputCodecOrFreqChanged));
 
             descriptor.mCodecStatus = status;
             mHandler.post(() -> notifyUnicastCodecConfigChanged(groupId, status));
 
-            if (descriptor.isActive() && (outputCodecOrFreqChanged || inputCodecOrFreqChanged)) {
-                // Audio framework needs to be notified so it get new codec config
+            /* For LC3 codec, the sample frequency change does not have to be notified to Audio Framework, as this is
+             * internal change done in Bluetooth which is internally synced with Audio HAL over Bluetooth Audio HAL.
+             * For other codecs we might want to to still notify Audio Manager e.g. for high res codecs.
+             */
+            if (descriptor.isActive()
+                    && (codecTypeHasChanged
+                            || (!isUsingLc3(descriptor.mCodecStatus)
+                                    && (outputCodecOrFreqChanged || inputCodecOrFreqChanged)))) {
+                /* Audio framework needs to be notified so it get new codec config.
+                 * Note: this mostlikely will trigger device TearDown and Setup which will impact Bluetooth Audio Session
+                 */
                 notifyAudioFrameworkForCodecConfigUpdate(
                         groupId, descriptor, outputCodecOrFreqChanged, inputCodecOrFreqChanged);
             }

@@ -173,7 +173,7 @@ void LeAudioDeviceGroup::Cleanup(void) {
     auto& source_stream_locations = stream_conf.stream_params.source.stream_config.stream_map;
 
     if (!sink_stream_locations.empty()) {
-      for (const auto info : sink_stream_locations) {
+      for (const auto& info : sink_stream_locations) {
         auto cis_handle = info.stream_handle;
         bluetooth::hci::IsoManager::GetInstance()->DisconnectCis(cis_handle, HCI_ERR_PEER_USER);
 
@@ -431,7 +431,7 @@ uint8_t LeAudioDeviceGroup::GetActiveQoSConfiguredDirections(void) {
   }
 
   uint8_t enabled_remote_directions = 0;
-  for (const auto dev : leAudioDevices_) {
+  for (const auto& dev : leAudioDevices_) {
     auto device = dev.lock();
     if (device == nullptr) {
       continue;
@@ -444,7 +444,7 @@ uint8_t LeAudioDeviceGroup::GetActiveQoSConfiguredDirections(void) {
 
 uint8_t LeAudioDeviceGroup::GetActiveEnabledDirections(void) {
   uint8_t enabled_remote_directions = 0;
-  for (const auto dev : leAudioDevices_) {
+  for (const auto& dev : leAudioDevices_) {
     auto device = dev.lock();
     if (device == nullptr) {
       continue;
@@ -1362,7 +1362,7 @@ bool LeAudioDeviceGroup::IsGroupStreamReady(void) const {
 }
 
 bool LeAudioDeviceGroup::HaveAllCisesDisconnected(void) const {
-  for (auto const dev : leAudioDevices_) {
+  for (auto const& dev : leAudioDevices_) {
     if (dev.expired()) {
       continue;
     }

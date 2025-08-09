@@ -114,7 +114,7 @@ public:
 
   // Virtual ACL disconnect emitted during suspend.
   void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) override;
-  void SetSystemSuspendState(bool suspended) override;
+  void SetSystemSuspendState(bool suspended, std::promise<void> promise) override;
 
   Address HACK_GetLeAddress(uint16_t connection_handle) override;
 

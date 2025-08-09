@@ -15,27 +15,30 @@
     "AVCTP/CT/NFR/BV-01-C",
     "AVCTP/CT/NFR/BV-04-C",
     "AVCTP/TG/FRA/BV-02-C",
+    // Fails with verdict:
+    // The IUT incorrectly rejected the invalid GET CONFIGURATION command sent
+    // by the tester. The IUT is expected to reject the GET CONFIGURATION
+    // command with the error code BAD_ACP_SEID.
     "AVDTP/SNK/ACP/SIG/SMG/BI-11-C",
+    // Fails with verdict:
+    // The IUT incorrectly accepted the invalid CLOSE command sent by the
+    // tester. The IUT is expected to reject the CLOSE command with the error
+    // code BAD ACP SEID.
     "AVDTP/SNK/ACP/SIG/SMG/BI-23-C",
     "AVDTP/SNK/ACP/SIG/SMG/BV-14-C",
     "AVDTP/SNK/ACP/SIG/SMG/BV-34-C",
-    "AVDTP/SNK/ACP/SIG/SMG/ESR05/BV-14-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-11-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-13-C",
-    "AVDTP/SNK/INT/SIG/SMG/BV-19-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-23-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-33-C",
-    "AVDTP/SNK/INT/SIG/SMG/ESR05/BV-13-C",
     "AVDTP/SRC/ACP/SIG/SMG/BI-11-C",
     "AVDTP/SRC/ACP/SIG/SMG/BI-23-C",
     "AVDTP/SRC/ACP/SIG/SMG/BV-14-C",
     "AVDTP/SRC/ACP/SIG/SMG/BV-34-C",
-    "AVDTP/SRC/ACP/SIG/SMG/ESR05/BV-14-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-11-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-13-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-23-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-33-C",
-    "AVDTP/SRC/INT/SIG/SMG/ESR05/BV-13-C",
     "AVRCP/TG/CA/BI-01-C",
     "AVRCP/TG/CA/BI-04-C",
     "AVRCP/TG/CA/BI-06-C",

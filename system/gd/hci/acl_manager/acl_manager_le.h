@@ -69,7 +69,7 @@ public:
 
   // Virtual ACL disconnect emitted during suspend.
   virtual void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) = 0;
-  virtual void SetSystemSuspendState(bool suspended) = 0;
+  virtual void SetSystemSuspendState(bool suspended, std::promise<void> promise) = 0;
   virtual Address HACK_GetLeAddress(uint16_t connection_handle) = 0;
 };
 

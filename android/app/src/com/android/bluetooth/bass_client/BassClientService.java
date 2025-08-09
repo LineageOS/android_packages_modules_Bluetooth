@@ -75,6 +75,7 @@ import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.le_audio.LeAudioStackEvent;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -104,21 +105,6 @@ public class BassClientService extends ConnectableProfile {
 
     private static final int MAX_ACTIVE_SYNCED_SOURCES_NUM = 4;
     private static final int MAX_BIS_DISCOVERY_TRIES_NUM = 5;
-
-    private static final int STATUS_LOCAL_STREAM_REQUESTED = 0;
-    private static final int STATUS_LOCAL_STREAM_STREAMING = 1;
-    private static final int STATUS_LOCAL_STREAM_SUSPENDED = 2;
-    private static final int STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE = 3;
-
-    // Do not modify without updating the HAL bt_le_audio.h files.
-    // Match up with BroadcastState enum of bt_le_audio.h
-    private static final int BROADCAST_STATE_STOPPED = 0;
-    private static final int BROADCAST_STATE_CONFIGURING = 1;
-    private static final int BROADCAST_STATE_PAUSED = 2;
-    private static final int BROADCAST_STATE_ENABLING = 3;
-    private static final int BROADCAST_STATE_DISABLING = 4;
-    private static final int BROADCAST_STATE_STOPPING = 5;
-    private static final int BROADCAST_STATE_STREAMING = 6;
 
     @VisibleForTesting static final int MESSAGE_BIG_MONITOR_TIMEOUT = 1;
     @VisibleForTesting static final int MESSAGE_OOR_MONITOR_TIMEOUT = 2;
@@ -4346,7 +4332,7 @@ public class BassClientService extends ConnectableProfile {
         mUnicastSourceStreamStatus = Optional.of(status);
         Log.d(TAG, "handleUnicastSourceStreamStatusChange: status: " + status);
 
-        if (status == STATUS_LOCAL_STREAM_REQUESTED) {
+        if (status == LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED) {
             if (isPrimaryDeviceSyncedToExternalBroadcast()) {
                 cacheSuspendingSources(BassConstants.INVALID_BROADCAST_ID);
                 if (!leaudioBroadcastAllowMonitoringOnResume()) {
@@ -4359,14 +4345,14 @@ public class BassClientService extends ConnectableProfile {
                     }
                 }
             }
-        } else if (status == STATUS_LOCAL_STREAM_SUSPENDED) {
+        } else if (status == LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED) {
             /* Resume paused receivers if there are some */
             if (!mPausedBroadcastSinks.isEmpty()) {
                 resumeReceiversSourceSynchronization();
             }
-        } else if (status == STATUS_LOCAL_STREAM_STREAMING) {
+        } else if (status == LeAudioStackEvent.STATUS_LOCAL_STREAM_STREAMING) {
             Log.d(TAG, "Ignore STREAMING source status");
-        } else if (status == STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE) {
+        } else if (status == LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE) {
             suspendAllReceiversSourceSynchronization();
         }
     }
@@ -4549,17 +4535,17 @@ public class BassClientService extends ConnectableProfile {
     /** Handle broadcast state changed */
     public void notifyBroadcastStateChanged(int state, int broadcastId) {
         switch (state) {
-            case BROADCAST_STATE_STOPPED:
+            case LeAudioStackEvent.BROADCAST_STATE_STOPPED:
                 if (mLocalBroadcastReceivers.remove(broadcastId) != null) {
                     sEventLogger.logd(TAG, "Broadcast ID: " + broadcastId + ", stopped");
                 }
                 break;
-            case BROADCAST_STATE_CONFIGURING:
-            case BROADCAST_STATE_PAUSED:
-            case BROADCAST_STATE_ENABLING:
-            case BROADCAST_STATE_DISABLING:
-            case BROADCAST_STATE_STOPPING:
-            case BROADCAST_STATE_STREAMING:
+            case LeAudioStackEvent.BROADCAST_STATE_CONFIGURING:
+            case LeAudioStackEvent.BROADCAST_STATE_PAUSED:
+            case LeAudioStackEvent.BROADCAST_STATE_ENABLING:
+            case LeAudioStackEvent.BROADCAST_STATE_DISABLING:
+            case LeAudioStackEvent.BROADCAST_STATE_STOPPING:
+            case LeAudioStackEvent.BROADCAST_STATE_STREAMING:
             default:
                 break;
         }

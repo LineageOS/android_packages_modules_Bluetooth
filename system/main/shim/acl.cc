@@ -1062,8 +1062,8 @@ struct shim::Acl::impl {
                       !handle_to_le_connection_map_.empty());
   }
 
-  void SetSystemSuspendState(bool suspended) {
-    GetAclManagerLe()->SetSystemSuspendState(suspended);
+  void SetSystemSuspendState(bool suspended, std::promise<void> promise) {
+    GetAclManagerLe()->SetSystemSuspendState(suspended, std::move(promise));
   }
 
   void DumpConnectionHistory() const {
@@ -1594,5 +1594,8 @@ void shim::Acl::SetSystemSuspendState(bool suspended) {
       pimpl_->wakeup_wakelock_.release();
     }
   }
-  handler_->CallOn(pimpl_.get(), &Acl::impl::SetSystemSuspendState, suspended);
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  handler_->CallOn(pimpl_.get(), &Acl::impl::SetSystemSuspendState, suspended, std::move(promise));
+  future.wait();
 }

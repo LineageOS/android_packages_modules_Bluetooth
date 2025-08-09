@@ -29,6 +29,7 @@ cc_library_static {
     ],
     srcs: ["src/btif_jni_task.cc"],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbluetooth_log",
         "libbluetooth_types",
         "libosi",
@@ -340,8 +341,11 @@ cc_test {
         "liblog",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib",
+        "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_gd_os",
         "libbluetooth_log",
         "libbluetooth_types",
         "libbt-common",

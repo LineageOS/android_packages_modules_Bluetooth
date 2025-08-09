@@ -907,6 +907,8 @@ public:
       le_scan_window_2m = le_scan_window;
       le_scan_window_coded = le_scan_window;
     }
+    is_using_system_suspend_scan_params_ = system_suspend_;
+
     InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_FILTER_ACCEPT_LIST;
     OwnAddressType own_address_type = static_cast<OwnAddressType>(
             le_address_manager_->GetInitiatorAddress().GetAddressType());
@@ -1154,8 +1156,9 @@ public:
 
       bool in_accept_list_due_to_direct_connect =
               direct_connections_.find(address_with_type) != direct_connections_.end();
-
-      if (already_in_accept_list && (in_accept_list_due_to_direct_connect || !is_direct)) {
+      if (already_in_accept_list && (in_accept_list_due_to_direct_connect || !is_direct) &&
+          (!com::android::bluetooth::flags::allow_rearm_if_suspend_scan_params_used() ||
+           is_using_system_suspend_scan_params_ == system_suspend_)) {
         log::info("Device {} already in accept list. Stop here.", address_with_type);
         return;
       }
@@ -1369,7 +1372,10 @@ public:
     }
   }
 
-  void set_system_suspend_state(bool suspended) { system_suspend_ = suspended; }
+  void set_system_suspend_state(bool suspended, std::promise<void> promise) {
+    system_suspend_ = suspended;
+    promise.set_value();
+  }
 
   HciInterface& hci_layer_;
   Controller& controller_;
@@ -1396,6 +1402,7 @@ public:
   bool pause_connection = false;
   bool disarmed_while_arming_ = false;
   bool system_suspend_ = false;
+  bool is_using_system_suspend_scan_params_ = false;
   ConnectabilityState connectability_state_{ConnectabilityState::DISARMED};
   std::map<AddressWithType, os::Alarm> create_connection_timeout_alarms_{};
 };

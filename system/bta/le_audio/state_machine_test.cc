@@ -1782,8 +1782,6 @@ protected:
                   InjectAseStateNotification(ase, device, group, ascs::kAseStateIdle, nullptr);
                 }
               }
-
-
             }));
   }
 
@@ -4075,7 +4073,7 @@ static void InjectCisDisconnected(LeAudioDeviceGroup* group, LeAudioDevice* leAu
                                   uint8_t reason, bool first_cis_disconnect_only = false) {
   bluetooth::hci::iso_manager::cis_disconnected_evt event;
 
-  for (auto const ase : leAudioDevice->ases_) {
+  for (auto const& ase : leAudioDevice->ases_) {
     if (ase.cis_state != types::CisState::ASSIGNED && ase.cis_state != types::CisState::IDLE) {
       event.reason = reason;
       event.cig_id = group->group_id_;

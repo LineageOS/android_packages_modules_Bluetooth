@@ -95,6 +95,7 @@ import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.le_audio.LeAudioStackEvent;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -3926,7 +3927,7 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
 
         /* Imitate broadcast source stop, sink notify about loosing PA and BIS sync */
         injectRemoteSourceStateChanged(
@@ -3934,7 +3935,7 @@ public class BassClientServiceTest {
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
 
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
@@ -3948,7 +3949,7 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
 
         /* Imitate broadcast source stop, sink notify about loosing BIS sync */
         verifyModifyMessageAndInjectSourceModified();
@@ -3959,15 +3960,15 @@ public class BassClientServiceTest {
         }
         // Make another stream request with no context validate
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
 
         // Make another stream request
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
 
         // Verify all group members resume with the previous cached source
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -4276,7 +4277,7 @@ public class BassClientServiceTest {
         prepareTwoSynchronizedDevicesForLocalBroadcast();
 
         mBassClientService.notifyBroadcastStateChanged(
-                0 /* BROADCAST_STATE_STOPPED */, TEST_BROADCAST_ID);
+                LeAudioStackEvent.BROADCAST_STATE_STOPPED, TEST_BROADCAST_ID);
 
         /* Imitate scenario when if there would be broadcast - stop would be called */
         mBassClientService.handleDeviceDisconnection(mCurrentDevice, true);
@@ -5490,12 +5491,12 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         verifyStopBroadcastMonitoringWithUnsync();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
@@ -5511,13 +5512,13 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
@@ -5527,13 +5528,13 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         verifyStopBroadcastMonitoringWithUnsync();
         verifyModifyMessageAndInjectSourceModified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
@@ -5549,14 +5550,14 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         verifyStopBroadcastMonitoringWithoutUnsync();
         verifyModifyMessageAndInjectSourceModified();
         checkNoResumeSynchronizationByBig();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
@@ -6200,12 +6201,12 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         checkNotAllowBroadcastMonitoring();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
@@ -6221,12 +6222,12 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         checkNotAllowBroadcastMonitoring();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
@@ -6236,23 +6237,23 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         checkNotAllowBroadcastMonitoring();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
 
         /* Unicast would like to stream again before previous resume was complete*/
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
@@ -6268,13 +6269,13 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         checkNotAllowBroadcastMonitoring();
         verifyModifyMessageAndInjectSourceModified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
@@ -6290,13 +6291,13 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         checkNotAllowBroadcastMonitoring();
         verifyModifyMessageAndInjectSourceModified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED);
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
@@ -6842,7 +6843,7 @@ public class BassClientServiceTest {
 
         // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6869,7 +6870,7 @@ public class BassClientServiceTest {
         // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         // Try resume while sync info requested
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1,
                 BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST,
@@ -6884,7 +6885,7 @@ public class BassClientServiceTest {
         // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         // Try resume while pa unsynced
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED);
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         checkResumeSynchronizationByHost();
@@ -6973,7 +6974,7 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
@@ -7135,7 +7136,7 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
@@ -7164,7 +7165,7 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
@@ -7256,7 +7257,7 @@ public class BassClientServiceTest {
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
-                3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
+                LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE);
         verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);

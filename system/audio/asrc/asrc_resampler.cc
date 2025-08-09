@@ -173,7 +173,7 @@ public:
   ClockRecovery(bluetooth::common::MessageLoopThread* thread)
       : state_{.id = StateId::RESET}, reference_timing_{0, 0, 0} {
     read_clock_timer_.SchedulePeriodic(
-            thread->GetWeakPtr(),
+            thread,
             base::BindRepeating(
                     [](void*) {
                       bluetooth::shim::GetHciLayer()->EnqueueCommand(

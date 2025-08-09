@@ -246,7 +246,8 @@ private:
 ///   - btif_a2dp_source_audio_handle_timer
 ///   - btif_a2dp_source_read_callback
 ///   - btif_a2dp_source_enqueue_callback
-static bluetooth::common::MessageLoopThread btif_a2dp_source_thread("bt_a2dp_source_worker_thread");
+static bluetooth::common::MessageLoopThread btif_a2dp_source_thread(
+        "bt_a2dp_source_worker_thread", bluetooth::os::Thread::Priority::REAL_TIME);
 
 static BtifA2dpSource btif_a2dp_source_cb;
 static uint8_t btif_a2dp_source_dynamic_audio_buffer_size = MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ;
@@ -868,7 +869,7 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
   btif_a2dp_source_cb.tx_flush = false;
   btif_a2dp_source_cb.sw_audio_is_encoding = true;
   btif_a2dp_source_cb.media_alarm.SchedulePeriodic(
-          btif_a2dp_source_thread.GetWeakPtr(),
+          &btif_a2dp_source_thread,
           base::BindRepeating(&btif_a2dp_source_audio_handle_timer),
           std::chrono::milliseconds(
                   btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms()));
