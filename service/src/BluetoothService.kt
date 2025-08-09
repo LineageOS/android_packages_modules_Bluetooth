@@ -41,13 +41,6 @@ class BluetoothService(context: Context) : SystemService(context) {
 
     init {
         Log.d("Booting now")
-        val hciInstance =
-            if (Flags.hciInstanceNameUseInjected()) {
-                BluetoothHciInstance().getInstance()
-            } else {
-                "default"
-            }
-
         val bluetoothComponent =
             if (Flags.userRestrictionRefactor()) {
                 BluetoothComponent(context)
@@ -57,7 +50,7 @@ class BluetoothService(context: Context) : SystemService(context) {
         // Run BluetoothManagerService on the correct thread even during constructor
         supervisor =
             runBlocking(serviceDispatcher) {
-                BluetoothSupervisor(context, looper, hciInstance, bluetoothComponent)
+                BluetoothSupervisor(context, looper, bluetoothComponent)
             }
 
         runOnBmsThread {

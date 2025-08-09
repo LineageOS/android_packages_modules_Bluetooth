@@ -19,16 +19,23 @@ package com.android.server.bluetooth
 import android.content.Context
 import android.os.Looper
 import android.os.UserHandle
+import com.android.bluetooth.flags.Flags
 
 class BluetoothSupervisor(
     val context: Context,
     val looper: Looper,
-    val hciInstance: String,
     val bluetoothComponent: BluetoothComponent?,
 ) {
     private val bms: BluetoothManagerService
 
     init {
+        val hciInstance =
+            if (Flags.hciInstanceNameUseInjected()) {
+                BluetoothHciInstance().getInstance()
+            } else {
+                "default"
+            }
+
         bms = BluetoothManagerService(context, looper, hciInstance, bluetoothComponent)
         Log.i("Created BluetoothSupervisor")
     }
