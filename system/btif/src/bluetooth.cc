@@ -45,6 +45,7 @@
 #include <utility>
 #include <vector>
 
+#include "bta/ag/bta_ag_int.h"
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_api.h"
@@ -480,9 +481,9 @@ static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(&stop_
 
 bool is_restricted_mode() { return restricted_mode; }
 
-static bool get_wbs_supported() { return hfp_hal_interface::get_wbs_supported(); }
+static bool get_wbs_supported() { return bta_ag_get_wbs_supported(); }
 
-static bool get_swb_supported() { return hfp_hal_interface::get_swb_supported(); }
+static bool get_swb_supported() { return bta_ag_get_swb_supported(); }
 
 static bool is_coding_format_supported(esco_coding_format_t coding_format) {
   return hfp_hal_interface::is_coding_format_supported(coding_format);

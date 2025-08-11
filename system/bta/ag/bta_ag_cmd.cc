@@ -52,7 +52,6 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
 #include "osi/include/compat.h"
-#include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 
 using namespace bluetooth;
@@ -1280,8 +1279,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
         p_scb->peer_codecs = bta_ag_parse_bac(p_arg, p_end);
         p_scb->codec_updated = true;
 
-        bool wbs_supported = hfp_hal_interface::get_wbs_supported();
-        bool swb_supported = hfp_hal_interface::get_swb_supported();
+        bool wbs_supported = bta_ag_get_wbs_supported();
+        bool swb_supported = bta_ag_get_swb_supported();
         const bool aptx_voice = is_hfp_aptx_voice_enabled() && p_scb->is_aptx_swb_codec;
         log::verbose("BTA_AG_AT_BAC_EVT aptx_voice={}", aptx_voice);
 
@@ -1388,8 +1387,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
         bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
         break;
       }
-      if (com::android::bluetooth::flags::qc_prioritize_lc3_codec() &&
-          hfp_hal_interface::get_swb_supported() && (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
+      if (com::android::bluetooth::flags::qc_prioritize_lc3_codec() && bta_ag_get_swb_supported() &&
+          (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
           !(p_scb->disabled_codecs & BTM_SCO_CODEC_LC3)) {
         log::warn("Phone and BT device support LC3, return error for QAC");
         bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);

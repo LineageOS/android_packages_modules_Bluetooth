@@ -285,7 +285,7 @@ bool HfpClientInterface::ReleaseDecode(HfpClientInterface::Decode* decode) {
     return false;
   }
 
-  log::info("decode");
+  log::info("");
   if (get_decode_client_interface()) {
     decode->Cleanup();
   }
@@ -454,6 +454,7 @@ bool HfpClientInterface::ReleaseEncode(HfpClientInterface::Encode* encode) {
     return false;
   }
 
+  log::info("");
   if (get_encode_client_interface()) {
     encode->Cleanup();
   }
@@ -621,6 +622,7 @@ bool HfpClientInterface::ReleaseOffload(HfpClientInterface::Offload* offload) {
     return false;
   }
 
+  log::info("");
   if (get_encode_client_interface()) {
     offload->Cleanup();
   }

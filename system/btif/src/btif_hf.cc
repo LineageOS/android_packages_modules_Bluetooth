@@ -65,7 +65,6 @@
 #include "include/hardware/bt_hf.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
@@ -701,10 +700,10 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       /* If the peer supports mSBC and the BTIF preferred codec is also mSBC,
        * then we should set the BTA AG Codec to mSBC. This would trigger a +BCS
        * to mSBC at the time of SCO connection establishment */
-      if (hfp_hal_interface::get_swb_supported() && (p_data->val.num & BTM_SCO_CODEC_LC3)) {
+      if (bta_ag_get_swb_supported() && (p_data->val.num & BTM_SCO_CODEC_LC3)) {
         log::verbose("btif_hf override-Preferred Codec to LC3");
         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTM_SCO_CODEC_LC3);
-      } else if (hfp_hal_interface::get_wbs_supported() && (p_data->val.num & BTM_SCO_CODEC_MSBC)) {
+      } else if (bta_ag_get_wbs_supported() && (p_data->val.num & BTM_SCO_CODEC_MSBC)) {
         log::verbose("btif_hf override-Preferred Codec to mSBC");
         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTM_SCO_CODEC_MSBC);
       } else {

@@ -376,6 +376,7 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
+        ":TestMockBtaAg",
         ":TestMockStack",
         "test/btif_hf_client_service_test.cc",
     ],

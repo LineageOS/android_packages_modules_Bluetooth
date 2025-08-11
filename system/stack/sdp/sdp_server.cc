@@ -29,13 +29,13 @@
 
 #include <cstdint>
 
+#include "bta/ag/bta_ag_int.h"
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
-#include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
@@ -142,7 +142,7 @@ bool sdp_dynamic_change_hfp_version(const tSDP_ATTRIBUTE* p_attr,
       !(osi_property_get_bool("vendor.bt.pts.certification", false))) {
     return false;
   }
-  if (hfp_hal_interface::get_swb_supported() && is_allowlisted_1_9) {
+  if (bta_ag_get_swb_supported() && is_allowlisted_1_9) {
     p_attr->value_ptr[PROFILE_VERSION_POSITION] = HFP_PROFILE_MINOR_VERSION_9;
   } else {
     p_attr->value_ptr[PROFILE_VERSION_POSITION] = HFP_PROFILE_MINOR_VERSION_7;
