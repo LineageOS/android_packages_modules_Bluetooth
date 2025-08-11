@@ -284,6 +284,7 @@ public:
   void StartStream(void) {
     log::verbose("StreamSpeedTracker group_id: {}", group_id_);
     setup_start_ts_ = bluetooth::common::time_get_os_boottime_us();
+    clock_gettime(CLOCK_REALTIME, &start_ts_);
     is_started_ = true;
   }
 
@@ -320,8 +321,10 @@ public:
   }
 
   void Dump(std::stringstream& stream) {
-    char ts[20];
-    std::strftime(ts, sizeof(ts), "%T", std::gmtime(&end_ts_.tv_sec));
+    char start_ts[20];
+    std::strftime(start_ts, sizeof(start_ts), "%T", std::gmtime(&start_ts_.tv_sec));
+    char end_ts[20];
+    std::strftime(end_ts, sizeof(end_ts), "%T", std::gmtime(&end_ts_.tv_sec));
 
     if (total_time_ < 900) {
       stream << "[ 🌕 ";
@@ -333,7 +336,7 @@ public:
       stream << "[ 🌒 ";
     }
 
-    stream << ts << ", gID:" << group_id_ << ", #dev:" << num_of_devices_ << ", " << context_type_;
+    stream << start_ts << "->" << end_ts << ", gID:" << group_id_ << ", #dev:" << num_of_devices_ << ", " << context_type_;
     auto hal_idle = total_time_ - stream_setup_time_ - reconfig_time_;
     if (reconfig_time_ != 0) {
       stream << ", t:" << total_time_ << "ms (r:" << reconfig_time_ << "/s:" << stream_setup_time_
@@ -349,6 +352,7 @@ private:
   int group_id_;
   int num_of_devices_;
   LeAudioContextType context_type_;
+  struct timespec start_ts_;
   struct timespec end_ts_;
   uint64_t reconfig_start_ts_;
   uint64_t setup_start_ts_;
