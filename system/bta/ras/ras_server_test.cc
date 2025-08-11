@@ -126,7 +126,7 @@ protected:
     // Init test data
     gatt::SetMockBtaGattServerInterface(&mock_gatt_server_interface_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
-    RawAddress::FromString("11:22:33:44:55:66", test_address_);
+    test_address_ = RawAddress::FromString("11:22:33:44:55:66").value();
     VendorSpecificCharacteristic vendor_specific_characteristic1, vendor_specific_characteristic2;
     vendor_specific_characteristic1.characteristicUuid_ = kVendorSpecificCharacteristic1;
     vendor_specific_characteristic1.value_ = {0x01, 0x02, 0x03};
@@ -343,8 +343,7 @@ TEST_F(RasServerTest, ReadCharacteristicInvalid) {
   captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  RawAddress invalid_address;
-  RawAddress::FromString("11:22:33:44:55:77", invalid_address);
+  RawAddress invalid_address = RawAddress::FromString("11:22:33:44:55:77").value();
   p_data.req_data.remote_bda = invalid_address;
   p_data.req_data.p_data->read_req.handle =
           GetCharacteristicHandle(kRasRangingDataReadyCharacteristic);
@@ -407,8 +406,7 @@ TEST_F(RasServerTest, ReadWriteDescriptorInvalid) {
   captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  RawAddress invalid_address;
-  RawAddress::FromString("11:22:33:44:55:77", invalid_address);
+  RawAddress invalid_address = RawAddress::FromString("11:22:33:44:55:77").value();
   p_data.req_data.remote_bda = invalid_address;
   p_data.req_data.p_data->write_req.handle =
           GetDescriptorHandle(kRasRangingDataReadyCharacteristic);
@@ -465,8 +463,7 @@ TEST_F(RasServerTest, WriteCharacteristicInalid) {
   captured_status = GATT_SUCCESS;
   EXPECT_CALL(mock_gatt_server_interface_, SendRsp(_, _, _, _))
           .WillOnce(testing::SaveArg<2>(&captured_status));
-  RawAddress invalid_address;
-  RawAddress::FromString("11:22:33:44:55:77", invalid_address);
+  RawAddress invalid_address = RawAddress::FromString("11:22:33:44:55:77").value();
   p_data.req_data.remote_bda = invalid_address;
   p_data.req_data.p_data->write_req.handle =
           GetCharacteristicHandle(kRasControlPointCharacteristic);

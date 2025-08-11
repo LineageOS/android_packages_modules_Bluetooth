@@ -84,16 +84,15 @@ static uint64_t uuid_msb(const Uuid& uuid) {
 }
 
 static RawAddress str2addr(JNIEnv* env, jstring address) {
-  RawAddress bd_addr;
   const char* c_address = env->GetStringUTFChars(address, NULL);
   if (!c_address) {
-    return bd_addr;
+    return RawAddress::kEmpty;
   }
 
-  RawAddress::FromString(std::string(c_address), bd_addr);
+  auto bd_addr = RawAddress::FromString(std::string(c_address));
   env->ReleaseStringUTFChars(address, c_address);
 
-  return bd_addr;
+  return bd_addr.value_or(RawAddress::kEmpty);
 }
 
 static jstring bdaddr2newjstr(JNIEnv* env, const RawAddress* bda) {

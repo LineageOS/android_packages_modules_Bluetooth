@@ -1225,9 +1225,8 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, i
   tBLE_ADDR_TYPE addr_type;
   bool device_added = false;
   bool key_found = false;
-  RawAddress bd_addr;
 
-  RawAddress::FromString(remote_bd_addr, bd_addr);
+  RawAddress bd_addr = RawAddress::FromString(remote_bd_addr).value_or(RawAddress::kEmpty);
 
   if (!btif_config_get_int(remote_bd_addr, BTIF_STORAGE_KEY_DEV_TYPE, &device_type)) {
     return BT_STATUS_FAIL;
