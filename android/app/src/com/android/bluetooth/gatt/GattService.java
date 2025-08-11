@@ -35,7 +35,7 @@ import static com.android.bluetooth.gatt.GattUtil.isHidCharUuid;
 import static com.android.bluetooth.gatt.GattUtil.isHidSrvcUuid;
 import static com.android.bluetooth.gatt.GattUtil.isLeAudioSrvcUuid;
 import static com.android.bluetooth.gatt.GattUtil.translateHciCode;
-import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
+import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;

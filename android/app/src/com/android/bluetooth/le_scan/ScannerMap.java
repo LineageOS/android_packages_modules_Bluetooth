@@ -17,7 +17,7 @@
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.getSystemClock;
-import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
+import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
 
 import android.annotation.Nullable;
 import android.app.PendingIntent;
