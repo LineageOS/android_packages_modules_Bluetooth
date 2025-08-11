@@ -1528,6 +1528,10 @@ public class LeAudioService extends ConnectableProfile {
 
         Log.d(TAG, "destroyBroadcast");
 
+        if (mBroadcastIdDeactivatedForUnicastTransition.isPresent()
+                && mBroadcastIdDeactivatedForUnicastTransition.get().equals(broadcastId)) {
+            mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
+        }
         mLeAudioBroadcasterNativeInterface.get().destroyBroadcast(broadcastId);
     }
 
@@ -1582,6 +1586,7 @@ public class LeAudioService extends ConnectableProfile {
     public List<BluetoothLeBroadcastMetadata> getAllBroadcastMetadata() {
         return mBroadcastDescriptors.values().stream()
                 .map(s -> s.mMetadata)
+                .filter(m -> m != null)
                 .collect(Collectors.toList());
     }
 
@@ -3967,8 +3972,8 @@ public class LeAudioService extends ConnectableProfile {
                  */
                 if ((mUnicastGroupIdDeactivatedForBroadcastTransition != LE_AUDIO_GROUP_ID_INVALID)
                         && mCreateBroadcastQueue.isEmpty()
-                        && (!Objects.equals(device, mActiveBroadcastAudioDevice))) {
-                    updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
+                        && (!Objects.equals(null, mActiveBroadcastAudioDevice))) {
+                    transitionFromBroadcastToUnicast();
                 }
 
                 mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN));
