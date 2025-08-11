@@ -109,11 +109,13 @@ namespace {
 
 constexpr char kBtmLogTag[] = "SCAN";
 
-constexpr uint8_t BLE_EVT_CONNECTABLE_BIT = 0;
-constexpr uint8_t BLE_EVT_SCANNABLE_BIT = 1;
-constexpr uint8_t BLE_EVT_DIRECTED_BIT = 2;
-constexpr uint8_t BLE_EVT_SCAN_RESPONSE_BIT = 3;
-constexpr uint8_t BLE_EVT_LEGACY_BIT = 4;
+enum : uint8_t {
+  BLE_EVT_CONNECTABLE_MASK = 1 << 0,
+  BLE_EVT_SCANNABLE_MASK = 1 << 1,
+  BLE_EVT_DIRECTED_MASK = 1 << 2,
+  BLE_EVT_SCAN_RESPONSE_MASK = 1 << 3,
+  BLE_EVT_LEGACY_MASK = 1 << 4,
+};
 
 class AdvertisingCache {
 public:
@@ -204,7 +206,6 @@ static bool ble_vnd_is_included() {
   return android::sysprop::bluetooth::Ble::vnd_included().value_or(true);
 }
 
-static tBTM_BLE_CTRL_FEATURES_CBACK* p_ctrl_le_feature_rd_cmpl_cback = NULL;
 /**********PAST & PS *******************/
 using StartSyncCb = base::Callback<void(
         uint8_t /*status*/, uint16_t /*sync_handle*/, uint8_t /*advertising_sid*/,
@@ -270,7 +271,7 @@ typedef struct {
   tBTM_BLE_PERIODIC_SYNC_TRANSFER sync_transfer[MAX_SYNC_TRANSACTION];
 } tBTM_BLE_PA_SYNC_TX_CB;
 static tBTM_BLE_PA_SYNC_TX_CB btm_ble_pa_sync_cb;
-static bool syncRcvdCbRegistered = false;
+
 static int btm_ble_get_psync_index(uint8_t adv_sid, RawAddress addr);
 static void btm_ble_start_sync_timeout(void* data);
 
@@ -290,19 +291,19 @@ enum : uint8_t {
 };
 
 static bool ble_evt_type_is_connectable(uint16_t evt_type) {
-  return evt_type & (1 << BLE_EVT_CONNECTABLE_BIT);
+  return evt_type & BLE_EVT_CONNECTABLE_MASK;
 }
 
 static bool ble_evt_type_is_scannable(uint16_t evt_type) {
-  return evt_type & (1 << BLE_EVT_SCANNABLE_BIT);
+  return evt_type & BLE_EVT_SCANNABLE_MASK;
 }
 
 static bool ble_evt_type_is_scan_resp(uint16_t evt_type) {
-  return evt_type & (1 << BLE_EVT_SCAN_RESPONSE_BIT);
+  return evt_type & BLE_EVT_SCAN_RESPONSE_MASK;
 }
 
 static bool ble_evt_type_is_legacy(uint16_t evt_type) {
-  return evt_type & (1 << BLE_EVT_LEGACY_BIT);
+  return evt_type & BLE_EVT_LEGACY_MASK;
 }
 
 static uint8_t ble_evt_type_data_status(uint16_t evt_type) { return (evt_type >> 5) & 3; }

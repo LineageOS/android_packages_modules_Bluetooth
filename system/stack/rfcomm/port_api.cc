@@ -472,8 +472,6 @@ int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid)
 }
 
 static const tPORT* get_port_from_mcb(const tRFC_MCB* multiplexer_cb) {
-  tPORT* p_port = nullptr;
-
   for (tPORT& port : rfc_cb.port.port) {
     if (port.rfc.p_mcb == multiplexer_cb) {
       return &port;

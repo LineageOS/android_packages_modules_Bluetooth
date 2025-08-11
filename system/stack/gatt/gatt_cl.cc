@@ -634,11 +634,9 @@ static void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint
 static void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code, uint16_t len,
                                       uint8_t* p_data) {
   tGATT_VALUE value = {};
-  tGATT_REG* p_reg;
   tCONN_ID conn_id;
   tGATT_STATUS encrypt_status = {};
   uint8_t* p = p_data;
-  uint8_t i;
   tGATTC_OPTYPE event =
           (op_code == GATT_HANDLE_VALUE_IND) ? GATTC_OPTYPE_INDICATION : GATTC_OPTYPE_NOTIFICATION;
 

@@ -183,7 +183,6 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle, const RawAddres
 void l2c_link_sec_comp(RawAddress p_bda, tBT_TRANSPORT transport, void* p_ref_data,
                        tBTM_STATUS btm_status) {
   tL2C_CCB* p_ccb;
-  tL2C_CCB* p_next_ccb;
 
   log::debug("btm_status={}, BD_ADDR={}, transport={}", btm_status_text(btm_status), p_bda,
              bt_transport_text(transport));

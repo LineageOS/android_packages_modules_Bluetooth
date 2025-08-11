@@ -56,7 +56,6 @@ namespace {
 
 tL2CAP_APPL_INFO appl_info;
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
-tBTM_SEC_CALLBACK* security_callback = nullptr;
 
 constexpr uint8_t kDummyId = 0x77;
 constexpr uint8_t kDummyRemoteAddr[] = {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC};
