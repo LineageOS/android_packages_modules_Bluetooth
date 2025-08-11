@@ -1503,6 +1503,14 @@ public class BassClientServiceTest {
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
     }
 
+    private void incjectDeviceDisconnection(BluetoothDevice device) {
+        BassClientStateMachine sm = mStateMachines.get(device);
+        doReturn(STATE_DISCONNECTED).when(sm).getConnectionState();
+        doReturn(false).when(sm).isConnected();
+        doReturn(new ArrayList<>()).when(sm).getAllSources();
+        mBassClientService.connectionStateChanged(device, STATE_CONNECTED, STATE_DISCONNECTED);
+    }
+
     private void prepareRemoteSourceState(
             BluetoothLeBroadcastMetadata meta, boolean isPaSynced, boolean isBisSynced) {
         injectRemoteSourceStateSourceAdded(meta, isPaSynced, isBisSynced);
@@ -5367,17 +5375,11 @@ public class BassClientServiceTest {
         bigMonitoringWithoutScanning();
 
         // Disconnect not all sinks not cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
 
         // Disconnect all sinks cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice1);
         verifyStopBroadcastMonitoringWithUnsync();
         checkNoResumeSynchronizationByBig();
     }
@@ -5387,17 +5389,11 @@ public class BassClientServiceTest {
         bigMonitoringDuringScanning();
 
         // Disconnect not all sinks not cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
 
         // Disconnect all sinks cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice1);
         verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
     }
@@ -7065,11 +7061,7 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -7086,18 +7078,10 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Disconnect second sink cause remove metadata for both devices
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice1), TEST_SOURCE_ID + 1);
+        incjectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -7136,11 +7120,7 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -7165,18 +7145,10 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Disconnect second sink cause remove metadata for both devices
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice1), TEST_SOURCE_ID + 1);
+        incjectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -7208,11 +7180,7 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Remove second source should remove metadata for both
         // Do not clear receive state
@@ -7257,11 +7225,7 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Remove second source should remove metadata for both
         // Do not clear receive state
@@ -7298,10 +7262,7 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice1, mBroadcastMetadata1, /* isGroupOp */ false);
 
         // Disconnect first sink should remove pendingSourceToAdd for it
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Sync established should add source on only one sink
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -7338,10 +7299,7 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
 
         // Disconnect first sink should remove pendingSourceToAdd for it
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Sync established should add source on only one sink
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
