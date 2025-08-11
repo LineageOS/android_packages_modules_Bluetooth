@@ -39,10 +39,6 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* /* p_scb */, uint8_t /* bits */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool bta_av_switch_if_needed(tBTA_AV_SCB* /* p_scb */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 const char* bta_av_evt_code(uint16_t /* evt_code */) {
   inc_func_call_count(__func__);
   return nullptr;
