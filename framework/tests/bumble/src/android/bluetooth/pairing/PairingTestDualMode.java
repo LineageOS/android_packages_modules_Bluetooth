@@ -470,6 +470,115 @@ public class PairingTestDualMode {
         intentReceiver.close();
     }
 
+    /**
+     * Tests that a bonded device's bond state remains bonded even after an immediate disconnection
+     * from Bumble.
+     *
+     * <p>steps:
+     *
+     * <ol>
+     *   <li>Initiates a BR/EDR bonding with Bumble
+     *   <li>Disconnects from Bumble device
+     *   <li>Reconnect from Bumble side
+     *   <li>Disconnect from Bumble
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>After immediate disconnection Bumble should still be bonded
+     * </ul>
+     */
+    @Test
+    public void testBondState_OnImmediateDisconnectionFromRef() throws Exception {
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                mTargetContext,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_ACL_CONNECTED,
+                                BluetoothDevice.ACTION_PAIRING_REQUEST,
+                                BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                        .build();
+
+        HostProto.ConnectResponse response =
+                mBumble.hostBlocking()
+                        .connect(
+                                HostProto.ConnectRequest.newBuilder()
+                                        .setAddress(
+                                                ByteString.copyFrom(
+                                                        Utils.addressBytesFromString(
+                                                                mAdapter.getAddress())))
+                                        .build());
+
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+        // Create bond over BR/EDR
+        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
+
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(
+                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+        // Approve pairing from Android
+        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+
+        // Ensure that pairing succeeds
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+
+        // Disconnect Bumble
+        mBumble.hostBlocking()
+                .disconnect(
+                        HostProto.DisconnectRequest.newBuilder()
+                                .setConnection(response.getConnection())
+                                .build());
+
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+
+        HostProto.ConnectResponse secondResponse =
+                mBumble.hostBlocking()
+                        .connect(
+                                HostProto.ConnectRequest.newBuilder()
+                                        .setAddress(
+                                                ByteString.copyFrom(
+                                                        Utils.addressBytesFromString(
+                                                                mAdapter.getAddress())))
+                                        .build());
+
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+
+        // Disconnect Bumble
+        mBumble.hostBlocking()
+                .disconnect(
+                        HostProto.DisconnectRequest.newBuilder()
+                                .setConnection(secondResponse.getConnection())
+                                .build());
+
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+
+        assertThat(mBumbleDevice.getBondState()).isEqualTo(BluetoothDevice.BOND_BONDED);
+    }
+
     private static void testStep_VerifyBondIntents(
             IntentReceiver intentReceiver, BluetoothDevice device, int transport) {
         intentReceiver.verifyReceived(
