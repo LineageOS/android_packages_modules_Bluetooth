@@ -33,9 +33,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeCall;
 import android.media.AudioManager;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -360,6 +363,59 @@ public class TbsGenericTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_TBS_SET_LEA_FROM_BTSERVICE)
+    // To replace testCallAccept test after flag is released
+    public void testCallAccept_setLeActiveDeviceFromAdapterService() {
+        Integer ccid = prepareTestBearer();
+        reset(mTbsGatt);
+
+        // Prepare the incoming call
+        UUID callUuid = UUID.randomUUID();
+        List<BluetoothLeCall> tbsCalls = new ArrayList<>();
+        tbsCalls.add(
+                new BluetoothLeCall(
+                        callUuid,
+                        "tel:987654321",
+                        "aFriendlyCaller",
+                        BluetoothLeCall.STATE_INCOMING,
+                        0));
+        mTbsGeneric.currentCallsList(ccid, tbsCalls);
+
+        ArgumentCaptor<Map> currentCallsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(mTbsGatt).setCallState(currentCallsCaptor.capture());
+        Map<Integer, TbsCall> capturedCurrentCalls = currentCallsCaptor.getValue();
+        assertThat(capturedCurrentCalls).hasSize(1);
+        Integer callIndex = capturedCurrentCalls.entrySet().iterator().next().getKey();
+        reset(mTbsGatt);
+
+        byte args[] = new byte[1];
+        args[0] = (byte) (callIndex & 0xFF);
+        mTbsGattCallback
+                .getValue()
+                .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
+
+        ArgumentCaptor<Integer> requestIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<UUID> callUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(mCallback).onAcceptCall(requestIdCaptor.capture(), callUuidCaptor.capture());
+        assertThat(callUuidCaptor.getValue()).isEqualTo(callUuid);
+        // Active device should be changed
+        verify(mAdapterService).setActiveDevice(mDevice, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
+
+        // Respond with requestComplete...
+        mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
+        mTbsGeneric.callStateChanged(ccid, callUuid, BluetoothLeCall.STATE_ACTIVE);
+
+        // ..and verify if GTBS control point is updated to notifier the peer about the result
+        verify(mTbsGatt)
+                .setCallControlPointResult(
+                        eq(mDevice),
+                        eq(TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT),
+                        eq(callIndex),
+                        eq(Result.SUCCESS));
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_TBS_SET_LEA_FROM_BTSERVICE)
     public void testCallAccept() {
         Integer ccid = prepareTestBearer();
         reset(mTbsGatt);

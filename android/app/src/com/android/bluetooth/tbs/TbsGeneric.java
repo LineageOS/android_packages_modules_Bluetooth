@@ -23,6 +23,7 @@ import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 
 import static java.util.Objects.requireNonNull;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeCall;
@@ -1102,6 +1103,11 @@ public class TbsGeneric {
     private void setActiveLeDevice(BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "setActiveLeDevice: ignore null device");
+            return;
+        }
+
+        if (Flags.tbsSetLeaFromBtservice()) {
+            mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
             return;
         }
 
