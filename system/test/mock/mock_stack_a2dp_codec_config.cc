@@ -263,26 +263,26 @@ int A2dpCodecConfig::getTrackBitRate() const {
 }
 std::string A2DP_CodecInfoString(const uint8_t* /* p_codec_info */) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 std::string A2dpCodecConfig::codecBitsPerSample2Str(
         btav_a2dp_codec_bits_per_sample_t /* codec_bits_per_sample */) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 std::string A2dpCodecConfig::codecChannelMode2Str(
         btav_a2dp_codec_channel_mode_t /* codec_channel_mode */) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 std::string A2dpCodecConfig::codecConfig2Str(const btav_a2dp_codec_config_t& /* codec_config */) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 std::string A2dpCodecConfig::codecSampleRate2Str(
         btav_a2dp_codec_sample_rate_t /* codec_sample_rate */) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 tA2DP_CODEC_TYPE A2DP_GetCodecType(const uint8_t* /* p_codec_info */) {
   inc_func_call_count(__func__);

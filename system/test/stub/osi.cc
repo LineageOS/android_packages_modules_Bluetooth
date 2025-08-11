@@ -129,7 +129,7 @@ int config_get_int(const config_t& config, const std::string& section, const std
 }
 std::string checksum_read(const char* filename) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 std::unique_ptr<config_t> config_new(const char* filename) {
   inc_func_call_count(__func__);
