@@ -38,7 +38,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
+import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -67,14 +70,23 @@ public class NotificationHelperServiceTest {
     @Mock private PackageManager mPackageManager;
     @Mock private StatusBarNotification mStatusBarNotification;
 
+    private MockContentResolver mMockContentResolver;
     private NotificationHelperService mNotificationHelperService;
 
     @Before
     public void setUp() {
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
-        final var mockContentResolver = new MockContentResolver(context);
-        NotificationHelperService.factoryReset(mockContentResolver);
-        doReturn(mockContentResolver).when(mContext).getContentResolver();
+        mMockContentResolver = new MockContentResolver(context);
+        mMockContentResolver.addProvider(
+                Settings.AUTHORITY,
+                new MockContentProvider() {
+                    @Override
+                    public Bundle call(String method, String request, Bundle args) {
+                        return Bundle.EMPTY;
+                    }
+                });
+        NotificationHelperService.factoryReset(mMockContentResolver);
+        doReturn(mMockContentResolver).when(mContext).getContentResolver();
         doReturn(context.getResources()).when(mContext).getResources();
         doReturn(context.getPackageName()).when(mContext).getPackageName();
         doReturn(mApplicationInfo).when(mContext).getApplicationInfo();

@@ -622,6 +622,7 @@ class HIDService(HIDServicer):
         self.hid_proto_mode_queue: asyncio.Queue[hid_pb2.ProtocolModeEvent] | None = None
         self.hid_report_queue: asyncio.Queue[hid_pb2.ReportEvent] | None = None
         self.hid_device: HID_Device | None = None
+        self.hid_interrupt_data_queue: asyncio.Queue[hid_pb2.ReportDataEvent] | None = None
 
     async def handle_virtual_cable_unplug(self) -> None:
         if not self.hid_device:
@@ -705,6 +706,21 @@ class HIDService(HIDServicer):
         logging.info('Received Virtual Cable Unplug')
         asyncio.create_task(self.handle_virtual_cable_unplug())
 
+    def on_hid_interrupt_data_cb(self, pdu: bytes):
+        logging.info(f'Received Data, PDU: {pdu.hex()}')
+
+        if len(pdu) == 1:
+            logging.error('Warning: No report received')
+            return
+
+        recv_data = hid_pb2.ReportDataEvent()
+        recv_data.report_type = pdu[0] & 0x0F
+        recv_data.report_data = str(pdu[1:].hex())
+
+        if self.hid_interrupt_data_queue:
+            # put the pdu to the interrupt data queue (excluding report type at index 0)
+            self.hid_interrupt_data_queue.put_nowait(recv_data)
+
     def register_hid(self) -> None:
         self.device.sdp_service_records.update(sdp_records())
         self.hid_device = HID_Device(self.device)
@@ -715,6 +731,8 @@ class HIDService(HIDServicer):
         self.hid_device.register_set_protocol_cb(self.on_set_protocol_cb)
         # Register for virtual cable unplug call back
         self.hid_device.on('virtual_cable_unplug', self.on_virtual_cable_unplug_cb)
+        # Register for interrupt data callback
+        self.hid_device.on('interrupt_data', self.on_hid_interrupt_data_cb)
 
     @utils.rpc
     async def RegisterService(self, request: hid_pb2.ServiceRequest,
@@ -832,3 +850,24 @@ class HIDService(HIDServicer):
                 yield event
         finally:
             self.hid_report_queue = None
+
+    @utils.rpc
+    async def OnSendHostData(
+            self, request: empty_pb2.Empty,
+            context: grpc.ServicerContext) -> AsyncGenerator[hid_pb2.ReportDataEvent, None]:
+        logging.info(f'OnSendHostData')
+
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
+
+        if self.hid_interrupt_data_queue is not None:
+            raise RuntimeError('already streaming OnSendHostData events')
+
+        self.hid_interrupt_data_queue = asyncio.Queue[hid_pb2.ReportDataEvent]()
+
+        try:
+            while event := await self.hid_interrupt_data_queue.get():
+                yield event
+
+        finally:
+            self.hid_interrupt_data_queue = None

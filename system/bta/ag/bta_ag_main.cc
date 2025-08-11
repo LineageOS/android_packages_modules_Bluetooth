@@ -439,6 +439,8 @@ void bta_ag_api_enable(tBTA_AG_CBACK* p_cback) {
 
   bta_sys_collision_register(BTA_ID_AG, bta_ag_collision_cback);
 
+  bta_ag_init_hfp_client_interface();
+
   /* call callback with enable event */
   (*bta_ag_cb.p_cback)(BTA_AG_ENABLE_EVT, nullptr);
 }
@@ -477,6 +479,7 @@ void bta_ag_api_disable() {
   if (bta_ag_is_sco_managed_by_audio()) {
     // Stop session if not done
     bta_clear_active_device();
+    bta_ag_release_hfp_client_interface();
   }
 
   if (!do_dereg) {

@@ -818,30 +818,23 @@ public class PairingTest {
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        // As HID reconnection causes additinal ACL and profile connection Intents, Close all the
+        // Intents and register only Bond state change Intent for remove bond verification
 
-        if (Flags.hogpReconnection()) {
-            intentReceiver.verifyReceivedOrdered(
-                    hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                    hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
-                    hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-        }
-
+        IntentReceiver bondIntentReceiver =
+                IntentReceiver.update(
+                        intentReceiver,
+                        new IntentReceiver.Builder(
+                                sTargetContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED));
         // Remove bond
         assertThat(mBumbleDevice.removeBond()).isTrue();
-        if (Flags.hogpReconnection()) {
-            // Wait for ACL to get disconnected
-            intentReceiver.verifyReceivedOrdered(
-                    hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                    hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
-                    hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-        }
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
         assertThat(sAdapter.getBondedDevices()).doesNotContain(mBumbleDevice);
 
-        intentReceiver.close();
+        bondIntentReceiver.close();
     }
 
     /**

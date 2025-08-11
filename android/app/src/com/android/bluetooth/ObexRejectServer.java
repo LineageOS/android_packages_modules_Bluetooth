@@ -25,8 +25,6 @@ import android.util.Log;
 import com.android.obex.HeaderSet;
 import com.android.obex.ServerRequestHandler;
 
-import java.io.IOException;
-
 /**
  * A simple ObexServer used to handle connection rejection in two cases: - A profile cannot handle a
  * new connection, as it is already connected to another device. - The user rejected access to the
@@ -74,7 +72,7 @@ public class ObexRejectServer extends ServerRequestHandler implements Handler.Ca
         try {
             // This will cause an exception in the ServerSession, causing it to shut down
             mSocket.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.w(TAG, "Unable to close socket - ignoring", e);
         }
     }

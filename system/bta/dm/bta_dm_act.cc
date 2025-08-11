@@ -42,6 +42,7 @@
 #include "bta/dm/bta_dm_gatt_client.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"
+#include "bta/dm/bta_dm_pm_offload.h"
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_dm_acl.h"
 #include "bta/include/bta_dm_api.h"
@@ -298,6 +299,9 @@ void BTA_dm_on_hw_on() {
   /* if sniff is offload, no need to handle it in the stack */
   if (osi_property_get_bool(kPropertySniffOffloadEnabled, false)) {
     log::info("Sniff offloaded. Skip bta_dm_init_pm.");
+    if(com::android::bluetooth::flags::sniff_offload_with_vsc_based_control()) {
+      bta_dm_init_pm_offload();
+    }
   } else {
     /* initialize bluetooth low power manager */
     bta_dm_init_pm();

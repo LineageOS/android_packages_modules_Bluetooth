@@ -61,7 +61,6 @@ static void bta_dm_sniff_cback(uint8_t id, uint8_t app_id, const RawAddress& pee
 static int bta_dm_get_sco_index();
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer, uint8_t timer_idx);
 
-static tBTM_PM_PWR_MD get_sniff_entry(uint8_t index);
 static void bta_dm_pm_timer(const RawAddress& bd_addr, tBTA_DM_PM_ACTION pm_request);
 
 #include "../hh/bta_hh_int.h"
@@ -769,7 +768,7 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
 }
 /*******************************************************************************
  *
- * Function         get_sniff_entry
+ * Function         bta_dm_pm_get_sniff_entry
  *
  * Description      Helper function to get sniff entry from sysprop or
  *                  default table.
@@ -778,7 +777,7 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
  * Returns          tBTM_PM_PWR_MD with specified |index|.
  *
  ******************************************************************************/
-static tBTM_PM_PWR_MD get_sniff_entry(uint8_t index) {
+tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index) {
   static std::vector<tBTM_PM_PWR_MD> pwr_mds_cache;
   if (pwr_mds_cache.size() == BTA_DM_PM_PARK_IDX) {
     if (index >= BTA_DM_PM_PARK_IDX) {
@@ -855,7 +854,7 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   }
   /* if the current mode is not sniff, issue the sniff command.
    * If sniff, but SSR is not used in this link, still issue the command */
-  tBTM_PM_PWR_MD sniff_entry = get_sniff_entry(index);
+  tBTM_PM_PWR_MD sniff_entry = bta_dm_pm_get_sniff_entry(index);
   memcpy(&pwr_md, &sniff_entry, sizeof(tBTM_PM_PWR_MD));
   if (p_peer_dev->is_local_init_sniff()) {
     log::debug("Trying to force power mode");

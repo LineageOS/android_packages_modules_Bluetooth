@@ -61,7 +61,6 @@
 #include "btif_profile_queue.h"
 #include "btif_util.h"
 #include "osi/include/properties.h"
-#include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_uuid16.h"
 
 /*******************************************************************************
@@ -1104,7 +1103,8 @@ bt_status_t btif_hf_client_execute_service(bool b_enable) {
 
   tBTA_HF_CLIENT_FEAT features = get_default_hf_client_features();
   uint16_t hfp_version = get_default_hfp_version();
-  if (hfp_version >= HFP_VERSION_1_9 && hfp_hal_interface::get_swb_supported()) {
+  if (hfp_version >= HFP_VERSION_1_9 &&
+      osi_property_get_bool("bluetooth.hfp.swb.supported", false)) {
     features |= BTA_HF_CLIENT_FEAT_SWB;
   }
   if (hfp_version >= HFP_VERSION_1_7) {
