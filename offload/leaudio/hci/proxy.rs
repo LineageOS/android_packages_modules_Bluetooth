@@ -439,7 +439,7 @@ impl Module for LeAudioModule {
             Ok(..) => (),
 
             Err(code) => {
-                log::error!("Malformed event with code: {:?}", code);
+                log::error!("Malformed event with code: {code:?}");
             }
         }
 
@@ -456,7 +456,7 @@ impl Module for LeAudioModule {
             Some(stream) => stream.state != StreamState::Idle,
             None => false,
         } {
-            log::error!("Incoming data on handle 0x{:03x} not allowed", handle);
+            log::error!("Incoming data on handle 0x{handle:03x} not allowed");
             return;
         }
 

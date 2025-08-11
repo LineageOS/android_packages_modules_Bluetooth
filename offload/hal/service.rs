@@ -172,22 +172,22 @@ impl<T: HciHal> Module for SinkModule<T> {
 
     fn in_evt(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.hciEventReceived(data) {
-            log::error!("Cannot send event to client: {:?}", e);
+            log::error!("Cannot send event to client: {e:?}");
         }
     }
     fn in_acl(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.aclDataReceived(data) {
-            log::error!("Cannot send ACL to client: {:?}", e);
+            log::error!("Cannot send ACL to client: {e:?}");
         }
     }
     fn in_sco(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.scoDataReceived(data) {
-            log::error!("Cannot send SCO to client: {:?}", e);
+            log::error!("Cannot send SCO to client: {e:?}");
         }
     }
     fn in_iso(&self, data: &[u8]) {
         if let Err(e) = self.callbacks.isoDataReceived(data) {
-            log::error!("Cannot send ISO to client: {:?}", e);
+            log::error!("Cannot send ISO to client: {e:?}");
         }
     }
 }
@@ -208,7 +208,7 @@ impl HciProxyCallbacks {
             *state = State::Closed;
         }
         if let Err(e) = self.callbacks.initializationComplete(status.into()) {
-            log::error!("Cannot call-back client: {:?}", e);
+            log::error!("Cannot call-back client: {e:?}");
             *state = State::Closed;
         }
     }
