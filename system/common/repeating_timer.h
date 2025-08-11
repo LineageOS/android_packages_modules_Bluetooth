@@ -42,7 +42,9 @@ class MessageLoopThread;
 class RepeatingTimer final {
 public:
   RepeatingTimer(uint64_t (*clock_tick_us)(void) = bluetooth::common::time_get_os_boottime_us)
-      : expected_time_next_task_us_(0), clock_tick_us_(clock_tick_us) {}
+      : message_loop_thread_(nullptr),
+        expected_time_next_task_us_(0),
+        clock_tick_us_(clock_tick_us) {}
   RepeatingTimer(const RepeatingTimer&) = delete;
   RepeatingTimer& operator=(const RepeatingTimer&) = delete;
 
