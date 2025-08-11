@@ -38,7 +38,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
@@ -69,7 +68,6 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.AudioRecordingConfiguration;
 import android.media.BluetoothProfileConnectionInfo;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -80,7 +78,6 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
-import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 import android.util.Pair;
@@ -155,10 +152,6 @@ public class LeAudioService extends ConnectableProfile {
 
     /** Filter for Targeted Announcements */
     static final byte[] CAP_TARGETED_ANNOUNCEMENT_PAYLOAD = new byte[] {0x01};
-
-    /** This is used by application read-only for checking the fallback active group id. */
-    public static final String BLUETOOTH_LE_BROADCAST_FALLBACK_ACTIVE_GROUP_ID =
-            "bluetooth_le_broadcast_fallback_active_group_id";
 
     /**
      * Per PBP 1.0 4.3. High Quality Public Broadcast Audio, Broadcast HIGH quality audio configs
@@ -5339,21 +5332,6 @@ public class LeAudioService extends ConnectableProfile {
             if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
                 updateInbandRingtoneForTheGroup(groupId);
             }
-        }
-
-        // waive WRITE_SECURE_SETTINGS permission check
-        final long callingIdentity = Binder.clearCallingIdentity();
-        try {
-            Context userContext =
-                    getApplicationContext()
-                            .createContextAsUser(
-                                    UserHandle.of(ActivityManager.getCurrentUser()), 0);
-            Settings.Secure.putInt(
-                    userContext.getContentResolver(),
-                    BLUETOOTH_LE_BROADCAST_FALLBACK_ACTIVE_GROUP_ID,
-                    groupId);
-        } finally {
-            Binder.restoreCallingIdentity(callingIdentity);
         }
 
         if (leaudioBroadcastApiManagePrimaryGroup()) {
