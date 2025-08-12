@@ -34,6 +34,7 @@ namespace device_esco_parameters {
 
 // Function state capture and return values, if needed
 struct esco_parameters_for_codec esco_parameters_for_codec;
+enh_esco_params_t esco_parameters_for_codec::return_value{};
 
 }  // namespace device_esco_parameters
 }  // namespace mock
