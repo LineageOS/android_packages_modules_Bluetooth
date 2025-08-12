@@ -147,7 +147,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         on_set_terminated_(on_set_terminated) {
     le_maximum_advertising_data_length_ = controller_->GetLeMaximumAdvertisingDataLength();
 
-    num_instances_ = controller_->GetLeNumberOfSupportedAdverisingSets();
+    num_instances_ = controller_->GetLeNumberOfSupportedAdvertisingSets();
 
     le_advertising_interface_ = hci_->GetLeAdvertisingInterface(
             handler_->BindOn(this, &LeAdvertisingManagerImpl::impl::handle_event));

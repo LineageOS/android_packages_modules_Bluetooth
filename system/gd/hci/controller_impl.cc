@@ -1511,7 +1511,7 @@ uint16_t ControllerImpl::GetLeSuggestedDefaultDataLength() const {
   return impl_->le_suggested_default_data_length_;
 }
 
-uint8_t ControllerImpl::GetLeNumberOfSupportedAdverisingSets() const {
+uint8_t ControllerImpl::GetLeNumberOfSupportedAdvertisingSets() const {
   return impl_->le_number_supported_advertising_sets_;
 }
 

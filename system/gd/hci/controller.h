@@ -184,7 +184,7 @@ public:
 
   virtual uint16_t GetLeSuggestedDefaultDataLength() const = 0;
 
-  virtual uint8_t GetLeNumberOfSupportedAdverisingSets() const = 0;
+  virtual uint8_t GetLeNumberOfSupportedAdvertisingSets() const = 0;
 
   virtual uint8_t GetLePeriodicAdvertiserListSize() const = 0;
 
