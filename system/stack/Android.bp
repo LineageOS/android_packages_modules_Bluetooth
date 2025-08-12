@@ -262,6 +262,7 @@ cc_defaults {
     host_supported: true,
     defaults: [
         "bluetooth_cflags",
+        "bluetooth_fuzz_config",
         "bluetooth_tidy",
     ],
     cflags: [
@@ -310,19 +311,6 @@ cc_defaults {
             // TODO: b/280300628 for fixing memory leaks. Until it's fixed leak
             // detection needs to be turned off to unblock fuzzing.
             "detect_leaks=0",
-        ],
-        cc: [
-            "android-bluetooth-security@google.com",
-            "android-security-assurance-redteam@google.com",
-        ],
-        componentid: 27441, // Android > Android OS & Apps > Systems > bluetooth
-        hotlists: [
-            "3705175", // ASA Red Team Discovered Issues
-            "4810445", // ASA Red Team: Bluetooth Engagement Issues
-        ],
-        acknowledgement: [
-            "Android Bluetooth Team of Google",
-            "Android Red Team of Google",
         ],
     },
 }
