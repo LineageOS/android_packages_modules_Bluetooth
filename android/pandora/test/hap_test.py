@@ -25,7 +25,7 @@ from bumble.profiles.hap import (DynamicPresets, HearingAccessService, HearingAi
                                  PresetChangedOperation, PresetChangedOperationAvailable,
                                  PresetRecord, PresetSynchronizationSupport, WritablePresetsSupport)
 from mobly import base_test, signals
-from mobly.asserts import assert_equal, assert_is_not_none, assert_not_in
+from mobly.asserts import assert_equal, assert_not_in
 from pandora._utils import AioStream
 from pandora.gatt_grpc_aio import GATT
 from pandora.hap_grpc_aio import HAP
@@ -263,7 +263,7 @@ class HapTest(base_test.BaseTestClass):
         )
         assert_equal('connection', dut_ref_res.result_variant())
         dut_ref, ref_dut = dut_ref_res.connection, ref_dut_res.connection
-        assert_is_not_none(dut_ref)
+        assert dut_ref
         advertisement.cancel()
         return dut_ref, ref_dut
 

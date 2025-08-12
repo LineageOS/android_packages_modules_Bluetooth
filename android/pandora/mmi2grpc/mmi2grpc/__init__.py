@@ -107,7 +107,8 @@ class IUT:
         try:
             # Note: we don't keep a single gRPC channel instance in the IUT class
             # because reset is allowed to close the gRPC server.
-            print(f"Connecting to Pandora server at port {self.pandora_server_port}", file=sys.stderr)
+            print(f"Connecting to Pandora server at port {self.pandora_server_port}",
+                  file=sys.stderr)
             with grpc.insecure_channel(f'localhost:{self.pandora_server_port}') as channel:
                 print("Executing FactoryReset", file=sys.stderr)
                 Host(channel).FactoryReset(wait_for_ready=True, timeout=15.0)
