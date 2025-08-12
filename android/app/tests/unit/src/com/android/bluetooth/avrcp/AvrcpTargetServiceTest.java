@@ -28,6 +28,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioDeviceCallback;
@@ -65,6 +67,8 @@ public class AvrcpTargetServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mMockAdapterService;
+    @Mock private BluetoothManager mBluetoothManager;
+    @Mock private BluetoothAdapter mAdapter;
     @Mock private AudioManager mMockAudioManager;
     @Mock private AvrcpNativeInterface mMockNativeInterface;
     @Mock private Resources mMockResources;
@@ -92,6 +96,8 @@ public class AvrcpTargetServiceTest {
 
         mockGetSystemService(mMockAdapterService, AudioManager.class, mMockAudioManager);
         mockGetSystemService(mMockAdapterService, MediaSessionManager.class, mMediaSessionManager);
+        mockGetSystemService(mMockAdapterService, BluetoothManager.class, mBluetoothManager);
+        doReturn(mAdapter).when(mBluetoothManager).getAdapter();
 
         doReturn(mLooper.getNewExecutor()).when(mMockAdapterService).getMainExecutor();
 
