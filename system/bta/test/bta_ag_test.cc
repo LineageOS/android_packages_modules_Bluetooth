@@ -42,6 +42,9 @@
 
 #define TEST_BT com::android::bluetooth::flags
 
+using ::testing::NiceMock;
+using ::testing::Test;
+
 using namespace bluetooth;
 
 namespace {
@@ -60,13 +63,13 @@ static bool enable_aptx_voice_property(bool enable) {
   return android::base::SetProperty(kBtCodecAptxVoiceEnabled, value);
 }
 
-class BtaAgTest : public testing::Test {
+class BtaAgTest : public Test {
 protected:
   void SetUp() override {
     reset_mock_function_count_map();
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockController>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
 
     main_thread_start_up();
     post_on_bt_main([]() { log::info("Main thread started up"); });
