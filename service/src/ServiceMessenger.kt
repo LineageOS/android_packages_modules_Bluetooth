@@ -70,7 +70,7 @@ internal class ServiceMessenger(
                 val isQuiet = obj.isQuiet
                 val bleToken = obj.bleToken
 
-                val foregroundRequired = isQuiet == false || bleToken == null
+                val foregroundRequired = bleToken == null && isQuiet == false
                 SystemServiceMessage.Enable.Reply().apply {
                     value =
                         try {
