@@ -48,24 +48,24 @@ class PermissionChecker(
     class BluetoothPermissionException(message: String? = null, cause: Throwable? = null) :
         Exception(message, cause)
 
-    fun enableAllowed(uid: Int, source: AttributionSource, foregroundRequired: Boolean) =
-        userCanToggle(uid, source, "enable", foregroundRequired)
+    fun enableAllowed(source: AttributionSource, foregroundRequired: Boolean) =
+        userCanToggle(source, "enable", foregroundRequired)
 
-    fun disableAllowed(uid: Int, source: AttributionSource, foregroundRequired: Boolean) =
-        userCanToggle(uid, source, "disable", foregroundRequired)
+    fun disableAllowed(source: AttributionSource, foregroundRequired: Boolean) =
+        userCanToggle(source, "disable", foregroundRequired)
 
     fun factoryResetAllowed(source: AttributionSource) =
         enforceConnectPermission(source, "factoryReset")
 
-    fun getAddressAllowed(uid: Int, source: AttributionSource) {
+    fun getAddressAllowed(source: AttributionSource) {
         enforceConnectPermission(source, "getAddress")
-        if (uid != SYSTEM_UID) enforceCallerIsForegroundUser(uid)
-        enforceLocalMacAddressPermission(uid, "getAddress")
+        if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)
+        enforceLocalMacAddressPermission(source.uid, "getAddress")
     }
 
-    fun getNameAllowed(uid: Int, source: AttributionSource) {
+    fun getNameAllowed(source: AttributionSource) {
         enforceConnectPermission(source, "getName")
-        if (uid != SYSTEM_UID) enforceCallerIsForegroundUser(uid)
+        if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)
     }
 
     fun enforcePrivileged(uid: Int) = context.enforcePermission(BLUETOOTH_PRIVILEGED, -1, uid, null)
@@ -75,7 +75,6 @@ class PermissionChecker(
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun userCanToggle(
-        uid: Int,
         source: AttributionSource,
         apiName: String,
         foregroundRequired: Boolean,
@@ -83,7 +82,7 @@ class PermissionChecker(
 
         enforceBluetoothRestriction()
 
-        val callingAppId = UserHandle.getAppId(uid)
+        val callingAppId = UserHandle.getAppId(source.uid)
         if (arrayOf(SYSTEM_UID, NFC_UID, SHELL_UID, ROOT_UID).contains(callingAppId)) {
             // special uid can always toggle
             // TODO: b/280890575 - remove process bypass
@@ -92,13 +91,13 @@ class PermissionChecker(
 
         val packageName = source.packageName
         if (packageName == null) {
-            throw BluetoothPermissionException("Null package name from $uid")
+            throw BluetoothPermissionException("Null package name from ${source.uid}")
         }
         checkPackageName(callingAppId, packageName)
 
         if (foregroundRequired) {
-            enforceCallerIsForegroundUser(uid)
-            enforceCompatChange(uid, source.packageName)
+            enforceCallerIsForegroundUser(source.uid)
+            enforceCompatChange(source)
         }
 
         enforceConnectPermission(source, apiName)
@@ -178,21 +177,21 @@ class PermissionChecker(
         }
     }
 
-    private fun enforceCompatChange(uid: Int, packageName: String?) {
-        if (packageName != null && isExcludedFromCompatChange(uid, packageName)) {
+    private fun enforceCompatChange(source: AttributionSource) {
+        if (isExcludedFromCompatChange(source)) {
             return
         }
 
-        if (CompatChanges.isChangeEnabled(RESTRICT_ENABLE_DISABLE, uid)) {
+        if (CompatChanges.isChangeEnabled(RESTRICT_ENABLE_DISABLE, source.uid)) {
             throw BluetoothPermissionException("Caller does not match restriction criteria")
         }
     }
 
-    private fun isExcludedFromCompatChange(uid: Int, packageName: String): Boolean {
-        return isPrivileged(uid) ||
-            isSystem(uid, packageName) ||
-            isDeviceOwner(uid, packageName) ||
-            isProfileOwner(uid, packageName)
+    private fun isExcludedFromCompatChange(source: AttributionSource): Boolean {
+        return isPrivileged(source.uid) ||
+            isSystem(source) ||
+            isDeviceOwner(source) ||
+            isProfileOwner(source)
     }
 
     private fun isPrivileged(uid: Int): Boolean {
@@ -201,14 +200,14 @@ class PermissionChecker(
             (packageManager.checkSignatures(uid, SYSTEM_UID) == SIGNATURE_MATCH)
     }
 
-    private fun isSystem(uid: Int, packageName: String): Boolean {
-        val callingUser = UserHandle.getUserHandleForUid(uid)
-        val info = packageManager.getApplicationInfoAsUser(packageName, 0, callingUser)
+    private fun isSystem(source: AttributionSource): Boolean {
+        val callingUser = UserHandle.getUserHandleForUid(source.uid)
+        val info = packageManager.getApplicationInfoAsUser(source.packageName!!, 0, callingUser)
         val SYSTEM_APP = ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP
         return (info.flags and SYSTEM_APP) != 0
     }
 
-    private fun isDeviceOwner(uid: Int, packageName: String): Boolean {
+    private fun isDeviceOwner(source: AttributionSource): Boolean {
         // DevicePolicyManager is started after Bluetooth and cannot be passed in constructor
         val devicePolicyManager = context.getSystemService(DevicePolicyManager::class.java)
         if (devicePolicyManager == null) {
@@ -218,17 +217,17 @@ class PermissionChecker(
         val deviceOwnerUser = devicePolicyManager.deviceOwnerUser ?: return false
         val deviceOwnerComponent = devicePolicyManager.deviceOwnerComponentOnAnyUser ?: return false
 
-        return deviceOwnerUser.equals(UserHandle.getUserHandleForUid(uid)) &&
-            deviceOwnerComponent.getPackageName().equals(packageName)
+        return deviceOwnerUser.equals(UserHandle.getUserHandleForUid(source.uid)) &&
+            deviceOwnerComponent.getPackageName().equals(source.packageName)
     }
 
-    private fun isProfileOwner(uid: Int, packageName: String?): Boolean {
+    private fun isProfileOwner(source: AttributionSource): Boolean {
         val userContext =
             try {
                 context.createPackageContextAsUser(
                     context.packageName,
                     0,
-                    UserHandle.getUserHandleForUid(uid),
+                    UserHandle.getUserHandleForUid(source.uid),
                 )
             } catch (e: PackageManager.NameNotFoundException) {
                 Log.e(TAG, "Unknown package name")
@@ -239,6 +238,6 @@ class PermissionChecker(
             Log.w(TAG, "isProfileOwner: Error retrieving DevicePolicyManager service")
             return false
         }
-        return devicePolicyManager.isProfileOwnerApp(packageName)
+        return devicePolicyManager.isProfileOwnerApp(source.packageName)
     }
 }

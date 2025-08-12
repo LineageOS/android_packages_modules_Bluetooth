@@ -74,7 +74,7 @@ internal class ServiceMessenger(
                 SystemServiceMessage.Enable.Reply().apply {
                     value =
                         try {
-                            checker.enableAllowed(sendingUid, source, foregroundRequired)
+                            checker.enableAllowed(source, foregroundRequired)
                             if (bleToken != null) {
                                 api.enableBle(source.packageName, bleToken)
                             } else if (isQuiet) {
@@ -99,7 +99,7 @@ internal class ServiceMessenger(
                 SystemServiceMessage.Disable.Reply().apply {
                     value =
                         try {
-                            checker.disableAllowed(sendingUid, source, foregroundRequired)
+                            checker.disableAllowed(source, foregroundRequired)
                             if (bleToken != null) {
                                 api.disableBle(source.packageName, bleToken)
                             } else {
@@ -132,7 +132,7 @@ internal class ServiceMessenger(
                 SystemServiceMessage.GetAddress.Reply().apply {
                     value =
                         try {
-                            checker.getAddressAllowed(sendingUid, source)
+                            checker.getAddressAllowed(source)
                             api.getAddress()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
@@ -146,7 +146,7 @@ internal class ServiceMessenger(
                 SystemServiceMessage.GetName.Reply().apply {
                     value =
                         try {
-                            checker.getNameAllowed(sendingUid, source)
+                            checker.getNameAllowed(source)
                             api.getName()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
