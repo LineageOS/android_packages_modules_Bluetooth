@@ -70,15 +70,6 @@ class AdapterBinder(rawBinder: IBinder) {
         adapterBinder.unregAllGattClient()
     }
 
-    fun isMediaProfileConnected(): Boolean {
-        try {
-            return adapterBinder.isMediaProfileConnected()
-        } catch (ex: RemoteException) {
-            Log.e(TAG, "Error when calling isMediaProfileConnected", ex)
-        }
-        return false
-    }
-
     @Throws(RemoteException::class)
     fun killBluetoothProcess() {
         adapterBinder.killBluetoothProcess()
