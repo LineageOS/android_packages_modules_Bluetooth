@@ -85,7 +85,6 @@ public:
             });
     ON_CALL(mock_l2cap_interface, L2CA_DataWrite)
             .WillByDefault([](uint16_t cid, BT_HDR* p_data) -> tL2CAP_DW_RESULT {
-              auto len = p_data->len;
               osi_free(p_data);
               return tL2CAP_DW_RESULT::SUCCESS;
             });

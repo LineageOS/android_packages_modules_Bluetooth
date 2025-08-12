@@ -720,7 +720,6 @@ struct eatt_impl {
 
   static void eatt_ind_confirmation_timeout(void* data) {
     EattChannel* channel = (EattChannel*)data;
-    tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(channel->bda_, BT_TRANSPORT_LE);
 
     log::warn("disconnecting channel {:#x} for {}", channel->cid_, channel->bda_);
     EattExtension::GetInstance()->Disconnect(channel->bda_, channel->cid_);
