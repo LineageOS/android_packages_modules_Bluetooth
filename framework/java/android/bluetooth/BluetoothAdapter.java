@@ -2990,7 +2990,6 @@ public final class BluetoothAdapter {
      *
      * <p>Valid RFCOMM channels are in range 1 to 30.
      *
-     * @param channel RFCOMM channel to listen on
      * @return a listening RFCOMM BluetoothServerSocket
      * @throws IOException on error, for example Bluetooth not available, or insufficient
      *     permissions, or channel in use.
@@ -2999,8 +2998,8 @@ public final class BluetoothAdapter {
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public BluetoothServerSocket listenUsingRfcommOn(int channel) throws IOException {
-        return listenUsingRfcommOn(channel, false, false);
+    public BluetoothServerSocket listenUsingRfcommOn() throws IOException {
+        return listenUsingRfcommOn(false, false);
     }
 
     /**
@@ -3017,7 +3016,6 @@ public final class BluetoothAdapter {
      * <p>To auto assign a channel without creating a SDP record use {@link
      * #SOCKET_CHANNEL_AUTO_STATIC_NO_SDP} as channel number.
      *
-     * @param channel RFCOMM channel to listen on
      * @param mitm enforce person-in-the-middle protection for authentication.
      * @param min16DigitPin enforce a pin key length og minimum 16 digit for sec mode 2 connections.
      * @return a listening RFCOMM BluetoothServerSocket
@@ -3029,15 +3027,14 @@ public final class BluetoothAdapter {
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public BluetoothServerSocket listenUsingRfcommOn(
-            int channel, boolean mitm, boolean min16DigitPin) throws IOException {
+    public BluetoothServerSocket listenUsingRfcommOn(boolean mitm, boolean min16DigitPin)
+            throws IOException {
+        int channel = SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
         BluetoothServerSocket socket =
                 new BluetoothServerSocket(
                         BluetoothSocket.TYPE_RFCOMM, true, true, channel, mitm, min16DigitPin);
         int errno = socket.mSocket.bindListen();
-        if (channel == SOCKET_CHANNEL_AUTO_STATIC_NO_SDP) {
-            socket.setChannel(socket.mSocket.getPort());
-        }
+        socket.setChannel(socket.mSocket.getPort());
         if (errno != 0) {
             // TODO(BT): Throw the same exception error code
             // that the previous code was using.
@@ -3171,6 +3168,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @NonNull BluetoothSocket retrieveConnectedRfcommSocket(@NonNull UUID uuid) {
+        requireNonNull(uuid);
         IncomingRfcommSocketInfo socketInfo = null;
 
         mServiceLock.readLock().lock();
@@ -3327,7 +3325,8 @@ public final class BluetoothAdapter {
      */
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public BluetoothServerSocket listenUsingInsecureRfcommOn(int port) throws IOException {
+    public BluetoothServerSocket listenUsingInsecureRfcommOn() throws IOException {
+        int port = SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
         BluetoothServerSocket socket =
                 new BluetoothServerSocket(BluetoothSocket.TYPE_RFCOMM, false, false, port);
         int errno = socket.mSocket.bindListen();

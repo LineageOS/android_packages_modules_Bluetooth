@@ -91,10 +91,8 @@ public final class BluetoothServerSocket implements Closeable {
      * @param auth require the remote device to be authenticated
      * @param encrypt require the connection to be encrypted
      * @param port remote port
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
-    /*package*/ BluetoothServerSocket(int type, boolean auth, boolean encrypt, int port)
-            throws IOException {
+    /*package*/ BluetoothServerSocket(int type, boolean auth, boolean encrypt, int port) {
         mSocketCreationTimeMillis = System.currentTimeMillis();
         mType = type;
         mChannel = port;
@@ -114,11 +112,14 @@ public final class BluetoothServerSocket implements Closeable {
      * @param port remote port
      * @param pitm enforce person-in-the-middle protection for authentication.
      * @param min16DigitPin enforce a minimum length of 16 digits for a sec mode 2 connection
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothServerSocket(
-            int type, boolean auth, boolean encrypt, int port, boolean pitm, boolean min16DigitPin)
-            throws IOException {
+            int type,
+            boolean auth,
+            boolean encrypt,
+            int port,
+            boolean pitm,
+            boolean min16DigitPin) {
         mSocketCreationTimeMillis = System.currentTimeMillis();
         mType = type;
         mChannel = port;
@@ -136,10 +137,8 @@ public final class BluetoothServerSocket implements Closeable {
      * @param auth require the remote device to be authenticated
      * @param encrypt require the connection to be encrypted
      * @param uuid uuid
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
-    /*package*/ BluetoothServerSocket(int type, boolean auth, boolean encrypt, ParcelUuid uuid)
-            throws IOException {
+    /*package*/ BluetoothServerSocket(int type, boolean auth, boolean encrypt, ParcelUuid uuid) {
         mSocketCreationTimeMillis = System.currentTimeMillis();
         mType = type;
         mSocket = new BluetoothSocket(type, auth, encrypt, -1, uuid);
@@ -163,7 +162,6 @@ public final class BluetoothServerSocket implements Closeable {
      * @param hubId ID of the hub to which the end point belongs
      * @param endpointId ID of the endpoint within the hub that is associated with this socket
      * @param maximumPacketSize The maximum size (in bytes) of a single data packet
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothServerSocket(
             int type,
@@ -177,8 +175,7 @@ public final class BluetoothServerSocket implements Closeable {
             @NonNull String socketName,
             long hubId,
             long endpointId,
-            int maximumPacketSize)
-            throws IOException {
+            int maximumPacketSize) {
         mSocketCreationTimeMillis = System.currentTimeMillis();
         mType = type;
         mChannel = port;
