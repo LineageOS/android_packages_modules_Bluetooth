@@ -3228,23 +3228,19 @@ public class BassClientServiceTest {
     public void testAddSourceForExternalBroadcast_triggerSetContextMask() {
         final int testGroupId = 1;
         prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
 
-        /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
-        doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+        // Sync and stop searching to left only cache for broadcast
+        prepareSyncToSourceAndVerify();
+        mBassClientService.stopSearchingForSources();
+        assertThat(mBassClientService.getActiveSyncedSources()).isEmpty();
+
+        // Device as part of active unicast group
         doReturn(testGroupId).when(mLeAudioService).getActiveGroupId();
         doReturn(new ArrayList<BluetoothDevice>(Arrays.asList(mCurrentDevice)))
                 .when(mLeAudioService)
                 .getActiveDevices();
 
-        assertThat(mBassClientService.getActiveSyncedSources()).hasSize(1);
-        assertThat(mBassClientService.getActiveSyncedSources()).containsExactly(TEST_SYNC_HANDLE);
-        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(mSourceDevice);
-        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(TEST_BROADCAST_ID);
-
-        // Add source to unsynced broadcast, causes synchronization first
+        // Add source to unsynced broadcast
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
 
         // Verify setting allowed context mask is triggered
@@ -3255,6 +3251,9 @@ public class BassClientServiceTest {
                                         & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
                                                 | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS)),
                         eq(BluetoothLeAudio.CONTEXTS_ALL));
+
+        // Sync to broadcast
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
 
         // Verify all group members getting ADD_BCAST_SOURCE message
         assertThat(mStateMachines).hasSize(2);
@@ -3920,9 +3919,6 @@ public class BassClientServiceTest {
 
     @Test
     public void testHandleUnicastSourceStreamStatusChange() {
-        /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
-        doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
-
         prepareSynchronizedPair();
 
         /* Unicast would like to stream */
@@ -3942,9 +3938,6 @@ public class BassClientServiceTest {
 
     @Test
     public void testHandleUnicastSourceStreamStatusChange_MultipleRequests() {
-        /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
-        doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
-
         prepareSynchronizedPair();
 
         /* Unicast would like to stream */
