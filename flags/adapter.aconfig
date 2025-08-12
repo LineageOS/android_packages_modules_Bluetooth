@@ -66,6 +66,16 @@ flag {
 }
 
 flag {
+    name: "get_profile_oneway"
+    namespace: "bluetooth"
+    description: "do not block calling thread when fetching profiles"
+    bug: "438829357"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "return_correct_ble_state"
     namespace: "bluetooth"
     description: "Return correct BLE state from bluetooth adapter"

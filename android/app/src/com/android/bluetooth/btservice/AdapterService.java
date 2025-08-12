@@ -38,6 +38,7 @@ import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
+import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
@@ -81,6 +82,7 @@ import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.bluetooth.IBluetoothPreferredAudioProfilesCallback;
+import android.bluetooth.IBluetoothProfileCallback;
 import android.bluetooth.IBluetoothQualityReportReadyCallback;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
@@ -4075,6 +4077,21 @@ public class AdapterService extends Service {
         }
 
         return getStartedProfile(id).flatMap(ProfileService::getBinder).orElse(null);
+    }
+
+    void getProfile(int id, IBluetoothProfileCallback callback) {
+        if (getState() == BluetoothAdapter.STATE_TURNING_ON) {
+            return;
+        }
+
+        // LE_AUDIO_BROADCAST is not associated with a service and use LE_AUDIO's Binder
+        if (id == BluetoothProfile.LE_AUDIO_BROADCAST) {
+            id = BluetoothProfile.LE_AUDIO;
+        }
+
+        getStartedProfile(id)
+                .flatMap(ProfileService::getBinder)
+                .ifPresent(binder -> callbackToApp(() -> callback.getProfileReply(binder)));
     }
 
     private boolean isMediaProfileConnected() {

@@ -3243,6 +3243,19 @@ public final class BluetoothAdapter {
             // ProfileConnection.connect concurrently
             mProfileConnections.put(profileProxy, connection);
 
+            if (Flags.getProfileOneway()) {
+                getProfile(
+                        profile,
+                        new IBluetoothProfileCallback.Stub() {
+                            @RequiresNoPermission
+                            public void getProfileReply(IBinder binder) {
+                                synchronized (sProfileLock) {
+                                    connection.connect(profileProxy, binder);
+                                }
+                            }
+                        });
+                return true;
+            }
             IBinder binder = getProfile(profile);
             if (binder != null) {
                 connection.connect(profileProxy, binder);
@@ -3260,7 +3273,7 @@ public final class BluetoothAdapter {
      * @param proxy Profile proxy object
      * @hide
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Call control is not exposed to 3p app
+    @SuppressLint("AndroidFrameworkRequiresPermission")
     @RequiresNoPermission
     public void closeProfileProxy(@NonNull BluetoothProfile proxy) {
         if (proxy instanceof BluetoothGatt gatt) {
@@ -3457,6 +3470,19 @@ public final class BluetoothAdapter {
                             (proxy, connection) -> {
                                 if (connection.mConnected) return;
 
+                                if (Flags.getProfileOneway()) {
+                                    getProfile(
+                                            connection.mProfile,
+                                            new IBluetoothProfileCallback.Stub() {
+                                                @RequiresNoPermission
+                                                public void getProfileReply(IBinder binder) {
+                                                    synchronized (sProfileLock) {
+                                                        connection.connect(proxy, binder);
+                                                    }
+                                                }
+                                            });
+                                    return;
+                                }
                                 IBinder binder = getProfile(connection.mProfile);
                                 if (binder == null) {
                                     Log.e(
@@ -3778,8 +3804,12 @@ public final class BluetoothAdapter {
                 s -> IDistanceMeasurement.Stub.asInterface(s.getDistanceMeasurement()), null);
     }
 
+    private void getProfile(int profile, IBluetoothProfileCallback callback) {
+        callServiceIfEnabled(s -> s.getProfileOneway(profile, callback));
+    }
+
     /** Return a binder to a Profile service */
-    private @Nullable IBinder getProfile(int profile) {
+    private @Nullable IBinder getProfile(int profile) { // Delete with get_profile_oneway clean up
         return callServiceIfEnabled(s -> s.getProfile(profile), null);
     }
 
