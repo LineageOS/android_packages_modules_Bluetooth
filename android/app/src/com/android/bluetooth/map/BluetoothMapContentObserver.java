@@ -1336,7 +1336,7 @@ public class BluetoothMapContentObserver {
                         BluetoothProtoEnums.BLUETOOTH_MAP_CONTENT_OBSERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         9);
-                Log.e(TAG, "Failed to initialize the list of messages: " + e.toString());
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
                 return;
             }
 
@@ -1352,6 +1352,8 @@ public class BluetoothMapContentObserver {
                         msgListSms.put(id, msg);
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1386,6 +1388,8 @@ public class BluetoothMapContentObserver {
                         msgListMms.put(id, msg);
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1419,6 +1423,8 @@ public class BluetoothMapContentObserver {
                         msgList.put(id, msg);
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1482,6 +1488,8 @@ public class BluetoothMapContentObserver {
                     contactList.put(uci, contact);
                 } while (c.moveToNext());
             }
+        } catch (SQLiteException e) {
+            Log.e(TAG, "Failed to initialize the list of contacts: " + e);
         } finally {
             if (c != null) {
                 c.close();
@@ -1706,6 +1714,8 @@ public class BluetoothMapContentObserver {
                         }
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to handle change of sms list: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1969,6 +1979,8 @@ public class BluetoothMapContentObserver {
                         }
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to handle change of mms list: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -2200,6 +2212,8 @@ public class BluetoothMapContentObserver {
                         }
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to handle change of messages list: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -2521,6 +2535,8 @@ public class BluetoothMapContentObserver {
                         }
                         setContactList(contactList, listChanged);
                     } // end synchronized
+                } catch (SQLiteException e) {
+                    Log.e(TAG, "Failed to handle contact list changed: " + e);
                 } finally {
                     if (c != null) {
                         c.close();
@@ -4202,6 +4218,8 @@ public class BluetoothMapContentObserver {
                     sendMessage(msgInfo, msgBody);
                 } while (c.moveToNext());
             }
+        } catch (SQLiteException e) {
+            Log.e(TAG, "Failed to resend pending message: " + e);
         } finally {
             if (c != null) {
                 c.close();
@@ -4224,6 +4242,8 @@ public class BluetoothMapContentObserver {
                     Utils.moveMessageToFolder(mContext, msgInfo.uri, false);
                 } while (c.moveToNext());
             }
+        } catch (SQLiteException e) {
+            Log.e(TAG, "Failed to move pending messages from outbox: " + e);
         } finally {
             if (c != null) {
                 c.close();
