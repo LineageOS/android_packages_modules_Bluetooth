@@ -437,7 +437,7 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(0x56, controller_->GetLeMaximumDataLength().supported_max_rx_octets_);
   ASSERT_EQ(0x78, controller_->GetLeMaximumDataLength().supported_max_rx_time_);
   ASSERT_EQ(0x0672, controller_->GetLeMaximumAdvertisingDataLength());
-  ASSERT_EQ(0xF0, controller_->GetLeNumberOfSupportedAdverisingSets());
+  ASSERT_EQ(0xF0, controller_->GetLeNumberOfSupportedAdvertisingSets());
   ASSERT_GT(controller_->GetLocalSupportedBrEdrCodecIds().size(), 0u);
 }
 
