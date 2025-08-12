@@ -336,3 +336,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_config_data_path_before_set_iso_data_path"
+    namespace: "bluetooth"
+    description: "Configure data path before setting ISO data path"
+    bug: "438088172"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
