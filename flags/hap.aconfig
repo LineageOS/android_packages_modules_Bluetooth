@@ -26,3 +26,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hap_safely_erase_pending_operation_timeout"
+    namespace: "bluetooth"
+    description: "Fixes erasing pending operation timeout"
+    bug: "437279372"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
