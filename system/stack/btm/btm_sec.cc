@@ -484,9 +484,15 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
   /* Other security process is in progress */
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
-    log::error("already busy in state: {}",
-               btm_pair_state_descr(btm_sec_cb.pairing_state));
-    return tBTM_STATUS::BTM_WRONG_MODE;
+    if (com::android::bluetooth::flags::pairing_collision_with_same_device() &&
+        btm_sec_cb.link_spec.addrt.bda == bd_addr) {
+      log::warn("Already pairing with {}", btm_sec_cb.link_spec);
+      return tBTM_STATUS::BTM_CMD_STARTED;
+    } else {
+      log::error("Busy ({}) pairing with {}", btm_pair_state_descr(btm_sec_cb.pairing_state),
+                 btm_sec_cb.link_spec);
+      return tBTM_STATUS::BTM_WRONG_MODE;
+    }
   }
 
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
