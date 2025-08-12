@@ -51,7 +51,6 @@ rust_ffi {
 
 rust_test {
     name: "libbluetooth_offload_leaudio_audio_test",
-    team: "trendy_team_bluetooth",
     defaults: ["bluetooth_offload_leaudio_audio_defaults"],
 }
 

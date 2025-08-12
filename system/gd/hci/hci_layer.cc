@@ -86,9 +86,10 @@ static std::chrono::milliseconds getHciTimeoutRestartMs() {
 static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
   auto reset_complete = ResetCompleteView::Create(complete);
   log::assert_that(reset_complete.IsValid(), "assert failed: reset_complete.IsValid()");
-  log::debug("Reset completed with status: {}", ErrorCodeText(ErrorCode::SUCCESS));
   log::assert_that(reset_complete.GetStatus() == ErrorCode::SUCCESS,
                    "assert failed: reset_complete.GetStatus() == ErrorCode::SUCCESS");
+
+  log::info("HciLayer::reset is completed");
 }
 
 static void abort_after_time_out(OpCode op_code) {
@@ -313,7 +314,13 @@ struct HciLayer::impl {
 
     bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
-    log::error("Flushing {} waiting commands", command_queue_.size());
+    log::error("Flushing #{} waiting commands", command_queue_.size());
+    for (auto& command : command_queue_) {
+      log::debug("Flushing command: opcode:{}, waiting for: {}",
+                 OpCodeText(command.command_view->GetOpCode()),
+                 std::to_string(static_cast<uint8_t>(command.waiting_for_)));
+    }
+
     // Clear any waiting commands (there is an abort coming anyway)
     command_queue_.clear();
     command_credits_ = 1;

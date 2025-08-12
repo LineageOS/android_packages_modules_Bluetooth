@@ -186,9 +186,7 @@ public class SapService extends ConnectableProfile
                 // It is mandatory for MSE to support initiation of bonding and encryption.
                 // TODO: Consider reusing the mServerSocket - it is indented to be reused
                 //       for multiple connections.
-                mServerSocket =
-                        mAdapter.listenUsingRfcommOn(
-                                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP, true, true);
+                mServerSocket = mAdapter.listenUsingRfcommOn(true, true);
                 removeSdpRecord();
 
                 final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
@@ -232,7 +230,6 @@ public class SapService extends ConnectableProfile
 
         if (initSocketOK) {
             Log.v(TAG, "Succeed to create listening socket ");
-
         } else {
             Log.e(TAG, "Error to create listening socket after " + CREATE_RETRY_TIME + " try");
         }

@@ -606,7 +606,7 @@ void bta_av_switch_role(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   p_scb->wait &= ~(BTA_AV_WAIT_ROLE_SW_RES_OPEN | BTA_AV_WAIT_ROLE_SW_RES_START);
 
   if (p_scb->q_tag == BTA_AV_Q_TAG_OPEN) {
-    if (bta_av_switch_if_needed(p_scb) || !bta_av_link_role_ok(p_scb, A2DP_SET_MULTL_BIT)) {
+    if (!bta_av_link_role_ok(p_scb, A2DP_SET_MULTL_BIT)) {
       p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_OPEN;
     } else {
       /* this should not happen in theory. Just in case...
@@ -754,7 +754,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   switch (p_data->api_open.switch_res) {
     case BTA_AV_RS_NONE:
-      if (bta_av_switch_if_needed(p_scb) || !bta_av_link_role_ok(p_scb, A2DP_SET_MULTL_BIT)) {
+      if (!bta_av_link_role_ok(p_scb, A2DP_SET_MULTL_BIT)) {
         /* waiting for role switch result. save the api to control block */
         memcpy(&p_scb->q_info.open, &p_data->api_open, sizeof(tBTA_AV_API_OPEN));
         p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_OPEN;

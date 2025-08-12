@@ -271,12 +271,13 @@ void CopyVendorSpecificData(const std::vector<hal::VendorSpecificCharacteristic>
 
 RangingHalImpl::RangingHalImpl() {
   std::string instance = std::string() + IBluetoothChannelSounding::descriptor + "/default";
-  log::info("AServiceManager_isDeclared {}", AServiceManager_isDeclared(instance.c_str()));
-  if (AServiceManager_isDeclared(instance.c_str())) {
+  bool is_declared = AServiceManager_isDeclared(instance.c_str());
+  log::info("AServiceManager_isDeclared {}", is_declared);
+  if (is_declared) {
     ::ndk::SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
     bluetooth_channel_sounding_ = IBluetoothChannelSounding::fromBinder(binder);
-    log::info("Bind IBluetoothChannelSounding {}", IsBound() ? "Success" : "Fail");
-    if (bluetooth_channel_sounding_ != nullptr) {
+    log::info("Bind IBluetoothChannelSounding {}", (IsBound() ? "Success" : "Fail"));
+    if (IsBound()) {
       hal_ver_ = get_ranging_hal_version();
     }
   }
@@ -284,7 +285,7 @@ RangingHalImpl::RangingHalImpl() {
 
 std::vector<VendorSpecificCharacteristic> RangingHalImpl::GetVendorSpecificCharacteristics() {
   std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics = {};
-  if (bluetooth_channel_sounding_ != nullptr) {
+  if (IsBound()) {
     std::optional<std::vector<std::optional<VendorSpecificData>>> vendorSpecificDataOptional;
     bluetooth_channel_sounding_->getVendorSpecificData(&vendorSpecificDataOptional);
     if (vendorSpecificDataOptional.has_value()) {

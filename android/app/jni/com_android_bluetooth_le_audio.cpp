@@ -1531,10 +1531,10 @@ static int register_com_android_bluetooth_le_audio_broadcaster(JNIEnv* env) {
   GET_JAVA_METHODS(env, "android/bluetooth/BluetoothLeBroadcastSubgroup",
                    javaLeBroadcastSubgroupMethods);
 
-  const JNIJavaMethod javaBluetoothDevieceMethods[] = {
+  const JNIJavaMethod javaBluetoothDeviceMethods[] = {
           {"<init>", "(Ljava/lang/String;I)V", &android_bluetooth_BluetoothDevice.constructor},
   };
-  GET_JAVA_METHODS(env, "android/bluetooth/BluetoothDevice", javaBluetoothDevieceMethods);
+  GET_JAVA_METHODS(env, "android/bluetooth/BluetoothDevice", javaBluetoothDeviceMethods);
 
   const JNIJavaMethod javaLeBroadcastMetadataMethods[] = {
           {"<init>",

@@ -2564,7 +2564,8 @@
     "GAVDP": {},
     "GMAP": {
       "TSPX_delete_link_key": "TRUE",
-      "TSPX_delete_ltk": "TRUE"
+      "TSPX_delete_ltk": "TRUE",
+      "TSPX_mtu_size": "128"
     },
     "HAP": {},
     "HFP": {

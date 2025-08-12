@@ -621,8 +621,6 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
 
 /** This function is called to process the congestion callback from lcb */
 static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
-  uint8_t i = 0;
-  tGATT_REG* p_reg = NULL;
   tCONN_ID conn_id;
 
   /* if uncongested, check to see if there is any more pending data */
@@ -927,8 +925,6 @@ static void gatt_l2cif_congest_cback(uint16_t lcid, bool congested) {
 
 /** Callback used to notify layer above about a connection */
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
-  uint8_t i;
-  tGATT_REG* p_reg;
   tCONN_ID conn_id;
 
   std::set<tGATT_IF> apps = connection_manager::get_apps_connecting_to(p_tcb->peer_bda);

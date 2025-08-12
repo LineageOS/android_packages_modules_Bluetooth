@@ -369,9 +369,6 @@ public class HidHeadTrackerTest {
      */
     private void verifyTransportSwitch(BluetoothDevice device, int fromTransport, int toTransport) {
         assertThat(fromTransport).isNotEqualTo(toTransport);
-        if (!Flags.ignoreUnselectedHidTransportStates()) {
-            verifyConnectionState(fromTransport, STATE_DISCONNECTING);
-        }
 
         class Wrapper {
             int mState;

@@ -38,18 +38,15 @@ TEST(RawAddressUnittest, test_constructor_array) {
 }
 
 TEST(RawAddressUnittest, test_is_empty) {
-  RawAddress empty;
-  RawAddress::FromString("00:00:00:00:00:00", empty);
+  RawAddress empty = RawAddress::FromString("00:00:00:00:00:00").value();
   ASSERT_TRUE(empty.IsEmpty());
 
-  RawAddress not_empty;
-  RawAddress::FromString("00:00:00:00:00:01", not_empty);
+  RawAddress not_empty = RawAddress::FromString("00:00:00:00:00:01").value();
   ASSERT_FALSE(not_empty.IsEmpty());
 }
 
 TEST(RawAddressUnittest, test_to_from_str) {
-  RawAddress bdaddr;
-  RawAddress::FromString(test_addr, bdaddr);
+  RawAddress bdaddr = RawAddress::FromString(test_addr).value();
 
   ASSERT_EQ(0x12, bdaddr.address[0]);
   ASSERT_EQ(0x34, bdaddr.address[1]);
@@ -83,82 +80,65 @@ TEST(RawAddressUnittest, test_from_octets) {
 }
 
 TEST(RawAddressTest, test_equals) {
-  RawAddress bdaddr1;
-  RawAddress bdaddr2;
-  RawAddress bdaddr3;
-  RawAddress::FromString(test_addr, bdaddr1);
-  RawAddress::FromString(test_addr, bdaddr2);
+  RawAddress bdaddr1 = RawAddress::FromString(test_addr).value();
+  RawAddress bdaddr2 = RawAddress::FromString(test_addr).value();
   EXPECT_TRUE(bdaddr1 == bdaddr2);
   EXPECT_FALSE(bdaddr1 != bdaddr2);
   EXPECT_TRUE(bdaddr1 == bdaddr1);
   EXPECT_FALSE(bdaddr1 != bdaddr1);
 
-  RawAddress::FromString(test_addr2, bdaddr3);
+  RawAddress bdaddr3 = RawAddress::FromString(test_addr2).value();
   EXPECT_FALSE(bdaddr2 == bdaddr3);
   EXPECT_TRUE(bdaddr2 != bdaddr3);
 }
 
 TEST(RawAddressTest, test_less_than) {
-  RawAddress bdaddr1;
-  RawAddress bdaddr2;
-  RawAddress bdaddr3;
-  RawAddress::FromString(test_addr, bdaddr1);
-  RawAddress::FromString(test_addr, bdaddr2);
+  RawAddress bdaddr1 = RawAddress::FromString(test_addr).value();
+  RawAddress bdaddr2 = RawAddress::FromString(test_addr).value();
   EXPECT_FALSE(bdaddr1 < bdaddr2);
   EXPECT_FALSE(bdaddr1 < bdaddr1);
 
-  RawAddress::FromString(test_addr2, bdaddr3);
+  RawAddress bdaddr3 = RawAddress::FromString(test_addr2).value();
   EXPECT_TRUE(bdaddr2 < bdaddr3);
   EXPECT_FALSE(bdaddr3 < bdaddr2);
 }
 
 TEST(RawAddressTest, test_more_than) {
-  RawAddress bdaddr1;
-  RawAddress bdaddr2;
-  RawAddress bdaddr3;
-  RawAddress::FromString(test_addr, bdaddr1);
-  RawAddress::FromString(test_addr, bdaddr2);
+  RawAddress bdaddr1 = RawAddress::FromString(test_addr).value();
+  RawAddress bdaddr2 = RawAddress::FromString(test_addr).value();
   EXPECT_FALSE(bdaddr1 > bdaddr2);
   EXPECT_FALSE(bdaddr1 > bdaddr1);
 
-  RawAddress::FromString(test_addr2, bdaddr3);
+  RawAddress bdaddr3 = RawAddress::FromString(test_addr2).value();
   EXPECT_FALSE(bdaddr2 > bdaddr3);
   EXPECT_TRUE(bdaddr3 > bdaddr2);
 }
 
 TEST(RawAddressTest, test_less_than_or_equal) {
-  RawAddress bdaddr1;
-  RawAddress bdaddr2;
-  RawAddress bdaddr3;
-  RawAddress::FromString(test_addr, bdaddr1);
-  RawAddress::FromString(test_addr, bdaddr2);
+  RawAddress bdaddr1 = RawAddress::FromString(test_addr).value();
+  RawAddress bdaddr2 = RawAddress::FromString(test_addr).value();
   EXPECT_TRUE(bdaddr1 <= bdaddr2);
   EXPECT_TRUE(bdaddr1 <= bdaddr1);
 
-  RawAddress::FromString(test_addr2, bdaddr3);
+  RawAddress bdaddr3 = RawAddress::FromString(test_addr2).value();
   EXPECT_TRUE(bdaddr2 <= bdaddr3);
   EXPECT_FALSE(bdaddr3 <= bdaddr2);
 }
 
 TEST(RawAddressTest, test_more_than_or_equal) {
-  RawAddress bdaddr1;
-  RawAddress bdaddr2;
-  RawAddress bdaddr3;
-  RawAddress::FromString(test_addr, bdaddr1);
-  RawAddress::FromString(test_addr, bdaddr2);
+  RawAddress bdaddr1 = RawAddress::FromString(test_addr).value();
+  RawAddress bdaddr2 = RawAddress::FromString(test_addr).value();
   EXPECT_TRUE(bdaddr1 >= bdaddr2);
   EXPECT_TRUE(bdaddr1 >= bdaddr1);
 
-  RawAddress::FromString(test_addr2, bdaddr3);
+  RawAddress bdaddr3 = RawAddress::FromString(test_addr2).value();
   EXPECT_FALSE(bdaddr2 >= bdaddr3);
   EXPECT_TRUE(bdaddr3 >= bdaddr2);
 }
 
 TEST(RawAddressTest, test_copy) {
-  RawAddress bdaddr1;
-  RawAddress bdaddr2;
-  RawAddress::FromString(test_addr, bdaddr1);
-  bdaddr2 = bdaddr1;
+  RawAddress bdaddr1 = RawAddress::FromString(test_addr).value();
+  RawAddress bdaddr2 = bdaddr1;
 
   EXPECT_TRUE(bdaddr1 == bdaddr2);
 }
@@ -175,16 +155,12 @@ TEST(RawAddressTest, IsValidAddress) {
 }
 
 TEST(RawAddressTest, BdAddrFromString) {
-  RawAddress addr;
-  memset(&addr, 0, sizeof(addr));
-
-  EXPECT_TRUE(RawAddress::FromString("00:00:00:00:00:00", addr));
-  const RawAddress result0 = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
-  EXPECT_EQ(0, memcmp(&addr, &result0, sizeof(addr)));
-
-  EXPECT_TRUE(RawAddress::FromString("ab:01:4C:d5:21:9f", addr));
-  const RawAddress result1 = {{0xab, 0x01, 0x4c, 0xd5, 0x21, 0x9f}};
-  EXPECT_EQ(0, memcmp(&addr, &result1, sizeof(addr)));
+  EXPECT_EQ(RawAddress::FromString("00:00:00:00:00:00"), RawAddress::kEmpty);
+  EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21:9f"),
+            RawAddress({0xab, 0x01, 0x4c, 0xd5, 0x21, 0x9f}));
+  EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21"), std::nullopt);
+  EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21aaa"), std::nullopt);
+  EXPECT_EQ(RawAddress::FromString("ab:01:4C:d5:21:xx"), std::nullopt);
 }
 
 TEST(RawAddressTest, BdAddrFromArray) {

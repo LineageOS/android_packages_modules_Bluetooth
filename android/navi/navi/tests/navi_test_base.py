@@ -633,6 +633,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                                   AndroidSnippetDeviceWrapper] = AndroidSnippetDeviceWrapper
     _refs: Sequence[crown.CrownDevice] = ()
     NUM_REF_DEVICES: int
+    test_case_log_handler: logging.FileHandler | None = None
 
     def _get_passthrough_hci_specs(self) -> list[str]:
         hci_specs = self.user_params.get("crown_driver_specs", [])
@@ -759,6 +760,19 @@ class AndroidBumbleTestBase(BaseTestBase):
     @retry_lib.retry_on_exception()
     @override
     async def async_setup_test(self) -> None:
+        await super().async_setup_test()
+
+        # Bumble logger.
+        self.test_case_log_handler = logging.FileHandler(
+            pathlib.Path(self.current_test_info.output_path, "test_log.DEBUG"))
+        self.test_case_log_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s.%(msecs).03d %(levelname)s %(message)s",
+                "%m-%d %H:%M:%S",
+            ))
+        self.test_case_log_handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(self.test_case_log_handler)
+
         # Make sure Bluetooth is enabled before factory reset.
         self.assertTrue(self.dut.bt.enable())
 
@@ -788,6 +802,11 @@ class AndroidBumbleTestBase(BaseTestBase):
                 raise signals.TestAbortAll("DUT is disconnected, cannot continue the test.") from e
         # Collect logcat.
         self.dut.device.services.create_output_excerpts_all(self.current_test_info)
+        # Close test case log handler.
+        if self.test_case_log_handler is not None:
+            self.test_case_log_handler.close()
+            logging.getLogger().removeHandler(self.test_case_log_handler)
+            self.test_case_log_handler = None
         await super().async_teardown_test()
 
     @override

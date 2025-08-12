@@ -288,13 +288,13 @@ impl Worker {
                     if underrun == 0 {
                         log::warn!("PCM underrun starts");
                     } else if underrun % (1_000_000 / frame_duration_us) == 0 {
-                        log::warn!("PCM underrun: {} SDU starved", underrun);
+                        log::warn!("PCM underrun: {underrun} SDU starved");
                     }
                     underrun += 1;
                     continue;
                 };
                 if underrun > 0 {
-                    log::warn!("PCM underrun ends: {} SDU starved", underrun);
+                    log::warn!("PCM underrun ends: {underrun} SDU starved");
                     underrun = 0;
                 }
 
@@ -302,7 +302,7 @@ impl Worker {
             }
 
             if underrun > 0 {
-                log::warn!("PCM underrun ends: {} SDU starved before stopped", underrun);
+                log::warn!("PCM underrun ends: {underrun} SDU starved before stopped");
             }
             log::info!("Streaming stopped");
         });
@@ -385,7 +385,7 @@ impl Clocker {
         if now > pos_ref - self.min_delay {
             let gap = ((now - deadline).as_micros() as u64).div_ceil(interval_us);
             if self.seq_nums[i_ref].is_some() {
-                log::warn!("Real-time loss: {} packet(s) skipped", gap);
+                log::warn!("Real-time loss: {gap} packet(s) skipped");
             }
 
             sn_ref += gap;

@@ -133,6 +133,13 @@ public class BassClientService extends ConnectableProfile {
         RESUMING // Broadcast during resume.
     }
 
+    private enum ModifyCallReason {
+        API,
+        RESUME,
+        SUSPEND,
+        REMOVE
+    }
+
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static BassClientService sService;
 
@@ -3206,6 +3213,10 @@ public class BassClientService extends ConnectableProfile {
         }
 
         for (BluetoothDevice device : devices) {
+            if (!isLocalBroadcast(sourceMetadata)) {
+                checkAndSetGroupAllowedContextMask(device);
+            }
+
             BluetoothDevice sourceDevice = sourceMetadata.getSourceDevice();
             if (!isLocalBroadcast(sourceMetadata)
                     && (!getActiveSyncedSources()
@@ -3350,10 +3361,6 @@ public class BassClientService extends ConnectableProfile {
                         device, BassClientStateMachine.ADD_BCAST_SOURCE, sourceMetadata);
             }
 
-            if (!isLocalBroadcast(sourceMetadata)) {
-                checkAndSetGroupAllowedContextMask(device);
-            }
-
             sEventLogger.logi(
                     TAG,
                     "Add Broadcast Source: "
@@ -3437,25 +3444,23 @@ public class BassClientService extends ConnectableProfile {
             /* Update metadata for sink device */
             storeSinkMetadata(device, updatedMetadata.getBroadcastId(), updatedMetadata);
 
-            sEventLogger.logi(
-                    TAG,
-                    "Modify Broadcast Source: "
-                            + ("device: " + device)
-                            + (", sourceId: " + deviceSourceId)
-                            + (", updatedBroadcastId: " + updatedMetadata.getBroadcastId())
-                            + (", updatedBroadcastName: " + updatedMetadata.getBroadcastName()));
-
-            Message message =
-                    stateMachine.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
-            message.arg1 = deviceSourceId;
             if (leaudioBisSyncControl()) {
-                message.arg2 =
-                        BassConstants.FLAG_SYNC_PA | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE;
+                sendModifySource(
+                        stateMachine,
+                        device,
+                        deviceSourceId,
+                        BassConstants.FLAG_SYNC_PA | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE,
+                        updatedMetadata,
+                        ModifyCallReason.API);
             } else {
-                message.arg2 = BassConstants.INVALID_PA_SYNC_VALUE;
+                sendModifySource(
+                        stateMachine,
+                        device,
+                        deviceSourceId,
+                        BassConstants.INVALID_PA_SYNC_VALUE,
+                        updatedMetadata,
+                        ModifyCallReason.API);
             }
-            message.obj = updatedMetadata;
-            stateMachine.sendMessage(message);
 
             if (!leaudioBroadcastSimplifySetBcastCode()) {
                 byte[] code = updatedMetadata.getBroadcastCode();
@@ -3468,7 +3473,8 @@ public class BassClientService extends ConnectableProfile {
                                     + (", updatedBroadcastId: " + updatedMetadata.getBroadcastId())
                                     + (", updatedBroadcastName: "
                                             + updatedMetadata.getBroadcastName()));
-                    message = stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
+                    Message message =
+                            stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
                     message.obj = updatedMetadata;
                     message.arg1 = BassClientStateMachine.ARGTYPE_METADATA;
                     stateMachine.sendMessage(message);
@@ -3545,27 +3551,13 @@ public class BassClientService extends ConnectableProfile {
             stateMachine.sendMessage(message);
         } else {
             if (stateMachine.isSyncedToTheSource(sourceId)) {
-                sEventLogger.logd(
-                        TAG,
-                        "Remove Broadcast Source(Force lost PA sync): "
-                                + ("device: " + sink)
-                                + (", sourceId: " + sourceId)
-                                + (", broadcastId: "
-                                        + ((metaData == null)
-                                                ? BassConstants.INVALID_BROADCAST_ID
-                                                : metaData.getBroadcastId()))
-                                + (", broadcastName: "
-                                        + ((metaData == null) ? "" : metaData.getBroadcastName())));
-
-                Log.d(TAG, "Force source to lost PA sync");
-                Message message =
-                        stateMachine.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
-                message.arg1 = sourceId;
-                message.arg2 = BassConstants.PA_SYNC_DO_NOT_SYNC;
-                /* Pending remove set. Remove source once not synchronized to PA */
-                /* MetaData can be null if source is from remote's receive state */
-                message.obj = metaData;
-                stateMachine.sendMessage(message);
+                sendModifySource(
+                        stateMachine,
+                        sink,
+                        sourceId,
+                        BassConstants.PA_SYNC_DO_NOT_SYNC,
+                        metaData,
+                        ModifyCallReason.REMOVE);
             } else {
                 sEventLogger.logd(
                         TAG,
@@ -4099,30 +4091,24 @@ public class BassClientService extends ConnectableProfile {
 
             int sourceId = pair.second;
             BluetoothLeBroadcastMetadata metadata = sm.getCurrentBroadcastMetadata(sourceId);
-
-            sEventLogger.logi(
-                    TAG,
-                    "Modify Broadcast Source (suspend): "
-                            + ("device: " + device)
-                            + (", sourceId: " + sourceId)
-                            + (", updatedBroadcastId: "
-                                    + (metadata != null
-                                            ? metadata.getBroadcastId()
-                                            : BassConstants.INVALID_BROADCAST_ID))
-                            + (", updatedBroadcastName: "
-                                    + (metadata != null ? metadata.getBroadcastName() : "")));
-            Message message = sm.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
-            message.arg1 = sourceId;
-
             if (leaudioBisSyncControl()) {
                 metadata = getMetadataWithChannelUnselected(metadata);
-                message.arg2 =
-                        BassConstants.FLAG_SYNC_PA | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE;
+                sendModifySource(
+                        sm,
+                        device,
+                        sourceId,
+                        BassConstants.FLAG_SYNC_PA | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE,
+                        metadata,
+                        ModifyCallReason.SUSPEND);
             } else {
-                message.arg2 = BassConstants.PA_SYNC_DO_NOT_SYNC;
+                sendModifySource(
+                        sm,
+                        device,
+                        sourceId,
+                        BassConstants.PA_SYNC_DO_NOT_SYNC,
+                        metadata,
+                        ModifyCallReason.SUSPEND);
             }
-            message.obj = metadata;
-            sm.sendMessage(message);
         }
     }
 
@@ -4291,6 +4277,34 @@ public class BassClientService extends ConnectableProfile {
         logPausedBroadcastsAndSinks();
     }
 
+    private static void sendModifySource(
+            BassClientStateMachine sm,
+            BluetoothDevice device,
+            int sourceId,
+            int arg,
+            BluetoothLeBroadcastMetadata metadata,
+            ModifyCallReason modifyCallReason) {
+
+        sEventLogger.logi(
+                TAG,
+                "Modify Broadcast Source: "
+                        + ("reason: " + modifyCallReason)
+                        + (", device: " + device)
+                        + (", sourceId: " + sourceId)
+                        + (", broadcastId: "
+                                + (metadata != null
+                                        ? metadata.getBroadcastId()
+                                        : BassConstants.INVALID_BROADCAST_ID))
+                        + (", broadcastName: "
+                                + (metadata != null ? metadata.getBroadcastName() : "")));
+
+        Message message = sm.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
+        message.arg1 = sourceId;
+        message.arg2 = arg;
+        message.obj = metadata;
+        sm.sendMessage(message);
+    }
+
     private void updateSourceToResumeBroadcast(
             BluetoothDevice sink, int sourceId, BluetoothLeBroadcastMetadata metadata) {
         BassClientStateMachine stateMachine = mStateMachines.get(sink);
@@ -4309,22 +4323,25 @@ public class BassClientService extends ConnectableProfile {
             return;
         }
 
-        sEventLogger.logi(
-                TAG,
-                "Modify Broadcast Source (resume): "
-                        + ("device: " + sink)
-                        + (", sourceId: " + sourceId)
-                        + (", updatedBroadcastId: " + metadata.getBroadcastId())
-                        + (", updatedBroadcastName: " + metadata.getBroadcastName()));
-        Message message = stateMachine.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
-        message.arg1 = sourceId;
         if (leaudioBisSyncControl()) {
-            message.arg2 = BassConstants.FLAG_SYNC_PA; // Use no preference BIS sync
+            // Use no preference BIS sync
+            sendModifySource(
+                    stateMachine,
+                    sink,
+                    sourceId,
+                    BassConstants.FLAG_SYNC_PA,
+                    metadata,
+                    ModifyCallReason.RESUME);
         } else {
-            message.arg2 = BassConstants.PA_SYNC_PAST_AVAILABLE;
+            sendModifySource(
+                    stateMachine,
+                    sink,
+                    sourceId,
+                    BassConstants.PA_SYNC_PAST_AVAILABLE,
+                    metadata,
+                    ModifyCallReason.RESUME);
         }
-        message.obj = metadata;
-        stateMachine.sendMessage(message);
+
     }
 
     /** Handle Unicast source stream status change */

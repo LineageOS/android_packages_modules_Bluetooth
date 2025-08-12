@@ -195,9 +195,6 @@ public final class BluetoothSocket implements Closeable {
     /** prevents all native calls after destroyNative() */
     private volatile SocketState mSocketState;
 
-    /** protects mSocketState */
-    // private final ReentrantReadWriteLock mLock;
-
     /**
      * Construct a BluetoothSocket.
      *
@@ -206,10 +203,9 @@ public final class BluetoothSocket implements Closeable {
      * @param encrypt require the connection to be encrypted
      * @param port remote port
      * @param uuid SDP uuid
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
-    /*package*/ BluetoothSocket(int type, boolean auth, boolean encrypt, int port, ParcelUuid uuid)
-            throws IOException {
+    /*package*/ BluetoothSocket(
+            int type, boolean auth, boolean encrypt, int port, ParcelUuid uuid) {
         this(type, auth, encrypt, port, uuid, false, false);
     }
 
@@ -223,7 +219,6 @@ public final class BluetoothSocket implements Closeable {
      * @param uuid SDP uuid
      * @param pitm enforce person-in-the-middle protection.
      * @param min16DigitPin enforce a minimum length of 16 digits for a sec mode 2 connection
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothSocket(
             int type,
@@ -232,8 +227,7 @@ public final class BluetoothSocket implements Closeable {
             int port,
             ParcelUuid uuid,
             boolean pitm,
-            boolean min16DigitPin)
-            throws IOException {
+            boolean min16DigitPin) {
         this(type, auth, encrypt, port, uuid, pitm, min16DigitPin, 0, DEFAULT_SOCKET_NAME, 0, 0, 0);
     }
 
@@ -252,7 +246,6 @@ public final class BluetoothSocket implements Closeable {
      * @param hubId ID of the hub to which the end point belongs
      * @param endpointId ID of the endpoint within the hub that is associated with this socket
      * @param maximumPacketSize The maximum size (in bytes) of a single data packet
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothSocket(
             int type,
@@ -266,24 +259,11 @@ public final class BluetoothSocket implements Closeable {
             @NonNull String socketName,
             long hubId,
             long endpointId,
-            int maximumPacketSize)
-            throws IOException {
+            int maximumPacketSize) {
         mSocketCreationTimeNanos = System.nanoTime();
         mType = type;
         if (VDBG) Log.d(TAG, "Creating new BluetoothSocket of type: " + type);
         mRemoteDevice = Optional.empty(); // Only when this is for BluetoothServerSocket
-        if (type == BluetoothSocket.TYPE_RFCOMM
-                && uuid == null
-                && port != BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
-                && (port < 1 || port > MAX_RFCOMM_CHANNEL)) {
-            mSocketState = SocketState.CLOSED;
-            // WARNING: BluetoothSocket implements finalize
-            // Please read and understand: Effective Java Item 8, "Avoid finalizers and cleaners"
-            // TL:DR;
-            //      Throwing an exception from a constructor should be sufficient to prevent an
-            //      object from coming into existence; in the presence of finalizers, it is not.
-            throw new IOException("Invalid RFCOMM channel: " + port);
-        }
 
         if (uuid != null) {
             mUuid = uuid;
@@ -317,7 +297,6 @@ public final class BluetoothSocket implements Closeable {
      * @param encrypt require the connection to be encrypted
      * @param port remote port
      * @param uuid SDP uuid
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothSocket(
             BluetoothDevice device,
@@ -325,8 +304,7 @@ public final class BluetoothSocket implements Closeable {
             boolean auth,
             boolean encrypt,
             int port,
-            ParcelUuid uuid)
-            throws IOException {
+            ParcelUuid uuid) {
         this(device, type, auth, encrypt, port, uuid, false, false);
     }
 
@@ -341,7 +319,6 @@ public final class BluetoothSocket implements Closeable {
      * @param uuid SDP uuid
      * @param pitm enforce person-in-the-middle protection.
      * @param min16DigitPin enforce a minimum length of 16 digits for a sec mode 2 connection
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothSocket(
             @NonNull BluetoothDevice device,
@@ -351,8 +328,7 @@ public final class BluetoothSocket implements Closeable {
             int port,
             ParcelUuid uuid,
             boolean pitm,
-            boolean min16DigitPin)
-            throws IOException {
+            boolean min16DigitPin) {
         this(
                 device,
                 type,
@@ -385,7 +361,6 @@ public final class BluetoothSocket implements Closeable {
      * @param hubId ID of the hub to which the end point belongs
      * @param endpointId ID of the endpoint within the hub that is associated with this socket
      * @param maximumPacketSize The maximum size (in bytes) of a single data packet
-     * @throws IOException On error, for example Bluetooth not available, or insufficient privileges
      */
     /*package*/ BluetoothSocket(
             @NonNull BluetoothDevice device,
@@ -400,24 +375,11 @@ public final class BluetoothSocket implements Closeable {
             @NonNull String socketName,
             long hubId,
             long endpointId,
-            int maximumPacketSize)
-            throws IOException {
+            int maximumPacketSize) {
         mSocketCreationTimeNanos = System.nanoTime();
         mType = type;
         if (VDBG) Log.d(TAG, "Creating new BluetoothSocket of type: " + type);
         mRemoteDevice = Optional.of(device);
-        if (type == BluetoothSocket.TYPE_RFCOMM
-                && uuid == null
-                && port != BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
-                && (port < 1 || port > MAX_RFCOMM_CHANNEL)) {
-            mSocketState = SocketState.CLOSED;
-            // WARNING: BluetoothSocket implements finalize
-            // Please read and understand: Effective Java Item 8, "Avoid finalizers and cleaners"
-            // TL:DR;
-            //      Throwing an exception from a constructor should be sufficient to prevent an
-            //      object from coming into existence; in the presence of finalizers, it is not.
-            throw new IOException("Invalid RFCOMM channel: " + port);
-        }
 
         if (uuid != null) {
             mUuid = uuid;

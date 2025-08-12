@@ -374,9 +374,6 @@ public class HidHostService extends ConnectableProfile {
                         + (" transport: prev=" + prevTransport + " -> new=" + transport));
 
         InputDevice inputDevice = getOrCreateInputDevice(device);
-        if (!Flags.ignoreUnselectedHidTransportStates()) {
-            inputDevice.mSelectedTransport = transport;
-        }
 
         /* If connections are allowed, ensure that the previous transport is disconnected and the
         new transport is connected */
@@ -389,20 +386,18 @@ public class HidHostService extends ConnectableProfile {
                                 + (" transport: prev=" + prevTransport + " -> new=" + transport));
                 // Disconnect the other transport and disallow reconnections
                 nativeDisconnect(device, prevTransport, false);
-                if (Flags.ignoreUnselectedHidTransportStates()) {
-                    // Immediately update the connection state to disconnected. From now on,
-                    // the connection state will be updated only for the selected transport.
-                    updateConnectionState(device, prevTransport, STATE_DISCONNECTED);
-                }
+
+                // Immediately update the connection state to disconnected. From now on,
+                // the connection state will be updated only for the selected transport.
+                updateConnectionState(device, prevTransport, STATE_DISCONNECTED);
+
                 // Request to connect the preferred transport
                 nativeConnect(device, transport);
             }
         }
 
-        if (Flags.ignoreUnselectedHidTransportStates()) {
-            // Save the preferred transport
-            inputDevice.mSelectedTransport = transport;
-        }
+        // Save the preferred transport
+        inputDevice.mSelectedTransport = transport;
     }
 
     private void handleMessageSetIdleTime(Message msg) {
@@ -579,9 +574,7 @@ public class HidHostService extends ConnectableProfile {
                             + (" transport=" + transport)
                             + (" newState=" + state)
                             + (" prevState=" + prevState));
-            if (Flags.ignoreUnselectedHidTransportStates()) {
-                return;
-            }
+            return;
         }
 
         Log.d(

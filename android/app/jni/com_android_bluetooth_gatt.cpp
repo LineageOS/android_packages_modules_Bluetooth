@@ -90,13 +90,12 @@ static uint64_t uuid_msb(const Uuid& uuid) {
 }
 
 static RawAddress str2addr(JNIEnv* env, jstring address) {
-  RawAddress bd_addr;
   const char* c_address = env->GetStringUTFChars(address, NULL);
   if (!c_address) {
-    return bd_addr;
+    return RawAddress::kEmpty;
   }
 
-  RawAddress::FromString(std::string(c_address), bd_addr);
+  RawAddress bd_addr = RawAddress::FromString(std::string(c_address)).value_or(RawAddress::kEmpty);
   env->ReleaseStringUTFChars(address, c_address);
 
   return bd_addr;
