@@ -971,7 +971,6 @@ bt_status_t btif_storage_load_bonded_devices(void) {
   bt_property_t remote_properties[11];
   RawAddress addr;
   bt_bdname_t name, alias, model_name;
-  bt_scan_mode_t mode;
   uint32_t disc_timeout;
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
   Uuid remote_uuids[BT_MAX_NUM_UUIDS];

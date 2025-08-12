@@ -297,7 +297,6 @@ static bt_status_t btif_in_get_adapter_properties(void) {
 
   RawAddress addr;
   bt_bdname_t name;
-  bt_scan_mode_t mode;
   uint32_t disc_timeout;
   tBLE_BD_ADDR_SERIALIZED serialized_bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   Uuid local_uuids[BT_MAX_NUM_UUIDS];

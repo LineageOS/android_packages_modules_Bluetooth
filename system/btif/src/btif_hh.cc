@@ -1026,8 +1026,6 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
 void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MASK attr_mask,
                              uint8_t sub_class, uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info,
                              bool reconnect_allowed) {
-  btif_hh_device_t* p_dev;
-  uint8_t i;
   tAclLinkSpec link_spec = link_spec_ref;
 
   if (link_spec.transport == BT_TRANSPORT_AUTO) {
