@@ -66,7 +66,6 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.Binder;
-import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.platform.test.annotations.EnableFlags;
@@ -76,7 +75,7 @@ import android.sysprop.BluetoothProperties;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.bass_client.BassClientService;
@@ -164,6 +163,7 @@ public class LeAudioServiceTest {
     private final BluetoothDevice mBroadcastDevice = getTestDevice("FF:FF:FF:FF:FF:FF");
 
     private LeAudioService mService;
+    private TestLooper mLooper;
     private static final int TEST_GROUP_ID = 1;
     private boolean onGroupStatusCallbackCalled = false;
     private boolean onGroupStreamStatusCallbackCalled = false;
@@ -345,9 +345,14 @@ public class LeAudioServiceTest {
                 .when(mVolumeControlService)
                 .syncPost(any(), any());
 
+        mLooper = new TestLooper();
+
         mService =
                 new LeAudioService(
-                        mAdapterService, mNativeInterface, mLeAudioBroadcasterNativeInterface);
+                        mAdapterService,
+                        mLooper.getLooper(),
+                        mNativeInterface,
+                        mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
         mService.mServiceFactory = mServiceFactory;
 
@@ -399,6 +404,7 @@ public class LeAudioServiceTest {
                                     LeAudioService service =
                                             new LeAudioService(
                                                     mAdapterService,
+                                                    mLooper.getLooper(),
                                                     mNativeInterface,
                                                     mLeAudioBroadcasterNativeInterface);
                                     return service.getTmapRoleMask();
@@ -1726,7 +1732,7 @@ public class LeAudioServiceTest {
 
         injectGroupStatusChange(groupId, groupStatus);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupStatusCallbackCalled).isTrue();
 
         onGroupStatusCallbackCalled = false;
@@ -1787,7 +1793,7 @@ public class LeAudioServiceTest {
 
         injectGroupStreamStatusChange(groupId, groupStreamStatus);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupStreamStatusCallbackCalled).isTrue();
 
         onGroupStreamStatusCallbackCalled = false;
@@ -1904,7 +1910,7 @@ public class LeAudioServiceTest {
         // Inject configuration and check that AF is NOT notified.
         injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_48KHZ_CONFIG);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         mInOrder.verify(mAudioManager, never())
@@ -1925,7 +1931,7 @@ public class LeAudioServiceTest {
 
         injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_16KHZ_CONFIG);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         mInOrder.verify(mAudioManager, never())
@@ -1997,7 +2003,7 @@ public class LeAudioServiceTest {
 
         injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         mInOrder.verify(mAudioManager, times(2))
@@ -2018,7 +2024,7 @@ public class LeAudioServiceTest {
 
         injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         mInOrder.verify(mAudioManager, times(2))
@@ -2091,7 +2097,7 @@ public class LeAudioServiceTest {
 
         injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         mInOrder.verify(mAudioManager, times(2))
@@ -2112,7 +2118,7 @@ public class LeAudioServiceTest {
 
         injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, LC3_48KHZ_CONFIG, LC3_48KHZ_CONFIG);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         mInOrder.verify(mAudioManager, never())
@@ -2176,7 +2182,7 @@ public class LeAudioServiceTest {
                 TEST_GROUP_ID, INPUT_EMPTY_CONFIG, OUTPUT_SELECTABLE_CONFIG);
         injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, EMPTY_CONFIG, LC3_48KHZ_CONFIG);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(onGroupCodecConfChangedCallbackCalled).isTrue();
 
         onGroupCodecConfChangedCallbackCalled = false;
@@ -2335,7 +2341,7 @@ public class LeAudioServiceTest {
         injectAudioConfChanged(mSingleDevice, groupId, availableContexts, direction);
 
         assertThat(mService.setActiveDevice(mLeftDevice)).isTrue();
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         doReturn(-1).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId);
         // Set group and device as active.
@@ -2354,7 +2360,7 @@ public class LeAudioServiceTest {
         mInOrder.verify(mAudioManager)
                 .handleBluetoothActiveDeviceChanged(
                         eq(null), any(), any(BluetoothProfileConnectionInfo.class));
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         doReturn(100).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId);
 
@@ -2390,7 +2396,7 @@ public class LeAudioServiceTest {
         // Add location support.
         injectAudioConfChanged(mSingleDevice, groupId, availableContexts, direction);
         assertThat(mService.setActiveDevice(mLeftDevice)).isTrue();
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         doReturn(volume).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId);
         doReturn(volume).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId2);
@@ -2408,7 +2414,7 @@ public class LeAudioServiceTest {
         mInOrder.verify(mAudioManager)
                 .handleBluetoothActiveDeviceChanged(
                         eq(null), any(), any(BluetoothProfileConnectionInfo.class));
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         // Verify setGroupVolume will not be called if no synced sinks
         doReturn(new ArrayList<>()).when(mBassClientService).getSyncedBroadcastSinks();

@@ -61,7 +61,6 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
@@ -127,7 +126,7 @@ public class LeAudioService extends ConnectableProfile {
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
     /* 5 seconds timeout for Broadcast streaming state transition */
-    private static final int CREATE_BROADCAST_TIMEOUT_MS = 5000;
+    @VisibleForTesting static final int CREATE_BROADCAST_TIMEOUT_MS = 5000;
 
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static LeAudioService sLeAudioService;
@@ -229,12 +228,13 @@ public class LeAudioService extends ConnectableProfile {
     BluetoothLeScanner mAudioServersScanner;
 
     public LeAudioService(AdapterService adapterService) {
-        this(adapterService, null, null);
+        this(adapterService, null, null, null);
     }
 
     @VisibleForTesting
     LeAudioService(
             AdapterService adapterService,
+            Looper looper,
             LeAudioNativeInterface nativeInterface,
             LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface) {
         super(BluetoothProfile.LE_AUDIO, requireNonNull(adapterService));
@@ -242,6 +242,12 @@ public class LeAudioService extends ConnectableProfile {
                 requireNonNullElseGet(
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
+
+        if (looper == null) {
+            mHandler = new Handler(Looper.getMainLooper());
+        } else {
+            mHandler = new Handler(looper);
+        }
 
         // Start handler thread for state machines
         mStateMachinesThread = new HandlerThread("LeAudioService.StateMachines");
@@ -669,7 +675,7 @@ public class LeAudioService extends ConnectableProfile {
     private final Map<Integer, LeAudioBroadcastSessionStats> mBroadcastSessionStats =
             new LinkedHashMap<>();
 
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private final Handler mHandler;
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
     private final AudioModeChangeListener mAudioModeChangeListener = new AudioModeChangeListener();

@@ -70,7 +70,6 @@ import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.Binder;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.platform.test.annotations.EnableFlags;
@@ -81,7 +80,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
@@ -137,7 +136,6 @@ public class LeAudioBroadcastServiceTest {
     // TODO(b/422543753) Delete on flag cleanup
     @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
 
-    private static final int CREATE_BROADCAST_TIMEOUT_MS = 6000;
     private static final String TEST_MAC_ADDRESS = "00:11:22:33:44:55";
     private static final int TEST_BROADCAST_ID = 42;
     private static final int TEST_ADVERTISER_SID = 1234;
@@ -180,6 +178,7 @@ public class LeAudioBroadcastServiceTest {
 
     private LeAudioService mService;
     private InOrder mInOrder;
+    private TestLooper mLooper;
 
     @Before
     public void setUp() throws Exception {
@@ -198,10 +197,6 @@ public class LeAudioBroadcastServiceTest {
         LeAudioObjectsFactory.setInstanceForTesting(mObjectsFactory);
         doReturn(mTmapGattServer).when(mObjectsFactory).getTmapGattServer(any());
 
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
-
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(true).when(mAdapterService).isLeAudioBroadcastSourceSupported();
         doReturn(
@@ -216,9 +211,12 @@ public class LeAudioBroadcastServiceTest {
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
+        mLooper = new TestLooper();
+
         mService =
                 new LeAudioService(
                         mAdapterService,
+                        mLooper.getLooper(),
                         mLeAudioNativeInterface,
                         mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
@@ -300,7 +298,7 @@ public class LeAudioBroadcastServiceTest {
 
         // Check if metadata is requested when the broadcast starts to stream
         verify(mLeAudioBroadcasterNativeInterface).getBroadcastMetadata(eq(broadcastId));
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         verify(mCallbacks, never()).onBroadcastStartFailed(anyInt());
         verify(mCallbacks)
@@ -326,7 +324,7 @@ public class LeAudioBroadcastServiceTest {
         state_event.valueInt1 = broadcastId;
         mService.messageFromNative(state_event);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         // Verify broadcast audio session is logged when session stopped
         verify(mMetricsLogger)
@@ -418,7 +416,7 @@ public class LeAudioBroadcastServiceTest {
         create_event.valueBool1 = false;
         mService.messageFromNative(create_event);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         // Verify broadcast audio session is logged when session failed to create
         verify(mMetricsLogger)
@@ -452,8 +450,9 @@ public class LeAudioBroadcastServiceTest {
         BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
         mService.createBroadcast(settings);
 
-        verify(mCallbacks, timeout(CREATE_BROADCAST_TIMEOUT_MS))
-                .onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
+        mLooper.moveTimeForward(LeAudioService.CREATE_BROADCAST_TIMEOUT_MS);
+        mLooper.dispatchAll();
+        verify(mCallbacks).onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
     }
 
     @Test
@@ -569,7 +568,7 @@ public class LeAudioBroadcastServiceTest {
         // Stop non-existing broadcast
         mService.stopBroadcast(broadcastId);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         verify(mCallbacks, never()).onBroadcastStopped(anyInt(), anyInt());
         verify(mCallbacks)
@@ -584,7 +583,7 @@ public class LeAudioBroadcastServiceTest {
                         .build();
         mService.updateBroadcast(broadcastId, buildBroadcastSettingsFromMetadata(meta, null, 1));
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         verify(mCallbacks, never()).onBroadcastUpdated(anyInt(), anyInt());
         verify(mCallbacks).onBroadcastUpdateFailed(anyInt(), anyInt());
@@ -658,7 +657,7 @@ public class LeAudioBroadcastServiceTest {
         create_event.valueBool1 = true;
         mService.messageFromNative(create_event);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         // Before metadata is updated, getAllBroadcastMetadata should not return null element
         assertThat(mService.getAllBroadcastMetadata()).doesNotContain(null);
@@ -670,7 +669,7 @@ public class LeAudioBroadcastServiceTest {
         state_event.broadcastMetadata = createBroadcastMetadata();
         mService.messageFromNative(state_event);
 
-        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+        mLooper.dispatchAll();
 
         assertThat(mService.getAllBroadcastMetadata())
                 .containsExactly(state_event.broadcastMetadata);
@@ -870,7 +869,7 @@ public class LeAudioBroadcastServiceTest {
                         .build();
         BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         verifyBroadcastStarted(broadcastId, settings);
         Mockito.clearInvocations(mCallbacks);
@@ -878,7 +877,7 @@ public class LeAudioBroadcastServiceTest {
         // verify creating another broadcast will fail
         mService.createBroadcast(settings);
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
 
         verify(mCallbacks, never()).onBroadcastStarted(anyInt(), anyInt());
         verify(mCallbacks)
@@ -1341,7 +1340,7 @@ public class LeAudioBroadcastServiceTest {
         verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice2));
         verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
 
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
         assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId2);
 
         verify(mLeAudioCallbacks).onBroadcastToUnicastFallbackGroupChanged(groupId2);
@@ -1426,7 +1425,7 @@ public class LeAudioBroadcastServiceTest {
         verifyConnectionStateIntent(device, STATE_DISCONNECTED, STATE_DISCONNECTING);
         assertThat(mService.getConnectionState(device)).isEqualTo(STATE_DISCONNECTED);
         mService.deviceDisconnected(device, false);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mLooper.dispatchAll();
     }
 
     @Test
