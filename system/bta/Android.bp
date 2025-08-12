@@ -1660,7 +1660,6 @@ cc_test {
 
 cc_test {
     name: "sniff_offload_config_reader_test",
-    team: "trendy_team_bluetooth",
     srcs: [
         "dm/sniff_offload/sniff_offload_config_reader.cc",
         "dm/sniff_offload/sniff_offload_config_reader_test.cc",

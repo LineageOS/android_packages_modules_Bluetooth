@@ -367,7 +367,6 @@ cc_defaults {
 
 cc_fuzz {
     name: "sdp-fuzzer",
-    team: "trendy_team_bluetooth",
     defaults: [
         "sdp_fuzzer_default",
     ],
@@ -505,7 +504,6 @@ cc_defaults {
 
 cc_fuzz {
     name: "gatt-fuzzer",
-    team: "trendy_team_bluetooth",
     defaults: [
         "gatt_fuzzer_default",
     ],
@@ -569,7 +567,6 @@ cc_defaults {
 
 cc_fuzz {
     name: "smp-fuzzer",
-    team: "trendy_team_bluetooth",
     defaults: [
         "smp_fuzzer_default",
     ],
@@ -622,7 +619,6 @@ cc_defaults {
 
 cc_fuzz {
     name: "bnep-fuzzer",
-    team: "trendy_team_bluetooth",
     defaults: [
         "bnep_fuzzer_default",
     ],
@@ -684,7 +680,6 @@ cc_defaults {
 
 cc_fuzz {
     name: "avrc-fuzzer",
-    team: "trendy_team_bluetooth",
     defaults: [
         "avrc_fuzzer_default",
     ],
@@ -752,7 +747,6 @@ cc_defaults {
 
 cc_fuzz {
     name: "l2cap-fuzzer",
-    team: "trendy_team_bluetooth",
     defaults: [
         "l2cap_fuzzer_default",
     ],

@@ -1,6 +1,7 @@
 package {
     default_visibility: [":__subpackages__"],
     default_applicable_licenses: ["system_bt_license"],
+    default_team: "trendy_team_bluetooth",
 }
 
 // Added automatically by a large-scale-change that took the approach of
