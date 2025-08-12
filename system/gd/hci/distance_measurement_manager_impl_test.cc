@@ -366,7 +366,7 @@ struct CsModule {
     uint8_t packet_antenna = 1;  // 0x01 to 0x04
     if (role == CsRole::INITIATOR) {
       uint16_t measured_freq_offset = 0;
-      return GetCsStepData<LeCsMode0InitatorData>(LeCsMode0InitatorData(
+      return GetCsStepData<LeCsMode0InitiatorData>(LeCsMode0InitiatorData(
               packet_quality, packet_rssi, packet_antenna, measured_freq_offset));
     }
     // reflector
@@ -406,11 +406,12 @@ struct CsModule {
     }
     if (cs_role == CsRole::INITIATOR) {
       if (has_packet_pct) {
-        return GetCsStepData<LeCsMode1InitatorDataWithPacketPct>(LeCsMode1InitatorDataWithPacketPct(
-                packet_quality, nadm, packet_rssi, toa_tod_initiator, packet_antenna, packet_pct1,
-                packet_pct2));
+        return GetCsStepData<LeCsMode1InitiatorDataWithPacketPct>(
+                LeCsMode1InitiatorDataWithPacketPct(packet_quality, nadm, packet_rssi,
+                                                    toa_tod_initiator, packet_antenna, packet_pct1,
+                                                    packet_pct2));
       } else {
-        return GetCsStepData<LeCsMode1InitatorData>(LeCsMode1InitatorData(
+        return GetCsStepData<LeCsMode1InitiatorData>(LeCsMode1InitiatorData(
                 packet_quality, nadm, packet_rssi, toa_tod_initiator, packet_antenna));
       }
     } else {

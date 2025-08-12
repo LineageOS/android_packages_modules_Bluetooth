@@ -81,7 +81,7 @@ static inline int16_t ConvertToSigned(uint16_t num) {
 }
 
 struct Mode0Data {
-  Mode0Data(const hci::LeCsMode0InitatorData& le_cs_mode0_data)
+  Mode0Data(const hci::LeCsMode0InitiatorData& le_cs_mode0_data)
       : packet_quality_(le_cs_mode0_data.packet_quality_),
         packet_rssi_(le_cs_mode0_data.packet_rssi_),
         packet_antenna_(le_cs_mode0_data.packet_antenna_),
@@ -100,14 +100,14 @@ struct Mode0Data {
 
 struct Mode1Data {
   Mode1Data() {}
-  Mode1Data(const hci::LeCsMode1InitatorData& le_cs_mode1_data)
+  Mode1Data(const hci::LeCsMode1InitiatorData& le_cs_mode1_data)
       : packet_quality_(le_cs_mode1_data.packet_quality_),
         packet_nadm_(le_cs_mode1_data.packet_nadm_),
         packet_rssi_(le_cs_mode1_data.packet_rssi_),
         rtt_toa_tod_data_(le_cs_mode1_data.toa_tod_initiator_),
         packet_antenna_(le_cs_mode1_data.packet_antenna_) {}
 
-  Mode1Data(const hci::LeCsMode1InitatorDataWithPacketPct& le_cs_mode1_data)
+  Mode1Data(const hci::LeCsMode1InitiatorDataWithPacketPct& le_cs_mode1_data)
       : packet_quality_(le_cs_mode1_data.packet_quality_),
         packet_nadm_(le_cs_mode1_data.packet_nadm_),
         packet_rssi_(le_cs_mode1_data.packet_rssi_),
@@ -136,14 +136,14 @@ struct Mode1Data {
         i_packet_pct2_(le_cs_mode1_data.packet_pct2_.i_sample_),
         q_packet_pct2_(le_cs_mode1_data.packet_pct2_.q_sample_) {}
 
-  Mode1Data(const hci::LeCsMode3InitatorData& le_cs_mode3_data)
+  Mode1Data(const hci::LeCsMode3InitiatorData& le_cs_mode3_data)
       : packet_quality_(le_cs_mode3_data.packet_quality_),
         packet_nadm_(le_cs_mode3_data.packet_nadm_),
         packet_rssi_(le_cs_mode3_data.packet_rssi_),
         rtt_toa_tod_data_(le_cs_mode3_data.toa_tod_initiator_),
         packet_antenna_(le_cs_mode3_data.packet_antenna_) {}
 
-  Mode1Data(const hci::LeCsMode3InitatorDataWithPacketPct& le_cs_mode3_data)
+  Mode1Data(const hci::LeCsMode3InitiatorDataWithPacketPct& le_cs_mode3_data)
       : packet_quality_(le_cs_mode3_data.packet_quality_),
         packet_nadm_(le_cs_mode3_data.packet_nadm_),
         packet_rssi_(le_cs_mode3_data.packet_rssi_),
@@ -191,13 +191,13 @@ struct Mode2Data {
               std::back_inserter(tone_data_with_qualities_));
   }
 
-  Mode2Data(const hci::LeCsMode3InitatorData& le_cs_mode3_data)
+  Mode2Data(const hci::LeCsMode3InitiatorData& le_cs_mode3_data)
       : antenna_permutation_index_(le_cs_mode3_data.antenna_permutation_index_) {
     std::copy(le_cs_mode3_data.tone_data_.begin(), le_cs_mode3_data.tone_data_.end(),
               std::back_inserter(tone_data_with_qualities_));
   }
 
-  Mode2Data(const hci::LeCsMode3InitatorDataWithPacketPct& le_cs_mode3_data)
+  Mode2Data(const hci::LeCsMode3InitiatorDataWithPacketPct& le_cs_mode3_data)
       : antenna_permutation_index_(le_cs_mode3_data.antenna_permutation_index_) {
     std::copy(le_cs_mode3_data.tone_data_.begin(), le_cs_mode3_data.tone_data_.end(),
               std::back_inserter(tone_data_with_qualities_));
@@ -220,10 +220,10 @@ struct Mode2Data {
 };
 
 struct Mode3Data {
-  Mode3Data(const hci::LeCsMode3InitatorData& le_cs_mode3_data)
+  Mode3Data(const hci::LeCsMode3InitiatorData& le_cs_mode3_data)
       : mode1_data_(le_cs_mode3_data), mode2_data_(le_cs_mode3_data) {}
 
-  Mode3Data(const hci::LeCsMode3InitatorDataWithPacketPct& le_cs_mode3_data)
+  Mode3Data(const hci::LeCsMode3InitiatorDataWithPacketPct& le_cs_mode3_data)
       : mode1_data_(le_cs_mode3_data), mode2_data_(le_cs_mode3_data) {}
 
   Mode3Data(const hci::LeCsMode3ReflectorData& le_cs_mode3_data)
