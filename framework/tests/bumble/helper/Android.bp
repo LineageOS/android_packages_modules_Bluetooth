@@ -11,7 +11,7 @@ android_test_helper_app {
     name: "BumbleBluetoothTestsHelperApp",
     defaults: ["framework-bluetooth-tests-defaults"],
 
-    min_sdk_version: "current",
+    min_sdk_version: "36",
     target_sdk_version: "current",
 
     jarjar_rules: ":bluetooth-jarjar-rules",
