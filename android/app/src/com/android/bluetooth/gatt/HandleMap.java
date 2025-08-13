@@ -72,15 +72,6 @@ class HandleMap {
         boolean mAdvertisePreferred = false;
         boolean mStarted = false;
 
-        Entry(int serverIf, int handle, UUID uuid, int serviceType, int instance) {
-            mServerIf = serverIf;
-            mType = Type.SERVICE;
-            mHandle = handle;
-            mUuid = uuid;
-            mInstance = instance;
-            mServiceType = serviceType;
-        }
-
         Entry(
                 int serverIf,
                 int handle,
