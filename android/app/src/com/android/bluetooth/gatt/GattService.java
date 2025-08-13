@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.gatt;
 
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
@@ -40,7 +39,6 @@ import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributi
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -144,7 +142,7 @@ public class GattService extends ProfileService {
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
     /** List of our registered clients. */
-    @VisibleForTesting ContextMap<IBluetoothGattCallback> mClientMap = new ContextMap<>();
+    ContextMap<IBluetoothGattCallback> mClientMap = new ContextMap<>();
 
     /** List of our registered server apps. */
     @VisibleForTesting ContextMap<IBluetoothGattServerCallback> mServerMap = new ContextMap<>();
@@ -155,7 +153,7 @@ public class GattService extends ProfileService {
     /**
      * Set of restricted (which require a BLUETOOTH_PRIVILEGED permission) handles per connectionId.
      */
-    @VisibleForTesting final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
+    final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
 
     /** Server handle map. */
     private final HandleMap mHandleMap = new HandleMap();
@@ -356,32 +354,6 @@ public class GattService extends ProfileService {
             unregisterClient(
                     mCallback, getAttributionSource(), ContextMap.RemoveReason.REASON_BINDER_DIED);
         }
-    }
-
-    // Suppressed because we are conditionally enforcing
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    // * Only called from {@code GattServiceBinder} */
-    void permissionCheck(IBluetoothGattCallback callback, BluetoothDevice device, int handle) {
-        final var clientApp = mClientMap.getByCallbackId(callback);
-        if (clientApp == null) {
-            Log.w(TAG, "(" + callback + ") - App not registered");
-            return;
-        }
-        final var connId = getFirstConnectionIdForDevice(clientApp.id, device);
-        if (connId == null) {
-            Log.e(TAG, "(" + device + ") - No connection");
-            return;
-        }
-
-        if (!isHandleRestricted(connId, handle)) {
-            return;
-        }
-        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-    }
-
-    private boolean isHandleRestricted(int connId, int handle) {
-        Set<Integer> restrictedHandles = mRestrictedHandles.get(connId);
-        return restrictedHandles != null && restrictedHandles.contains(handle);
     }
 
     /**************************************************************************
