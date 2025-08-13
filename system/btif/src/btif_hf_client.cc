@@ -652,7 +652,7 @@ static bt_status_t query_current_operator_name(const RawAddress bd_addr) {
 
 /*******************************************************************************
  *
- * Function         retieve_subscriber_info
+ * Function         retrieve_subscriber_info
  *
  * Description      retrieve subscriber number information
  *

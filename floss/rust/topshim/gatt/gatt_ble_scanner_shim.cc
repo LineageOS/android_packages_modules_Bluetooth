@@ -333,7 +333,7 @@ void BleScannerIntf::OnMsftAdvMonitorRemoveCallback(uint8_t status) {
   rusty::gdscan_msft_adv_monitor_remove_callback(status);
 }
 
-void BleScannerIntf::OnMsftAdvMonitorEnableCallback(uint8_t status) {
+void BleScannerIntf::OnMsftAdvMonitorEnableCallback(bool /* enable */, uint8_t status) {
   rusty::gdscan_msft_adv_monitor_enable_callback(status);
 }
 

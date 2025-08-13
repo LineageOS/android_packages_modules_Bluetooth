@@ -2725,7 +2725,7 @@ static bt_status_t get_playback_state_cmd(const RawAddress& bd_addr) {
  *
  * Description      Fetch the now playing list
  *
- * Paramters        start_item: First item to fetch (0 to fetch from beganning)
+ * Parameters       start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
@@ -2772,7 +2772,7 @@ static bt_status_t get_item_attribute_cmd(uint64_t uid, int scope, uint8_t /*num
  *
  * Description      Fetch the currently selected folder list
  *
- * Paramters        start_item: First item to fetch (0 to fetch from beganning)
+ * Parameters       start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
@@ -2791,7 +2791,7 @@ static bt_status_t get_folder_list_cmd(const RawAddress& bd_addr, uint32_t start
  *
  * Description      Fetch the player list
  *
- * Paramters        start_item: First item to fetch (0 to fetch from beganning)
+ * Parameters       start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
@@ -2810,7 +2810,7 @@ static bt_status_t get_player_list_cmd(const RawAddress& bd_addr, uint32_t start
  *
  * Description      Change the folder.
  *
- * Paramters        direction: Direction (Up/Down) to change folder
+ * Parameters       direction: Direction (Up/Down) to change folder
  *                  uid: The UID of folder to move to
  *                  start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
@@ -2846,7 +2846,7 @@ static bt_status_t change_folder_path_cmd(const RawAddress& bd_addr, uint8_t dir
  *
  * Description      Change the browsed player.
  *
- * Paramters        id: The UID of player to move to
+ * Parameters       id: The UID of player to move to
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
@@ -2873,7 +2873,7 @@ static bt_status_t set_browsed_player_cmd(const RawAddress& bd_addr, uint16_t id
  **
  ** Description      Change the addressed player.
  **
- ** Paramters        id: The UID of player to move to
+ ** Parameters       id: The UID of player to move to
  **
  ** Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  **                  BT_STATUS_FAIL.
@@ -2902,7 +2902,7 @@ static bt_status_t set_addressed_player_cmd(const RawAddress& bd_addr, uint16_t 
  * Description      Helper function to browse the content hierarchy of the
  *                  TG device.
  *
- * Paramters        scope: AVRC_SCOPE_NOW_PLAYING (etc) for various browseable
+ * Parameters       scope: AVRC_SCOPE_NOW_PLAYING (etc) for various browseable
  *                  content
  *                  start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffff to fetch until end)

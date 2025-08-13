@@ -96,7 +96,8 @@ public:
   uint16_t service_handle = GAP_INVALID_HANDLE;
   bool is_gatt_service_valid = false;
 
-  GattServiceDevice(const RawAddress& addr, bool /*first_connection*/) : addr(addr) {}
+  GattServiceDevice(const RawAddress& addr, bool connecting)
+      : addr(addr), connecting_actively(connecting) {}
 
   GattServiceDevice() : GattServiceDevice(RawAddress::kEmpty, false) {}
 

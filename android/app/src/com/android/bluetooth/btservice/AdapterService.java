@@ -4081,29 +4081,30 @@ public class AdapterService extends Service {
         return getStartedProfile(id).flatMap(ProfileService::getBinder).orElse(null);
     }
 
-    boolean isMediaProfileConnected() {
+    private boolean isMediaProfileConnected() {
         if (getA2dpService().map(a2dp -> a2dp.getConnectedDevices().size() > 0).orElse(false)) {
             Log.d(TAG, "isMediaProfileConnected. A2dp is connected");
             return true;
-        } else if (getHearingAidService()
+        }
+        if (getHearingAidService()
                 .map(hearingAid -> hearingAid.getConnectedDevices().size() > 0)
                 .orElse(false)) {
             Log.d(TAG, "isMediaProfileConnected. HearingAid is connected");
             return true;
-        } else if (getLeAudioService()
+        }
+        if (getLeAudioService()
                 .map(leAudio -> leAudio.getConnectedDevices().size() > 0)
                 .orElse(false)) {
             Log.d(TAG, "isMediaProfileConnected. LeAudio is connected");
             return true;
-        } else {
-            Log.d(
-                    TAG,
-                    "isMediaProfileConnected: no Media connected."
-                            + (" A2dp=" + getA2dpService())
-                            + (" HearingAid=" + getHearingAidService())
-                            + (" LeAudio=" + getLeAudioService()));
-            return false;
         }
+        Log.d(
+                TAG,
+                "isMediaProfileConnected: no Media connected."
+                        + (" A2dp=" + getA2dpService())
+                        + (" HearingAid=" + getHearingAidService())
+                        + (" LeAudio=" + getLeAudioService()));
+        return false;
     }
 
     List<BluetoothDevice> getConnectedMediaDevices(int profile) {

@@ -1991,8 +1991,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
         switch (mode) {
           case 0: {
             if (remote_role == CsRole::INITIATOR) {
-              LeCsMode0InitatorData tone_data;
-              after = LeCsMode0InitatorData::Parse(&tone_data, parse_index);
+              LeCsMode0InitiatorData tone_data;
+              after = LeCsMode0InitiatorData::Parse(&tone_data, parse_index);
               if (after == parse_index) {
                 log::warn("Error invalid mode {} data, role:{}", step_mode.mode_type_,
                           CsRoleText(remote_role));
@@ -2021,8 +2021,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
           case 1: {
             if (remote_role == CsRole::INITIATOR) {
               if (procedure_data->contains_sounding_sequence_remote_) {
-                LeCsMode1InitatorDataWithPacketPct tone_data;
-                after = LeCsMode1InitatorDataWithPacketPct::Parse(&tone_data, parse_index);
+                LeCsMode1InitiatorDataWithPacketPct tone_data;
+                after = LeCsMode1InitiatorDataWithPacketPct::Parse(&tone_data, parse_index);
                 if (after == parse_index) {
                   log::warn("Error invalid mode {} data, role:{}", step_mode.mode_type_,
                             CsRoleText(remote_role));
@@ -2036,8 +2036,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
                                                                   hal::Mode1Data(tone_data));
                 }
               } else {
-                LeCsMode1InitatorData tone_data;
-                after = LeCsMode1InitatorData::Parse(&tone_data, parse_index);
+                LeCsMode1InitiatorData tone_data;
+                after = LeCsMode1InitiatorData::Parse(&tone_data, parse_index);
                 if (after == parse_index) {
                   log::warn("Error invalid mode {} data, role:{}", step_mode.mode_type_,
                             CsRoleText(remote_role));
@@ -2173,9 +2173,9 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
             std::vector<LeCsToneDataWithQuality> view_tone_data = {};
             if (remote_role == CsRole::INITIATOR) {
               if (procedure_data->contains_sounding_sequence_local_) {
-                LeCsMode3InitatorDataWithPacketPct tone_data_view;
-                after = LeCsMode3InitatorDataWithPacketPct::Parse(&tone_data_view,
-                                                                  packet_bytes_view.begin());
+                LeCsMode3InitiatorDataWithPacketPct tone_data_view;
+                after = LeCsMode3InitiatorDataWithPacketPct::Parse(&tone_data_view,
+                                                                   packet_bytes_view.begin());
                 if (after == packet_bytes_view.begin()) {
                   log::warn("Error invalid mode {} data, role:{}", step_mode.mode_type_,
                             CsRoleText(remote_role));
@@ -2196,8 +2196,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
                                                                   hal::Mode3Data(tone_data_view));
                 }
               } else {
-                LeCsMode3InitatorData tone_data_view;
-                after = LeCsMode3InitatorData::Parse(&tone_data_view, packet_bytes_view.begin());
+                LeCsMode3InitiatorData tone_data_view;
+                after = LeCsMode3InitiatorData::Parse(&tone_data_view, packet_bytes_view.begin());
                 if (after == packet_bytes_view.begin()) {
                   log::warn("Error invalid mode {} data, role:{}", step_mode.mode_type_,
                             CsRoleText(remote_role));
@@ -2499,8 +2499,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       switch (mode) {
         case 0: {
           if (role == CsRole::INITIATOR) {
-            LeCsMode0InitatorData tone_data_view;
-            auto after = LeCsMode0InitatorData::Parse(&tone_data_view, iterator);
+            LeCsMode0InitiatorData tone_data_view;
+            auto after = LeCsMode0InitiatorData::Parse(&tone_data_view, iterator);
             if (after == iterator) {
               log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
               print_raw_data(result_data_structure.step_data_);
@@ -2530,8 +2530,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
         case 1: {
           if (role == CsRole::INITIATOR) {
             if (procedure_data.contains_sounding_sequence_local_) {
-              LeCsMode1InitatorDataWithPacketPct tone_data_view;
-              auto after = LeCsMode1InitatorDataWithPacketPct::Parse(&tone_data_view, iterator);
+              LeCsMode1InitiatorDataWithPacketPct tone_data_view;
+              auto after = LeCsMode1InitiatorDataWithPacketPct::Parse(&tone_data_view, iterator);
               if (after == iterator) {
                 log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
                 print_raw_data(result_data_structure.step_data_);
@@ -2546,8 +2546,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
                                                              hal::Mode1Data(tone_data_view));
               }
             } else {
-              LeCsMode1InitatorData tone_data_view;
-              auto after = LeCsMode1InitatorData::Parse(&tone_data_view, iterator);
+              LeCsMode1InitiatorData tone_data_view;
+              auto after = LeCsMode1InitiatorData::Parse(&tone_data_view, iterator);
               if (after == iterator) {
                 log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
                 print_raw_data(result_data_structure.step_data_);
@@ -2655,8 +2655,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
           std::vector<LeCsToneDataWithQuality> view_tone_data = {};
           if (role == CsRole::INITIATOR) {
             if (procedure_data.contains_sounding_sequence_local_) {
-              LeCsMode3InitatorDataWithPacketPct tone_data_view;
-              auto after = LeCsMode3InitatorDataWithPacketPct::Parse(&tone_data_view, iterator);
+              LeCsMode3InitiatorDataWithPacketPct tone_data_view;
+              auto after = LeCsMode3InitiatorDataWithPacketPct::Parse(&tone_data_view, iterator);
               if (after == iterator) {
                 log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
                 print_raw_data(result_data_structure.step_data_);
@@ -2675,8 +2675,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               view_tone_data.reserve(tone_data.size());
               view_tone_data.insert(view_tone_data.end(), tone_data.begin(), tone_data.end());
             } else {
-              LeCsMode3InitatorData tone_data_view;
-              auto after = LeCsMode3InitatorData::Parse(&tone_data_view, iterator);
+              LeCsMode3InitiatorData tone_data_view;
+              auto after = LeCsMode3InitiatorData::Parse(&tone_data_view, iterator);
               if (after == iterator) {
                 log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
                 print_raw_data(result_data_structure.step_data_);

@@ -6903,7 +6903,7 @@ packet LeCsProcedureEnableComplete : LeMetaEvent (subevent_code = LE_CS_PROCEDUR
   max_procedure_len : 16,
 }
 
-struct LeCsMode0InitatorData {
+struct LeCsMode0InitiatorData {
   packet_quality : 8,
   packet_rssi : 8,
   packet_antenna : 8,
@@ -6934,7 +6934,7 @@ struct LeCsPacketPct {
   _reserved_ : 8,
 }
 
-struct LeCsMode1InitatorData {
+struct LeCsMode1InitiatorData {
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
   packet_rssi : 8,
@@ -6942,7 +6942,7 @@ struct LeCsMode1InitatorData {
   packet_antenna : 8,
 }
 
-struct LeCsMode1InitatorDataWithPacketPct {
+struct LeCsMode1InitiatorDataWithPacketPct {
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
   packet_rssi : 8,
@@ -6982,7 +6982,7 @@ struct LeCsMode2Data {
   tone_data : LeCsToneDataWithQuality[],
 }
 
-struct LeCsMode3InitatorData {
+struct LeCsMode3InitiatorData {
   _count_(tone_data) : 8,
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
@@ -6993,7 +6993,7 @@ struct LeCsMode3InitatorData {
   tone_data : LeCsToneDataWithQuality[],
 }
 
-struct LeCsMode3InitatorDataWithPacketPct {
+struct LeCsMode3InitiatorDataWithPacketPct {
   _count_(tone_data) : 8,
   packet_quality : 8,
   packet_nadm : CsPacketNadm,

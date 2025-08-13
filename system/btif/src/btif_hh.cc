@@ -1372,7 +1372,7 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
     return BT_STATUS_SUCCESS;
   }
 
-  /* Not checking the NORMALLY_Connectible flags from sdp record, and anyways
+  /* Not checking the NORMALLY_Connectable flags from sdp record, and anyways
    sending this request from host, for subsequent user initiated connection.
    If the remote is not in pagescan mode, we will do 2 retries to connect before
    giving up */

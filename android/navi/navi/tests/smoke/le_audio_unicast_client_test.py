@@ -15,13 +15,13 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Sequence
 import contextlib
 import decimal
 import struct
 import sys
 import tempfile
-from typing import Sequence, TYPE_CHECKING, TypeAlias
-from unittest import mock
+from typing import TYPE_CHECKING, TypeAlias
 import wave
 
 from bumble import core
@@ -226,24 +226,6 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         self.dut_mcp_enabled = (self.dut.getprop(_AndroidProperty.MCP_SERVER_ENABLED) == "true")
         self.dut_ccp_enabled = (self.dut.getprop(_AndroidProperty.CCP_SERVER_ENABLED) == "true")
 
-        # TODO: Remove this when Bumble is fixed and synced.
-        origin_on_enable = ascs.AseStateMachine.on_enable
-
-        def on_enable(ase: ascs.AseStateMachine,
-                      metadata: bytes) -> tuple[ascs.AseResponseCode, ascs.AseReasonCode]:
-            res = origin_on_enable(ase, metadata)
-            # CIS could be established before enable.
-            if cis_link := next(
-                (cis_link for cis_link in ase.service.device.cis_links.values()
-                 if cis_link.cig_id == ase.cig_id and cis_link.cis_id == ase.cis_id),
-                    None,
-            ):
-                ase.on_cis_establishment(cis_link)
-            return res
-
-        self.test_class_context.enter_context(
-            mock.patch.object(ascs.AseStateMachine, "on_enable", new=on_enable))
-
     @override
     async def async_setup_test(self) -> None:
         # Disable the allow list to allow the connect LE Audio to Bumble.
@@ -421,10 +403,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
 
         self.logger.info("[DUT] Start audio recording")
-        recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
-            _RECORDING_PATH,
-            source=bl4a_api.AudioRecorder.Source.VOICE_PERFORMANCE,
-        ))
+        recorder = await asyncio.to_thread(
+            lambda: self.dut.bl4a.start_audio_recording(_RECORDING_PATH))
         self.test_case_context.push(recorder)
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -478,13 +458,6 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         )
         sink_ase = self.ref_ascs.ase_state_machines[_SINK_ASE_ID]
         source_ase = self.ref_ascs.ase_state_machines[_SOURCE_ASE_ID]
-        self.dut.bl4a.set_audio_attributes(
-            bl4a_api.AudioAttributes(
-                usage=bl4a_api.AudioAttributes.Usage.VOICE_COMMUNICATION,
-                content_type=bl4a_api.AudioAttributes.ContentType.SPEECH,
-            ),
-            handle_audio_focus=False,
-        )
 
         with call:
             await dut_telecom_cb.wait_for_event(
@@ -509,10 +482,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
 
             self.logger.info("[DUT] Start audio recording")
-            recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
-                _RECORDING_PATH,
-                source=bl4a_api.AudioRecorder.Source.VOICE_COMMUNICATION,
-            ))
+            recorder = await asyncio.to_thread(
+                lambda: self.dut.bl4a.start_audio_recording(_RECORDING_PATH))
             self.test_case_context.push(recorder)
             async with self.assert_not_timeout(
                     _DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -598,10 +569,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             # Start audio streaming from DUT.
             self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
             self.dut.bt.audioPlaySine()
-            recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
-                _RECORDING_PATH,
-                source=bl4a_api.AudioRecorder.Source.VOICE_COMMUNICATION,
-            ))
+            recorder = await asyncio.to_thread(
+                lambda: self.dut.bl4a.start_audio_recording(_RECORDING_PATH))
             stack.enter_context(recorder)
 
             dut_leaudio_cb = self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO)

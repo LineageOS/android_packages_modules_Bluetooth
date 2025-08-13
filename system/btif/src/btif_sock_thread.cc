@@ -130,7 +130,7 @@ static int alloc_thread_slot() {
       return i;
     }
   }
-  log::error("execeeded max thread count");
+  log::error("exceeded max thread count");
   return -1;
 }
 static void free_thread_slot(int h) {
@@ -335,7 +335,7 @@ static inline void remove_poll(int h, poll_slot_t* ps, int flags) {
     memset(ps, 0, sizeof(*ps));
     ps->pfd.fd = -1;
   } else {
-    // one read or one write monitor event signaled, removed the accordding bit
+    // one read or one write monitor event signaled, removed the according bit
     ps->flags &= ~flags;
     // update the poll events mask
     ps->pfd.events = flags2pevents(ps->flags);

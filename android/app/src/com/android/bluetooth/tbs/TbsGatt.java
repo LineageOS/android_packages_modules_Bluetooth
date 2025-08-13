@@ -288,6 +288,7 @@ public class TbsGatt {
     }
 
     public void cleanup() {
+        mHandler.removeCallbacksAndMessages(null);
         mAdapterService.unregisterBluetoothStateCallback(mBluetoothStateChangeCallback);
         mBluetoothGattServer.close();
     }

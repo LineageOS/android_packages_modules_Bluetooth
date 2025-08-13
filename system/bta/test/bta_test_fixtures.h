@@ -46,6 +46,8 @@ protected:
   }
 
   void TearDown() override { fake_osi_.reset(); }
+
+private:
   std::unique_ptr<test::fake::FakeOsi> fake_osi_;
 };
 

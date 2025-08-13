@@ -124,7 +124,7 @@ bool btif_is_dut_mode() { return btif_dut_mode == 1; }
  *
  * Description      checks if main adapter is fully enabled
  *
- * Returns          1 if fully enabled, otherwize 0
+ * Returns          1 if fully enabled, otherwise 0
  *
  ******************************************************************************/
 
@@ -469,7 +469,7 @@ void btif_get_adapter_property(bt_property_type_t type) {
     auto controller = bluetooth::shim::GetController();
 
     if (controller->SupportsBleExtendedAdvertising()) {
-      local_le_features.max_adv_instance = controller->GetLeNumberOfSupportedAdverisingSets();
+      local_le_features.max_adv_instance = controller->GetLeNumberOfSupportedAdvertisingSets();
     }
     local_le_features.le_2m_phy_supported = controller->SupportsBle2mPhy();
     local_le_features.le_coded_phy_supported = controller->SupportsBleCodedPhy();

@@ -445,22 +445,20 @@ TEST_F(BtaDmCustomAlarmTest, bta_dm_sniff_cback) {
   ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
 }
 
-TEST_F(BtaDmCustomAlarmTest, sniff_offload_feature__test_sysprop) {
-  bool is_property_enabled = true;
-  test::mock::osi_properties::osi_property_get_bool.body =
-          [&](const char* /*key*/, bool /*default_value*/) -> int { return is_property_enabled; };
-
+TEST_F(BtaWithContextTest, sniff_offload_feature__test_sysprop) {
   // Expect not to trigger bta_dm_init_pm due to sysprop enabled
   // and reset the value of .srvc_id.
-  is_property_enabled = true;
+  test::mock::osi_properties::osi_property_get_bool.return_value = true;
   BTA_dm_on_hw_on();
-  ASSERT_EQ(0, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  EXPECT_EQ(0, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  BTA_dm_on_hw_off();
 
   // Expect to trigger bta_dm_init_pm and init the value of .srvc_id to
   // BTA_ID_MAX due to sysprop disabled.
-  is_property_enabled = false;
+  test::mock::osi_properties::osi_property_get_bool.return_value = false;
   BTA_dm_on_hw_on();
-  ASSERT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  EXPECT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  BTA_dm_on_hw_off();
 
   // Shouldn't crash even there's no active timer when calling
   // bta_dm_disable_pm.

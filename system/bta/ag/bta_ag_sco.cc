@@ -36,6 +36,7 @@
 #include "audio_hal_interface/hfp_client_interface.h"
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_swb_aptx.h"
+#include "bta/include/bta_le_audio_api.h"
 #include "bta_ag_api.h"
 #include "bta_sys.h"
 #include "btm_api_types.h"
@@ -1700,7 +1701,7 @@ void bta_clear_active_device() {
 }
 
 void bta_ag_api_set_active_device(const RawAddress& new_active_device) {
-  log::info("active_device_addr{}, new_active_device:{}", active_device_addr, new_active_device);
+  log::info("active_device_addr:{}, new_active_device:{}", active_device_addr, new_active_device);
   if (new_active_device.IsEmpty()) {
     log::error("empty device");
     return;

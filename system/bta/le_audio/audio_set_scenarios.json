@@ -70,6 +70,7 @@
         "Two-OneChan-SnkAse-Lc3_48_3_2",
         "Two-OneChan-SnkAse-Lc3_48_1_High_Reliability",
         "Two-OneChan-SnkAse-Lc3_48_1_2",
+        "VND_Two-OneChan-SnkAse-Lc3_48_2_155octs_High_Reliability_2",
         "Two-OneChan-SnkAse-Lc3_24_2_Balanced_Reliability",
         "Two-OneChan-SnkAse-Lc3_24_2_2",
         "Two-OneChan-SnkAse-Lc3_16_2_Balanced_Reliability",
@@ -84,6 +85,7 @@
         "One-TwoChan-SnkAse-Lc3_48_3_2",
         "One-TwoChan-SnkAse-Lc3_48_1_High_Reliability",
         "One-TwoChan-SnkAse-Lc3_48_1_2",
+        "VND_One-OneChan-SnkAse-Lc3_48_2_155octs_High_Reliability_2",
         "One-TwoChan-SnkAse-Lc3_24_2_Balanced_Reliability",
         "One-TwoChan-SnkAse-Lc3_24_2_2",
         "One-TwoChan-SnkAse-Lc3_16_2_Balanced_Reliability",
@@ -263,6 +265,7 @@
     {
       "name": "Live",
       "configurations": [
+        "VND_Two-OneChan-SnkAse-Lc3_48_2-Two-OneChan-SrcAse-Lc3_48_2",
         "VND_SingleDev_TwoChanStereoSrc_48khz_100octs_Balanced_Reliability_1",
         "VND_SingleDev_TwoChanStereoSrc_48khz_100octs_R11_L40_1",
         "Two-OneChan-SnkAse-Lc3_32_2-Two-OneChan-SrcAse-Lc3_32_2_1",

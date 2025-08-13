@@ -1218,7 +1218,7 @@ BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
     return peer;
   }
 
-  // Find next availabie Peer ID to use
+  // Find next available Peer ID to use
   uint8_t peer_id;
   for (peer_id = kPeerIdMin; peer_id < kPeerIdMax; peer_id++) {
     /* because the peer id may be in source cb and we cannot use it */
@@ -1479,7 +1479,7 @@ BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address, tBTA_AV
     return peer;
   }
 
-  // Find next availabie Peer ID to use
+  // Find next available Peer ID to use
   uint8_t peer_id;
   for (peer_id = kPeerIdMin; peer_id < kPeerIdMax; peer_id++) {
     /* because the peer id may be in source cb and we cannot use it */
@@ -2054,7 +2054,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
         log::assert_that(peer_.PeerSep() == p_bta_data->open.sep,
                          "assert failed: peer_.PeerSep() == p_bta_data->open.sep");
         /** normally it can be checked in IDLE PENDING/CONNECT_REQ, in case:
-         * 1 speacker connected to DUT and phone connect DUT, because
+         * 1 speaker connected to DUT and phone connect DUT, because
          * default
          * connect req is as SINK peer. only at here, we can know which
          * role
@@ -2082,7 +2082,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
         bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::A2DP_CONNECTION_SUCCESS);
       } else {
         if (btif_rc_is_connected_peer(peer_.PeerAddress())) {
-          // Disconnect the AVRCP connection, in case the A2DP connectiton
+          // Disconnect the AVRCP connection, in case the A2DP connection
           // failed for any reason.
           log::warn("Peer {} : Disconnecting AVRCP", peer_.PeerAddress());
           uint8_t peer_handle = btif_rc_get_connected_peer_handle(peer_.PeerAddress());

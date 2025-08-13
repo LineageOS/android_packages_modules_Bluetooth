@@ -30,7 +30,6 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Looper;
 import android.os.PowerManager;
-import android.os.SystemProperties;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
@@ -58,11 +57,6 @@ class HeadsetSystemInterface {
     private final PowerManager.WakeLock mVoiceRecognitionWakeLock;
     private final TelephonyManager mTelephonyManager;
     private final TelecomManager mTelecomManager;
-
-    private static final String ENABLE_SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio";
-
-    private boolean mIsScoManagedByAudioEnabled =
-            SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
 
     HeadsetSystemInterface(
             AdapterService adapterService, HeadsetService headsetService, Looper looper) {
@@ -389,19 +383,18 @@ class HeadsetSystemInterface {
     }
 
     /**
-     * Check if SCO managed by Audio is enabled. This is set via the system property
-     * bluetooth.sco.managed_by_audio.
+     * Check if SCO managed by Audio is enabled
      *
-     * <p>When set to {@code false}, Bluetooth will managed the start and end of the SCO.
-     *
-     * <p>When set to {@code true}, Audio will manage the start and end of the SCO through HAL.
-     *
-     * @return true if SCO managed by Audio is enabled, false otherwise
+     * @return true if SCO creation is managed by the audio service, false if it's done by Bluetooth
      */
     boolean isScoManagedByAudioEnabled() {
+        // TODO(b/437953494) Replace with SDK check when flag is fully rolled out
         if (scoManagedByAudio()) {
-            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + mIsScoManagedByAudioEnabled);
-            return mIsScoManagedByAudioEnabled;
+            boolean isScoManagedByAudio = mAudioManager.isScoManagedByAudio();
+            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudio);
+            return isScoManagedByAudio;
+        } else {
+            Log.d(TAG, "sco managed by audio is not enabled");
         }
         return false;
     }

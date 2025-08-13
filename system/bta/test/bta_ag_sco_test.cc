@@ -19,20 +19,15 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <functional>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include "audio_hal_interface/hfp_client_interface.h"
-#include "bta/ag/bta_ag_int.h"
+#include "bluetooth/types/address.h"
 #include "bta/include/bta_le_audio_api.h"
 #include "hci/controller_mock.h"
-#include "osi/include/properties.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/btm/btm_sco.h"
 #include "stack/btm/internal/btm_api.h"
-#include "test/common/mock_functions.h"
 #include "test/mock/mock_audio_hal_interface_hfp_client_interface.h"
 #include "test/mock/mock_device_esco_parameters.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -58,8 +53,8 @@ protected:
             std::make_unique<bluetooth::hci::testing::MockController>();
   }
   void TearDown() override {
-    test::mock::device_esco_parameters::esco_parameters_for_codec = {};
     bluetooth::hci::testing::mock_controller_.reset();
+    test::mock::device_esco_parameters::esco_parameters_for_codec = {};
   }
   esco_codec_t codec;
 };
@@ -83,6 +78,9 @@ TEST_P(BtaAgScoParameterSelectionTest, create_sco_cvsd) {
   } else {
     ASSERT_EQ(this->codec, ESCO_CODEC_CVSD_S3);
   }
+  bta_clear_active_device();
+
+  ASSERT_EQ(RawAddress::kEmpty, bta_ag_get_active_device());
 }
 
 TEST_P(BtaAgScoParameterSelectionTest, create_pending_sco_cvsd) {
@@ -110,6 +108,9 @@ TEST_P(BtaAgScoParameterSelectionTest, create_pending_sco_cvsd) {
   } else {
     ASSERT_EQ(this->codec, ESCO_CODEC_CVSD_S3);
   }
+  bta_clear_active_device();
+
+  ASSERT_EQ(RawAddress::kEmpty, bta_ag_get_active_device());
 }
 
 static std::vector<std::tuple<tBTA_AG_FEAT, tBTA_AG_PEER_FEAT, bool>>

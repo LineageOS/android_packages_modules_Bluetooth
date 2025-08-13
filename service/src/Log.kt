@@ -67,4 +67,13 @@ object Log {
     @JvmStatic
     fun timeToStringWithZone(timestamp: Long) =
         DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(timestamp))
+
+    @JvmStatic
+    fun address(address: String?): String {
+        return when {
+            address == null -> "[address is null]"
+            address.length != 17 -> "[address invalid]"
+            else -> "XX:XX:XX:XX:${address.takeLast(5)}"
+        }
+    }
 }

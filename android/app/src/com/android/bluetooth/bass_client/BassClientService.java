@@ -312,10 +312,7 @@ public class BassClientService extends ConnectableProfile {
                     }
                     return;
                 }
-                scanController.doOnScanThread(
-                        () ->
-                                scanController.startScanInternal(
-                                        scannerId, settings, mBaasUuidFilters));
+                scanController.startScanInternal(scannerId, settings, mBaasUuidFilters);
                 if (mIsForegroundScan) {
                     mCallbacks.notifySearchStarted(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                 }
@@ -4341,7 +4338,6 @@ public class BassClientService extends ConnectableProfile {
                     metadata,
                     ModifyCallReason.RESUME);
         }
-
     }
 
     /** Handle Unicast source stream status change */

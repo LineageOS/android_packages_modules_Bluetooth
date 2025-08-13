@@ -25,9 +25,12 @@ import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothProfile.getProfileName;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
 import static android.bluetooth.BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
 import static android.bluetooth.BluetoothStatusCodes.ERROR_UNKNOWN;
 import static android.bluetooth.BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
+import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringFunction;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 
@@ -1100,6 +1103,31 @@ public final class BluetoothAdapter {
         }
     }
 
+    private <R> R callServiceIfEnabled(
+            RemoteExceptionIgnoringFunction<IBluetooth, R> function, R defaultValue) {
+        mServiceLock.readLock().lock();
+        try {
+            if (mService == null) {
+                return defaultValue;
+            }
+            return function.apply(mService, defaultValue);
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+    }
+
+    private void callServiceIfEnabled(RemoteExceptionIgnoringConsumer<IBluetooth> consumer) {
+        mServiceLock.readLock().lock();
+        try {
+            if (mService == null) {
+                return;
+            }
+            consumer.accept(mService);
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+    }
+
     /**
      * Early enforcing of permission in the framework is a courtesy for regular app developer. It is
      * useless from security point of view, but when the binder operation is an oneway call, the
@@ -1701,17 +1729,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothAdvertisePermission
     @RequiresPermission(BLUETOOTH_ADVERTISE)
     public int getNameLengthForAdvertise() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getNameLengthForAdvertise(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return -1;
+        return callServiceIfEnabled(s -> s.getNameLengthForAdvertise(mAttributionSource), -1);
     }
 
     /**
@@ -1780,17 +1798,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return defaultValue;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getUuids(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return defaultValue;
+        return callServiceIfEnabled(s -> s.getUuids(mAttributionSource), defaultValue);
     }
 
     /**
@@ -1815,17 +1823,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.setName(name, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.setName(name, mAttributionSource), false);
     }
 
     /**
@@ -1851,17 +1849,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return SCAN_MODE_NONE;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getScanMode(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return SCAN_MODE_NONE;
+        return callServiceIfEnabled(s -> s.getScanMode(mAttributionSource), SCAN_MODE_NONE);
     }
 
     /**
@@ -1886,24 +1874,15 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_SCAN, BLUETOOTH_PRIVILEGED})
     public @ScanModeStatusCode int setScanMode(@ScanMode int mode) {
         if (getState() != STATE_ON) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
         if (mode != SCAN_MODE_NONE
                 && mode != SCAN_MODE_CONNECTABLE
                 && mode != SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
             throw new IllegalArgumentException("Invalid scan mode param value");
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.setScanMode(mode, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
+        return callServiceIfEnabled(
+                s -> s.setScanMode(mode, mAttributionSource), BluetoothStatusCodes.ERROR_UNKNOWN);
     }
 
     /**
@@ -1917,18 +1896,12 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return null;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                long timeout = mService.getDiscoverableTimeout(mAttributionSource);
-                return (timeout == -1) ? null : Duration.ofSeconds(timeout);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return callServiceIfEnabled(
+                s -> {
+                    long timeout = s.getDiscoverableTimeout(mAttributionSource);
+                    return (timeout == -1) ? null : Duration.ofSeconds(timeout);
+                },
+                null);
     }
 
     /**
@@ -1951,23 +1924,15 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_SCAN, BLUETOOTH_PRIVILEGED})
     public @ScanModeStatusCode int setDiscoverableTimeout(@NonNull Duration timeout) {
         if (getState() != STATE_ON) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
         if (timeout.toSeconds() > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(
                     "Timeout in seconds must be less or equal to " + Integer.MAX_VALUE);
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.setDiscoverableTimeout(timeout.toSeconds(), mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
+        return callServiceIfEnabled(
+                s -> s.setDiscoverableTimeout(timeout.toSeconds(), mAttributionSource),
+                BluetoothStatusCodes.ERROR_UNKNOWN);
     }
 
     /**
@@ -1982,17 +1947,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public long getDiscoveryEndMillis() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getDiscoveryEndMillis(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return -1;
+        return callServiceIfEnabled(s -> s.getDiscoveryEndMillis(mAttributionSource), -1L);
     }
 
     /**
@@ -2034,17 +1989,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.startDiscovery(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.startDiscovery(mAttributionSource), false);
     }
 
     /**
@@ -2069,17 +2014,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.cancelDiscovery(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.cancelDiscovery(mAttributionSource), false);
     }
 
     /**
@@ -2106,17 +2041,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isDiscovering(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isDiscovering(mAttributionSource), false);
     }
 
     /**
@@ -2144,19 +2069,13 @@ public final class BluetoothAdapter {
                             + "BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL, or "
                             + "BluetoothAdapter.ACTIVE_DEVICE_ALL");
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                Log.d(TAG, "removeActiveDevice, profiles: " + profiles);
-                return mService.removeActiveDevice(profiles, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
+        return callServiceIfEnabled(
+                s -> {
+                    Log.d(TAG, "removeActiveDevice, profiles: " + profiles);
 
-        return false;
+                    return s.removeActiveDevice(profiles, mAttributionSource);
+                },
+                false);
     }
 
     /**
@@ -2191,27 +2110,15 @@ public final class BluetoothAdapter {
                             + "BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL, or "
                             + "BluetoothAdapter.ACTIVE_DEVICE_ALL");
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                boolean retVal = mService.setActiveDevice(device, profiles, mAttributionSource);
-                Log.d(
-                        TAG,
-                        "setActiveDevice, device: "
-                                + device
-                                + ", profiles: "
-                                + profiles
-                                + ", retVal: "
-                                + retVal);
-                return retVal;
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-
-        return false;
+        return callServiceIfEnabled(
+                s -> {
+                    boolean retVal = s.setActiveDevice(device, profiles, mAttributionSource);
+                    Log.d(
+                            TAG,
+                            "setActiveDevice(" + device + ", " + profiles + ") retVal=" + retVal);
+                    return retVal;
+                },
+                false);
     }
 
     /**
@@ -2240,19 +2147,8 @@ public final class BluetoothAdapter {
                             + "BluetoothProfile.HEARING_AID, or "
                             + "BluetoothProfile.LE_AUDIO");
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                Log.d(TAG, "getActiveDevices(" + getProfileName(profile) + ")");
-                return mService.getActiveDevices(profile, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-
-        return Collections.emptyList();
+        return callServiceIfEnabled(
+                s -> s.getActiveDevices(profile, mAttributionSource), Collections.emptyList());
     }
 
     /**
@@ -2266,17 +2162,7 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isMultiAdvertisementSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isMultiAdvertisementSupported(), false);
     }
 
     /**
@@ -2375,17 +2261,7 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isOffloadedScanBatchingSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isOffloadedScanBatchingSupported(), false);
     }
 
     /**
@@ -2399,17 +2275,7 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLe2MPhySupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isLe2MPhySupported(), false);
     }
 
     /**
@@ -2423,17 +2289,7 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLeCodedPhySupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isLeCodedPhySupported(), false);
     }
 
     /**
@@ -2447,17 +2303,7 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLeExtendedAdvertisingSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isLeExtendedAdvertisingSupported(), false);
     }
 
     /**
@@ -2471,17 +2317,7 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLePeriodicAdvertisingSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(s -> s.isLePeriodicAdvertisingSupported(), false);
     }
 
     /** @hide */
@@ -2505,19 +2341,9 @@ public final class BluetoothAdapter {
     @RequiresNoPermission
     public @LeFeatureReturnValues int isLeAudioSupported() {
         if (!getLeAccess()) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLeAudioSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        return callServiceIfEnabled(s -> s.isLeAudioSupported(), ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2530,19 +2356,10 @@ public final class BluetoothAdapter {
     @RequiresNoPermission
     public @LeFeatureReturnValues int isLeAudioBroadcastSourceSupported() {
         if (!getLeAccess()) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLeAudioBroadcastSourceSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        return callServiceIfEnabled(
+                s -> s.isLeAudioBroadcastSourceSupported(), ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2555,19 +2372,10 @@ public final class BluetoothAdapter {
     @RequiresNoPermission
     public @LeFeatureReturnValues int isLeAudioBroadcastAssistantSupported() {
         if (!getLeAccess()) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLeAudioBroadcastAssistantSupported();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        return callServiceIfEnabled(
+                s -> s.isLeAudioBroadcastAssistantSupported(), ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2581,19 +2389,11 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @LeFeatureReturnValues int isDistanceMeasurementSupported() {
         if (!getLeAccess()) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isDistanceMeasurementSupported(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        return callServiceIfEnabled(
+                s -> s.isDistanceMeasurementSupported(mAttributionSource),
+                ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2608,17 +2408,7 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return 0;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getLeMaximumAdvertisingDataLength();
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return 0;
+        return callServiceIfEnabled(s -> s.getLeMaximumAdvertisingDataLength(), 0);
     }
 
     /**
@@ -2649,17 +2439,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getMaxConnectedAudioDevices() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getMaxConnectedAudioDevices(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return -1;
+        return callServiceIfEnabled(s -> s.getMaxConnectedAudioDevices(mAttributionSource), -1);
     }
 
     /**
@@ -2744,19 +2524,12 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return Collections.emptyList();
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return Attributable.setAttributionSource(
-                        mService.getMostRecentlyConnectedDevices(mAttributionSource),
-                        mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return Collections.emptyList();
+        return callServiceIfEnabled(
+                s ->
+                        Attributable.setAttributionSource(
+                                s.getMostRecentlyConnectedDevices(mAttributionSource),
+                                mAttributionSource),
+                Collections.emptyList());
     }
 
     /**
@@ -2767,7 +2540,7 @@ public final class BluetoothAdapter {
      * turning on Bluetooth, wait for {@link #ACTION_STATE_CHANGED} with {@link #STATE_ON} to get
      * the updated value.
      *
-     * @return unmodifiable set of {@link BluetoothDevice}, or null on error
+     * @return unmodifiable set of {@link BluetoothDevice}
      */
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -2776,20 +2549,12 @@ public final class BluetoothAdapter {
         if (getState() != STATE_ON) {
             return toDeviceSet(Arrays.asList());
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return toDeviceSet(
-                        Attributable.setAttributionSource(
-                                mService.getBondedDevices(mAttributionSource), mAttributionSource));
-            }
-            return toDeviceSet(Arrays.asList());
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return toDeviceSet(
+                callServiceIfEnabled(
+                        s ->
+                                Attributable.setAttributionSource(
+                                        s.getBondedDevices(mAttributionSource), mAttributionSource),
+                        Collections.emptyList()));
     }
 
     /**
@@ -2893,10 +2658,10 @@ public final class BluetoothAdapter {
         try {
             if (mService != null) return sBluetoothGetAdapterConnectionStateCache.query(mService);
         } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof RemoteException)) {
+            if (!(e.getCause() instanceof RemoteException ex)) {
                 throw e;
             }
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            logRemoteException(TAG, ex);
         } finally {
             mServiceLock.readLock().unlock();
         }
@@ -2969,10 +2734,10 @@ public final class BluetoothAdapter {
                         new Pair<>(mService, new Pair<>(mAttributionSource, profile)));
             }
         } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof RemoteException)) {
+            if (!(e.getCause() instanceof RemoteException ex)) {
                 throw e;
             }
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            logRemoteException(TAG, ex);
         } finally {
             mServiceLock.readLock().unlock();
         }
@@ -3110,18 +2875,11 @@ public final class BluetoothAdapter {
         if (!pendingIntent.isImmutable()) {
             throw new IllegalArgumentException("The provided PendingIntent is not immutable");
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.startRfcommListener(
-                        name, new ParcelUuid(uuid), pendingIntent, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
+        return callServiceIfEnabled(
+                s ->
+                        s.startRfcommListener(
+                                name, new ParcelUuid(uuid), pendingIntent, mAttributionSource),
+                BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND);
     }
 
     /**
@@ -3137,17 +2895,9 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @RfcommListenerResult int stopRfcommServer(@NonNull UUID uuid) {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.stopRfcommListener(new ParcelUuid(uuid), mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
+        return callServiceIfEnabled(
+                s -> s.stopRfcommListener(new ParcelUuid(uuid), mAttributionSource),
+                BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND);
     }
 
     /**
@@ -3169,21 +2919,12 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @NonNull BluetoothSocket retrieveConnectedRfcommSocket(@NonNull UUID uuid) {
         requireNonNull(uuid);
-        IncomingRfcommSocketInfo socketInfo = null;
-
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                socketInfo =
-                        mService.retrievePendingSocketForServiceRecord(
-                                new ParcelUuid(uuid), mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-            return null;
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
+        IncomingRfcommSocketInfo socketInfo =
+                callServiceIfEnabled(
+                        s ->
+                                s.retrievePendingSocketForServiceRecord(
+                                        new ParcelUuid(uuid), mAttributionSource),
+                        null);
         if (socketInfo == null) {
             return null;
         }
@@ -3874,22 +3615,15 @@ public final class BluetoothAdapter {
         requireNonNull(callback);
         if (!isEnabled()) {
             Log.w(TAG, "generateLocalOobData(): Adapter isn't enabled!");
-            callback.onError(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
-        } else {
-            mServiceLock.readLock().lock();
-            try {
-                if (mService != null) {
-                    mService.generateLocalOobData(
-                            transport,
-                            new WrappedOobDataCallback(callback, executor),
-                            mAttributionSource);
-                }
-            } catch (RemoteException e) {
-                logRemoteException(TAG, e);
-            } finally {
-                mServiceLock.readLock().unlock();
-            }
+            callback.onError(ERROR_BLUETOOTH_NOT_ENABLED);
+            return;
         }
+        callServiceIfEnabled(
+                s ->
+                        s.generateLocalOobData(
+                                transport,
+                                new WrappedOobDataCallback(callback, executor),
+                                mAttributionSource));
     }
 
     private static Set<BluetoothDevice> toDeviceSet(List<BluetoothDevice> devices) {
@@ -4002,17 +3736,8 @@ public final class BluetoothAdapter {
      */
     @RequiresNoPermission
     public @Nullable IBluetoothGatt getBluetoothGatt() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return IBluetoothGatt.Stub.asInterface(mService.getBluetoothGatt());
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return callServiceIfEnabled(
+                s -> IBluetoothGatt.Stub.asInterface(s.getBluetoothGatt()), null);
     }
 
     /**
@@ -4022,17 +3747,8 @@ public final class BluetoothAdapter {
      */
     @RequiresNoPermission
     public @Nullable IBluetoothScan getBluetoothScan() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return IBluetoothScan.Stub.asInterface(mService.getBluetoothScan());
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return callServiceIfEnabled(
+                s -> IBluetoothScan.Stub.asInterface(s.getBluetoothScan()), null);
     }
 
     /**
@@ -4042,17 +3758,8 @@ public final class BluetoothAdapter {
      */
     @RequiresNoPermission
     public @Nullable IBluetoothAdvertise getBluetoothAdvertise() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return IBluetoothAdvertise.Stub.asInterface(mService.getBluetoothAdvertise());
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return callServiceIfEnabled(
+                s -> IBluetoothAdvertise.Stub.asInterface(s.getBluetoothAdvertise()), null);
     }
 
     /**
@@ -4062,32 +3769,13 @@ public final class BluetoothAdapter {
      */
     @RequiresNoPermission
     public @Nullable IDistanceMeasurement getDistanceMeasurement() {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return IDistanceMeasurement.Stub.asInterface(mService.getDistanceMeasurement());
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return callServiceIfEnabled(
+                s -> IDistanceMeasurement.Stub.asInterface(s.getDistanceMeasurement()), null);
     }
 
     /** Return a binder to a Profile service */
     private @Nullable IBinder getProfile(int profile) {
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getProfile(profile);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return null;
+        return callServiceIfEnabled(s -> s.getProfile(profile), null);
     }
 
     void removeServiceStateCallback(IBluetoothManagerCallback cb) {
@@ -4641,18 +4329,11 @@ public final class BluetoothAdapter {
                 // Unregister to Bluetooth service if all listeners are removed from
                 // the registered device
                 mMetadataListeners.remove(device);
-                mServiceLock.readLock().lock();
-                try {
-                    if (mService != null) {
-                        return mService.unregisterMetadataListener(
-                                mBluetoothMetadataListener, device, mAttributionSource);
-                    }
-                } catch (RemoteException e) {
-                    logRemoteException(TAG, e);
-                    return false;
-                } finally {
-                    mServiceLock.readLock().unlock();
-                }
+                return callServiceIfEnabled(
+                        s ->
+                                s.unregisterMetadataListener(
+                                        mBluetoothMetadataListener, device, mAttributionSource),
+                        false);
             }
         }
         return true;
@@ -4921,18 +4602,9 @@ public final class BluetoothAdapter {
                             + modeToProfileBundle.getInt(AUDIO_MODE_DUPLEX));
         }
 
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.setPreferredAudioProfiles(
-                        device, modeToProfileBundle, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        return callServiceIfEnabled(
+                s -> s.setPreferredAudioProfiles(device, modeToProfileBundle, mAttributionSource),
+                ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -4978,18 +4650,8 @@ public final class BluetoothAdapter {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
 
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getPreferredAudioProfiles(device, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-
-        return Bundle.EMPTY;
+        return callServiceIfEnabled(
+                s -> s.getPreferredAudioProfiles(device, mAttributionSource), Bundle.EMPTY);
     }
 
     /** @hide */
@@ -5032,18 +4694,8 @@ public final class BluetoothAdapter {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
 
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.notifyActiveDeviceChangeApplied(device, mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
+        return callServiceIfEnabled(
+                s -> s.notifyActiveDeviceChangeApplied(device, mAttributionSource), ERROR_UNKNOWN);
     }
 
     private final CallbackWrapper<PreferredAudioProfilesChangedCallback, IBluetooth>
@@ -5501,19 +5153,11 @@ public final class BluetoothAdapter {
     @GetOffloadedTransportDiscoveryDataScanSupportedReturnValues
     public int getOffloadedTransportDiscoveryDataScanSupported() {
         if (!getLeAccess()) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.getOffloadedTransportDiscoveryDataScanSupported(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
+        return callServiceIfEnabled(
+                s -> s.getOffloadedTransportDiscoveryDataScanSupported(mAttributionSource),
+                ERROR_UNKNOWN);
     }
 
     /**
@@ -5811,17 +5455,8 @@ public final class BluetoothAdapter {
         if (!isEnabled()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isLeCocSocketOffloadSupported(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(
+                s -> s.isLeCocSocketOffloadSupported(mAttributionSource), false);
     }
 
     /**
@@ -5857,16 +5492,7 @@ public final class BluetoothAdapter {
         if (!isEnabled()) {
             return false;
         }
-        mServiceLock.readLock().lock();
-        try {
-            if (mService != null) {
-                return mService.isRfcommSocketOffloadSupported(mAttributionSource);
-            }
-        } catch (RemoteException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-        } finally {
-            mServiceLock.readLock().unlock();
-        }
-        return false;
+        return callServiceIfEnabled(
+                s -> s.isRfcommSocketOffloadSupported(mAttributionSource), false);
     }
 }

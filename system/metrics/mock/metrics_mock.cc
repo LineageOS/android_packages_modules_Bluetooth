@@ -308,4 +308,17 @@ void LogMetricsChannelSoundingRequesterSessionReported(
   }
 }
 
+void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
+                                             const bqr::BqrEnergyMonitorEvent& event) {
+  if (metricsInstance) {
+    metricsInstance->LogMetricBluetoothEnergyMonitorReported(bqr_version, event);
+  }
+}
+
+void LogMetricBluetoothRFStatsReported(uint16_t bqr_version, const bqr::BqrRFStatsEvent& event) {
+  if (metricsInstance) {
+    metricsInstance->LogMetricBluetoothRFStatsReported(bqr_version, event);
+  }
+}
+
 }  // namespace bluetooth::metrics
