@@ -46,16 +46,6 @@ tBNEP_RESULT BNEP_Register(tBNEP_REGISTER* /* p_reg_info */) {
   inc_func_call_count(__func__);
   return 0;
 }
-tBNEP_RESULT BNEP_SetMulticastFilters(uint16_t /* handle */, uint16_t /* num_filters */,
-                                      uint8_t* /* p_start_array */, uint8_t* /* p_end_array */) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-tBNEP_RESULT BNEP_SetProtocolFilters(uint16_t /* handle */, uint16_t /* num_filters */,
-                                     uint16_t* /* p_start_array */, uint16_t* /* p_end_array */) {
-  inc_func_call_count(__func__);
-  return 0;
-}
 tBNEP_RESULT BNEP_Write(uint16_t /* handle */, const RawAddress& /* dest_addr */,
                         uint8_t* /* p_data */, uint16_t /* len */, uint16_t /* protocol */,
                         const RawAddress& /* src_addr */, bool /* fw_ext_present */) {
