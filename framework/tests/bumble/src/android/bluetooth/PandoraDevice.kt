@@ -64,9 +64,12 @@ public final class PandoraDevice(
         try {
             stub.factoryReset(Empty.getDefaultInstance())
         } catch (e: StatusRuntimeException) {
-            if (e.getStatus().getCode() == Status.Code.CANCELLED) {
-                // Server is shutting down, the call might be canceled with an UNAVAILABLE status
-                // because the stream is closed.
+            if (
+                e.getStatus().getCode() == Status.Code.CANCELLED ||
+                    e.getStatus().getCode() == Status.Code.UNAVAILABLE
+            ) {
+                // Server is shutting down, the call might be canceled with a CANCELLED or
+                // UNAVAILABLE status because the stream is closed.
             } else {
                 throw e
             }
