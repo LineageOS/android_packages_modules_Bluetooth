@@ -64,7 +64,7 @@ public:
   /**
    * Initiate the connection.
    *
-   * @return BT_STATUS_SUCCESS on success, othewise the corresponding error
+   * @return BT_STATUS_SUCCESS on success, otherwise the corresponding error
    * code. Note: if a previous connect request hasn't been completed, the
    * return value is BT_STATUS_SUCCESS.
    */

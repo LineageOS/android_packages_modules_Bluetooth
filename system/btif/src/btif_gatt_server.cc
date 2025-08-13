@@ -379,7 +379,7 @@ static void add_service_impl(int server_if, vector<btgatt_db_element_t> service)
   // refactored, and one can distinguish stack-internal aps from external apps
   if (service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER) ||
       service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
-    log::error("Attept to register restricted service");
+    log::error("Attempt to register restricted service");
     auto callbacks = bt_gatt_callbacks;
     HAL_CBACK(callbacks, server->service_added_cb, BT_STATUS_AUTH_REJECTED, server_if,
               service.data(), service.size());

@@ -199,7 +199,7 @@ typedef struct {
   bool is_er_rcvd;
   Octet16 er;
   bool is_id_keys_rcvd;
-  btif_dm_local_key_id_t id_keys; /* ID kyes */
+  btif_dm_local_key_id_t id_keys; /* ID keys */
 } btif_dm_local_key_cb_t;
 
 /* this structure holds optional OOB data for remote device */
@@ -969,7 +969,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
     cod = COD_UNCLASSIFIED;
   }
 
-  /* check for auto pair possiblity only if bond was initiated by local device
+  /* check for auto pair possibility only if bond was initiated by local device
    */
   if (pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
     if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) ||

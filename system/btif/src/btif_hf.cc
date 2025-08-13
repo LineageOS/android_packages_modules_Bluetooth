@@ -493,7 +493,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         for (int i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++) {
           if ((i != idx) && (BTHF_CONNECTION_STATE_CONNECTED == btif_hf_cb[i].state) &&
               (connected_bda == btif_hf_cb[i].connected_bda)) {
-            // There is already an active cnnection on this device
+            // There is already an active connection on this device
             // skip upper layer notification
             notify_required = false;
             log::info(
