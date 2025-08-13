@@ -155,15 +155,6 @@ class AdapterBinder extends IAdapter.Stub {
     }
 
     @Override
-    public boolean isMediaProfileConnected() {
-        AdapterService service = getServiceAndEnforcePrivileged();
-        if (service == null) {
-            return false;
-        }
-        return service.isMediaProfileConnected();
-    }
-
-    @Override
     public void unregAllGattClient() {
         AdapterService service = getServiceAndEnforcePrivileged();
         if (service == null) {
