@@ -88,6 +88,7 @@ import org.mockito.hamcrest.MockitoHamcrest.argThat
 import org.mockito.stubbing.Answer
 import pandora.HIDGrpc
 import pandora.HidProto
+import pandora.HidProto.ReportDataEvent
 import pandora.SecurityProto
 
 /** Test cases for [BluetoothHidHost]. */
@@ -642,6 +643,34 @@ class HidHostTest {
             assertThat(hidReportEvent.reportTypeValue).isEqualTo(BluetoothHidHost.REPORT_TYPE_INPUT)
             assertThat(hidReportEvent.reportIdValue).isEqualTo(INVALID_RPT_ID)
             assertThat(hidReportEvent.reportData).isEqualTo(inValidReportData.substring(2))
+        }
+    }
+
+    /**
+     * Test send data
+     * 1. DUT sends the data to Bumble remote device using sendData api
+     * 2. Verify the data and the report type from bumble side
+     */
+    @SuppressLint("MissingPermission")
+    @Test
+    @Throws(Exception::class)
+    fun hidSendDataTest() {
+        val mHidDataEventObserver: Iterator<ReportDataEvent> =
+            hidBlockingStub
+                .withDeadlineAfter(PROTO_MODE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                .onSendHostData(Empty.getDefaultInstance())
+
+        val future = CompletableFuture<Int?>()
+        future.completeOnTimeout(null, 50, TimeUnit.MILLISECONDS).join()
+        // Send data
+        val Data = "010203040506070809"
+        assertThat(hidService.sendData(device, Data)).isTrue()
+
+        if (mHidDataEventObserver.hasNext()) {
+            val hidDataEvent: ReportDataEvent = mHidDataEventObserver.next()
+            assertThat(hidDataEvent.getReportData()).isEqualTo(Data)
+            assertThat(hidDataEvent.getReportTypeValue())
+                .isEqualTo(BluetoothHidHost.REPORT_TYPE_OUTPUT)
         }
     }
 
