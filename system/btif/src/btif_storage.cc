@@ -886,7 +886,7 @@ static void remove_devices_with_sample_ltk() {
  * Function         btif_storage_load_le_devices
  *
  * Description      BTIF storage API - Loads all LE-only and Dual Mode devices
- *                  from NVRAM. This API invokes the adaper_properties_cb.
+ *                  from NVRAM. This API invokes the adapter_properties_cb.
  *                  It also invokes invoke_address_consolidate_cb
  *                  to consolidate each Dual Mode device and
  *                  invoke_le_address_associate_cb to associate each LE-only
@@ -956,7 +956,7 @@ void btif_storage_load_le_devices(void) {
  *
  * Description      BTIF storage API - Loads all the bonded devices from NVRAM
  *                  and adds to the BTA.
- *                  Additionally, this API also invokes the adaper_properties_cb
+ *                  Additionally, this API also invokes the adapter_properties_cb
  *                  and remote_device_properties_cb for each of the bonded
  *                  devices.
  *
