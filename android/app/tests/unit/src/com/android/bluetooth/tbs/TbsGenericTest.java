@@ -629,7 +629,11 @@ public class TbsGenericTest {
         verify(mCallback).onPlaceCall(requestIdCaptor.capture(), callUuidCaptor.capture(), eq(uri));
 
         // Active device should be changed
-        verify(mLeAudioService).setActiveDevice(mDevice);
+        if (Flags.tbsSetLeaFromBtservice()) {
+            verify(mAdapterService).setActiveDevice(mDevice, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
+        } else {
+            verify(mLeAudioService).setActiveDevice(mDevice);
+        }
 
         // Respond with requestComplete...
         mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
@@ -750,7 +754,12 @@ public class TbsGenericTest {
                 .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
 
         // Active device should not be changed
-        verify(mLeAudioService, never()).setActiveDevice(mDevice);
+        if (Flags.tbsSetLeaFromBtservice()) {
+            verify(mAdapterService, never())
+                    .setActiveDevice(mDevice, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
+        } else {
+            verify(mLeAudioService, never()).setActiveDevice(mDevice);
+        }
         // Verify if GTBS control point is updated to notify the peer about the result
         verify(mTbsGatt)
                 .setCallControlPointResult(
