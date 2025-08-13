@@ -1456,6 +1456,79 @@ public class ActiveDeviceManagerTest {
     }
 
     /**
+     * Dual mode device is active. New A2DP device connects. A2DP device is set as active. LE Audio
+     * device is set as inactive.
+     */
+    @Test
+    public void dualModeDeviceActive_newA2dpDeviceConnected() {
+        /* Turn on the dual mode audio flag */
+        Utils.setDualModeAudioStateForTesting(true);
+        /* A2DP device connected and set as active*/
+        a2dpConnected(mA2dpDevice, false);
+        a2dpActiveDeviceChanged(mA2dpDevice);
+
+        reset(mLeAudioService);
+        when(mLeAudioService.getLeadDevice(mDualModeAudioDevice)).thenReturn(mDualModeAudioDevice);
+        when(mLeAudioService.isGroupAvailableForStream(anyInt())).thenReturn(true);
+
+        when(mAdapterService.isAllSupportedClassicAudioProfilesActive(mDualModeAudioDevice))
+                .thenReturn(false);
+
+        /* LE Audio is the active device */
+        leAudioConnected(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+        verify(mLeAudioService).setActiveDevice(mDualModeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+        Mockito.clearInvocations(mA2dpDevice);
+
+        /* A2DP is set as active device. Check if LE Audio device is set as inactive */
+        a2dpActiveDeviceChanged(mA2dpDevice);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+        verify(mLeAudioService).removeActiveDevice(true);
+    }
+
+    /**
+     * Dual mode device is active. New HFP device connects. HFP device is set as active. LE Audio
+     * device is set as inactive.
+     */
+    @Test
+    public void dualModeDeviceActive_newHfpDeviceConnected() {
+        /* Turn on the dual mode audio flag */
+        Utils.setDualModeAudioStateForTesting(true);
+        /* HFP device connected and set as active*/
+        headsetConnected(mHeadsetDevice, false);
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+
+        reset(mLeAudioService);
+        when(mLeAudioService.getLeadDevice(mDualModeAudioDevice)).thenReturn(mDualModeAudioDevice);
+        when(mLeAudioService.isGroupAvailableForStream(anyInt())).thenReturn(true);
+
+        when(mAdapterService.isAllSupportedClassicAudioProfilesActive(mDualModeAudioDevice))
+                .thenReturn(false);
+
+        /* LE Audio is the active device */
+        leAudioConnected(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+        verify(mLeAudioService).setActiveDevice(mDualModeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+        Mockito.clearInvocations(mHeadsetDevice);
+
+        /* HFP is set as active device. Check if LE Audio device is set as inactive */
+        headsetActiveDeviceChanged(mHeadsetDevice);
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+        verify(mLeAudioService).removeActiveDevice(true);
+    }
+
+    /**
      * Two Hearing Aid are connected and the current active is then disconnected. Should then set
      * active device to fallback device.
      */
