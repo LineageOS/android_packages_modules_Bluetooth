@@ -32,7 +32,6 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
 import android.util.ArraySet;
 import android.util.Log;
 
@@ -954,19 +953,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             mHandlerThread = null;
         }
         resetState();
-    }
-
-    /**
-     * Get the {@link Looper} for the handler thread. This is used in testing and helper objects
-     *
-     * @return {@link Looper} for the handler thread
-     */
-    @VisibleForTesting
-    public Looper getHandlerLooper() {
-        if (mHandler == null) {
-            return null;
-        }
-        return mHandler.getLooper();
     }
 
     private boolean setA2dpActiveDevice(@NonNull BluetoothDevice device) {
