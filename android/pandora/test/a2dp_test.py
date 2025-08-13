@@ -690,7 +690,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                             identifier=request.identifier,
                             destination_cid=0,
                             source_cid=request.source_cid,
-                            result=L2CAP_Connection_Response.Result.
+                            result=L2CAP_Connection_Response.
                             CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
                             status=0x0000,
                         ),
@@ -808,7 +808,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                             identifier=request.identifier,
                             destination_cid=0,
                             source_cid=request.source_cid,
-                            result=L2CAP_Connection_Response.Result.
+                            result=L2CAP_Connection_Response.
                             CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
                             status=0x0000,
                         ))
