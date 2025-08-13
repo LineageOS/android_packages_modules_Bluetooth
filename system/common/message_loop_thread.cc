@@ -169,7 +169,11 @@ base::PlatformThreadId MessageLoopThread::GetThreadId() const {
     // base::PlatformThreadId (pid_t).
     log::fatal(
       "GetThreadId should not be called when flag replace_message_loop_thread_with_gd_handler is enabled.");
+#if defined(TARGET_FLOSS) && BASE_VER >= 1419016
+    return base::PlatformThreadId(-1);
+#else
     return -1;
+#endif  // defined(TARGET_FLOSS) && BASE_VER >= 1419016
   }
 
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
