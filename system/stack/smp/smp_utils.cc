@@ -1413,9 +1413,9 @@ void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   RawAddress bda;
   uint8_t* p = le_addr;
 
-  log::verbose("addr:{}", p_cb->pairing_bda);
-
   BTM_ReadConnectionAddr(p_cb->pairing_bda, bda, &addr_type, true);
+  log::debug("pairing_addr:{}, bda:{}, addr_type:{}", p_cb->pairing_bda, bda, addr_type);
+
   BDADDR_TO_STREAM(p, bda);
   UINT8_TO_STREAM(p, addr_type);
 }
@@ -1435,12 +1435,11 @@ void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   RawAddress bda;
   uint8_t* p = le_addr;
 
-  log::verbose("addr:{}", p_cb->pairing_bda);
-
   if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, bda, &addr_type, true)) {
-    log::error("can not collect peer le addr information for unknown device");
+    log::error("can not collect peer le addr information for unknown device {}", p_cb->pairing_bda);
     return;
   }
+  log::verbose("p_cb->pairing_bda:{}, bda:{}, addr_type:{}", p_cb->pairing_bda, bda, addr_type);
 
   BDADDR_TO_STREAM(p, bda);
   UINT8_TO_STREAM(p, addr_type);
