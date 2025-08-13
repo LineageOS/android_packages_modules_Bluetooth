@@ -692,7 +692,7 @@ public class HeadsetStateMachineTest {
         sendAndDispatchStackEvent(
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_BIA,
-                        new HeadsetAgIndicatorEnableState(false, true, true, false),
+                        new HeadsetAgIndicatorEnableState(false, false, true, false),
                         mDevice));
         verify(mPhoneState)
                 .listenForPhoneState(mDevice, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
@@ -700,7 +700,14 @@ public class HeadsetStateMachineTest {
         sendAndDispatchStackEvent(
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_BIA,
-                        new HeadsetAgIndicatorEnableState(false, true, false, false),
+                        new HeadsetAgIndicatorEnableState(false, true, true, false),
+                        mDevice));
+        verify(mPhoneState).listenForPhoneState(mDevice, PhoneStateListener.LISTEN_SERVICE_STATE);
+
+        sendAndDispatchStackEvent(
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BIA,
+                        new HeadsetAgIndicatorEnableState(false, false, false, false),
                         mDevice));
         verify(mPhoneState).listenForPhoneState(mDevice, PhoneStateListener.LISTEN_NONE);
     }

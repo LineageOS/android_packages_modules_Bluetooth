@@ -2710,7 +2710,8 @@ class HeadsetStateMachine extends StateMachine {
         }
         mAgIndicatorEnableState = agIndicatorEnableState;
         int events = PhoneStateListener.LISTEN_NONE;
-        if (mAgIndicatorEnableState != null && mAgIndicatorEnableState.service) {
+        if (mAgIndicatorEnableState != null
+                && (mAgIndicatorEnableState.service || mAgIndicatorEnableState.roam)) {
             events |= PhoneStateListener.LISTEN_SERVICE_STATE;
         }
         if (mAgIndicatorEnableState != null && mAgIndicatorEnableState.signal) {
