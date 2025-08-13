@@ -59,7 +59,7 @@ public:
 
   // Copies |from| raw Bluetooth address octets to the local object.
   // Returns the number of copied octets - should be always RawAddress::kLength
-  size_t FromOctets(const uint8_t* from);
+  static RawAddress FromOctets(const uint8_t* from);
 
   static bool IsValidAddress(const std::string& address);
 
