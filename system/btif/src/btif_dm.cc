@@ -3013,8 +3013,19 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len
   if (pairing_cb.is_le_only) {
     int i;
     uint32_t passkey = 0;
+    int len = pin_len;
+    if (len > 6) {
+      // BLE specifies 6 digits for passkey.  However, it's possible for callers to
+      // pass in a longer or shorter PIN code.  In that case, we
+      // truncate the passkey to the first 6 digits.
+      log::warn("Received {} digit passkey, truncating to 6 digits", len);
+      len = 6;
+    }
+    if (len < 6) {
+      log::warn("Received {} digit passkey, BLE calls for 6 digits", len);
+    }
     int multi[] = {100000, 10000, 1000, 100, 10, 1};
-    for (i = 0; i < 6; i++) {
+    for (i = 0; i < len; i++) {
       passkey += (multi[i] * (pin_code.pin[i] - '0'));
     }
     BTA_DmBlePasskeyReply(bd_addr, accept, passkey);
