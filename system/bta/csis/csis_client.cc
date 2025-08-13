@@ -296,6 +296,8 @@ public:
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
+    bool use_opportunstic_connect = false;
+
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
       if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
@@ -305,10 +307,15 @@ public:
       }
       devices_.emplace_back(std::make_shared<CsisDevice>(address, true));
     } else {
+      /* When this is already known device, we should use opportinistic connect for this profile.
+       * Non opportunistic one is needed only after bonding to make sure the device is not
+       * disconnected in case leAudio is not enabled by default.
+       */
+      use_opportunstic_connect = true;
       device->connecting_actively = true;
     }
 
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunstic_connect);
   }
 
   void Disconnect(const RawAddress& addr) override {
