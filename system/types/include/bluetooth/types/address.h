@@ -68,8 +68,9 @@ public:
   static const RawAddress kAny;    // FF:FF:FF:FF:FF:FF
 };
 
+namespace std {
 template <>
-struct std::hash<RawAddress> {
+struct hash<RawAddress> {
   std::size_t operator()(const RawAddress& val) const {
     static_assert(sizeof(uint64_t) >= RawAddress::kLength);
     uint64_t int_addr = 0;
@@ -78,22 +79,6 @@ struct std::hash<RawAddress> {
   }
 };
 
-#define BD_ADDR_LEN 6 /* Device address length */
-
-inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
-  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) {
-    *(p)++ = a.address[BD_ADDR_LEN - 1 - ijk];
-  }
-}
-
-inline void STREAM_TO_BDADDR(RawAddress& a, const uint8_t*& p) {
-  uint8_t* pbda = a.address.data() + BD_ADDR_LEN - 1;
-  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) {
-    *pbda-- = *(p)++;
-  }
-}
-
-namespace std {
 template <>
 struct formatter<RawAddress> : formatter<std::string> {
   template <class Context>
