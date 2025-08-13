@@ -216,3 +216,11 @@ void LogMetricsChannelSoundingRequesterSessionReported(
         android::bluetooth::ChannelSoundingType /*cs_type*/, int32_t /*min_subevent_len*/,
         int32_t /*min_subevent_len_count*/) {}
 }  // namespace bluetooth::metrics
+
+void LogMetricBluetoothEnergyMonitorReported(uint16_t /*bqr_version*/,
+                                             const bqr::BqrEnergyMonitorEvent& /*event*/) {}
+
+void LogMetricBluetoothRFStatsReported(uint16_t /*bqr_version*/,
+                                       const bqr::BqrRFStatsEvent& /*event*/) {}
+
+// namespace bluetooth::metrics

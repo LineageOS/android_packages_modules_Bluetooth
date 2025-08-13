@@ -90,6 +90,9 @@ public:
               (const hci::Address&, const std::vector<int32_t>&, const std::vector<int32_t>&,
                const std::vector<int32_t>&, android::bluetooth::ChannelSoundingStopReason, int32_t,
                int32_t, bool, android::bluetooth::ChannelSoundingType, int32_t, int32_t));
+  MOCK_METHOD(void, LogMetricBluetoothEnergyMonitorReported,
+              (uint16_t, const bqr::BqrEnergyMonitorEvent&));
+  MOCK_METHOD(void, LogMetricBluetoothRFStatsReported, (uint16_t, const bqr::BqrRFStatsEvent&));
 };
 
 }  // namespace bluetooth::metrics

@@ -531,4 +531,35 @@ void LogMetricsChannelSoundingRequesterSessionReported(
   }
 }
 
+void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
+                                             const bqr::BqrEnergyMonitorEvent& event) {
+  int ret = stats_write(
+          BLUETOOTH_ENERGY_MONITOR_REPORTED, bqr_version, event.quality_report_id,
+          event.avg_current_consume, event.idle_total_time, event.idle_state_enter_count,
+          event.active_total_time, event.active_state_enter_count, event.bredr_tx_total_time,
+          event.bredr_tx_state_enter_count, event.bredr_tx_avg_power_lv,
+          event.bredr_rx_total_time, event.bredr_rx_state_enter_count, event.le_tx_total_time,
+          event.le_tx_state_enter_count, event.le_tx_avg_power_lv, event.le_rx_total_time,
+          event.le_rx_state_enter_count, event.tm_period, event.rx_active_one_chain_time,
+          event.rx_active_two_chain_time, event.tx_ipa_active_one_chain_time,
+          event.tx_ipa_active_two_chain_time, event.tx_epa_active_one_chain_time,
+          event.tx_epa_active_two_chain_time);
+  if (ret < 0) {
+    log::warn("failed to log BQR energy monitor event to statsd, error {}", ret);
+  }
+}
+
+void LogMetricBluetoothRFStatsReported(uint16_t bqr_version, const bqr::BqrRFStatsEvent& event) {
+  int ret = stats_write(
+          BLUETOOTH_RF_STATS_REPORTED, bqr_version, event.quality_report_id, event.tm_period,
+          event.tx_pw_ipa_bf, event.tx_pw_epa_bf, event.tx_pw_ipa_div, event.tx_pw_epa_div,
+          event.rssi_ch_50, event.rssi_ch_50_55, event.rssi_ch_55_60, event.rssi_ch_60_65,
+          event.rssi_ch_65_70, event.rssi_ch_70_75, event.rssi_ch_75_80, event.rssi_ch_80_85,
+          event.rssi_ch_85_90, event.rssi_ch_90, event.rssi_delta_2_down, event.rssi_delta_2_5,
+          event.rssi_delta_5_8, event.rssi_delta_8_11, event.rssi_delta_11_up);
+  if (ret < 0) {
+    log::warn("failed to log BQR RF stats event to statsd, error {}", ret);
+  }
+}
+
 }  // namespace bluetooth::metrics

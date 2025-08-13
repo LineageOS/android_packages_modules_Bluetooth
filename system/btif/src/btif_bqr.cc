@@ -71,7 +71,7 @@ static std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportIn
 namespace {
 static std::recursive_mutex life_cycle_guard_;
 static common::PostableContext* to_bind_ = nullptr;
-}
+}  // namespace
 
 void BqrVseSubEvt::ParseBqrLinkQualityEvt(uint8_t length, const uint8_t* p_param_buf) {
   if (length < kLinkQualityParamTotalLen) {
@@ -813,6 +813,9 @@ static void AddEnergyMonitorEventToQueue(uint8_t length, const uint8_t* p_energy
     return;
   }
 
+  metrics::LogMetricBluetoothEnergyMonitorReported(vendor_cap_supported_version,
+                                                   p_bqr_event->bqr_energy_monitor_event_);
+
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
   if (bqrItf == NULL) {
@@ -830,6 +833,9 @@ static void AddRFStatsEventToQueue(uint8_t length, const uint8_t* p_rf_stats_eve
     log::warn("failed to parse BQR RF stats event");
     return;
   }
+
+  metrics::LogMetricBluetoothRFStatsReported(vendor_cap_supported_version,
+                                             p_bqr_event->bqr_rf_stats_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
