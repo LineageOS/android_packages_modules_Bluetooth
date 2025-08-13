@@ -21,7 +21,7 @@ dependencies = [
     "types-portpicker",
     # Only for local test.
     "pytest",
-    "bumble == 0.0.214",
+    "bumble == 0.0.212",
     "snippet-uiautomator"
 ]
 

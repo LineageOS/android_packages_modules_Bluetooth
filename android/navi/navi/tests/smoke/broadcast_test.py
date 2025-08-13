@@ -15,7 +15,7 @@
 
 import asyncio
 import random
-from typing import TypeVar, cast
+from typing import Protocol, cast
 
 from bumble import core
 from bumble import device
@@ -39,6 +39,18 @@ _PROPERTY_BROADCAST_ASSIST_ENABLED = ("bluetooth.profile.bap.broadcast.assist.en
 _PROPERTY_BYPASS_ALLOW_LIST = "persist.bluetooth.leaudio.bypass_allow_list"
 _DEFAULT_TIMEOUT_SECEONDS = 10.0
 _SUBGROUP_INDEX = 0
+
+
+class _LePeriodicAdvertisingSyncTransferReceivedEvent(Protocol):
+    status: int
+    connection_handle: int
+    service_data: int
+    sync_handle: int
+    advertising_sid: int
+    advertiser_address: hci.Address
+    advertiser_phy: int
+    periodic_advertising_interval: int
+    advertiser_clock_accuracy: int
 
 
 def _make_basic_audio_announcement(
@@ -101,14 +113,6 @@ class _BroadcastAudioScanService(gatt.TemplateService):
             self.broadcast_audio_scan_control_point_characteristic,
             self.broadcast_receive_state_characteristic,
         ])
-
-    _OP = TypeVar("_OP", bound=bass.ControlPointOperation)
-
-    async def wait_for_operation(self, op_type: type[_OP]) -> _OP:
-        while operation := await self.operations.get():
-            if isinstance(operation, op_type):
-                return operation
-        raise RuntimeError("Unreachable")
 
 
 class BroadcastTest(navi_test_base.TwoDevicesTestBase):
@@ -186,7 +190,7 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
         )
 
         basic_audio_announcements = asyncio.Queue[bap.BasicAudioAnnouncement]()
-        big_info_advertisements = asyncio.Queue[device.BigInfoAdvertisement]()
+        big_info_advertisements = asyncio.Queue[device.BIGInfoAdvertisement]()
 
         def on_periodic_advertisement(advertisement: device.PeriodicAdvertisement,) -> None:
             if (advertising_data := advertisement.data) is None:  # type: ignore[attribute-error]
@@ -200,7 +204,7 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
                         bap.BasicAudioAnnouncement.from_bytes(data))
                     break
 
-        def on_biginfo_advertisement(advertisement: device.BigInfoAdvertisement,) -> None:
+        def on_biginfo_advertisement(advertisement: device.BIGInfoAdvertisement,) -> None:
             big_info_advertisements.put_nowait(advertisement)
 
         pa_sync.on(pa_sync.EVENT_PERIODIC_ADVERTISEMENT, on_periodic_advertisement)
@@ -535,22 +539,44 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
 
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             self.logger.info("[REF] Wait for add source operation")
-            operation = await self._ref_bass_service.wait_for_operation(bass.AddSourceOperation)
+            operation = await self._ref_bass_service.operations.get()
 
+        if not isinstance(operation, bass.AddSourceOperation):
+            self.fail(f"Expected AddSourceOperation, got {operation}")
         self.assertEqual(operation.broadcast_id, broadcast.broadcast_id)
         self.assertEqual(
             operation.pa_sync,
             bass.PeriodicAdvertisingSyncParams.SYNCHRONIZE_TO_PA_PAST_AVAILABLE,
         )
 
-        pa_syncs = asyncio.Queue[device.PeriodicAdvertisingSync]()
+        # Configure PAST handler.
+        past_events = asyncio.Queue[_LePeriodicAdvertisingSyncTransferReceivedEvent]()
 
-        @self.ref.device.on(device.Device.EVENT_PERIODIC_ADVERTISING_SYNC_TRANSFER)
-        def _(
-                pa_sync: device.PeriodicAdvertisingSync, connection: device.Connection
-        ):
-            del connection  # Unused.
-            pa_syncs.put_nowait(pa_sync)
+        # TODO: Remove this when handler is synced to G3.
+        def on_past_event(event: _LePeriodicAdvertisingSyncTransferReceivedEvent):
+            past_events.put_nowait(event)
+            pa_sync = device.PeriodicAdvertisingSync(
+                self.ref.device,
+                advertiser_address=event.advertiser_address,
+                sid=event.advertising_sid,
+                skip=0,
+                sync_timeout=0.0,
+                filter_duplicates=False,
+            )
+            pa_sync.on_establishment(
+                status=event.status,
+                sync_handle=event.sync_handle,
+                advertiser_phy=event.advertiser_phy,
+                periodic_advertising_interval=event.periodic_advertising_interval,
+                advertiser_clock_accuracy=event.advertiser_clock_accuracy,
+            )
+            self.ref.device.periodic_advertising_syncs.append(pa_sync)
+
+        setattr(
+            self.ref.device.host,
+            "on_hci_le_periodic_advertising_sync_transfer_received_event",
+            on_past_event,
+        )
 
         receiver_state = bass.BroadcastReceiveState(
             source_id=0,
@@ -568,23 +594,22 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
             self._ref_bass_service.broadcast_receive_state_characteristic)
         self.logger.info("[REF] Wait for sync info")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
-            while pa_sync := await pa_syncs.get():
-                if (pa_sync.sid == operation.advertising_sid and
-                        pa_sync.advertiser_address == operation.advertiser_address):
+            while past_event := await past_events.get():
+                if (past_event.advertising_sid == operation.advertising_sid and
+                        past_event.advertiser_address == operation.advertiser_address):
                     self.logger.info("[REF] Sync info received")
                     break
 
         pa_sync = self.ref.device.periodic_advertising_syncs[0]
-        biginfo_advertisements = asyncio.Queue[device.BigInfoAdvertisement]()
+        biginfo_advertisements = asyncio.Queue[device.BIGInfoAdvertisement]()
         pa_sync.on(pa_sync.EVENT_BIGINFO_ADVERTISEMENT, biginfo_advertisements.put_nowait)
 
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             self.logger.info("[REF] Wait for BIG info advertisement")
             biginfo_advertisement = await biginfo_advertisements.get()
 
-        encryped = (device.BigInfoAdvertisement.Encryption.ENCRYPTED
-                    if broadcast_code else device.BigInfoAdvertisement.Encryption.UNENCRYPTED)
-        self.assertEqual(biginfo_advertisement.encryption, encryped)
+        encryped = bool(broadcast_code)
+        self.assertEqual(biginfo_advertisement.encrypted, encryped)
 
         receiver_state.pa_sync_state = (
             bass.BroadcastReceiveState.PeriodicAdvertisingSyncState.SYNCHRONIZED_TO_PA)
@@ -601,9 +626,11 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
         if encryped:
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
                 self.logger.info("[REF] Wait for set broadcast code operation")
-                op_set_broadcast_code = await self._ref_bass_service.wait_for_operation(
-                    bass.SetBroadcastCodeOperation)
-            self.assertEqual(op_set_broadcast_code.broadcast_code, broadcast_code)
+                operation = await self._ref_bass_service.operations.get()
+
+            if not isinstance(operation, bass.SetBroadcastCodeOperation):
+                self.fail(f"Expected SetBroadcastCodeOperation, got {operation}")
+            self.assertEqual(operation.broadcast_code, broadcast_code)
 
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
                 self.logger.info("[REF] Update broadcast receive state")
@@ -661,9 +688,9 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
                 bass.BroadcastReceiveState.PeriodicAdvertisingSyncState.SYNCHRONIZED_TO_PA):
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
                 self.logger.info("[REF] Wait for modify source operation")
-                operation = await self._ref_bass_service.wait_for_operation(
-                    bass.ModifySourceOperation)
-
+                operation = await self._ref_bass_service.operations.get()
+            if not isinstance(operation, bass.ModifySourceOperation):
+                self.fail(f"Expected ModifySourceOperation, got {operation}")
             self.assertEqual(operation.source_id, 0)
             self.assertEqual(
                 operation.pa_sync,
@@ -679,10 +706,10 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
 
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             self.logger.info("[REF] Wait for remove source operation")
-            op_remove_source = await self._ref_bass_service.wait_for_operation(
-                bass.RemoveSourceOperation)
-
-        self.assertEqual(op_remove_source.source_id, 0)
+            operation = await self._ref_bass_service.operations.get()
+        if not isinstance(operation, bass.RemoveSourceOperation):
+            self.fail(f"Expected RemoveSourceOperation, got {operation}")
+        self.assertEqual(operation.source_id, 0)
 
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             self.logger.info("[REF] Update broadcast receive state")

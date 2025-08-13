@@ -89,7 +89,7 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
                         identifier=request.identifier,
                         destination_cid=0,
                         source_cid=request.source_cid,
-                        result=l2cap.L2CAP_Connection_Response.Result.
+                        result=l2cap.L2CAP_Connection_Response.
                         CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
                         status=0x0000,
                     ),
