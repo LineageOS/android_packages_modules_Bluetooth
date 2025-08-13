@@ -65,12 +65,34 @@ class HandleMap {
         final Type mType;
         final int mHandle;
         final UUID mUuid;
-        int mInstance = 0;
-        int mServiceType = 0;
-        int mServiceHandle = 0;
-        int mCharHandle = 0;
-        boolean mAdvertisePreferred = false;
+        final int mInstance;
+        final int mServiceType;
+        final int mServiceHandle;
+        final int mCharHandle;
+        final boolean mAdvertisePreferred;
+
         boolean mStarted = false;
+
+        private Entry(
+                int serverIf,
+                Type type,
+                int handle,
+                UUID uuid,
+                int instance,
+                int serviceType,
+                int serviceHandle,
+                int charHandle,
+                boolean advertisePreferred) {
+            mServerIf = serverIf;
+            mType = type;
+            mHandle = handle;
+            mUuid = uuid;
+            mInstance = instance;
+            mServiceType = serviceType;
+            mServiceHandle = serviceHandle;
+            mCharHandle = charHandle;
+            mAdvertisePreferred = advertisePreferred;
+        }
 
         Entry(
                 int serverIf,
@@ -79,30 +101,42 @@ class HandleMap {
                 int serviceType,
                 int instance,
                 boolean advertisePreferred) {
-            mServerIf = serverIf;
-            mType = Type.SERVICE;
-            mHandle = handle;
-            mUuid = uuid;
-            mInstance = instance;
-            mServiceType = serviceType;
-            mAdvertisePreferred = advertisePreferred;
+            this(
+                    serverIf,
+                    Type.SERVICE,
+                    handle,
+                    uuid,
+                    instance,
+                    serviceType,
+                    0 /* serviceHandle */,
+                    0 /* charHandle */,
+                    advertisePreferred);
         }
 
         Entry(int serverIf, Type type, int handle, UUID uuid, int serviceHandle) {
-            mServerIf = serverIf;
-            mType = type;
-            mHandle = handle;
-            mUuid = uuid;
-            mServiceHandle = serviceHandle;
+            this(
+                    serverIf,
+                    type,
+                    handle,
+                    uuid,
+                    0 /* instance */,
+                    0 /* serviceType */,
+                    serviceHandle,
+                    0 /* charHandle */,
+                    false);
         }
 
         Entry(int serverIf, Type type, int handle, UUID uuid, int serviceHandle, int charHandle) {
-            mServerIf = serverIf;
-            mType = type;
-            mHandle = handle;
-            mUuid = uuid;
-            mServiceHandle = serviceHandle;
-            mCharHandle = charHandle;
+            this(
+                    serverIf,
+                    type,
+                    handle,
+                    uuid,
+                    0 /* instance */,
+                    0 /* serviceType */,
+                    serviceHandle,
+                    charHandle,
+                    false);
         }
     }
 
