@@ -1112,9 +1112,6 @@ public:
       switch (group->dsa_.mode) {
         case DsaMode::ISO_HW:
           data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
-          if (!com::android::bluetooth::flags::dsa_hw_transparent_codec()) {
-            codec = bluetooth::le_audio::types::kLeAudioCodecHeadtracking;
-          }
           break;
         case DsaMode::ISO_SW:
           data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
