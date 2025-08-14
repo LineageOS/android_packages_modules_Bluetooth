@@ -73,6 +73,9 @@ public class AdapterSuspend {
     static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
             "bluetooth.power.suspend.scan_mode_none.enabled";
 
+    static final String BLUETOOTH_SUSPEND_STOP_LE_SCAN =
+            "bluetooth.power.suspend.stop_le_scan.enabled";
+
     private static final int[] AUDIO_PROFILES = {
         BluetoothProfile.A2DP,
         BluetoothProfile.HEADSET,
@@ -91,6 +94,8 @@ public class AdapterSuspend {
 
     private final boolean mDisconnectAclOnSuspend;
     private final boolean mScanModeNoneOnSuspend;
+    private final boolean mStopLeScanOnSuspend;
+
     private int mScanModeOnLastSuspend;
     private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
 
@@ -169,6 +174,10 @@ public class AdapterSuspend {
                                     + screenOn
                                     + " Interactive="
                                     + interactive);
+
+                    if (Flags.stopLeScanSystemSuspend()) {
+                        mAdapterService.getBluetoothScanController().onDisplayChanged(screenOn);
+                    }
                     if (interactive != screenOn) {
                         return;
                     }
@@ -202,6 +211,7 @@ public class AdapterSuspend {
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_DISCONNECT_ACL, false);
         mScanModeNoneOnSuspend =
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
+        mStopLeScanOnSuspend = SystemProperties.getBoolean(BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
     }
 
     void profileConnectionStateChanged(
@@ -240,6 +250,10 @@ public class AdapterSuspend {
                 mScanModeOnLastSuspend = mAdapterService.getScanMode();
                 mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
             }
+        }
+
+        if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
+            mAdapterService.getBluetoothScanController().onSystemSuspendChanged(true /* suspend */);
         }
 
         if (mDisconnectAclOnSuspend) {
@@ -282,6 +296,12 @@ public class AdapterSuspend {
                 Log.w(TAG, "device list to disconnect is not empty: " + mDisconnectProfileDevices);
                 mDisconnectProfileDevices.clear();
             }
+        }
+
+        if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
+            mAdapterService
+                    .getBluetoothScanController()
+                    .onSystemSuspendChanged(false /* suspend */);
         }
 
         if (mScanModeNoneOnSuspend) {
