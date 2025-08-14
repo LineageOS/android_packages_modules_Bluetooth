@@ -95,12 +95,10 @@ public class BluetoothOppReceiverTest {
         mReceiver = new BluetoothOppReceiver();
 
         Intents.init();
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
 
         Intents.release();
