@@ -87,6 +87,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
@@ -256,15 +257,15 @@ public class LeAudioService extends ConnectableProfile {
         // Initialize Broadcast native interface
         if (doNotHardcodeTmapRoleMask()) {
             int mask = 0;
-            if (isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
+            if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
                 // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
                 mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
             }
-            if (isProfileSupported(BluetoothProfile.MCP_SERVER)) {
+            if (Config.isProfileSupported(BluetoothProfile.MCP_SERVER)) {
                 // Table 3.5 of TMAP v1.0: MCP Server is mandatory for the TMAP UMS role.
                 mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
             }
-            if (isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
+            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
                 Log.i(TAG, "Init Le Audio broadcaster");
                 final var broadcastNativeInterface =
                         requireNonNullElseGet(
@@ -280,9 +281,7 @@ public class LeAudioService extends ConnectableProfile {
             }
             mTmapRoleMask = mask;
         } else {
-            if ((mAdapterService.getSupportedProfilesBitMask()
-                            & (1 << BluetoothProfile.LE_AUDIO_BROADCAST))
-                    != 0) {
+            if (Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
                 Log.i(TAG, "Init Le Audio broadcaster");
                 final var broadcastNativeInterface =
                         requireNonNullElseGet(
@@ -392,10 +391,6 @@ public class LeAudioService extends ConnectableProfile {
         } else {
             return Optional.ofNullable(mServiceFactory.getVolumeControlService());
         }
-    }
-
-    private boolean isProfileSupported(int profile) {
-        return (mAdapterService.getSupportedProfilesBitMask() & (1 << profile)) != 0;
     }
 
     @VisibleForTesting
