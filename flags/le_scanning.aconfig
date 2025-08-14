@@ -28,3 +28,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "stop_le_scan_system_suspend"
+    namespace: "bluetooth"
+    description: "Stop all LE scanners if the system is suspended"
+    bug: "438826539"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
