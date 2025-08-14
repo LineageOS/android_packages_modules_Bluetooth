@@ -1800,35 +1800,6 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   /* if no connection is active and HH disable is signaled, disable service */
   if (bta_hh_cb.cnt_num == 0 && bta_hh_cb.w4_disable) {
     bta_hh_disc_cmpl();
-  } else {
-    if (com::android::bluetooth::flags::hogp_reconnection()) {
-      // reconnection is handled in btif_hh.cc:btif_hh_acl_disconnected
-      return;
-    }
-
-    switch (le_close->reason) {
-      case GATT_CONN_FAILED_ESTABLISHMENT:
-      case GATT_CONN_TERMINATE_PEER_USER:
-      case GATT_CONN_TIMEOUT:
-        log::debug("gd_acl: add into acceptlist for reconnection device:{} reason:{}",
-                   p_cb->link_spec, gatt_disconnection_reason_text(le_close->reason));
-        // gd removes from bg list after successful connection
-        // Correct the cached state to allow re-add to acceptlist.
-        bta_hh_le_add_dev_bg_conn(p_cb);
-        break;
-
-      case BTA_GATT_CONN_NONE:
-      case GATT_CONN_L2C_FAILURE:
-      case GATT_CONN_LMP_TIMEOUT:
-      case GATT_CONN_OK:
-      case GATT_CONN_TERMINATE_LOCAL_HOST:
-      default:
-        log::debug(
-                "gd_acl: SKIP add into acceptlist for reconnection device:{} "
-                "reason:{}",
-                p_cb->link_spec, gatt_disconnection_reason_text(le_close->reason));
-        break;
-    }
   }
 }
 
@@ -2175,10 +2146,8 @@ void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb) {
-  if (com::android::bluetooth::flags::hogp_reconnection()) {
-    if (p_cb->in_bg_conn) {
-      return;
-    }
+  if (p_cb->in_bg_conn) {
+    return;
   }
 
   /* Add device into BG connection to accept remote initiated connection */

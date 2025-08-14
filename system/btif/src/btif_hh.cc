@@ -1051,10 +1051,6 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MAS
 }
 
 void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
-  if (!com::android::bluetooth::flags::hogp_reconnection()) {
-    return;
-  }
-
   // We want to reconnect HoGP in the background, so we're only interested in LE case.
   if (transport != BT_TRANSPORT_LE) {
     return;
