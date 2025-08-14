@@ -106,19 +106,29 @@ void RepeatingTimer::CancelAndWait() {
 void RepeatingTimer::CancelHelper(std::promise<void> promise) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   MessageLoopThread* scheduled_thread;
+
   if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
     scheduled_thread = message_loop_thread_;
+    if (scheduled_thread == nullptr) {
+      promise.set_value();
+      return;
+    }
+    if (scheduled_thread->IsRunningOnSameThread()) {
+      CancelClosure(std::move(promise));
+      return;
+    }
   } else {
     scheduled_thread = message_loop_thread_weak_ptr_.get();
+    if (scheduled_thread == nullptr) {
+      promise.set_value();
+      return;
+    }
+    if (scheduled_thread->GetThreadId() == base::PlatformThread::CurrentId()) {
+      CancelClosure(std::move(promise));
+      return;
+    }
   }
-  if (scheduled_thread == nullptr) {
-    promise.set_value();
-    return;
-  }
-  if (scheduled_thread->GetThreadId() == base::PlatformThread::CurrentId()) {
-    CancelClosure(std::move(promise));
-    return;
-  }
+
   scheduled_thread->DoInThread(base::BindOnce(&RepeatingTimer::CancelClosure,
                                               base::Unretained(this), std::move(promise)));
 }
