@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "scan_results_in_main_thread"
-    namespace: "bluetooth"
-    description: "Use main thread for handling scan results"
-    bug: "392693506"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "support_passive_scanning"
     namespace: "bluetooth"
     is_exported: true
