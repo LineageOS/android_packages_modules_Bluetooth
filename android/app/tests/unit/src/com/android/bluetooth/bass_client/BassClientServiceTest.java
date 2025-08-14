@@ -1218,7 +1218,7 @@ public class BassClientServiceTest {
                 syncHandle, testDevice, TEST_ADVERTISER_SID, 0, 200, BluetoothGatt.GATT_FAILURE);
     }
 
-    private void verifyAddSourceForGroup(BluetoothLeBroadcastMetadata meta) {
+    private void addSourceAndVerify(BluetoothLeBroadcastMetadata meta) {
         // Add broadcast source
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
 
@@ -1503,10 +1503,12 @@ public class BassClientServiceTest {
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
     }
 
-    private void prepareRemoteSourceState(
-            BluetoothLeBroadcastMetadata meta, boolean isPaSynced, boolean isBisSynced) {
-        injectRemoteSourceStateSourceAdded(meta, isPaSynced, isBisSynced);
-        injectRemoteSourceStateChanged(meta, isPaSynced, isBisSynced);
+    private void incjectDeviceDisconnection(BluetoothDevice device) {
+        BassClientStateMachine sm = mStateMachines.get(device);
+        doReturn(STATE_DISCONNECTED).when(sm).getConnectionState();
+        doReturn(false).when(sm).isConnected();
+        doReturn(new ArrayList<>()).when(sm).getAllSources();
+        mBassClientService.connectionStateChanged(device, STATE_CONNECTED, STATE_DISCONNECTED);
     }
 
     private void prepareSyncToSourceAndVerify() {
@@ -1535,7 +1537,7 @@ public class BassClientServiceTest {
     public void testAddSourceForGroup() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
     }
 
     /** Test whether service.addSource() source id can be propagated through callback correctly */
@@ -1634,7 +1636,7 @@ public class BassClientServiceTest {
     public void testRemoveSourceForGroupAndTriggerModifySource() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             injectRemoteSourceStateSourceAdded(
                     sm,
@@ -1935,14 +1937,14 @@ public class BassClientServiceTest {
         }
 
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
 
         // Add another new broadcast source
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
         onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
-        verifyAddSourceForGroup(mBroadcastMetadata2);
+        addSourceAndVerify(mBroadcastMetadata2);
     }
 
     @Test
@@ -2039,15 +2041,15 @@ public class BassClientServiceTest {
         }
 
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         assertThat(mStateMachines).hasSize(2);
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
 
         // Add another broadcast source
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
         onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
-        verifyAddSourceForGroup(mBroadcastMetadata2);
+        addSourceAndVerify(mBroadcastMetadata2);
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
@@ -2201,8 +2203,8 @@ public class BassClientServiceTest {
             verify(sm, never()).sendMessage(any());
         }
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
 
         // Verify errors are reported for the entire group
@@ -2272,7 +2274,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, unknown quality, broadcast HQ only
-        verifyAddSourceForGroup(metadataHighQuality);
+        addSourceAndVerify(metadataHighQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Remotes do not support high quality
@@ -2291,7 +2293,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, group id does not support HQ, broadcast no Q set
-        verifyAddSourceForGroup(metadataNoQuality);
+        addSourceAndVerify(metadataNoQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Broadcast has standard quality only
@@ -2302,7 +2304,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, group id does not support HQ, broadcast SQ only
-        verifyAddSourceForGroup(metadataStandardQuality);
+        addSourceAndVerify(metadataStandardQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Verify add source fail, group id does not support HQ, broadcast HQ only
@@ -2327,7 +2329,7 @@ public class BassClientServiceTest {
                         .build();
 
         // Verify add source pass, group id does not support HQ, broadcast SQ and HQ
-        verifyAddSourceForGroup(metadataBothQuality);
+        addSourceAndVerify(metadataBothQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Remotes support high quality
@@ -2339,11 +2341,11 @@ public class BassClientServiceTest {
                 .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice1);
 
         // Verify add source pass, group id supports HQ, broadcast SQ and HQ
-        verifyAddSourceForGroup(metadataBothQuality);
+        addSourceAndVerify(metadataBothQuality);
         mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
 
         // Verify add source pass, group id supports HQ, broadcast HQ only
-        verifyAddSourceForGroup(metadataHighQuality);
+        addSourceAndVerify(metadataHighQuality);
     }
 
     /**
@@ -2937,8 +2939,8 @@ public class BassClientServiceTest {
 
         // Add source 1
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(broadcastId1);
-        verifyAddSourceForGroup(meta);
-        prepareRemoteSourceState(meta, /* isPaSynced */ true, /* isBisSynced */ true);
+        addSourceAndVerify(meta);
+        injectRemoteSourceStateSourceAdded(meta, /* isPaSynced */ true, /* isBisSynced */ true);
 
         // Scan 5 cause removing first element which is not synced to any sink
         onScanResult(device5, broadcastId5);
@@ -3984,8 +3986,8 @@ public class BassClientServiceTest {
     public void testIsAnyReceiverActive() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         List<BluetoothDevice> devices = mBassClientService.getConnectedDevices();
@@ -4020,8 +4022,9 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
         BluetoothLeBroadcastMetadata metaNoBroadcast = createEmptyBroadcastMetadata();
 
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(metaNoBroadcast, /* isPaSynced */ true, /* isBisSynced */ false);
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
+                metaNoBroadcast, /* isPaSynced */ true, /* isBisSynced */ false);
 
         // Verify getSyncedBroadcastSinks returns empty device list if no broadcast ID
         assertThat(mBassClientService.getSyncedBroadcastSinks().isEmpty()).isTrue();
@@ -4060,7 +4063,7 @@ public class BassClientServiceTest {
     private void prepareTwoSynchronizedDevicesForLocalBroadcast() throws RemoteException {
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         prepareConnectedDeviceGroup();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         // verify source id
@@ -4981,10 +4984,10 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
 
         // Add source
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
 
         // Bis synced
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
         verify(mLeAudioService).activeBroadcastAssistantNotification(eq(true));
     }
@@ -5367,17 +5370,11 @@ public class BassClientServiceTest {
         bigMonitoringWithoutScanning();
 
         // Disconnect not all sinks not cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
 
         // Disconnect all sinks cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice1);
         verifyStopBroadcastMonitoringWithUnsync();
         checkNoResumeSynchronizationByBig();
     }
@@ -5387,17 +5384,11 @@ public class BassClientServiceTest {
         bigMonitoringDuringScanning();
 
         // Disconnect not all sinks not cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
 
         // Disconnect all sinks cause stop monitoring
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice1);
         verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
     }
@@ -5794,7 +5785,7 @@ public class BassClientServiceTest {
 
         // Finish adding source without PA and BIS to detect BIG_MONITORING which will sync
         // again. This will confirm that cache is available
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
@@ -6013,7 +6004,7 @@ public class BassClientServiceTest {
 
         // Finish adding source without PA and BIS to detect BIG_MONITORING which will sync
         // again. This will confirm that cache is available
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
@@ -6089,7 +6080,7 @@ public class BassClientServiceTest {
                 .verify(mPeriodicAdvertisingManager, never())
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
 
         // Sync lost without triggering timeout to keep cache
@@ -6124,7 +6115,7 @@ public class BassClientServiceTest {
 
         // Verify add source clear the SUSPENDED_BY_HOST
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         checkAllowBroadcastMonitoring();
     }
 
@@ -6888,7 +6879,7 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenSourceAddFailed() throws RemoteException {
         prepareSynchronizedPair();
         mBassClientService.stopSearchingForSources();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
@@ -6930,8 +6921,8 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenSwitch() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Add another new broadcast source should remove old metadata during switch
@@ -6942,7 +6933,7 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata2, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should resume only new broadcast
@@ -6961,8 +6952,8 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenSwitch_duringSuspend() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
-        prepareRemoteSourceState(
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         /* Unicast would like to stream */
@@ -6981,7 +6972,7 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata2, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should resume only new broadcast
@@ -7005,7 +6996,7 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Remove source should remove metadata
@@ -7057,24 +7048,20 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenAllDisconnected() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should resume all devices
@@ -7086,25 +7073,17 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Disconnect second sink cause remove metadata for both devices
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice1), TEST_SOURCE_ID + 1);
+        incjectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should not resume at all
@@ -7120,11 +7099,11 @@ public class BassClientServiceTest {
     public void multipleSinkMetadata_clearWhenAllDisconnected_duringSuspend() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
-        verifyAddSourceForGroup(mBroadcastMetadata1);
+        addSourceAndVerify(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         /* Unicast would like to stream */
@@ -7136,16 +7115,12 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should resume all devices
@@ -7165,25 +7140,17 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Disconnect second sink cause remove metadata for both devices
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice1), TEST_SOURCE_ID + 1);
+        incjectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice1)).isConnected();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should not resume at all
@@ -7204,15 +7171,11 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Remove second source should remove metadata for both
         // Do not clear receive state
@@ -7224,7 +7187,7 @@ public class BassClientServiceTest {
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should not resume at all
@@ -7245,7 +7208,7 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         /* Unicast would like to stream */
@@ -7257,11 +7220,7 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Remove second source should remove metadata for both
         // Do not clear receive state
@@ -7273,7 +7232,7 @@ public class BassClientServiceTest {
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Cache and resume should not resume at all
@@ -7298,10 +7257,7 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice1, mBroadcastMetadata1, /* isGroupOp */ false);
 
         // Disconnect first sink should remove pendingSourceToAdd for it
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Sync established should add source on only one sink
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -7338,10 +7294,7 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
 
         // Disconnect first sink should remove pendingSourceToAdd for it
-        doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(false).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        incjectDeviceDisconnection(mCurrentDevice);
 
         // Sync established should add source on only one sink
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -8023,7 +7976,7 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
         mBassClientService.stopSearchingForSources();
 
@@ -8039,7 +7992,7 @@ public class BassClientServiceTest {
                 true);
 
         // Trigger OOR monitor
-        prepareRemoteSourceState(
+        injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
