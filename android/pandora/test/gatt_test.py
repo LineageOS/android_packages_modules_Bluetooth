@@ -14,14 +14,16 @@
 
 import asyncio
 import avatar
+import dataclasses
 import grpc
 import logging
 
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices
 import pandora_services as bumble_server
+from bumble import hci
+from bumble import l2cap
 from bumble.gatt import (Characteristic, Service, GATT_VOLUME_CONTROL_SERVICE,
                          GATT_AUDIO_INPUT_CONTROL_SERVICE)
-from bumble.l2cap import L2CAP_Control_Frame
 from bumble.pairing import PairingConfig
 from pandora_services.gatt import GATTService
 from mobly import base_test, signals, test_runner
@@ -36,6 +38,36 @@ from pandora.gatt_grpc import GATT
 from pandora.gatt_grpc_aio import GATT as AioGATT, add_GATTServicer_to_server
 from pandora.gatt_pb2 import SUCCESS, ReadCharacteristicsFromUuidResponse
 from typing import Optional, Tuple
+
+
+# TODO: b/437518704 - Implement in Bumble.
+@dataclasses.dataclass
+class L2capCreditBasedConnectionRequest(l2cap.L2CAP_Control_Frame):
+    code = 0x17
+    name = "L2CAP_CREDIT_BASED_CONNECTION_REQUEST"
+
+    spsm: int = dataclasses.field(metadata=hci.metadata(2))
+    mtu: int = dataclasses.field(metadata=hci.metadata(2))
+    mps: int = dataclasses.field(metadata=hci.metadata(2))
+    initial_credits: int = dataclasses.field(metadata=hci.metadata(2))
+    source_cid: bytes = dataclasses.field(metadata=hci.metadata(2))
+
+
+@dataclasses.dataclass
+class L2capCreditBasedConnectionResponse(l2cap.L2CAP_Control_Frame):
+    code = 0x18
+    name = "L2CAP_CREDIT_BASED_CONNECTION_RESPONSE"
+
+    mtu: int = dataclasses.field(metadata=hci.metadata(2))
+    mps: int = dataclasses.field(metadata=hci.metadata(2))
+    initial_credits: int = dataclasses.field(metadata=hci.metadata(2))
+    result: int = dataclasses.field(metadata=hci.metadata(2))
+    destination_cid: bytes = dataclasses.field(metadata=hci.metadata(2))
+
+
+for subclass in (L2capCreditBasedConnectionRequest, L2capCreditBasedConnectionResponse):
+    subclass.fields = hci.HCI_Object.fields_from_dataclass(subclass)
+    l2cap.L2CAP_Control_Frame.classes[subclass.code] = subclass
 
 
 class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
@@ -274,25 +306,22 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         connection = self.ref.device.lookup_connection(int.from_bytes(ref_dut.cookie.value, 'big'))
         assert connection
 
-        connection_request = L2CAP_Control_Frame.from_bytes((
-            b"\x17"  # code of L2CAP_CREDIT_BASED_CONNECTION_REQ
-            b"\x01"  # identifier
-            b"\x0a\x00"  # data length
-            b"\x27\x00"  # psm(EATT)
-            b"\x64\x00"  # MTU
-            b"\x64\x00"  # MPS
-            b"\x64\x00"  # initial credit
-            b"\x40\x00"  # source cid[0]
-        ))
-
-        fut = asyncio.get_running_loop().create_future()
-        setattr(self.ref.device.l2cap_channel_manager, "on_[0x18]",
+        fut: asyncio.Future[L2capCreditBasedConnectionResponse] = asyncio.get_running_loop(
+        ).create_future()
+        setattr(self.ref.device.l2cap_channel_manager, "on_l2cap_credit_based_connection_response",
                 lambda _, _1, frame: fut.set_result(frame))
-        self.ref.device.l2cap_channel_manager.send_control_frame(  # type:ignore
-            connection, 0x05, connection_request)
-        control_frame = await fut
+        self.ref.device.l2cap_channel_manager.send_control_frame(
+            connection, 0x05,
+            L2capCreditBasedConnectionRequest(
+                identifier=self.ref.device.l2cap_channel_manager.next_identifier(connection),
+                spsm=0x27,
+                mtu=0x64,
+                mps=0x64,
+                initial_credits=0x64,
+                source_cid=0x40))
+        control_frame = await asyncio.wait_for(fut, 15.0)
 
-        assert_equal(bytes(control_frame)[10],
+        assert_equal(control_frame.result,
                      0x05)  # All connections refused – insufficient authentication
         assert_true(await is_connected(self.ref, ref_dut), "Device is no longer connected")
 

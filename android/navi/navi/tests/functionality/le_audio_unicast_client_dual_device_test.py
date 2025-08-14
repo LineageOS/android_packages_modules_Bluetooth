@@ -480,6 +480,9 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
       is_active: True if reconnect is actively initialized by DUT, otherwise TA
         will be used to perform the reconnection passively.
     """
+        if self.dut.device.is_emulator and not is_active:
+            self.skipTest("Rootcanal doesn't support APCF.")
+
         # Pair and connect devices.
         await self._pair_major_device()
         await self._pair_minor_device()
@@ -720,6 +723,9 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
       4. Start advertising from REF(Right), wait for DUT to connect.
       5. Wait for audio streaming to start from REF(Right).
     """
+        if self.dut.device.is_emulator:
+            self.skipTest("Rootcanal doesn't support APCF.")
+
         # Pair and connect the major device.
         await self._pair_major_device()
         await self._pair_minor_device()
