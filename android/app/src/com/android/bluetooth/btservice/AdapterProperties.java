@@ -251,10 +251,6 @@ class AdapterProperties {
         return mUuids;
     }
 
-    byte[] getAddress() {
-        return mAddress;
-    }
-
     void setConnectionState(int connectionState) {
         mConnectionState = connectionState;
         invalidateGetConnectionStateCache();

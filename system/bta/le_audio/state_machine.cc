@@ -586,6 +586,13 @@ public:
                group->group_id_, in_transition, ToString(target_state), ToString(current_state));
   }
 
+  static void set_ase_data_path(const RawAddress& addr, struct ase* ase, DataPathState state) {
+    log::debug("{}, ase_id: {}: {} -> {}", addr, ase->id,
+               bluetooth::common::ToString(ase->data_path_state),
+               bluetooth::common::ToString(state));
+    ase->data_path_state = state;
+  }
+
   void ProcessGattNotifEvent(uint8_t* value, uint16_t len, struct ase* ase,
                              LeAudioDevice* leAudioDevice, LeAudioDeviceGroup* group) override {
     struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr arh;
@@ -799,7 +806,7 @@ public:
       log::error("Failed to setup data path for {}, cis handle: {:#x}, error: {:#x}",
                  leAudioDevice->address_, conn_handle, status);
       if (ase) {
-        ase->data_path_state = DataPathState::IDLE;
+        set_ase_data_path(leAudioDevice->address_, ase, DataPathState::IDLE);
       }
       StopStream(group);
 
@@ -816,10 +823,14 @@ public:
 
     if (!ase) {
       log::error("Cannot find ase by handle {}", conn_handle);
+      if (ase) {
+        log::error("ASE: {}", ase->cis_conn_hdl);
+      }
+      group->PrintDebugState();
       return;
     }
 
-    ase->data_path_state = DataPathState::CONFIGURED;
+    set_ase_data_path(leAudioDevice->address_, ase, DataPathState::CONFIGURED);
 
     if (group->GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
       log::warn("Group {} is not targeting streaming state any more", group->group_id_);
@@ -862,7 +873,7 @@ public:
 
     auto ases_pair = leAudioDevice->GetAsesByCisConnHdl(conn_hdl);
     if (ases_pair.sink && (ases_pair.sink->data_path_state == DataPathState::REMOVING)) {
-      ases_pair.sink->data_path_state = DataPathState::IDLE;
+      set_ase_data_path(leAudioDevice->address_, ases_pair.sink, DataPathState::IDLE);
 
       if (ases_pair.sink->cis_state == CisState::CONNECTED) {
         ases_pair.sink->cis_state = CisState::DISCONNECTING;
@@ -871,7 +882,7 @@ public:
     }
 
     if (ases_pair.source && (ases_pair.source->data_path_state == DataPathState::REMOVING)) {
-      ases_pair.source->data_path_state = DataPathState::IDLE;
+      set_ase_data_path(leAudioDevice->address_, ases_pair.source, DataPathState::IDLE);
 
       if (ases_pair.source->cis_state == CisState::CONNECTED) {
         ases_pair.source->cis_state = CisState::DISCONNECTING;
@@ -1234,12 +1245,12 @@ public:
 
     if (ases_pair.sink && (ases_pair.sink->data_path_state == DataPathState::IDLE)) {
       PrepareDataPath(group->group_id_, ases_pair.sink);
-      PrepareIsoDataPath(group->group_id_, ases_pair.sink);
+      PrepareIsoDataPath(group->group_id_, leAudioDevice, ases_pair.sink);
     }
 
     if (ases_pair.source && (ases_pair.source->data_path_state == DataPathState::IDLE)) {
       PrepareDataPath(group->group_id_, ases_pair.source);
-      PrepareIsoDataPath(group->group_id_, ases_pair.source);
+      PrepareIsoDataPath(group->group_id_, leAudioDevice, ases_pair.source);
     } else {
       PrepareDataPath(group->group_id_, ases_pair.sink);
       applyDsaDataPath(group, leAudioDevice, event->cis_conn_hdl);
@@ -1298,13 +1309,13 @@ public:
     if (ases_pair.sink && (ases_pair.sink->data_path_state == DataPathState::CONFIGURED ||
                            ases_pair.sink->data_path_state == DataPathState::CONFIGURING)) {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionInput;
-      ases_pair.sink->data_path_state = DataPathState::REMOVING;
+      set_ase_data_path(leAudioDevice->address_, ases_pair.sink, DataPathState::REMOVING);
     }
 
     if (ases_pair.source && (ases_pair.source->data_path_state == DataPathState::CONFIGURED ||
                              ases_pair.source->data_path_state == DataPathState::CONFIGURING)) {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
-      ases_pair.source->data_path_state = DataPathState::REMOVING;
+      set_ase_data_path(leAudioDevice->address_, ases_pair.source, DataPathState::REMOVING);
     } else {
       if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED ||
           leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURING) {
@@ -1963,7 +1974,7 @@ private:
     return true;
   }
 
-  static void PrepareIsoDataPath(int group_id, struct ase* ase) {
+  static void PrepareIsoDataPath(int group_id, LeAudioDevice* leAudioDevice, struct ase* ase) {
     bluetooth::hci::iso_manager::iso_data_path_params param = {
             .data_path_dir = ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
                                      ? bluetooth::hci::iso_manager::kIsoDataPathDirectionIn
@@ -1979,12 +1990,12 @@ private:
     };
 
     LeAudioLogHistory::Get()->AddLogHistory(
-            kLogStateMachineTag, group_id, RawAddress::kEmpty,
+            kLogStateMachineTag, group_id, leAudioDevice->address_,
             kLogSetIsoDataPathOp + "cis_h:" + loghex(ase->cis_conn_hdl),
             "direction: " + loghex(param.data_path_dir) + ", codecId: " +
                     ToString(ase->data_path_configuration.isoDataPathConfig.codecId));
 
-    ase->data_path_state = DataPathState::CONFIGURING;
+    set_ase_data_path(leAudioDevice->address_, ase, DataPathState::CONFIGURING);
     IsoManager::GetInstance()->SetupIsoDataPath(ase->cis_conn_hdl, std::move(param));
   }
 

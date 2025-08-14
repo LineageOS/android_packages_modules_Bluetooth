@@ -797,7 +797,6 @@ void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len) {
 void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev, const char* dev_name, uint16_t vendor_id,
                              uint16_t product_id, uint16_t version, uint8_t ctry_code,
                              uint16_t dscp_len, uint8_t* p_dscp) {
-  int result;
   tBTA_HH_TO_UHID_EVT to_uhid = {};
   struct uhid_event& ev = to_uhid.uhid;
 

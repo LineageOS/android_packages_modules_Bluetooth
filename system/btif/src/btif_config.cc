@@ -52,12 +52,6 @@ using bluetooth::common::AddressObfuscator;
 using namespace bluetooth;
 
 // Key attestation
-static const std::string ENCRYPTED_STR = "encrypted";
-static const std::string CONFIG_FILE_PREFIX = "bt_config-origin";
-static const std::string CONFIG_FILE_HASH = "hash";
-static const std::string encrypt_key_name_list[] = {"LinkKey",     "LE_KEY_PENC",  "LE_KEY_PID",
-                                                    "LE_KEY_LID",  "LE_KEY_PCSRK", "LE_KEY_LENC",
-                                                    "LE_KEY_LCSRK"};
 
 /**
  * Read metrics salt from config file, if salt is invalid or does not exist,

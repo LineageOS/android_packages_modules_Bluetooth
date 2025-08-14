@@ -708,8 +708,12 @@ struct ase* LeAudioDevice::GetAseWaitingForDataPathByConnHandle(uint16_t conn_ha
 
 struct ase* LeAudioDevice::GetFirstActiveAseByCisAndDataPathState(CisState cis_state,
                                                                   DataPathState data_path_state) {
-  auto iter =
-          std::find_if(ases_.begin(), ases_.end(), [cis_state, data_path_state](const auto& ase) {
+  auto iter = std::find_if(
+          ases_.begin(), ases_.end(), [cis_state, data_path_state, this](const auto& ase) {
+            log::verbose("{}, ase_id: {}, active: {}, data: {} cis state {}", address_, ase.id,
+                         ase.active, bluetooth::common::ToString(ase.data_path_state),
+                         bluetooth::common::ToString(ase.cis_state));
+
             return ase.active && (ase.data_path_state == data_path_state) &&
                    (ase.cis_state == cis_state);
           });

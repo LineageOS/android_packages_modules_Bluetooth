@@ -55,7 +55,6 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.avrcp.AvrcpTargetService;
-import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
@@ -169,10 +168,6 @@ public class A2dpService extends ConnectableProfile {
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileA2dpSourceEnabled().orElse(false);
-    }
-
-    ActiveDeviceManager getActiveDeviceManager() {
-        return mAdapterService.getActiveDeviceManager();
     }
 
     @Override

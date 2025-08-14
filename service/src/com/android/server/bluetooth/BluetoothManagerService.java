@@ -815,27 +815,9 @@ class BluetoothManagerService {
         }
 
         @Override
-        public void onBluetoothDisallowed() {
-            enforceCorrectThread();
-            BluetoothManagerService.this.onBluetoothDisallowed();
-        }
-
-        @Override
         public void onBleScanDisabled() {
             enforceCorrectThread();
             BluetoothManagerService.this.onBleScanDisabled();
-        }
-
-        @Override
-        public void handleOnBootPhase(UserHandle userHandle) {
-            enforceCorrectThread();
-            BluetoothManagerService.this.handleOnBootPhase(userHandle);
-        }
-
-        @Override
-        public void onUserSwitching(UserHandle userHandle) {
-            enforceCorrectThread();
-            BluetoothManagerService.this.onUserSwitching(userHandle);
         }
     }
 

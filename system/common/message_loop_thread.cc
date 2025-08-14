@@ -71,6 +71,11 @@ MessageLoopThread::~MessageLoopThread() { ShutDown(); }
 
 void MessageLoopThread::StartUp() {
   if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    if (handler_thread_ != nullptr) {
+      log::warn("handler_thread_ {} is already started", *this);
+      return;
+    }
+
     handler_thread_ = new os::Thread(thread_name_, handler_thread_priority_);
     handler_ = new os::Handler(handler_thread_);
     log::info("MessageLoopThread {} started", thread_name_);
@@ -93,6 +98,11 @@ void MessageLoopThread::StartUp() {
 
 bool MessageLoopThread::DoInThread(base::OnceClosure task) {
   if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    if (handler_ == nullptr) {
+      log::error("handler is null for thread {}", *this);
+      return false;
+    }
+
     handler_->Post(std::move(task));
     return true;
   }
@@ -102,6 +112,11 @@ bool MessageLoopThread::DoInThread(base::OnceClosure task) {
 
 bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::microseconds delay) {
   if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    if (handler_ == nullptr) {
+      log::error("handler is null for thread {}", *this);
+      return false;
+    }
+
     handler_->PostWithDelay(std::move(task),
                             std::chrono::duration_cast<std::chrono::milliseconds>(delay));
     return true;
@@ -124,6 +139,11 @@ bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::m
 void MessageLoopThread::ShutDown() {
   if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
+      log::error("handler is already stopped for thread {}", *this);
+      return;
+    }
+
     handler_->Clear();
     handler_->WaitUntilStopped(kHandlerStopTimeout);
     delete handler_;

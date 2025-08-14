@@ -366,22 +366,24 @@ public class HeadsetClientService extends ConnectableProfile {
     public List<BluetoothDevice> getConnectedDevices() {
         List<BluetoothDevice> connectedDevices = new ArrayList<>();
         synchronized (mStateMachineMap) {
-            for (BluetoothDevice bd : mStateMachineMap.keySet()) {
-                HeadsetClientStateMachine sm = mStateMachineMap.get(bd);
+            for (var entry : mStateMachineMap.entrySet()) {
+                BluetoothDevice bd = entry.getKey();
+                HeadsetClientStateMachine sm = entry.getValue();
                 if (sm != null && sm.getConnectionState(bd) == STATE_CONNECTED) {
                     connectedDevices.add(bd);
                 }
             }
+            return connectedDevices;
         }
-        return connectedDevices;
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         List<BluetoothDevice> devices = new ArrayList<>();
         synchronized (mStateMachineMap) {
-            for (BluetoothDevice bd : mStateMachineMap.keySet()) {
+            for (var entry : mStateMachineMap.entrySet()) {
+                BluetoothDevice bd = entry.getKey();
+                HeadsetClientStateMachine sm = entry.getValue();
                 for (int state : states) {
-                    HeadsetClientStateMachine sm = mStateMachineMap.get(bd);
                     if (sm != null && sm.getConnectionState(bd) == state) {
                         devices.add(bd);
                     }
@@ -529,20 +531,6 @@ public class HeadsetClientService extends ConnectableProfile {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm != null) {
             sm.setAudioPolicy(policies);
-        }
-    }
-
-    /**
-     * sets the audio policy feature support status for the corresponding device.
-     *
-     * @param device for whom the policies to be set
-     * @param supported support status
-     */
-    void setAudioPolicyRemoteSupported(BluetoothDevice device, boolean supported) {
-        Log.i(TAG, "setAudioPolicyRemoteSupported: " + supported);
-        HeadsetClientStateMachine sm = getStateMachine(device);
-        if (sm != null) {
-            sm.setAudioPolicyRemoteSupported(supported);
         }
     }
 

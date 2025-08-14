@@ -156,6 +156,7 @@ using bluetooth::le_audio::types::LeAudioContextType;
 using bluetooth::le_audio::types::PublishedAudioCapabilities;
 using bluetooth::le_audio::utils::GetAudioContextsFromSinkMetadata;
 using bluetooth::le_audio::utils::GetAudioContextsFromSourceMetadata;
+using bluetooth::le_audio::utils::StreamSpeedTracker;
 
 using namespace bluetooth;
 
@@ -236,126 +237,6 @@ CigCallbacks* stateMachineHciCallbacks;
 LeAudioGroupStateMachine::Callbacks* stateMachineCallbacks;
 DeviceGroupsCallbacks* device_group_callbacks;
 LeAudioIsoDataCallback* iso_data_callback;
-
-class StreamSpeedTracker {
-public:
-  StreamSpeedTracker(void)
-      : is_started_(false),
-        group_id_(bluetooth::groups::kGroupUnknown),
-        num_of_devices_(0),
-        context_type_(LeAudioContextType::UNSPECIFIED),
-        reconfig_start_ts_(0),
-        setup_start_ts_(0),
-        total_time_(0),
-        reconfig_time_(0),
-        stream_setup_time_(0) {}
-
-  void Init(int group_id, LeAudioContextType context_type, int num_of_devices) {
-    Reset(bluetooth::groups::kGroupUnknown);
-    group_id_ = group_id;
-    context_type_ = context_type;
-    num_of_devices_ = num_of_devices;
-    log::verbose("StreamSpeedTracker group_id: {}, context: {} #{}", group_id_,
-                 ToString(context_type_), num_of_devices);
-  }
-
-  void Reset(int group_id) {
-    if (group_id != bluetooth::groups::kGroupUnknown && group_id != group_id_) {
-      log::verbose("StreamSpeedTracker Reset called for invalid group_id: {} != {}", group_id,
-                   group_id_);
-      return;
-    }
-
-    log::verbose("StreamSpeedTracker group_id: {}", group_id_);
-    is_started_ = false;
-    group_id_ = bluetooth::groups::kGroupUnknown;
-    reconfig_start_ts_ = setup_start_ts_ = total_time_ = reconfig_time_ = stream_setup_time_ =
-            num_of_devices_ = 0;
-    context_type_ = LeAudioContextType::UNSPECIFIED;
-  }
-
-  void ReconfigStarted(void) {
-    log::verbose("StreamSpeedTracker group_id: {}", group_id_);
-    reconfig_time_ = 0;
-    is_started_ = true;
-    reconfig_start_ts_ = bluetooth::common::time_get_os_boottime_us();
-  }
-
-  void StartStream(void) {
-    log::verbose("StreamSpeedTracker group_id: {}", group_id_);
-    setup_start_ts_ = bluetooth::common::time_get_os_boottime_us();
-    is_started_ = true;
-  }
-
-  void ReconfigurationComplete(void) {
-    reconfig_time_ = (bluetooth::common::time_get_os_boottime_us() - reconfig_start_ts_) / 1000;
-    log::verbose("StreamSpeedTracker group_id: {}, {} reconfig time {} ms", group_id_,
-                 ToString(context_type_), reconfig_time_);
-  }
-
-  void StreamCreated(void) {
-    stream_setup_time_ = (bluetooth::common::time_get_os_boottime_us() - setup_start_ts_) / 1000;
-    log::verbose("StreamSpeedTracker group_id: {}, {} stream create  time {} ms", group_id_,
-                 ToString(context_type_), stream_setup_time_);
-  }
-
-  void StopStreamSetup(void) {
-    is_started_ = false;
-    uint64_t start_ts = reconfig_time_ != 0 ? reconfig_start_ts_ : setup_start_ts_;
-    total_time_ = (bluetooth::common::time_get_os_boottime_us() - start_ts) / 1000;
-    clock_gettime(CLOCK_REALTIME, &end_ts_);
-    log::verbose("StreamSpeedTracker group_id: {}, {} setup time {} ms", group_id_,
-                 ToString(context_type_), total_time_);
-  }
-
-  bool IsStarted(int group_id) {
-    if (is_started_ && group_id_ == group_id) {
-      log::verbose("StreamSpeedTracker group_id: {}, {} is_started_: {} ", group_id_,
-                   ToString(context_type_), is_started_);
-      return true;
-    }
-    log::verbose("StreamSpeedTracker not started {} or group_id does not match ({} ! = {}) ",
-                 is_started_, group_id, group_id_);
-    return false;
-  }
-
-  void Dump(std::stringstream& stream) {
-    char ts[20];
-    std::strftime(ts, sizeof(ts), "%T", std::gmtime(&end_ts_.tv_sec));
-
-    if (total_time_ < 900) {
-      stream << "[ 🌕 ";
-    } else if (total_time_ < 1500) {
-      stream << "[ 🌔 ";
-    } else if (total_time_ < 2500) {
-      stream << "[ 🌓 ";
-    } else {
-      stream << "[ 🌒 ";
-    }
-
-    stream << ts << ", gID:" << group_id_ << ", #dev:" << num_of_devices_ << ", " << context_type_;
-    auto hal_idle = total_time_ - stream_setup_time_ - reconfig_time_;
-    if (reconfig_time_ != 0) {
-      stream << ", t:" << total_time_ << "ms (r:" << reconfig_time_ << "/s:" << stream_setup_time_
-             << "/hal:" << hal_idle << ")";
-    } else {
-      stream << ", t:" << total_time_ << "ms (hal:" << hal_idle << ")";
-    }
-    stream << "]";
-  }
-
-private:
-  bool is_started_;
-  int group_id_;
-  int num_of_devices_;
-  LeAudioContextType context_type_;
-  struct timespec end_ts_;
-  uint64_t reconfig_start_ts_;
-  uint64_t setup_start_ts_;
-  uint64_t total_time_;
-  uint64_t reconfig_time_;
-  uint64_t stream_setup_time_;
-};
 
 /*
  * Coordinatet Set Identification Profile (CSIP) based on CSIP 1.0
@@ -5621,8 +5502,6 @@ public:
 
       return;
     }
-
-    UpdateSourceLocalMetadataContextTypes(local_metadata_context_types_.source);
 
     if (!ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       /* False is returned when reconfiguration has been started */
