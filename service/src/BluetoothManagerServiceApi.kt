@@ -70,11 +70,5 @@ interface BluetoothManagerServiceApi {
 
     fun onUserRestrictionsChanged(userHandle: UserHandle?)
 
-    fun onBluetoothDisallowed()
-
     fun onBleScanDisabled()
-
-    fun handleOnBootPhase(userHandle: UserHandle)
-
-    fun onUserSwitching(userHandle: UserHandle)
 }
