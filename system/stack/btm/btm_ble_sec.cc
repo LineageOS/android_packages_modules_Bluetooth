@@ -1136,8 +1136,7 @@ static void btm_ble_get_auth_req(const tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_AUTH
   // If the device is bonded and we are trying to encrypt the link with it as a
   // peripheral, then we need to ensure that the authentication requirements
   // match what was agreed upon during bonding.
-  if (com::android::bluetooth::flags::peripheral_auth_req() &&
-      btm_sec_cb.link_spec.addrt.bda != p_dev_rec->bd_addr &&
+  if (btm_sec_cb.link_spec.addrt.bda != p_dev_rec->bd_addr &&
       btm_sec_cb.link_spec.addrt.bda != p_dev_rec->ble.pseudo_addr) {  // Not pairing
     if (!p_dev_rec->role_central && p_dev_rec->sec_rec.is_le_link_key_known() &&
         p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE &&

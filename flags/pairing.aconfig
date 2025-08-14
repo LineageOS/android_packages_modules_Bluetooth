@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "peripheral_auth_req"
-    namespace: "bluetooth"
-    description: "Use appropriate authentication requirements for SMP security request in peripheral role"
-    bug: "385202199"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_appearance_after_ctkd"
     namespace: "bluetooth"
     description: "Allow read of LE appearance after CTKD if class of device is unknown"
