@@ -45,14 +45,24 @@ class BluetoothSupervisor(
     }
 
     public fun onBluetoothDisallowed() {
+        enforceCorrectThread()
         bms.onBluetoothDisallowed()
     }
 
     public fun handleOnBootPhase(userHandle: UserHandle) {
+        enforceCorrectThread()
         bms.handleOnBootPhase(userHandle)
     }
 
     public fun onUserSwitching(userHandle: UserHandle) {
+        enforceCorrectThread()
         bms.onUserSwitching(userHandle)
+    }
+
+    private fun enforceCorrectThread() {
+        if (looper == Looper.myLooper()) {
+            return
+        }
+        throw IllegalThreadStateException("Must be called on BluetoothSystemServer looper")
     }
 }
