@@ -32,8 +32,20 @@ _MASKED_ADDRESS = "FF:FF:FF:FF:FF:FF"
 
 class BqrEventMaskBitIndex(enum.IntFlag):
     """BQR event mask bit index."""
+    QUALITY_MONITORING_MODE = 1 << 0
     APPROACH_LSTO = 1 << 1
-    RF_STATS = 1 << 8
+    A2DP_AUDIO_CHOPPY_EVENT = 1 << 2
+    SCO_VOICE_CHOPPY_EVENT = 1 << 3
+    ROOT_INFLAMMATION_EVENT = 1 << 4
+    ENERGY_MONITORING_MODE = 1 << 5
+    LE_AUDIO_CHOPPY_EVENT = 1 << 6
+    CONNECT_FAIL_EVENT = 1 << 7
+    RF_STATS_MODE_EVENT_TRIGGER = 1 << 8
+    RF_STATS_PERIODIC_REPORT = 1 << 9
+    VENDOR_SPECIFIC_QUALITY_EVENTS = 1 << 15
+    LMP_LL_MESSAGE_TRACE = 1 << 16
+    BLUETOOTH_MULTI_LINK_COEX_SCHEDULING_TRACE = 1 << 17
+    THE_CONTROLLER_DEBUG_INFORMATION_MECHANISM = 1 << 18
 
 
 class BluetoothQualityReportTest(navi_test_base.TwoDevicesTestBase):
@@ -84,7 +96,7 @@ class BluetoothQualityReportTest(navi_test_base.TwoDevicesTestBase):
                 ),
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
             )
-        if self.bqr_event_mask & BqrEventMaskBitIndex.RF_STATS:
+        if self.bqr_event_mask & BqrEventMaskBitIndex.RF_STATS_MODE_EVENT_TRIGGER:
             self.logger.info("[DUT] Wait for BQR event: RF_STATS.")
             await bqr_cb.wait_for_event(
                 bl4a_api.BluetoothQualityReportReady(
@@ -101,6 +113,8 @@ class BluetoothQualityReportTest(navi_test_base.TwoDevicesTestBase):
 
         if int(self.dut.getprop("ro.build.version.sdk")) < 36:
             self.skipTest("Energy monitor event is not supported before SDK API level: 36.")
+        if not self.bqr_event_mask & BqrEventMaskBitIndex.ENERGY_MONITORING_MODE:
+            self.skipTest("Energy monitor event is not enabled on DUT.")
 
         bqr_cb = self.dut.bl4a.register_callback(bl4a_api.Module.BQR)
         self.test_case_context.push(bqr_cb)
