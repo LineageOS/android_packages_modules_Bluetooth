@@ -1106,6 +1106,8 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_CSRK, true);
 
+  smp_key_distribution_by_transport(p_cb, NULL);
+
   /* save CSRK to security record */
   tBTM_LE_KEY_VALUE le_key = {
       .pcsrk_key =
@@ -1124,7 +1126,6 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) &&
       (p_cb->loc_auth_req & SMP_AUTH_BOND))
     btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, &le_key, true);
-  smp_key_distribution_by_transport(p_cb, NULL);
 }
 
 /*******************************************************************************
