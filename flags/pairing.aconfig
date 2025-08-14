@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "create_metadata_after_bonding"
-    namespace: "bluetooth"
-    description: "Don't create metadata before the device is bonded"
-    bug: "387523991"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_mandate_auth_along_with_encryption"
     namespace: "bluetooth"
     description: "Don't mandate authentication along with encryption"
