@@ -239,35 +239,6 @@ typedef struct {
 /* Response status code - Unknown Error - this is changed to "reserved" */
 #define BTIF_STS_GEN_ERROR 0x06
 
-/* Utility table to map hal status codes to bta status codes for the response
- * status */
-static const uint8_t status_code_map[] = {
-        /* BTA_Status codes        HAL_Status codes */
-        AVRC_STS_BAD_CMD,         /* BTRC_STS_BAD_CMD */
-        AVRC_STS_BAD_PARAM,       /* BTRC_STS_BAD_PARAM */
-        AVRC_STS_NOT_FOUND,       /* BTRC_STS_NOT_FOUND */
-        AVRC_STS_INTERNAL_ERR,    /* BTRC_STS_INTERNAL_ERR */
-        AVRC_STS_NO_ERROR,        /* BTRC_STS_NO_ERROR */
-        AVRC_STS_UID_CHANGED,     /* BTRC_STS_UID_CHANGED */
-        BTIF_STS_GEN_ERROR,       /* BTRC_STS_RESERVED */
-        AVRC_STS_BAD_DIR,         /* BTRC_STS_INV_DIRN */
-        AVRC_STS_NOT_DIR,         /* BTRC_STS_INV_DIRECTORY */
-        AVRC_STS_NOT_EXIST,       /* BTRC_STS_INV_ITEM */
-        AVRC_STS_BAD_SCOPE,       /* BTRC_STS_INV_SCOPE */
-        AVRC_STS_BAD_RANGE,       /* BTRC_STS_INV_RANGE */
-        AVRC_STS_UID_IS_DIR,      /* BTRC_STS_DIRECTORY */
-        AVRC_STS_IN_USE,          /* BTRC_STS_MEDIA_IN_USE */
-        AVRC_STS_NOW_LIST_FULL,   /* BTRC_STS_PLAY_LIST_FULL */
-        AVRC_STS_SEARCH_NOT_SUP,  /* BTRC_STS_SRCH_NOT_SPRTD */
-        AVRC_STS_SEARCH_BUSY,     /* BTRC_STS_SRCH_IN_PROG */
-        AVRC_STS_BAD_PLAYER_ID,   /* BTRC_STS_INV_PLAYER */
-        AVRC_STS_PLAYER_N_BR,     /* BTRC_STS_PLAY_NOT_BROW */
-        AVRC_STS_PLAYER_N_ADDR,   /* BTRC_STS_PLAY_NOT_ADDR */
-        AVRC_STS_BAD_SEARCH_RES,  /* BTRC_STS_INV_RESULTS */
-        AVRC_STS_NO_AVAL_PLAYER,  /* BTRC_STS_NO_AVBL_PLAY */
-        AVRC_STS_ADDR_PLAYER_CHG, /* BTRC_STS_ADDR_PLAY_CHGD */
-};
-
 static void initialize_device(btif_rc_device_cb_t* p_dev);
 static void send_reject_response(uint8_t rc_handle, uint8_t label, uint8_t pdu, uint8_t status,
                                  uint8_t opcode);
