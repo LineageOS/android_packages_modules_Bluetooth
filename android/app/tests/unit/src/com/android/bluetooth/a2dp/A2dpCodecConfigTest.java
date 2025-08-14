@@ -712,12 +712,12 @@ public class A2dpCodecConfigTest {
                         0,
                         0); // Codec-specific fields
 
-        // shouldn't invoke to native when current codec is SBC
+        // shouldn't invoke to native when current codec is SBC and priorty is HIGHEST
         mA2dpCodecConfig.disableOptionalCodecs(
                 mDevice,
                 getDefaultCodecConfigByType(
                         BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                        BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                        BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST));
         verify(mA2dpNativeInterface, times(0)).setCodecConfigPreference(mDevice, codecConfigsArray);
 
         // should invoke to native when current codec is an optional codec
@@ -750,17 +750,23 @@ public class A2dpCodecConfigTest {
         // should invoke to native when current codec is SBC
         mA2dpCodecConfig.enableOptionalCodecs(
                 mDevice,
-                getDefaultCodecConfigByType(
-                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                        BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                new BluetoothCodecStatus(
+                        getDefaultCodecConfigByType(
+                                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                                BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT),
+                        Arrays.asList(sCodecCapabilities),
+                        Arrays.asList(sCodecCapabilities)));
         verify(mA2dpNativeInterface).setCodecConfigPreference(mDevice, codecConfigsArray);
 
         // shouldn't invoke to native when current codec is already an optional
         for (int codecType : sOptionalCodecTypes) {
             mA2dpCodecConfig.enableOptionalCodecs(
                     mDevice,
-                    getDefaultCodecConfigByType(
-                            codecType, BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                    new BluetoothCodecStatus(
+                            getDefaultCodecConfigByType(
+                                    codecType, BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT),
+                            Arrays.asList(sCodecCapabilities),
+                            Arrays.asList(sCodecCapabilities)));
             verify(mA2dpNativeInterface).setCodecConfigPreference(mDevice, codecConfigsArray);
         }
     }
