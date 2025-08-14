@@ -10,16 +10,6 @@ flag {
 }
 
 flag {
-    name: "pending_hid_connection_cancellation"
-    namespace: "bluetooth"
-    description: "Properly cancel the pending connection to the already added devices"
-    bug: "381135214"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "vup_for_pending_connection"
     namespace: "bluetooth"
     description: "Generate HID VUP for pending connections as well"

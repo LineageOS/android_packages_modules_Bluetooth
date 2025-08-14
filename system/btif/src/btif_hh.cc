@@ -1340,8 +1340,7 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
   }
 
   // Add the new connection to the pending list
-  if (!com::android::bluetooth::flags::pending_hid_connection_cancellation() ||
-      added_dev == nullptr) {
+  if (added_dev == nullptr) {
     btif_hh_cb.new_connection_requests.push_back(link_spec);
   }
 
@@ -1885,9 +1884,7 @@ static bt_status_t disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
                 bthh_connection_state_text(p_dev->dev_status));
       p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
 
-      if (com::android::bluetooth::flags::pending_hid_connection_cancellation()) {
-        btif_hh_cb.new_connection_requests.remove(link_spec);
-      }
+      btif_hh_cb.new_connection_requests.remove(link_spec);
       return BT_STATUS_DONE;
     } else if (std::find(btif_hh_cb.new_connection_requests.begin(),
                          btif_hh_cb.new_connection_requests.end(),
