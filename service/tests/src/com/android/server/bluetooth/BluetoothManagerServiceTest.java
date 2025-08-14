@@ -340,9 +340,9 @@ public class BluetoothManagerServiceTest {
     public void enable_bindFailure_removesTimeoutAndStaysOff() throws Exception {
         doReturn(false).when(mContext).bindServiceAsUser(any(), any(), anyInt(), any());
         mManagerService.enableBle("enable_bindFailure_removesTimeout", mBleBinder);
-            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
         mInOrder.verify(mContext).unbindService(any());
-            verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
 
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
@@ -364,7 +364,7 @@ public class BluetoothManagerServiceTest {
     }
 
     private ServiceConnection acceptBluetoothBinding() {
-            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
 
         ComponentName compName =
                 new ComponentName("", "com.android.bluetooth.btservice.AdapterService");
@@ -470,7 +470,7 @@ public class BluetoothManagerServiceTest {
     @Test
     public void enable_whileNotYetBoundToBle_shouldEnable() throws Exception {
         mManagerService.enableBle("enable_whileTurningToBleOn_shouldEnable", mBleBinder);
-            assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_ON);
 
         // receive enable when Bluetooth is OFF and not yet binded
         mManagerService.enable(0, "enable_whileTurningToBleOn_shouldEnable");
@@ -555,11 +555,11 @@ public class BluetoothManagerServiceTest {
     @Test
     public void disable_whenBinding_bluetoothShouldStop_new() throws Exception {
         mManagerService.enable(0, "disable_whenBinding_bluetoothShouldStop_new");
-            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
         mInOrder.verify(mContext).bindServiceAsUser(any(), any(), anyInt(), any());
         mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
         mInOrder.verify(mContext).unbindService(any());
-            verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+        verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();

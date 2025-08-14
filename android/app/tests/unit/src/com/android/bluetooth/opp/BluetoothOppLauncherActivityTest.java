@@ -622,5 +622,4 @@ public class BluetoothOppLauncherActivityTest {
         verify(mMetricsLogger, never())
                 .logBluetoothOppLauncherCreated(anyInt(), anyInt(), anyInt());
     }
-
 }

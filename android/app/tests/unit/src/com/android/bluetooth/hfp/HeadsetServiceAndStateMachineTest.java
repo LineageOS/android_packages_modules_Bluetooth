@@ -202,7 +202,9 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(mAudioManager).when(mSystemInterface).getAudioManager();
         doReturn(mAudioDeviceVolumeManager).when(mSystemInterface).getAudioDeviceVolumeManager();
         doReturn(true).when(mSystemInterface).activateVoiceRecognition(any(BluetoothDevice.class));
-        doReturn(true).when(mSystemInterface).deactivateVoiceRecognition(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mSystemInterface)
+                .deactivateVoiceRecognition(any(BluetoothDevice.class));
         doReturn(mVoiceRecognitionWakeLock).when(mSystemInterface).getVoiceRecognitionWakeLock();
         doReturn(true).when(mSystemInterface).isCallIdle();
         doReturn(false).when(mSystemInterface).isScoManagedByAudioEnabled();

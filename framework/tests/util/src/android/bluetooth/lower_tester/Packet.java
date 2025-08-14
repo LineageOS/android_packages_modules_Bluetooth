@@ -16,11 +16,11 @@
 
 package android.bluetooth.lower_tester;
 
+import android.bluetooth.BluetoothAdapter;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.Objects;
-import android.bluetooth.BluetoothAdapter;
 
 /**
  * Packet class will be used to represent a packet in the Lower Tester. It will be used to store the

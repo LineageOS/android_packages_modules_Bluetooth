@@ -1603,8 +1603,7 @@ class BluetoothManagerService {
     private void handleDisableMessage() {
         mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
 
-        if (Flags.gracefulDisableWithoutMessage()
-                && mState.oneOf(State.OFF)) {
+        if (Flags.gracefulDisableWithoutMessage() && mState.oneOf(State.OFF)) {
             Log.d(TAG, "Disable while already OFF. Nothing to do");
         } else if (isBinding()) {
             Log.d(TAG, "Disable while binding");

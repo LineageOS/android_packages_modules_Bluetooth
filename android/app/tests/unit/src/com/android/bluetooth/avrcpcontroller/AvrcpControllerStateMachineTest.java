@@ -1639,8 +1639,8 @@ public class AvrcpControllerStateMachineTest {
     }
 
     /**
-     * Test receiving an audio focus gain coming out of a transient loss where a stop command
-     * has been sent
+     * Test receiving an audio focus gain coming out of a transient loss where a stop command has
+     * been sent
      */
     @Test
     public void testOnAudioFocusGainFromTransientLossWithStop_playNotSent() {

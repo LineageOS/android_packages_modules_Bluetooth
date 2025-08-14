@@ -114,9 +114,7 @@ public class ObexServerSockets {
      */
     @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
     private static ObexServerSockets create(
-            AdapterService adapterService,
-            IObexConnectionHandler validator,
-            boolean isSecure) {
+            AdapterService adapterService, IObexConnectionHandler validator, boolean isSecure) {
         Log.d(TAG, "create()");
 
         BluetoothServerSocket rfcommSocket = null;

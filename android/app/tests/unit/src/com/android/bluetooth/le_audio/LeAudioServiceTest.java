@@ -1240,7 +1240,6 @@ public class LeAudioServiceTest {
         assertThat(connInfos.get(0).isLeOutput()).isTrue();
         assertThat(connInfos.get(1).isLeOutput()).isFalse();
 
-
         assertThat(mService.setActiveDevice(mRightDevice)).isTrue();
         mInOrder.verify(mAudioManager, never())
                 .handleBluetoothActiveDeviceChanged(

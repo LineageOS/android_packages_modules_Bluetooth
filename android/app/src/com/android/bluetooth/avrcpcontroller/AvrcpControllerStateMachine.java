@@ -267,9 +267,11 @@ class AvrcpControllerStateMachine extends StateMachine {
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);
         ProfileService.println(
-                sb, "Cover Art: " + (mCoverArtManager != null ?
-                    mCoverArtManager.getState(mDevice) == STATE_CONNECTED :
-                    "false, mCoverArtManager is null"));
+                sb,
+                "Cover Art: "
+                        + (mCoverArtManager != null
+                                ? mCoverArtManager.getState(mDevice) == STATE_CONNECTED
+                                : "false, mCoverArtManager is null"));
 
         ProfileService.println(sb, "Addressed Player ID: " + mAddressedPlayerId);
         ProfileService.println(sb, "Browsed Player ID: " + mBrowseTree.getCurrentBrowsedPlayer());
