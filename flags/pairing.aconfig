@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "le_appearance_after_ctkd"
-    namespace: "bluetooth"
-    description: "Allow read of LE appearance after CTKD if class of device is unknown"
-    bug: "386835787"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_mandate_auth_along_with_encryption"
     namespace: "bluetooth"
     description: "Don't mandate authentication along with encryption"

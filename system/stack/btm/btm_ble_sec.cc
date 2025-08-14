@@ -1328,8 +1328,7 @@ void btm_ble_connection_established(const RawAddress& bda) {
     btm_ble_read_remote_name(bda, nullptr);
   }
 
-  if (p_dev_rec != nullptr && (com::android::bluetooth::flags::le_appearance_after_ctkd() ||
-                               !p_dev_rec->sec_rec.is_le_link_key_known())) {
+  if (p_dev_rec != nullptr) {
     // Unknown device
     if (p_dev_rec->dev_class == kDevClassEmpty || p_dev_rec->dev_class == kDevClassUnclassified) {
       // Class of device not known, read appearance characteristic ...
