@@ -1182,23 +1182,23 @@ package android.bluetooth {
   }
 
   public final class BluetoothStatusCodes {
-    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int AVDTP_DISCOVERY_FAILED = 1403; // 0x57b
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ERROR_AVDTP_DISCOVERY_FAILED = 1403; // 0x57b
     field public static final int ERROR_BLUETOOTH_NOT_ALLOWED = 2; // 0x2
     field public static final int ERROR_BLUETOOTH_NOT_ENABLED = 1; // 0x1
     field public static final int ERROR_DEVICE_NOT_BONDED = 3; // 0x3
     field public static final int ERROR_GATT_WRITE_NOT_ALLOWED = 200; // 0xc8
     field public static final int ERROR_GATT_WRITE_REQUEST_BUSY = 201; // 0xc9
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ERROR_INSUFFICIENT_RESOURCES = 1404; // 0x57c
     field public static final int ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION = 6; // 0x6
     field public static final int ERROR_PROFILE_SERVICE_NOT_BOUND = 9; // 0x9
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ERROR_RFCOMM_CONNECTION_FAILED = 1405; // 0x57d
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ERROR_ROLE_SWITCH_FAILED = 1402; // 0x57a
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ERROR_SDP_DISCOVERY_FAILED = 1400; // 0x578
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ERROR_STREAM_CONNECTION_FAILED = 1401; // 0x579
     field public static final int ERROR_UNKNOWN = 2147483647; // 0x7fffffff
     field public static final int FEATURE_NOT_CONFIGURED = 30; // 0x1e
     field public static final int FEATURE_NOT_SUPPORTED = 11; // 0xb
     field public static final int FEATURE_SUPPORTED = 10; // 0xa
-    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int INSUFFICIENT_RESOURCES = 1404; // 0x57c
-    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int RFCOMM_CONNECTION_FAILED = 1405; // 0x57d
-    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ROLE_SWITCH_FAILED = 1402; // 0x57a
-    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int SDP_DISCOVERY_FAILED = 1400; // 0x578
-    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int STREAM_CONNECTION_FAILED = 1401; // 0x579
     field public static final int SUCCESS = 0; // 0x0
   }
 
