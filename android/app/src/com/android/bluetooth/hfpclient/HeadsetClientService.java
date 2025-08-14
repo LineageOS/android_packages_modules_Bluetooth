@@ -533,20 +533,6 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     /**
-     * sets the audio policy feature support status for the corresponding device.
-     *
-     * @param device for whom the policies to be set
-     * @param supported support status
-     */
-    void setAudioPolicyRemoteSupported(BluetoothDevice device, boolean supported) {
-        Log.i(TAG, "setAudioPolicyRemoteSupported: " + supported);
-        HeadsetClientStateMachine sm = getStateMachine(device);
-        if (sm != null) {
-            sm.setAudioPolicyRemoteSupported(supported);
-        }
-    }
-
-    /**
      * gets the audio policy feature support status for the corresponding device.
      *
      * @param device for whom the policies to be set

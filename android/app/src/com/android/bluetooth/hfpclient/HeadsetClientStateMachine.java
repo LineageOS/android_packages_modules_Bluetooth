@@ -2416,12 +2416,8 @@ public class HeadsetClientStateMachine extends StateMachine {
         return true;
     }
 
-    /**
-     * sets the audio policy feature support status
-     *
-     * @param supported support status
-     */
-    public void setAudioPolicyRemoteSupported(boolean supported) {
+    @VisibleForTesting
+    void setAudioPolicyRemoteSupported(boolean supported) {
         if (supported) {
             mAudioPolicyRemoteSupported = BluetoothStatusCodes.FEATURE_SUPPORTED;
         } else {
@@ -2429,12 +2425,7 @@ public class HeadsetClientStateMachine extends StateMachine {
         }
     }
 
-    /**
-     * gets the audio policy feature support status
-     *
-     * @return int support status
-     */
-    public int getAudioPolicyRemoteSupported() {
+    int getAudioPolicyRemoteSupported() {
         return mAudioPolicyRemoteSupported;
     }
 
