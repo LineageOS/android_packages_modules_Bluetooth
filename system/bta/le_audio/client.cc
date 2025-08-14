@@ -5622,8 +5622,6 @@ public:
       return;
     }
 
-    UpdateSourceLocalMetadataContextTypes(local_metadata_context_types_.source);
-
     if (!ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       /* False is returned when reconfiguration has been started */
       if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
