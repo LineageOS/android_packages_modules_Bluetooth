@@ -23,7 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-import static android.media.audio.Flags.deprecateStreamBtSco;
 
 import static java.util.Objects.requireNonNull;
 
@@ -1946,7 +1945,7 @@ class HeadsetStateMachine extends StateMachine {
             boolean showVolume = SystemProperties.getBoolean(HFP_VOLUME_CONTROL_ENABLED, true);
             int flag = showVolume && (mCurrentState == mAudioOn) ? AudioManager.FLAG_SHOW_UI : 0;
             int volStream =
-                    deprecateStreamBtSco()
+                    android.media.audio.Flags.deprecateStreamBtSco()
                             ? AudioManager.STREAM_VOICE_CALL
                             : AudioManager.STREAM_BLUETOOTH_SCO;
             int currentVol = mSystemInterface.getAudioManager().getStreamVolume(volStream);
