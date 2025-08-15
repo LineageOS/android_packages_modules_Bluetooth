@@ -60,11 +60,6 @@ import java.util.Locale;
 public class BluetoothOppNotificationTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
-
     @Mock BluetoothMethodProxy mMethodProxy;
 
     private static final int TIMEOUT_MS = 3000;
@@ -85,7 +80,6 @@ public class BluetoothOppNotificationTest {
                 .runOnMainSync(() -> mOppNotification = new BluetoothOppNotification(mContext));
 
         Intents.init();
-        TestUtils.setUpUiTest();
         // Go to notification screen
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).openNotification();
 
@@ -103,7 +97,6 @@ public class BluetoothOppNotificationTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
         // Back to home screen
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressHome();
 

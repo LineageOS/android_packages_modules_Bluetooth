@@ -34,7 +34,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -52,9 +51,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.opp.BluetoothOppTestUtils.CursorMockData;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -89,15 +87,13 @@ public class BluetoothOppUtilityTest {
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
-        TestUtils.setUpUiTest();
     }
 
     @After
-    public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
+    public void tearDown() {
         BluetoothMethodProxy.setInstanceForTesting(null);
         Mockito.clearAllCaches();
     }
