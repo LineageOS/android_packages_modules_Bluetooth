@@ -47,6 +47,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
@@ -235,6 +236,37 @@ static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tG
 
   p_tcb->att_lcid = L2CAP_ATT_CID;
   return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_force_disconnect
+ *
+ * Description      This function is called to forcefully disconnect a device.
+ *
+ * Parameter        p_tcb: pointer to the TCB to disconnect.
+ *                  comment: disconnection reason
+ *
+ ******************************************************************************/
+void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment) {
+  log::verbose("");
+
+  if (!p_tcb) {
+    log::warn("Unable to disconnect an unknown device");
+    return;
+  }
+
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
+    gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
+  }
+
+  auto hci_handle =
+          get_btm_client_interface().peer.BTM_GetHCIConnHandle(p_tcb->peer_bda, p_tcb->transport);
+  if (hci_handle == HCI_INVALID_HANDLE) {
+    log::warn("Unable to disconnect - no handle");
+  } else {
+    acl_disconnect_from_handle(hci_handle, HCI_ERR_PEER_USER, comment);
+  }
 }
 
 /*******************************************************************************
