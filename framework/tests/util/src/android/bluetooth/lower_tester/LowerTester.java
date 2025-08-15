@@ -16,15 +16,11 @@
 
 package android.bluetooth.lower_tester;
 
-import com.google.protobuf.ByteString;
-import android.bluetooth.lower_tester.PacketInstructions;
-import android.bluetooth.lower_tester.PacketInstructions.Instruction;
-import android.bluetooth.lower_tester.PacketInstructions.Builder;
-import android.bluetooth.lower_tester.Packet;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.lower_tester.PacketInstructions.Instruction;
 import android.util.Log;
+
+import com.google.protobuf.ByteString;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,13 +30,9 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 public class LowerTester implements Runnable {
     private static final String TAG = LowerTester.class.getSimpleName();

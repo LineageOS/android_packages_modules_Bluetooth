@@ -42,7 +42,6 @@ import androidx.test.uiautomator.Until;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;

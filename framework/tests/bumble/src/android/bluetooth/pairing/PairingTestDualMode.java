@@ -509,7 +509,6 @@ public class PairingTestDualMode {
                 hasExtra(
                         BluetoothDevice.EXTRA_PAIRING_VARIANT,
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
-
     }
 
     private static void testStep_restartBt() {

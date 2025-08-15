@@ -106,11 +106,13 @@ public class Constants {
 
     /** The bytes size unit used in the file size categorization */
     static final long KB_TO_BYTES = 1024;
+
     static final long MB_TO_BYTES = KB_TO_BYTES * 1024;
     static final long GB_TO_BYTES = MB_TO_BYTES * 1024;
 
     /** The time unit used in the duration categorization */
     static final int SEC_TO_MS = 1000;
+
     static final int MIN_TO_MS = 60 * SEC_TO_MS;
 
     /**

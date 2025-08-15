@@ -17,10 +17,9 @@
 package android.bluetooth.lower_tester;
 
 import com.google.protobuf.ByteString;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * An immutable container for a list of instructions on how to handle an intercepted packet. This

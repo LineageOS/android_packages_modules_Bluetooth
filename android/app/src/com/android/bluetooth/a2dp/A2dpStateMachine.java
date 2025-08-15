@@ -931,12 +931,14 @@ final class A2dpStateMachine extends StateMachine {
             return;
         }
         int metricsState = MetricsProfileToProtoState(state);
-        int eventType = BluetoothStatsLog
-                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_STATE_CHANGE;
+        int eventType =
+                BluetoothStatsLog
+                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_STATE_CHANGE;
         if (metricsState
                 == BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_UNKNOWN) {
-            eventType = BluetoothStatsLog
-                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_ERROR_STATE_CHANGE;
+            eventType =
+                    BluetoothStatsLog
+                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_ERROR_STATE_CHANGE;
             MetricsLogger.getInstance().logBluetoothEvent(device, eventType, metricsState, 0);
             return;
         }

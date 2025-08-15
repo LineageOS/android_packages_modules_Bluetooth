@@ -246,7 +246,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-
         assertThat(mBumbleDevice.createBond()).isTrue();
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -260,7 +259,6 @@ public class PairingTest {
                         BluetoothDevice.EXTRA_PAIRING_VARIANT,
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
         mBumbleDevice.setPairingConfirmation(true);
-
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -294,7 +292,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-
         assertThat(mBumbleDevice.createBond()).isTrue();
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -311,7 +308,6 @@ public class PairingTest {
         BluetoothDevice fakeUnintendedDevice = sAdapter.getRemoteDevice("51:F7:A8:75:17:01");
         assertThat(fakeUnintendedDevice.cancelBondProcess()).isTrue();
         mBumbleDevice.setPairingConfirmation(true);
-
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -344,7 +340,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-
         // Start SDP.  This will create an ACL connection before the bonding starts.
         assertThat(mBumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
 
@@ -365,7 +360,6 @@ public class PairingTest {
                         BluetoothDevice.EXTRA_PAIRING_VARIANT,
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
         mBumbleDevice.setPairingConfirmation(true);
-
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -919,7 +913,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                         .build();
 
-
         BluetoothSocket bluetoothSocket = mBumbleDevice.createL2capChannel(TEST_PSM);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -973,7 +966,6 @@ public class PairingTest {
                         BluetoothDevice.EXTRA_PAIRING_VARIANT,
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
         mBumbleDevice.setPairingConfirmation(true);
-
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -1201,7 +1193,6 @@ public class PairingTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
-
         // connect and disconnect the Classic link
         testStep_ConnectDisconnectBredr(intentReceiver);
         // Ensure that pairing succeeds
@@ -1298,7 +1289,6 @@ public class PairingTest {
 
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
 
         // connect and disconnect the LE link
         testStep_ConnectDisconnectLE(intentReceiver);
@@ -1516,7 +1506,6 @@ public class PairingTest {
                                 BluetoothDevice.ACTION_ACL_CONNECTED,
                                 BluetoothDevice.ACTION_PAIRING_REQUEST));
 
-
         assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
 
         intentReceiver.verifyReceived(
@@ -1536,7 +1525,6 @@ public class PairingTest {
 
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
@@ -1686,7 +1674,6 @@ public class PairingTest {
                                 .setOwnAddressType(ownAddressType)
                                 .build());
 
-
         assertThat(device.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue();
 
         intentReceiver.verifyReceived(
@@ -1706,7 +1693,6 @@ public class PairingTest {
 
         // Approve pairing from Android
         assertThat(device.setPairingConfirmation(true)).isTrue();
-
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(

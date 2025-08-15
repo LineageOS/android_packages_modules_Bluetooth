@@ -43,7 +43,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.base.Objects;

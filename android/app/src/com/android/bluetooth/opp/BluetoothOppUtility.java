@@ -58,8 +58,8 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.R;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -879,9 +879,9 @@ public class BluetoothOppUtility {
         ContentResolver resolver = context.getContentResolver();
 
         try (Cursor cursor =
-                    BluetoothMethodProxy.getInstance()
-                            .contentResolverQuery(
-                                    resolver, contentUri, FULL_PROJECTION, null, null, null)) {
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverQuery(
+                                resolver, contentUri, FULL_PROJECTION, null, null, null)) {
 
             if (cursor != null && cursor.moveToFirst()) {
                 oldStatus = cursor.getInt(cursor.getColumnIndexOrThrow(BluetoothShare.STATUS));
