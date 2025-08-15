@@ -23,9 +23,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.EXTRA_PREVIOUS_STATE;
 import static android.bluetooth.BluetoothProfile.EXTRA_STATE;
-import static android.bluetooth.BluetoothProfile.LE_AUDIO_BROADCAST;
-import static android.bluetooth.BluetoothProfile.LE_CALL_CONTROL;
-import static android.bluetooth.BluetoothProfile.MCP_SERVER;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -37,9 +34,6 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.le_audio.LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
-import static com.android.bluetooth.le_audio.LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
-import static com.android.bluetooth.le_audio.LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -87,7 +81,6 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
@@ -99,9 +92,8 @@ import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
-import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.FlagsWrapper;
-import com.android.tests.bluetooth.StaticMockitoRule;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -125,14 +117,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Test cases for {@link LeAudioService}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class LeAudioServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
-    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private ScanController mScanController;
@@ -272,10 +266,8 @@ public class LeAudioServiceTest {
         doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
         doReturn(MAX_LE_AUDIO_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
 
-        ExtendedMockito.doReturn(true)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST));
-        ExtendedMockito.doReturn(true)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
+        injectSupportedProfilesBitMask(
+                Set.of(BluetoothProfile.LE_AUDIO_BROADCAST, BluetoothProfile.LE_AUDIO));
 
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
@@ -388,67 +380,43 @@ public class LeAudioServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportLeCallControl_isCG() {
-        assertTmapRole(TMAP_ROLE_FLAG_CG, LE_CALL_CONTROL);
-    }
+    public void testTmapRoleMask() {
+        List<Set<Integer>> powerSet =
+                List.of(
+                        Set.of(BluetoothProfile.LE_CALL_CONTROL),
+                        Set.of(BluetoothProfile.MCP_SERVER),
+                        Set.of(BluetoothProfile.LE_CALL_CONTROL, BluetoothProfile.MCP_SERVER),
+                        Set.of(BluetoothProfile.LE_AUDIO_BROADCAST),
+                        Set.of(
+                                BluetoothProfile.LE_AUDIO_BROADCAST,
+                                BluetoothProfile.LE_CALL_CONTROL),
+                        Set.of(BluetoothProfile.LE_AUDIO_BROADCAST, BluetoothProfile.MCP_SERVER),
+                        Set.of(
+                                BluetoothProfile.LE_AUDIO_BROADCAST,
+                                BluetoothProfile.LE_CALL_CONTROL,
+                                BluetoothProfile.MCP_SERVER));
 
-    @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportMcpServer_isUMS() {
-        assertTmapRole(TMAP_ROLE_FLAG_UMS, MCP_SERVER);
-    }
+        List<Integer> tmapMasks =
+                powerSet.stream()
+                        .map(
+                                set -> {
+                                    injectSupportedProfilesBitMask(set);
+                                    LeAudioService service =
+                                            new LeAudioService(
+                                                    mAdapterService,
+                                                    mLooper.getLooper(),
+                                                    mNativeInterface,
+                                                    mLeAudioBroadcasterNativeInterface);
+                                    return service.getTmapRoleMask();
+                                })
+                        .collect(Collectors.toList());
 
-    @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportLeCallControlAndMcpServer_isCGAndUMS() {
-        assertTmapRole(TMAP_ROLE_FLAG_CG | TMAP_ROLE_FLAG_UMS, LE_CALL_CONTROL, MCP_SERVER);
-    }
+        List<Integer> expectedMasks =
+                powerSet.stream()
+                        .map(LeAudioServiceTest::constructTmapRoleMask)
+                        .collect(Collectors.toList());
 
-    @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportBroadcast_isBMS() {
-        assertTmapRole(TMAP_ROLE_FLAG_BMS, LE_AUDIO_BROADCAST);
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportBroadcastAndLeCallControl_isBMSAndCG() {
-        assertTmapRole(TMAP_ROLE_FLAG_CG | TMAP_ROLE_FLAG_BMS, LE_AUDIO_BROADCAST, LE_CALL_CONTROL);
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportBroadcastAndMcpServer_isBMSAndUMS() {
-        assertTmapRole(TMAP_ROLE_FLAG_UMS | TMAP_ROLE_FLAG_BMS, LE_AUDIO_BROADCAST, MCP_SERVER);
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK)
-    public void tmapRoleMask_whenSupportLeCallControlAndBroadcastAndMcpServer_isBMSAndUMSAndCG() {
-        assertTmapRole(
-                TMAP_ROLE_FLAG_CG | TMAP_ROLE_FLAG_UMS | TMAP_ROLE_FLAG_BMS,
-                LE_AUDIO_BROADCAST,
-                MCP_SERVER,
-                LE_CALL_CONTROL);
-    }
-
-    private void assertTmapRole(int expectedMasks, int... supportedProfiles) {
-        // revert the profile set in setup
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST));
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
-        for (int profile : supportedProfiles) {
-            ExtendedMockito.doReturn(true).when(() -> Config.isProfileSupported(profile));
-        }
-        int mask =
-                new LeAudioService(
-                                mAdapterService,
-                                mLooper.getLooper(),
-                                mNativeInterface,
-                                mLeAudioBroadcasterNativeInterface)
-                        .getTmapRoleMask();
-        assertThat(mask).isEqualTo(expectedMasks);
+        assertThat(tmapMasks).containsExactly(expectedMasks.toArray()).inOrder();
     }
 
     /** Test getting LeAudio Service: getLeAudioService() */
@@ -3640,5 +3608,29 @@ public class LeAudioServiceTest {
         mInOrder.verify(mAdapterService, timeout(2000))
                 .sendBroadcastAsUser(
                         MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any(), any());
+    }
+
+    private void injectSupportedProfilesBitMask(Set<Integer> profiles) {
+        long mask = 0;
+        for (int profile : profiles) {
+            mask |= (long) (1 << profile);
+        }
+        doReturn(mask).when(mAdapterService).getSupportedProfilesBitMask();
+    }
+
+    private static int constructTmapRoleMask(Set<Integer> profiles) {
+        int mask = 0;
+        for (int profile : profiles) {
+            switch (profile) {
+                case BluetoothProfile.LE_CALL_CONTROL ->
+                        mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
+                case BluetoothProfile.MCP_SERVER ->
+                        mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
+                case BluetoothProfile.LE_AUDIO_BROADCAST ->
+                        mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
+                default -> {} // Nothing to do
+            }
+        }
+        return mask;
     }
 }

@@ -525,16 +525,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public int[] getSupportedProfiles(AttributionSource source) {
+    public long getSupportedProfiles(AttributionSource source) {
         AdapterService service = getService();
         if (service == null
                 || !checkConnectPermissionForDataDelivery(
                         service, source, TAG, "getSupportedProfiles")) {
-            return new int[0];
+            return 0;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return Config.getSupportedProfiles();
+        return Config.getSupportedProfilesBitMask();
     }
 
     @Override
@@ -1302,22 +1302,54 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public boolean isLeAudioSupported() {
+    public int isLeAudioSupported() {
+        AdapterService service = getService();
+        if (service == null) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        }
+
         Set<Integer> supportedProfileServices =
                 Arrays.stream(Config.getSupportedProfiles()).boxed().collect(Collectors.toSet());
         int[] leAudioUnicastProfiles = Config.getLeAudioUnicastProfiles();
 
-        return Arrays.stream(leAudioUnicastProfiles).allMatch(supportedProfileServices::contains);
+        if (Arrays.stream(leAudioUnicastProfiles).allMatch(supportedProfileServices::contains)) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
     @Override
-    public boolean isLeAudioBroadcastSourceSupported() {
-        return Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST);
+    public int isLeAudioBroadcastSourceSupported() {
+        AdapterService service = getService();
+        if (service == null) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        }
+
+        long supportBitMask = Config.getSupportedProfilesBitMask();
+        if ((supportBitMask & (1 << BluetoothProfile.LE_AUDIO_BROADCAST)) != 0) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
     @Override
-    public boolean isLeAudioBroadcastAssistantSupported() {
-        return Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+    public int isLeAudioBroadcastAssistantSupported() {
+        AdapterService service = getService();
+        if (service == null) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        }
+
+        int[] supportedProfileServices = Config.getSupportedProfiles();
+
+        if (Arrays.stream(supportedProfileServices)
+                .anyMatch(
+                        profileId -> profileId == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
     @Override
