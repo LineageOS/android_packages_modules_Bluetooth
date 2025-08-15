@@ -168,7 +168,7 @@ public class ScanController {
             ScannerMap scannerMap,
             @Nullable Looper looper,
             TimeProvider timeProvider) {
-        Log.d(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
+        Log.i(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
