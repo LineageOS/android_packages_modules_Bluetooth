@@ -13,17 +13,6 @@
     </issue>
 
     <issue
-        id="FlaggedApi"
-        message="Method `setMeasurementTimestampNanos()` is a flagged API and should be inside an `if (Flags.channelSounding25q2Apis())` check (or annotate the surrounding method `createFromParcel` with `@FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS) to transfer requirement to caller`)"
-        errorLine1="                    return new Builder(in.readDouble(), in.readDouble())"
-        errorLine2="                           ^">
-        <location
-            file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/DistanceMeasurementResult.java"
-            line="385"
-            column="28"/>
-    </issue>
-
-    <issue
         id="WrongConstant"
         message="Flag not allowed here"
         errorLine1="            return (mCapability >> 1) &amp; 1;"

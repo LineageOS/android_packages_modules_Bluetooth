@@ -56,14 +56,6 @@ flag {
 }
 
 flag {
-    name: "directed_advertising_api"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add new API for directed advertising"
-    bug: "378230500"
-}
-
-flag {
     name: "distance_measurement_thread"
     namespace: "bluetooth"
     description: "Makes distance measurement operations run on one thread."

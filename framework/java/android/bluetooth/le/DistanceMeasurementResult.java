@@ -16,7 +16,6 @@
 
 package android.bluetooth.le;
 
-import android.annotation.FlaggedApi;
 import android.annotation.FloatRange;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -24,8 +23,6 @@ import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -309,7 +306,6 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @return timestamp of ranging measurement in nanoseconds
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @SystemApi
     @RequiresNoPermission
     public long getMeasurementTimestampNanos() {
@@ -601,7 +597,6 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @param measurementTimestampNanos time the distance measurement occurred
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setMeasurementTimestampNanos(long measurementTimestampNanos) {

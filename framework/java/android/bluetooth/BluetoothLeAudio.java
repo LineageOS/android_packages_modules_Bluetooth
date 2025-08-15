@@ -26,7 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -49,8 +48,6 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -170,7 +167,6 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          * @param groupId The ID of the new broadcast to unicast fallback group.
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
         @SystemApi
         default void onBroadcastToUnicastFallbackGroupChanged(int groupId) {
             if (DBG) {
@@ -214,10 +210,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
 
         @Override
         public void onBroadcastToUnicastFallbackGroupChanged(int groupId) {
-            if (Flags.leaudioBroadcastApiManagePrimaryGroup()) {
-                mCallbackWrapper.forEach(
-                        (cb) -> cb.onBroadcastToUnicastFallbackGroupChanged(groupId));
-            }
+            mCallbackWrapper.forEach((cb) -> cb.onBroadcastToUnicastFallbackGroupChanged(groupId));
         }
     }
 
@@ -397,28 +390,21 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *     with a meaning MONO.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_LEAUDIO_MONO_LOCATION_ERRATA_API)
-    @Deprecated
-    @SystemApi
-    public static final int AUDIO_LOCATION_INVALID = 0;
+    @Deprecated @SystemApi public static final int AUDIO_LOCATION_INVALID = 0;
 
     /**
      * This represents an Mono audio location.
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_LEAUDIO_MONO_LOCATION_ERRATA_API)
-    @SystemApi
-    public static final int AUDIO_LOCATION_MONO = 0;
+    @SystemApi public static final int AUDIO_LOCATION_MONO = 0;
 
     /**
      * This represents an Unknown audio location which will be returned only when Bluetooth is OFF.
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_LEAUDIO_MONO_LOCATION_ERRATA_API)
-    @SystemApi
-    public static final int AUDIO_LOCATION_UNKNOWN = 0x01 << 31;
+    @SystemApi public static final int AUDIO_LOCATION_UNKNOWN = 0x01 << 31;
 
     /**
      * This represents an audio location front left.
@@ -1231,11 +1217,9 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
             }
         }
 
-        if (Flags.leaudioMonoLocationErrataApi()
-                && CompatChanges.isChangeEnabled(LEAUDIO_MONO_LOCATION_ERRATA)) {
+        if (CompatChanges.isChangeEnabled(LEAUDIO_MONO_LOCATION_ERRATA)) {
             return AUDIO_LOCATION_UNKNOWN;
         }
-
         return AUDIO_LOCATION_INVALID;
     }
 
@@ -1429,7 +1413,6 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @see BluetoothLeAudio#getGroupId()
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1463,7 +1446,6 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *     disabled
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
