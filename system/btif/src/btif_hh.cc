@@ -1051,10 +1051,6 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MAS
 }
 
 void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
-  if (!com::android::bluetooth::flags::hogp_reconnection()) {
-    return;
-  }
-
   // We want to reconnect HoGP in the background, so we're only interested in LE case.
   if (transport != BT_TRANSPORT_LE) {
     return;
@@ -1150,12 +1146,10 @@ void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
   }
 
   // Remove pending connection if address matches
-  if (com::android::bluetooth::flags::vup_for_pending_connection()) {
-    size_t pending_connections = btif_hh_cb.new_connection_requests.remove_if(
-            [link_spec](auto ls) { return ls.addrt.bda == link_spec.addrt.bda; });
-    if (pending_connections > 0) {
-      announce_vup = true;
-    }
+  size_t pending_connections = btif_hh_cb.new_connection_requests.remove_if(
+          [link_spec](auto ls) { return ls.addrt.bda == link_spec.addrt.bda; });
+  if (pending_connections > 0) {
+    announce_vup = true;
   }
 
   if (!announce_vup) {
@@ -1180,32 +1174,6 @@ void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
  ** Returns          void
  ******************************************************************************/
 static void btif_hh_remove_pending_connection(const tAclLinkSpec& link_spec) {
-  if (!com::android::bluetooth::flags::vup_for_pending_connection()) {
-    bool pending_connection = false;
-    for (auto ls : btif_hh_cb.new_connection_requests) {
-      if (ls.addrt.bda == link_spec.addrt.bda) {
-        pending_connection = true;
-        break;
-      }
-    }
-
-    if (pending_connection) {
-      btif_hh_cb.new_connection_requests.remove_if(
-              [link_spec](auto ls) { return ls.addrt.bda == link_spec.addrt.bda; });
-
-      // Notify service of disconnection to avoid state mismatch
-      if (com::android::bluetooth::flags::hh_state_update_race_fix()) {
-        tAclLinkSpec ls = link_spec;
-        BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED);
-      } else {
-        do_in_jni_thread(base::Bind(
-                [](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED); },
-                link_spec));
-      }
-    }
-    return;
-  }
-
   size_t pending_connections = btif_hh_cb.new_connection_requests.remove_if([link_spec](auto ls) {
     if (ls.addrt.bda == link_spec.addrt.bda) {
       // Notify service of disconnection to avoid state mismatch
@@ -1271,11 +1239,6 @@ bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec) {
   // Remove the connecting or added device
   if (btif_hh_find_dev_by_link_spec(link_spec) != nullptr ||
       btif_hh_find_added_dev(link_spec) != nullptr) {
-    if (!com::android::bluetooth::flags::vup_for_pending_connection()) {
-      // Remove pending connection if address matches
-      btif_hh_cb.new_connection_requests.remove_if(
-              [link_spec](auto ls) { return ls.addrt.bda == link_spec.addrt.bda; });
-    }
     btif_hh_remove_device(link_spec);
     BTA_DmRemoveDevice(link_spec.addrt.bda);
     return BT_STATUS_SUCCESS;
@@ -1344,8 +1307,7 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
   }
 
   // Add the new connection to the pending list
-  if (!com::android::bluetooth::flags::pending_hid_connection_cancellation() ||
-      added_dev == nullptr) {
+  if (added_dev == nullptr) {
     btif_hh_cb.new_connection_requests.push_back(link_spec);
   }
 
@@ -1889,9 +1851,7 @@ static bt_status_t disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
                 bthh_connection_state_text(p_dev->dev_status));
       p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
 
-      if (com::android::bluetooth::flags::pending_hid_connection_cancellation()) {
-        btif_hh_cb.new_connection_requests.remove(link_spec);
-      }
+      btif_hh_cb.new_connection_requests.remove(link_spec);
       return BT_STATUS_DONE;
     } else if (std::find(btif_hh_cb.new_connection_requests.begin(),
                          btif_hh_cb.new_connection_requests.end(),

@@ -146,22 +146,6 @@ public class DatabaseManager {
     void bondStateChanged(BluetoothDevice device, int state) {
         synchronized (mMetadataCache) {
             String address = device.getAddress();
-            if (!Flags.createMetadataAfterBonding()) {
-                if (state != BluetoothDevice.BOND_NONE) {
-                    if (mMetadataCache.containsKey(address)) {
-                        return;
-                    }
-                    createMetadata(address, false);
-                } else {
-                    Metadata metadata = mMetadataCache.get(address);
-                    if (metadata != null) {
-                        mMetadataCache.remove(address);
-                        deleteDatabase(metadata);
-                    }
-                }
-                return;
-            }
-
             if (state == BluetoothDevice.BOND_BONDED) {
                 if (mMetadataCache.containsKey(address)) {
                     return;
