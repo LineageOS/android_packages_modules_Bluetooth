@@ -54,7 +54,6 @@ import android.sysprop.BluetoothProperties;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
@@ -152,6 +151,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     private final NotificationManager mNotificationManager;
     private final PbapHandler mSessionStatusHandler;
     private final HandlerThread mHandlerThread;
+    private final Looper mLooper;
     private final boolean mIsPseDynamicVersionUpgradeEnabled;
 
     private static String sLocalPhoneNum;
@@ -169,11 +169,17 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
     // TODO(b/422543753) Delete on flag cleanup
     public BluetoothPbapService(AdapterService adapterService) {
-        this(requireNonNull(adapterService), null);
+        this(requireNonNull(adapterService), null, null);
     }
 
     public BluetoothPbapService(
             AdapterService adapterService, NotificationManager notificationManager) {
+        this(requireNonNull(adapterService), notificationManager, null);
+    }
+
+    @VisibleForTesting
+    BluetoothPbapService(
+            AdapterService adapterService, NotificationManager notificationManager, Looper looper) {
         super(BluetoothProfile.PBAP, requireNonNull(adapterService));
         if (Flags.adapterServiceProfilesUseOptional()) {
             mNotificationManager = requireNonNull(notificationManager);
@@ -194,10 +200,15 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         // Enable owned Activity component
         setComponentAvailable(PBAP_ACTIVITY, true);
 
-        mHandlerThread = new HandlerThread("PbapHandlerThread");
-        BluetoothMethodProxy mp = requireNonNull(BluetoothMethodProxy.getInstance());
-        mp.threadStart(mHandlerThread);
-        mSessionStatusHandler = new PbapHandler(mp.handlerThreadGetLooper(mHandlerThread));
+        if (looper == null) {
+            mHandlerThread = new HandlerThread("PbapHandlerThread");
+            mHandlerThread.start();
+            mLooper = mHandlerThread.getLooper();
+        } else {
+            mHandlerThread = null;
+            mLooper = looper;
+        }
+        mSessionStatusHandler = new PbapHandler(mLooper);
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
@@ -714,8 +725,10 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         Log.i(TAG, "cleanup()");
 
         mSessionStatusHandler.sendEmptyMessage(SHUTDOWN);
-        mHandlerThread.quitSafely();
-        joinUninterruptibly(mHandlerThread);
+        if (mHandlerThread != null) {
+            mHandlerThread.quitSafely();
+            joinUninterruptibly(mHandlerThread);
+        }
         mContactsLoaded = false;
         unregisterReceiver(mPbapReceiver);
         mAdapterService.getContentResolver().unregisterContentObserver(mContactChangeObserver);
@@ -743,7 +756,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         mAdapterService,
                         this,
                         mNotificationManager,
-                        mHandlerThread.getLooper(),
+                        mLooper,
                         remoteDevice,
                         socket,
                         mSessionStatusHandler,
