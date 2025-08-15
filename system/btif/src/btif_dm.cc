@@ -2322,6 +2322,20 @@ static void btif_add_local_irk_to_resolving_list() {
   }
 }
 
+void btif_remove_local_irk_from_resolving_list() {
+  if (!com::android::bluetooth::flags::btsec_cycle_irks()) {
+    // we should only be calling this from a block that's already checked, but
+    // let's make sure anyway
+    return;
+  }
+
+  if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
+    log::info("Removing local IRK from resolving list before reset");
+    bluetooth::shim::GetAclManagerLe()->RemoveDeviceFromResolvingList(
+            {bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+  }
+}
+
 void BTIF_dm_enable() {
   btif_storage_prune_devices();
 
