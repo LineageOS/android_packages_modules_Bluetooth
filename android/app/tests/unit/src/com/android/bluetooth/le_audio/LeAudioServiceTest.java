@@ -251,7 +251,6 @@ public class LeAudioServiceTest {
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
                 Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
-                Flags.FLAG_ONLY_BROADCAST_TO_LOCAL_USER,
                 Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK);
     }
 
