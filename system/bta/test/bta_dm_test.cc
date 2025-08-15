@@ -49,6 +49,8 @@
 
 #define TEST_BT com::android::bluetooth::flags
 
+using ::testing::NiceMock;
+
 using namespace std::chrono_literals;
 using namespace bluetooth;
 
@@ -66,7 +68,7 @@ protected:
   void SetUp() override {
     BtaWithContextTest::SetUp();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockController>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
             .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
 

@@ -20,8 +20,7 @@
 #include <gmock/gmock.h>
 
 #include "bta/dm/bta_dm_int.h"
-#include "bta/include/bta_api.h"
-#include "bta/sys/bta_sys.h"
+#include "include/bluetooth/types/uuid.h"
 #include "osi/include/allocator.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
@@ -62,7 +61,7 @@ protected:
     ASSERT_NE(get_btm_client_interface().lifecycle.btm_free, nullptr);
 
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockController>();
+            std::make_unique<::testing::NiceMock<bluetooth::hci::testing::MockController>>();
     bluetooth::testing::stack::rnr::set_interface(&mock_stack_rnr_interface_);
 
     test::mock::stack_gatt_api::GATT_Register.body =
