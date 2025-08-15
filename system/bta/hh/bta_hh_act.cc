@@ -1001,7 +1001,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       break;
 
     default:
-      log::verbose("invalid command");
+      log::warn("Invalid command {} for device {}", p_dev_info->sub_event, p_dev_info->link_spec);
       break;
   }
 
