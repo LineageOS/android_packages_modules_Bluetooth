@@ -118,16 +118,6 @@ flag {
 }
 
 flag {
-    name: "dsa_hw_transparent_codec"
-    namespace: "bluetooth"
-    description: "Use trasparent codec for DSA hardware path"
-    bug: "382263607"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_disable_broadcast_for_hap_device"
     namespace: "bluetooth"
     description: "Disable broadcast feature for HAP device"
@@ -342,6 +332,16 @@ flag {
     namespace: "bluetooth"
     description: "Configure data path before setting ISO data path"
     bug: "438088172"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "start_leaudio_subrate_for_active_set_only"
+    namespace: "bluetooth"
+    description: "Only start LE audio subrate for the active le audio set"
+    bug: "437449260"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -10,36 +10,6 @@ flag {
 }
 
 flag {
-    name: "hogp_reconnection"
-    namespace: "bluetooth"
-    description: "Allow reconnection from HOGP device irrespective of disconnection reason"
-    bug: "378162528"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "pending_hid_connection_cancellation"
-    namespace: "bluetooth"
-    description: "Properly cancel the pending connection to the already added devices"
-    bug: "381135214"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "vup_for_pending_connection"
-    namespace: "bluetooth"
-    description: "Generate HID VUP for pending connections as well"
-    bug: "396747085"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "early_incoming_hid_connection"
     namespace: "bluetooth"
     description: "Allow early incoming HID connection"

@@ -32,46 +32,6 @@ flag {
 }
 
 flag {
-    name: "remove_device_in_main_thread"
-    namespace: "bluetooth"
-    description: "Device must be removed in main thread"
-    bug: "381275933"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "peripheral_auth_req"
-    namespace: "bluetooth"
-    description: "Use appropriate authentication requirements for SMP security request in peripheral role"
-    bug: "385202199"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "le_appearance_after_ctkd"
-    namespace: "bluetooth"
-    description: "Allow read of LE appearance after CTKD if class of device is unknown"
-    bug: "386835787"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "create_metadata_after_bonding"
-    namespace: "bluetooth"
-    description: "Don't create metadata before the device is bonded"
-    bug: "387523991"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_mandate_auth_along_with_encryption"
     namespace: "bluetooth"
     description: "Don't mandate authentication along with encryption"
@@ -324,6 +284,16 @@ flag {
     namespace: "bluetooth"
     description: "Do not perform CTKD for temporary pairing"
     bug: "436957985"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "pairing_collision_with_same_device"
+    namespace: "bluetooth"
+    description: "Continue pairing if collision is detected with the same device"
+    bug: "438291410"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

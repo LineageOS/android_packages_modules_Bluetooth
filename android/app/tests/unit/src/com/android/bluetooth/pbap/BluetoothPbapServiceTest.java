@@ -17,19 +17,18 @@
 package com.android.bluetooth.pbap;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.content.pm.PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -40,7 +39,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Message;
 import android.os.UserManager;
 import android.test.mock.MockContentResolver;
@@ -49,21 +47,18 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Spy;
 
 import java.util.List;
 
@@ -77,17 +72,18 @@ public class BluetoothPbapServiceTest {
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private NotificationManager mNotificationManager;
     @Mock private SharedPreferences mSharedPreferences;
-    @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(42);
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final MockContentResolver mMockContentResolver = new MockContentResolver(mContext);
 
     private BluetoothPbapService mService;
-    private TestLooper mTestLooper;
+    private TestLooper mLooper;
 
     @Before
     public void setUp() throws Exception {
+        assumeTrue(mContext.getPackageManager().hasSystemFeature(FEATURE_TELEPHONY_SUBSCRIPTION));
+
         doReturn(mSharedPreferences)
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
@@ -97,25 +93,17 @@ public class BluetoothPbapServiceTest {
         UserManager manager = TestUtils.mockGetSystemService(mAdapterService, UserManager.class);
         doReturn(List.of()).when(manager).getAllProfiles();
 
-        mTestLooper = new TestLooper();
-        BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
-        doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
-        doNothing().when(mMethodProxy).threadStart(any());
-        mTestLooper.startAutoDispatch();
+        mLooper = new TestLooper();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mockGetBluetoothManager(mAdapterService);
-        mService = new BluetoothPbapService(mAdapterService, mNotificationManager);
+        mService =
+                new BluetoothPbapService(
+                        mAdapterService, mNotificationManager, mLooper.getLooper());
         mService.setAvailable(true);
-
-        PackageManager pm = mContext.getPackageManager();
-        assumeNotNull(pm);
-        assumeTrue(pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION));
     }
 
-    @After
-    public void tearDown() throws Exception {
-        mTestLooper.stopAutoDispatchAndIgnoreExceptions();
-        BluetoothMethodProxy.setInstanceForTesting(null);
+    @Test
+    public void init_cleanup() {
         mService.cleanup();
     }
 
@@ -154,7 +142,6 @@ public class BluetoothPbapServiceTest {
 
     @Test
     public void onAcceptFailed() {
-        mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         PbapStateMachine sm = mock(PbapStateMachine.class);
         mService.mPbapStateMachineMap.put(mRemoteDevice, sm);
 

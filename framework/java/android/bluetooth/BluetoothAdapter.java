@@ -2343,7 +2343,12 @@ public final class BluetoothAdapter {
         if (!getLeAccess()) {
             return ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        return callServiceIfEnabled(s -> s.isLeAudioSupported(), ERROR_BLUETOOTH_NOT_ENABLED);
+        return callServiceIfEnabled(
+                s ->
+                        s.isLeAudioSupported()
+                                ? BluetoothStatusCodes.FEATURE_SUPPORTED
+                                : BluetoothStatusCodes.FEATURE_NOT_SUPPORTED,
+                ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2359,7 +2364,11 @@ public final class BluetoothAdapter {
             return ERROR_BLUETOOTH_NOT_ENABLED;
         }
         return callServiceIfEnabled(
-                s -> s.isLeAudioBroadcastSourceSupported(), ERROR_BLUETOOTH_NOT_ENABLED);
+                s ->
+                        s.isLeAudioBroadcastSourceSupported()
+                                ? BluetoothStatusCodes.FEATURE_SUPPORTED
+                                : BluetoothStatusCodes.FEATURE_NOT_SUPPORTED,
+                ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2375,7 +2384,11 @@ public final class BluetoothAdapter {
             return ERROR_BLUETOOTH_NOT_ENABLED;
         }
         return callServiceIfEnabled(
-                s -> s.isLeAudioBroadcastAssistantSupported(), ERROR_BLUETOOTH_NOT_ENABLED);
+                s ->
+                        s.isLeAudioBroadcastAssistantSupported()
+                                ? BluetoothStatusCodes.FEATURE_SUPPORTED
+                                : BluetoothStatusCodes.FEATURE_NOT_SUPPORTED,
+                ERROR_BLUETOOTH_NOT_ENABLED);
     }
 
     /**
@@ -2571,31 +2584,23 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @NonNull List<Integer> getSupportedProfiles() {
-        final ArrayList<Integer> supportedProfiles = new ArrayList<Integer>();
-
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final long supportedProfilesBitMask =
-                        mService.getSupportedProfiles(mAttributionSource);
-
-                for (int i = 0; i <= BluetoothProfile.MAX_PROFILE_ID; i++) {
-                    if ((supportedProfilesBitMask & (1 << i)) != 0) {
-                        supportedProfiles.add(i);
-                    }
-                }
-            } else {
-                // Bluetooth is disabled. Just fill in known supported Profiles
-                if (isHearingAidProfileSupported()) {
-                    supportedProfiles.add(BluetoothProfile.HEARING_AID);
-                }
+                return Arrays.stream(mService.getSupportedProfiles(mAttributionSource))
+                        .boxed()
+                        .toList();
             }
         } catch (RemoteException e) {
             logRemoteException(TAG, e);
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return supportedProfiles;
+        // Bluetooth is disabled. Just fill in known supported Profiles
+        if (isHearingAidProfileSupported()) {
+            return List.of(BluetoothProfile.HEARING_AID);
+        }
+        return List.of();
     }
 
     private static final IpcDataCache.QueryHandler<IBluetooth, Integer>

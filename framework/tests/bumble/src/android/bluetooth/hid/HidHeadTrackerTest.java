@@ -230,12 +230,7 @@ public class HidHeadTrackerTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
 
-        if (!Flags.hogpReconnection()) {
-            assertThat(mBumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-            verifyConnectionState(TRANSPORT_LE, STATE_CONNECTING);
-        }
-        // HOGP CONNECTING and ACL CONNECTED has race connection when hogp_reconnection flag enabled
-        // hence unordered here
+        // HOGP CONNECTING and ACL CONNECTED has race connection hence unordered here
         verifyIntentReceivedUnorderedAtLeast(
                 1,
                 hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),

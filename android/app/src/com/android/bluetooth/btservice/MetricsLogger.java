@@ -1012,8 +1012,8 @@ public class MetricsLogger {
 
     /** Log calling app uid and files count and size for OPP launcher activity. */
     public void logBluetoothOppLauncherCreated(int uid, int fileCount, int totalFileSize) {
-        BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_OPP_LAUNCHER_CREATED,
-                uid, fileCount, totalFileSize);
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLUETOOTH_OPP_LAUNCHER_CREATED, uid, fileCount, totalFileSize);
     }
 
     /** Log the status of a Bluetooth share. */

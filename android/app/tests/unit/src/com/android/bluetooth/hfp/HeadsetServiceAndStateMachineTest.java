@@ -202,7 +202,9 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(mAudioManager).when(mSystemInterface).getAudioManager();
         doReturn(mAudioDeviceVolumeManager).when(mSystemInterface).getAudioDeviceVolumeManager();
         doReturn(true).when(mSystemInterface).activateVoiceRecognition(any(BluetoothDevice.class));
-        doReturn(true).when(mSystemInterface).deactivateVoiceRecognition(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mSystemInterface)
+                .deactivateVoiceRecognition(any(BluetoothDevice.class));
         doReturn(mVoiceRecognitionWakeLock).when(mSystemInterface).getVoiceRecognitionWakeLock();
         doReturn(true).when(mSystemInterface).isCallIdle();
         doReturn(false).when(mSystemInterface).isScoManagedByAudioEnabled();
@@ -638,13 +640,7 @@ public class HeadsetServiceAndStateMachineTest {
         mTestLooper.dispatchAll();
         verify(mNativeInterface)
                 .atResponseCode(activeDevice, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
-        mInOrder.verify(mAdapterService, times(0))
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(
-                                hasAction(BluetoothHeadset.ACTION_ACTIVE_DEVICE_CHANGED)),
-                        any(),
-                        any(),
-                        any());
+        verifyNoIntentSent();
         assertThat(mHeadsetService.getActiveDevice()).isEqualTo(dialingOutDevice);
 
         // Make sure only one intent is fired
@@ -2478,8 +2474,21 @@ public class HeadsetServiceAndStateMachineTest {
         assertThat(mHeadsetService.getConnectionState(device)).isEqualTo(STATE_CONNECTED);
     }
 
+    private void verifyNoIntentSent() {
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService, never()).sendBroadcast(any(), any(), any());
+            return;
+        }
+        mInOrder.verify(mAdapterService, never()).sendBroadcastAsUser(any(), any(), any(), any());
+    }
+
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mAdapterService)
+                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
+            return;
+        }
         mInOrder.verify(mAdapterService)
                 .sendBroadcastAsUser(
                         MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any(), any());

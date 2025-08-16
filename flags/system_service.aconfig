@@ -64,3 +64,10 @@ flag {
     description: "If there is a watch connected, keep Bluetooth on"
     bug: "416092966"
 }
+
+flag {
+    name: "user_visible_on_user_starting"
+    namespace: "bluetooth"
+    description: "Check userVisible API to determine if user should startup bluetooth instance"
+    bug: "438756896"
+}

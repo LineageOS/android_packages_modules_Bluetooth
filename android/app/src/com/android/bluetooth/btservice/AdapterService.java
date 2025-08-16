@@ -3849,10 +3849,6 @@ public class AdapterService extends Service {
         return mAdapterProperties.isLeChannelSoundingSupported();
     }
 
-    public long getSupportedProfilesBitMask() {
-        return Config.getSupportedProfilesBitMask();
-    }
-
     /**
      * Check if the LE audio CIS central feature is supported.
      *

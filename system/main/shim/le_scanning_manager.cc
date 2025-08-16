@@ -507,13 +507,6 @@ void BleScannerInterfaceImpl::OnScanResult(uint16_t event_type, uint8_t address_
                                            int8_t tx_power, int8_t rssi,
                                            uint16_t periodic_advertising_interval,
                                            std::vector<uint8_t> advertising_data) {
-  if (!com::android::bluetooth::flags::scan_results_in_main_thread()) {
-    BleScannerInterfaceImpl::on_scan_result(event_type, address_type, address, primary_phy,
-                                            secondary_phy, advertising_sid, tx_power, rssi,
-                                            periodic_advertising_interval, advertising_data);
-    return;
-  }
-
   do_in_main_thread(base::BindOnce(&BleScannerInterfaceImpl::on_scan_result, base::Unretained(this),
                                    event_type, address_type, address, primary_phy, secondary_phy,
                                    advertising_sid, tx_power, rssi, periodic_advertising_interval,

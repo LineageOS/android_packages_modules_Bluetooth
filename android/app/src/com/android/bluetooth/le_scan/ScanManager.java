@@ -954,6 +954,9 @@ class ScanManager {
         if (!isAppForeground(client) || isBatchClient(client)) {
             return false;
         }
+        if (Flags.upgradeLeScanOnlyScreenOn() && !mScreenOn) {
+            return false;
+        }
 
         if (upgradeScanModeByOneLevel(client)) {
             if (Flags.scanControllerThread()) {

@@ -46,7 +46,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.base.Objects;
@@ -71,11 +70,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RunWith(AndroidJUnit4.class)
 public class IncomingFileConfirmActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
     @Spy BluetoothMethodProxy mBluetoothMethodProxy;
 
@@ -155,13 +149,10 @@ public class IncomingFileConfirmActivityTest {
                                         BluetoothShare.USER_CONFIRMATION,
                                         11,
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
-
         BluetoothMethodProxy.setInstanceForTesting(null);
     }
 

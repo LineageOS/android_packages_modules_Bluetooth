@@ -332,9 +332,9 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * <ul>
      *   <li>{@link BluetoothStatusCodes#SUCCESS}
      *   <li>{@link BluetoothStatusCodes#ERROR_UNKNOWN}
-     *   <li>{@link BluetoothStatusCodes#INSUFFICIENT_RESOURCES}
-     *   <li>{@link BluetoothStatusCodes#SDP_DISCOVERY_FAILED}
-     *   <li>{@link BluetoothStatusCodes#RFCOMM_CONNECTION_FAILED}
+     *   <li>{@link BluetoothStatusCodes#ERROR_INSUFFICIENT_RESOURCES}
+     *   <li>{@link BluetoothStatusCodes#ERROR_SDP_DISCOVERY_FAILED}
+     *   <li>{@link BluetoothStatusCodes#ERROR_RFCOMM_CONNECTION_FAILED}
      * </ul>
      */
     @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)

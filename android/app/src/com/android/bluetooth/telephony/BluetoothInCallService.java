@@ -161,8 +161,7 @@ public class BluetoothInCallService extends InCallService {
     private TelephonyManager mTelephonyManager;
     private TelecomManager mTelecomManager;
 
-    @VisibleForTesting
-    final LeCallControlClient mLeCallControlClient = new LeCallControlClient();
+    @VisibleForTesting final LeCallControlClient mLeCallControlClient = new LeCallControlClient();
 
     @VisibleForTesting
     public final HashMap<Integer, CallStateCallback> mCallbacks = new HashMap<>();

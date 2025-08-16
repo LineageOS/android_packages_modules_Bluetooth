@@ -261,7 +261,6 @@ public class PairingWithDiscoveryTest {
         // Start Device Discovery from Android
         testStepStartDiscovery();
 
-
         // Start pairing from Android with Auto transport
         assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
 
@@ -282,7 +281,6 @@ public class PairingWithDiscoveryTest {
 
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
 
         // Ensure that pairing succeeds
         verifyIntentReceived(
@@ -339,7 +337,6 @@ public class PairingWithDiscoveryTest {
         // Start Device Discovery from Android
         testStepStartDiscovery();
 
-
         // Start pairing from Android with Auto transport
         assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
 
@@ -360,7 +357,6 @@ public class PairingWithDiscoveryTest {
 
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
 
         // Ensure that pairing succeeds
         verifyIntentReceived(

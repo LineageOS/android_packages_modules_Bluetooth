@@ -807,11 +807,11 @@ final class A2dpStateMachine extends StateMachine {
         return switch (reason) {
             case /* BTA_AV_SUCCESS */ 0 -> BluetoothStatusCodes.SUCCESS;
             case /* BTA_AV_FAIL */ 1 -> BluetoothStatusCodes.ERROR_UNKNOWN;
-            case /* BTA_AV_FAIL_SDP */ 2 -> BluetoothStatusCodes.SDP_DISCOVERY_FAILED;
-            case /* BTA_AV_FAIL_STREAM */ 3 -> BluetoothStatusCodes.STREAM_CONNECTION_FAILED;
-            case /* BTA_AV_FAIL_RESOURCES */ 4 -> BluetoothStatusCodes.INSUFFICIENT_RESOURCES;
-            case /* BTA_AV_FAIL_ROLE */ 5 -> BluetoothStatusCodes.ROLE_SWITCH_FAILED;
-            case /* BTA_AV_FAIL_GET_CAP */ 6 -> BluetoothStatusCodes.AVDTP_DISCOVERY_FAILED;
+            case /* BTA_AV_FAIL_SDP */ 2 -> BluetoothStatusCodes.ERROR_SDP_DISCOVERY_FAILED;
+            case /* BTA_AV_FAIL_STREAM */ 3 -> BluetoothStatusCodes.ERROR_STREAM_CONNECTION_FAILED;
+            case /* BTA_AV_FAIL_RESOURCES */ 4 -> BluetoothStatusCodes.ERROR_INSUFFICIENT_RESOURCES;
+            case /* BTA_AV_FAIL_ROLE */ 5 -> BluetoothStatusCodes.ERROR_ROLE_SWITCH_FAILED;
+            case /* BTA_AV_FAIL_GET_CAP */ 6 -> BluetoothStatusCodes.ERROR_AVDTP_DISCOVERY_FAILED;
             default -> BluetoothStatusCodes.ERROR_UNKNOWN;
         };
     }
@@ -931,12 +931,14 @@ final class A2dpStateMachine extends StateMachine {
             return;
         }
         int metricsState = MetricsProfileToProtoState(state);
-        int eventType = BluetoothStatsLog
-                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_STATE_CHANGE;
+        int eventType =
+                BluetoothStatsLog
+                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_STATE_CHANGE;
         if (metricsState
                 == BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_UNKNOWN) {
-            eventType = BluetoothStatsLog
-                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_ERROR_STATE_CHANGE;
+            eventType =
+                    BluetoothStatsLog
+                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__A2DP_PROFILE_ERROR_STATE_CHANGE;
             MetricsLogger.getInstance().logBluetoothEvent(device, eventType, metricsState, 0);
             return;
         }

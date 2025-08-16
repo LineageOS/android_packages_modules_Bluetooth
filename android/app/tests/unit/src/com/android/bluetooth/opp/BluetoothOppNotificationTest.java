@@ -42,7 +42,6 @@ import androidx.test.uiautomator.Until;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -59,11 +58,6 @@ import java.util.Locale;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppNotificationTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
     @Mock BluetoothMethodProxy mMethodProxy;
 
@@ -85,7 +79,6 @@ public class BluetoothOppNotificationTest {
                 .runOnMainSync(() -> mOppNotification = new BluetoothOppNotification(mContext));
 
         Intents.init();
-        TestUtils.setUpUiTest();
         // Go to notification screen
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).openNotification();
 
@@ -103,7 +96,6 @@ public class BluetoothOppNotificationTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
         // Back to home screen
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressHome();
 
