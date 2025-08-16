@@ -513,6 +513,8 @@ void LeAudioDevice::SetConnectionState(DeviceConnectState state) {
 
 DeviceConnectState LeAudioDevice::GetConnectionState(void) { return connection_state_; }
 
+SubrateState LeAudioDevice::GetSubrateState(void) { return subrate_state_; }
+
 void LeAudioDevice::SetSubrateState(SubrateState state) {
   log::debug("{}, {} --> {}", address_, bluetooth::common::ToString(subrate_state_),
              bluetooth::common::ToString(state));

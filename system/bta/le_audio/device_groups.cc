@@ -2595,6 +2595,28 @@ std::unique_ptr<types::AudioSetConfiguration> LeAudioDeviceGroup::FindFirstSuppo
   return nullptr;
 }
 
+void LeAudioDeviceGroup::StartConnSubrateIfNeeded() {
+  if (!com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only()) {
+    return;
+  }
+
+  for (auto* leAudioDevice = GetFirstDevice(); leAudioDevice;
+       leAudioDevice = GetNextDevice(leAudioDevice)) {
+    leAudioDevice->StartConnSubrate();
+  }
+}
+
+void LeAudioDeviceGroup::StopConnSubrateIfNeeded() {
+  if (!com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only()) {
+    return;
+  }
+
+  for (auto* leAudioDevice = GetFirstDevice(); leAudioDevice;
+       leAudioDevice = GetNextDevice(leAudioDevice)) {
+    leAudioDevice->StopConnSubrate();
+  }
+}
+
 /* This method should choose aproperiate ASEs to be active and set a cached
  * configuration for codec and qos.
  */

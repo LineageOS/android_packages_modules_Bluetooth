@@ -1652,9 +1652,9 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_
             ->leaudio_use_game_sonification_as_regular_sonification(true);
-
-    // Enable flags
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
+    com::android::bluetooth::flags::provider_->leaudio_connection_subrating(true);
+    com::android::bluetooth::flags::provider_->start_leaudio_subrate_for_active_set_only(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
@@ -1667,6 +1667,8 @@ protected:
     ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectedIsochronousStreamPeripheral)
             .WillByDefault(Return(true));
     ON_CALL(*hci::testing::mock_controller_, SupportsBle2mPhy).WillByDefault(Return(true));
+    ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectionSubrating)
+            .WillByDefault(Return(true));
     bluetooth::manager::SetMockBtmInterface(&mock_btm_interface_);
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
     gatt::SetMockBtaGattQueue(&mock_gatt_queue_);
@@ -16983,6 +16985,164 @@ TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_TwoEa
           .Times(0);
   // Resume
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
+  SyncOnMainLoop();
+}
+
+TEST_F(UnicastTest, StartEarbudsSubrate_WhenGroupActive) {
+  RawAddress test_address0;
+  RawAddress test_address1;
+  uint8_t group_size = 2;
+  int group_id = 0;
+
+  test_address0 = GetTestAddress(0);
+  test_address1 = GetTestAddress(1);
+
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+
+  // First earbud
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  // Second earbud
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  auto group = streaming_groups.at(group_id);
+  auto device1 = group->GetFirstDevice();
+  auto device2 = group->GetNextDevice(device1);
+  ASSERT_TRUE(device1 != nullptr);
+  ASSERT_NE(device1->GetSubrateState(), SubrateState::DISABLED);
+  ASSERT_TRUE(device2 != nullptr);
+  ASSERT_NE(device2->GetSubrateState(), SubrateState::DISABLED);
+  SyncOnMainLoop();
+}
+
+TEST_F(UnicastTest, StopEarbudsSubrate_WhenGroupInactive) {
+  RawAddress test_address0;
+  RawAddress test_address1;
+  uint8_t group_size = 2;
+  int group_id = 0;
+
+  test_address0 = GetTestAddress(0);
+  test_address1 = GetTestAddress(1);
+
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+  // First earbud
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  // Second earbud
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
+  auto group = streaming_groups.at(group_id);
+  auto device1 = group->GetFirstDevice();
+  auto device2 = group->GetNextDevice(device1);
+  ASSERT_TRUE(device1 != nullptr);
+  ASSERT_EQ(device1->GetSubrateState(), SubrateState::DISABLED);
+  ASSERT_TRUE(device2 != nullptr);
+  ASSERT_EQ(device2->GetSubrateState(), SubrateState::DISABLED);
+  SyncOnMainLoop();
+}
+
+TEST_F(UnicastTest, StartEarbudsSubrate_WhenOneEarbudsReconnected) {
+  RawAddress test_address0;
+  RawAddress test_address1;
+  uint8_t group_size = 2;
+  int group_id = 0;
+
+  test_address0 = GetTestAddress(0);
+  test_address1 = GetTestAddress(1);
+
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+
+  // First earbud
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  auto group = streaming_groups.at(group_id);
+  auto device1 = group->GetFirstDevice();
+  auto device2 = group->GetNextDevice(device1);
+  ASSERT_TRUE(device1 != nullptr);
+  ASSERT_NE(device1->GetSubrateState(), SubrateState::DISABLED);
+  ASSERT_FALSE(device2 != nullptr);
+  // Second earbud
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+  device2 = group->GetNextDevice(device1);
+  ASSERT_TRUE(device2 != nullptr);
+  ASSERT_NE(device2->GetSubrateState(), SubrateState::DISABLED);
+  SyncOnMainLoop();
+}
+
+TEST_F(UnicastTest, StopEarbudsSubrate_WhenOneEarbudsAclClosed) {
+  RawAddress test_address0;
+  RawAddress test_address1;
+  uint8_t group_size = 2;
+  int group_id = 0;
+
+  test_address0 = GetTestAddress(0);
+  test_address1 = GetTestAddress(1);
+
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+
+  // First earbud
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  // Second earbud
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  DisconnectLeAudioWithAclClose(test_address1, 2);
+  auto group = streaming_groups.at(group_id);
+  auto device1 = group->GetFirstDevice();
+  ASSERT_TRUE(device1 != nullptr);
+  ASSERT_NE(device1->GetSubrateState(), SubrateState::DISABLED);
+  auto device2 = group->GetNextDevice(device1);
+  ASSERT_TRUE(device2 != nullptr);
+  ASSERT_EQ(device2->GetSubrateState(), SubrateState::DISABLED);
   SyncOnMainLoop();
 }
 
