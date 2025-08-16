@@ -296,4 +296,24 @@ TEST_F(MetricsCollectorTest, BroadastSessions) {
   collector->OnBroadcastStateChanged(false);
 }
 
+TEST_F(MetricsCollectorTest, GattStatusToConnectionStatus) {
+  ASSERT_EQ(to_atom_gatt_status(GATT_SUCCESS), ConnectionStatus::SUCCESS);
+  ASSERT_EQ(to_atom_gatt_status(GATT_INVALID_HANDLE),
+            ConnectionStatus::FAILED_GATT_INVALID_HANDLE);
+  ASSERT_EQ(to_atom_gatt_status(GATT_BUSY), ConnectionStatus::FAILED_GATT_BUSY);
+  ASSERT_EQ(to_atom_gatt_status(GATT_CONNECTION_TIMEOUT),
+            ConnectionStatus::FAILED_GATT_CONNECTION_TIMEOUT);
+  ASSERT_EQ(to_atom_gatt_status(static_cast<tGATT_STATUS>(0xFC)), ConnectionStatus::FAILED);
+}
+
+TEST_F(MetricsCollectorTest, BtmStatusToConnectionStatus) {
+  ASSERT_EQ(to_atom_btm_status(tBTM_STATUS::BTM_SUCCESS), ConnectionStatus::SUCCESS);
+  ASSERT_EQ(to_atom_btm_status(tBTM_STATUS::BTM_BUSY), ConnectionStatus::FAILED_BTM_BUSY);
+  ASSERT_EQ(to_atom_btm_status(tBTM_STATUS::BTM_ERR_KEY_MISSING),
+            ConnectionStatus::FAILED_BTM_ERR_KEY_MISSING);
+  ASSERT_EQ(to_atom_btm_status(tBTM_STATUS::BTM_DEVICE_TIMEOUT),
+            ConnectionStatus::FAILED_BTM_DEVICE_TIMEOUT);
+  ASSERT_EQ(to_atom_btm_status(static_cast<tBTM_STATUS>(0xFC)), ConnectionStatus::FAILED);
+}
+
 }  // namespace bluetooth::le_audio

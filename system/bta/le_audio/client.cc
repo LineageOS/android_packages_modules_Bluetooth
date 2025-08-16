@@ -1898,6 +1898,10 @@ public:
       if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
         log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
+          0, address,
+          ConnectionState::CONNECTED,
+          bluetooth::le_audio::ConnectionStatus::FAILED_CONNECT_UNBONDED_DEV);
         return;
       }
       leAudioDevices_.Add(address, DeviceConnectState::CONNECTING_BY_USER);
@@ -1917,6 +1921,10 @@ public:
           log::warn("{}, trying to connect to disabled group id {}", address,
                     leAudioDevice->group_id_);
           callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+          bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
+            leAudioDevice->group_id_, address,
+            ConnectionState::CONNECTED,
+            bluetooth::le_audio::ConnectionStatus::FAILED_CONNECT_DISABLING_GROUP);
           return;
         }
       }
@@ -2632,7 +2640,7 @@ public:
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
       bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
               leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-              bluetooth::le_audio::ConnectionStatus::FAILED);
+              bluetooth::le_audio::to_atom_gatt_status(status));
       return;
     }
 
@@ -2711,7 +2719,7 @@ public:
       log::error("Link key unknown for {}, disconnect profile", address);
       bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
               leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-              bluetooth::le_audio::ConnectionStatus::FAILED);
+              bluetooth::le_audio::ConnectionStatus::FAILED_BTM_ERR_KEY_MISSING);
 
       /* If link cannot be enctypted, disconnect profile */
       BTA_GATTC_Close(conn_id);
@@ -2824,7 +2832,7 @@ public:
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
         bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
                 leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-                bluetooth::le_audio::ConnectionStatus::FAILED);
+                bluetooth::le_audio::to_atom_btm_status(status));
       }
 
       leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTING);
