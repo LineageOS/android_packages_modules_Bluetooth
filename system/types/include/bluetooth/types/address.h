@@ -27,13 +27,10 @@
 /** Bluetooth Address */
 class RawAddress final {
 public:
-  static constexpr unsigned int kLength = 6;
-
-  std::array<uint8_t, kLength> address;
+  std::array<uint8_t, 6> address;
 
   RawAddress() = default;
-  RawAddress(const uint8_t (&addr)[kLength]);
-  RawAddress(const std::array<uint8_t, kLength> array);
+  constexpr RawAddress(std::array<uint8_t, 6> const& address) : address(address) {}
 
   bool operator<(const RawAddress& rhs) const { return address < rhs.address; }
   bool operator==(const RawAddress& rhs) const { return address == rhs.address; }
@@ -65,6 +62,7 @@ public:
 
   static bool IsValidAddress(const std::string& address);
 
+  static constexpr unsigned int kLength = 6;
   static const RawAddress kEmpty;  // 00:00:00:00:00:00
   static const RawAddress kAny;    // FF:FF:FF:FF:FF:FF
 };

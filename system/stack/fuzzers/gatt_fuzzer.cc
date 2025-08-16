@@ -60,7 +60,7 @@ uint32_t GetSystemPropertyUint32(const std::string& property, uint32_t default_v
 }  // namespace os
 }  // namespace bluetooth
 
-constexpr uint8_t kDummyAddr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+constexpr RawAddress kDummyAddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 constexpr uint16_t kMaxPacketSize = 1024;
 namespace {
 
