@@ -50,7 +50,7 @@ public class HapClientNativeCallback {
 
     private void sendMessageToService(Consumer<HapClientService> action) {
         if (Flags.hapOnMainLooper()) {
-            mHapClientService.syncPost(action);
+            mHapClientService.post(action);
             return;
         }
         if (!mHapClientService.isAvailable()) {

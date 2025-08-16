@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -88,7 +89,8 @@ public class HapClientService extends ConnectableProfile {
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HapClientService sHapClient;
 
-    private final Map<BluetoothDevice, HapClientStateMachine> mStateMachines = new HashMap<>();
+    private final Map<BluetoothDevice, HapClientStateMachine> mStateMachines =
+            new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
@@ -378,7 +380,13 @@ public class HapClientService extends ConnectableProfile {
      * @return A list of connected {@link BluetoothDevice}.
      */
     public List<BluetoothDevice> getConnectedDevices() {
-        enforceMainLooperIsUsed();
+        if (Flags.hapOnMainLooper()) {
+            // Getter can be accessed from Binder thread
+            return mStateMachines.values().stream()
+                    .filter(HapClientStateMachine::isConnected)
+                    .map(HapClientStateMachine::getDevice)
+                    .toList();
+        }
         synchronized (mStateMachines) {
             List<BluetoothDevice> devices = new ArrayList<>();
             for (HapClientStateMachine sm : mStateMachines.values()) {
