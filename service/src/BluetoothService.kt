@@ -63,14 +63,6 @@ class BluetoothService(context: Context) : SystemService(context) {
     // Run any lambda on the BluetoothSystemServer thread without waiting for its completion
     private fun runOnBmsThread(block: suspend CoroutineScope.() -> Unit) = scope.launch { block() }
 
-    private fun initialize(user: TargetUser) {
-        if (!mInitialized) {
-            Log.i("initialize($user)")
-            runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
-            mInitialized = true
-        }
-    }
-
     override fun onStart() {
         publishBinderService(
             SERVICE_NAME,

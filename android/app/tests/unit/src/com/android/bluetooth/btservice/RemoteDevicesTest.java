@@ -70,9 +70,8 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
-import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.FlagsWrapper;
-import com.android.tests.bluetooth.StaticMockitoRule;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -96,7 +95,7 @@ import java.util.Optional;
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class RemoteDevicesTest {
-    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AdapterService mAdapterService;
@@ -654,8 +653,9 @@ public class RemoteDevicesTest {
 
     @Test
     public void testIsCoordinatedSetMemberAsLeAudioEnabled() {
-        ExtendedMockito.doReturn(true)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.CSIP_SET_COORDINATOR));
+        doReturn((long) (1 << BluetoothProfile.CSIP_SET_COORDINATOR))
+                .when(mAdapterService)
+                .getSupportedProfilesBitMask();
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
@@ -669,8 +669,9 @@ public class RemoteDevicesTest {
 
     @Test
     public void testIsCoordinatedSetMemberAsLeAudioDisabled() {
-        ExtendedMockito.doReturn(false)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.CSIP_SET_COORDINATOR));
+        doReturn((long) (0 << BluetoothProfile.CSIP_SET_COORDINATOR))
+                .when(mAdapterService)
+                .getSupportedProfilesBitMask();
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();

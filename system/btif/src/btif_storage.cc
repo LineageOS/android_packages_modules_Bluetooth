@@ -848,6 +848,17 @@ bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) 
 
   btif_config_remove_device(bdstr);
 
+  /* Check the length of the paired devices, and if 0 then reset IRK */
+  if (com::android::bluetooth::flags::btsec_cycle_irks()) {
+    auto paired_devices = btif_config_get_paired_devices();
+    if (paired_devices.empty()) {
+      btif_remove_local_irk_from_resolving_list();
+
+      log::info("Last paired device removed, resetting IRK");
+      BTA_DmBleResetId();
+    }
+  }
+
   return BT_STATUS_SUCCESS;
 }
 

@@ -980,6 +980,9 @@ public:
     }
 
     new_group->AddNode(leAudioDevices_.GetByAddress(address));
+    if (group_id != bluetooth::groups::kGroupUnknown && group_id == active_group_id_) {
+      new_group->StartConnSubrateIfNeeded();
+    }
 
     callbacks_->OnGroupNodeStatus(address, new_group->group_id_, GroupNodeStatus::ADDED);
 
@@ -1022,6 +1025,12 @@ public:
   void group_remove_node(LeAudioDeviceGroup* group, const RawAddress& address,
                          bool update_group_module = false) {
     int group_id = group->group_id_;
+    LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
+    if (com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only() &&
+        group_id == active_group_id_ && !leAudioDevice) {
+      leAudioDevice->StopConnSubrate();
+    }
+
     group->RemoveNode(leAudioDevices_.GetByAddress(address));
 
     if (update_group_module) {
@@ -1665,6 +1674,11 @@ public:
       }
 
       log::info("Active group_id changed {} -> {}", active_group_id_, group_id);
+      LeAudioDeviceGroup* group = aseGroups_.FindById(active_group_id_);
+      if (group) {
+        group->StopConnSubrateIfNeeded();
+      }
+
       auto group_id_to_close = active_group_id_;
       groupSetAndNotifyInactive(/* autonomous_inactive */ false);
       GroupStop(group_id_to_close);
@@ -1796,6 +1810,7 @@ public:
 
     SendAudioGroupSelectableCodecConfigChanged(group);
     SendAudioGroupCurrentCodecConfigChanged(group);
+    group->StartConnSubrateIfNeeded();
     callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
   }
 
@@ -1883,6 +1898,10 @@ public:
       if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
         log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
+          0, address,
+          ConnectionState::CONNECTED,
+          bluetooth::le_audio::ConnectionStatus::FAILED_CONNECT_UNBONDED_DEV);
         return;
       }
       leAudioDevices_.Add(address, DeviceConnectState::CONNECTING_BY_USER);
@@ -1902,6 +1921,10 @@ public:
           log::warn("{}, trying to connect to disabled group id {}", address,
                     leAudioDevice->group_id_);
           callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+          bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
+            leAudioDevice->group_id_, address,
+            ConnectionState::CONNECTED,
+            bluetooth::le_audio::ConnectionStatus::FAILED_CONNECT_DISABLING_GROUP);
           return;
         }
       }
@@ -2617,7 +2640,7 @@ public:
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
       bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
               leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-              bluetooth::le_audio::ConnectionStatus::FAILED);
+              bluetooth::le_audio::to_atom_gatt_status(status));
       return;
     }
 
@@ -2696,7 +2719,7 @@ public:
       log::error("Link key unknown for {}, disconnect profile", address);
       bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
               leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-              bluetooth::le_audio::ConnectionStatus::FAILED);
+              bluetooth::le_audio::ConnectionStatus::FAILED_BTM_ERR_KEY_MISSING);
 
       /* If link cannot be enctypted, disconnect profile */
       BTA_GATTC_Close(conn_id);
@@ -2809,7 +2832,7 @@ public:
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
         bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
                 leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
-                bluetooth::le_audio::ConnectionStatus::FAILED);
+                bluetooth::le_audio::to_atom_btm_status(status));
       }
 
       leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTING);
@@ -2818,7 +2841,9 @@ public:
       return;
     }
 
-    leAudioDevice->StartConnSubrate();
+    if (!com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only()) {
+      leAudioDevice->StartConnSubrate();
+    }
 
     if (leAudioDevice->encrypted_) {
       log::info("link already encrypted, nothing to do");
@@ -3870,6 +3895,9 @@ public:
 
     LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
     if (group) {
+      if (leAudioDevice->group_id_ == active_group_id_) {
+        group->StartConnSubrateIfNeeded();
+      }
       UpdateLocationsAndContextsAvailability(group, true);
     }
 

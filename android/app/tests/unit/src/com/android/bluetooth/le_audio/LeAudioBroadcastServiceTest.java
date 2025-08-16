@@ -85,15 +85,13 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
-import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.tests.bluetooth.StaticMockitoRule;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -117,7 +115,7 @@ import java.util.Optional;
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcastServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AdapterService mAdapterService;
@@ -201,12 +199,11 @@ public class LeAudioBroadcastServiceTest {
 
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(true).when(mAdapterService).isLeAudioBroadcastSourceSupported();
-
-        ExtendedMockito.doReturn(true)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST));
-        ExtendedMockito.doReturn(true)
-                .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
-
+        doReturn(
+                        (long) (1 << BluetoothProfile.LE_AUDIO_BROADCAST)
+                                | (1 << BluetoothProfile.LE_AUDIO))
+                .when(mAdapterService)
+                .getSupportedProfilesBitMask();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 

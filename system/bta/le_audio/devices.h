@@ -171,6 +171,7 @@ public:
 
   void SetConnectionState(DeviceConnectState state);
   DeviceConnectState GetConnectionState(void);
+  SubrateState GetSubrateState(void);
   void ClearPACs(void);
   void RegisterPACs(std::vector<struct types::acs_ac_record>* apr_db,
                     std::vector<struct types::acs_ac_record>* apr);

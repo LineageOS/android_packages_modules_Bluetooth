@@ -153,16 +153,6 @@ public class Config {
         }
     }
 
-    public static boolean isProfileSupported(int profileId) {
-        for (ProfileConfig profile : PROFILE_SERVICES_AND_FLAGS) {
-            if (profileId == profile.mProfileId) {
-                return profile.mSupported;
-            }
-        }
-        Log.e(TAG, "isProfileSupported for unknown " + BluetoothProfile.getProfileName(profileId));
-        return false;
-    }
-
     static void init(Context ctx) {
         if (LeAudioService.isBroadcastEnabled()) {
             final String leAudioSwitcherMode =
@@ -217,7 +207,7 @@ public class Config {
         }
     }
 
-    private static void setLeAudioProfileStatus(Boolean enable) {
+    static void setLeAudioProfileStatus(Boolean enable) {
         setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, enable);
         setProfileEnabled(BluetoothProfile.HAP_CLIENT, enable);
         setProfileEnabled(BluetoothProfile.LE_AUDIO, enable);
@@ -226,7 +216,7 @@ public class Config {
         setProfileEnabled(BluetoothProfile.VOLUME_CONTROL, enable);
     }
 
-    private static void setLeAudioBroadcastProfileStatus(Boolean enable) {
+    static void setLeAudioBroadcastProfileStatus(Boolean enable) {
         setProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, enable);
         setProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST, enable);
     }
@@ -242,5 +232,15 @@ public class Config {
                 // LE_AUDIO_BROADCAST don't have an associated class
                 .filter(profileId -> profileId != BluetoothProfile.LE_AUDIO_BROADCAST)
                 .toArray();
+    }
+
+    static long getSupportedProfilesBitMask() {
+        long mask = 0;
+        for (ProfileConfig config : PROFILE_SERVICES_AND_FLAGS) {
+            if (config.mSupported) {
+                mask |= (1L << config.mProfileId);
+            }
+        }
+        return mask;
     }
 }
