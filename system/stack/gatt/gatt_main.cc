@@ -447,6 +447,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
   if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, initiating_phys, p_reg->gatt_if)) {
     log::error("gatt_connect failed");
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
+    alarm_free(p_tcb->conf_timer);
+    alarm_free(p_tcb->ind_ack_timer);
     *p_tcb = tGATT_TCB();
     return false;
   }
