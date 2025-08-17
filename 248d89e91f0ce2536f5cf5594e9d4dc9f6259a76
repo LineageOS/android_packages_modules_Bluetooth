@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dd1f5c0_bac15f5e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2025-08-17T21:42:27Z",
+      "side": 1,
+      "message": "First working prototype, works for both SBC and AAC on D7300",
+      "revId": "248d89e91f0ce2536f5cf5594e9d4dc9f6259a76",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1555e49_35c8bf5f",
+        "filename": "system/bta/av/bta_av_aact.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2025-08-17T21:42:27Z",
+      "side": 1,
+      "message": "should maybe be a prop? after all its bt chip vendor specific",
+      "revId": "248d89e91f0ce2536f5cf5594e9d4dc9f6259a76",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d509d6a7_5e624a57",
+        "filename": "system/bta/av/bta_av_aact.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 3120,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2025-08-17T21:42:27Z",
+      "side": 1,
+      "message": "should only optionally happen, by default should be aosp behaviour only",
+      "range": {
+        "startLine": 3110,
+        "startChar": 0,
+        "endLine": 3120,
+        "endChar": 22
+      },
+      "revId": "248d89e91f0ce2536f5cf5594e9d4dc9f6259a76",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a876b77_7fe4cba7",
+        "filename": "system/bta/av/bta_av_int.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 673,
+      "author": {
+        "id": 24262
+      },
+      "writtenOn": "2025-08-17T21:42:27Z",
+      "side": 1,
+      "message": "should maybe be a prop? after all its bt chip vendor specific",
+      "revId": "248d89e91f0ce2536f5cf5594e9d4dc9f6259a76",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
