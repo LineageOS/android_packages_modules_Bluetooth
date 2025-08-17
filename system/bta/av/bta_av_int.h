@@ -658,6 +658,7 @@ constexpr uint8_t kEnablingAttemptsCountMaximum = 5;
 #define VS_HCI_A2DP_OFFLOAD_STOP 0x02
 #define VS_HCI_A2DP_OFFLOAD_START_V2 0x03
 #define VS_HCI_A2DP_OFFLOAD_STOP_V2 0x04
+#define VS_HCI_A2DP_OFFLOAD_ENABLE_COEX 0xA0
 
 /*****************************************************************************
  *  Global data

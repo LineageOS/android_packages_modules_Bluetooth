@@ -40,6 +40,7 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/l2cap_av_interface.h"
 #include "stack/l2cap/internal/l2c_api.h"
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
@@ -615,7 +616,10 @@ struct tL2C_CB {
 
   bool disallow_switch;     /* false, to allow switch at create conn */
   uint16_t num_lm_acl_bufs; /* # of ACL buffers on controller */
+  uint16_t full_num_lm_acl_bufs; /* # of ACL buffers on controller, not substracting buffers needed for A2DP offload coex on MTK */
   uint16_t idle_timeout;    /* Idle timeout */
+  uint16_t pending_acks_until_coex_cb;
+  tL2C_COEX_READY coex_cb;
 
   tL2C_LCB* p_cur_hcit_lcb; /* Current HCI Transport buffer */
   uint16_t num_used_lcbs;   /* Number of active link control blocks */
