@@ -23,9 +23,6 @@
 
 namespace bluetooth::hci::acl_manager {
 
-constexpr uint16_t kQualcommDebugHandle = 0xedc;
-constexpr uint16_t kSamsungDebugHandle = 0xeef;
-
 using common::BindOnce;
 
 using acl_manager::classic_impl;

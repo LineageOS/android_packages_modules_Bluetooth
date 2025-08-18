@@ -72,7 +72,6 @@ static constexpr uint8_t kCh3cJump = 0x03;              // Skip 3 Channels
 static constexpr uint16_t kMaxProcedureLen = 0x2710;    // 6.25s
 static constexpr uint16_t kMinProcedureInterval = 0x01;
 static constexpr uint16_t kMaxProcedureInterval = 0xFF;
-static constexpr uint16_t kMaxProcedureCount = 0x01;
 static constexpr uint32_t kMinSubeventLen = 0x0004E2;  // 1250us
 static constexpr uint32_t kMaxSubeventLen = 0x1E8480;  // 2s
 static constexpr uint8_t kTxPwrDelta = 0x00;
