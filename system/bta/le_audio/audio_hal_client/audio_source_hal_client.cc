@@ -92,6 +92,7 @@ public:
           const ::bluetooth::le_audio::broadcast_offload_config& config) override;
   void SuspendedForReconfiguration() override;
   void ReconfigurationComplete() override;
+  void StreamSuspended() override;
 
   // Internal functionality
   SourceImpl(bool is_broadcaster)
@@ -428,6 +429,16 @@ void SourceImpl::ReconfigurationComplete() {
 
   log::info("");
   halSinkInterface_->ReconfigurationComplete();
+}
+
+void SourceImpl::StreamSuspended() {
+  if ((halSinkInterface_ == nullptr) || (le_audio_sink_hal_state_ != HAL_STARTED)) {
+    log::error("Audio HAL Audio sink was not started!");
+    return;
+  }
+
+  log::info("");
+  halSinkInterface_->StreamSuspended();
 }
 
 void SourceImpl::CancelStreamingRequest() {
