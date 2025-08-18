@@ -364,7 +364,7 @@ void LeAddressManager::ack_pause(LeAddressManagerCallback* callback) {
     return;
   }
   registered_clients_.find(callback)->second = ClientState::PAUSED;
-  for (auto client : registered_clients_) {
+  for (auto& client : registered_clients_) {
     switch (client.second) {
       case ClientState::PAUSED:
         log::verbose("Client already in paused state");
