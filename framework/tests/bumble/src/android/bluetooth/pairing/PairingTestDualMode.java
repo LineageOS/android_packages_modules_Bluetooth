@@ -209,6 +209,7 @@ public class PairingTestDualMode {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
+        pairingEvent = mPairingEventStreamObserver.iterator().next();
         assertThat(pairingEvent.hasJustWorks()).isTrue();
         pairingEventAnswerObserver.onNext(
                 SecurityProto.PairingEventAnswer.newBuilder()
@@ -314,6 +315,7 @@ public class PairingTestDualMode {
         // Start bonding from remote side
         testStep_BondBredrFromRemote(intentReceiver);
 
+        pairingEvent = mPairingEventStreamObserver.iterator().next();
         assertThat(pairingEvent.hasJustWorks()).isTrue();
         pairingEventAnswerObserver.onNext(
                 SecurityProto.PairingEventAnswer.newBuilder()
