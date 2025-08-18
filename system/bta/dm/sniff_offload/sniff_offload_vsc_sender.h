@@ -17,6 +17,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "sniff_offload_structs.h"
 #include "stack/include/hci_error_code.h"
