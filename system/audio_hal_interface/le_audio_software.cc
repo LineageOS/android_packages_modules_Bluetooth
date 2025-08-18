@@ -419,6 +419,17 @@ void LeAudioClientInterface::Sink::ReconfigurationComplete() {
   }
 }
 
+void LeAudioClientInterface::Sink::StreamSuspended() {
+  // This is needed only for AIDL since SuspendedForReconfiguration()
+  // already calls StreamSuspended(SUCCESS_FINISHED) for HIDL
+  if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
+    // FIXME: For now we have to workaround the missing API and use
+    //        StreamSuspended() with SUCCESS_FINISHED ack code.
+    get_aidl_client_interface(is_broadcaster_)
+            ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+  }
+}
+
 size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return hidl::le_audio::LeAudioSinkTransport::interface->ReadAudioData(p_buf, len);
@@ -512,6 +523,17 @@ void LeAudioClientInterface::Source::SuspendedForReconfiguration() {
 }
 
 void LeAudioClientInterface::Source::ReconfigurationComplete() {
+  // This is needed only for AIDL since SuspendedForReconfiguration()
+  // already calls StreamSuspended(SUCCESS_FINISHED) for HIDL
+  if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
+    // FIXME: For now we have to workaround the missing API and use
+    //        StreamSuspended() with SUCCESS_FINISHED ack code.
+    aidl::le_audio::LeAudioSourceTransport::interface->StreamSuspended(
+            aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+  }
+}
+
+void LeAudioClientInterface::Source::StreamSuspended() {
   // This is needed only for AIDL since SuspendedForReconfiguration()
   // already calls StreamSuspended(SUCCESS_FINISHED) for HIDL
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
