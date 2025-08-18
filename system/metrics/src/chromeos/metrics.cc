@@ -215,7 +215,6 @@ void LogMetricsChannelSoundingRequesterSessionReported(
         int32_t /*duration_seconds*/, bool /*back_to_back*/,
         android::bluetooth::ChannelSoundingType /*cs_type*/, int32_t /*min_subevent_len*/,
         int32_t /*min_subevent_len_count*/) {}
-}  // namespace bluetooth::metrics
 
 void LogMetricBluetoothEnergyMonitorReported(uint16_t /*bqr_version*/,
                                              const bqr::BqrEnergyMonitorEvent& /*event*/) {}
@@ -223,4 +222,4 @@ void LogMetricBluetoothEnergyMonitorReported(uint16_t /*bqr_version*/,
 void LogMetricBluetoothRFStatsReported(uint16_t /*bqr_version*/,
                                        const bqr::BqrRFStatsEvent& /*event*/) {}
 
-// namespace bluetooth::metrics
+}  // namespace bluetooth::metrics
