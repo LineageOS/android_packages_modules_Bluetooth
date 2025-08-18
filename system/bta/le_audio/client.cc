@@ -55,6 +55,7 @@
 #include "bta_groups.h"
 #include "bta_le_audio_api.h"
 #include "bta_le_audio_broadcaster_api.h"
+#include "bta/include/bta_vaps_server_api.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btm_api_types.h"
 #include "btm_ble_api_types.h"
@@ -6942,6 +6943,16 @@ public:
 
         if (audio_sender_state_ == AudioState::READY_TO_START) {
           startSendingAudioWrapper(group);
+          if (com::android::bluetooth::flags::add_profile_as_intent_extra()) {
+            auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+            if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+              log::info(" audio sender: NotifyVaSessionStarted");
+              if (group) {
+                bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+                    GetGroupDevices(group->group_id_), true);
+              }
+            }
+          }
         } else if (audio_sender_state_ == AudioState::STARTED) {
           /* If we are already sending, the initial configuration was already sent and
            * we might need to just update the current channel mixing information.
@@ -6955,6 +6966,16 @@ public:
 
         if (audio_receiver_state_ == AudioState::READY_TO_START) {
           startReceivingAudioWrapper(group);
+          if (com::android::bluetooth::flags::add_profile_as_intent_extra()) {
+            auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+            if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+              log::info(" audio receiver: NotifyVaSessionStarted");
+              if (group) {
+                bluetooth::vaps::GetVapsServer()->NotifyVaSessionStarted(
+                    GetGroupDevices(group->group_id_), true);
+              }
+            }
+          }
         } else if (audio_receiver_state_ == AudioState::STARTED) {
           /* If we are already receiving, the initial configuration was already sent and
            * we might need to just update the current channel mixing information.
@@ -7084,6 +7105,18 @@ public:
           HandlePendingDeviceRemove(group);
           HandlePendingDeviceDisconnection(group);
         }
+
+        if (com::android::bluetooth::flags::add_profile_as_intent_extra()) {
+          auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+          if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+            log::info(" Status Idle: NotifyVaSessionStopped");
+            if (group) {
+              bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+                  GetGroupDevices(group->group_id_), true);
+            }
+          }
+        }
+
         break;
       }
       case GroupStreamStatus::RELEASING_AUTONOMOUS:
