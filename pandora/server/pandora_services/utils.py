@@ -18,6 +18,7 @@ import functools
 import grpc
 import inspect
 import logging
+import unittest
 
 from bumble.device import Device
 from bumble.hci import Address, AddressType
@@ -30,6 +31,9 @@ ADDRESS_TYPES: Dict[str, AddressType] = {
     "public_identity": Address.PUBLIC_IDENTITY_ADDRESS,
     "random_static_identity": Address.RANDOM_IDENTITY_ADDRESS,
 }
+
+_TC = unittest.TestCase()
+assert_equal = _TC.assertEqual
 
 
 def address_from_request(request: Message, field: Optional[str]) -> Address:

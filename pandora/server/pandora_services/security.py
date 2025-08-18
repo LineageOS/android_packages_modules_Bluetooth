@@ -98,7 +98,7 @@ class PairingDelegate(BasePairingDelegate):
         else:
             # In BR/EDR, connection may not be complete,
             # use address instead
-            assert self.connection.transport == PhysicalTransport.BR_EDR
+            utils.assert_equal(self.connection.transport, PhysicalTransport.BR_EDR)
             ev.address = bytes(reversed(bytes(self.connection.peer_address)))
 
         return ev
@@ -112,8 +112,9 @@ class PairingDelegate(BasePairingDelegate):
         event = self.add_origin(PairingEvent(just_works=empty_pb2.Empty()))
         self.service.event_queue.put_nowait(event)
         answer = await anext(self.service.event_answer)  # type: ignore
-        assert answer.event == event
-        assert answer.answer_variant() == 'confirm' and answer.confirm is not None
+        utils.assert_equal(answer.event, event)
+        utils.assert_equal(answer.answer_variant(), 'confirm')
+        assert answer.confirm is not None
         return answer.confirm
 
     async def compare_numbers(self, number: int, digits: int = 6) -> bool:
@@ -125,8 +126,9 @@ class PairingDelegate(BasePairingDelegate):
         event = self.add_origin(PairingEvent(numeric_comparison=number))
         self.service.event_queue.put_nowait(event)
         answer = await anext(self.service.event_answer)  # type: ignore
-        assert answer.event == event
-        assert answer.answer_variant() == 'confirm' and answer.confirm is not None
+        utils.assert_equal(answer.event, event)
+        utils.assert_equal(answer.answer_variant(), 'confirm')
+        assert answer.confirm is not None
         return answer.confirm
 
     async def get_number(self) -> Optional[int]:
@@ -139,10 +141,10 @@ class PairingDelegate(BasePairingDelegate):
         event = self.add_origin(PairingEvent(passkey_entry_request=empty_pb2.Empty()))
         self.service.event_queue.put_nowait(event)
         answer = await anext(self.service.event_answer)  # type: ignore
-        assert answer.event == event
+        utils.assert_equal(answer.event, event)
         if answer.answer_variant() is None:
             return None
-        assert answer.answer_variant() == 'passkey'
+        utils.assert_equal(answer.answer_variant(), 'passkey')
         return answer.passkey
 
     async def get_string(self, max_length: int) -> Optional[str]:
@@ -154,10 +156,10 @@ class PairingDelegate(BasePairingDelegate):
         event = self.add_origin(PairingEvent(pin_code_request=empty_pb2.Empty()))
         self.service.event_queue.put_nowait(event)
         answer = await anext(self.service.event_answer)  # type: ignore
-        assert answer.event == event
+        utils.assert_equal(answer.event, event)
         if answer.answer_variant() is None:
             return None
-        assert answer.answer_variant() == 'pin'
+        utils.assert_equal(answer.answer_variant(), 'pin')
 
         if answer.pin is None:
             return None
@@ -264,10 +266,17 @@ class SecurityService(SecurityServicer):
                 'the `OnPairing` method shall be initiated before establishing any connections.')
 
         self.event_queue = asyncio.Queue()
-        self.event_answer = request
+
+        async def event_answer() -> AsyncIterator[PairingEventAnswer]:
+            while ans := await anext(request):
+                self.log.debug("OnPairing Answer: %s", ans)
+                yield ans
+
+        self.event_answer = event_answer()
 
         try:
             while event := await self.event_queue.get():
+                self.log.debug("OnPairing Event: %s", event)
                 yield event
 
         finally:
@@ -284,10 +293,11 @@ class SecurityService(SecurityServicer):
 
         oneof = request.WhichOneof('level')
         level = getattr(request, oneof)
-        assert {
+        excepted_transport = {
             PhysicalTransport.BR_EDR: 'classic',
             PhysicalTransport.LE: 'le'
-        }[connection.transport] == oneof
+        }[connection.transport]
+        utils.assert_equal(excepted_transport, oneof)
 
         # security level already reached
         if await self.reached_security_level(connection, level):
@@ -374,10 +384,11 @@ class SecurityService(SecurityServicer):
 
         assert request.level
         level = request.level
-        assert {
+        excepted_transport = {
             PhysicalTransport.BR_EDR: 'classic',
             PhysicalTransport.LE: 'le'
-        }[connection.transport] == request.level_variant()
+        }[connection.transport]
+        utils.assert_equal(excepted_transport, request.level_variant())
 
         wait_for_security: asyncio.Future[str] = (asyncio.get_running_loop().create_future())
         authenticate_task: Optional[asyncio.Future[None]] = None
