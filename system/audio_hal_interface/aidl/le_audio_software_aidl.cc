@@ -208,8 +208,6 @@ void LeAudioTransport::SourceMetadataChanged(const source_metadata_v7_t& source_
 }
 
 void LeAudioTransport::SinkMetadataChanged(const sink_metadata_v7_t& sink_metadata) {
-  auto track_count = sink_metadata.track_count;
-
   if (stream_cb_.on_sink_metadata_update_) {
     stream_cb_.on_sink_metadata_update_(sink_metadata);
   }
