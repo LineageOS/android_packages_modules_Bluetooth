@@ -46,6 +46,7 @@
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -53,6 +54,7 @@ using ::testing::NiceMock;
 
 using namespace std::chrono_literals;
 using namespace bluetooth;
+using ::testing::_;
 
 namespace {
 constexpr uint8_t kUnusedTimer = BTA_ID_MAX;
@@ -113,6 +115,8 @@ TEST_F(BtaDmTest, nop) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_no_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   bta_dm_cb.disabling = true;
 
   bta_dm_disable();  // Waiting for all ACL connections to drain
@@ -128,6 +132,8 @@ TEST_F(BtaDmCustomAlarmTest, disable_no_acl_links) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
@@ -148,6 +154,8 @@ TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_second_pass_with_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
