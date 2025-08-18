@@ -43,15 +43,16 @@ public class InteropUtil {
         INTEROP_HFP_SEND_CALL_INDICATORS_BACK_TO_BACK,
         INTEROP_SETUP_SCO_WITH_NO_DELAY_AFTER_SLC_DURING_CALL,
         INTEROP_RETRY_SCO_AFTER_REMOTE_REJECT_SCO,
-        INTEROP_ADV_PBAP_VER_1_2;
+        INTEROP_ADV_PBAP_VER_1_2,
+        INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END;
     }
 
-    private InteropUtil() {}
-
     /**
-     * Check if a given address or remote device name matches a known interoperability workaround
-     * identified by the interop feature. remote device name will be fetched internally based on the
-     * given address at stack layer.
+     * private InteropUtil() {}
+     *
+     * <p>/** Check if a given address or remote device name matches a known interoperability
+     * workaround identified by the interop feature. remote device name will be fetched internally
+     * based on the given address at stack layer.
      *
      * @param feature a given interop feature defined in {@link InteropFeature}.
      * @param address a given address to be matched.

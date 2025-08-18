@@ -53,6 +53,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -101,6 +102,7 @@ class HeadsetStateMachine extends StateMachine {
     // message.obj is an intent AudioManager.ACTION_VOLUME_CHANGED
     // EXTRA_VOLUME_STREAM_TYPE is STREAM_BLUETOOTH_SCO/STREAM_VOICE_CALL
     static final int INTENT_SCO_VOLUME_CHANGED = 7;
+    static final int CLCC_RSP_AFTER_VOIP_CALL_END = 18;
     static final int INTENT_CONNECTION_ACCESS_REPLY = 8;
     static final int CALL_STATE_CHANGED = 9;
     static final int DEVICE_STATE_CHANGED = 10;
@@ -2142,6 +2144,12 @@ class HeadsetStateMachine extends StateMachine {
             int type = PhoneNumberUtils.toaFromString(phoneNumber);
             mNativeInterface.clccResponse(device, 1, 0, 0, 0, false, phoneNumber, type);
             mNativeInterface.clccResponse(device, 0, 0, 0, 0, false, "", 0);
+        } else if (hasMessages(CLCC_RSP_AFTER_VOIP_CALL_END)) {
+            // This is an interop fix to send CLCC responses as few devices expect
+            // empty CLCC response after the VOIP call is terminated
+            Log.w(TAG, "processAtClcc: send OK response as VOIP call ended just now");
+            mNativeInterface.clccResponse(device, 0, 0, 0, 0, false, "", 0);
+            removeMessages(CLCC_RSP_AFTER_VOIP_CALL_END);
         } else {
             // In Telecom call, ask Telecom to send send remote phone number
             if (!mSystemInterface.listCurrentCalls(mHeadsetService)) {
@@ -2679,6 +2687,15 @@ class HeadsetStateMachine extends StateMachine {
             events |= PhoneStateListener.LISTEN_SIGNAL_STRENGTHS;
         }
         mSystemInterface.getHeadsetPhoneState().listenForPhoneState(mDevice, events);
+    }
+
+    boolean isDeviceDenylistedForDelayingCLCCRespAfterVOIPCall() {
+        boolean matched =
+                InteropUtil.interopMatchAddrOrName(
+                        mAdapterService,
+                        InteropUtil.InteropFeature.INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
+                        mDevice.getAddress());
+        return matched;
     }
 
     @Override
