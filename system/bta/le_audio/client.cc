@@ -3876,6 +3876,27 @@ public:
     callbacks_->OnAudioGroupCurrentCodecConf(group->group_id_, input_config, output_config);
   }
 
+  void verifyPossibleMonoLocations(LeAudioDevice* leAudioDevice) {
+    auto mono_location =
+            AudioLocations(bluetooth::le_audio::codec_spec_conf::kLeAudioLocationMonoAudio);
+    if (!leAudioDevice->audio_locations_.sink) {
+      if (leAudioDevice->GetAseCount(bluetooth::le_audio::types::kLeAudioDirectionSink) > 0) {
+        log::info("{}, Mono sink location", leAudioDevice->address_);
+        leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSink;
+        leAudioDevice->audio_locations_.sink.emplace(hdl_pair(0, 0), mono_location);
+        callbacks_->OnSinkAudioLocationAvailable(leAudioDevice->address_, mono_location);
+      }
+    }
+
+    if (!leAudioDevice->audio_locations_.source) {
+      if (leAudioDevice->GetAseCount(bluetooth::le_audio::types::kLeAudioDirectionSource) > 0) {
+        log::info("{}, Mono source location", leAudioDevice->address_);
+        leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSource;
+        leAudioDevice->audio_locations_.source.emplace(hdl_pair(0, 0), mono_location);
+      }
+    }
+  }
+
   void connectionReady(LeAudioDevice* leAudioDevice) {
     log::debug("{},  {}", leAudioDevice->address_,
                bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
@@ -3891,6 +3912,8 @@ public:
       btif_storage_set_leaudio_autoconnect(leAudioDevice->address_, true);
       leAudioDevice->autoconnect_flag_ = true;
     }
+
+    verifyPossibleMonoLocations(leAudioDevice);
 
     leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTED);
     bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
