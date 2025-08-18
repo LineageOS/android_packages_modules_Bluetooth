@@ -1025,13 +1025,16 @@ public:
   void group_remove_node(LeAudioDeviceGroup* group, const RawAddress& address,
                          bool update_group_module = false) {
     int group_id = group->group_id_;
-    LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
-    if (com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only() &&
-        group_id == active_group_id_ && !leAudioDevice) {
-      leAudioDevice->StopConnSubrate();
-    }
+    auto leAudioDevice = leAudioDevices_.GetByAddress(address);
 
-    group->RemoveNode(leAudioDevices_.GetByAddress(address));
+    if (leAudioDevice) {
+      if (com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only() &&
+          group_id == active_group_id_) {
+        leAudioDevice->StopConnSubrate();
+      }
+
+      group->RemoveNode(leAudioDevice);
+    }
 
     if (update_group_module) {
       int groups_group_id =
