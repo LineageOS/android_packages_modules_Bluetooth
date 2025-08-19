@@ -111,7 +111,6 @@ class HidHostDualModeTest {
             }
             ACTION_PAIRING_REQUEST == action -> {
                 val device = intent.getParcelableExtra(EXTRA_DEVICE, BluetoothDevice::class.java)
-                bumble.remoteDevice.setPairingConfirmation(true)
                 Log.i(TAG, "onReceive(): setPairingConfirmation(true) for $device")
             }
             ACTION_BOND_STATE_CHANGED == action -> {
@@ -203,13 +202,6 @@ class HidHostDualModeTest {
         hidBlockingStub.registerService(
             ServiceRequest.newBuilder().setServiceType(HidServiceType.SERVICE_TYPE_BOTH).build()
         )
-        val request =
-            AdvertiseRequest.newBuilder()
-                .setLegacy(true)
-                .setConnectable(true)
-                .setOwnAddressType(OwnAddressType.RANDOM)
-                .build()
-        bumble.hostBlocking().advertise(request)
 
         device = bumble.remoteDevice
 
@@ -224,6 +216,19 @@ class HidHostDualModeTest {
             hasExtra(EXTRA_BOND_STATE, BOND_BONDING),
         )
         verifyIntentReceived(hasAction(ACTION_PAIRING_REQUEST), hasExtra(EXTRA_DEVICE, device))
+        bumble.remoteDevice.setPairingConfirmation(true)
+
+        // Make Bumble connectable with some delay
+        Thread.sleep(300)
+
+        val request =
+            AdvertiseRequest.newBuilder()
+                .setLegacy(true)
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.RANDOM)
+                .build()
+        bumble.hostBlocking().advertise(request)
+
         verifyIntentReceived(
             hasAction(ACTION_BOND_STATE_CHANGED),
             hasExtra(EXTRA_DEVICE, device),
