@@ -1358,6 +1358,14 @@ TEST_F(VolumeControlCallbackTest, test_volume_state_changed_malformed) {
   GetNotificationEvent(0x0021, too_long);
 }
 
+TEST_F(VolumeControlCallbackTest, audio_input_state_changed__invalid_gain__is_rejected) {
+  uint8_t invalid_gain = 2;
+  std::vector<uint8_t> value(
+          {invalid_gain, (uint8_t)Mute::NOT_MUTED, (uint8_t)GainMode::MANUAL, 0x04});
+  EXPECT_CALL(callbacks, OnExtAudioInStateChanged(_, _, _, _, _)).Times(0);
+  GetNotificationEvent(0x0032, value);
+}
+
 TEST_F(VolumeControlCallbackTest, audio_input_state_changed__invalid_mute__is_rejected) {
   uint8_t invalid_mute = 0x03;
   std::vector<uint8_t> value({0x03, invalid_mute, (uint8_t)GainMode::MANUAL, 0x04});
@@ -1373,16 +1381,16 @@ TEST_F(VolumeControlCallbackTest, audio_input_state_changed__invalid_gain_mode__
 }
 
 TEST_F(VolumeControlCallbackTest, test_audio_input_state_changed__muted) {
-  std::vector<uint8_t> value({0x03, (uint8_t)Mute::MUTED, (uint8_t)GainMode::MANUAL, 0x04});
+  std::vector<uint8_t> value({0x01, (uint8_t)Mute::MUTED, (uint8_t)GainMode::MANUAL, 0x04});
   EXPECT_CALL(callbacks,
-              OnExtAudioInStateChanged(test_address, _, 0x03, Mute::MUTED, GainMode::MANUAL));
+              OnExtAudioInStateChanged(test_address, _, 0x01, Mute::MUTED, GainMode::MANUAL));
   GetNotificationEvent(0x0032, value);
 }
 
 TEST_F(VolumeControlCallbackTest, test_audio_input_state_changed__disabled) {
-  std::vector<uint8_t> value({0x03, (uint8_t)Mute::DISABLED, (uint8_t)GainMode::MANUAL, 0x04});
+  std::vector<uint8_t> value({0x01, (uint8_t)Mute::DISABLED, (uint8_t)GainMode::MANUAL, 0x04});
   EXPECT_CALL(callbacks,
-              OnExtAudioInStateChanged(test_address, _, 0x03, Mute::DISABLED, GainMode::MANUAL));
+              OnExtAudioInStateChanged(test_address, _, 0x01, Mute::DISABLED, GainMode::MANUAL));
   GetNotificationEvent(0x0032, value);
 }
 

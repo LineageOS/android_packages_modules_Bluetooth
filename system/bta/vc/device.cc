@@ -445,9 +445,9 @@ void VolumeControlDevice::EnqueueRemainingRequests(tGATT_IF /*gatt_if*/,
   }
 
   for (auto const& input : audio_inputs.volume_audio_inputs) {
-    handles_to_read.push_back(std::make_pair(input.state_handle, 6));
     handles_to_read.push_back(std::make_pair(input.gain_setting_handle, 5));
     handles_to_read.push_back(std::make_pair(input.type_handle, 3));
+    handles_to_read.push_back(std::make_pair(input.state_handle, 6));
     handles_to_read.push_back(std::make_pair(input.status_handle, 3));
     handles_to_read_variable_length.push_back(input.description_handle);
   }
