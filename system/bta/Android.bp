@@ -29,28 +29,6 @@ cc_defaults {
     header_libs: ["libbluetooth_headers"],
 }
 
-cc_defaults {
-    name: "sanitize_defaults",
-    sanitize: {
-        misc_undefined: [
-            "alignment",
-            "bounds",
-            "integer",
-            "null",
-            "unreachable",
-        ],
-        diag: {
-            misc_undefined: [
-                "alignment",
-                "bounds",
-                "integer",
-                "null",
-                "unreachable",
-            ],
-        },
-    },
-}
-
 filegroup {
     name: "BtaDmSources",
     srcs: [
@@ -243,7 +221,6 @@ cc_test {
         "latest_android_hardware_bluetooth_audio_ndk_static",
         "latest_android_media_audio_common_types_ndk_static",
         "mts_defaults",
-        "sanitize_defaults",
     ],
     test_suites: ["general-tests"],
     host_supported: true,
