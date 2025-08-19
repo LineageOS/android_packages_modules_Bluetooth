@@ -4269,6 +4269,38 @@ public:
     audio_receiver_state_ = AudioState::STARTED;
   }
 
+  void ConfirmLocalAudioSourceStartRequestAndUpdateConfig(LeAudioDeviceGroup* group,
+                                                          bool force_update = false) {
+    uint16_t remote_delay_ms =
+            group->GetRemoteDelay(bluetooth::le_audio::types::kLeAudioDirectionSink);
+
+    le_audio_source_hal_client_->UpdateRemoteDelay(remote_delay_ms);
+
+    /* We update the target audio allocation before streamStarted so that the CodecManager would
+     * already know how to configure the encoder once we confirm the streaming request. */
+    CodecManager::GetInstance()->UpdateActiveAudioConfig(
+            group->stream_conf.stream_params,
+            std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
+                      std::placeholders::_1, std::placeholders::_2),
+            ::bluetooth::le_audio::types::kLeAudioDirectionSink, force_update);
+
+    ConfirmLocalAudioSourceStreamingRequest();
+
+    /* After confirming the streaming request, if no Stream Active API is available, we need to
+     * send an additional update with the currently active audio channel configuration (in case one
+     * of the earbuds is not yet connected) so that the offloader would know if any channel mixing
+     * (and sending joint-stereo to one CIS) is required until the other bud joins the stream.
+     * NOTE: With the Stream Active API available, both information is passed with the initial call.
+     */
+    if (!LeAudioHalVerifier::SupportsStreamActiveApi()) {
+      CodecManager::GetInstance()->UpdateActiveAudioConfig(
+              group->stream_conf.stream_params,
+              std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
+                        std::placeholders::_1, std::placeholders::_2),
+              bluetooth::le_audio::types::kLeAudioDirectionSink, force_update);
+    }
+  }
+
   void StartSendingAudio(int group_id) {
     log::info("");
 
@@ -4297,8 +4329,6 @@ public:
                  info.audio_channel_allocation);
     }
 
-    uint16_t remote_delay_ms =
-            group->GetRemoteDelay(bluetooth::le_audio::types::kLeAudioDirectionSink);
     if (CodecManager::GetInstance()->GetCodecLocation() ==
         bluetooth::le_audio::types::CodecLocation::HOST) {
       if (sw_enc_left || sw_enc_right) {
@@ -4323,7 +4353,25 @@ public:
       }
     }
 
-    le_audio_source_hal_client_->UpdateRemoteDelay(remote_delay_ms);
+    ConfirmLocalAudioSourceStartRequestAndUpdateConfig(group);
+  }
+
+  const struct bluetooth::le_audio::stream_configuration* GetStreamSourceConfiguration(
+          LeAudioDeviceGroup* group) {
+    const struct bluetooth::le_audio::stream_configuration* stream_conf = &group->stream_conf;
+    if (stream_conf->stream_params.source.stream_config.stream_map.size() == 0) {
+      return nullptr;
+    }
+    log::info("configuration: {}", stream_conf->conf->name);
+    return stream_conf;
+  }
+
+  void ConfirmLocalAudioSinkStartRequestAndUpdateConfig(LeAudioDeviceGroup* group,
+                                                        bool force_update = false) {
+    uint16_t remote_delay_ms =
+            group->GetRemoteDelay(bluetooth::le_audio::types::kLeAudioDirectionSource);
+
+    le_audio_sink_hal_client_->UpdateRemoteDelay(remote_delay_ms);
 
     /* We update the target audio allocation before streamStarted so that the CodecManager would
      * already know how to configure the encoder once we confirm the streaming request. */
@@ -4331,9 +4379,9 @@ public:
             group->stream_conf.stream_params,
             std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
                       std::placeholders::_1, std::placeholders::_2),
-            ::bluetooth::le_audio::types::kLeAudioDirectionSink);
+            ::bluetooth::le_audio::types::kLeAudioDirectionSource, force_update);
 
-    ConfirmLocalAudioSourceStreamingRequest();
+    ConfirmLocalAudioSinkStreamingRequest();
 
     /* After confirming the streaming request, if no Stream Active API is available, we need to
      * send an additional update with the currently active audio channel configuration (in case one
@@ -4346,18 +4394,8 @@ public:
               group->stream_conf.stream_params,
               std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
                         std::placeholders::_1, std::placeholders::_2),
-              bluetooth::le_audio::types::kLeAudioDirectionSink);
+              bluetooth::le_audio::types::kLeAudioDirectionSource, force_update);
     }
-  }
-
-  const struct bluetooth::le_audio::stream_configuration* GetStreamSourceConfiguration(
-          LeAudioDeviceGroup* group) {
-    const struct bluetooth::le_audio::stream_configuration* stream_conf = &group->stream_conf;
-    if (stream_conf->stream_params.source.stream_config.stream_map.size() == 0) {
-      return nullptr;
-    }
-    log::info("configuration: {}", stream_conf->conf->name);
-    return stream_conf;
   }
 
   void StartReceivingAudio(int group_id) {
@@ -4373,9 +4411,6 @@ public:
       groupStateMachine_->StopStream(group);
       return;
     }
-
-    uint16_t remote_delay_ms =
-            group->GetRemoteDelay(bluetooth::le_audio::types::kLeAudioDirectionSource);
 
     CleanCachedMicrophoneData();
 
@@ -4403,31 +4438,7 @@ public:
       }
     }
 
-    le_audio_sink_hal_client_->UpdateRemoteDelay(remote_delay_ms);
-
-    /* We update the target audio allocation before streamStarted so that the CodecManager would
-     * already know how to configure the encoder once we confirm the streaming request. */
-    CodecManager::GetInstance()->UpdateActiveAudioConfig(
-            group->stream_conf.stream_params,
-            std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
-                      std::placeholders::_1, std::placeholders::_2),
-            ::bluetooth::le_audio::types::kLeAudioDirectionSource);
-
-    ConfirmLocalAudioSinkStreamingRequest();
-
-    /* After confirming the streaming request, if no Stream Active API is available, we need to
-     * send an additional update with the currently active audio channel configuration (in case one
-     * of the earbuds is not yet connected) so that the offloader would know if any channel mixing
-     * (and sending joint-stereo to one CIS) is required until the other bud joins the stream.
-     * NOTE: With the Stream Active API available, both information is passed with the initial call.
-     */
-    if (!LeAudioHalVerifier::SupportsStreamActiveApi()) {
-      CodecManager::GetInstance()->UpdateActiveAudioConfig(
-              group->stream_conf.stream_params,
-              std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
-                        std::placeholders::_1, std::placeholders::_2),
-              bluetooth::le_audio::types::kLeAudioDirectionSource);
-    }
+    ConfirmLocalAudioSinkStartRequestAndUpdateConfig(group);
   }
 
   void SuspendAudio(void) {
@@ -5003,7 +5014,7 @@ public:
                 (group->GetActiveEnabledDirections() &
                  bluetooth::le_audio::types::kLeAudioDirectionSink)) {
               /* Stream is up just restore it */
-              ConfirmLocalAudioSourceStreamingRequest();
+              ConfirmLocalAudioSourceStartRequestAndUpdateConfig(group, true /* Force update */);
               bluetooth::le_audio::MetricsCollector::Get()->OnStreamStarted(
                       active_group_id_, upcoming_configuration_context_type);
             } else if (!reenableDirectionIfNeeded(
@@ -5327,7 +5338,7 @@ public:
                 (group->GetActiveEnabledDirections() &
                  bluetooth::le_audio::types::kLeAudioDirectionSource)) {
               /* Stream is up just restore it */
-              ConfirmLocalAudioSinkStreamingRequest();
+              ConfirmLocalAudioSinkStartRequestAndUpdateConfig(group, true /* force_update */);
             } else if (!reenableDirectionIfNeeded(
                                group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
               log::error("Cannot enable directions for group_id: {}", group->group_id_);
