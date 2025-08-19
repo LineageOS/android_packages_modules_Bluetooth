@@ -663,7 +663,16 @@ public:
     }
 
     uint8_t* pp = value;
-    STREAM_TO_INT8(input->gain_setting, pp);
+    int8_t gain;
+    STREAM_TO_INT8(gain, pp);
+    if (gain < input->gain_settings.min || gain > input->gain_settings.max) {
+      bluetooth::log::error("{} Gain outside of range: {:#x} (min: {:#x} max {:#x})",
+                            device->address, gain, input->gain_settings.min,
+                            input->gain_settings.max);
+      return;
+    }
+    input->gain_setting = gain;
+
     uint8_t mute;
     STREAM_TO_UINT8(mute, pp);
     if (!bluetooth::aics::isValidAudioInputMuteValue(mute)) {

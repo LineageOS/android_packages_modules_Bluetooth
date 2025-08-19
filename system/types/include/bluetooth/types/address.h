@@ -21,6 +21,7 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <format>
 #include <optional>
 #include <string>
 
@@ -92,9 +93,6 @@ inline void STREAM_TO_BDADDR(RawAddress& a, const uint8_t*& p) {
   }
 }
 
-#if __has_include(<bluetooth/log.h>)
-#include <bluetooth/log.h>
-
 namespace std {
 template <>
 struct formatter<RawAddress> : formatter<std::string> {
@@ -105,5 +103,3 @@ struct formatter<RawAddress> : formatter<std::string> {
   }
 };
 }  // namespace std
-
-#endif  // __has_include(<bluetooth/log.h>)

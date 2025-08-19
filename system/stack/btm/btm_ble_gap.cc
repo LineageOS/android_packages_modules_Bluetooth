@@ -1823,7 +1823,7 @@ void btm_ble_stop_inquiry(void) {
   } else if (!btm_cb.ble_ctr_cb.inq_var.is_1m_phy_configured() ||
              get_low_latency_scan_params() != std::pair(btm_cb.ble_ctr_cb.inq_var.scan_interval_1m,
                                                         btm_cb.ble_ctr_cb.inq_var.scan_window_1m)) {
-    log::verbose("setting default params for ongoing observe");
+    log::verbose("Setting scan parameters to values requested previously from ongoing observer");
     btm_ble_stop_scan();
     btm_send_hci_set_scan_params(
             BTM_BLE_SCAN_MODE_ACTI, btm_cb.ble_ctr_cb.inq_var.scan_interval_1m,

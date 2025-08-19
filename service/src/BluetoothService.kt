@@ -75,16 +75,29 @@ class BluetoothService(context: Context) : SystemService(context) {
             Log.i("onUserStarting($user) but already initialized")
             return
         }
-        val isForeground =
-            context
-                .createContextAsUser(user.userHandle, 0)
-                .getSystemService(android.os.UserManager::class.java)!!
-                .isUserForeground
-        if (!isForeground) {
-            Log.i("onUserStarting($user) Skipping non foreground user ")
-            return
+        if (Flags.userVisibleOnUserStarting()) {
+            val isUserVisible =
+                context
+                    .createContextAsUser(user.userHandle, 0)
+                    .getSystemService(android.os.UserManager::class.java)!!
+                    .isUserVisible
+            if (!isUserVisible) {
+                Log.i("onUserStarting($user) Skipping non visible user ")
+                return
+            }
+            Log.i("onUserStarting($user) Initializing for visible user ")
+        } else {
+            val isForeground =
+                context
+                    .createContextAsUser(user.userHandle, 0)
+                    .getSystemService(android.os.UserManager::class.java)!!
+                    .isUserForeground
+            if (!isForeground) {
+                Log.i("onUserStarting($user) Skipping non foreground user ")
+                return
+            }
+            Log.i("onUserStarting($user) Initializing for foreground user ")
         }
-        Log.i("onUserStarting($user) Initializing for foreground user ")
         runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
         mInitialized = true
     }

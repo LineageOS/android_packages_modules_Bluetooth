@@ -59,9 +59,6 @@ def main(grpc_port: int, rootcanal_port: int, transport: str, config: str) -> No
     server_config = Config()
     server_config.load_from_dict(bumble_config.get('server', {}))
 
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s.%(msecs).03d %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M:%S')
     asyncio.run(serve(device, config=server_config, port=grpc_port))
 
 
@@ -120,5 +117,8 @@ def retrieve_config(config: str) -> Dict[str, Any]:
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s.%(msecs).03d %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M:%S')
     args = args_parser().parse_args()
     main(**vars(args))

@@ -763,6 +763,7 @@ cc_test {
         "test/gatt/gatt_api_test.cc",
         "test/stack_a2dp_test.cc",
         "test/stack_avrcp_test.cc",
+        "test/stack_bnep_test.cc",
     ],
     shared_libs: [
         "libPlatformProperties",

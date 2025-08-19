@@ -2715,7 +2715,8 @@
         "bluetooth.profile.gmap.enabled": "true",
         "bluetooth.le_audio.software_datapath_test.enabled": "true",
         "bluetooth.leaudio.dual_bidirection_swb.supported": "true",
-        "bluetooth.auto_connect_profiles.enabled": "true"
+        "bluetooth.auto_connect_profiles.enabled": "true",
+        "persist.bluetooth.leaudio.device.set.state.timeoutms": "20000"
       },
       "tests": [
         "GMAP"

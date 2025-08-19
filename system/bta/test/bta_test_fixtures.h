@@ -30,6 +30,7 @@
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_stack_gatt_api.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 #include "test/mock/mock_stack_rnr_interface.h"
 
 constexpr tGATT_IF kGattRegisteredIf = 5;
@@ -62,6 +63,7 @@ protected:
 
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<::testing::NiceMock<bluetooth::hci::testing::MockController>>();
+    bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface_);
     bluetooth::testing::stack::rnr::set_interface(&mock_stack_rnr_interface_);
 
     test::mock::stack_gatt_api::GATT_Register.body =
@@ -80,17 +82,19 @@ protected:
   }
 
   void TearDown() override {
+    mock_btm_client_interface.security.BTM_SecRegister = {};
+    mock_btm_client_interface.eir.BTM_WriteEIR = {};
+    mock_btm_client_interface.eir.BTM_GetEirSupportedServices = {};
     test::mock::stack_gatt_api::GATT_Register = {};
 
-    mock_btm_client_interface.eir.BTM_GetEirSupportedServices = {};
-    mock_btm_client_interface.eir.BTM_WriteEIR = {};
-
     bluetooth::testing::stack::rnr::reset_interface();
+    bluetooth::testing::stack::l2cap::reset_interface();
     bluetooth::hci::testing::mock_controller_.reset();
 
     BtaWithFakesTest::TearDown();
   }
 
+  bluetooth::testing::stack::l2cap::Mock mock_l2cap_interface_;
   bluetooth::testing::stack::rnr::Mock mock_stack_rnr_interface_;
 };
 

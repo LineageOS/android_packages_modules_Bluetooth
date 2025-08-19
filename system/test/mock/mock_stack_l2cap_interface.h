@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include <cstdint>
 #include <vector>
 
 #include "stack/include/l2cap_interface.h"
@@ -129,7 +130,7 @@ public:
 };
 
 void reset_interface();
-void set_interface(bluetooth::stack::l2cap::Interface* interface_);
+void set_interface(Mock* mock_interface);
 
 }  // namespace l2cap
 }  // namespace stack
