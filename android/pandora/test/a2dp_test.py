@@ -711,15 +711,15 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         class TestClassicChannel(ClassicChannel):
 
-            def on_connection_response(self, response):
-                assert self.state == self.State.WAIT_CONNECT_RSP
-                assert (response.result == L2CAP_Connection_Response.CONNECTION_SUCCESSFUL
-                       ), f"Connection response: {response}"
+            def on_connection_response(self, response: L2CAP_Connection_Response) -> None:
+                assert_equal(self.state, self.State.WAIT_CONNECT_RSP)
+                assert_equal(response.result,
+                             L2CAP_Connection_Response.Result.CONNECTION_SUCCESSFUL)
                 self.destination_cid = response.destination_cid
                 self._change_state(self.State.WAIT_CONFIG)
                 logger.info("<< 2. RD1 connected DUT, configuration postponed >>")
 
-            def on_configure_request(self, request) -> None:
+            def on_configure_request(self, request: L2CAP_Configure_Request) -> None:
                 nonlocal pending_configuration_request
                 if pending_configuration_request is not None:
                     logger.info("<< 3. Block RD1 until DUT tries AVDTP channel connection >>")
