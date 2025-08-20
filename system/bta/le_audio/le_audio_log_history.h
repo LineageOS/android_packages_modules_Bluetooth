@@ -64,6 +64,7 @@ static std::string kLogAfSuspendConfirm("SUSPEND_CONFIRMED: ");
 static std::string kLogAfCancel("REQUEST_CANCELED: ");
 static std::string kLogAfReconfigComplete("RECONFIG_COMPLETE_EVT: ");
 static std::string kLogAfSuspendForReconfig("SUSPEND_FOR_RECONFIG_EVT: ");
+static std::string kLogAfStreamSuspended("SUSPENDED_EVT: ");
 
 class LeAudioLogHistory {
 public:
