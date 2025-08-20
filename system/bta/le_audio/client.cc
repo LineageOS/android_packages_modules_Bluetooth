@@ -1786,6 +1786,11 @@ public:
       /* In case there was an active group. Stop the stream, but before that, set
        * the new group so the group change is correctly handled in OnStateMachineStatusReportCb
        */
+      LeAudioDeviceGroup* prev_group = aseGroups_.FindById(previous_active_group);
+      if (prev_group) {
+        prev_group->StopConnSubrateIfNeeded();
+      }
+
       active_group_id_ = group_id;
       SuspendedForReconfiguration();
       GroupStop(previous_active_group);
