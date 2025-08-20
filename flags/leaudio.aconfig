@@ -336,3 +336,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_improve_switching_le_audio_devices"
+    namespace: "bluetooth"
+    description: "Decreasing time when switching between leAudio devices"
+    bug: "438399588"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
