@@ -455,8 +455,7 @@ static void btif_hh_start_vup_timer(const tAclLinkSpec& link_spec) {
   alarm_set_on_mloop(p_dev->vup_timer, BTIF_TIMEOUT_VUP_MS, btif_hh_timer_timeout, p_dev);
 }
 
-static void btif_hh_incoming_connection_timeout(void* data) {
-  uint8_t handle = reinterpret_cast<size_t>(data) & 0xFF;
+static void reject_incoming_connection(uint8_t handle) {
   tBTA_HH_CONN& conn = btif_hh_cb.pending_incoming_connection;
   if (conn.link_spec.addrt.bda.IsEmpty()) {
     log::warn("Unknown incoming connection timeout, handle: {}", handle);
@@ -477,6 +476,15 @@ static void btif_hh_incoming_connection_timeout(void* data) {
   }
   BTA_HhRemoveDev(conn.handle);
   btif_hh_cb.pending_incoming_connection = {};
+}
+
+static void btif_hh_incoming_connection_timeout(void* data) {
+  uint8_t handle = reinterpret_cast<size_t>(data) & 0xFF;
+  if (!com::android::bluetooth::flags::hid_connection_timeout_in_jni_thread()) {
+    reject_incoming_connection(handle);
+    return;
+  }
+  do_in_jni_thread(base::BindOnce(reject_incoming_connection, handle));
 }
 
 // Todo(b/404590499): Remove when simpler_hid_connection_policy is released
