@@ -14,7 +14,7 @@ from typing import List, Optional, Set
 from btsnoop import Btsnoop
 import analyzers.a2dp
 import analyzers.asha
-
+import analyzers.leaudio
 
 class Bugreport:
     BTSNOOP_HCI_PATH = "FS/data/misc/bluetooth/logs/btsnoop_hci.log"
@@ -31,7 +31,7 @@ class Bugreport:
             return None
 
     def __init__(self, path: Path):
-        if path.suffix == '.log':
+        if path.suffix in ['.log', '.last']:
             with open(path, 'rb') as f:
                 self.archive = None
                 self.btsnoop_hci = Btsnoop(f.read(), None)
@@ -52,6 +52,10 @@ def run_a2dp(bugreport: Bugreport, args: argparse.Namespace):
 def run_asha(bugreport: Bugreport, args: argparse.Namespace):
     for acl_connection in bugreport.btsnoop_hci.le_acl_connections:
         analyzers.asha.plot_acl_connection(acl_connection, **vars(args))
+
+
+def run_leaudio(bugreport: Bugreport, args: argparse.Namespace):
+    analyzers.leaudio.plot_cis_connections(bugreport.btsnoop_hci, **vars(args))
 
 
 def run(args: argparse.Namespace):
@@ -76,6 +80,12 @@ def main():
     asha.set_defaults(func=run_asha)
     asha.add_argument("path", type=Path, help="path to the bugreport or btsnoop file")
     asha.add_argument("--psm", type=lambda x: int(x,0), help="override the stream PSM")
+
+    leaudio = subparsers.add_parser('leaudio', description='Extract ASHA profile information')
+    leaudio.set_defaults(func=run_leaudio)
+    leaudio.add_argument("path", type=Path, help="path to the bugreport or btsnoop file")
+    leaudio.add_argument("--plot", action='store_true', help="plot the stream deviation")
+    leaudio.add_argument("--extract", action='store_true', help="extract the stream audio")
 
     args = parser.parse_args()
     run(args)
