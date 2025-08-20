@@ -42,6 +42,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
@@ -1445,6 +1446,49 @@ public class ActiveDeviceManagerTest {
         mTestLooper.dispatchAll();
         verify(mLeAudioService).removeActiveDevice(true);
         verify(mHearingAidService).setActiveDevice(mSecondaryAudioDevice);
+    }
+
+    /**
+     * Dual mode device is an active LE Audio device. It is requested to be active HFP device. It is
+     * unset as active LE Audio device, and set as active Headset device.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void dualModeDeviceActive_phoneCallSetActive() {
+        /* Turn on the dual mode audio flag */
+        Utils.setDualModeAudioStateForTesting(true);
+
+        reset(mLeAudioService);
+        when(mLeAudioService.getLeadDevice(mDualModeAudioDevice)).thenReturn(mDualModeAudioDevice);
+        when(mLeAudioService.isGroupAvailableForStream(anyInt())).thenReturn(true);
+
+        when(mAdapterService.isAllSupportedClassicAudioProfilesActive(mDualModeAudioDevice))
+                .thenReturn(true);
+        when(mAdapterService.isDualModeAudioSinkDevice(mDualModeAudioDevice)).thenReturn(true);
+
+        when(mLeAudioService.getConnectionPolicy(mDualModeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(mDualModeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+
+        /* LE Audio is the active device */
+        leAudioConnected(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService).setActiveDevice(mDualModeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+        Mockito.clearInvocations(mA2dpDevice);
+
+        assertThat(
+                        mActiveDeviceManager.setActiveDevice(
+                                mDualModeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL))
+                .isEqualTo(true);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService, never()).setActiveDevice(mDualModeAudioDevice);
+        verify(mLeAudioService).removeActiveDevice(true);
+        verify(mHeadsetService).setActiveDevice(mDualModeAudioDevice);
     }
 
     /**
