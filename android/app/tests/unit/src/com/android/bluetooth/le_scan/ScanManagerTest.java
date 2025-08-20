@@ -2096,7 +2096,7 @@ public class ScanManagerTest {
         // Stop scan on coded
         stopScan(clientCoded);
 
-        verify(mScanNativeInterface, atLeastOnce()).gattClientScan(false);
+        verify(mScanNativeInterface, atLeastOnce()).scan(false);
         verify(mScanNativeInterface, never())
                 .gattSetScanParameters(
                         anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), eq(0));
@@ -2105,7 +2105,7 @@ public class ScanManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     public void testMsftScan() {
-        doReturn(true).when(mScanNativeInterface).gattClientIsMsftSupported();
+        doReturn(true).when(mScanNativeInterface).isMsftSupported();
         doReturn(false).when(mAdapter).isOffloadedFilteringSupported();
 
         final boolean isFiltered = true;
@@ -2157,18 +2157,18 @@ public class ScanManagerTest {
 
         // Verify MSFT APIs are only called once
         verify(mScanNativeInterface)
-                .gattClientMsftAdvMonitorAdd(
+                .msftAdvMonitorAdd(
                         any(MsftAdvMonitor.Monitor.class),
                         any(MsftAdvMonitor.Pattern[].class),
                         any(MsftAdvMonitor.Address.class),
                         anyInt());
-        verify(mScanNativeInterface).gattClientMsftAdvMonitorEnable(eq(true));
+        verify(mScanNativeInterface).msftAdvMonitorEnable(eq(true));
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     public void testPreferApcfOverMsftScan() {
-        doReturn(true).when(mScanNativeInterface).gattClientIsMsftSupported();
+        doReturn(true).when(mScanNativeInterface).isMsftSupported();
         doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
         final boolean isFiltered = true;
@@ -2205,25 +2205,25 @@ public class ScanManagerTest {
         startScan(client);
 
         // Verify APCF APIs are called
-        verify(mScanNativeInterface).gattClientScanFilterParamAdd(any());
+        verify(mScanNativeInterface).scanFilterParamAdd(any());
 
         // Verify MSFT APIs are never called
         verify(mScanNativeInterface, never())
-                .gattClientMsftAdvMonitorAdd(
+                .msftAdvMonitorAdd(
                         any(MsftAdvMonitor.Monitor.class),
                         any(MsftAdvMonitor.Pattern[].class),
                         any(MsftAdvMonitor.Address.class),
                         anyInt());
-        verify(mScanNativeInterface, never()).gattClientMsftAdvMonitorEnable(anyBoolean());
+        verify(mScanNativeInterface, never()).msftAdvMonitorEnable(anyBoolean());
 
         // Stop scan
         stopScan(client);
 
         // Verify APCF APIs are called
-        verify(mScanNativeInterface).gattClientScanFilterParamDelete(anyInt(), anyInt());
+        verify(mScanNativeInterface).scanFilterParamDelete(anyInt(), anyInt());
 
         // Verify MSFT APIs are never called
-        verify(mScanNativeInterface, never()).gattClientMsftAdvMonitorRemove(anyInt());
-        verify(mScanNativeInterface, never()).gattClientMsftAdvMonitorEnable(anyBoolean());
+        verify(mScanNativeInterface, never()).msftAdvMonitorRemove(anyInt());
+        verify(mScanNativeInterface, never()).msftAdvMonitorEnable(anyBoolean());
     }
 }
