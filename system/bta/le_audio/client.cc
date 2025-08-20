@@ -761,6 +761,79 @@ public:
     group_remove_node(group, address);
   }
 
+  void handleStateTimeoutWhenGoingToStreaming(LeAudioDeviceGroup* group) {
+    log::info("group_id: {}", group->group_id_);
+
+    group->SetTargetState(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
+    group->ClearAllCises();
+
+    /* There is an issue with a setting up stream or any other operation which
+     * are gatt operations. It means peer is not responsible. Lets close ACL
+     */
+    CancelStreamingRequest();
+    LeAudioDevice* leAudioDevice = group->GetFirstActiveDevice();
+    while (leAudioDevice) {
+      DisconnectDevice(leAudioDevice, true, true);
+      leAudioDevice = group->GetNextActiveDevice(leAudioDevice);
+    }
+
+    if (active_group_id_ == group->group_id_ && group->NumOfConnected() == 0) {
+      log::info("All devices disconnected, group becomes inactive");
+      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
+    }
+  }
+
+  void handleStateTimeoutWhenGoingToIdle(LeAudioDeviceGroup* group) {
+    log::info("group_id: {}", group->group_id_);
+
+    group->ClearAllCises();
+
+    /* There is an issue with a closing stream. It might be during
+     * reconfiguration, so make sure to cancel stream request if needed
+     */
+    CancelStreamingRequest();
+
+    /* Check if stream was closing for the purpose of Disconnecting the whole group
+     */
+    LeAudioDevice* leAudioDevice = group->GetFirstDevice();
+    if (leAudioDevice == nullptr) {
+      log::error("No devices. nothing to do");
+      return;
+    }
+
+    bool disconnecting_device_by_user = false;
+    for (auto tmpDevice = leAudioDevice; tmpDevice != nullptr;
+         tmpDevice = group->GetNextDevice(tmpDevice)) {
+      if (tmpDevice->closing_stream_for_disconnection_) {
+        disconnecting_device_by_user = true;
+        break;
+      }
+    }
+
+    if (disconnecting_device_by_user) {
+      /* Streaming were closing because user hit disconnect. Just disconnect all devices.*/
+      while (leAudioDevice) {
+        DisconnectDevice(leAudioDevice, true, false);
+        leAudioDevice = group->GetNextDevice(leAudioDevice);
+      }
+    } else {
+      /* Do recovery only for devices which had a problem with moving to IDLE state.
+       * Those devices are marked as Active.
+       */
+      leAudioDevice = group->GetFirstActiveDevice();
+      while (leAudioDevice) {
+        DisconnectDevice(leAudioDevice, true, true);
+        leAudioDevice = group->GetNextActiveDevice(leAudioDevice);
+      }
+    }
+
+    if (active_group_id_ == group->group_id_ && group->NumOfConnected() == 0) {
+      log::info("All devices disconnected, group becomes inactive");
+      /* Group is disconnecting. Notify upper layer that group is inactive */
+      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
+    }
+  }
+
   /* This callback happens if kLeAudioDeviceSetStateTimeoutMs timeout happens
    * during transition from origin to target state
    */
@@ -772,9 +845,6 @@ public:
       return;
     }
 
-    bool check_if_recovery_needed =
-            group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_IDLE;
-
     if (leAudioHealthStatus_) {
       leAudioHealthStatus_->AddStatisticForGroup(
               group, LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED);
@@ -782,51 +852,15 @@ public:
 
     log::error(
             "State not achieved on time for group: group id {}, current state {}, "
-            "target state: {}, check_if_recovery_needed: {}",
-            group_id, ToString(group->GetState()), ToString(group->GetTargetState()),
-            check_if_recovery_needed);
+            "target state: {}",
+            group_id, ToString(group->GetState()), ToString(group->GetTargetState()));
+
     group->PrintDebugState();
-    group->SetTargetState(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
-    group->ClearAllCises();
 
-    /* There is an issue with a setting up stream or any other operation which
-     * are gatt operations. It means peer is not responsible. Lets close ACL
-     */
-    CancelStreamingRequest();
-    LeAudioDevice* leAudioDevice = group->GetFirstActiveDevice();
-    if (leAudioDevice == nullptr) {
-      log::error("Shouldn't be called without an active device.");
-      leAudioDevice = group->GetFirstDevice();
-      if (leAudioDevice == nullptr) {
-        log::error("Front device is null. Number of devices: {}", group->Size());
-        return;
-      }
-    }
-
-    /* If Timeout happens on stream close and stream is closing just for the
-     * purpose of device disconnection, do not bother with recovery mode
-     */
-    bool recovery = true;
-    if (check_if_recovery_needed) {
-      for (auto tmpDevice = leAudioDevice; tmpDevice != nullptr;
-           tmpDevice = group->GetNextActiveDevice(tmpDevice)) {
-        if (tmpDevice->closing_stream_for_disconnection_) {
-          recovery = false;
-          break;
-        }
-      }
-    }
-
-    do {
-      DisconnectDevice(leAudioDevice, true, recovery);
-      leAudioDevice = group->GetNextActiveDevice(leAudioDevice);
-    } while (leAudioDevice);
-
-    if (recovery && !group->NumOfConnected()) {
-      log::info("All devices disconnected, group becomes inactive");
-      /* Both devices will  be disconnected soon. Notify upper layer that group
-       * is inactive */
-      groupSetAndNotifyInactive(/* autonomous_inactive */ false);
+    if (group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {
+      handleStateTimeoutWhenGoingToIdle(group);
+    } else {
+      handleStateTimeoutWhenGoingToStreaming(group);
     }
   }
 
