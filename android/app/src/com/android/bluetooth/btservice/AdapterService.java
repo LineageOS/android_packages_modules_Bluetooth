@@ -1387,8 +1387,11 @@ public class AdapterService extends Service {
     private void stopScanController() {
         Log.i(TAG, "stopScanController() called");
         setScanMode(SCAN_MODE_NONE, "stopScanController");
-        mScanController.cleanup();
-        mScanController = null;
+        final var scanController = getBluetoothScanController();
+        if (scanController != null) {
+            mScanController = null;
+            scanController.cleanup();
+        }
         mNativeInterface.disable();
     }
 
@@ -1397,13 +1400,14 @@ public class AdapterService extends Service {
         setScanMode(SCAN_MODE_NONE, "stopGattProfileService");
 
         mStartedProfiles.remove(BluetoothProfile.GATT);
-        if (mGattService != null) {
-            mGattService.setAvailable(false);
-            onProfileServiceStateChanged(mGattService, BluetoothAdapter.STATE_OFF);
-            removeProfile(mGattService);
-            mGattService.cleanup();
-            mGattService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
+        final var gattService = mGattService;
+        if (gattService != null) {
             mGattService = null;
+            gattService.setAvailable(false);
+            onProfileServiceStateChanged(gattService, BluetoothAdapter.STATE_OFF);
+            removeProfile(gattService);
+            gattService.cleanup();
+            gattService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
         }
     }
 
@@ -4039,7 +4043,8 @@ public class AdapterService extends Service {
     }
 
     IBinder getBluetoothGatt() {
-        return mGattService == null ? null : mGattService.getBinder().orElse(null);
+        final var gattService = mGattService;
+        return gattService == null ? null : gattService.getBinder().orElse(null);
     }
 
     IBinder getBluetoothScan() {
