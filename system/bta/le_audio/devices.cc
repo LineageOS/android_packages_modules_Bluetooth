@@ -462,9 +462,12 @@ bool LeAudioDevice::ConfigureAses(const types::AudioSetConfiguration* audio_set_
       ase->codec_config = ase_cfg.codec;
 
       /* Let's choose audio channel allocation if not set */
-      ase->codec_config.params.Add(
-              codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
-              PickAudioLocation(strategy, direction, audio_locations_, group_audio_locations_memo));
+      auto location =
+              PickAudioLocation(strategy, direction, audio_locations_, group_audio_locations_memo);
+      if (location != bluetooth::le_audio::codec_spec_conf::kLeAudioLocationMonoAudio) {
+        ase->codec_config.params.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
+                                     location);
+      }
 
       /* Get default value if no requirement for specific frame blocks per sdu
        */

@@ -2370,8 +2370,11 @@ public:
                                                                     value);
 
       /* Value may not change */
-      if (!leAudioDevice->audio_locations_.sink ||
-          (leAudioDevice->audio_locations_.sink->value ^ snk_audio_locations).none()) {
+      if (leAudioDevice->audio_locations_.sink->value !=
+          bluetooth::le_audio::codec_spec_conf::kLeAudioLocationUninitialized) {
+        log::warn("{} Audio location already set {} , new value : {}", leAudioDevice->address_,
+                  leAudioDevice->audio_locations_.sink->value.to_ulong(),
+                  snk_audio_locations.to_ulong());
         return;
       }
 
@@ -2400,8 +2403,11 @@ public:
                                                                     value);
 
       /* Value may not change */
-      if (!leAudioDevice->audio_locations_.source ||
-          (leAudioDevice->audio_locations_.source->value ^ src_audio_locations).none()) {
+      if (leAudioDevice->audio_locations_.source->value !=
+          bluetooth::le_audio::codec_spec_conf::kLeAudioLocationUninitialized) {
+        log::warn("{} Audio location already set {} , new value : {}", leAudioDevice->address_,
+                  leAudioDevice->audio_locations_.source->value.to_ulong(),
+                  src_audio_locations.to_ulong());
         return;
       }
 
@@ -3454,8 +3460,10 @@ public:
                 charac.value_handle, hdl_pair.ccc_hdl, leAudioDevice->address_);
       } else if (charac.uuid == bluetooth::le_audio::uuid::kSinkAudioLocationCharacteristicUuid) {
         auto ccc_hdl = find_ccc_handle(charac);
-        leAudioDevice->audio_locations_.sink.emplace(hdl_pair(charac.value_handle, ccc_hdl),
-                                                     AudioLocations(0));
+        leAudioDevice->audio_locations_.sink.emplace(
+                hdl_pair(charac.value_handle, ccc_hdl),
+                AudioLocations(
+                        bluetooth::le_audio::codec_spec_conf::kLeAudioLocationUninitialized));
 
         if (ccc_hdl == 0) {
           log::info(", snk audio locations char doesn't have ccc");
@@ -3477,8 +3485,10 @@ public:
                 charac.value_handle, ccc_hdl, leAudioDevice->address_);
       } else if (charac.uuid == bluetooth::le_audio::uuid::kSourceAudioLocationCharacteristicUuid) {
         auto ccc_hdl = find_ccc_handle(charac);
-        leAudioDevice->audio_locations_.source.emplace(hdl_pair(charac.value_handle, ccc_hdl),
-                                                       AudioLocations(0));
+        leAudioDevice->audio_locations_.source.emplace(
+                hdl_pair(charac.value_handle, ccc_hdl),
+                AudioLocations(
+                        bluetooth::le_audio::codec_spec_conf::kLeAudioLocationUninitialized));
 
         if (ccc_hdl == 0) {
           log::info(", src audio locations char doesn't have ccc");
