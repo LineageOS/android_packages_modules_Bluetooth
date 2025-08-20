@@ -56,6 +56,7 @@ cc_defaults {
         },
         android: {
             srcs: [
+                "hal/gatt_hal_impl_android.cc",
                 "hal/hci_backend_aidl.cc",
                 "hal/hci_backend_hidl.cc",
                 "hal/hci_hal_impl_android.cc",
@@ -81,6 +82,7 @@ cc_defaults {
             ],
             whole_static_libs: [
                 "android.hardware.bluetooth-V1-ndk",
+                "android.hardware.bluetooth.gatt-V1-ndk",
                 "android.hardware.bluetooth.ranging-V2-ndk",
                 "android.hardware.bluetooth.socket-V1-ndk",
                 "android.hardware.contexthub-V4-ndk",

@@ -26,7 +26,7 @@ namespace bluetooth::lpp {
 /* Low Power Processor Offload Manager*/
 class LppOffloadManager : public LppOffloadInterface {
 public:
-  LppOffloadManager(os::Handler* handler, hal::SocketHal* socket_hal);
+  LppOffloadManager(os::Handler* handler, hal::SocketHal* socket_hal, hal::GattHal* gatt_hal);
 
   LppOffloadManager(const LppOffloadManager&) = delete;
 
@@ -41,6 +41,16 @@ public:
   bool SocketOpened(const hal::SocketContext& context) override;
 
   void SocketClosed(uint64_t socket_id) override;
+
+  bool InitializeGattHal(hal::GattHalCallback* callbacks) override;
+
+  hal::GattCapabilities GetGattCapabilities() const override;
+
+  bool RegisterGattService(const hal::GattSession& session) override;
+
+  void UnregisterGattService(int session_id) override;
+
+  void ClearGattServices(int acl_connection_handle) override;
 
 private:
   struct impl;
