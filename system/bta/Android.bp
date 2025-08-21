@@ -919,6 +919,7 @@ cc_test {
         "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
+        "libcutils",
         "libhidlbase",
         "liblog", // __android_log_print
         "server_configurable_flags",

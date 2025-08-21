@@ -171,6 +171,7 @@ public:
 
   void SetConnectionState(DeviceConnectState state);
   DeviceConnectState GetConnectionState(void);
+  void SetSubrateState(SubrateState state);
   SubrateState GetSubrateState(void);
   void ClearPACs(void);
   void RegisterPACs(std::vector<struct types::acs_ac_record>* apr_db,
@@ -301,7 +302,6 @@ private:
 
   void DumpPacsDebugState(std::stringstream& stream, types::PublishedAudioCapabilities pacs);
   void ParseHeadtrackingCodec(const struct types::acs_ac_record& pac);
-  void SetSubrateState(SubrateState state);
 };
 
 /* LeAudioDevices class represents a wraper helper over all devices in le audio
