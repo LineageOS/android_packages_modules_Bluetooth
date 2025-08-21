@@ -1589,6 +1589,14 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA* /*p_da
     /* tell sys to stop av if any */
     bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     /* When HS initiated SCO, it cannot be WBS. */
+
+    if ((p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC) && (p_scb->features & BTA_AG_FEAT_CODEC) &&
+        (p_scb->peer_codecs & BTM_SCO_CODEC_MSBC)) {
+      log::error(
+              "Codec negotiation and mSBC codec are supported, but remote does not initiate codec "
+              "negotiation. Using the CVSD codec");
+      BTA_AgSetCodec(bta_ag_scb_to_idx(p_scb), BTM_SCO_CODEC_CVSD);
+    }
   }
 
   /* If SCO open was initiated from HS, it must be CVSD */
