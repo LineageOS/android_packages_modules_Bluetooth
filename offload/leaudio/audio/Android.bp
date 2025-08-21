@@ -29,6 +29,7 @@ rust_defaults {
     rustlibs: [
         "android.hardware.bluetooth.offload.leaudio-rust",
         "libbinder_rs",
+        "liblibc",
         "liblog_rust",
         "liblogger",
     ],
