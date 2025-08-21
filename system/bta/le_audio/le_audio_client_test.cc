@@ -17157,6 +17157,43 @@ TEST_F(UnicastTest, StopEarbudsSubrate_WhenOneEarbudsAclClosed) {
   SyncOnMainLoop();
 }
 
+TEST_F(UnicastTest, DisableSubrateOnPreviousGroup_WhenSwitchActiveGroup) {
+  RawAddress test_address0;
+  RawAddress test_address1;
+  uint8_t group_id0 = bluetooth::groups::kGroupUnknown;
+  uint8_t group_id1 = bluetooth::groups::kGroupUnknown;
+
+  test_address0 = GetTestAddress(0);
+  test_address1 = GetTestAddress(1);
+
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address0))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubrating(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+  ON_CALL(mock_btm_interface_, AclPeerSupportsBleConnectionSubratingHost(test_address1))
+          .WillByDefault(DoAll(Return(true)));
+
+  ConnectNonCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                       codec_spec_conf::kLeAudioLocationFrontLeft);
+  ConnectNonCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                       codec_spec_conf::kLeAudioLocationFrontLeft);
+
+  group_id0 = MockDeviceGroups::DeviceGroups::Get()->GetGroupId(test_address0);
+  group_id1 = MockDeviceGroups::DeviceGroups::Get()->GetGroupId(test_address1);
+
+  LeAudioClient::Get()->GroupSetActive(group_id0);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id0);
+  auto group = streaming_groups.at(group_id0);
+  auto device1 = group->GetFirstDevice();
+  ASSERT_TRUE(device1 != nullptr);
+  ASSERT_NE(device1->GetSubrateState(), SubrateState::DISABLED);
+  LeAudioClient::Get()->GroupSetActive(group_id1);
+  ASSERT_EQ(device1->GetSubrateState(), SubrateState::DISABLED);
+  SyncOnMainLoop();
+}
+
 static std::vector<types::AseConfiguration> GetVendorAseConfigurationsForRequirements(
         const bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements& requirements,
         const types::CodecConfigSetting& codec, uint8_t direction) {
