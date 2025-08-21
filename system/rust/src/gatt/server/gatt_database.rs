@@ -511,6 +511,12 @@ mod test {
     }
 
     #[test]
+    fn test_remove_nonexistent_service() {
+        let gatt_db = SharedBox::new(GattDatabase::new());
+        assert!(gatt_db.remove_service_at_handle(AttHandle(1)).is_ok());
+    }
+
+    #[test]
     fn test_single_characteristic_declaration() {
         let (gatt_datastore, _) = MockDatastore::new();
         let gatt_db = SharedBox::new(GattDatabase::new());

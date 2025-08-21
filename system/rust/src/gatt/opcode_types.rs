@@ -120,3 +120,66 @@ impl From<Att> for AttType {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::packets::att;
+
+    #[test]
+    fn test_operation_types() {
+        assert_eq!(AttOpcode::ErrorResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ExchangeMtuRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ExchangeMtuResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::FindInformationRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::FindInformationResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::FindByTypeValueRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::FindByTypeValueResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ReadByTypeRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ReadByTypeResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ReadRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ReadResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ReadBlobRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ReadBlobResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ReadMultipleRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ReadMultipleResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ReadByGroupTypeRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ReadByGroupTypeResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::WriteRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::WriteResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::PrepareWriteRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::PrepareWriteResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ExecuteWriteRequest.operation_type(), OperationType::Request);
+        assert_eq!(AttOpcode::ExecuteWriteResponse.operation_type(), OperationType::Response);
+        assert_eq!(AttOpcode::ReadMultipleVariableRequest.operation_type(), OperationType::Request);
+        assert_eq!(
+            AttOpcode::ReadMultipleVariableResponse.operation_type(),
+            OperationType::Response
+        );
+        assert_eq!(AttOpcode::WriteCommand.operation_type(), OperationType::Command);
+        assert_eq!(AttOpcode::SignedWriteCommand.operation_type(), OperationType::Command);
+        assert_eq!(
+            AttOpcode::HandleValueNotification.operation_type(),
+            OperationType::Notification
+        );
+        assert_eq!(AttOpcode::HandleValueIndication.operation_type(), OperationType::Indication);
+        assert_eq!(
+            AttOpcode::HandleValueConfirmation.operation_type(),
+            OperationType::Confirmation
+        );
+    }
+
+    #[test]
+    fn test_att_type_from() {
+        let att = att::Att { opcode: att::AttOpcode::ReadRequest, payload: vec![] };
+        assert!(matches!(AttType::from(att), AttType::Request(_)));
+    }
+
+    #[test]
+    fn test_att_type_new() {
+        let req = att::AttReadRequest { attribute_handle: att::AttHandle { handle: 1 } };
+        assert!(AttRequest::new(req).is_ok());
+        let cmd = att::AttWriteCommand { handle: att::AttHandle { handle: 1 }, value: vec![] };
+        assert!(AttRequest::new(cmd).is_err());
+    }
+}

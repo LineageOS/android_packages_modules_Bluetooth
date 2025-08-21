@@ -359,3 +359,74 @@ impl WeakAttClient {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::core::uuid::Uuid;
+    use crate::gatt::server::att_database::{AttAttribute, AttPermissions};
+    use crate::gatt::server::test::test_att_db::new_test_database;
+    use crate::utils::task::block_on_locally;
+
+    const TCB_IDX: TransportIndex = TransportIndex(1);
+    const HANDLE: AttHandle = AttHandle(1);
+    const VALUE: [u8; 2] = [1, 2];
+
+    fn set_up() -> (
+        SharedBox<GattDatabase>,
+        SharedBox<AttClient>,
+        tokio::sync::mpsc::UnboundedReceiver<att::Att>,
+    ) {
+        let db = new_test_database(vec![(
+            AttAttribute {
+                handle: HANDLE,
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE
+                    | AttPermissions::WRITABLE_WITH_RESPONSE
+                    | AttPermissions::WRITABLE_WITHOUT_RESPONSE,
+            },
+            VALUE.to_vec(),
+        )]);
+        let (client, rx) = AttClient::new_test_client(TCB_IDX, &db);
+        (db, client, rx)
+    }
+
+    #[test]
+    fn test_att_client_new() {
+        let (_db, client, _) = set_up();
+        assert_eq!(client.tcb_idx(), TCB_IDX);
+    }
+
+    #[test]
+    fn test_list_attributes() {
+        let (_db, client, _) = set_up();
+        let attrs = client.list_attributes();
+        assert_eq!(attrs.len(), 1);
+        assert_eq!(attrs[0].handle, HANDLE);
+    }
+
+    #[test]
+    fn test_read_attribute() {
+        let (_db, client, _) = set_up();
+        let value = block_on_locally(client.read_attribute(HANDLE));
+        assert_eq!(value, Ok(VALUE.to_vec()));
+    }
+
+    #[test]
+    fn test_write_attribute() {
+        let (_db, client, _) = set_up();
+        let new_value = vec![3, 4];
+        block_on_locally(client.write_attribute(HANDLE, &new_value)).unwrap();
+        let value = block_on_locally(client.read_attribute(HANDLE));
+        assert_eq!(value, Ok(new_value));
+    }
+
+    #[test]
+    fn test_write_no_response_attribute() {
+        let (_db, client, _) = set_up();
+        let new_value = vec![5, 6];
+        client.write_no_response_attribute(HANDLE, &new_value);
+        let value = block_on_locally(client.read_attribute(HANDLE));
+        assert_eq!(value, Ok(new_value));
+    }
+}

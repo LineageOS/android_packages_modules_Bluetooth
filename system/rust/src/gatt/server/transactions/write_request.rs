@@ -67,8 +67,7 @@ mod test {
     use crate::core::uuid::Uuid;
     use crate::gatt::ids::{AttHandle, TransportIndex};
     use crate::gatt::server::att_client::AttClient;
-    use crate::gatt::server::att_database::AttAttribute;
-    use crate::gatt::server::gatt_database::AttPermissions;
+    use crate::gatt::server::att_database::{AttAttribute, AttPermissions};
     use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::packets::att;
 
@@ -123,5 +122,103 @@ mod test {
             }
             .try_into()
         );
+    }
+
+    #[test]
+    fn test_prepare_write() {
+        // arrange: db with one writable attribute
+        let db = new_test_database(vec![(
+            AttAttribute {
+                handle: AttHandle(1),
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE | AttPermissions::WRITABLE_WITH_RESPONSE,
+            },
+            vec![0; 10],
+        )]);
+        let data = vec![1, 2];
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
+
+        // act: prepare write to the attribute
+        let att_view = att::AttPrepareWriteRequest {
+            handle: AttHandle(1).into(),
+            offset: 2,
+            value: data.clone(),
+        };
+        let resp = block_on(handle_prepare_write_request(att_view.clone(), &client.downgrade()));
+
+        // assert: that the prepare write succeeded and returns the same values
+        assert_eq!(
+            resp,
+            att::AttPrepareWriteResponse {
+                handle: att_view.handle,
+                offset: att_view.offset,
+                value: att_view.value
+            }
+            .try_into()
+        );
+        // assert: that the value has not been written yet
+        assert_eq!(block_on(client.read_attribute(AttHandle(1))).unwrap(), vec![0; 10]);
+    }
+
+    #[test]
+    fn test_execute_write() {
+        // arrange: db with one writable attribute and a pending prepared write
+        let db = new_test_database(vec![(
+            AttAttribute {
+                handle: AttHandle(1),
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE | AttPermissions::WRITABLE_WITH_RESPONSE,
+            },
+            vec![0; 10],
+        )]);
+        let data = vec![1, 2];
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
+        let att_view = att::AttPrepareWriteRequest {
+            handle: AttHandle(1).into(),
+            offset: 2,
+            value: data.clone(),
+        };
+        block_on(handle_prepare_write_request(att_view.clone(), &client.downgrade())).unwrap();
+
+        // act: execute write
+        let execute_view = att::AttExecuteWriteRequest { commit: 1 };
+        let resp = block_on(handle_execute_write_request(execute_view, &client.downgrade()));
+
+        // assert: that the execute write succeeded
+        assert_eq!(resp, att::AttExecuteWriteResponse {}.try_into());
+        // assert: that the value has been written
+        let mut expected_value = vec![0; 10];
+        expected_value[2..4].copy_from_slice(&data);
+        assert_eq!(block_on(client.read_attribute(AttHandle(1))).unwrap(), expected_value);
+    }
+
+    #[test]
+    fn test_cancel_write() {
+        // arrange: db with one writable attribute and a pending prepared write
+        let db = new_test_database(vec![(
+            AttAttribute {
+                handle: AttHandle(1),
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE | AttPermissions::WRITABLE_WITH_RESPONSE,
+            },
+            vec![0; 10],
+        )]);
+        let data = vec![1, 2];
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
+        let att_view = att::AttPrepareWriteRequest {
+            handle: AttHandle(1).into(),
+            offset: 2,
+            value: data.clone(),
+        };
+        block_on(handle_prepare_write_request(att_view.clone(), &client.downgrade())).unwrap();
+
+        // act: cancel write
+        let execute_view = att::AttExecuteWriteRequest { commit: 0 };
+        let resp = block_on(handle_execute_write_request(execute_view, &client.downgrade()));
+
+        // assert: that the execute write succeeded
+        assert_eq!(resp, att::AttExecuteWriteResponse {}.try_into());
+        // assert: that the value has not been written
+        assert_eq!(block_on(client.read_attribute(AttHandle(1))).unwrap(), vec![0; 10]);
     }
 }
