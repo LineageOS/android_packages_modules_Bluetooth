@@ -470,6 +470,9 @@ public:
   /* Set allowed to stream context */
   virtual void SetGroupAllowedContextMask(int group_id, int sink_context_types,
                                           int source_context_types) = 0;
+
+  /* Confirm group is active */
+  virtual void GroupConfirmActive(int group_id) = 0;
 };
 
 /* Represents the broadcast source state. */
