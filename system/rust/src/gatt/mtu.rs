@@ -249,4 +249,17 @@ mod test {
             assert!(pending_mtu.await.is_none());
         });
     }
+
+    #[test]
+    fn test_double_outgoing_request_fails() {
+        let mtu = AttMtu::new();
+        mtu.handle_event(MtuEvent::OutgoingRequest).unwrap();
+        assert!(mtu.handle_event(MtuEvent::OutgoingRequest).is_err());
+    }
+
+    #[test]
+    fn test_unsolicited_incoming_response_fails() {
+        let mtu = AttMtu::new();
+        assert!(mtu.handle_event(MtuEvent::IncomingResponse(NEW_MTU)).is_err());
+    }
 }

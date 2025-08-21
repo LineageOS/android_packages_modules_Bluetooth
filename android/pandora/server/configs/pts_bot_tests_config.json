@@ -2559,7 +2559,9 @@
     },
     "BNEP": {},
     "DID": {},
-    "GAP": {},
+    "GAP": {
+      "TSPX_gap_iut_role": "Central"
+    },
     "GATT": {},
     "GAVDP": {},
     "GMAP": {

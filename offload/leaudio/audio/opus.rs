@@ -130,7 +130,7 @@ impl OpusEncoder {
     }
 
     unsafe fn set_qext(st: *mut c_void, value: bool) {
-        const SET_QEXT_REQUEST: c_int = 4054;
+        const SET_QEXT_REQUEST: c_int = 4056;
         // SAFETY: The encoder state `st` points to a valid instance, as required by this
         //         function; The first argument of the variable argument list is interpreted
         //         as int32_t, as defined by the `OPUS_SET_QEXT()` macro.

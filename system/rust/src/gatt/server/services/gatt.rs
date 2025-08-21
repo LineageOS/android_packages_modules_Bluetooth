@@ -270,6 +270,21 @@ mod test {
     }
 
     #[test]
+    fn test_subscribe_to_indication_malformed() {
+        // arrange
+        let gatt_db = init_gatt_db();
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &gatt_db);
+
+        // act: register for service change indication with a malformed value
+        let result = block_on_locally(
+            client.write_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE, &[0x01, 0x02, 0x03]),
+        );
+
+        // assert: we get an application error
+        assert_eq!(result, Err(AttErrorCode::ApplicationError));
+    }
+
+    #[test]
     fn test_unsubscribe_to_indication() {
         // arrange
         let gatt_db = init_gatt_db();

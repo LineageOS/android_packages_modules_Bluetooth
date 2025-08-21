@@ -66,3 +66,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "disconnect_acl_on_gatt_timeout"
+    namespace: "bluetooth"
+    description: "Disconnect ACL when a gatt response or confirmation timeout occurs"
+    bug: "438985552"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

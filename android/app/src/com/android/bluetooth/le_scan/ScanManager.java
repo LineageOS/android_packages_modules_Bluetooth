@@ -293,7 +293,7 @@ class ScanManager {
         mIsMsftSupported =
                 Flags.leScanMsftSupport()
                         && SystemProperties.getBoolean(MSFT_HCI_EXT_ENABLED, false)
-                        && mNativeInterface.gattClientIsMsftSupported();
+                        && mNativeInterface.isMsftSupported();
         mDisplayManager = requireNonNull(mAdapterService.getSystemService(DisplayManager.class));
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
@@ -1198,13 +1198,13 @@ class ScanManager {
             int scanInterval1m = getScanInterval(client1m);
             int scanWindowCoded = getScanWindow(clientCoded);
             int scanIntervalCoded = getScanInterval(clientCoded);
-            mNativeInterface.gattClientScan(false);
+            mNativeInterface.scan(false);
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
             Log.d(
                     TAG,
-                    "Start gattClientScanNative with"
+                    "Start scanNative with"
                             + " old 1M scanMode "
                             + mLastConfiguredScanSetting1m
                             + " new 1M scanMode "
@@ -1237,7 +1237,7 @@ class ScanManager {
                     scanIntervalCoded,
                     scanWindowCoded,
                     scanPhyMask);
-            mNativeInterface.gattClientScan(true);
+            mNativeInterface.scan(true);
             recordScanRadioStart(client1m, clientCoded, newScanSetting1m, newScanSettingCoded);
         } else {
             Log.d(TAG, "configureRegularScanParams() - queue empty, scan stopped");
@@ -1321,8 +1321,8 @@ class ScanManager {
         // Start scan native only for the first client.
         if (numRegularScanClients() == 1
                 && client.getSettings().getScanMode() != ScanSettings.SCAN_MODE_OPPORTUNISTIC) {
-            Log.d(TAG, "start gattClientScanNative from startRegularScan()");
-            mNativeInterface.gattClientScan(true);
+            Log.d(TAG, "start scanNative from startRegularScan()");
+            mNativeInterface.scan(true);
         }
     }
 
@@ -1357,7 +1357,7 @@ class ScanManager {
         if (mBatchScanParams != null && (!mBatchScanParams.equals(batchScanParams))) {
             Log.d(TAG, "Stopping BLE Batch");
             resetCountDownLatch();
-            mNativeInterface.gattClientStopBatchScan(scannerId);
+            mNativeInterface.stopBatchScan(scannerId);
             waitForCallback();
             // Clear pending results as it's illegal to config storage if there are still
             // pending results.
@@ -1371,14 +1371,14 @@ class ScanManager {
             int fullScanPercent = getFullScanStoragePercent(resultType);
             resetCountDownLatch();
             Log.d(TAG, "Configuring batch scan storage for " + client);
-            mNativeInterface.gattClientConfigBatchScanStorage(
+            mNativeInterface.configBatchScanStorage(
                     client.getScannerId(), fullScanPercent, 100 - fullScanPercent, notifyThreshold);
             waitForCallback();
             resetCountDownLatch();
             int scanInterval =
                     Utils.millsToUnit(getBatchScanIntervalMillis(batchScanParams.scanMode));
             int scanWindow = Utils.millsToUnit(getBatchScanWindowMillis(batchScanParams.scanMode));
-            mNativeInterface.gattClientStartBatchScan(
+            mNativeInterface.startBatchScan(
                     scannerId,
                     resultType,
                     scanInterval,
@@ -1520,8 +1520,8 @@ class ScanManager {
         }
         mRegularScanClients.remove(client);
         if (numRegularScanClients() == 0) {
-            Log.d(TAG, "stop gattClientScanNative");
-            mNativeInterface.gattClientScan(false);
+            Log.d(TAG, "stop scanNative");
+            mNativeInterface.scan(false);
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
@@ -1562,8 +1562,8 @@ class ScanManager {
         // The scan should continue for background scans
         configureRegularScanParams();
         if (numRegularScanClients() == 0) {
-            Log.d(TAG, "stop gattClientScanNative");
-            mNativeInterface.gattClientScan(false);
+            Log.d(TAG, "stop scanNative");
+            mNativeInterface.scan(false);
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
@@ -1600,13 +1600,13 @@ class ScanManager {
     private void flushBatchResults(ScanClient client) {
         if (mBatchScanParams.fullScanScannerId != -1) {
             resetCountDownLatch();
-            mNativeInterface.gattClientReadScanReports(
+            mNativeInterface.readScanReports(
                     mBatchScanParams.fullScanScannerId, SCAN_RESULT_TYPE_FULL);
             waitForCallback();
         }
         if (mBatchScanParams.truncatedScanScannerId != -1) {
             resetCountDownLatch();
-            mNativeInterface.gattClientReadScanReports(
+            mNativeInterface.readScanReports(
                     mBatchScanParams.truncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
             waitForCallback();
         }
@@ -1631,7 +1631,7 @@ class ScanManager {
         }
 
         resetCountDownLatch();
-        mNativeInterface.gattClientScanFilterEnable(scannerId, true);
+        mNativeInterface.scanFilterEnable(scannerId, true);
         waitForCallback();
 
         if (shouldUseAllPassFilter(client)) {
@@ -1652,7 +1652,7 @@ class ScanManager {
                 int filterIndex = mFilterIndexStack.pop();
 
                 resetCountDownLatch();
-                mNativeInterface.gattClientScanFilterAdd(scannerId, queue.toArray(), filterIndex);
+                mNativeInterface.scanFilterAdd(scannerId, queue.toArray(), filterIndex);
                 waitForCallback();
 
                 resetCountDownLatch();
@@ -1706,7 +1706,7 @@ class ScanManager {
             mFilterIndexStack.addAll(filterIndices);
             for (Integer filterIndex : filterIndices) {
                 resetCountDownLatch();
-                mNativeInterface.gattClientScanFilterParamDelete(scannerId, filterIndex);
+                mNativeInterface.scanFilterParamDelete(scannerId, filterIndex);
                 waitForCallback();
             }
         }
@@ -1723,7 +1723,7 @@ class ScanManager {
         // Remove ALL_PASS filter iff no app is using it.
         if (clients.isEmpty()) {
             resetCountDownLatch();
-            mNativeInterface.gattClientScanFilterParamDelete(scannerId, filterIndex);
+            mNativeInterface.scanFilterParamDelete(scannerId, filterIndex);
             waitForCallback();
         }
     }
@@ -1829,7 +1829,7 @@ class ScanManager {
                         onLostTimeout,
                         onFoundCount,
                         numOfTrackingEntries);
-        mNativeInterface.gattClientScanFilterParamAdd(filtValue);
+        mNativeInterface.scanFilterParamAdd(filtValue);
     }
 
     // Get delivery mode based on scan settings.
@@ -2068,7 +2068,7 @@ class ScanManager {
                 int filterIndex = mFilterIndexStack.pop();
 
                 resetCountDownLatch();
-                mNativeInterface.gattClientMsftAdvMonitorAdd(
+                mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
                         monitor.getAddress(),
@@ -2092,7 +2092,7 @@ class ScanManager {
                     mMsftAdvMonitorMergedPatternList.add(filterIndex, monitor.getPatterns());
             if (filterIndex == existingFilterIndex) {
                 resetCountDownLatch();
-                mNativeInterface.gattClientMsftAdvMonitorAdd(
+                mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
                         monitor.getAddress(),
@@ -2115,7 +2115,7 @@ class ScanManager {
             for (int filterIndex : clientFilterIndices) {
                 if (mMsftAdvMonitorMergedPatternList.remove(filterIndex)) {
                     resetCountDownLatch();
-                    mNativeInterface.gattClientMsftAdvMonitorRemove(filterIndex);
+                    mNativeInterface.msftAdvMonitorRemove(filterIndex);
                     waitForCallback();
                     mFilterIndexStack.add(filterIndex);
                 }
@@ -2136,16 +2136,16 @@ class ScanManager {
                                                         c.getScannerId()));
         if (mScanEnabledMsft != shouldEnableScanMsft) {
             resetCountDownLatch();
-            mNativeInterface.gattClientMsftAdvMonitorEnable(shouldEnableScanMsft);
+            mNativeInterface.msftAdvMonitorEnable(shouldEnableScanMsft);
             waitForCallback();
             mScanEnabledMsft = shouldEnableScanMsft;
 
             // Restart scanning, since enabling/disabling may have changed
             // the filter policy
             Log.d(TAG, "Restarting MSFT scan");
-            mNativeInterface.gattClientScan(false);
+            mNativeInterface.scan(false);
             if (numRegularScanClients() > 0) {
-                mNativeInterface.gattClientScan(true);
+                mNativeInterface.scan(true);
             }
         }
     }

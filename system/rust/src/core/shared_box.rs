@@ -68,3 +68,39 @@ impl<T: ?Sized> Clone for WeakBox<T> {
         Self(self.0.clone())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::cell::RefCell;
+
+    #[test]
+    fn test_shared_box() {
+        let b = SharedBox::new(5);
+        assert_eq!(*b, 5);
+
+        let w = b.downgrade();
+        w.with(|opt_b| {
+            assert!(opt_b.is_some());
+            assert_eq!(**opt_b.unwrap(), 5);
+        });
+
+        drop(b);
+        w.with(|opt_b| {
+            assert!(opt_b.is_none());
+        });
+    }
+
+    #[test]
+    fn test_new_cyclic() {
+        struct Cycle {
+            _f: RefCell<Option<WeakBox<Cycle>>>,
+        }
+        let b = SharedBox::new_cyclic(|w| Cycle { _f: RefCell::new(Some(w.clone())) });
+
+        let w = b.downgrade();
+        w.with(|opt_b| assert!(opt_b.is_some()));
+        drop(b);
+        w.with(|opt_b| assert!(opt_b.is_none()));
+    }
+}

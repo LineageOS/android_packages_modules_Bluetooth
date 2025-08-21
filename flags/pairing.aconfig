@@ -298,3 +298,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reject_bond_request_during_bonding"
+    namespace: "bluetooth"
+    description: "Don't accept new bond request when bonding"
+    bug: "439861848"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
