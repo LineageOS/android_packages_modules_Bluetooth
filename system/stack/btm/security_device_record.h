@@ -321,14 +321,22 @@ public:
 
   bool is_device_type_has_ble() const { return device_type & BT_DEVICE_TYPE_BLE; }
 
-  bool SupportsSecureConnections() const { return remote_supports_secure_connections; }
+  bool HostSupportsSecureConnections() const { return remote_host_supports_secure_connections; }
+  bool ControllerSupportsSecureConnections() const {
+    return remote_controller_supports_secure_connections;
+  }
+
+  bool SupportsSecureConnections() const {
+    return HostSupportsSecureConnections() && ControllerSupportsSecureConnections();
+  }
 
   std::string ToString() const {
     return std::format(
             "{} {:6s} cod:{} remote_info:{:<14s} sm4:0x{:02x} SecureConn:{:c} "
             "name:\"{}\" sec_prop:{}, in_resolving_list: {}",
             bd_addr, DeviceTypeText(device_type), dev_class_text(dev_class),
-            remote_version_info.ToString(), sm4, remote_supports_secure_connections ? 'T' : 'F',
+            remote_version_info.ToString(), sm4,
+            remote_host_supports_secure_connections ? 'T' : 'F',
             reinterpret_cast<char const*>(sec_bd_name), sec_rec.ToString(),
             (ble.in_controller_list & BTM_RESOLVING_LIST_BIT) ? 'T' : 'F');
   }
@@ -360,7 +368,8 @@ public:
   bool remote_supports_hci_role_switch = false;
   bool remote_supports_bredr;
   bool remote_supports_ble;
-  bool remote_supports_secure_connections;
+  bool remote_host_supports_secure_connections;
+  bool remote_controller_supports_secure_connections;
   bool remote_feature_received = false;
 
   tREMOTE_VERSION_INFO remote_version_info;
