@@ -822,17 +822,13 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_numbe
   }
 
   bool ssp_supported = HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  bool host_secure_connections_supported =
-          HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  bool controller_secure_connections_supported =
-          HCI_SC_CTRLR_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[2]);
+  bool secure_connections_supported = HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
   bool role_switch_supported = HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
   bool br_edr_supported = !HCI_BREDR_NOT_SPT_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
   bool le_supported = HCI_LE_SPT_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]) &&
                       HCI_LE_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported, host_secure_connections_supported,
-                            controller_secure_connections_supported, role_switch_supported,
-                            br_edr_supported, le_supported);
+  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported, secure_connections_supported,
+                            role_switch_supported, br_edr_supported, le_supported);
 }
 
 /*******************************************************************************

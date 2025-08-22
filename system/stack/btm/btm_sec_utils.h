@@ -23,12 +23,7 @@
 
 bool concurrentPeerAuthIsEnabled();
 bool handleUnexpectedEncryptionChange();
-void btm_sec_store_device_sc_support(uint16_t hci_handle,
-                                     bool host_secure_connections_supported,
-                                     bool controller_secure_connections_supported);
-bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle,
-                                   bool host_secure_connections_supported,
-                                   bool controller_secure_connections_supported);
+void btm_sec_store_device_sc_support(uint16_t hci_handle, bool secure_connections_supported);
 bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle, uint8_t key_size);
 void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size);
 
