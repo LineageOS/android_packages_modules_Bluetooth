@@ -410,11 +410,12 @@ typedef enum {
   BT_PROPERTY_REMOTE_ADDR_TYPE,
 
   /**
-   * Description - Whether remote device supports Secure Connections mode
+   * Description - Whether remote device supports Secure Connections mode on
+   * host
    * Access mode - GET and SET.
    * Data Type - uint8_t.
    */
-  BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+  BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED,
 
   /**
    * Description - Maximum observed session key for remote device
@@ -466,6 +467,14 @@ typedef enum {
    *   - Otherwise, Array of bluetooth::Uuid (Array size inferred from property length).
    */
   BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+
+  /**
+   * Description - Whether remote device supports Secure Connections mode on
+   * controller
+   * Access mode - GET and SET.
+   * Data Type - uint8_t.
+   */
+  BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
 
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
