@@ -222,6 +222,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         && (device == null
                                 || leAudio.get().getConnectionPolicy(device)
                                         == CONNECTION_POLICY_ALLOWED);
+        final var hearingAid = mAdapterService.getHearingAidService();
 
         if (leAudioSupported) {
             if (Flags.admCentralizeActiveDeviceHandling()) {
@@ -242,6 +243,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
                         // TODO:  b/312396770
                         a2dp.get().removeActiveDevice(false);
+                    }
+                    if (headset.isPresent() && headset.get().getActiveDevice() != null) {
+                        headset.get().setActiveDevice(null);
+                    }
+                    if (hearingAid.isPresent()
+                            && (hearingAid.get().getActiveDevices().get(0) != null
+                                    || hearingAid.get().getActiveDevices().get(1) != null)) {
+                        hearingAid.get().removeActiveDevice(false);
                     }
                     leAudio.get().setActiveDevice(device);
                 }
@@ -287,7 +296,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             }
         }
 
-        final var hearingAid = mAdapterService.getHearingAidService();
         if (hearingAid.isPresent()) {
             if (device == null
                     || hearingAid.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
