@@ -366,3 +366,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_improve_unicast_monitor"
+    namespace: "bluetooth"
+    description: "Improve unicast monitor mode robustness"
+    bug: "440506873"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
