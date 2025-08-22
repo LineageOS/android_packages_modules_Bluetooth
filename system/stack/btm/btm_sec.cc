@@ -3344,9 +3344,9 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   btm_sec_check_pending_enc_req(p_dev_rec, transport, encr_enable != HCI_ENCRYPT_MODE_DISABLED);
 
   if (!from_key_refresh) {
-    bta_dm_on_encryption_change(bt_encryption_change_evt{p_dev_rec->bd_addr, status,
-                                                         (bool)encr_enable, key_size, transport,
-                                                         p_dev_rec->SupportsSecureConnections()});
+    bta_dm_on_encryption_change(
+            bt_encryption_change_evt{p_dev_rec->bd_addr, status, (bool)encr_enable, key_size,
+                                     transport, p_dev_rec->SupportsSecureConnections()});
   }
 
   if (transport == BT_TRANSPORT_LE) {
@@ -4154,7 +4154,8 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
   if (p_dev_rec->sec_rec.is_bond_type_persistent() &&
       (p_dev_rec->is_device_type_br_edr() || p_dev_rec->is_device_type_dual_mode())) {
     btm_sec_store_device_sc_support(p_dev_rec->get_br_edr_hci_handle(),
-                                    p_dev_rec->SupportsSecureConnections());
+                                    p_dev_rec->HostSupportsSecureConnections(),
+                                    p_dev_rec->ControllerSupportsSecureConnections());
   }
 
   /* If name is not known at this point delay calling callback until the name is
@@ -5227,11 +5228,22 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool sc_supported,
-                               bool hci_role_switch_supported, bool br_edr_supported,
-                               bool le_supported) {
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
+                               bool controller_sc_supported, bool hci_role_switch_supported,
+                               bool br_edr_supported, bool le_supported) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) {
+    return;
+  }
+
+  // Drop the connection here if the remote attempts to downgrade from Secure
+  // Connections mode.
+  if (p_dev_rec->is_device_type_br_edr() &&
+      p_dev_rec->sec_rec.is_bonded() &&
+      btm_sec_is_enc_algo_downgrade(hci_handle, host_sc_supported, controller_sc_supported)) {
+    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
+    btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_AUTH_FAILURE, hci_handle,
+                                "attempted to downgrade from Secure Connections mode");
     return;
   }
 
@@ -5253,10 +5265,12 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool sc_
        btm_sec_cb.security_mode == BTM_SEC_MODE_SC) &&
       ssp_supported) {
     p_dev_rec->sm4 = BTM_SM4_TRUE;
-    p_dev_rec->remote_supports_secure_connections = sc_supported;
+    p_dev_rec->remote_host_supports_secure_connections = host_sc_supported;
+    p_dev_rec->remote_controller_supports_secure_connections = controller_sc_supported;
   } else {
     p_dev_rec->sm4 = BTM_SM4_KNOWN;
-    p_dev_rec->remote_supports_secure_connections = false;
+    p_dev_rec->remote_host_supports_secure_connections = false;
+    p_dev_rec->remote_controller_supports_secure_connections = false;
   }
 
   if (p_dev_rec->remote_features_needed) {
