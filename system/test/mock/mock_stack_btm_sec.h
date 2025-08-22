@@ -699,17 +699,15 @@ extern struct btm_sec_role_changed btm_sec_role_changed;
 // hci_role_switch_supported, bool br_edr_supported, bool le_supported Return:
 // void
 struct btm_sec_set_peer_sec_caps {
-  std::function<void(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
-                     bool controller_sc_supported, bool hci_role_switch_supported,
-                     bool br_edr_supported, bool le_supported)>
-          body{[](uint16_t /* hci_handle */, bool /* ssp_supported */, bool /* host_sc_supported */,
-                  bool /* controller_sc_supported */, bool /* hci_role_switch_supported */,
-                  bool /* br_edr_supported */, bool /* le_supported */) {}};
-  void operator()(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
-                  bool controller_sc_supported, bool hci_role_switch_supported,
-                  bool br_edr_supported, bool le_supported) {
-    body(hci_handle, ssp_supported, host_sc_supported, controller_sc_supported,
-         hci_role_switch_supported, br_edr_supported, le_supported);
+  std::function<void(uint16_t hci_handle, bool ssp_supported, bool sc_supported,
+                     bool hci_role_switch_supported, bool br_edr_supported, bool le_supported)>
+          body{[](uint16_t /* hci_handle */, bool /* ssp_supported */, bool /* sc_supported */,
+                  bool /* hci_role_switch_supported */, bool /* br_edr_supported */,
+                  bool /* le_supported */) {}};
+  void operator()(uint16_t hci_handle, bool ssp_supported, bool sc_supported,
+                  bool hci_role_switch_supported, bool br_edr_supported, bool le_supported) {
+    body(hci_handle, ssp_supported, sc_supported, hci_role_switch_supported, br_edr_supported,
+         le_supported);
   }
 };
 extern struct btm_sec_set_peer_sec_caps btm_sec_set_peer_sec_caps;
