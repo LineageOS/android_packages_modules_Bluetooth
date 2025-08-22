@@ -63,7 +63,6 @@ import android.util.Log;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import io.grpc.stub.StreamObserver;
@@ -276,6 +275,17 @@ public class HidHeadTrackerTest {
         // Switch to LE Transport
         mHidService.setPreferredTransport(mBumbleDevice, TRANSPORT_LE);
         verifyTransportSwitch(mBumbleDevice, TRANSPORT_BREDR, TRANSPORT_LE);
+        // Disconnect
+        assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
+
+        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTING);
+        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTED);
+        // Wait for ACL to get disconnected
+        verifyIntentReceivedUnorderedAtLeast(
+                1,
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
     }
 
     private void pairAndConnect() throws Exception {
