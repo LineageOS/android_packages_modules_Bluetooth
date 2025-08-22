@@ -30,3 +30,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "adm_iterate_devices_on_fallback"
+    namespace: "bluetooth"
+    description: "Iterate over recently connected devices to find fallback"
+    bug: "440528457"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
