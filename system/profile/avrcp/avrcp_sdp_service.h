@@ -61,8 +61,8 @@ public:
    * @return AVRC_SUCCESS if successful.
    *         AVRC_FAIL otherwise
    */
-  uint16_t EnableCovertArt(const uint16_t service_uuid, uint16_t cover_art_psm,
-                           const uint16_t request_id);
+  uint16_t EnableCoverArt(const uint16_t service_uuid, uint16_t cover_art_psm,
+                          const uint16_t request_id);
 
   /**
    * Dynamically disable the cover art for Control SDP records. It also removes
@@ -73,7 +73,7 @@ public:
    * @return AVRC_SUCCESS if successful.
    *         AVRC_FAIL otherwise
    */
-  uint16_t DisableCovertArt(const uint16_t service_uuid, const uint16_t request_id);
+  uint16_t DisableCoverArt(const uint16_t service_uuid, const uint16_t request_id);
 
   /**
    * Removes the entire record for the corresponding service.
