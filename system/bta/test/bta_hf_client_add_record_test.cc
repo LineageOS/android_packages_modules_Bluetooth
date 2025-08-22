@@ -48,6 +48,8 @@ bool SDP_AddUuidSequence(uint32_t handle, uint16_t attr_id, uint16_t num_uuids,
   return false;
 }
 
+bool SDP_CancelServiceSearch(void* p_disc_db) { return false; }
+
 class BtaHfClientAddRecordTest : public ::testing::Test {
  protected:
   void SetUp() override {
