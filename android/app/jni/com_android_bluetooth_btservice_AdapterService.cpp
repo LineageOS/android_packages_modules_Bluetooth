@@ -2476,6 +2476,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_vaps_server(e);
+  if (status < 0) {
+    log::error("jni le audio vaps server registration failure: {}", status);
+    return JNI_ERR;
+  }
+
   status = android::register_com_android_bluetooth_btservice_BluetoothQualityReport(e);
   if (status < 0) {
     log::error("jni bluetooth quality report registration failure: {}", status);

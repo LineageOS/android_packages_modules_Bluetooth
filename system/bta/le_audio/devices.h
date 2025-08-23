@@ -76,7 +76,7 @@ enum class SubrateState : uint8_t {
 };
 
 static constexpr uint16_t kDefaultSubrateLeAudioModeMaxSubrate = 2;
-static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 2;
+static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 1;
 static constexpr uint16_t kDefaultSubrateLeAudioModeContNumber = 1;
 
 std::ostream& operator<<(std::ostream& os, const DeviceConnectState& state);

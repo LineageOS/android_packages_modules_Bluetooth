@@ -135,6 +135,8 @@ static_library("bta") {
     "sys/bta_sys_conn.cc",
     "sys/bta_sys_main.cc",
     "sys/utl.cc",
+    "vaps/vaps_server.cc",
+    "vaps/vaps_server_utils.cc",
     "vc/device.cc",
     "vc/vc.cc",
   ]
