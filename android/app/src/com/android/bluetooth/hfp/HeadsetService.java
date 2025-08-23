@@ -1036,12 +1036,11 @@ public class HeadsetService extends ConnectableProfile {
                         BluetoothStatsLog
                                 .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_DISCONNECT_AUDIO_END,
                         Binder.getCallingUid());
+            } else {
+                clearCommunicationDevice(device);
             }
         }
 
-        if (mSystemInterface.isScoManagedByAudioEnabled()) {
-            clearCommunicationDevice(device);
-        }
         enableSwbCodec(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX, false, device);
         return true;
     }
@@ -1844,6 +1843,9 @@ public class HeadsetService extends ConnectableProfile {
                                     + fromDevice
                                     + " with status code "
                                     + disconnectStatus);
+                    if (mSystemInterface.isScoManagedByAudioEnabled()) {
+                        clearCommunicationDevice(fromDevice);
+                    }
                 }
                 mVoiceRecognitionStarted = false;
             }
