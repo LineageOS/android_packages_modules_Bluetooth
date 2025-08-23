@@ -165,6 +165,8 @@ cc_library_static {
         "sys/bta_sys_conn.cc",
         "sys/bta_sys_main.cc",
         "sys/utl.cc",
+        "vaps/vaps_server.cc",
+        "vaps/vaps_server_utils.cc",
         "vc/device.cc",
         "vc/vc.cc",
     ],
@@ -1006,6 +1008,8 @@ cc_test {
         "test/common/btm_api_mock.cc",
         "test/common/mock_csis_client.cc",
         "test/common/mock_device_groups.cc",
+        "vaps/vaps_server.cc",
+        "vaps/vaps_server_utils.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
