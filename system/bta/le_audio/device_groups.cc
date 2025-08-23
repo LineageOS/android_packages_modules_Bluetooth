@@ -2709,8 +2709,10 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
   auto active_conf = GetActiveConfiguration();
 
   stream << "    ■ Group (gID): " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
-         << ", " << (is_active ? "Active\n" : "Inactive\n") << "      Current state: " << GetState()
-         << ",\ttarget state: " << GetTargetState() << ",\tcig state: " << cig.GetState() << "\n"
+         << ", " << (is_active ? "Active (" : "Inactive (")
+         << (active_confirmed_ ? "confirmed)\n" : "not confirmed)\n")
+         << "      Current state: " << GetState() << ",\ttarget state: " << GetTargetState()
+         << ",\tcig state: " << cig.GetState() << "\n"
          << "      Num of devices:\t" << Size() << " (" << NumOfConnected() << " connected)\n"
          << "      Num of sinks:\t" << stream_conf.stream_params.sink.num_of_devices << " ("
          << stream_conf.stream_params.sink.stream_config.stream_map.size() << " connected)\n"

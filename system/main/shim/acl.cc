@@ -959,10 +959,11 @@ struct shim::Acl::impl {
     }
 
     auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
-    if (com::android::bluetooth::flags::remove_device_with_connection_manager()) {
-      connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
-    } else {
+    if (com::android::bluetooth::flags::disconnect_acl_on_gatt_timeout() ||
+        !com::android::bluetooth::flags::remove_device_with_connection_manager()) {
       GetAclManagerLe()->RemoveFromBackgroundList(remote_address_with_type);
+    } else {
+      connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
     }
     connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
     log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type, handle);

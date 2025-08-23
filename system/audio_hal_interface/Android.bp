@@ -350,4 +350,11 @@ cc_test {
     cflags: [
         "-DBUILDCFG",
     ],
+    target: {
+        android: {
+            sanitize: {
+                address: true,
+            },
+        },
+    },
 }
