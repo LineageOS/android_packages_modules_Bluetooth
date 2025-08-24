@@ -28,6 +28,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
+import static android.bluetooth.IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
 
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
@@ -2328,7 +2329,9 @@ public class LeAudioServiceTest {
         assertThat(mService.setActiveDevice(mLeftDevice)).isTrue();
         mLooper.dispatchAll();
 
-        doReturn(-1).when(mVolumeControlService).getAudioDeviceGroupVolume(TEST_GROUP_ID);
+        doReturn(VOLUME_CONTROL_UNKNOWN_VOLUME)
+                .when(mVolumeControlService)
+                .getAudioDeviceGroupVolume(TEST_GROUP_ID);
         // Set group and device as active.
         injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
 
@@ -2424,7 +2427,8 @@ public class LeAudioServiceTest {
             doReturn(null).when(mServiceFactory).getVolumeControlService();
         }
 
-        assertThat(mService.getAudioDeviceGroupVolume(TEST_GROUP_ID)).isEqualTo(-1);
+        assertThat(mService.getAudioDeviceGroupVolume(TEST_GROUP_ID))
+                .isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
     }
 
     @Test

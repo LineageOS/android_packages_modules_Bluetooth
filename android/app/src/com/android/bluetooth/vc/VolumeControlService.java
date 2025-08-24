@@ -759,7 +759,8 @@ public class VolumeControlService extends ConnectableProfile {
     /**
      * @return the volume. If not cached, return volume from any device in the group
      */
-    public int getGroupVolume(int groupId) {
+    @VisibleForTesting
+    int getGroupVolume(int groupId) {
         enforceMainLooperIsUsed();
         synchronized (mDeviceVolumeCache) {
             Integer volume = mGroupVolumeCache.get(groupId);
@@ -781,7 +782,8 @@ public class VolumeControlService extends ConnectableProfile {
     /**
      * @return the volume. If not cached, return volume from another device in the group
      */
-    public int getDeviceVolume(BluetoothDevice device) {
+    @VisibleForTesting
+    int getDeviceVolume(BluetoothDevice device) {
         enforceMainLooperIsUsed();
         synchronized (mDeviceVolumeCache) {
             Integer volume = mDeviceVolumeCache.get(device);
@@ -1045,16 +1047,6 @@ public class VolumeControlService extends ConnectableProfile {
         }
     }
 
-    int getBleVolumeFromCurrentStream() {
-        enforceMainLooperIsUsed();
-        int streamType = getBluetoothContextualVolumeStream();
-        int streamVolume = mAudioManager.getStreamVolume(streamType);
-        int streamMaxVolume = mAudioManager.getStreamMaxVolume(streamType);
-
-        /* leaudio expect volume value in range 0 to 255 */
-        return (int) Math.round((double) streamVolume * LE_AUDIO_MAX_VOL / streamMaxVolume);
-    }
-
     private void setIgnoreSetVolumeFromAfFlag(boolean value) {
         Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
         mIgnoreSetVolumeFromAF = value;
@@ -1169,7 +1161,7 @@ public class VolumeControlService extends ConnectableProfile {
             volume = 0;
         }
 
-        if (volume == VOLUME_CONTROL_UNKNOWN_VOLUME) return -1;
+        if (volume == VOLUME_CONTROL_UNKNOWN_VOLUME) return VOLUME_CONTROL_UNKNOWN_VOLUME;
         return getAudioDeviceVolume(getBluetoothContextualVolumeStream(), volume);
     }
 
