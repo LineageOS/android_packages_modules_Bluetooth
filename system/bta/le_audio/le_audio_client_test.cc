@@ -17508,6 +17508,39 @@ TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_FallbackToMedia)
   ASSERT_EQ(get_alarm_cancel_call_count("LeAudioCloseVbcTimeout"), 1);
 }
 
+TEST_F(UnicastTest, testAccessibilityUsage) {
+  /* Scenario
+   * 1. Start Media stream
+   * 2. Simulated ASSISTANCE_ACCESSIBILITY sound
+   * 3. Verify Media stream is not reconfigured
+   */
+
+  int group_id = 1;
+  TestSetupRemoteDevices(group_id);
+
+  auto scenario = types::LeAudioContextType::MEDIA;
+  types::BidirectionalPair<types::AudioContexts> metadata_contexts = {
+          .sink = AudioContexts(types::LeAudioContextType::MEDIA), .source = AudioContexts()};
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  metadata_contexts.sink.set(types::LeAudioContextType::INSTRUCTIONAL);
+
+  EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, scenario, metadata_contexts, _)).Times(1);
+  std::vector<struct playback_track_metadata> tracks = {
+          {{AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, 0},
+           {AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY, AUDIO_CONTENT_TYPE_MUSIC, 0}}};
+  UpdateLocalSourceMetadata(tracks);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
 TEST_F(UnicastTest, TestForAudioHalWhichDoesNotSetEmptyMetadata_Conversational) {
   /* Scenario
    * 1. Make device active
