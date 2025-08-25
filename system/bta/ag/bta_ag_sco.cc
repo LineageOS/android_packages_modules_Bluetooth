@@ -237,8 +237,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
     /* Restore settings */
     if (bta_ag_cb.sco.p_curr_scb->inuse_codec == tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC ||
         bta_ag_cb.sco.p_curr_scb->inuse_codec == tBTA_AG_UUID_CODEC::UUID_CODEC_LC3 || aptx_voice ||
-        (com_android_bluetooth_flags_fix_hfp_qual_1_9() &&
-         bta_ag_cb.sco.p_curr_scb->inuse_codec == tBTA_AG_UUID_CODEC::UUID_CODEC_CVSD &&
+        (bta_ag_cb.sco.p_curr_scb->inuse_codec == tBTA_AG_UUID_CODEC::UUID_CODEC_CVSD &&
          bta_ag_cb.sco.p_curr_scb->codec_cvsd_settings != BTA_AG_SCO_CVSD_SETTINGS_S1)) {
       /* Bypass vendor specific and voice settings if enhanced eSCO supported */
       if (!(bluetooth::shim::GetController()->IsSupported(
@@ -249,14 +248,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
       /* If SCO open was initiated by AG and failed for mSBC T2, try mSBC T1
        * 'Safe setting' first. If T1 also fails, try CVSD
        * same operations for LC3 settings */
-      if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) &&
-          (!com_android_bluetooth_flags_fix_hfp_qual_1_9() || bta_ag_cb.sco.is_local)) {
-        /* Don't bother to edit |p_curr_scb->state| because it is in
-         * |BTA_AG_OPEN_ST|, which has the same value as |BTA_AG_SCO_CODEC_ST|
-         */
-        if (!com_android_bluetooth_flags_fix_hfp_qual_1_9()) {
-          bta_ag_cb.sco.p_curr_scb->state = (tBTA_AG_STATE)BTA_AG_SCO_CODEC_ST;
-        }
+      if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) && bta_ag_cb.sco.is_local) {
         if (bta_ag_cb.sco.p_curr_scb->inuse_codec == tBTA_AG_UUID_CODEC::UUID_CODEC_LC3) {
           if (bta_ag_cb.sco.p_curr_scb->codec_lc3_settings == BTA_AG_SCO_LC3_SETTINGS_T2) {
             log::warn("eSCO/SCO failed to open, falling back to LC3 T1 settings");
@@ -278,16 +270,13 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
             bta_ag_cb.sco.p_curr_scb->codec_fallback = true;
           }
         } else {
-          // Entering this block implies
-          // - |fix_hfp_qual_1_9| is enabled, AND
-          // - we just failed CVSD S2+.
+          // Entering this block implies we just failed CVSD S2+.
           log::warn("eSCO/SCO failed to open, falling back to CVSD S1 settings");
           bta_ag_cb.sco.p_curr_scb->codec_cvsd_settings = BTA_AG_SCO_CVSD_SETTINGS_S1;
           bta_ag_cb.sco.p_curr_scb->trying_cvsd_safe_settings = true;
         }
       }
-    } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) &&
-               (!com_android_bluetooth_flags_fix_hfp_qual_1_9() || bta_ag_cb.sco.is_local)) {
+    } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) && bta_ag_cb.sco.is_local) {
       log::error("eSCO/SCO failed to open, no more fall back");
       if (bta_ag_is_sco_managed_by_audio()) {
         if (hfp_software_datapath_enabled) {
@@ -513,8 +502,7 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
       params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T1, offload);
     }
   } else {
-    if (com_android_bluetooth_flags_fix_hfp_qual_1_9() &&
-        p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1) {
+    if (p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1) {
       params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S1, offload);
     } else {
       if ((p_scb->features & BTA_AG_FEAT_ESCO_S4) &&
@@ -1541,16 +1529,15 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   /* codec_fallback is set when AG is initiator and connection failed for mSBC.
    * OR if codec is msbc and T2 settings failed, then retry Safe T1 settings
    * same operations for LC3 settings */
-  if (p_scb->svc_conn &&
-      (p_scb->codec_fallback ||
-       (p_scb->sco_codec == BTM_SCO_CODEC_MSBC &&
-        p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T1) ||
-       (p_scb->sco_codec == BTM_SCO_CODEC_LC3 &&
-        p_scb->codec_lc3_settings == BTA_AG_SCO_LC3_SETTINGS_T1) ||
-       aptx_voice ||
-       (com_android_bluetooth_flags_fix_hfp_qual_1_9() && p_scb->sco_codec == BTM_SCO_CODEC_CVSD &&
-        p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1 &&
-        p_scb->trying_cvsd_safe_settings))) {
+  if (p_scb->svc_conn && (p_scb->codec_fallback ||
+                          (p_scb->sco_codec == BTM_SCO_CODEC_MSBC &&
+                           p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T1) ||
+                          (p_scb->sco_codec == BTM_SCO_CODEC_LC3 &&
+                           p_scb->codec_lc3_settings == BTA_AG_SCO_LC3_SETTINGS_T1) ||
+                          aptx_voice ||
+                          (p_scb->sco_codec == BTM_SCO_CODEC_CVSD &&
+                           p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1 &&
+                           p_scb->trying_cvsd_safe_settings))) {
     bta_ag_sco_event(p_scb, BTA_AG_SCO_REOPEN_E);
   } else {
     /* Indicate if the closing of audio is because of transfer */
