@@ -23,6 +23,8 @@
  *
  ******************************************************************************/
 
+#include <com_android_bluetooth_flags.h>
+
 #include <cstdint>
 
 #include "bta/dm/bta_dm_int.h"
@@ -129,6 +131,14 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC* get_bta_dm_pm_spec() {
                                           BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS));
   static uint16_t ftc_idle_to_sniff_delay_ms = uint16_t(osi_property_get_int32(
           "bluetooth.bta_ftc_idle_to_sniff_delay_ms.config", BTA_FTC_IDLE_TO_SNIFF_DELAY_MS));
+
+  if (com::android::bluetooth::flags::delay_jv_pm_idle()) {
+    // Before this triggered, we've waited
+    fts_ops_idle_to_sniff_delay_ms =
+            std::max(0, fts_ops_idle_to_sniff_delay_ms - BTA_JV_PM_IDLE_TIMEOUT_MS);
+    ftc_idle_to_sniff_delay_ms =
+            std::max(0, ftc_idle_to_sniff_delay_ms - BTA_JV_PM_IDLE_TIMEOUT_MS);
+  }
 
   static tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
           /* AG : 0 */
