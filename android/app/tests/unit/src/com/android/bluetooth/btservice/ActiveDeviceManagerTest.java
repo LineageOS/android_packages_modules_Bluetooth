@@ -149,6 +149,12 @@ public class ActiveDeviceManagerTest {
         doAnswer(invocation -> getMostRecentlyConnectedDeviceInList(invocation.getArgument(0)))
                 .when(mStorage)
                 .getMostRecentlyConnectedDeviceInList(any());
+        doAnswer(invocation -> getMostRecentlyConnectedDevices())
+                .when(mDatabaseManager)
+                .getMostRecentlyConnectedDevices();
+        doAnswer(invocation -> getMostRecentlyConnectedDevices())
+                .when(mStorage)
+                .getMostRecentlyConnectedDevices();
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         when(mAdapterService.getDatabaseManager()).thenReturn(mDatabaseManager);
@@ -272,6 +278,10 @@ public class ActiveDeviceManagerTest {
             return mMostRecentDevice;
         }
         return devices.get(0);
+    }
+
+    private List<BluetoothDevice> getMostRecentlyConnectedDevices() {
+        return mDeviceConnectionStack;
     }
 
     @Test
@@ -929,6 +939,40 @@ public class ActiveDeviceManagerTest {
         a2dpDisconnected(mA2dpDevice);
         mTestLooper.dispatchAll();
         verify(mLeAudioService, never()).setActiveDevice(mLeAudioDevice);
+    }
+
+    /**
+     * Two LE Audio are connected and ready to stream. Most recently connected, active device,
+     * becomes autonomously inactive (released its ASE). Check if fallback set previous device as
+     * active
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_ITERATE_DEVICES_ON_FALLBACK)
+    public void leAudioFallbackLeaudioToLeaudio_autonomousInactive() {
+        /* LeAudio device from group 1 - not ready for stream */
+        when(mLeAudioService.getGroupId(mLeAudioDevice)).thenReturn(1);
+        /* LeAudio device from group 1 - ready for stream */
+        when(mLeAudioService.getGroupId(mLeAudioDevice2)).thenReturn(2);
+        when(mLeAudioService.isGroupAvailableForStream(1)).thenReturn(true);
+        when(mLeAudioService.isGroupAvailableForStream(2)).thenReturn(true);
+        leAudioConnected(mLeAudioDevice);
+        leAudioConnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice2);
+
+        /* Active device autonomously inactivates */
+        mActiveDeviceManager.profileActiveDeviceChanged(BluetoothProfile.LE_AUDIO, null);
+        Mockito.clearInvocations(mLeAudioService);
+        /* LeAudio device from group 1 - not ready for stream */
+        when(mLeAudioService.getGroupId(mLeAudioDevice)).thenReturn(1);
+        /* LeAudio device from group 1 - ready for stream */
+        when(mLeAudioService.getGroupId(mLeAudioDevice2)).thenReturn(2);
+        when(mLeAudioService.isGroupAvailableForStream(1)).thenReturn(true);
+        when(mLeAudioService.isGroupAvailableForStream(2)).thenReturn(true);
+
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
     }
 
     /**
@@ -2101,6 +2145,7 @@ public class ActiveDeviceManagerTest {
 
     /** Helper to indicate LE Audio connected for a device. */
     private void leAudioConnected(BluetoothDevice device) {
+        mDeviceConnectionStack.add(device);
         mMostRecentDevice = device;
 
         mActiveDeviceManager.profileConnectionStateChanged(

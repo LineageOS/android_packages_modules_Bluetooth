@@ -1304,6 +1304,76 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 }
             }
         }
+        if (Flags.admIterateDevicesOnFallback()) {
+            if (connectedDevices.isEmpty()) {
+                return false;
+            }
+            for (BluetoothDevice device : getMostRecentlyConnectedDevices()) {
+                if (mAudioManager.getMode() == AudioManager.MODE_NORMAL) {
+                    if (Objects.equals(a2dpFallbackDevice, device)) {
+                        Log.i(TAG, "Found an A2DP fallback device: " + device);
+                        setA2dpActiveDevice(device);
+                        setHfpActiveDevice(headsetFallbackDevice);
+                        /* If dual mode is enabled, LEA will be made active once all supported
+                        classic audio profiles are made active for the device. */
+                        if (!Utils.isDualModeAudioEnabled()) {
+                            setLeAudioActiveDevice(null, true);
+                        }
+                        setHearingAidActiveDevice(null, true);
+                        break;
+                    } else {
+                        Log.i(TAG, "Found a LE audio fallback device: " + device);
+                        if (areSameGroupMembers(recentlyRemovedDevice, device)) {
+                            Log.i(
+                                    TAG,
+                                    "Do nothing, removed device belong to the same group as the"
+                                            + " fallback device.");
+                            continue;
+                        }
+
+                        if (!setLeAudioActiveDevice(device)) {
+                            return false;
+                        }
+
+                        if (!Utils.isDualModeAudioEnabled()) {
+                            setA2dpActiveDevice(null, true);
+                            setHfpActiveDevice(null);
+                        }
+                        setHearingAidActiveDevice(null, true);
+                        break;
+                    }
+                } else {
+                    if (Objects.equals(headsetFallbackDevice, device)) {
+                        Log.i(TAG, "Found a HFP fallback device: " + device);
+                        setHfpActiveDevice(device);
+                        setA2dpActiveDevice(a2dpFallbackDevice);
+                        if (!Utils.isDualModeAudioEnabled()) {
+                            setLeAudioActiveDevice(null, true);
+                        }
+                        setHearingAidActiveDevice(null, true);
+                        break;
+                    } else {
+                        Log.i(TAG, "Found an LE audio fallback device: " + device);
+                        if (areSameGroupMembers(recentlyRemovedDevice, device)) {
+                            Log.i(
+                                    TAG,
+                                    "Do nothing, removed device belong to the same group as the"
+                                            + " fallback device.");
+                            continue;
+                        }
+
+                        setLeAudioActiveDevice(device);
+                        if (!Utils.isDualModeAudioEnabled()) {
+                            setA2dpActiveDevice(null, true);
+                            setHfpActiveDevice(null);
+                        }
+                        setHearingAidActiveDevice(null, true);
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
         BluetoothDevice device = getMostRecentlyConnectedDeviceInList(connectedDevices);
         if (device == null) {
             Log.d(TAG, "No fallback devices are found");
@@ -1492,6 +1562,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             return mStorage.getMostRecentlyConnectedDeviceInList(list);
         }
         return mDatabaseManager.getMostRecentlyConnectedDevicesInList(list); // Migrating
+    }
+
+    // TODO (b/430166215) inline method
+    private List<BluetoothDevice> getMostRecentlyConnectedDevices() {
+        if (Flags.mainlineBetaStorage()) {
+            return mStorage.getMostRecentlyConnectedDevices();
+        }
+        return mDatabaseManager.getMostRecentlyConnectedDevices(); // Migrating
     }
 
     protected void dump(PrintWriter writer) {
