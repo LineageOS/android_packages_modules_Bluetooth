@@ -435,6 +435,11 @@ public class AdapterSuspend {
      * Called by the advertising thread to notify that it has finished the preparation for suspend.
      */
     public void advertiseSuspendReady() {
+        if (Utils.isInstrumentationTestMode()) {
+            onSuspendTaskCompleted(SuspendTasks.ADVERTISEMENT);
+            return;
+        }
+
         mHandler.post(() -> onSuspendTaskCompleted(SuspendTasks.ADVERTISEMENT));
     }
 
