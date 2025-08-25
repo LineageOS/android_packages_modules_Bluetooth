@@ -573,6 +573,7 @@ final class A2dpStateMachine extends StateMachine {
                                 processAudioStateEvent(event.valueInt);
                         case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
                                 processCodecConfigEvent(event.codecStatus);
+                        case A2dpStackEvent.EVENT_TYPE_AUDIO_DELAY_REPORTED -> {}
                         default -> Log.e(TAG, "Connected: ignoring stack event: " + event);
                     }
                 }
