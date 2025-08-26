@@ -53,7 +53,6 @@
 
  class VapsServerImpl;
  VapsServerImpl* instance;
- std::mutex instance_mutex;
 
  static uint8_t kVaeUuid[kVaeUuidSize] = {};
  static uint8_t kVapsCcid = 0;
@@ -86,7 +85,6 @@
    }
 
    void do_initialize(bluetooth::vaps::VapsServerCallbacks* callbacks) {
-     auto controller = bluetooth::shim::GetController();
      log::info("initialize vaps server");
      callbacks_ = callbacks;
 
@@ -387,7 +385,6 @@
      }
      server_if_ = p_data->reg_oper.server_if;
 
-     uint16_t key_mask = ((16 - 7) << 12);
      std::vector<btgatt_db_element_t> service;
      // VAPS service
      btgatt_db_element_t vaps_service;
@@ -550,7 +547,6 @@
      uint16_t write_req_handle = p_data->req_data.p_data->write_req.handle;
      uint16_t len = p_data->req_data.p_data->write_req.len;
      bool need_rsp = p_data->req_data.p_data->write_req.need_rsp;
-     RawAddress remote_bda = p_data->req_data.remote_bda;
      log::info("conn_id:{}, write_req_handle:0x{:04x}, need_rsp{}, len:{}", conn_id,
                write_req_handle, need_rsp, len);
 
@@ -612,7 +608,6 @@
        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_ILLEGAL_PARAMETER, &p_msg);
        return;
      }
-     RemoteClient* remote_client = &remote_clients_[p_data->req_data.remote_bda];
      const uint8_t* value = p_data->req_data.p_data->write_req.value;
      uint16_t ccc_value;
      STREAM_TO_UINT16(ccc_value, value);
