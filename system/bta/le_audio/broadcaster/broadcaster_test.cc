@@ -836,7 +836,7 @@ TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
           .WillRepeatedly(Return(false));
 
   ContentControlIdKeeper::GetInstance()->SetCcid(LeAudioContextType::MEDIA, media_ccid);
-  auto broadcast_id = InstantiateBroadcast();
+  InstantiateBroadcast();
 
   ASSERT_NE(audio_receiver, nullptr);
   audio_receiver->OnAudioResume();

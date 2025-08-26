@@ -52,7 +52,6 @@ constexpr uint64_t kRandomNumber = 0x123456789abcdef0;
 /*sbc_supported= 1, aac_supported= 1, aptx_supported= 0, aptx_hd_supported= 0, ldac_supported= 1 */
 constexpr uint32_t kDynamicAudioBufferSupport = 0x13;
 uint16_t feature_spec_version = 55;
-constexpr char title[] = "hci_controller_test";
 
 }  // namespace
 

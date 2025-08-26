@@ -241,9 +241,6 @@ class SniffOffloadTest : public ::testing::Test {
 // =================================================================
 
 TEST_F(SniffOffloadTest, start_success) {
-  // Setup
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
-
   // Call helper that does the start and does the verification of started
   StartOffloadSuccessfully();
 }
@@ -273,7 +270,6 @@ TEST_F(SniffOffloadTest, start_failure) {
 
 TEST_F(SniffOffloadTest, single_profile_event) {
   // Setup: Start the module
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
   StartOffloadSuccessfully();
 
   // Define test data and expectations for the profile event
@@ -298,7 +294,6 @@ TEST_F(SniffOffloadTest, single_profile_event) {
 
 TEST_F(SniffOffloadTest, profile_a_blinks) {
   // Setup: Start the module
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
   StartOffloadSuccessfully();
 
   // Setup: Set expectations that no parameter update should occur
@@ -320,7 +315,6 @@ TEST_F(SniffOffloadTest, profile_a_blinks) {
 
 TEST_F(SniffOffloadTest, profile_a_blinks2) {
   // Setup: Start the module
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
   StartOffloadSuccessfully();
 
   // Setup: Set expectations that no parameter update should occur

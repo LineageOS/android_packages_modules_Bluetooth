@@ -2243,7 +2243,6 @@ TEST_F(HasClientTest, test_select_preset_not_available) {
    * 5. Preset b is not selected, operation aborts, event with error code is received
    */
   const RawAddress test_address = GetTestAddress(1);
-  uint16_t test_conn_id = GetTestConnId(test_address);
 
   std::set<HasPreset, HasPreset::ComparatorDesc> presets = {{
           HasPreset(1, HasPreset::kPropertyAvailable, "Universal"),

@@ -287,7 +287,6 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_tempora
   RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
-  bool rval = false;
 
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   device_record->bd_addr = bd_addr;
@@ -313,7 +312,6 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_non_authenticated_tem
   RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
-  bool rval = false;
 
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   device_record->bd_addr = bd_addr;
@@ -341,7 +339,6 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_persist
   RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
-  bool rval = false;
 
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   device_record->bd_addr = bd_addr;
@@ -369,7 +366,6 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_upgrade_needed) {
   RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
-  bool rval = false;
 
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   device_record->bd_addr = bd_addr;
@@ -402,7 +398,6 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_encryption_required) 
   RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
-  bool rval = false;
 
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   device_record->bd_addr = bd_addr;

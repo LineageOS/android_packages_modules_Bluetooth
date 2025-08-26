@@ -645,9 +645,6 @@ protected:
     TestConnect(address);
     GetConnectedEvent(address, conn_id);
 
-    tBTA_GATTC_MULTI received_to_read_1{};
-    tBTA_GATTC_MULTI received_to_read_2{};
-
     if (!com::android::bluetooth::flags::le_ase_read_multiple_variable()) {
       EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, _, _, _)).WillRepeatedly(DoDefault());
       for (auto const& handle : handles) {
@@ -2112,9 +2109,6 @@ TEST_F(VolumeControlValueSetTest, test_set_volume_stress) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_set_volume_stress_2) {
-  uint8_t change_cnt = 0;
-  uint8_t vol = 1;
-
   // In this test we simulate notification coming later and operations will be queued
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
           .WillByDefault([](uint16_t conn_id, uint16_t handle, std::vector<uint8_t> value,
@@ -2157,9 +2151,6 @@ TEST_F(VolumeControlValueSetTest, test_set_volume_stress_2) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_set_volume_stress_3) {
-  uint8_t change_cnt = 0;
-  uint8_t vol = 1;
-
   // In this test we simulate notification coming later and operations will be queued but some will
   // be removed from the queue
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))

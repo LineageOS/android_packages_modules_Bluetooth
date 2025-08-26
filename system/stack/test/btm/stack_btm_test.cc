@@ -47,7 +47,6 @@ using ::testing::Invoke;
 
 tL2C_CB l2cb;
 
-const std::string kSmpOptions("mock smp options");
 const std::string kBroadcastAudioConfigOptions("mock broadcast audio config options");
 
 void btm_inq_remote_name_timer_timeout(void*) {}
