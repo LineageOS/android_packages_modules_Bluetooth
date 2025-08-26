@@ -53,6 +53,7 @@ import android.bluetooth.IBluetoothHciVendorSpecificCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.bluetooth.IBluetoothPreferredAudioProfilesCallback;
+import android.bluetooth.IBluetoothProfileCallback;
 import android.bluetooth.IBluetoothQualityReportReadyCallback;
 import android.bluetooth.IBluetoothSocketManager;
 import android.bluetooth.IncomingRfcommSocketInfo;
@@ -1889,6 +1890,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         return service.getProfile(profileId);
+    }
+
+    @Override
+    public void getProfileOneway(int profileId, IBluetoothProfileCallback callback) {
+        AdapterService service = getService();
+        if (service == null) {
+            return;
+        }
+
+        service.getProfile(profileId, callback);
     }
 
     @Override

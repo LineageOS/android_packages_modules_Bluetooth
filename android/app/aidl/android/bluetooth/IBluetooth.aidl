@@ -23,6 +23,7 @@ import android.bluetooth.IBluetoothHciVendorSpecificCallback;
 import android.bluetooth.IBluetoothPreferredAudioProfilesCallback;
 import android.bluetooth.IBluetoothQualityReportReadyCallback;
 import android.bluetooth.IBluetoothCallback;
+import android.bluetooth.IBluetoothProfileCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
@@ -281,7 +282,10 @@ interface IBluetooth
     IBinder getBluetoothScan();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    IBinder getProfile(int profile);
+    IBinder getProfile(int profile);// TODO delete with get_profile_oneway
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    oneway void getProfileOneway(int profile, in IBluetoothProfileCallback callback);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     int setActiveAudioDevicePolicy(in BluetoothDevice device, int activeAudioDevicePolicy, in AttributionSource source);
