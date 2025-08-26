@@ -481,15 +481,14 @@ void AvrcpService::RegisterBipServer(int psm) {
   log::info("AVRCP Target Service has registered a BIP OBEX server, psm={}", psm);
 
   const std::shared_ptr<AvrcpSdpService>& avrcp_sdp_service = AvrcpSdpService::Get();
-  avrcp_sdp_service->EnableCovertArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, psm,
-                                     target_sdp_request_id_);
+  avrcp_sdp_service->EnableCoverArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, psm, target_sdp_request_id_);
 }
 
 void AvrcpService::UnregisterBipServer() {
   log::info("AVRCP Target Service has unregistered a BIP OBEX server");
 
   const std::shared_ptr<AvrcpSdpService>& avrcp_sdp_service = AvrcpSdpService::Get();
-  avrcp_sdp_service->DisableCovertArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, target_sdp_request_id_);
+  avrcp_sdp_service->DisableCoverArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, target_sdp_request_id_);
 }
 
 AvrcpService* AvrcpService::Get() {

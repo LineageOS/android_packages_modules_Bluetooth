@@ -101,10 +101,40 @@ flag {
 }
 
 flag {
+    name: "synchronize_codec_preferences_and_priority"
+    namespace: "bluetooth"
+    description: "Resolve incorrect codec priority of mandatory codec"
+    bug: "438373657"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "a2dp_source_null_fixed_queue"
     namespace: "bluetooth"
     description: "Resolve race in btif_a2dp_source between start and shutdown"
     bug: "432232478"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_reject_sho_request"
+    namespace: "bluetooth"
+    description: "Reject SHO request when rsp pending from active device"
+    bug: "440286060"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_delay_disconnect"
+    namespace: "bluetooth"
+    description: "Delay A2DP profile disconnection to fix interoperability issues"
+    bug: "440507683"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

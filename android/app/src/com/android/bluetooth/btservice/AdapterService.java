@@ -146,6 +146,7 @@ import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.le_audio.LeAudioBroadcast;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanController;
@@ -165,8 +166,8 @@ import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.bluetooth.util.DeviceConfigUtils;
-import com.android.bluetooth.vc.VolumeControlService;
 import com.android.bluetooth.vaps.VapsServerService;
+import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
@@ -1240,6 +1241,7 @@ public class AdapterService extends Service {
                             Map.entry(BluetoothProfile.HID_HOST, HidHostService::new),
                             Map.entry(BluetoothProfile.GATT, GattService::new),
                             Map.entry(BluetoothProfile.LE_AUDIO, LeAudioService::new),
+                            Map.entry(BluetoothProfile.LE_AUDIO_BROADCAST, LeAudioBroadcast::new),
                             Map.entry(BluetoothProfile.LE_CALL_CONTROL, TbsService::new),
                             Map.entry(BluetoothProfile.MAP, BluetoothMapService::new),
                             Map.entry(BluetoothProfile.MAP_CLIENT, MapClientService::new),
@@ -1272,30 +1274,31 @@ public class AdapterService extends Service {
             }
             case BluetoothProfile.A2DP -> new A2dpService(this);
             case BluetoothProfile.A2DP_SINK -> new A2dpSinkService(this);
-            case BluetoothProfile.AVRCP -> new AvrcpTargetService(this);
             case BluetoothProfile.AVRCP_CONTROLLER -> new AvrcpControllerService(this);
-            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> new BassClientService(this);
+            case BluetoothProfile.AVRCP -> new AvrcpTargetService(this);
             case BluetoothProfile.BATTERY -> new BatteryService(this);
             case BluetoothProfile.CSIP_SET_COORDINATOR -> new CsipSetCoordinatorService(this);
             case BluetoothProfile.HAP_CLIENT -> new HapClientService(this);
-            case BluetoothProfile.HEADSET -> new HeadsetService(this);
             case BluetoothProfile.HEADSET_CLIENT -> new HeadsetClientService(this);
+            case BluetoothProfile.HEADSET -> new HeadsetService(this);
             case BluetoothProfile.HEARING_AID -> new HearingAidService(this);
             case BluetoothProfile.HID_DEVICE -> new HidDeviceService(this);
             case BluetoothProfile.HID_HOST -> new HidHostService(this);
+            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> new BassClientService(this);
+            case BluetoothProfile.LE_AUDIO_BROADCAST -> new LeAudioBroadcast(this);
+            case BluetoothProfile.LE_AUDIO -> new LeAudioService(this);
             case BluetoothProfile.LE_CALL_CONTROL -> new TbsService(this, mGattService);
-            case BluetoothProfile.MAP -> new BluetoothMapService(this);
             case BluetoothProfile.MAP_CLIENT -> new MapClientService(this);
+            case BluetoothProfile.MAP -> new BluetoothMapService(this);
             case BluetoothProfile.MCP_SERVER -> new McpService(this);
             case BluetoothProfile.OPP -> new BluetoothOppService(this);
             case BluetoothProfile.PAN -> new PanService(this);
+            case BluetoothProfile.PBAP_CLIENT -> new PbapClientService(this);
             case BluetoothProfile.PBAP ->
                     new BluetoothPbapService(this, getSystemService(NotificationManager.class));
-            case BluetoothProfile.PBAP_CLIENT -> new PbapClientService(this);
             case BluetoothProfile.SAP -> new SapService(this);
-            case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
-            case BluetoothProfile.LE_AUDIO -> new LeAudioService(this);
             case BluetoothProfile.VAPS_SERVER -> new VapsServerService(this);
+            case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }
@@ -3557,9 +3560,6 @@ public class AdapterService extends Service {
         if (connectIfProfileSupported(BluetoothProfile.LE_AUDIO, device)) {
             numProfilesConnected++;
         }
-        if (connectIfProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST, device)) {
-            numProfilesConnected++;
-        }
         if (connectIfProfileSupported(BluetoothProfile.BATTERY, device)) {
             numProfilesConnected++;
         }
@@ -3858,10 +3858,6 @@ public class AdapterService extends Service {
      */
     public boolean isLeChannelSoundingSupported() {
         return mAdapterProperties.isLeChannelSoundingSupported();
-    }
-
-    public long getSupportedProfilesBitMask() {
-        return Config.getSupportedProfilesBitMask();
     }
 
     /**

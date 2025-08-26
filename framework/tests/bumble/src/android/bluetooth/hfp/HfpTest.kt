@@ -18,6 +18,7 @@ package android.bluetooth.hfp
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.ACTION_ACL_CONNECTED
 import android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED
 import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
 import android.bluetooth.BluetoothDevice.ACTION_PAIRING_REQUEST
@@ -105,6 +106,7 @@ class HfpTest {
         val filter =
             IntentFilter().apply {
                 addAction(ACTION_ACL_DISCONNECTED)
+                addAction(ACTION_ACL_CONNECTED)
                 addAction(ACTION_BOND_STATE_CHANGED)
                 addAction(ACTION_PAIRING_REQUEST)
                 addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
@@ -185,6 +187,12 @@ class HfpTest {
             hasExtra(EXTRA_BOND_STATE, BOND_BONDING),
         )
         verifyIntentReceived(
+            hasAction(ACTION_ACL_CONNECTED),
+            hasExtra(EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
+        )
+        restartSettingsApp()
+        verifyIntentReceived(
             hasAction(ACTION_PAIRING_REQUEST),
             hasExtra(EXTRA_DEVICE, bumbleDevice),
         )
@@ -199,7 +207,8 @@ class HfpTest {
             assertThat(a2dpService.setConnectionPolicy(bumbleDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue()
         }
-        // Connection is automatically triggered by pairing
+        // Connect HFP
+        assertThat(bumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyConnectionState(STATE_CONNECTING)
         verifyConnectionState(STATE_CONNECTED)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
@@ -213,6 +222,13 @@ class HfpTest {
             hasExtra(EXTRA_DEVICE, bumbleDevice),
             hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
         )
+    }
+
+    private fun restartSettingsApp() {
+        // Restart settings and system UI after ACL connection to avoid auto profile connection
+        // which leads test failure
+        Runtime.getRuntime().exec("am crash com.android.systemui").waitFor()
+        Runtime.getRuntime().exec("am crash com.android.settings").waitFor()
     }
 
     private fun removeBond() {
