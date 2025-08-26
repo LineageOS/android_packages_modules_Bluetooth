@@ -2,123 +2,47 @@
 // modifying code in other component (like Java app, system server of framework)
 {
   "bt-mainline-presubmit": [
-    {
-      "name": "bluetooth_le_audio_client_test"
-    },
-    {
-      "name": "bluetooth_le_audio_codec_manager_test"
-    },
-    {
-      "name": "bluetooth_le_audio_test"
-    },
-    {
-      "name": "bluetooth_test_gd_unit"
-    },
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_hci"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    }
+    { "name": "bluetooth_le_audio_client_test" },
+    { "name": "bluetooth_le_audio_codec_manager_test" },
+    { "name": "bluetooth_le_audio_test" },
+    { "name": "bluetooth_test_gd_unit" },
+    { "name": "net_test_bluetooth" },
+    { "name": "net_test_btif_hf_client_service" },
+    { "name": "net_test_btif_profile_queue" },
+    { "name": "net_test_device" },
+    { "name": "net_test_device_iot_config" },
+    { "name": "net_test_hci" },
+    { "name": "net_test_stack" },
+    { "name": "net_test_stack_ad_parser" }
   ],
   "presubmit": [
-    {
-      "name": "bluetooth_le_audio_client_test"
-    },
-    {
-      "name": "bluetooth_le_audio_codec_manager_test"
-    },
-    {
-      "name": "bluetooth_le_audio_test"
-    },
-    {
-      "name": "bluetooth_test_gd_unit"
-    },
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_hci"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    }
+    { "name": "bluetooth_le_audio_client_test" },
+    { "name": "bluetooth_le_audio_codec_manager_test" },
+    { "name": "bluetooth_le_audio_test" },
+    { "name": "bluetooth_test_gd_unit" },
+    { "name": "net_test_bluetooth" },
+    { "name": "net_test_btif_hf_client_service" },
+    { "name": "net_test_btif_profile_queue" },
+    { "name": "net_test_device" },
+    { "name": "net_test_device_iot_config" },
+    { "name": "net_test_hci" },
+    { "name": "net_test_stack" },
+    { "name": "net_test_stack_ad_parser" }
   ],
   "hwasan-presubmit": [
-    {
-      "name": "bluetooth_le_audio_test"
-    },
-    {
-      "name": "sdp-fuzzer-validation-test"
-    },
-    {
-      "name": "gatt-fuzzer-validation-test"
-    },
-    {
-      "name": "smp-fuzzer-validation-test"
-    },
-    {
-      "name": "avrc-fuzzer-validation-test"
-    },
-    {
-      "name": "bnep-fuzzer-validation-test"
-    },
-    {
-      "name": "l2cap-fuzzer-validation-test"
-    },
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    }
+    { "name": "bluetooth_le_audio_test" },
+    { "name": "sdp-fuzzer-validation-test" },
+    { "name": "gatt-fuzzer-validation-test" },
+    { "name": "smp-fuzzer-validation-test" },
+    { "name": "avrc-fuzzer-validation-test" },
+    { "name": "bnep-fuzzer-validation-test" },
+    { "name": "l2cap-fuzzer-validation-test" },
+    { "name": "net_test_bluetooth" },
+    { "name": "net_test_btif_hf_client_service" },
+    { "name": "net_test_btif_profile_queue" },
+    { "name": "net_test_device" },
+    { "name": "net_test_device_iot_config" },
+    { "name": "net_test_stack" },
+    { "name": "net_test_stack_ad_parser" }
   ]
 }
