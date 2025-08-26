@@ -1101,7 +1101,8 @@ public class GattService extends ProfileService {
         clientDisconnectInternal(clientApp.id, device, source);
     }
 
-    void clientDisconnectInternal(int clientIf, BluetoothDevice device, AttributionSource source) {
+    private void clientDisconnectInternal(
+            int clientIf, BluetoothDevice device, AttributionSource source) {
         final var connId = getFirstConnectionIdForDevice(clientIf, device);
         Log.d(TAG, "clientDisconnectInternal() - device=" + device + ", connId=" + connId);
         statsLogGattConnectionStateChange(
