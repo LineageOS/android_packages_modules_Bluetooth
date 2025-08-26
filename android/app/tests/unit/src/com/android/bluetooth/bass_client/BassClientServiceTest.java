@@ -1085,16 +1085,20 @@ public class BassClientServiceTest {
 
     private void onScanResult(BluetoothDevice testDevice, int broadcastId) {
         byte[] scanRecord = getScanRecord(broadcastId);
+        onScanResult(testDevice, scanRecord);
+    }
+
+    private void onScanResult(BluetoothDevice testDevice, byte[] scanRecord) {
         ScanResult scanResult =
                 new ScanResult(
                         testDevice,
                         0,
                         0,
                         0,
-                        0,
+                        TEST_ADVERTISER_SID,
                         0,
                         TEST_RSSI,
-                        0,
+                        TEST_PA_SYNC_INTERVAL,
                         ScanRecord.parseFromBytes(scanRecord),
                         0);
         generateScanResult(scanResult);
@@ -2507,22 +2511,10 @@ public class BassClientServiceTest {
                     0x01,
                     0x02, // an unknown data type won't cause trouble
                 };
-        ScanResult scanResult =
-                new ScanResult(
-                        mSourceDevice,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        TEST_RSSI,
-                        0,
-                        ScanRecord.parseFromBytes(scanRecord),
-                        0);
 
         prepareConnectedDeviceGroup();
         startSearchingForSources();
-        generateScanResult(scanResult);
+        onScanResult(mSourceDevice, scanRecord);
         verify(mPeriodicAdvertisingManager, never())
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
     }
@@ -2604,22 +2596,10 @@ public class BassClientServiceTest {
                     0x01,
                     0x02, // an unknown data type won't cause trouble
                 };
-        ScanResult scanResult =
-                new ScanResult(
-                        mSourceDevice,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        TEST_RSSI,
-                        0,
-                        ScanRecord.parseFromBytes(scanRecord),
-                        0);
 
         prepareConnectedDeviceGroup();
         startSearchingForSources();
-        generateScanResult(scanResult);
+        onScanResult(mSourceDevice, scanRecord);
         verify(mPeriodicAdvertisingManager).registerSync(any(), anyInt(), anyInt(), any(), any());
     }
 
@@ -2679,22 +2659,10 @@ public class BassClientServiceTest {
                     0x01,
                     0x02, // an unknown data type won't cause trouble
                 };
-        ScanResult scanResult =
-                new ScanResult(
-                        mSourceDevice,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        TEST_RSSI,
-                        0,
-                        ScanRecord.parseFromBytes(scanRecord),
-                        0);
 
         prepareConnectedDeviceGroup();
         startSearchingForSources();
-        generateScanResult(scanResult);
+        onScanResult(mSourceDevice, scanRecord);
         verify(mPeriodicAdvertisingManager).registerSync(any(), anyInt(), anyInt(), any(), any());
     }
 
@@ -4636,7 +4604,8 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void notifySourceFound_once_updateRssi() throws RemoteException {
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void notifySourceFound_once_updateMetadata() throws RemoteException {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
 
@@ -4657,7 +4626,16 @@ public class BassClientServiceTest {
                 ArgumentCaptor.forClass(BluetoothLeBroadcastMetadata.class);
         InOrder inOrder = inOrder(mCallback);
         inOrder.verify(mCallback).onSourceFound(metaData.capture());
+        assertThat(metaData.getValue().getSourceDevice()).isEqualTo(mSourceDevice);
+        assertThat(metaData.getValue().getSourceAddressType())
+                .isEqualTo(mSourceDevice.getAddressType());
+        assertThat(metaData.getValue().getSourceAdvertisingSid()).isEqualTo(TEST_ADVERTISER_SID);
+        assertThat(metaData.getValue().getBroadcastId()).isEqualTo(TEST_BROADCAST_ID);
+        assertThat(metaData.getValue().getPaSyncInterval()).isEqualTo(TEST_PA_SYNC_INTERVAL);
         assertThat(metaData.getValue().getRssi()).isEqualTo(TEST_RSSI);
+        assertThat(metaData.getValue().getBroadcastName()).isEqualTo("Test");
+        assertThat(metaData.getValue().isEncrypted()).isEqualTo(true);
+        assertThat(metaData.getValue().isPublicBroadcast()).isEqualTo(true);
 
         // Any of them should not notified second time
         onPeriodicAdvertisingReport();
@@ -4670,9 +4648,6 @@ public class BassClientServiceTest {
 
     @Test
     public void notifySourceFound_without_public_announcement() throws RemoteException {
-        prepareConnectedDeviceGroup();
-        startSearchingForSources();
-
         byte[] broadcastScanRecord =
                 new byte[] {
                     0x02,
@@ -4716,20 +4691,10 @@ public class BassClientServiceTest {
                     0x01,
                     0x02, // an unknown data type won't cause trouble
                 };
-        ScanResult scanResult =
-                new ScanResult(
-                        mSourceDevice,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        TEST_RSSI,
-                        0,
-                        ScanRecord.parseFromBytes(broadcastScanRecord),
-                        0);
-        generateScanResult(scanResult);
 
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+        onScanResult(mSourceDevice, broadcastScanRecord);
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
         assertThat(mBassClientService.getActiveSyncedSources()).hasSize(1);
         assertThat(mBassClientService.getActiveSyncedSources()).containsExactly(TEST_SYNC_HANDLE);

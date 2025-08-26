@@ -2694,6 +2694,7 @@ public class BassClientService extends ConnectableProfile {
             metaData.setBroadcastId(broadcastId);
             metaData.setSourceAdvertisingSid(result.getAdvSid());
             if (leaudioBroadcastImproveSourceOperations()) {
+                metaData.setPaSyncInterval(result.getAdvInterval());
                 int rssi = result.getRssi();
                 if (rssi < -127 || rssi > 126) {
                     metaData.setRssi(BluetoothLeBroadcastMetadata.RSSI_UNKNOWN);
