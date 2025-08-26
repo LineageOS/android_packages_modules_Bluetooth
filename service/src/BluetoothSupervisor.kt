@@ -22,9 +22,9 @@ import android.os.UserHandle
 import com.android.bluetooth.flags.Flags
 
 class BluetoothSupervisor(
-    val context: Context,
+    context: Context,
     val looper: Looper,
-    val bluetoothComponent: BluetoothComponent?,
+    bluetoothComponent: BluetoothComponent?,
 ) {
     private val bms: BluetoothManagerService
 
@@ -40,21 +40,21 @@ class BluetoothSupervisor(
         Log.i("Created BluetoothSupervisor")
     }
 
-    public fun api(): BluetoothManagerServiceApi {
+    fun api(): BluetoothManagerServiceApi {
         return bms.api
     }
 
-    public fun onBluetoothDisallowed() {
+    fun onBluetoothDisallowed() {
         enforceCorrectThread()
         bms.onBluetoothDisallowed()
     }
 
-    public fun handleOnBootPhase(userHandle: UserHandle) {
+    fun handleOnBootPhase(userHandle: UserHandle) {
         enforceCorrectThread()
         bms.handleOnBootPhase(userHandle)
     }
 
-    public fun onUserSwitching(userHandle: UserHandle) {
+    fun onUserSwitching(userHandle: UserHandle) {
         enforceCorrectThread()
         bms.onUserSwitching(userHandle)
     }
