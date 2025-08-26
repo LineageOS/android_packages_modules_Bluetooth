@@ -129,3 +129,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_delay_disconnect"
+    namespace: "bluetooth"
+    description: "Delay A2DP profile disconnection to fix interoperability issues"
+    bug: "440507683"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
