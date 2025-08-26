@@ -747,7 +747,7 @@ public class A2dpService extends ConnectableProfile {
             return;
         }
         updateLowLatencyAudioSupport(device);
-        mA2dpCodecConfig.enableOptionalCodecs(device, codecStatus.getCodecConfig());
+        mA2dpCodecConfig.enableOptionalCodecs(device, codecStatus);
     }
 
     /**
