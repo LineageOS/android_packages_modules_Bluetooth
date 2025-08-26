@@ -376,3 +376,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_stop_big_monitoring_based_on_bis_sync"
+    namespace: "bluetooth"
+    description: "Disable BIG monitoring when no BIS are selected to be synced to."
+    bug: "441243548"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
