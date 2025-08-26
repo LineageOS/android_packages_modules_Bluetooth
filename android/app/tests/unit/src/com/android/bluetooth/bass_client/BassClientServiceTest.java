@@ -3681,6 +3681,7 @@ public class BassClientServiceTest {
         final int testBroadcastIdInvalid = 43;
         final int testAdvertiserSid = 1234;
         final int testAdvInterval = 100;
+        final int testRssi = 77;
 
         // mock the update in selectSource
         mBassClientService.updateSyncHandleForBroadcastId(
@@ -3692,6 +3693,7 @@ public class BassClientServiceTest {
                 BassConstants.INVALID_ADV_SID,
                 testAdvInterval,
                 testBroadcastId,
+                testRssi,
                 null,
                 testBroadcastName);
 
@@ -3703,6 +3705,7 @@ public class BassClientServiceTest {
                 testAdvertiserSid,
                 BassConstants.INVALID_ADV_INTERVAL,
                 BassConstants.INVALID_BROADCAST_ID,
+                BluetoothLeBroadcastMetadata.RSSI_UNKNOWN,
                 null,
                 null);
 
@@ -3726,12 +3729,15 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
     public void testPeriodicAdvertisementResultMap_syncEstablishedOnTheSameSyncHandle() {
         final String testBroadcastName1 = "Test1";
         final String testBroadcastName2 = "Test2";
         final int testSyncHandle = 1;
         final int testBroadcastId1 = 42;
         final int testBroadcastId2 = 43;
+        final int testRssi1 = 51;
+        final int testRssi2 = 52;
         final int testAdvertiserSid1 = 1234;
         final int testAdvertiserSid2 = 2345;
         final int testAdvInterval1 = 100;
@@ -3747,6 +3753,7 @@ public class BassClientServiceTest {
                 BassConstants.INVALID_ADV_SID,
                 testAdvInterval1,
                 testBroadcastId1,
+                testRssi1,
                 null,
                 testBroadcastName1);
 
@@ -3758,6 +3765,7 @@ public class BassClientServiceTest {
                 testAdvertiserSid1,
                 BassConstants.INVALID_ADV_INTERVAL,
                 BassConstants.INVALID_BROADCAST_ID,
+                BluetoothLeBroadcastMetadata.RSSI_UNKNOWN,
                 null,
                 null);
 
@@ -3771,6 +3779,7 @@ public class BassClientServiceTest {
         assertThat(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         assertThat(paResult.getAdvSid()).isEqualTo(testAdvertiserSid1);
         assertThat(paResult.getAdvInterval()).isEqualTo(testAdvInterval1);
+        assertThat(paResult.getRssi()).isEqualTo(testRssi1);
         assertThat(paResult.getBroadcastName()).isEqualTo(testBroadcastName1);
 
         // mock the update in selectSource
@@ -3783,6 +3792,7 @@ public class BassClientServiceTest {
                 BassConstants.INVALID_ADV_SID,
                 testAdvInterval2,
                 testBroadcastId2,
+                testRssi2,
                 null,
                 testBroadcastName2);
 
@@ -3794,6 +3804,7 @@ public class BassClientServiceTest {
                 testAdvertiserSid2,
                 BassConstants.INVALID_ADV_INTERVAL,
                 BassConstants.INVALID_BROADCAST_ID,
+                BluetoothLeBroadcastMetadata.RSSI_UNKNOWN,
                 null,
                 null);
 
@@ -3807,6 +3818,7 @@ public class BassClientServiceTest {
         expect.that(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         expect.that(paResult.getAdvSid()).isEqualTo(testAdvertiserSid2);
         expect.that(paResult.getAdvInterval()).isEqualTo(testAdvInterval2);
+        expect.that(paResult.getRssi()).isEqualTo(testRssi2);
         expect.that(paResult.getBroadcastName()).isEqualTo(testBroadcastName2);
     }
 

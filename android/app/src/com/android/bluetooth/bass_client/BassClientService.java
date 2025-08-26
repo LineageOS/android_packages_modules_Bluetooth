@@ -26,6 +26,7 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static com.android.bluetooth.flags.Flags.leaudioBisSyncControl;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastAllowMonitoringOnResume;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastFixAutonomousSourceAdding;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOperations;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSyncHandleToDeviceFix;
@@ -579,6 +580,7 @@ public class BassClientService extends ConnectableProfile {
             int advSid,
             int advInterval,
             int bId,
+            int rssi,
             PublicBroadcastData pbData,
             String broadcastName) {
         Log.d(
@@ -590,6 +592,7 @@ public class BassClientService extends ConnectableProfile {
                         + (", addressType: " + addressType)
                         + (", advInterval: " + advInterval)
                         + (", broadcastId: " + bId)
+                        + (", rssi: " + rssi)
                         + (", broadcastName: " + broadcastName)
                         + (", syncHandleToDeviceMap: " + mSyncHandleToDeviceMap)
                         + (", periodicAdvertisementResultMap: " + mPeriodicAdvertisementResultMap));
@@ -608,6 +611,7 @@ public class BassClientService extends ConnectableProfile {
                             advSid,
                             advInterval,
                             bId,
+                            rssi,
                             pbData,
                             broadcastName);
             if (paRes != null) {
@@ -670,6 +674,9 @@ public class BassClientService extends ConnectableProfile {
             }
             if (bId != BassConstants.INVALID_BROADCAST_ID) {
                 paRes.updateBroadcastId(bId);
+            }
+            if (rssi != BluetoothLeBroadcastMetadata.RSSI_UNKNOWN) {
+                paRes.updateRssi(rssi);
             }
             if (pbData != null) {
                 paRes.updatePublicBroadcastData(pbData);
@@ -2367,6 +2374,7 @@ public class BassClientService extends ConnectableProfile {
                         advertisingSid,
                         BassConstants.INVALID_ADV_INTERVAL,
                         BassConstants.INVALID_BROADCAST_ID,
+                        BluetoothLeBroadcastMetadata.RSSI_UNKNOWN,
                         null,
                         null);
                 addActiveSyncedSource(syncHandle);
@@ -2685,6 +2693,14 @@ public class BassClientService extends ConnectableProfile {
             Log.d(TAG, "broadcast ID: " + broadcastId);
             metaData.setBroadcastId(broadcastId);
             metaData.setSourceAdvertisingSid(result.getAdvSid());
+            if (leaudioBroadcastImproveSourceOperations()) {
+                int rssi = result.getRssi();
+                if (rssi < -127 || rssi > 126) {
+                    metaData.setRssi(BluetoothLeBroadcastMetadata.RSSI_UNKNOWN);
+                } else {
+                    metaData.setRssi(rssi);
+                }
+            }
 
             PublicBroadcastData pbData = result.getPublicBroadcastData();
             if (pbData != null) {
@@ -2704,10 +2720,11 @@ public class BassClientService extends ConnectableProfile {
                 metaData.setBroadcastName(broadcastName);
             }
 
-            // update the rssi value
-            ScanResult scanRes = getCachedBroadcast(broadcastId);
-            if (scanRes != null) {
-                metaData.setRssi(scanRes.getRssi());
+            if (!leaudioBroadcastImproveSourceOperations()) {
+                ScanResult scanRes = getCachedBroadcast(broadcastId);
+                if (scanRes != null) {
+                    metaData.setRssi(scanRes.getRssi());
+                }
             }
         }
         metaData.setEncrypted(encrypted);
@@ -2898,6 +2915,7 @@ public class BassClientService extends ConnectableProfile {
                     BassConstants.INVALID_ADV_SID,
                     scanRes.getPeriodicAdvertisingInterval(),
                     broadcastId,
+                    scanRes.getRssi(),
                     pbData,
                     broadcastName);
 

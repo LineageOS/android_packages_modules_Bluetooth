@@ -29,6 +29,7 @@ public class PeriodicAdvertisementResult {
     private int mSyncHandle;
     private int mPAInterval;
     private int mBroadcastId;
+    private int mRssi;
     private boolean mIsNotified;
     private PublicBroadcastData mPbData;
     private String mBroadcastName;
@@ -40,6 +41,7 @@ public class PeriodicAdvertisementResult {
             int advSid,
             int paInterval,
             int broadcastId,
+            int rssi,
             PublicBroadcastData pbData,
             String broadcastName) {
         mDevice = device;
@@ -48,6 +50,7 @@ public class PeriodicAdvertisementResult {
         mSyncHandle = syncHandle;
         mPAInterval = paInterval;
         mBroadcastId = broadcastId;
+        mRssi = rssi;
         mIsNotified = false;
         mPbData = pbData;
         mBroadcastName = broadcastName;
@@ -116,6 +119,16 @@ public class PeriodicAdvertisementResult {
         return mBroadcastId;
     }
 
+    /** Update rssi */
+    public void updateRssi(int rssi) {
+        mRssi = rssi;
+    }
+
+    /** Get rssi */
+    public int getRssi() {
+        return mRssi;
+    }
+
     /** Update public broadcast data */
     public void updatePublicBroadcastData(PublicBroadcastData pbData) {
         mPbData = pbData;
@@ -145,6 +158,7 @@ public class PeriodicAdvertisementResult {
         log("mSyncHandle:" + mSyncHandle);
         log("mPAInterval:" + mPAInterval);
         log("mBroadcastId:" + mBroadcastId);
+        log("mRssi:" + mRssi);
         log("mIsNotified: " + mIsNotified);
         log("mBroadcastName: " + mBroadcastName);
         log("-- END: PeriodicAdvertisementResult --");

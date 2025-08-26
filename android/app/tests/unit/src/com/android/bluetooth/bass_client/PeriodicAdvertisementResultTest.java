@@ -44,6 +44,7 @@ public class PeriodicAdvertisementResultTest {
         int advSid = 3;
         int paInterval = 4;
         int broadcastId = 5;
+        int rssi = 6;
         PublicBroadcastData pbData = generatePublicBroadcastData();
         String broadcastName = TEST_BROADCAST_NAME;
         PeriodicAdvertisementResult result =
@@ -54,6 +55,7 @@ public class PeriodicAdvertisementResultTest {
                         advSid,
                         paInterval,
                         broadcastId,
+                        rssi,
                         pbData,
                         broadcastName);
 
@@ -62,6 +64,7 @@ public class PeriodicAdvertisementResultTest {
         assertThat(result.getAdvSid()).isEqualTo(advSid);
         assertThat(result.getAdvInterval()).isEqualTo(paInterval);
         assertThat(result.getBroadcastId()).isEqualTo(broadcastId);
+        assertThat(result.getRssi()).isEqualTo(rssi);
         assertThat(result.getPublicBroadcastData()).isEqualTo(pbData);
         assertThat(result.getBroadcastName()).isEqualTo(broadcastName);
     }
@@ -73,6 +76,7 @@ public class PeriodicAdvertisementResultTest {
         int advSid = 3;
         int paInterval = 4;
         int broadcastId = 5;
+        int rssi = 6;
         PublicBroadcastData pbData = null;
         String broadcastName = null;
         PeriodicAdvertisementResult result =
@@ -83,6 +87,7 @@ public class PeriodicAdvertisementResultTest {
                         advSid,
                         paInterval,
                         broadcastId,
+                        rssi,
                         pbData,
                         broadcastName);
 
@@ -106,6 +111,10 @@ public class PeriodicAdvertisementResultTest {
         result.updateBroadcastId(newBroadcastId);
         assertThat(result.getBroadcastId()).isEqualTo(newBroadcastId);
 
+        int newRssi = 11;
+        result.updateRssi(newRssi);
+        assertThat(result.getRssi()).isEqualTo(newRssi);
+
         PublicBroadcastData newPbData = generatePublicBroadcastData();
         result.updatePublicBroadcastData(newPbData);
         assertThat(result.getPublicBroadcastData()).isEqualTo(newPbData);
@@ -122,6 +131,7 @@ public class PeriodicAdvertisementResultTest {
         int advSid = 3;
         int paInterval = 4;
         int broadcastId = 5;
+        int rssi = 6;
         PublicBroadcastData pbData = generatePublicBroadcastData();
         String broadcastName = TEST_BROADCAST_NAME;
         PeriodicAdvertisementResult result =
@@ -132,6 +142,7 @@ public class PeriodicAdvertisementResultTest {
                         advSid,
                         paInterval,
                         broadcastId,
+                        rssi,
                         pbData,
                         broadcastName);
 
