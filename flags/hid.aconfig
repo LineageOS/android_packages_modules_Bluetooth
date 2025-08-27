@@ -78,3 +78,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reset_state_when_removing_non_connected_hid_device"
+    namespace: "bluetooth"
+    description: "When removing a not-yet-connected HID device, set conn_state to UNUSED and CID to 0"
+    bug: "441425948"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
