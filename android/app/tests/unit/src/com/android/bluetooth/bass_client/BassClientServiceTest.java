@@ -3656,7 +3656,6 @@ public class BassClientServiceTest {
                 BassConstants.PENDING_SYNC_HANDLE, testBroadcastId);
         mBassClientService.updatePeriodicAdvertisementResultMap(
                 mSourceDevice,
-                mSourceDevice.getAddressType(),
                 BassConstants.PENDING_SYNC_HANDLE,
                 BassConstants.INVALID_ADV_SID,
                 testAdvInterval,
@@ -3668,7 +3667,6 @@ public class BassClientServiceTest {
         // mock the update in onSyncEstablished
         mBassClientService.updatePeriodicAdvertisementResultMap(
                 mSourceDevice,
-                BassConstants.INVALID_ADV_ADDRESS_TYPE,
                 testSyncHandle,
                 testAdvertiserSid,
                 BassConstants.INVALID_ADV_INTERVAL,
@@ -3683,7 +3681,7 @@ public class BassClientServiceTest {
                 .isNull();
         PeriodicAdvertisementResult paResult =
                 mBassClientService.getPeriodicAdvertisementResult(mSourceDevice, testBroadcastId);
-        assertThat(paResult.getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
+        assertThat(paResult.getDevice().getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
         assertThat(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         assertThat(paResult.getAdvSid()).isEqualTo(testAdvertiserSid);
         assertThat(paResult.getAdvInterval()).isEqualTo(testAdvInterval);
@@ -3716,7 +3714,6 @@ public class BassClientServiceTest {
                 BassConstants.PENDING_SYNC_HANDLE, testBroadcastId1);
         mBassClientService.updatePeriodicAdvertisementResultMap(
                 mSourceDevice,
-                mSourceDevice.getAddressType(),
                 BassConstants.PENDING_SYNC_HANDLE,
                 BassConstants.INVALID_ADV_SID,
                 testAdvInterval1,
@@ -3728,7 +3725,6 @@ public class BassClientServiceTest {
         // mock the update in onSyncEstablished
         mBassClientService.updatePeriodicAdvertisementResultMap(
                 mSourceDevice,
-                BassConstants.INVALID_ADV_ADDRESS_TYPE,
                 testSyncHandle,
                 testAdvertiserSid1,
                 BassConstants.INVALID_ADV_INTERVAL,
@@ -3743,7 +3739,7 @@ public class BassClientServiceTest {
                 .isNull();
         PeriodicAdvertisementResult paResult =
                 mBassClientService.getPeriodicAdvertisementResult(mSourceDevice, testBroadcastId1);
-        assertThat(paResult.getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
+        assertThat(paResult.getDevice().getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
         assertThat(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         assertThat(paResult.getAdvSid()).isEqualTo(testAdvertiserSid1);
         assertThat(paResult.getAdvInterval()).isEqualTo(testAdvInterval1);
@@ -3755,7 +3751,6 @@ public class BassClientServiceTest {
                 BassConstants.PENDING_SYNC_HANDLE, testBroadcastId2);
         mBassClientService.updatePeriodicAdvertisementResultMap(
                 mSourceDevice,
-                mSourceDevice.getAddressType(),
                 BassConstants.PENDING_SYNC_HANDLE,
                 BassConstants.INVALID_ADV_SID,
                 testAdvInterval2,
@@ -3767,7 +3762,6 @@ public class BassClientServiceTest {
         // mock the update in onSyncEstablished
         mBassClientService.updatePeriodicAdvertisementResultMap(
                 mSourceDevice,
-                BassConstants.INVALID_ADV_ADDRESS_TYPE,
                 testSyncHandle,
                 testAdvertiserSid2,
                 BassConstants.INVALID_ADV_INTERVAL,
@@ -3782,7 +3776,7 @@ public class BassClientServiceTest {
                 .isNull();
         paResult =
                 mBassClientService.getPeriodicAdvertisementResult(mSourceDevice, testBroadcastId2);
-        expect.that(paResult.getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
+        expect.that(paResult.getDevice().getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
         expect.that(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         expect.that(paResult.getAdvSid()).isEqualTo(testAdvertiserSid2);
         expect.that(paResult.getAdvInterval()).isEqualTo(testAdvInterval2);

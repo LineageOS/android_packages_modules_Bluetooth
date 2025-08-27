@@ -39,7 +39,6 @@ public class PeriodicAdvertisementResultTest {
 
     @Test
     public void constructor() {
-        int addressType = 1;
         int syncHandle = 2;
         int advSid = 3;
         int paInterval = 4;
@@ -50,7 +49,6 @@ public class PeriodicAdvertisementResultTest {
         PeriodicAdvertisementResult result =
                 new PeriodicAdvertisementResult(
                         mDevice,
-                        addressType,
                         syncHandle,
                         advSid,
                         paInterval,
@@ -59,7 +57,7 @@ public class PeriodicAdvertisementResultTest {
                         pbData,
                         broadcastName);
 
-        assertThat(result.getAddressType()).isEqualTo(addressType);
+        assertThat(result.getDevice()).isEqualTo(mDevice);
         assertThat(result.getSyncHandle()).isEqualTo(syncHandle);
         assertThat(result.getAdvSid()).isEqualTo(advSid);
         assertThat(result.getAdvInterval()).isEqualTo(paInterval);
@@ -71,7 +69,6 @@ public class PeriodicAdvertisementResultTest {
 
     @Test
     public void updateMethods() {
-        int addressType = 1;
         int syncHandle = 2;
         int advSid = 3;
         int paInterval = 4;
@@ -82,7 +79,6 @@ public class PeriodicAdvertisementResultTest {
         PeriodicAdvertisementResult result =
                 new PeriodicAdvertisementResult(
                         mDevice,
-                        addressType,
                         syncHandle,
                         advSid,
                         paInterval,
@@ -90,10 +86,6 @@ public class PeriodicAdvertisementResultTest {
                         rssi,
                         pbData,
                         broadcastName);
-
-        int newAddressType = 6;
-        result.updateAddressType(newAddressType);
-        assertThat(result.getAddressType()).isEqualTo(newAddressType);
 
         int newSyncHandle = 7;
         result.updateSyncHandle(newSyncHandle);
@@ -126,7 +118,6 @@ public class PeriodicAdvertisementResultTest {
 
     @Test
     public void print_doesNotCrash() {
-        int addressType = 1;
         int syncHandle = 2;
         int advSid = 3;
         int paInterval = 4;
@@ -137,7 +128,6 @@ public class PeriodicAdvertisementResultTest {
         PeriodicAdvertisementResult result =
                 new PeriodicAdvertisementResult(
                         mDevice,
-                        addressType,
                         syncHandle,
                         advSid,
                         paInterval,

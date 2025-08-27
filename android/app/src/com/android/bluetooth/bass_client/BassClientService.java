@@ -575,7 +575,6 @@ public class BassClientService extends ConnectableProfile {
 
     void updatePeriodicAdvertisementResultMap(
             BluetoothDevice device,
-            int addressType,
             int syncHandle,
             int advSid,
             int advInterval,
@@ -589,7 +588,6 @@ public class BassClientService extends ConnectableProfile {
                         + (" device: " + device)
                         + (", syncHandle: " + syncHandle)
                         + (", advSid: " + advSid)
-                        + (", addressType: " + addressType)
                         + (", advInterval: " + advInterval)
                         + (", broadcastId: " + bId)
                         + (", rssi: " + rssi)
@@ -606,7 +604,6 @@ public class BassClientService extends ConnectableProfile {
             PeriodicAdvertisementResult paRes =
                     new PeriodicAdvertisementResult(
                             device,
-                            addressType,
                             syncHandle,
                             advSid,
                             advInterval,
@@ -665,9 +662,6 @@ public class BassClientService extends ConnectableProfile {
                     // update the sync handle for the broadcast source
                     updateSyncHandleForBroadcastId(syncHandle, paRes.getBroadcastId());
                 }
-            }
-            if (addressType != BassConstants.INVALID_ADV_ADDRESS_TYPE) {
-                paRes.updateAddressType(addressType);
             }
             if (advInterval != BassConstants.INVALID_ADV_INTERVAL) {
                 paRes.updateAdvInterval(advInterval);
@@ -2369,7 +2363,6 @@ public class BassClientService extends ConnectableProfile {
                 // set other fields as invalid or null
                 updatePeriodicAdvertisementResultMap(
                         device,
-                        BassConstants.INVALID_ADV_ADDRESS_TYPE,
                         syncHandle,
                         advertisingSid,
                         BassConstants.INVALID_ADV_INTERVAL,
@@ -2912,7 +2905,6 @@ public class BassClientService extends ConnectableProfile {
             if (leaudioBroadcastImproveSourceOperations()) {
                 updatePeriodicAdvertisementResultMap(
                         scanRes.getDevice(),
-                        scanRes.getDevice().getAddressType(),
                         BassConstants.PENDING_SYNC_HANDLE,
                         scanRes.getAdvertisingSid(),
                         scanRes.getPeriodicAdvertisingInterval(),
@@ -2923,7 +2915,6 @@ public class BassClientService extends ConnectableProfile {
             } else {
                 updatePeriodicAdvertisementResultMap(
                         scanRes.getDevice(),
-                        scanRes.getDevice().getAddressType(),
                         BassConstants.PENDING_SYNC_HANDLE,
                         BassConstants.INVALID_ADV_SID,
                         scanRes.getPeriodicAdvertisingInterval(),

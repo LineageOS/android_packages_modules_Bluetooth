@@ -24,7 +24,6 @@ public class PeriodicAdvertisementResult {
     private static final String TAG = PeriodicAdvertisementResult.class.getSimpleName();
 
     private final BluetoothDevice mDevice;
-    private int mAddressType;
     private int mAdvSid;
     private int mSyncHandle;
     private int mPAInterval;
@@ -36,7 +35,6 @@ public class PeriodicAdvertisementResult {
 
     PeriodicAdvertisementResult(
             BluetoothDevice device,
-            int addressType,
             int syncHandle,
             int advSid,
             int paInterval,
@@ -45,7 +43,6 @@ public class PeriodicAdvertisementResult {
             PublicBroadcastData pbData,
             String broadcastName) {
         mDevice = device;
-        mAddressType = addressType;
         mAdvSid = advSid;
         mSyncHandle = syncHandle;
         mPAInterval = paInterval;
@@ -54,6 +51,11 @@ public class PeriodicAdvertisementResult {
         mIsNotified = false;
         mPbData = pbData;
         mBroadcastName = broadcastName;
+    }
+
+    /** Get Device */
+    public BluetoothDevice getDevice() {
+        return mDevice;
     }
 
     /** Update Sync handle */
@@ -87,16 +89,6 @@ public class PeriodicAdvertisementResult {
     /** Get Adv ID */
     public int getAdvSid() {
         return mAdvSid;
-    }
-
-    /** Update address type */
-    public void updateAddressType(int addressType) {
-        mAddressType = addressType;
-    }
-
-    /** Get address type */
-    public int getAddressType() {
-        return mAddressType;
     }
 
     /** Update Adv interval */
@@ -153,7 +145,6 @@ public class PeriodicAdvertisementResult {
     public void print() {
         log("-- PeriodicAdvertisementResult --");
         log("mDevice:" + mDevice);
-        log("mAddressType:" + mAddressType);
         log("mAdvSid:" + mAdvSid);
         log("mSyncHandle:" + mSyncHandle);
         log("mPAInterval:" + mPAInterval);
