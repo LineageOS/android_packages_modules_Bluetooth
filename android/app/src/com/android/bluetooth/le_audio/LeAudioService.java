@@ -3699,17 +3699,11 @@ public class LeAudioService extends ConnectableProfile {
                 Log.e(TAG, " Group not found " + groupId);
                 return;
             }
-            BluetoothLeAudioCodecConfig emptyConfig =
-                    new BluetoothLeAudioCodecConfig.Builder().build();
 
             BluetoothLeAudioCodecStatus status =
                     new BluetoothLeAudioCodecStatus(
-                            (stackEvent.valueCodec1.equals(emptyConfig)
-                                    ? null
-                                    : stackEvent.valueCodec1),
-                            (stackEvent.valueCodec2.equals(emptyConfig)
-                                    ? null
-                                    : stackEvent.valueCodec2),
+                            stackEvent.valueCodec1,
+                            stackEvent.valueCodec2,
                             mInputLocalCodecCapabilities,
                             mOutputLocalCodecCapabilities,
                             descriptor.mInputSelectableConfig,
@@ -3730,7 +3724,10 @@ public class LeAudioService extends ConnectableProfile {
                             + (", inputCodecOrFreqChanged: " + inputCodecOrFreqChanged));
 
             descriptor.mCodecStatus = status;
-            mHandler.post(() -> notifyUnicastCodecConfigChanged(groupId, status));
+            mHandler.post(
+                    () ->
+                            notifyUnicastCodecConfigChanged(
+                                    groupId, prepareCodecStatusForTheApi(status)));
 
             /* For LC3 codec, the sample frequency change does not have to be notified to Audio Framework, as this is
              * internal change done in Bluetooth which is internally synced with Audio HAL over Bluetooth Audio HAL.
@@ -5378,6 +5375,30 @@ public class LeAudioService extends ConnectableProfile {
         mBroadcastSessionStats.clear();
     }
 
+    private static BluetoothLeAudioCodecStatus prepareCodecStatusForTheApi(
+            BluetoothLeAudioCodecStatus codecStatus) {
+        if (codecStatus == null) {
+            return null;
+        }
+        BluetoothLeAudioCodecConfig emptyConfig = new BluetoothLeAudioCodecConfig.Builder().build();
+
+        BluetoothLeAudioCodecStatus codecStatusForTheApi =
+                new BluetoothLeAudioCodecStatus(
+                        ((codecStatus.getInputCodecConfig() == null
+                                        || codecStatus.getInputCodecConfig().equals(emptyConfig))
+                                ? null
+                                : codecStatus.getInputCodecConfig()),
+                        ((codecStatus.getOutputCodecConfig() == null
+                                        || codecStatus.getOutputCodecConfig().equals(emptyConfig))
+                                ? null
+                                : codecStatus.getOutputCodecConfig()),
+                        codecStatus.getInputCodecLocalCapabilities(),
+                        codecStatus.getOutputCodecLocalCapabilities(),
+                        codecStatus.getInputCodecSelectableCapabilities(),
+                        codecStatus.getOutputCodecSelectableCapabilities());
+        return codecStatusForTheApi;
+    }
+
     /**
      * Gets the current codec status (configuration and capability).
      *
@@ -5385,12 +5406,18 @@ public class LeAudioService extends ConnectableProfile {
      * @return the current codec status
      */
     public BluetoothLeAudioCodecStatus getCodecStatus(int groupId) {
-        Log.d(TAG, "getCodecStatus(" + groupId + ")");
         LeAudioGroupDescriptor descriptor = getGroupDescriptor(groupId);
-        if (descriptor != null) {
-            return descriptor.mCodecStatus;
+        if (descriptor == null) {
+            Log.d(
+                    TAG,
+                    "getCodecStatus(" + groupId + ") = null because there is no group descriptor");
+            return null;
         }
-        return null;
+
+        BluetoothLeAudioCodecStatus codecStatus =
+                prepareCodecStatusForTheApi(descriptor.mCodecStatus);
+        Log.d(TAG, "getCodecStatus(" + groupId + ") = " + codecStatus);
+        return codecStatus;
     }
 
     private boolean shouldUpdateCodecConfigPreference(BluetoothLeAudioCodecConfig codecConfig) {
