@@ -242,7 +242,7 @@ typedef struct {
   uint8_t flag;
   bool include_rsi;        /* true, if ADV contains RSI data */
   RawAddress original_bda; /* original address to pass up to
-                              GattService#onScanResult */
+                              ScanController#onScanResult */
   uint16_t clock_offset;
 } tBTA_DM_INQ_RES;
 
@@ -536,7 +536,7 @@ void BTA_DmDiscover(const RawAddress& bd_addr, service_discovery_callbacks cback
  *
  * Function         BTA_DmGetCachedRemoteName
  *
- * Description      Retieve cached remote name if available
+ * Description      Retrieve cached remote name if available
  *
  * Returns          BTA_SUCCESS if cached name was retrieved
  *                  BTA_FAILURE if cached name is not available
@@ -561,7 +561,7 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr);
  *
  * Description      This function adds a DI record to the local SDP database.
  *
- * Returns          BTA_SUCCESS if record set sucessfully, otherwise error code.
+ * Returns          BTA_SUCCESS if record set successfully, otherwise error code.
  *
  ******************************************************************************/
 tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info, uint32_t* p_handle);
@@ -623,7 +623,7 @@ void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb);
  *
  * Description      Enable/disable privacy on the local device
  *
- * Parameters:      privacy_enable   - enable/disabe privacy on remote device.
+ * Parameters:      privacy_enable   - enable/disable privacy on remote device.
  *
  * Returns          void
  *
@@ -637,7 +637,7 @@ void BTA_DmBleConfigLocalPrivacy(bool privacy_enable);
  * Description      Enable/disable privacy on a remote device
  *
  * Parameters:      bd_addr          - BD address of the peer
- *                  privacy_enable   - enable/disabe privacy on remote device.
+ *                  privacy_enable   - enable/disable privacy on remote device.
  *
  * Returns          void
  *
