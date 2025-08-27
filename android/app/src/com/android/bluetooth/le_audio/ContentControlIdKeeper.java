@@ -23,8 +23,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.flags.Flags;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,13 +43,10 @@ public class ContentControlIdKeeper {
     private static SortedSet<Integer> sAssignedCcidList = new TreeSet();
     private static HashMap<ParcelUuid, Pair<Integer, Integer>> sUuidToCcidContextPair =
             new HashMap<>();
-    // TODO(b/422543753) Delete on flag cleanup
-    private static ServiceFactory sServiceFactory = null;
 
-    static synchronized void initForTesting(ServiceFactory instance) {
+    static synchronized void initForTesting() {
         sAssignedCcidList = new TreeSet();
         sUuidToCcidContextPair = new HashMap<>();
-        sServiceFactory = instance;
     }
 
     /**
@@ -99,23 +94,12 @@ public class ContentControlIdKeeper {
             sUuidToCcidContextPair.put(userUuid, new Pair(ccid, contextType));
 
             // Notify LeAudioService about new ccid
-            if (Flags.adapterServiceProfilesUseOptional()) {
-                final var ccidFinal = ccid;
-                adapterService
-                        .getLeAudioService()
-                        .ifPresent(
-                                leAudio ->
-                                        leAudio.setCcidInformation(
-                                                userUuid, ccidFinal, contextType));
-            } else {
-                if (sServiceFactory == null) {
-                    sServiceFactory = new ServiceFactory();
-                }
-                LeAudioService service = sServiceFactory.getLeAudioService();
-                if (service != null) {
-                    service.setCcidInformation(userUuid, ccid, contextType);
-                }
-            }
+            final var ccidFinal = ccid;
+            adapterService
+                    .getLeAudioService()
+                    .ifPresent(
+                            leAudio ->
+                                    leAudio.setCcidInformation(userUuid, ccidFinal, contextType));
         }
         return ccid;
     }
@@ -141,20 +125,10 @@ public class ContentControlIdKeeper {
 
         if (sAssignedCcidList.contains(value)) {
             // Notify LeAudioService about new value
-            if (Flags.adapterServiceProfilesUseOptional()) {
-                final var uuidFinal = uuid;
-                adapterService
-                        .getLeAudioService()
-                        .ifPresent(leAudio -> leAudio.setCcidInformation(uuidFinal, value, 0));
-            } else {
-                if (sServiceFactory == null) {
-                    sServiceFactory = new ServiceFactory();
-                }
-                LeAudioService service = sServiceFactory.getLeAudioService();
-                if (service != null) {
-                    service.setCcidInformation(uuid, value, 0);
-                }
-            }
+            final var uuidFinal = uuid;
+            adapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setCcidInformation(uuidFinal, value, 0));
 
             sAssignedCcidList.remove(value);
             sUuidToCcidContextPair.remove(uuid);

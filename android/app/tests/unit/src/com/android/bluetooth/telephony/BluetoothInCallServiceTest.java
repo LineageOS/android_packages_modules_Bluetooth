@@ -72,7 +72,6 @@ import com.android.bluetooth.tbs.TbsService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -128,17 +127,10 @@ public class BluetoothInCallServiceTest {
 
     @Before
     public void setUp() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            ExtendedMockito.doReturn(mAdapterService)
-                    .when(() -> AdapterService.deprecatedGetAdapterService());
-            doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
-            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
-        } else {
-            doReturn(true).when(mTbsService).isAvailable();
-            TbsService.setTbsService(mTbsService);
-            doReturn(true).when(mHeadsetService).isAvailable();
-            HeadsetService.setHeadsetService(mHeadsetService);
-        }
+        ExtendedMockito.doReturn(mAdapterService)
+                .when(() -> AdapterService.deprecatedGetAdapterService());
+        doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
+        doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
         doReturn(true).when(mCallInfo).isNullCall(null);
         doReturn(false).when(mCallInfo).isNullCall(notNull());
 
@@ -149,18 +141,9 @@ public class BluetoothInCallServiceTest {
         mBluetoothInCallService.onCreate();
     }
 
-    @After
-    public void tearDown() {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            TbsService.setTbsService(null);
-            HeadsetService.setHeadsetService(null);
-        }
-    }
-
     @Test
     public void onCreate_registerBearer_whenTbsServiceIsNull_doesNothing() {
         clearInvocations(mTbsService);
-        TbsService.setTbsService(null);
 
         Context spiedContext = spy(new ContextWrapper(mContext));
         mockGetSystemService(spiedContext, TelephonyManager.class, mTelephonyManager);
@@ -181,7 +164,6 @@ public class BluetoothInCallServiceTest {
     @Test
     public void onCreate_registerBearer_whenTbsServiceIsPresent_callsRegisterBearer() {
         clearInvocations(mTbsService);
-        TbsService.setTbsService(mTbsService);
 
         PhoneAccount fakePhoneAccount = makeQuickAccount("id0", TEST_ACCOUNT_INDEX);
         doReturn(fakePhoneAccount).when(mCallInfo).getBestPhoneAccount();

@@ -147,11 +147,6 @@ public class BluetoothOppServiceTest {
     }
 
     @Test
-    public void testInitialize() {
-        assertThat(BluetoothOppService.getBluetoothOppService()).isNotNull();
-    }
-
-    @Test
     public void deleteShare_deleteShareAndCorrespondingBatch() {
         int infoTimestamp = 123456789;
         int infoTimestamp2 = 123489;

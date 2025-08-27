@@ -54,8 +54,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -66,7 +64,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -86,9 +83,6 @@ public class HapClientService extends ConnectableProfile {
     private static final int MAX_HEARING_ACCESS_STATE_MACHINES = 10;
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static HapClientService sHapClient;
-
     private final Map<BluetoothDevice, HapClientStateMachine> mStateMachines =
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
@@ -102,35 +96,6 @@ public class HapClientService extends ConnectableProfile {
     @VisibleForTesting
     @GuardedBy("mCallbacks")
     final RemoteCallbackList<IBluetoothHapClientCallback> mCallbacks = new RemoteCallbackList<>();
-
-    // TODO(b/422543753) Delete on flag cleanup
-    @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
-
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    static synchronized void setHapClient(HapClientService instance) {
-        Log.d(TAG, "setHapClient(): set to: " + instance);
-        sHapClient = instance;
-    }
-
-    /**
-     * Get the HapClientService instance
-     *
-     * @return HapClientService instance
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized HapClientService getHapClientService() {
-        if (sHapClient == null) {
-            Log.w(TAG, "getHapClientService(): service is NULL");
-            return null;
-        }
-
-        if (!sHapClient.isAvailable()) {
-            Log.w(TAG, "getHapClientService(): service is not available");
-            return null;
-        }
-        return sHapClient;
-    }
 
     public HapClientService(AdapterService adapterService) {
         this(adapterService, Flags.hapOnMainLooper() ? Looper.getMainLooper() : null, null);
@@ -168,18 +133,6 @@ public class HapClientService extends ConnectableProfile {
 
         // Initialize native interface
         mNativeInterface.init();
-
-        // Mark service as started
-        setHapClient(this);
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getCsipSetCoordinatorService();
-        } else {
-            return Optional.ofNullable(mFactory.getCsipSetCoordinatorService());
-        }
     }
 
     public void syncPost(Consumer<HapClientService> consumer) {
@@ -250,14 +203,6 @@ public class HapClientService extends ConnectableProfile {
     @Override
     public void cleanup() {
         Log.i(TAG, "cleanup()");
-
-        if (sHapClient == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
-        // Marks service as stopped
-        setHapClient(null);
 
         // Destroy state machines and stop handler thread
         synchronized (mStateMachines) {
@@ -603,7 +548,7 @@ public class HapClientService extends ConnectableProfile {
     }
 
     int getHapGroup(BluetoothDevice device) {
-        final var csipSetCoordinator = getCsipSetCoordinatorService();
+        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
         if (csipSetCoordinator.isPresent()) {
             final Map<Integer, ParcelUuid> groups =
                     csipSetCoordinator.get().getGroupUuidMapByDevice(device);
@@ -771,7 +716,8 @@ public class HapClientService extends ConnectableProfile {
             return false;
         }
 
-        return getCsipSetCoordinatorService()
+        return mAdapterService
+                .getCsipSetCoordinatorService()
                 .map(csipClient -> csipClient.getAllGroupIds(BluetoothUuid.CAP).contains(groupId))
                 .orElse(false);
     }
@@ -853,7 +799,8 @@ public class HapClientService extends ConnectableProfile {
             return emptyList();
         }
 
-        return getCsipSetCoordinatorService()
+        return mAdapterService
+                .getCsipSetCoordinatorService()
                 .map(csipClient -> csipClient.getGroupDevicesOrdered(groupId))
                 .orElse(emptyList());
     }

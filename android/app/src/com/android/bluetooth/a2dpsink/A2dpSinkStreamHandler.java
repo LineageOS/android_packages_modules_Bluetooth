@@ -29,11 +29,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
-
-import java.util.Optional;
 
 /**
  * Bluetooth A2DP SINK Streaming Handler.
@@ -196,22 +192,16 @@ public class A2dpSinkStreamHandler extends Handler {
                 }
 
                 // Route new focus state to AVRCP Controller to handle media player states
-                final Optional<AvrcpControllerService> avrcpControllerService;
-                if (Flags.adapterServiceProfilesUseOptional()) {
-                    avrcpControllerService = mAdapterService.getAvrcpControllerService();
-                } else {
-                    avrcpControllerService =
-                            Optional.ofNullable(AvrcpControllerService.getAvrcpControllerService());
-                }
-
-                avrcpControllerService.ifPresentOrElse(
-                        avrcpController ->
-                                avrcpController.onAudioFocusStateChanged(focusChangeCode),
-                        () ->
-                                Log.w(
-                                        TAG,
-                                        "AVRCP Controller Service not available to send focus"
-                                                + " events to."));
+                mAdapterService
+                        .getAvrcpControllerService()
+                        .ifPresentOrElse(
+                                avrcpController ->
+                                        avrcpController.onAudioFocusStateChanged(focusChangeCode),
+                                () ->
+                                        Log.w(
+                                                TAG,
+                                                "AVRCP Controller Service not available to send"
+                                                        + " focus events to."));
             }
             default -> Log.w(TAG, "Received unexpected event: " + message.what);
         }

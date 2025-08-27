@@ -65,8 +65,6 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -79,7 +77,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.List;
@@ -93,8 +90,6 @@ public class CsipSetCoordinatorServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    // TODO(b/422543753) Delete on flag cleanup
-    @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
     @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
@@ -125,18 +120,14 @@ public class CsipSetCoordinatorServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any());
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();
 
         mService =
                 new CsipSetCoordinatorService(
-                        mAdapterService, mLooper.getLooper(), mNativeInterface, mServiceFactory);
+                        mAdapterService, mLooper.getLooper(), mNativeInterface);
         mService.setAvailable(true);
         mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService, mService);
 
@@ -146,12 +137,6 @@ public class CsipSetCoordinatorServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        assertThat(CsipSetCoordinatorService.getCsipSetCoordinatorService()).isNull();
-    }
-
-    @Test
-    public void getService() {
-        assertThat(CsipSetCoordinatorService.getCsipSetCoordinatorService()).isEqualTo(mService);
     }
 
     @Test

@@ -91,7 +91,6 @@ public class ActiveDeviceManagerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private A2dpService mA2dpService;
     @Mock private HeadsetService mHeadsetService;
     @Mock private HearingAidService mHearingAidService;
@@ -135,19 +134,12 @@ public class ActiveDeviceManagerTest {
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         when(mAdapterService.getDatabaseManager()).thenReturn(mDatabaseManager);
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
-            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
-            doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
-            when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
-            when(mServiceFactory.getHearingAidService()).thenReturn(mHearingAidService);
-            when(mServiceFactory.getLeAudioService()).thenReturn(mLeAudioService);
-        }
+        doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+        doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+        doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
-        mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mServiceFactory);
+        mActiveDeviceManager = new ActiveDeviceManager(mAdapterService);
         mActiveDeviceManager.start();
 
         // Get devices for testing

@@ -98,9 +98,6 @@ public class HidHostService extends ConnectableProfile {
         }
     }
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static HidHostService sHidHostService;
-
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
@@ -136,7 +133,6 @@ public class HidHostService extends ConnectableProfile {
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
         mNativeInterface.init();
-        setHidHostService(this);
     }
 
     public static boolean isEnabled() {
@@ -162,8 +158,6 @@ public class HidHostService extends ConnectableProfile {
             }
             mInputDevices.clear();
         }
-        // TODO(b/72948646): this should be moved to stop()
-        setHidHostService(null);
     }
 
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
@@ -254,25 +248,6 @@ public class HidHostService extends ConnectableProfile {
         }
 
         return STATE_DISCONNECTED;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized HidHostService getHidHostService() {
-        if (sHidHostService == null) {
-            Log.w(TAG, "getHidHostService(): service is null");
-            return null;
-        }
-        if (!sHidHostService.isAvailable()) {
-            Log.w(TAG, "getHidHostService(): service is not available ");
-            return null;
-        }
-        return sHidHostService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static synchronized void setHidHostService(HidHostService instance) {
-        Log.d(TAG, "setHidHostService(): set to: " + instance);
-        sHidHostService = instance;
     }
 
     /**

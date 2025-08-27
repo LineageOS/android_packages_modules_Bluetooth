@@ -47,8 +47,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -56,7 +54,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -73,7 +70,6 @@ public class HeadsetClientService extends ConnectableProfile {
     // Maximum number of devices we can try connecting to in one session
     private static final int MAX_STATE_MACHINES_POSSIBLE = 100;
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HeadsetClientService sHeadsetClientService;
 
     // This is also used as a lock for shared data in {@link HeadsetClientService}
@@ -134,15 +130,6 @@ public class HeadsetClientService extends ConnectableProfile {
         mSmThread.start();
 
         setHeadsetClientService(this);
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<HeadsetService> getHeadsetService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getHeadsetService();
-        } else {
-            return Optional.ofNullable(HeadsetService.getHeadsetService());
-        }
     }
 
     public static boolean isEnabled() {
@@ -295,8 +282,7 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     // API methods
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized HeadsetClientService getHeadsetClientService() {
+    private static synchronized HeadsetClientService getHeadsetClientService() {
         if (sHeadsetClientService == null) {
             Log.w(TAG, "getHeadsetClientService(): service is null");
             return null;
@@ -308,9 +294,7 @@ public class HeadsetClientService extends ConnectableProfile {
         return sHeadsetClientService;
     }
 
-    /** Set a {@link HeadsetClientService} instance. */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
+    @VisibleForTesting
     public static synchronized void setHeadsetClientService(HeadsetClientService instance) {
         Log.d(TAG, "setHeadsetClientService(): set to: " + instance);
         sHeadsetClientService = instance;
@@ -928,7 +912,7 @@ public class HeadsetClientService extends ConnectableProfile {
                     new HeadsetClientStateMachine(
                             mAdapterService,
                             this,
-                            getHeadsetService(),
+                            mAdapterService.getHeadsetService(),
                             mSmThread.getLooper(),
                             mNativeInterface);
             mStateMachineMap.put(device, sm);

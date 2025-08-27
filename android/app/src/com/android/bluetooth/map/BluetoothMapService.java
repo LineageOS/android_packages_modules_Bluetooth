@@ -138,9 +138,6 @@ public class BluetoothMapService extends ConnectableProfile {
     private boolean mSdpSearchInitiated = false;
     private SdpMnsRecord mMnsRecord = null;
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static BluetoothMapService sBluetoothMapService;
-
     private static final ParcelUuid[] MAP_UUIDS = {
         BluetoothUuid.MAP, BluetoothUuid.MNS,
     };
@@ -190,7 +187,6 @@ public class BluetoothMapService extends ConnectableProfile {
         createMasInstances(); // Uses mEnabledAccounts
 
         sendStartListenerMessage(-1);
-        setBluetoothMapService(this);
     }
 
     private synchronized void closeService() {
@@ -662,38 +658,6 @@ public class BluetoothMapService extends ConnectableProfile {
     }
 
     /**
-     * @return current instance of {@link BluetoothMapService}
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized BluetoothMapService getBluetoothMapService() {
-        if (sBluetoothMapService == null) {
-            Log.w(TAG, "getBluetoothMapService(): service is null");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    8);
-            return null;
-        }
-        if (!sBluetoothMapService.isAvailable()) {
-            Log.w(TAG, "getBluetoothMapService(): service is not available");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    9);
-            return null;
-        }
-        return sBluetoothMapService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static synchronized void setBluetoothMapService(BluetoothMapService instance) {
-        Log.d(TAG, "setBluetoothMapService(): set to: " + instance);
-        sBluetoothMapService = instance;
-    }
-
-    /**
      * Call this to trigger an update of the MAS instance list. No changes will be applied unless in
      * disconnected state
      */
@@ -827,7 +791,6 @@ public class BluetoothMapService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setBluetoothMapService(null);
         unregisterReceiver(mMapReceiver);
         mAppObserver.shutdown();
         sendShutdownMessage();

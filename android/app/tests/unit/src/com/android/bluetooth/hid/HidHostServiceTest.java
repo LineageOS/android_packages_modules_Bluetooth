@@ -76,13 +76,6 @@ public class HidHostServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        mService = HidHostService.getHidHostService();
-        assertThat(mService).isNull();
-    }
-
-    @Test
-    public void testInitialize() {
-        assertThat(HidHostService.getHidHostService()).isNotNull();
     }
 
     @Test

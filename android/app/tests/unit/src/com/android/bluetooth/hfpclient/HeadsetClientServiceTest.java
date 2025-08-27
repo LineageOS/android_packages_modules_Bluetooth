@@ -48,7 +48,6 @@ import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -74,7 +73,6 @@ public class HeadsetClientServiceTest {
     @Mock private RemoteDevices mRemoteDevices;
 
     private HeadsetClientService mService;
-    private boolean mIsHeadsetClientServiceStarted;
 
     private static final int STANDARD_WAIT_MILLIS = 1000;
     private static final int SERVICE_START_WAIT_MILLIS = 100;
@@ -89,15 +87,9 @@ public class HeadsetClientServiceTest {
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
     }
 
-    @After
-    public void tearDown() throws Exception {
-        stopServiceIfStarted();
-    }
-
     @Test
     public void testInitialize() throws Exception {
         startService();
-        assertThat(HeadsetClientService.getHeadsetClientService()).isNotNull();
     }
 
     @Ignore("b/260202548")
@@ -250,13 +242,5 @@ public class HeadsetClientServiceTest {
     private void startService() throws Exception {
         mService = new HeadsetClientService(mAdapterService, mNativeInterface);
         mService.setAvailable(true);
-        mIsHeadsetClientServiceStarted = true;
-    }
-
-    private void stopServiceIfStarted() throws Exception {
-        if (mIsHeadsetClientServiceStarted) {
-            mService.cleanup();
-            assertThat(HeadsetClientService.getHeadsetClientService()).isNull();
-        }
     }
 }

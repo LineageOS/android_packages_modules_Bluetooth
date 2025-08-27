@@ -91,7 +91,6 @@ import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -137,7 +136,6 @@ public class BassClientServiceTest {
     @Mock private PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothLeScannerWrapper mBluetoothLeScannerWrapper;
-    @Mock private ServiceFactory mServiceFactory;
     @Mock private ScanController mScanController;
     @Mock private CsipSetCoordinatorService mCsipService;
     @Mock private LeAudioService mLeAudioService;
@@ -327,16 +325,8 @@ public class BassClientServiceTest {
         mBassClientService = new BassClientService(mAdapterService);
         mBassClientService.setAvailable(true);
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mCsipService))
-                    .when(mAdapterService)
-                    .getCsipSetCoordinatorService();
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            mBassClientService.mServiceFactory = mServiceFactory;
-            doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mCsipService)).when(mAdapterService).getCsipSetCoordinatorService();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         mBassScanCallbackCaptor = ArgumentCaptor.forClass(IScannerCallback.class);
         doAnswer(
@@ -363,7 +353,6 @@ public class BassClientServiceTest {
         mBassClientService.unregisterCallback(mCallback);
 
         mBassClientService.cleanup();
-        assertThat(BassClientService.getBassClientService()).isNull();
         mStateMachines.clear();
         BassObjectsFactory.setInstanceForTesting(null);
     }
@@ -371,7 +360,6 @@ public class BassClientServiceTest {
     /** Test to verify that BassClientService can be successfully started */
     @Test
     public void testGetBassClientService() {
-        assertThat(mBassClientService).isEqualTo(BassClientService.getBassClientService());
         // Verify default connection and audio states
         assertThat(mBassClientService.getConnectionState(mCurrentDevice))
                 .isEqualTo(STATE_DISCONNECTED);

@@ -201,9 +201,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     + WHERE_CONFIRM_PENDING_INBOUND
                     + ")";
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static BluetoothOppService sBluetoothOppService;
-
     /*
      * TODO No support for queue incoming from multiple devices.
      * Make an array list of server session to support receiving queue from
@@ -244,7 +241,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         mNotifier = new BluetoothOppNotification(mAdapterService);
         mNotifier.cancelOppNotifications();
         updateFromProvider();
-        setBluetoothOppService(this);
     }
 
     public static boolean isEnabled() {
@@ -259,16 +255,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     @Override
     public void cleanup() {
         Log.i(TAG, "cleanup()");
-
-        if (sBluetoothOppService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            ContentProfileErrorReportUtils.report(
-                    mProfileId,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    1);
-        }
-        setBluetoothOppService(null);
         stopInternal();
 
         setComponentAvailable(OPP_PROVIDER, false);
@@ -312,41 +298,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                 + info.mTotalBytes);
             }
         }
-    }
-
-    /**
-     * Get the current instance of {@link BluetoothOppService}
-     *
-     * @return current instance of {@link BluetoothOppService}
-     */
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized BluetoothOppService getBluetoothOppService() {
-        if (sBluetoothOppService == null) {
-            Log.w(TAG, "getBluetoothOppService(): service is null");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    2);
-            return null;
-        }
-        if (!sBluetoothOppService.isAvailable()) {
-            Log.w(TAG, "getBluetoothOppService(): service is not available");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    3);
-            return null;
-        }
-        return sBluetoothOppService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static synchronized void setBluetoothOppService(BluetoothOppService instance) {
-        Log.d(TAG, "setBluetoothOppService(): set to: " + instance);
-        sBluetoothOppService = instance;
     }
 
     private static final int START_LISTENER = 1;

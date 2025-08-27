@@ -38,11 +38,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -88,24 +86,11 @@ public class HfpClientDeviceBlockTest {
 
         mockGetSystemService(mConnServ, TelecomManager.class);
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            ExtendedMockito.doReturn(mAdapterService)
-                    .when(() -> AdapterService.deprecatedGetAdapterService());
-            doReturn(Optional.of(mHeadsetClientService))
-                    .when(mAdapterService)
-                    .getHeadsetClientService();
-        } else {
-            when(mHeadsetClientService.isAvailable()).thenReturn(true);
-            HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
-        }
-    }
-
-    @After
-    public void tearDown() {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            HeadsetClientService.setHeadsetClientService(null);
-            assertThat(HeadsetClientService.getHeadsetClientService()).isNull();
-        }
+        ExtendedMockito.doReturn(mAdapterService)
+                .when(() -> AdapterService.deprecatedGetAdapterService());
+        doReturn(Optional.of(mHeadsetClientService))
+                .when(mAdapterService)
+                .getHeadsetClientService();
     }
 
     @Test

@@ -59,7 +59,6 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
@@ -75,7 +74,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -189,15 +187,6 @@ public class RemoteDevices {
                     }
                     return false;
                 };
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<BatteryService> getBatteryService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getBatteryService();
-        } else {
-            return Optional.ofNullable(BatteryService.getBatteryService());
-        }
     }
 
     /**
@@ -1659,7 +1648,8 @@ public class RemoteDevices {
                     || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
-            getBatteryService()
+            mAdapterService
+                    .getBatteryService()
                     .filter(battery -> transport == TRANSPORT_LE)
                     .ifPresent(battery -> battery.connectIfPossible(device));
             mAdapterService.updatePhonePolicyOnAclConnect(device);
@@ -1691,7 +1681,8 @@ public class RemoteDevices {
             }
             // Reset battery level on complete disconnection
             if (mAdapterService.getConnectionState(device) == 0) {
-                getBatteryService()
+                mAdapterService
+                        .getBatteryService()
                         .filter(battery -> transport == TRANSPORT_LE)
                         .filter(battery -> battery.getConnectionState(device) != STATE_DISCONNECTED)
                         .ifPresent(battery -> battery.disconnect(device));
@@ -2323,7 +2314,8 @@ public class RemoteDevices {
 
     @VisibleForTesting
     boolean hasBatteryService(BluetoothDevice device) {
-        return getBatteryService()
+        return mAdapterService
+                .getBatteryService()
                 .map(battery -> battery.getConnectionState(device) == STATE_CONNECTED)
                 .orElse(false);
     }

@@ -41,11 +41,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -96,23 +94,11 @@ public class MediaControlGattServiceTest {
         doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
         doReturn(BluetoothDevice.ACCESS_ALLOWED).when(mMcpService).getDeviceAuthorization(any());
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            when(mLeAudioService.isAvailable()).thenReturn(true);
-            LeAudioService.setLeAudioService(mLeAudioService);
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         mMediaControlGattService =
                 new MediaControlGattService(mAdapterService, mMcpService, mCallback, TEST_CCID);
         mMediaControlGattService.setBluetoothGattServerForTesting(mGattServer);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            LeAudioService.setLeAudioService(null);
-        }
     }
 
     private void prepareConnectedDevice() {
