@@ -113,7 +113,7 @@ DeviceGroupsCallbacks* device_group_callbacks;
  * Flow:
  * If connected device contains CSIS services, and it is included into CAP
  * service or is not included at all, implementation reads all its
- * characteristisc. The only mandatory characteristic is Set Identity Resolving
+ * characteristic. The only mandatory characteristic is Set Identity Resolving
  * Key (SIRK) and once this is read implementation assumes there is at least 2
  * devices in the set and start to search for other members by looking for new
  * Advertising Type (RSI Type) and Resolvable Set Identifier (RSI) in it.
@@ -296,7 +296,7 @@ public:
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
-    bool use_opportunstic_connect = false;
+    bool use_opportunistic_connect = false;
 
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
@@ -307,15 +307,15 @@ public:
       }
       devices_.emplace_back(std::make_shared<CsisDevice>(address, true));
     } else {
-      /* When this is already known device, we should use opportinistic connect for this profile.
+      /* When this is already known device, we should use opportunistic connect for this profile.
        * Non opportunistic one is needed only after bonding to make sure the device is not
        * disconnected in case leAudio is not enabled by default.
        */
-      use_opportunstic_connect = true;
+      use_opportunistic_connect = true;
       device->connecting_actively = true;
     }
 
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunstic_connect);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunistic_connect);
   }
 
   void Disconnect(const RawAddress& addr) override {
@@ -590,7 +590,7 @@ public:
       SetLock(csis_device, csis_instance, new_lock_state);
     } else {
       /* For unlocking, we don't have to monitor status of unlocking device,
-       * therefore, we can just send unlock to all of them, in oposite rank
+       * therefore, we can just send unlock to all of them, in opposite rank
        * order and check if we get new state notification.
        */
       auto csis_device = csis_group->GetLastDevice();
@@ -713,7 +713,7 @@ public:
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
-    /* Oportunistic works only for direct connect,
+    /* Opportunistic works only for direct connect,
      * but in fact this is background connect
      */
     log::info(": {}", address);
@@ -1463,7 +1463,7 @@ private:
     });
     BTA_DmBleScan(enable, bluetooth::csis::kDefaultScanDurationS);
 
-    /* Need to call it by ourselfs */
+    /* Need to call these ourselves */
     if (!enable) {
       OnCsisObserveCompleted();
       CsisObserverSetBackground(true);
@@ -2292,7 +2292,7 @@ private:
        * that its SIRK is different. Device connection was triggered by RSI
        * match for group.
        */
-      log::error("Joining device {}, does not match any existig group", address);
+      log::error("Joining device {}, does not match any existing group", address);
       BTA_DmSirkConfirmDeviceReply(address, false);
       return;
     }
