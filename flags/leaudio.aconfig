@@ -34,14 +34,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_mono_location_errata_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add mono location as per Bluetooth Assigned Numbers to API"
-    bug: "372840605"
-}
-
-flag {
     name: "leaudio_dynamic_direction_opening"
     namespace: "bluetooth"
     description: "Enable direction only when needed"
@@ -69,30 +61,6 @@ flag {
 }
 
 flag {
-    name: "metadata_api_microphone_for_call_enabled"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "API to get and set microphone for call enable status"
-    bug: "372395197"
-}
-
-flag {
-    name: "leaudio_broadcast_api_get_local_metadata"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "API to get broadcast assistant local metadata"
-    bug: "375423982"
-}
-
-flag {
-    name: "leaudio_broadcast_api_manage_primary_group"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "API to manage broadcast primary group"
-    bug: "375422410"
-}
-
-flag {
     name: "leaudio_config_profile_enabling"
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"
@@ -107,14 +75,6 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "leaudio_add_opus_codec_type"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add OPUS codec type"
-    bug: "380029892"
 }
 
 flag {

@@ -25,7 +25,6 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
 import static com.android.bluetooth.flags.Flags.leaudioBisSyncControl;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastAllowMonitoringOnResume;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiGetLocalMetadata;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastFixAutonomousSourceAdding;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
@@ -3613,10 +3612,6 @@ public class BassClientService extends ConnectableProfile {
      * @return metadata of source that stored on this Broadcast Sink
      */
     BluetoothLeBroadcastMetadata getSourceMetadata(BluetoothDevice sink, int sourceId) {
-        if (!leaudioBroadcastApiGetLocalMetadata()) {
-            return null;
-        }
-
         Log.d(TAG, "getSourceMetadata: device = " + sink + " with source id = " + sourceId);
         BassClientStateMachine stateMachine = mStateMachines.get(sink);
         if (stateMachine == null) {

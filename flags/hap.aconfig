@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "aics_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Expose new API to control AICS data"
-    bug: "372328699"
-}
-
-flag {
     name: "settings_can_control_hap_preset"
     is_exported: true
     namespace: "bluetooth"

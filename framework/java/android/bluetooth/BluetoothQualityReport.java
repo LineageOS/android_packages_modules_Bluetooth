@@ -20,7 +20,6 @@ package android.bluetooth;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.DurationMillisLong;
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -29,8 +28,6 @@ import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -109,9 +106,7 @@ public final class BluetoothQualityReport implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
-    @SystemApi
-    public static final int QUALITY_REPORT_ID_ENERGY_MONITOR = 0x06;
+    @SystemApi public static final int QUALITY_REPORT_ID_ENERGY_MONITOR = 0x06;
 
     // Report ID 0x07 is reserved for LE Audio Choppy events. This ID will be used
     // in a future version to indicate instances of choppy audio playback
@@ -128,9 +123,7 @@ public final class BluetoothQualityReport implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
-    @SystemApi
-    public static final int QUALITY_REPORT_ID_RF_STATS = 0x09;
+    @SystemApi public static final int QUALITY_REPORT_ID_RF_STATS = 0x09;
 
     /** @hide */
     @Retention(RetentionPolicy.SOURCE)
@@ -310,16 +303,11 @@ public final class BluetoothQualityReport implements Parcelable {
             mBqrVsScoChoppy = new BqrVsScoChoppy(rawData, vsPartOffset);
         } else if (id == QUALITY_REPORT_ID_CONN_FAIL) {
             mBqrConnectFail = new BqrConnectFail(rawData, vsPartOffset);
+        } else if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
+            mBqrEnergyMonitor = new BqrEnergyMonitor(rawData, 1);
+        } else if (id == QUALITY_REPORT_ID_RF_STATS) {
+            mBqrRfStats = new BqrRfStats(rawData, 1);
         } else {
-            if (Flags.supportBluetoothQualityReportV6()) {
-                if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
-                    mBqrEnergyMonitor = new BqrEnergyMonitor(rawData, 1);
-                    return;
-                } else if (id == QUALITY_REPORT_ID_RF_STATS) {
-                    mBqrRfStats = new BqrRfStats(rawData, 1);
-                    return;
-                }
-            }
             throw new IllegalArgumentException(TAG + ": unknown quality report id:" + id);
         }
     }
@@ -342,14 +330,10 @@ public final class BluetoothQualityReport implements Parcelable {
             mBqrVsScoChoppy = new BqrVsScoChoppy(in);
         } else if (id == QUALITY_REPORT_ID_CONN_FAIL) {
             mBqrConnectFail = new BqrConnectFail(in);
-        }
-
-        if (Flags.supportBluetoothQualityReportV6()) {
-            if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
-                mBqrEnergyMonitor = new BqrEnergyMonitor(in);
-            } else if (id == QUALITY_REPORT_ID_RF_STATS) {
-                mBqrRfStats = new BqrRfStats(in);
-            }
+        } else if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
+            mBqrEnergyMonitor = new BqrEnergyMonitor(in);
+        } else if (id == QUALITY_REPORT_ID_RF_STATS) {
+            mBqrRfStats = new BqrRfStats(in);
         }
     }
 
@@ -481,22 +465,14 @@ public final class BluetoothQualityReport implements Parcelable {
         if (mBqrCommon == null) {
             return null;
         }
-        int id = mBqrCommon.getQualityReportId();
-
-        if (Flags.supportBluetoothQualityReportV6()) {
-            if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
-                return mBqrEnergyMonitor;
-            } else if (id == QUALITY_REPORT_ID_RF_STATS) {
-                return mBqrRfStats;
-            }
-        }
-
-        return switch (id) {
+        return switch (mBqrCommon.getQualityReportId()) {
             case QUALITY_REPORT_ID_MONITOR -> mBqrCommon;
             case QUALITY_REPORT_ID_APPROACH_LSTO -> mBqrVsLsto;
             case QUALITY_REPORT_ID_A2DP_CHOPPY -> mBqrVsA2dpChoppy;
             case QUALITY_REPORT_ID_SCO_CHOPPY -> mBqrVsScoChoppy;
             case QUALITY_REPORT_ID_CONN_FAIL -> mBqrConnectFail;
+            case QUALITY_REPORT_ID_ENERGY_MONITOR -> mBqrEnergyMonitor;
+            case QUALITY_REPORT_ID_RF_STATS -> mBqrRfStats;
             default -> null;
         };
     }
@@ -543,14 +519,10 @@ public final class BluetoothQualityReport implements Parcelable {
             mBqrVsScoChoppy.writeToParcel(out, flags);
         } else if (id == QUALITY_REPORT_ID_CONN_FAIL) {
             mBqrConnectFail.writeToParcel(out, flags);
-        }
-
-        if (Flags.supportBluetoothQualityReportV6()) {
-            if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
-                mBqrEnergyMonitor.writeToParcel(out, flags);
-            } else if (id == QUALITY_REPORT_ID_RF_STATS) {
-                mBqrRfStats.writeToParcel(out, flags);
-            }
+        } else if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
+            mBqrEnergyMonitor.writeToParcel(out, flags);
+        } else if (id == QUALITY_REPORT_ID_RF_STATS) {
+            mBqrRfStats.writeToParcel(out, flags);
         }
     }
 
@@ -581,14 +553,10 @@ public final class BluetoothQualityReport implements Parcelable {
             str = str + mBqrConnectFail + "\n}";
         } else if (id == QUALITY_REPORT_ID_MONITOR) {
             str = str + "}";
-        }
-
-        if (Flags.supportBluetoothQualityReportV6()) {
-            if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
-                str = str + mBqrEnergyMonitor + "\n}";
-            } else if (id == QUALITY_REPORT_ID_RF_STATS) {
-                str = str + mBqrRfStats + "\n}";
-            }
+        } else if (id == QUALITY_REPORT_ID_ENERGY_MONITOR) {
+            str = str + mBqrEnergyMonitor + "\n}";
+        } else if (id == QUALITY_REPORT_ID_RF_STATS) {
+            str = str + mBqrRfStats + "\n}";
         }
 
         return str;
@@ -783,11 +751,9 @@ public final class BluetoothQualityReport implements Parcelable {
         private BqrCommon(byte[] rawData, int offset) {
 
             mQualityReportId = rawData[0] & 0xFF;
-            if (Flags.supportBluetoothQualityReportV6()) {
-                if ((mQualityReportId == QUALITY_REPORT_ID_ENERGY_MONITOR)
-                        || (mQualityReportId == QUALITY_REPORT_ID_RF_STATS)) {
-                    return;
-                }
+            if ((mQualityReportId == QUALITY_REPORT_ID_ENERGY_MONITOR)
+                    || (mQualityReportId == QUALITY_REPORT_ID_RF_STATS)) {
+                return;
             }
 
             if (rawData == null || rawData.length < offset + BQR_COMMON_LEN) {
@@ -877,21 +843,14 @@ public final class BluetoothQualityReport implements Parcelable {
         }
 
         static String qualityReportIdToString(@QualityReportId int id) {
-
-            if (Flags.supportBluetoothQualityReportV6()) {
-                if (QUALITY_REPORT_ID_ENERGY_MONITOR == id) {
-                    return "Energy Monitor";
-                } else if (QUALITY_REPORT_ID_RF_STATS == id) {
-                    return "RF Stats";
-                }
-            }
-
             return switch (id) {
                 case QUALITY_REPORT_ID_MONITOR -> "Quality monitor";
                 case QUALITY_REPORT_ID_APPROACH_LSTO -> "Approaching LSTO";
                 case QUALITY_REPORT_ID_A2DP_CHOPPY -> "A2DP choppy";
                 case QUALITY_REPORT_ID_SCO_CHOPPY -> "SCO choppy";
                 case QUALITY_REPORT_ID_CONN_FAIL -> "Connect fail";
+                case QUALITY_REPORT_ID_ENERGY_MONITOR -> "Energy Monitor";
+                case QUALITY_REPORT_ID_RF_STATS -> "RF Stats";
                 default -> "INVALID";
             };
         }
@@ -1190,7 +1149,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the total number of transmitted packets
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getTxTotalPackets() {
@@ -1203,7 +1161,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the number of unacknowledged packets
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getTxUnackPackets() {
@@ -1216,7 +1173,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the number of packets not sent due to flush
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getTxFlushPackets() {
@@ -1230,7 +1186,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the number of CIS Data PDUs transmitted in the last subevent
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getTxLastSubeventPackets() {
@@ -1244,7 +1199,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the number of packets received with CRC errors
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getCrcErrorPackets() {
@@ -1257,7 +1211,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the number of duplicate packets received
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getRxDupPackets() {
@@ -1271,7 +1224,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the number of unreceived packets
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public long getRxUnRecvPackets() {
@@ -1284,7 +1236,6 @@ public final class BluetoothQualityReport implements Parcelable {
          * @return the coexistence information mask value
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
         @RequiresNoPermission
         public int getCoexInfoMask() {
@@ -2437,7 +2388,6 @@ public final class BluetoothQualityReport implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
     @SystemApi
     public static final class BqrEnergyMonitor implements Parcelable {
         private static final String TAG =
@@ -2915,7 +2865,6 @@ public final class BluetoothQualityReport implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
     @SystemApi
     public static final class BqrRfStats implements Parcelable {
         private static final String TAG =

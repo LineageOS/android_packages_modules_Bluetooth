@@ -1993,10 +1993,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public void testSetGetLeAudioUnicastInputOutputCodecPreferenceList() {
         Metadata data = new Metadata(mDevice1.getAddress());
         mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), data);

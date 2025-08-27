@@ -640,10 +640,6 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
   void handle_conn_interval_updated(const Address& address, uint16_t connection_handle,
                                     uint16_t conn_interval) {
-    if (!com::android::bluetooth::flags::channel_sounding_25q2_apis()) {
-      log::debug("connection interval is not required.");
-      return;
-    }
     auto it = cs_requester_trackers_.find(connection_handle);
     if (it == cs_requester_trackers_.end()) {
       log::warn("can't find tracker for 0x{:04x}, address - {} ", connection_handle, address);
@@ -1543,10 +1539,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     }
   }
 
-  bool is_hal_v2() const {
-    return com::android::bluetooth::flags::channel_sounding_25q2_apis() &&
-           ranging_hal_->GetRangingHalVersion() == hal::V_2;
-  }
+  bool is_hal_v2() const { return ranging_hal_->GetRangingHalVersion() == hal::V_2; }
 
   void on_cs_subevent(LeMetaEventView event) {
     if (!event.IsValid()) {
