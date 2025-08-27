@@ -63,6 +63,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import libcore.util.SneakyThrow;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -819,10 +820,12 @@ public class HapClientService extends ConnectableProfile {
                     PRESET_INFO_REASON_PRESET_AVAILABILITY_CHANGED,
                     PRESET_INFO_REASON_PRESET_INFO_REQUEST_RESPONSE -> {
 
-                // Remove all updated presets from existing list and add them back
+                // Remove updated presets from the list and add the new one while keeping order
                 List<BluetoothHapPresetInfo> unchangedPresets = getFilteredPresets(device, presets);
                 List<BluetoothHapPresetInfo> finalPresets =
-                        Stream.concat(unchangedPresets.stream(), presets.stream()).toList();
+                        Stream.concat(unchangedPresets.stream(), presets.stream())
+                                .sorted(Comparator.comparingInt(BluetoothHapPresetInfo::getIndex))
+                                .toList();
 
                 mPresetsMap.put(device, finalPresets);
             }
