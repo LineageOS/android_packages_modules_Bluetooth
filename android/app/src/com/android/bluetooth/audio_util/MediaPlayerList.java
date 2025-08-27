@@ -43,6 +43,7 @@ import android.view.KeyEvent;
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.avrcp.AvrcpPassthrough;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -304,11 +305,25 @@ public class MediaPlayerList {
     /** Sets the {@link #mBrowsingPlayerId} and returns the number of items in current path */
     public void setBrowsedPlayer(int playerId, String currentPath, SetBrowsedPlayerCallback cb) {
         if (!Util.areMultiplePlayersSupported()) {
-            cb.run(
-                    playerId,
-                    playerId == BLUETOOTH_PLAYER_ID,
-                    currentPath,
-                    mMediaBrowserWrappers.size());
+            // if currentPath is not empty, process it
+            if (Flags.avrcpFixSetBrowsedPlayerItems() && !currentPath.equals("")) {
+                getFolderItems(
+                        playerId,
+                        currentPath,
+                        (parentId, itemList) -> {
+                            cb.run(
+                                    playerId,
+                                    playerId == BLUETOOTH_PLAYER_ID,
+                                    currentPath,
+                                    itemList.size());
+                        });
+            } else {
+                cb.run(
+                        playerId,
+                        playerId == BLUETOOTH_PLAYER_ID,
+                        currentPath,
+                        mMediaBrowserWrappers.size());
+            }
             return;
         }
         if (!haveMediaBrowser(playerId)) {
