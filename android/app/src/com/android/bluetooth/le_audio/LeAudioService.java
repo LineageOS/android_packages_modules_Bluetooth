@@ -210,6 +210,7 @@ public class LeAudioService extends ConnectableProfile {
     private boolean mAwaitingBroadcastCreateResponse = false;
     boolean mIsSourceStreamMonitorModeEnabled = false;
     boolean mIsBroadcastPausedFromOutside = false;
+    private final Looper mStateMachinesLooper;
 
     private static final int LOG_NB_EVENTS = 150;
     private final BluetoothEventLogger mEventLogger =
@@ -245,13 +246,15 @@ public class LeAudioService extends ConnectableProfile {
 
         if (looper == null) {
             mHandler = new Handler(Looper.getMainLooper());
+            // Start handler thread for state machines
+            mStateMachinesThread = new HandlerThread("LeAudioService.StateMachines");
+            mStateMachinesThread.start();
+            mStateMachinesLooper = mStateMachinesThread.getLooper();
         } else {
             mHandler = new Handler(looper);
+            mStateMachinesThread = null;
+            mStateMachinesLooper = looper;
         }
-
-        // Start handler thread for state machines
-        mStateMachinesThread = new HandlerThread("LeAudioService.StateMachines");
-        mStateMachinesThread.start();
 
         // Initialize Broadcast native interface
         if (doNotHardcodeTmapRoleMask()) {
@@ -851,11 +854,13 @@ public class LeAudioService extends ConnectableProfile {
 
         mLeAudioBroadcasterNativeInterface.ifPresent(LeAudioBroadcasterNativeInterface::cleanup);
 
-        try {
-            mStateMachinesThread.quitSafely();
-            mStateMachinesThread.join(SM_THREAD_JOIN_TIMEOUT_MS);
-        } catch (InterruptedException e) {
-            // Do not rethrow as we are shutting down anyway
+        if (mStateMachinesThread != null) {
+            try {
+                mStateMachinesThread.quitSafely();
+                mStateMachinesThread.join(SM_THREAD_JOIN_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                // Do not rethrow as we are shutting down anyway
+            }
         }
 
         mHandler.removeCallbacksAndMessages(null);
@@ -4200,10 +4205,7 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         Log.d(TAG, "Creating a new state machine for " + device);
-
-        sm =
-                new LeAudioStateMachine(
-                        device, this, mNativeInterface, mStateMachinesThread.getLooper());
+        sm = new LeAudioStateMachine(device, this, mNativeInterface, mStateMachinesLooper);
         descriptor.mStateMachine = sm;
         return sm;
     }

@@ -583,7 +583,6 @@ public class HeadsetStateMachineTest {
     @Test
     public void testStateTransition_AudioDisconnectingToAudioOnAndDisconnecting_Timeout() {
         setUpAudioDisconnectingState();
-        android.util.Log.e("WILLIAM", "Done with setup");
         // Wait for connection to timeout
         for (int i = 0; i <= MAX_RETRY_DISCONNECT_AUDIO; i++) {
             if (i > 0) { // Skip first AUDIO_DISCONNECTING init as it was setup before the loop
