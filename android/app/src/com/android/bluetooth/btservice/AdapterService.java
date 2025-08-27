@@ -1451,6 +1451,7 @@ public class AdapterService extends Service {
                 setAllProfileServiceStates(supportedProfiles, BluetoothAdapter.STATE_OFF);
             }
         }
+        mIsMediaProfileConnected = false;
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
