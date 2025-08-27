@@ -1403,6 +1403,10 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy() c
     auto strategy_selector = [&, this](uint8_t direction) {
       int expected_group_size = Size();
 
+      if (com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config()) {
+        expected_group_size = DesiredSize();
+      }
+
       if (!audio_locations_.get(direction)) {
         log::error("No audio locations for direction: {} available in the group", +direction);
         return types::LeAudioConfigurationStrategy::RFU;
@@ -2028,7 +2032,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     // contexts are not supported. Then we might want to configure the device
     // but use UNSPECIFIED which is always supported (but can be unavailable)
     auto device_cnt = NumOfAvailableForDirection(direction);
-    if (device_cnt == 0) {
+    if (device_cnt == 0 ||
+        com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config()) {
       device_cnt = DesiredSize();
       if (device_cnt == 0) {
         log::error("Device count is 0");
@@ -2108,8 +2113,11 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
       required_device_cnt--;
     }
 
-    if (required_device_cnt > 0) {
-      /* Don't left any active devices if requirements are not met */
+    /* If at least one device got configured we are good to go. */
+    if ((!com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config() &&
+         required_device_cnt > 0) ||
+        (com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config() &&
+         (required_device_cnt == device_cnt))) {
       log::debug("Could not configure all the devices for direction: {}",
                  direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
       return false;
@@ -2186,8 +2194,16 @@ bool LeAudioDeviceGroup::ConfigureAses(
       continue;
     }
 
-    auto const max_required_device_cnt = NumOfAvailableForDirection(direction);
-    auto required_device_cnt = max_required_device_cnt;
+    int max_required_device_cnt = 0;
+    int required_device_cnt = 0;
+
+    if (com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config()) {
+      max_required_device_cnt = DesiredSize();
+      required_device_cnt = NumOfAvailableForDirection(direction);
+    } else {
+      max_required_device_cnt = required_device_cnt = NumOfAvailableForDirection(direction);
+    }
+
     log::debug("Maximum {} device(s) required for {}", max_required_device_cnt, direction_str);
 
     uint8_t active_ase_cnt = 0;
