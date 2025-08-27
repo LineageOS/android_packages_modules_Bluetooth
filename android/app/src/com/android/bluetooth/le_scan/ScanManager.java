@@ -742,6 +742,9 @@ class ScanManager {
         if (isFilteringSupported()) {
             return true;
         }
+        if (mIsMsftSupported && !isBatchClient(client)) {
+            return true;
+        }
         return client.getSettings().getCallbackType() == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                 && client.getSettings().getReportDelayMillis() == 0;
     }
