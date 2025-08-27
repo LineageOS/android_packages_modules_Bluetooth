@@ -151,10 +151,10 @@ tHID_STATUS hidh_conn_reg(void) {
  *
  * Description      This function disconnects a connection.
  *
- * Returns          true if disconnect started, false if already disconnected
+ * Returns          void
  *
  ******************************************************************************/
-tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
+void hidh_conn_disconnect(uint8_t dhandle) {
   tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
 
   if ((p_hcon->ctrl_cid != 0) || (p_hcon->intr_cid != 0)) {
@@ -178,7 +178,32 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
-  return HID_SUCCESS;
+}
+
+/*******************************************************************************
+ *
+ * Function         hidh_conn_force_disconnect
+ *
+ * Description      This function forcefully disconnects both HID channels
+ *                  without waiting. This is not a proper behavior, so only use
+ *                  this when gracefully disconnecting is not an option.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void hidh_conn_force_disconnect(uint8_t dhandle) {
+  tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
+
+  log::warn("Forcefully disconnect intr_cid:{}, ctrl_cid:{}", p_hcon->intr_cid, p_hcon->ctrl_cid);
+  if (p_hcon->intr_cid != 0) {
+    stack::l2cap::get_interface().L2CA_DisconnectReq(p_hcon->intr_cid);
+    p_hcon->intr_cid = 0;
+  }
+  if (p_hcon->ctrl_cid != 0) {
+    stack::l2cap::get_interface().L2CA_DisconnectReq(p_hcon->ctrl_cid);
+    p_hcon->ctrl_cid = 0;
+  }
+  p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 }
 
 /*******************************************************************************
@@ -1000,4 +1025,19 @@ bool hidh_in_use(const per_device_ctb& ctb) {
   } else {
     return ctb.in_use;
   }
+}
+
+void hidh_conn_reset(uint8_t dhandle) {
+  tHID_HOST_DEV_CTB* p_dev = &hh_cb.devices[dhandle];
+  p_dev->in_use = false;
+  p_dev->addr = RawAddress::kEmpty;
+  p_dev->attr_mask = 0;
+  p_dev->state = HIDH_DEV_UNUSED;
+  p_dev->conn_tries = 0;
+  p_dev->conn.conn_state = HID_CONN_STATE_UNUSED;
+  p_dev->conn.conn_flags = 0;
+  p_dev->conn.ctrl_cid = 0;
+  p_dev->conn.intr_cid = 0;
+  p_dev->conn.rem_mtu_size = 0;
+  p_dev->conn.disc_reason = 0;
 }
