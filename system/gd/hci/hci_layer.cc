@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "com_android_bluetooth_flags.h"
 #include "common/bind.h"
 #include "common/stop_watch.h"
 #include "hal/hci_hal.h"
@@ -39,7 +40,6 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "packet/raw_builder.h"
 #include "storage/storage_module.h"
-#include "com_android_bluetooth_flags.h"
 
 namespace bluetooth {
 namespace hci {
@@ -317,8 +317,8 @@ struct HciLayer::impl {
     log::error("Flushing #{} waiting commands", command_queue_.size());
     for (auto& command : command_queue_) {
       log::debug("Flushing command: opcode:{}, waiting for: {}",
-                 OpCodeText(command.command_view->GetOpCode()),
-                 std::to_string(static_cast<uint8_t>(command.waiting_for_)));
+                 command.command_view ? OpCodeText(command.command_view->GetOpCode()) : "??",
+                 static_cast<int>(command.waiting_for_));
     }
 
     // Clear any waiting commands (there is an abort coming anyway)
@@ -1015,7 +1015,7 @@ HciLayer::~HciLayer() {
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
-  if(com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+  if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
     StopWithNoHalDependencies();
   }
 
