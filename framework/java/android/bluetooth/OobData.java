@@ -56,7 +56,11 @@ import java.lang.annotation.RetentionPolicy;
 public final class OobData implements Parcelable {
     private static final String TAG = OobData.class.getSimpleName();
 
-    /** The {@link OobData#mClassicLength} may be. (AD 3.1.1) (CSS 1.6.2) @hide */
+    /**
+     * The {@link OobData#mClassicLength} may be. (AD 3.1.1) (CSS 1.6.2)
+     *
+     * @hide
+     */
     @SystemApi public static final int OOB_LENGTH_OCTETS = 2;
 
     /**
@@ -67,25 +71,53 @@ public final class OobData implements Parcelable {
      */
     @SystemApi public static final int DEVICE_ADDRESS_OCTETS = 7;
 
-    /** The Class of Device is 3 octets. (AD 3.1.3) (CSS 1.6.2) @hide */
+    /**
+     * The Class of Device is 3 octets. (AD 3.1.3) (CSS 1.6.2)
+     *
+     * @hide
+     */
     @SystemApi public static final int CLASS_OF_DEVICE_OCTETS = 3;
 
-    /** The Confirmation data must be 16 octets. (AD 3.2.2) (CSS 1.6.2) @hide */
+    /**
+     * The Confirmation data must be 16 octets. (AD 3.2.2) (CSS 1.6.2)
+     *
+     * @hide
+     */
     @SystemApi public static final int CONFIRMATION_OCTETS = 16;
 
-    /** The Randomizer data must be 16 octets. (AD 3.2.3) (CSS 1.6.2) @hide */
+    /**
+     * The Randomizer data must be 16 octets. (AD 3.2.3) (CSS 1.6.2)
+     *
+     * @hide
+     */
     @SystemApi public static final int RANDOMIZER_OCTETS = 16;
 
-    /** The LE Device Role length is 1 octet. (AD 3.3.2) (CSS 1.17) @hide */
+    /**
+     * The LE Device Role length is 1 octet. (AD 3.3.2) (CSS 1.17)
+     *
+     * @hide
+     */
     @SystemApi public static final int LE_DEVICE_ROLE_OCTETS = 1;
 
-    /** The {@link OobData#mLeTemporaryKey} length. (3.4.1) @hide */
+    /**
+     * The {@link OobData#mLeTemporaryKey} length. (3.4.1)
+     *
+     * @hide
+     */
     @SystemApi public static final int LE_TK_OCTETS = 16;
 
-    /** The {@link OobData#mLeAppearance} length. (3.4.1) @hide */
+    /**
+     * The {@link OobData#mLeAppearance} length. (3.4.1)
+     *
+     * @hide
+     */
     @SystemApi public static final int LE_APPEARANCE_OCTETS = 2;
 
-    /** The {@link OobData#mLeFlags} length. (3.4.1) @hide */
+    /**
+     * The {@link OobData#mLeFlags} length. (3.4.1)
+     *
+     * @hide
+     */
     @SystemApi public static final int LE_DEVICE_FLAG_OCTETS = 1; // 1 octet to hold the 0-4 value.
 
     // Le Roles

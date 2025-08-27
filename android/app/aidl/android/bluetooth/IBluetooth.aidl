@@ -48,7 +48,7 @@ parcelable BluetoothDevice.BluetoothAddress;
 /**
  * System private API for talking with the Bluetooth service.
  *
- * {@hide}
+ * @hide
  */
 interface IBluetooth
 {

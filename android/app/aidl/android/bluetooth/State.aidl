@@ -1,6 +1,6 @@
 package android.bluetooth;
 
-/** {@hide} */
+/** @hide */
 @JavaDerive(toString = true)
 @Backing(type="int")
 enum State {

@@ -19,7 +19,7 @@ package android.bluetooth;
 /**
  * System private API for Bluetooth profiles callbacks.
  *
- * {@hide}
+ * @hide
  */
 oneway interface IBluetoothProfileCallback
 {
