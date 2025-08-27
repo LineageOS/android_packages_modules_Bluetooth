@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
@@ -366,6 +367,15 @@ public:
     if (group == nullptr) {
       log::debug("Not valid group");
       return false;
+    }
+
+    // Enable dynamic direction opening for PTS tests even if GMAP is not supported
+    bool dynamic_direction_opening_test =
+            android::sysprop::bluetooth::LeAudio::is_dynamic_direction_opening_supported_test()
+                    .value_or(false);
+    if (dynamic_direction_opening_test) {
+      log::info("leaudio_dynamic_direction_opening is enabled for PTS tests.");
+      return true;
     }
 
     log::debug("is enabled: {}", group->IsGmapEnabled());

@@ -1813,7 +1813,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_GET_LOCAL_METADATA)
     public void testGetSourceMetadata() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();

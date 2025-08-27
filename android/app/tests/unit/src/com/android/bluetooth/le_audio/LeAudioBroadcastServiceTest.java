@@ -72,7 +72,6 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.annotation.Nullable;
@@ -661,9 +660,6 @@ public class LeAudioBroadcastServiceTest {
         mService.messageFromNative(create_event);
 
         mLooper.dispatchAll();
-
-        // Before metadata is updated, getAllBroadcastMetadata should not return null element
-        assertThat(mService.getAllBroadcastMetadata()).doesNotContain(null);
 
         // Inject metadata stack event and verify if getter API works as expected
         LeAudioStackEvent state_event =
@@ -1317,7 +1313,6 @@ public class LeAudioBroadcastServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     public void testOnBroadcastToUnicastFallbackGroupChanged() throws RemoteException {
         int groupId1 = 1;
         int groupId2 = 2;
@@ -1378,7 +1373,6 @@ public class LeAudioBroadcastServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     public void testManageBroadcastToUnicastFallbackGroup() {
         int groupId = 1;
         int groupId2 = 2;
@@ -1432,7 +1426,6 @@ public class LeAudioBroadcastServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     public void testSetDefaultBroadcastToUnicastFallbackGroup() {
         int groupId = 1;
         int groupId2 = 2;

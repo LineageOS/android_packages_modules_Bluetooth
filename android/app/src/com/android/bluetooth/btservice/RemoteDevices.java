@@ -17,7 +17,6 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
@@ -1903,36 +1902,15 @@ public class RemoteDevices {
             device.removeBond();
         }
 
-        if (Flags.keyMissingPublic()) {
-            mAdapterService.sendOrderedBroadcast(
-                    intent,
-                    BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastBundle(),
-                    null /* resultReceiver */,
-                    null /* scheduler */,
-                    Activity.RESULT_OK /* initialCode */,
-                    null /* initialData */,
-                    null /* initialExtras */);
-            return;
-        }
-
-        if (android.os.Flags.orderedBroadcastMultiplePermissions()) {
-            mAdapterService.sendOrderedBroadcastMultiplePermissions(
-                    intent,
-                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                    null /* receiverAppOp */,
-                    null /* resultReceiver */,
-                    null /* scheduler */,
-                    Activity.RESULT_OK /* initialCode */,
-                    null /* initialData */,
-                    null /* initialExtras */,
-                    Utils.getTempBroadcastBundle());
-        } else {
-            mAdapterService.sendBroadcastMultiplePermissions(
-                    intent,
-                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                    Utils.getTempBroadcastOptions());
-        }
+        mAdapterService.sendOrderedBroadcast(
+                intent,
+                BLUETOOTH_CONNECT,
+                Utils.getTempBroadcastBundle(),
+                null /* resultReceiver */,
+                null /* scheduler */,
+                Activity.RESULT_OK /* initialCode */,
+                null /* initialData */,
+                null /* initialExtras */);
     }
 
     void encryptionChangeCallback(
@@ -2004,9 +1982,7 @@ public class RemoteDevices {
                         .putExtra(BluetoothDevice.EXTRA_KEY_SIZE, keySize)
                         .putExtra(BluetoothDevice.EXTRA_ENCRYPTION_ALGORITHM, algorithm);
 
-        if (com.android.bluetooth.flags.Flags.encryptionChangeBroadcast()) {
-            mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-        }
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
     }
 
     void fetchUuids(BluetoothDevice device, int transport) {

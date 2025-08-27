@@ -18,7 +18,6 @@ package android.bluetooth.le;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -29,8 +28,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.AddressType;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -273,7 +270,6 @@ public final class AdvertisingSetParameters implements Parcelable {
      * @hide This API is not publicly available as it is mainly intended for accessory devices
      *     running Android to broadcast their availability and which can thus leverage system APIs.
      */
-    @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
     @RequiresNoPermission
     public boolean isDirected() {
@@ -285,7 +281,6 @@ public final class AdvertisingSetParameters implements Parcelable {
      * @hide This API is not publicly available as it is mainly intended for accessory devices
      *     running Android to broadcast their availability and which can thus leverage system APIs.
      */
-    @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
     @RequiresNoPermission
     public boolean isHighDutyCycle() {
@@ -297,7 +292,6 @@ public final class AdvertisingSetParameters implements Parcelable {
      * @hide This API is not publicly available as it is mainly intended for accessory devices
      *     running Android to broadcast their availability and which can thus leverage system APIs.
      */
-    @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
     @RequiresNoPermission
     public @Nullable String getPeerAddress() {
@@ -309,7 +303,6 @@ public final class AdvertisingSetParameters implements Parcelable {
      * @hide This API is not publicly available as it is mainly intended for accessory devices
      *     running Android to broadcast their availability and which can thus leverage system APIs.
      */
-    @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
     @RequiresNoPermission
     public @AddressType int getPeerAddressType() {
@@ -599,7 +592,6 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     running Android to broadcast their availability and which can thus leverage system
          *     APIs.
          */
-        @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setDirected(boolean isDirected) {
@@ -615,7 +607,6 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     running Android to broadcast their availability and which can thus leverage system
          *     APIs.
          */
-        @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setHighDutyCycle(boolean isHighDutyCycle) {
@@ -632,7 +623,6 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     running Android to broadcast their availability and which can thus leverage system
          *     APIs.
          */
-        @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPeerAddress(@NonNull String peerAddress) {
@@ -654,7 +644,6 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     running Android to broadcast their availability and which can thus leverage system
          *     APIs.
          */
-        @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPeerAddressType(@AddressType int peerAddressType) {

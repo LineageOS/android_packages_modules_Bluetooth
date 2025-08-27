@@ -23,8 +23,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.media.audio.Flags.deprecateStreamBtSco;
-import static android.media.audio.Flags.unifyAbsoluteVolumeManagement;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -242,7 +240,7 @@ public class HeadsetService extends ConnectableProfile {
                     .registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
         }
 
-        if (unifyAbsoluteVolumeManagement()) {
+        if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
             mAudioManagerDeviceVolumeListener = new AudioManagerDeviceVolumeListener();
         } else {
             mAudioManagerDeviceVolumeListener = null;
@@ -252,7 +250,7 @@ public class HeadsetService extends ConnectableProfile {
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        if (!unifyAbsoluteVolumeManagement()) {
+        if (!android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
             filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
         }
         if (Flags.microphoneMuteStatusSync()) {
@@ -536,14 +534,14 @@ public class HeadsetService extends ConnectableProfile {
                                     .setCindBatteryCharge(cindBatteryLevel);
                         }
                         case AudioManager.ACTION_VOLUME_CHANGED -> {
-                            if (unifyAbsoluteVolumeManagement()) {
+                            if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
                                 break;
                             }
                             Log.i(TAG, "received action volume changed");
                             int streamType =
                                     intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1);
                             int volStream = AudioManager.STREAM_BLUETOOTH_SCO;
-                            if (deprecateStreamBtSco()) {
+                            if (android.media.audio.Flags.deprecateStreamBtSco()) {
                                 volStream = AudioManager.STREAM_VOICE_CALL;
                             }
                             if (streamType == volStream) {
@@ -1301,11 +1299,11 @@ public class HeadsetService extends ConnectableProfile {
                 } else {
                     broadcastActiveDevice(mActiveDevice);
                 }
-                if (unifyAbsoluteVolumeManagement()) {
+                if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
                     initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
                 }
             } else if (shouldPersistAudio()) {
-                if (unifyAbsoluteVolumeManagement()) {
+                if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
                     initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
                 }
                 if (mSystemInterface.isScoManagedByAudioEnabled()) {
@@ -1349,7 +1347,7 @@ public class HeadsetService extends ConnectableProfile {
                 } else {
                     broadcastActiveDevice(mActiveDevice);
                 }
-                if (unifyAbsoluteVolumeManagement()) {
+                if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
                     initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
                 }
             }
@@ -2334,7 +2332,7 @@ public class HeadsetService extends ConnectableProfile {
             Log.i(TAG, "In onAudioDeviceVolumeChanged");
             int streamType = vol.getStreamType();
             int vcVolStream = AudioManager.STREAM_BLUETOOTH_SCO;
-            if (deprecateStreamBtSco()) {
+            if (android.media.audio.Flags.deprecateStreamBtSco()) {
                 vcVolStream = AudioManager.STREAM_VOICE_CALL;
             }
             if (streamType != vcVolStream && streamType != AudioManager.STREAM_ASSISTANT) {

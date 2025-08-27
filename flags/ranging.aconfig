@@ -10,14 +10,6 @@ flag {
 }
 
 flag {
-    name:"channel_sounding_25q2_apis"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add new APIs for channel sounding"
-    bug: "367409858"
-}
-
-flag {
     name:"channel_sounding_offload"
     namespace: "bluetooth"
     description: "Add mechanism to handle channel sounding offload"

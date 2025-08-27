@@ -559,9 +559,9 @@ package android.bluetooth {
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_ALIAS_CHANGED = "android.bluetooth.device.action.ALIAS_CHANGED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_BOND_STATE_CHANGED = "android.bluetooth.device.action.BOND_STATE_CHANGED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_CLASS_CHANGED = "android.bluetooth.device.action.CLASS_CHANGED";
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_ENCRYPTION_CHANGE = "android.bluetooth.device.action.ENCRYPTION_CHANGE";
+    field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_ENCRYPTION_CHANGE = "android.bluetooth.device.action.ENCRYPTION_CHANGE";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN) public static final String ACTION_FOUND = "android.bluetooth.device.action.FOUND";
-    field @FlaggedApi("com.android.bluetooth.flags.key_missing_public") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public static final String ACTION_KEY_MISSING = "android.bluetooth.device.action.KEY_MISSING";
+    field @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public static final String ACTION_KEY_MISSING = "android.bluetooth.device.action.KEY_MISSING";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_NAME_CHANGED = "android.bluetooth.device.action.NAME_CHANGED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_PAIRING_REQUEST = "android.bluetooth.device.action.PAIRING_REQUEST";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_UUID = "android.bluetooth.device.action.UUID";
@@ -582,9 +582,9 @@ package android.bluetooth {
     field public static final int DEVICE_TYPE_DUAL = 3; // 0x3
     field public static final int DEVICE_TYPE_LE = 2; // 0x2
     field public static final int DEVICE_TYPE_UNKNOWN = 0; // 0x0
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_AES = 2; // 0x2
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_E0 = 1; // 0x1
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_NONE = 0; // 0x0
+    field public static final int ENCRYPTION_ALGORITHM_AES = 2; // 0x2
+    field public static final int ENCRYPTION_ALGORITHM_E0 = 1; // 0x1
+    field public static final int ENCRYPTION_ALGORITHM_NONE = 0; // 0x0
     field @FlaggedApi("com.android.bluetooth.flags.link_status_api") public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3; // 0x3
     field public static final int ERROR = -2147483648; // 0x80000000
     field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final String EXTRA_BOND_LOSS_REASON = "android.bluetooth.device.extra.BOND_LOSS_REASON";
@@ -592,11 +592,11 @@ package android.bluetooth {
     field public static final String EXTRA_CLASS = "android.bluetooth.device.extra.CLASS";
     field public static final String EXTRA_DEVICE = "android.bluetooth.device.extra.DEVICE";
     field @FlaggedApi("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data") public static final String EXTRA_DISCOVERY_RESULT_TYPE = "android.bluetooth.device.extra.DISCOVERY_RESULT_TYPE";
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_ENCRYPTION_ALGORITHM = "android.bluetooth.device.extra.EXTRA_ENCRYPTION_ALGORITHM";
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_ENCRYPTION_ENABLED = "android.bluetooth.device.extra.ENCRYPTION_ENABLED";
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_ENCRYPTION_STATUS = "android.bluetooth.device.extra.ENCRYPTION_STATUS";
+    field public static final String EXTRA_ENCRYPTION_ALGORITHM = "android.bluetooth.device.extra.EXTRA_ENCRYPTION_ALGORITHM";
+    field public static final String EXTRA_ENCRYPTION_ENABLED = "android.bluetooth.device.extra.ENCRYPTION_ENABLED";
+    field public static final String EXTRA_ENCRYPTION_STATUS = "android.bluetooth.device.extra.ENCRYPTION_STATUS";
     field public static final String EXTRA_IS_COORDINATED_SET_MEMBER = "android.bluetooth.extra.IS_COORDINATED_SET_MEMBER";
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_KEY_SIZE = "android.bluetooth.device.extra.KEY_SIZE";
+    field public static final String EXTRA_KEY_SIZE = "android.bluetooth.device.extra.KEY_SIZE";
     field public static final String EXTRA_NAME = "android.bluetooth.device.extra.NAME";
     field public static final String EXTRA_PAIRING_KEY = "android.bluetooth.device.extra.PAIRING_KEY";
     field public static final String EXTRA_PAIRING_VARIANT = "android.bluetooth.device.extra.PAIRING_VARIANT";
@@ -1038,7 +1038,7 @@ package android.bluetooth {
     field public static final int SAMPLE_RATE_NONE = 0; // 0x0
     field public static final int SOURCE_CODEC_TYPE_INVALID = 1000000; // 0xf4240
     field public static final int SOURCE_CODEC_TYPE_LC3 = 0; // 0x0
-    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_codec_type") public static final int SOURCE_CODEC_TYPE_OPUS = 1; // 0x1
+    field public static final int SOURCE_CODEC_TYPE_OPUS = 1; // 0x1
     field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_hi_res_codec_type_api") public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2; // 0x2
   }
 

@@ -23,6 +23,9 @@ service LeAudio {
   rpc LeAudioCaptureAudio(LeAudioCaptureAudioRequest) returns (stream LeAudioCaptureAudioResponse);
   // Prepare recorder
   rpc LeAudioPrepareRecorder(LeAudioPrepareRecorderRequest) returns (google.protobuf.Empty);
+  // Wait for a group stream status change
+  rpc LeAudioWaitGroupStreamStatusChanged(LeAudioWaitGroupStreamStatusChangedRequest)
+      returns (google.protobuf.Empty);
 }
 
 enum AudioUsage {
@@ -58,6 +61,11 @@ enum AudioSource {
   AUDIO_SOURCE_REMOTE_SUBMIX = 8;
   AUDIO_SOURCE_UNPROCESSED = 9;
   AUDIO_SOURCE_VOICE_PERFORMANCE = 10;
+}
+
+enum GroupStreamStatus {
+  GROUP_STREAM_STATUS_IDLE = 0;
+  GROUP_STREAM_STATUS_STREAMING = 1;
 }
 
 message OpenRequest {
@@ -104,4 +112,10 @@ message LeAudioPrepareRecorderRequest {
 // Request of the `LeAudioStopRecorder` method.
 message LeAudioStopRecorderRequest {
   Connection connection = 1;
+}
+
+// Request of the `LeAudioWaitGroupStreamStatusChanged` method.
+message LeAudioWaitGroupStreamStatusChangedRequest {
+  Connection connection = 1;
+  GroupStreamStatus groupStreamStatus = 2;
 }

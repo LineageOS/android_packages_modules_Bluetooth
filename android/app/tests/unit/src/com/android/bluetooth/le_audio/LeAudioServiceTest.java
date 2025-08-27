@@ -251,9 +251,7 @@ public class LeAudioServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(
-                Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
-                Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK);
+        return FlagsWrapper.progressionOf(Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK);
     }
 
     public LeAudioServiceTest(FlagsWrapper flags) {
@@ -3230,10 +3228,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public void testSetCodecConfigPreference() {
         // Not connected device
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
@@ -3291,10 +3286,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public void testCodecConfigPreferenceRestore() {
         // Not connected device
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
@@ -3379,10 +3371,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
-        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public void testSetGetCodecConfigPreferenceOpus() {
         // Not connected device
         assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
@@ -3478,7 +3467,6 @@ public class LeAudioServiceTest {
 
     /** Test managing broadcast to unicast fallback group */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP)
     public void testManageBroadcastToUnicastFallbackGroup() {
         /* AUDIO_DIRECTION_OUTPUT_BIT = 0x01 */
         int direction = 1;
