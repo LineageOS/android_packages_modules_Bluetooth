@@ -47,7 +47,7 @@ cc_fuzz {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",

@@ -366,7 +366,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
@@ -414,7 +414,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -472,7 +472,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
@@ -539,7 +539,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -1488,7 +1488,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
@@ -1567,7 +1567,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -1636,7 +1636,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
