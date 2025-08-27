@@ -1507,7 +1507,7 @@ public class ScanController {
      * PERIODIC SCANNING
      *************************************************************************/
 
-    void registerSync(
+    public void registerSync(
             BluetoothDevice device,
             int sid,
             int skip,
@@ -1517,23 +1517,23 @@ public class ScanController {
         mPeriodicScanManager.startSync(device, sid, skip, timeout, callback);
     }
 
-    void registerSync(
+    public void registerSync(
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
         mPeriodicScanManager.startSync(scanResult, skip, timeout, callback);
     }
 
-    void unregisterSync(IPeriodicAdvertisingCallback callback) {
+    public void unregisterSync(IPeriodicAdvertisingCallback callback) {
         enforceScanThread();
         mPeriodicScanManager.stopSync(callback);
     }
 
-    void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
+    public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
         enforceScanThread();
         mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
     }
 
-    void transferSetInfo(
+    public void transferSetInfo(
             BluetoothDevice bda,
             int serviceData,
             int advHandle,
