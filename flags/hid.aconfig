@@ -88,3 +88,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hidh_close_in_jni_thread"
+    namespace: "bluetooth"
+    description: "Handle incoming HID connection timeout in JNI thread"
+    bug: "441661424"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
