@@ -48,9 +48,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class A2dpSinkService extends ConnectableProfile {
     private static final String TAG = A2dpSinkService.class.getSimpleName();
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static A2dpSinkService sService;
-
     // This is also used as a lock for shared data in {@link A2dpSinkService}
     @GuardedBy("mDeviceStateMap")
     private final Map<BluetoothDevice, A2dpSinkStateMachine> mDeviceStateMap =
@@ -86,8 +83,6 @@ public class A2dpSinkService extends ConnectableProfile {
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler = new A2dpSinkStreamHandler(mAdapterService, mNativeInterface);
         }
-
-        setA2dpSinkService(this);
     }
 
     public static boolean isEnabled() {
@@ -98,7 +93,6 @@ public class A2dpSinkService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setA2dpSinkService(null);
         mNativeInterface.cleanup();
         synchronized (mDeviceStateMap) {
             for (A2dpSinkStateMachine stateMachine : mDeviceStateMap.values()) {
@@ -109,18 +103,6 @@ public class A2dpSinkService extends ConnectableProfile {
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.cleanup();
         }
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized A2dpSinkService getA2dpSinkService() {
-        return sService;
-    }
-
-    /** Testing API to inject a mockA2dpSinkService. */
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized void setA2dpSinkService(A2dpSinkService service) {
-        sService = service;
     }
 
     /** Set the device that should be allowed to actively stream */

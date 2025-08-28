@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,12 +42,8 @@ public class HeadsetClientServiceInterface {
     HeadsetClientServiceInterface() {}
 
     private static Optional<HeadsetClientService> getHeadsetClientService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
-                    .flatMap(AdapterService::getHeadsetClientService);
-        } else {
-            return Optional.ofNullable(HeadsetClientService.getHeadsetClientService());
-        }
+        return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                .flatMap(AdapterService::getHeadsetClientService);
     }
 
     private static boolean isServiceAvailable(Optional<HeadsetClientService> headsetClient) {

@@ -50,7 +50,6 @@ import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -100,11 +99,7 @@ public class AvrcpControllerServiceTest {
         mockGetSystemService(mAdapterService, AudioManager.class);
 
         mService = new AvrcpControllerService(mAdapterService, mNativeInterface);
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
-        } else {
-            A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
-        }
+        doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
 
         mService.mDeviceStateMap.put(mDevice1, mStateMachine);
         final Intent bluetoothBrowserMediaServiceStartIntent =
@@ -120,16 +115,6 @@ public class AvrcpControllerServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            A2dpSinkService.setA2dpSinkService(null);
-        }
-        mService = AvrcpControllerService.getAvrcpControllerService();
-        assertThat(mService).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(AvrcpControllerService.getAvrcpControllerService()).isNotNull();
     }
 
     @Test
@@ -166,11 +151,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void setActiveDevice_whenA2dpSinkServiceIsNotInitialized_returnsFalse() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.empty()).when(mAdapterService).getA2dpSinkService();
-        } else {
-            A2dpSinkService.setA2dpSinkService(null);
-        }
+        doReturn(Optional.empty()).when(mAdapterService).getA2dpSinkService();
         assertThat(mService.setActiveDevice(mDevice1)).isFalse();
         assertThat(mService.getActiveDevice()).isNull();
     }

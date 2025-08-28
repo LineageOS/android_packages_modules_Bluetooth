@@ -61,16 +61,12 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
-import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -80,7 +76,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Provides Bluetooth Headset and Handsfree profile, as a service in the Bluetooth application.
@@ -165,14 +160,9 @@ public class HeadsetService extends ConnectableProfile {
             new AudioManagerAudioDeviceCallback();
 
     private final AudioManagerDeviceVolumeListener mAudioManagerDeviceVolumeListener;
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static HeadsetService sHeadsetService;
 
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
     @VisibleForTesting boolean mIsAptXSwbPmEnabled = false;
-
-    // TODO(b/422543753) Delete on flag cleanup
-    @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public HeadsetService(AdapterService adapterService) {
         this(adapterService, null, null);
@@ -226,7 +216,6 @@ public class HeadsetService extends ConnectableProfile {
                 SystemProperties.getBoolean(
                         "bluetooth.hfp.swb.aptx.power_management.enabled", false);
         Log.i(TAG, "mIsAptXSwbPmEnabled: " + mIsAptXSwbPmEnabled);
-        setHeadsetService(this);
         mMaxHeadsetConnections = mAdapterService.getMaxConnectedAudioDevices();
         // Add 1 to allow a pending device to be connecting or disconnecting
         mNativeInterface.init(mMaxHeadsetConnections + 1, isInbandRingingEnabled());
@@ -258,33 +247,6 @@ public class HeadsetService extends ConnectableProfile {
         }
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
         registerReceiver(mHeadsetReceiver, filter);
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<A2dpService> getA2dpService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getA2dpService();
-        } else {
-            return Optional.ofNullable(A2dpService.getA2dpService());
-        }
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<HeadsetClientService> getHeadsetClientService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getHeadsetClientService();
-        } else {
-            return Optional.ofNullable(HeadsetClientService.getHeadsetClientService());
-        }
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<LeAudioService> getLeAudioService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getLeAudioService();
-        } else {
-            return Optional.ofNullable(mFactory.getLeAudioService());
-        }
     }
 
     private void initializeDeviceAbsoluteVolumeBehavior(BluetoothDevice device) {
@@ -377,7 +339,6 @@ public class HeadsetService extends ConnectableProfile {
         }
         // Step 4: Destroy native interface
         mNativeInterface.cleanup();
-        setHeadsetService(null);
         // Step 3: Destroy system interface
         mSystemInterface.stop();
         // Step 2: Stop handler thread
@@ -616,27 +577,6 @@ public class HeadsetService extends ConnectableProfile {
             }
             removeStateMachine(device);
         }
-    }
-
-    // API methods
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized HeadsetService getHeadsetService() {
-        if (sHeadsetService == null) {
-            Log.w(TAG, "getHeadsetService(): service is NULL");
-            return null;
-        }
-        if (!sHeadsetService.isAvailable()) {
-            Log.w(TAG, "getHeadsetService(): service is not available");
-            return null;
-        }
-        return sHeadsetService;
-    }
-
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized void setHeadsetService(HeadsetService instance) {
-        logD("setHeadsetService(): set to: " + instance);
-        sHeadsetService = instance;
     }
 
     @Override
@@ -1264,7 +1204,8 @@ public class HeadsetService extends ConnectableProfile {
              * when SCO is going to be created
              */
             if (mSystemInterface.isInCall() || mSystemInterface.isRinging()) {
-                getLeAudioService()
+                mAdapterService
+                        .getLeAudioService()
                         .filter(leAudio -> !leAudio.getConnectedDevices().isEmpty())
                         .ifPresent(
                                 leAudio -> {
@@ -2076,7 +2017,8 @@ public class HeadsetService extends ConnectableProfile {
     }
 
     private boolean isHeadsetClientConnected() {
-        return getHeadsetClientService()
+        return mAdapterService
+                .getHeadsetClientService()
                 .map(headsetClient -> !headsetClient.getConnectedDevices().isEmpty())
                 .orElse(false);
     }
@@ -2276,7 +2218,7 @@ public class HeadsetService extends ConnectableProfile {
                 // Do it here because some controllers cannot handle SCO and CIS
                 // co-existence see {@link LeAudioService#setInactiveForHfpHandover}
 
-                final var leAudio = getLeAudioService();
+                final var leAudio = mAdapterService.getLeAudioService();
                 boolean isLeAudioConnectedDeviceNotActive =
                         leAudio.isPresent()
                                 && !leAudio.get().getConnectedDevices().isEmpty()
@@ -2519,7 +2461,7 @@ public class HeadsetService extends ConnectableProfile {
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             // Otherwise, reject the connection if connection policy is not valid.
             if (!isOutgoingRequest) {
-                final var a2dp = getA2dpService();
+                final var a2dp = mAdapterService.getA2dpService();
                 if (a2dp.isPresent() && a2dp.get().okToConnect(device, true)) {
                     Log.d(
                             TAG,

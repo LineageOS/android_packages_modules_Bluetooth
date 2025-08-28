@@ -269,21 +269,24 @@ impl Worker {
         let thread = thread::Builder::new()
             .name("lea_swoff".to_owned())
             .spawn(move || {
-                // Configure the thread scheduling to be SCHED_FIFO with priority 1.
-                // SAFETY: sched_param is passed by reference and thus is a valid pointer.
-                let res = unsafe {
-                    let sched_param = libc::sched_param { sched_priority: 1 };
-                    libc::sched_setscheduler(
-                        // If pid equals zero, the scheduling policy and parameters of
-                        // the calling thread will be set.
-                        0,
-                        libc::SCHED_FIFO,
-                        &sched_param,
-                    )
-                };
+                #[cfg(not(target_env = "musl"))]
+                {
+                    // Configure the thread scheduling to be SCHED_FIFO with priority 1.
+                    // SAFETY: sched_param is passed by reference and thus is a valid pointer.
+                    let res = unsafe {
+                        let sched_param = libc::sched_param { sched_priority: 1 };
+                        libc::sched_setscheduler(
+                            // If pid equals zero, the scheduling policy and parameters of
+                            // the calling thread will be set.
+                            0,
+                            libc::SCHED_FIFO,
+                            &sched_param,
+                        )
+                    };
 
-                if res != 0 {
-                    log::warn!("failed to configure sched priority");
+                    if res != 0 {
+                        log::warn!("failed to configure sched priority");
+                    }
                 }
 
                 let min_delay = min(Duration::from_millis(10), anchor_delay);

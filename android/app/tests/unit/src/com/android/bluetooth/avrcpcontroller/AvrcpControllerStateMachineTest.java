@@ -64,7 +64,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -134,12 +133,7 @@ public class AvrcpControllerStateMachineTest {
             Looper.prepare();
         }
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
-        } else {
-            // Set a mock A2dpSinkService for audio focus calls
-            A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
-        }
+        doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
 
         // Start the Bluetooth Media Browser Service
         final Intent bluetoothBrowserMediaServiceStartIntent =
@@ -157,9 +151,6 @@ public class AvrcpControllerStateMachineTest {
     @After
     public void tearDown() throws Exception {
         destroyStateMachine(mAvrcpStateMachine);
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            A2dpSinkService.setA2dpSinkService(null);
-        }
     }
 
     /** Create a state machine to test */

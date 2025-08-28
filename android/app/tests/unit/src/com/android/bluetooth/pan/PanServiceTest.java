@@ -93,12 +93,6 @@ public class PanServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(PanService.getPanService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(PanService.getPanService()).isNotNull();
     }
 
     @Test

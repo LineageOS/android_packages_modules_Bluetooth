@@ -62,9 +62,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PanService extends ConnectableProfile {
     private static final String TAG = PanService.class.getSimpleName();
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static PanService sPanService;
-
     private static final int BLUETOOTH_MAX_PAN_CONNECTIONS = 5;
 
     private static final int MESSAGE_CONNECT = 1;
@@ -131,7 +128,6 @@ public class PanService extends ConnectableProfile {
 
         mTetheringManager.registerTetheringEventCallback(
                 new HandlerExecutor(new Handler(Looper.getMainLooper())), mTetheringCallback);
-        setPanService(this);
     }
 
     public static boolean isEnabled() {
@@ -142,25 +138,6 @@ public class PanService extends ConnectableProfile {
     @Override
     public IProfileServiceBinder initBinder() {
         return new PanServiceBinder(this);
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized PanService getPanService() {
-        if (sPanService == null) {
-            Log.w(TAG, "getPanService(): service is null");
-            return null;
-        }
-        if (!sPanService.isAvailable()) {
-            Log.w(TAG, "getPanService(): service is not available ");
-            return null;
-        }
-        return sPanService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static synchronized void setPanService(PanService instance) {
-        Log.d(TAG, "setPanService(): set to: " + instance);
-        sPanService = instance;
     }
 
     @Override
@@ -175,8 +152,6 @@ public class PanService extends ConnectableProfile {
         }
         mNativeInterface.cleanup();
         mHandler.removeCallbacksAndMessages(null);
-
-        setPanService(null);
 
         int[] desiredStates = {STATE_CONNECTING, STATE_CONNECTED, STATE_DISCONNECTING};
         List<BluetoothDevice> devList = getDevicesMatchingConnectionStates(desiredStates);

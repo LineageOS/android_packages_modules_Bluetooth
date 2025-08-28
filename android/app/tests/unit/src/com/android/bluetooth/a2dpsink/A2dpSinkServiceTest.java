@@ -95,7 +95,6 @@ public class A2dpSinkServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        assertThat(A2dpSinkService.getA2dpSinkService()).isNull();
     }
 
     private void syncHandler(int... what) {
@@ -130,7 +129,6 @@ public class A2dpSinkServiceTest {
     /** Test that initialization of the service completes and that we can get a instance */
     @Test
     public void testInitialize() {
-        assertThat(A2dpSinkService.getA2dpSinkService()).isEqualTo(mService);
         assertThat(mLooper.nextMessage()).isNull();
     }
 

@@ -198,8 +198,6 @@ public class HeadsetServiceTest {
     @After
     public void tearDown() throws Exception {
         mHeadsetService.cleanup();
-        mHeadsetService = HeadsetService.getHeadsetService();
-        assertThat(mHeadsetService).isNull();
         mStateMachines.clear();
         mCurrentDevice = null;
         HeadsetObjectsFactory.setInstanceForTesting(null);
@@ -208,7 +206,6 @@ public class HeadsetServiceTest {
     /** Test to verify that HeadsetService can be successfully started */
     @Test
     public void testGetHeadsetService() {
-        assertThat(HeadsetService.getHeadsetService()).isEqualTo(mHeadsetService);
         // Verify default connection and audio states
         mCurrentDevice = getTestDevice(0);
         assertThat(mHeadsetService.getConnectionState(mCurrentDevice))

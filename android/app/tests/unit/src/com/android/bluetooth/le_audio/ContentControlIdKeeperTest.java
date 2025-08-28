@@ -33,11 +33,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,22 +53,12 @@ public class ContentControlIdKeeperTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private LeAudioService mLeAudioService;
 
     @Before
     public void setUp() throws Exception {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
-        ContentControlIdKeeper.initForTesting(mServiceFactory);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        ContentControlIdKeeper.initForTesting(null);
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        ContentControlIdKeeper.initForTesting();
     }
 
     public int testCcidAcquire(ParcelUuid uuid, int context, int expectedListSize) {

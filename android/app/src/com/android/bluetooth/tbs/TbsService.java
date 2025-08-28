@@ -30,14 +30,11 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.le_audio.LeAudioService;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 public class TbsService extends ProfileService {
@@ -60,10 +57,6 @@ public class TbsService extends ProfileService {
         void onJoinCalls(int requestId, List<UUID> uuids);
     }
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static TbsService sTbsService;
-
-    // TODO(b/422543753) Available only on `Flags.adapterServiceProfilesUseOptional()`
     private final GattService unusedGattService;
     private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private final TbsGeneric mTbsGeneric;
@@ -74,14 +67,7 @@ public class TbsService extends ProfileService {
 
     public TbsService(AdapterService adapterService, GattService gattService) {
         super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            unusedGattService = requireNonNull(gattService);
-        } else {
-            unusedGattService = null;
-        }
-
-        // Mark service as started
-        setTbsService(this);
+        unusedGattService = requireNonNull(gattService);
 
         mTbsGeneric = new TbsGeneric(adapterService, new TbsGatt(adapterService, this));
     }
@@ -99,44 +85,8 @@ public class TbsService extends ProfileService {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sTbsService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
-        // Mark service as stopped
-        setTbsService(null);
-
         mTbsGeneric.cleanup();
-
         mDeviceAuthorizations.clear();
-    }
-
-    /**
-     * Get the TbsService instance
-     *
-     * @return TbsService instance
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized TbsService getTbsService() {
-        if (sTbsService == null) {
-            Log.w(TAG, "getTbsService: service is NULL");
-            return null;
-        }
-
-        if (!sTbsService.isAvailable()) {
-            Log.w(TAG, "getTbsService: service is not available");
-            return null;
-        }
-
-        return sTbsService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized void setTbsService(TbsService instance) {
-        Log.d(TAG, "setTbsService: set to=" + instance);
-
-        sTbsService = instance;
     }
 
     public void onDeviceUnauthorized(BluetoothDevice device) {
@@ -198,12 +148,7 @@ public class TbsService extends ProfileService {
             return authorization;
         }
 
-        final Optional<LeAudioService> leAudio;
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            leAudio = mAdapterService.getLeAudioService();
-        } else {
-            leAudio = Optional.ofNullable(LeAudioService.getLeAudioService());
-        }
+        final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.e(TAG, "TBS access not permitted. LeAudioService not available");
             return BluetoothDevice.ACCESS_UNKNOWN;

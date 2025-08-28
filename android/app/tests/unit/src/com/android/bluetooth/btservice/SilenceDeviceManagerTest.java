@@ -32,7 +32,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -74,7 +73,6 @@ public class SilenceDeviceManagerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private A2dpService mA2dpService;
     @Mock private HeadsetService mHeadsetService;
 
@@ -88,18 +86,13 @@ public class SilenceDeviceManagerTest {
     @Before
     public void setUp() {
         mInOrder = inOrder(mAdapterService);
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
-            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
-        } else {
-            when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
-            when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
-        }
+        doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+        doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
 
         mHandlerThread = new HandlerThread("SilenceManagerTestHandlerThread");
         mHandlerThread.start();
         mLooper = mHandlerThread.getLooper();
-        mManager = new SilenceDeviceManager(mAdapterService, mServiceFactory, mLooper);
+        mManager = new SilenceDeviceManager(mAdapterService, mLooper);
     }
 
     @After
