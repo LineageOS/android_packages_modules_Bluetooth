@@ -106,25 +106,42 @@ class BluetoothManagerService {
 
     private static final int CRASH_LOG_MAX_SIZE = 100;
 
-    // See android.os.Build.HW_TIMEOUT_MULTIPLIER. This should not be set on real hw
-    private static final int HW_MULTIPLIER = SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
-
     private static final Pattern ADDR_PATTERN = Pattern.compile("^([0-9A-F]{2}:){5}[0-9A-F]{2}$");
 
-    // Maximum msec to wait for a bind
-    private static final int TIMEOUT_BIND_MS = 4000 * HW_MULTIPLIER;
+    // See android.os.Build.HW_TIMEOUT_MULTIPLIER. This should not be set on real hw
+    private static final int HW_MULTIPLIER = SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final boolean DEGRADED_PERFORMANCE =
+            SystemProperties.getBoolean(
+                    "bluetooth.hardware.degraded_performance_mode.enabled", false);
 
-    // Timeout value for synchronous binder call
-    private static final Duration STATE_TIMEOUT = Duration.ofSeconds(4L * HW_MULTIPLIER);
+    private static final int TIMEOUT_BIND_MS;
+    private static final Duration STATE_TIMEOUT;
+    @VisibleForTesting static final int SERVICE_RESTART_TIME_MS;
+    private static final int ADD_PROXY_DELAY_MS;
+    private static final int ENABLE_DISABLE_DELAY_MS;
 
-    // Maximum msec to wait for service restart
-    @VisibleForTesting static final int SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
-    // Delay for the addProxy function in msec
-    @VisibleForTesting static final int ADD_PROXY_DELAY_MS = 100 * HW_MULTIPLIER;
-    // Delay for retrying enable and disable in msec
-    @VisibleForTesting static final int ENABLE_DISABLE_DELAY_MS = 300 * HW_MULTIPLIER;
+    static {
+        if (!Flags.unifyTimeoutProperty()) {
+            TIMEOUT_BIND_MS = 4000 * HW_MULTIPLIER;
+            STATE_TIMEOUT = Duration.ofSeconds(4L * HW_MULTIPLIER);
+            SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
+            ADD_PROXY_DELAY_MS = 100 * HW_MULTIPLIER;
+            ENABLE_DISABLE_DELAY_MS = 300 * HW_MULTIPLIER;
+        } else {
+            if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
+                TIMEOUT_BIND_MS = 8000;
+                STATE_TIMEOUT = Duration.ofSeconds(8);
+            } else {
+                TIMEOUT_BIND_MS = 4000;
+                STATE_TIMEOUT = Duration.ofSeconds(4);
+            }
+            SERVICE_RESTART_TIME_MS = 400;
+            ADD_PROXY_DELAY_MS = 100;
+            ENABLE_DISABLE_DELAY_MS = 300;
+        }
+    }
 
-    @VisibleForTesting static final int MESSAGE_HANDLE_DISABLE_DELAYED = 4;
+    private static final int MESSAGE_HANDLE_DISABLE_DELAYED = 4;
 
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_SERVICE_CONNECTED = 40;
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED = 41;
@@ -132,7 +149,7 @@ class BluetoothManagerService {
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_STATE_CHANGE = 60;
     @VisibleForTesting static final int MESSAGE_TIMEOUT_BIND = 100;
     @VisibleForTesting static final int MESSAGE_RESTORE_USER_SETTING_OFF = 501;
-    @VisibleForTesting static final int MESSAGE_RESTORE_USER_SETTING_ON = 502;
+    private static final int MESSAGE_RESTORE_USER_SETTING_ON = 502;
 
     private static final int MAX_ERROR_RESTART_RETRIES = 6;
     private static final int MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES = 10;
@@ -146,7 +163,7 @@ class BluetoothManagerService {
     // Bluetooth persisted setting is on
     // but Airplane mode will affect Bluetooth state at start up
     // and Airplane mode will have higher priority.
-    @VisibleForTesting static final int BLUETOOTH_ON_AIRPLANE = 2;
+    private static final int BLUETOOTH_ON_AIRPLANE = 2;
 
     private final BleAppManager mBleAppManager;
     private final ActiveLogs mActiveLogs;
