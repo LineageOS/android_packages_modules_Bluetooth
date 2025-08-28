@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "com_android_bluetooth_flags.h"
 #include "common/bind.h"
 #include "common/stop_watch.h"
 #include "hal/hci_hal.h"
@@ -39,7 +40,6 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "packet/raw_builder.h"
 #include "storage/storage_module.h"
-#include "com_android_bluetooth_flags.h"
 
 namespace bluetooth {
 namespace hci {
@@ -310,7 +310,8 @@ struct HciLayer::impl {
 #endif
 
     common::StopWatch::DumpStopWatchLog();
-    log::error("Timed out waiting for {} for {}ms", OpCodeText(op_code), getHciTimeoutMs().count());
+    log::error("Timed out waiting for {} for {}ms, which was armed at: {}", OpCodeText(op_code),
+               getHciTimeoutMs().count(), hci_timeout_alarm_->GetArmedTime());
 
     bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
@@ -1015,7 +1016,7 @@ HciLayer::~HciLayer() {
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
-  if(com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+  if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
     StopWithNoHalDependencies();
   }
 
