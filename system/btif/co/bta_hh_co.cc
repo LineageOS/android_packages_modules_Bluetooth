@@ -228,7 +228,7 @@ static void uhid_delayed_ready_cback(void* data) {
 static void uhid_ready_disconn_timeout(void* data) {
   int dev_handle = PTR_TO_INT(data);
 
-  log::verbose("UHID ready disconn timeout evt");
+  log::warn("dev_handle: {}", dev_handle);
   BTA_HhClose(dev_handle);
 }
 
