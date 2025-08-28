@@ -104,13 +104,6 @@ flag {
 }
 
 flag {
-    name: "adapter_service_profiles_use_optional"
-    namespace: "bluetooth"
-    description: "Add optional getters for all profiles in [Bluetooth]AdapterService"
-    bug: "422543753"
-}
-
-flag {
     name: "ignore_multiple_connect_request_in_bt_services"
     namespace: "bluetooth"
     description: "Ignore multiple connect request in BT Services"

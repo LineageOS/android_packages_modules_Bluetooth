@@ -52,9 +52,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -64,7 +62,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,14 +75,10 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static CsipSetCoordinatorService sCsipSetCoordinatorService;
-
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
     private final CsipSetCoordinatorNativeInterface mNativeInterface;
-    private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
 
     @GuardedBy("mStateMachines")
     private final Map<BluetoothDevice, CsipSetCoordinatorStateMachine> mStateMachines =
@@ -105,21 +98,19 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             new ConcurrentHashMap<>();
 
     public CsipSetCoordinatorService(AdapterService adapterService) {
-        this(adapterService, null, null, new ServiceFactory());
+        this(adapterService, null, null);
     }
 
     @VisibleForTesting
     CsipSetCoordinatorService(
             AdapterService adapterService,
             Looper looper,
-            CsipSetCoordinatorNativeInterface nativeInterface,
-            ServiceFactory serviceFactory) {
+            CsipSetCoordinatorNativeInterface nativeInterface) {
         super(BluetoothProfile.CSIP_SET_COORDINATOR, requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
                         () -> new CsipSetCoordinatorNativeInterface(mAdapterService, this));
-        mServiceFactory = requireNonNull(serviceFactory);
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("CsipSetCoordinatorService.StateMachines");
@@ -131,20 +122,8 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             mStateMachinesLooper = looper;
         }
 
-        // Mark service as started
-        setCsipSetCoordinatorService(this);
-
         // Initialize native interface
         mNativeInterface.init();
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<LeAudioService> getLeAudioService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getLeAudioService();
-        } else {
-            return Optional.ofNullable(mServiceFactory.getLeAudioService());
-        }
     }
 
     public static boolean isEnabled() {
@@ -160,16 +139,8 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sCsipSetCoordinatorService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
         // Cleanup native interface
         mNativeInterface.cleanup();
-
-        // Mark service as stopped
-        setCsipSetCoordinatorService(null);
 
         // Destroy state machines and stop handler thread
         synchronized (mStateMachines) {
@@ -200,32 +171,6 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         mGroupIdToUuidMap.clear();
 
         mLocks.clear();
-    }
-
-    /**
-     * Get the CsipSetCoordinatorService instance
-     *
-     * @return CsipSetCoordinatorService instance
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized CsipSetCoordinatorService getCsipSetCoordinatorService() {
-        if (sCsipSetCoordinatorService == null) {
-            Log.w(TAG, "getCsipSetCoordinatorService(): service is NULL");
-            return null;
-        }
-
-        if (!sCsipSetCoordinatorService.isAvailable()) {
-            Log.w(TAG, "getCsipSetCoordinatorService(): service is not available");
-            return null;
-        }
-        return sCsipSetCoordinatorService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static synchronized void setCsipSetCoordinatorService(
-            CsipSetCoordinatorService instance) {
-        Log.d(TAG, "setCsipSetCoordinatorService(): set to: " + instance);
-        sCsipSetCoordinatorService = instance;
     }
 
     /**
@@ -660,7 +605,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     private void disableCsipIfNeeded(int groupId) {
         /* Make sure CSIP connection policy mirrors that of LeAudioService once all CSIP
         characteristic reads have completed (ensures we can pair other set devices) */
-        final var leAudio = getLeAudioService();
+        final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.w(TAG, "checkIfGroupPaired: LE Audio Service is null");
             return;

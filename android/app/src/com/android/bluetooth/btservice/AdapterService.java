@@ -204,7 +204,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -306,7 +305,6 @@ public class AdapterService extends Service {
     private final SdpManagerNativeInterface mSdpManagerNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
-    private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
 
     private boolean mIsMediaProfileConnected;
 
@@ -482,8 +480,7 @@ public class AdapterService extends Service {
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
         mSdpManagerNativeInterface = sdpManagerNativeInterface;
-        mServiceFactory = new ServiceFactory();
-        mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
+        mSilenceDeviceManager = new SilenceDeviceManager(this, mLooper);
         mDatabaseManager = new DatabaseManager(this);
     }
 
@@ -1027,12 +1024,12 @@ public class AdapterService extends Service {
          */
         if (!isAutomotiveDevice && getResources().getBoolean(R.bool.enable_phone_policy)) {
             Log.i(TAG, "Phone policy enabled");
-            mPhonePolicy = Optional.of(new PhonePolicy(this, mLooper, mServiceFactory));
+            mPhonePolicy = Optional.of(new PhonePolicy(this, mLooper));
         } else {
             Log.i(TAG, "Phone policy disabled");
         }
 
-        mActiveDeviceManager = new ActiveDeviceManager(this, mServiceFactory);
+        mActiveDeviceManager = new ActiveDeviceManager(this);
         mActiveDeviceManager.start();
 
         mBtCompanionManager = new CompanionManager(this);
@@ -1219,43 +1216,6 @@ public class AdapterService extends Service {
         }
     }
 
-    // TODO(b/422543753) Delete on flag cleanup
-    private static final Map<Integer, Function<AdapterService, ProfileService>>
-            PROFILE_CONSTRUCTORS =
-                    Map.ofEntries(
-                            Map.entry(BluetoothProfile.A2DP, A2dpService::new),
-                            Map.entry(BluetoothProfile.A2DP_SINK, A2dpSinkService::new),
-                            Map.entry(BluetoothProfile.AVRCP, AvrcpTargetService::new),
-                            Map.entry(
-                                    BluetoothProfile.AVRCP_CONTROLLER, AvrcpControllerService::new),
-                            Map.entry(
-                                    BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
-                                    BassClientService::new),
-                            Map.entry(BluetoothProfile.BATTERY, BatteryService::new),
-                            Map.entry(
-                                    BluetoothProfile.CSIP_SET_COORDINATOR,
-                                    CsipSetCoordinatorService::new),
-                            Map.entry(BluetoothProfile.HAP_CLIENT, HapClientService::new),
-                            Map.entry(BluetoothProfile.HEADSET, HeadsetService::new),
-                            Map.entry(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService::new),
-                            Map.entry(BluetoothProfile.HEARING_AID, HearingAidService::new),
-                            Map.entry(BluetoothProfile.HID_DEVICE, HidDeviceService::new),
-                            Map.entry(BluetoothProfile.HID_HOST, HidHostService::new),
-                            Map.entry(BluetoothProfile.GATT, GattService::new),
-                            Map.entry(BluetoothProfile.LE_AUDIO, LeAudioService::new),
-                            Map.entry(BluetoothProfile.LE_AUDIO_BROADCAST, LeAudioBroadcast::new),
-                            Map.entry(BluetoothProfile.LE_CALL_CONTROL, TbsService::new),
-                            Map.entry(BluetoothProfile.MAP, BluetoothMapService::new),
-                            Map.entry(BluetoothProfile.MAP_CLIENT, MapClientService::new),
-                            Map.entry(BluetoothProfile.MCP_SERVER, McpService::new),
-                            Map.entry(BluetoothProfile.OPP, BluetoothOppService::new),
-                            Map.entry(BluetoothProfile.PAN, PanService::new),
-                            Map.entry(BluetoothProfile.PBAP, BluetoothPbapService::new),
-                            Map.entry(BluetoothProfile.PBAP_CLIENT, PbapClientService::new),
-                            Map.entry(BluetoothProfile.SAP, SapService::new),
-                            Map.entry(BluetoothProfile.VOLUME_CONTROL, VolumeControlService::new),
-                            Map.entry(BluetoothProfile.VAPS_SERVER, VapsServerService::new));
-
     /**
      * Constructs a {@link ProfileService} instance for the given profile ID.
      *
@@ -1316,25 +1276,10 @@ public class AdapterService extends Service {
                 return;
             }
             Log.i(TAG, logHdr + " starting profile");
-            final ProfileService profileService;
-            if (Flags.adapterServiceProfilesUseOptional()) {
-                profileService = constructProfile(profileId);
-            } else {
-                profileService = PROFILE_CONSTRUCTORS.get(profileId).apply(this);
-            }
+            final var profileService = constructProfile(profileId);
             mStartedProfiles.put(profileId, profileService);
             addProfile(profileService);
             profileService.setAvailable(true);
-            // With `Flags.adapterServiceProfilesUseOptional()` on, this assignment is not required
-            // as it already happens within `constructProfile`
-            if (!Flags.adapterServiceProfilesUseOptional()) {
-                // With `Flags.onlyStartScanDuringBleOn()` GattService initialization is pushed back
-                // to `ON` state instead of `BLE_ON`. Here we ensure mGattService is set prior to
-                // other Profiles using it.
-                if (profileId == BluetoothProfile.GATT && Flags.onlyStartScanDuringBleOn()) {
-                    mGattService = (GattService) profileService;
-                }
-            }
             onProfileServiceStateChanged(profileService, BluetoothAdapter.STATE_ON);
         } else if (state == BluetoothAdapter.STATE_OFF) {
             ProfileService profileService = mStartedProfiles.remove(profileId);

@@ -43,14 +43,12 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -192,15 +190,6 @@ class AvrcpControllerStateMachine extends StateMachine {
         setInitialState(mDisconnected);
 
         debug("State machine created");
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<A2dpSinkService> getA2dpSinkService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getA2dpSinkService();
-        } else {
-            return Optional.ofNullable(A2dpSinkService.getA2dpSinkService());
-        }
     }
 
     BrowseTree.BrowseNode findNode(String parentMediaId) {
@@ -1241,7 +1230,10 @@ class AvrcpControllerStateMachine extends StateMachine {
     }
 
     private int getFocusState() {
-        return getA2dpSinkService().map(A2dpSinkService::getFocusState).orElse(AudioManager.ERROR);
+        return mAdapterService
+                .getA2dpSinkService()
+                .map(A2dpSinkService::getFocusState)
+                .orElse(AudioManager.ERROR);
     }
 
     MediaSessionCompat.Callback mSessionCallbacks =
@@ -1310,7 +1302,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                 @Override
                 public void onPrepare() {
                     debug("onPrepare");
-                    getA2dpSinkService()
+                    mAdapterService
+                            .getA2dpSinkService()
                             .ifPresent(a2dpSink -> a2dpSink.requestAudioFocus(mDevice, true));
                 }
 

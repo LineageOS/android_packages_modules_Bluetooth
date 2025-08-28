@@ -26,7 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static com.android.bluetooth.Utils.joinUninterruptibly;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElseGet;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -167,11 +166,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
     private Thread mThreadUpdateSecVersionCounter;
 
-    // TODO(b/422543753) Delete on flag cleanup
-    public BluetoothPbapService(AdapterService adapterService) {
-        this(requireNonNull(adapterService), null, null);
-    }
-
     public BluetoothPbapService(
             AdapterService adapterService, NotificationManager notificationManager) {
         this(requireNonNull(adapterService), notificationManager, null);
@@ -181,14 +175,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     BluetoothPbapService(
             AdapterService adapterService, NotificationManager notificationManager, Looper looper) {
         super(BluetoothProfile.PBAP, requireNonNull(adapterService));
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            mNotificationManager = requireNonNull(notificationManager);
-        } else {
-            mNotificationManager =
-                    requireNonNullElseGet(
-                            notificationManager,
-                            () -> obtainSystemService(NotificationManager.class));
-        }
+        mNotificationManager = requireNonNull(notificationManager);
 
         IntentFilter userFilter = new IntentFilter();
         userFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);

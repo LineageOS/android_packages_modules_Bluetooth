@@ -78,12 +78,6 @@ public class BatteryServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(BatteryService.getBatteryService()).isNull();
-    }
-
-    @Test
-    public void getBatteryService() {
-        assertThat(BatteryService.getBatteryService()).isEqualTo(mService);
     }
 
     @Test

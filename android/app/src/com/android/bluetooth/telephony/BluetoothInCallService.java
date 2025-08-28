@@ -374,14 +374,9 @@ public class BluetoothInCallService extends InCallService {
         mCallInfo = requireNonNullElseGet(callInfo, CallInfo::new);
     }
 
-    // TODO(b/422543753) Delete on flag cleanup
     Optional<HeadsetService> getHeadsetService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
-                    .flatMap(AdapterService::getHeadsetService);
-        } else {
-            return Optional.ofNullable(HeadsetService.getHeadsetService());
-        }
+        return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                .flatMap(AdapterService::getHeadsetService);
     }
 
     public static BluetoothInCallService getInstance() {
@@ -1717,14 +1712,9 @@ public class BluetoothInCallService extends InCallService {
         private int mCcid = ContentControlIdKeeper.CCID_INVALID;
 
         // BluetoothInCallService
-        // TODO(b/422543753) Delete on flag cleanup
         private static Optional<TbsService> getTbsService() {
-            if (Flags.adapterServiceProfilesUseOptional()) {
-                return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
-                        .flatMap(AdapterService::getTbsService);
-            } else {
-                return Optional.ofNullable(TbsService.getTbsService());
-            }
+            return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                    .flatMap(AdapterService::getTbsService);
         }
 
         @Override

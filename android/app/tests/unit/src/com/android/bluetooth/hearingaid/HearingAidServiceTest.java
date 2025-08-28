@@ -128,7 +128,6 @@ public class HearingAidServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(HearingAidService.getHearingAidService()).isNull();
     }
 
     @SafeVarargs
@@ -166,11 +165,6 @@ public class HearingAidServiceTest {
                 mService.removeActiveDevice(stopAudio);
             }
         }
-    }
-
-    @Test
-    public void getHearingAidService() {
-        assertThat(HearingAidService.getHearingAidService()).isEqualTo(mService);
     }
 
     @Test

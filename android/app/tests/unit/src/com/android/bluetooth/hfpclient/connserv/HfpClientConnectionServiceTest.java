@@ -52,12 +52,10 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.R;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -97,17 +95,12 @@ public class HfpClientConnectionServiceTest {
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            ExtendedMockito.doReturn(mAdapterService)
-                    .when(() -> AdapterService.deprecatedGetAdapterService());
-            doReturn(Optional.of(mHeadsetClientService))
-                    .when(mAdapterService)
-                    .getHeadsetClientService();
-            doReturn(Optional.of(mPbapClientService)).when(mAdapterService).getPbapClientService();
-        } else {
-            when(mHeadsetClientService.isAvailable()).thenReturn(true);
-            HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
-        }
+        ExtendedMockito.doReturn(mAdapterService)
+                .when(() -> AdapterService.deprecatedGetAdapterService());
+        doReturn(Optional.of(mHeadsetClientService))
+                .when(mAdapterService)
+                .getHeadsetClientService();
+        doReturn(Optional.of(mPbapClientService)).when(mAdapterService).getPbapClientService();
 
         // Spy the connection service under test so we can mock some of the system services and keep
         // them from impacting the actual system. Note: Another way to do this would be to extend
@@ -130,13 +123,6 @@ public class HfpClientConnectionServiceTest {
         doReturn(getPhoneAccount(mDevice)).when(mTelecomManager).getPhoneAccount(any());
 
         mockGetBluetoothManager(mHfpClientConnectionService);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            HeadsetClientService.setHeadsetClientService(null);
-        }
     }
 
     private void createService() {

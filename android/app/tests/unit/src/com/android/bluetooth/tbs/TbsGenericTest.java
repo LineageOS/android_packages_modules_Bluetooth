@@ -45,7 +45,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
@@ -74,7 +73,6 @@ public class TbsGenericTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private LeAudioService mLeAudioService;
     @Mock private TbsGatt mTbsGatt;
     @Mock private TbsService.Callback mCallback;
@@ -125,15 +123,9 @@ public class TbsGenericTest {
         doReturn(true).when(mTbsGatt).clearFriendlyName();
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            // Setup the mocked factory to return mocked services
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         mTbsGeneric = new TbsGeneric(mAdapterService, mTbsGatt);
-        mTbsGeneric.mFactory = mServiceFactory;
     }
 
     private Integer prepareTestBearer() {

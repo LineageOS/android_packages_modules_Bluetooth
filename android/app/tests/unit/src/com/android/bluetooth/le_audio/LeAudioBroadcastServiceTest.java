@@ -85,7 +85,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.tbs.TbsService;
@@ -133,8 +132,6 @@ public class LeAudioBroadcastServiceTest {
     @Mock private IBinder mBinder;
 
     @Spy private LeAudioObjectsFactory mObjectsFactory = LeAudioObjectsFactory.getInstance();
-    // TODO(b/422543753) Delete on flag cleanup
-    @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
 
     private static final String TEST_MAC_ADDRESS = "00:11:22:33:44:55";
     private static final int TEST_BROADCAST_ID = 42;
@@ -222,15 +219,10 @@ public class LeAudioBroadcastServiceTest {
                         mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
-            doReturn(Optional.of(mVolumeControlService))
-                    .when(mAdapterService)
-                    .getVolumeControlService();
-        } else {
-            mService.mServiceFactory = mServiceFactory;
-            when(mServiceFactory.getBassClientService()).thenReturn(mBassClientService);
-        }
+        doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
+        doReturn(Optional.of(mVolumeControlService))
+                .when(mAdapterService)
+                .getVolumeControlService();
 
         // Set up the State Changed receiver
         when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF")))

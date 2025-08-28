@@ -52,7 +52,6 @@ import com.android.bluetooth.audio_util.PlayerInfo;
 import com.android.bluetooth.audio_util.PlayerSettingsManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -68,8 +67,6 @@ public class AvrcpTargetService extends ProfileService {
     private final BluetoothEventLogger mMediaKeyEventLogger =
             new BluetoothEventLogger(MEDIA_KEY_EVENT_LOGGER_SIZE, MEDIA_KEY_EVENT_LOGGER_TITLE);
 
-    // TODO(b/422543753) Delete on flag cleanup
-    private final ServiceFactory mFactory = new ServiceFactory();
     private final BroadcastReceiver mUserUnlockedReceiver =
             new BroadcastReceiver() {
                 @Override
@@ -101,9 +98,6 @@ public class AvrcpTargetService extends ProfileService {
 
     // Only used to see if the metadata has changed from its previous value
     private MediaData mCurrentData;
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static AvrcpTargetService sInstance = null;
 
     public AvrcpTargetService(AdapterService adapterService) {
         this(requireNonNull(adapterService), null, null, null, Looper.myLooper());
@@ -170,9 +164,6 @@ public class AvrcpTargetService extends ProfileService {
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
         registerReceiver(mReceiver, filter);
-
-        // Only allow the service to be used once it is initialized
-        sInstance = this;
     }
 
     /** Checks for profile enabled state in Bluetooth sysprops. */
@@ -231,23 +222,6 @@ public class AvrcpTargetService extends ProfileService {
         }
     }
 
-    /** Sets the AvrcpTargetService instance. */
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static void set(AvrcpTargetService instance) {
-        sInstance = instance;
-    }
-
-    /**
-     * Returns the {@link AvrcpTargetService} instance.
-     *
-     * <p>Returns null if the service hasn't been initialized.
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static AvrcpTargetService get() {
-        return sInstance;
-    }
-
     /** Returns the {@link AvrcpCoverArtService} instance. */
     public AvrcpCoverArtService getCoverArtService() {
         return mAvrcpCoverArtService;
@@ -262,16 +236,10 @@ public class AvrcpTargetService extends ProfileService {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sInstance == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
         if (mAvrcpCoverArtService != null) {
             mAvrcpCoverArtService.stop();
         }
 
-        sInstance = null;
         unregisterReceiver(mReceiver);
 
         // We check the interfaces first since they only get set on User Unlocked
@@ -284,14 +252,7 @@ public class AvrcpTargetService extends ProfileService {
 
     /** Returns the active A2DP {@link BluetoothDevice} */
     private BluetoothDevice getA2dpActiveDevice() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getA2dpService().map(A2dpService::getActiveDevice).orElse(null);
-        }
-        A2dpService service = mFactory.getA2dpService();
-        if (service == null) {
-            return null;
-        }
-        return service.getActiveDevice();
+        return mAdapterService.getA2dpService().map(A2dpService::getActiveDevice).orElse(null);
     }
 
     /**
@@ -305,12 +266,7 @@ public class AvrcpTargetService extends ProfileService {
             mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
             return;
         }
-        A2dpService service = A2dpService.getA2dpService();
-        if (service == null) {
-            Log.d(TAG, "setA2dpActiveDevice: A2dp service not found");
-            return;
-        }
-        service.setActiveDevice(device);
+        mAdapterService.getA2dpService().ifPresent(a2dp -> a2dp.setActiveDevice(device));
     }
 
     /** Informs {@link AvrcpVolumeManager} that a new device is connected */
@@ -673,10 +629,6 @@ public class AvrcpTargetService extends ProfileService {
     /** Dump debugging information to the string builder */
     public void dump(StringBuilder sb) {
         sb.append("\nProfile: AvrcpTargetService:\n");
-        if (sInstance == null) {
-            sb.append("AvrcpTargetService not running");
-            return;
-        }
 
         StringBuilder tempBuilder = new StringBuilder();
         tempBuilder.append("AVRCP version: ").append(mAvrcpVersion).append("\n");

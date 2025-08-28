@@ -71,7 +71,6 @@ import androidx.test.filters.MediumTest;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
@@ -103,7 +102,6 @@ public class HapClientServiceTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private HapClientNativeInterface mNativeInterface;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private CsipSetCoordinatorService mCsipService;
     @Mock private IBluetoothHapClientCallback mFrameworkCallback;
     @Mock private Binder mBinder;
@@ -140,13 +138,7 @@ public class HapClientServiceTest {
                 .when(mAdapterService)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mCsipService))
-                    .when(mAdapterService)
-                    .getCsipSetCoordinatorService();
-        } else {
-            doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
-        }
+        doReturn(Optional.of(mCsipService)).when(mAdapterService).getCsipSetCoordinatorService();
 
         doReturn(mBinder).when(mFrameworkCallback).asBinder();
 
@@ -186,18 +178,9 @@ public class HapClientServiceTest {
         mService = new HapClientService(mAdapterService, mLooper.getLooper(), mNativeInterface);
         mService.setAvailable(true);
 
-        mService.mFactory = mServiceFactory;
         synchronized (mService.mCallbacks) {
             mService.mCallbacks.register(mFrameworkCallback);
         }
-    }
-
-    @Test
-    public void getHapService() {
-        initTest();
-        assertThat(HapClientService.getHapClientService()).isEqualTo(mService);
-        mService.cleanup();
-        assertThat(HapClientService.getHapClientService()).isNull();
     }
 
     @Test

@@ -180,11 +180,6 @@ public class A2dpServiceTest {
     }
 
     @Test
-    public void testGetA2dpService() {
-        assertThat(A2dpService.getA2dpService()).isEqualTo(mA2dpService);
-    }
-
-    @Test
     public void testStopA2dpService() {
         // Prepare: connect and set active device
         doReturn(true).when(mMockNativeInterface).setActiveDevice(any(BluetoothDevice.class));

@@ -61,8 +61,6 @@ public class PbapClientService extends ConnectableProfile {
     // MAXIMUM_DEVICES set to 10 to prevent an excessive number of simultaneous devices.
     private static final int MAXIMUM_DEVICES = 10;
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static PbapClientService sPbapClientService;
     private final PbapClientContactsStorage mPbapClientContactsStorage;
     private final Map<BluetoothDevice, PbapClientStateMachine> mPbapClientStateMachineMap;
     private final Handler mHandler;
@@ -106,7 +104,6 @@ public class PbapClientService extends ConnectableProfile {
         setComponentAvailable(AUTHENTICATOR_SERVICE, true);
 
         registerSdpRecord();
-        setPbapClientService(this);
     }
 
     @VisibleForTesting
@@ -129,7 +126,6 @@ public class PbapClientService extends ConnectableProfile {
         mPbapClientContactsStorage.start();
 
         registerSdpRecord();
-        setPbapClientService(this);
     }
 
     public static boolean isEnabled() {
@@ -145,7 +141,6 @@ public class PbapClientService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setPbapClientService(null);
         cleanUpSdpRecord();
 
         // Unregister SDP event handler and stop all queued messages.
@@ -381,32 +376,6 @@ public class PbapClientService extends ConnectableProfile {
     // *********************************************************************************************
     // * API methods
     // *********************************************************************************************
-
-    /** Get the singleton instance of PbapClientService, if one exists */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized PbapClientService getPbapClientService() {
-        if (sPbapClientService == null) {
-            Log.w(TAG, "getPbapClientService(): service is null");
-            return null;
-        }
-        if (!sPbapClientService.isAvailable()) {
-            Log.w(TAG, "getPbapClientService(): service is not available");
-            return null;
-        }
-        return sPbapClientService;
-    }
-
-    /**
-     * Set the singleton instance of PbapClientService
-     *
-     * <p>This function is meant to be used by tests only.
-     */
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    static synchronized void setPbapClientService(PbapClientService instance) {
-        Log.v(TAG, "setPbapClientService(): set to: " + instance);
-        sPbapClientService = instance;
-    }
 
     /**
      * Requests a connection to the given device's PBAP Server

@@ -141,23 +141,6 @@ public class PbapClientServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(PbapClientService.getPbapClientService()).isNull();
-    }
-
-    // *********************************************************************************************
-    // * Initialize Service
-    // *********************************************************************************************
-
-    @Test
-    public void testInitialize() {
-        assertThat(PbapClientService.getPbapClientService()).isNotNull();
-    }
-
-    @Test
-    public void testSetPbapClientService_withNull() {
-        PbapClientService.setPbapClientService(null);
-
-        assertThat(PbapClientService.getPbapClientService()).isNull();
     }
 
     // *********************************************************************************************
@@ -304,19 +287,6 @@ public class PbapClientServiceTest {
     // *********************************************************************************************
     // * API Methods
     // *********************************************************************************************
-
-    // getPbapClientService (available) -> this
-    @Test
-    public void testGetService_serviceAvailable_returnsThis() {
-        assertThat(PbapClientService.getPbapClientService()).isEqualTo(mService);
-    }
-
-    // getPbapClientService (unavailable) -> null
-    @Test
-    public void testGetService_serviceUnavailable_returnsNull() {
-        mService.setAvailable(false);
-        assertThat(PbapClientService.getPbapClientService()).isNull();
-    }
 
     // connect (policy allowed) -> connect/true
     @Test

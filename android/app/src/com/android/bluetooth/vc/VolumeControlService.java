@@ -53,14 +53,10 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -91,9 +87,6 @@ public class VolumeControlService extends ConnectableProfile {
 
     private static final int GROUP_ID_INVALID = -1;
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static VolumeControlService sVolumeControlService;
-
     @VisibleForTesting
     @GuardedBy("mCallbacks")
     final RemoteCallbackList<IBluetoothVolumeControlCallback> mCallbacks =
@@ -118,9 +111,6 @@ public class VolumeControlService extends ConnectableProfile {
     private final Map<BluetoothDevice, Boolean> mDeviceMuteCache = new ConcurrentHashMap<>();
 
     private Boolean mIgnoreSetVolumeFromAF = false;
-
-    // TODO(b/422543753) Delete on flag cleanup
-    @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public VolumeControlService(AdapterService adapterService) {
         this(adapterService, Flags.vcpOnMainLooper() ? Looper.getMainLooper() : null, null);
@@ -155,35 +145,7 @@ public class VolumeControlService extends ConnectableProfile {
                 mStateMachinesLooper = looper;
             }
         }
-        setVolumeControlService(this);
         mNativeInterface.init();
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<BassClientService> getBassClientService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getBassClientService();
-        } else {
-            return Optional.ofNullable(mFactory.getBassClientService());
-        }
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getCsipSetCoordinatorService();
-        } else {
-            return Optional.ofNullable(mFactory.getCsipSetCoordinatorService());
-        }
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<LeAudioService> getLeAudioService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getLeAudioService();
-        } else {
-            return Optional.ofNullable(mFactory.getLeAudioService());
-        }
     }
 
     public void syncPost(Consumer<VolumeControlService> consumer) {
@@ -255,9 +217,6 @@ public class VolumeControlService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        // Mark service as stopped
-        setVolumeControlService(null);
-
         // Destroy state machines and stop handler thread
         synchronized (mStateMachines) {
             for (VolumeControlStateMachine sm : mStateMachines.values()) {
@@ -295,30 +254,6 @@ public class VolumeControlService extends ConnectableProfile {
 
     Map<BluetoothDevice, VolumeControlInputDescriptor> getAudioInputs() {
         return mAudioInputs;
-    }
-
-    /**
-     * @return VolumeControlService instance
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized VolumeControlService getVolumeControlService() {
-        if (sVolumeControlService == null) {
-            Log.w(TAG, "getVolumeControlService(): service is NULL");
-            return null;
-        }
-
-        if (!sVolumeControlService.isAvailable()) {
-            Log.w(TAG, "getVolumeControlService(): service is not available");
-            return null;
-        }
-        return sVolumeControlService;
-    }
-
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    static synchronized void setVolumeControlService(VolumeControlService instance) {
-        Log.d(TAG, "setVolumeControlService(): set to: " + instance);
-        sVolumeControlService = instance;
     }
 
     @Override
@@ -386,7 +321,7 @@ public class VolumeControlService extends ConnectableProfile {
             return mGroupIds.getOrDefault(device, GROUP_ID_INVALID);
         }
 
-        final var csipSetCoordinator = getCsipSetCoordinatorService();
+        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
         if (csipSetCoordinator.isPresent()) {
             int groupId = csipSetCoordinator.get().getGroupId(device, BluetoothUuid.CAP);
             if (groupId != CSIS_GROUP_ID_INVALID) {
@@ -396,7 +331,7 @@ public class VolumeControlService extends ConnectableProfile {
             Log.w(TAG, "CSIP not available");
         }
 
-        final var leAudio = getLeAudioService();
+        final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isPresent()) {
             int groupId = leAudio.get().getGroupId(device);
             if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
@@ -425,7 +360,7 @@ public class VolumeControlService extends ConnectableProfile {
             return result;
         }
 
-        final var csipSetCoordinator = getCsipSetCoordinatorService();
+        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
         if (csipSetCoordinator.isPresent()) {
             result = csipSetCoordinator.get().getGroupDevicesOrdered(groupId);
             if (!result.isEmpty()) {
@@ -435,7 +370,7 @@ public class VolumeControlService extends ConnectableProfile {
             Log.w(TAG, "CSIP not available");
         }
 
-        final var leAudio = getLeAudioService();
+        final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isPresent()) {
             result = leAudio.get().getGroupDevices(groupId);
             if (!result.isEmpty()) {
@@ -1012,11 +947,11 @@ public class VolumeControlService extends ConnectableProfile {
             }
         }
 
-        final var leAudio = getLeAudioService();
+        final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isPresent()) {
             int currentlyActiveGroupId = leAudio.get().getActiveGroupId();
             if (currentlyActiveGroupId == GROUP_ID_INVALID || groupId != currentlyActiveGroupId) {
-                final var bassClient = getBassClientService();
+                final var bassClient = mAdapterService.getBassClientService();
                 if (bassClient.isEmpty()
                         || bassClient.get().getSyncedBroadcastSinks().stream()
                                 .map(dev -> getGroupId(dev))
