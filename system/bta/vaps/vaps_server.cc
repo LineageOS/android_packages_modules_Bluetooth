@@ -370,9 +370,7 @@
    void OnGattDisconnect(tBTA_GATTS* p_data) {
      auto remote_bda = p_data->conn.remote_bda;
      log::info("Address: {}, conn_id:{}", remote_bda, p_data->conn.conn_id);
-     if (remote_clients_.find(remote_bda) != remote_clients_.end()) {
-       remote_clients_.erase(remote_bda);
-     }
+     remote_clients_.erase(remote_bda);
    }
 
    void OnGattServerRegister(tBTA_GATTS* p_data) {
