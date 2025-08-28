@@ -5534,7 +5534,10 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     int getBroadcastToUnicastFallbackGroup() {
-        Log.v(TAG, "getBroadcastToUnicastFallbackGroup()");
+        Log.v(
+                TAG,
+                "getBroadcastToUnicastFallbackGroup(), group id:"
+                        + mUnicastGroupIdDeactivatedForBroadcastTransition);
 
         return mUnicastGroupIdDeactivatedForBroadcastTransition;
     }
