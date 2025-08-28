@@ -873,7 +873,7 @@ void btm_ble_periodic_adv_sync_established(uint8_t status, uint16_t sync_handle,
  *
  * Function        btm_ble_periodic_adv_report
  *
- * Description     This callback is received when controller estalishes sync
+ * Description     This callback is received when controller establishes sync
  *                 to a PA requested from host
  *
  ******************************************************************************/
@@ -1474,9 +1474,9 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, tBLE_ADDR_TYPE addr_type,
   bool is_scan_resp = ble_evt_type_is_scan_resp(evt_type);
   bool is_legacy = ble_evt_type_is_legacy(evt_type);
 
-  // We might receive a legacy scan response without receving a ADV_IND
+  // We might receive a legacy scan response without receiving a ADV_IND
   // or ADV_SCAN_IND before. Only parsing the scan response data which
-  // has no ad flag, the device will be set to DUMO mode. The createbond
+  // has no ad flag, the device will be set to DUMO mode. The create bond
   // procedure will use the wrong device mode.
   // In such case no necessary to report scan response
   if (is_legacy && is_scan_resp && !cache.Exist(addr_type, bda)) {
@@ -1596,7 +1596,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, tBLE_ADDR_TYPE addr_type,
                        const_cast<uint8_t*>(adv_data.data()), adv_data.size());
   }
 
-  // Pass address up to GattService#onScanResult
+  // Pass address up to ScanController#onScanResult
   p_i->inq_info.results.original_bda = original_bda;
 
   tBTM_INQ_RESULTS_CB* p_obs_results_cb = btm_cb.ble_ctr_cb.p_obs_results_cb;
