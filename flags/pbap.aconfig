@@ -38,13 +38,3 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
-
-flag {
-    name: "ignore_message_sms_disallowed"
-    namespace: "bluetooth"
-    description: "Don't store message if SMS is disallowed for the current user"
-    bug: "429073340"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}

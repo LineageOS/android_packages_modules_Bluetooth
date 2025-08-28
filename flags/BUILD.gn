@@ -31,7 +31,7 @@ aconfig("bluetooth_flags_c_lib") {
     "native.aconfig",
     "opp.aconfig",
     "pairing.aconfig",
-    "pbapclient.aconfig",
+    "pbap.aconfig",
     "ranging.aconfig",
     "rfcomm.aconfig",
     "rnr.aconfig",
