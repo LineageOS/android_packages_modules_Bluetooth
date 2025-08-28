@@ -131,3 +131,5 @@ void post_on_bt_jni(BtJniClosure closure) {
 }
 
 bluetooth::common::PostableContext* get_jni() { return jni_thread.Postable(); }
+
+bluetooth::common::MessageLoopThread* get_jni_thread() { return &jni_thread; }

@@ -17,6 +17,7 @@
 #pragma once
 
 #include "btif/include/btif_common.h"
+#include "common/message_loop_thread.h"
 #include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 
@@ -54,3 +55,5 @@ bool is_on_jni_thread();
 void post_on_bt_jni(BtJniClosure closure);
 
 bluetooth::common::PostableContext* get_jni();
+
+bluetooth::common::MessageLoopThread* get_jni_thread();
