@@ -1179,6 +1179,8 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
   if (p_data->status == GATT_SUCCESS) {
     p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
     if (p_cb->hid_handle == BTA_HH_IDX_INVALID) {
+      log::warn("Invalid HID handle, closing connection {}, conn_id={}", p_cb->link_spec,
+                p_data->conn_id);
       p_cb->conn_id = p_data->conn_id;
       bta_hh_le_api_disc_act(p_cb);
       return;

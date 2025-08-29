@@ -1663,10 +1663,10 @@ static void btif_hh_timer_timeout(void* data) {
   tBTA_HH p_data;
   int param_len = sizeof(tBTA_HH_CBDATA);
 
-  log::verbose("");
   if (p_dev->dev_status != BTHH_CONN_STATE_CONNECTED) {
     return;
   }
+  log::warn("Virtual unplug timeout for {}", p_dev->link_spec);
 
   memset(&p_data, 0, sizeof(tBTA_HH));
   p_data.dev_status.status = BTA_HH_ERR;  // tBTA_HH_STATUS
