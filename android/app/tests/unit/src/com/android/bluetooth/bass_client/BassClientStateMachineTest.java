@@ -2440,6 +2440,33 @@ public class BassClientStateMachineTest {
         Mockito.clearInvocations(scanControlPoint);
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_INTENT_BROADCAST_IN_STATE_MACHINE_CLEANUP)
+    public void testDoQuit_inConnectedState_broadcastsDisconnectedIntent() {
+        allowConnection(true);
+        allowConnectGatt(true);
+
+        // Transition the state machine from DISCONNECTED to CONNECTING
+        mStateMachine.sendMessage(CONNECT);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
+
+        // Transition the state machine to CONNECTED
+        mStateMachine.notifyConnectionStateChanged(GATT_SUCCESS, STATE_CONNECTED);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(STATE_CONNECTED, STATE_CONNECTING);
+
+        // Call the method under test, which should trigger a disconnect intent
+        mStateMachine.doQuit();
+
+        // Verify that the connection state broadcast was made for the disconnection
+        verifyIntentSent(
+                hasAction(ACTION_CONNECTION_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
+                hasExtra(EXTRA_STATE, STATE_DISCONNECTED),
+                hasExtra(EXTRA_PREVIOUS_STATE, STATE_CONNECTED));
+    }
+
     private void initToConnectingState() {
         allowConnection(true);
         allowConnectGatt(true);

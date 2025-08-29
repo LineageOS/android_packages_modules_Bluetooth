@@ -179,6 +179,22 @@ public class LeAudioStateMachineTest {
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_INTENT_BROADCAST_IN_STATE_MACHINE_CLEANUP)
+    public void testDoQuit_inConnectedState_broadcastsDisconnectedIntent() {
+        // Set up the state machine in a connected state
+        generateConnectionMessageFromNative(STATE_CONNECTED, STATE_DISCONNECTED);
+
+        // Verify the state is Connected before calling doQuit()
+        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
+
+        // Call the method under test
+        mStateMachine.doQuit();
+
+        // Verify the connection state broadcast was made
+        verifyConnectionStateChanged(STATE_DISCONNECTED, STATE_CONNECTED);
+    }
+
     private void sendAndDispatchMessage(int what) {
         sendAndDispatchMessage(what, null);
     }
