@@ -263,9 +263,14 @@ public class BassClientServiceTest {
                         .setBroadcastId(broadcastId)
                         .setBroadcastCode(null)
                         .setPaSyncInterval(TEST_PA_SYNC_INTERVAL)
-                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS);
-        // builder expect at least one subgroup
-        builder.addSubgroup(createBroadcastSubgroup());
+                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS)
+                        .setPublicBroadcast(true)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH)
+                        .setPublicBroadcastMetadata(
+                                BluetoothLeAudioContentMetadata.fromRawBytes(
+                                        new byte[] {0x02, 0x08, 0x01}))
+                        .addSubgroup(createBroadcastSubgroup());
         return builder.build();
     }
 
@@ -278,9 +283,14 @@ public class BassClientServiceTest {
                         .setBroadcastId(broadcastId)
                         .setBroadcastCode(null)
                         .setPaSyncInterval(TEST_PA_SYNC_INTERVAL)
-                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS);
-        // builder expect at least one subgroup
-        builder.addSubgroup(createBroadcastSubgroupBisNotSelected());
+                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS)
+                        .setPublicBroadcast(true)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH)
+                        .setPublicBroadcastMetadata(
+                                BluetoothLeAudioContentMetadata.fromRawBytes(
+                                        new byte[] {0x02, 0x08, 0x01}))
+                        .addSubgroup(createBroadcastSubgroupBisNotSelected());
         return builder.build();
     }
 
@@ -295,9 +305,8 @@ public class BassClientServiceTest {
                         .setBroadcastId(0)
                         .setBroadcastCode(null)
                         .setPaSyncInterval(TEST_PA_SYNC_INTERVAL)
-                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS);
-        // builder expect at least one subgroup
-        builder.addSubgroup(createBroadcastSubgroup());
+                        .setPresentationDelayMicros(TEST_PRESENTATION_DELAY_MS)
+                        .addSubgroup(createBroadcastSubgroup());
         return builder.build();
     }
 
@@ -788,19 +797,22 @@ public class BassClientServiceTest {
     public void testNotRemovingCachedBroadcastOnLostWithoutScanning() throws RemoteException {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
 
         // Sync lost during scanning removes cached broadcast
         onSyncLost();
         checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
-
-        // Add source to not cached broadcast cause addFailed notification
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        mLooper.dispatchAll();
-        verify(mCallback)
-                .onSourceAddFailed(
-                        eq(mCurrentDevice),
-                        eq(mBroadcastMetadata1),
-                        eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNull();
+        if (!Flags.leaudioBroadcastImproveSourceOperations()) {
+            // Add source to not cached broadcast cause addFailed notification
+            mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
+            mLooper.dispatchAll();
+            verify(mCallback)
+                    .onSourceAddFailed(
+                            eq(mCurrentDevice),
+                            eq(mBroadcastMetadata1),
+                            eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
+        }
 
         // Add broadcast to cache
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
@@ -817,10 +829,12 @@ public class BassClientServiceTest {
         // Sync lost without active scanning should not remove broadcast cache
         onSyncLost();
         checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
-
-        // Add source to unsynced broadcast, causes synchronization first
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verifyRegisterSyncCalled(mSourceDevice);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        if (!Flags.leaudioBroadcastImproveSourceOperations()) {
+            // Add source to unsynced broadcast, causes synchronization first
+            mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
+            verifyRegisterSyncCalled(mSourceDevice);
+        }
     }
 
     @Test
@@ -878,6 +892,7 @@ public class BassClientServiceTest {
         // Add source to unsynced broadcast, causes synchronization first
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
         verifyRegisterSyncCalled(device1);
+        assertThat(mBassClientService.getCachedBroadcast(broadcastId1)).isNotNull();
 
         // Error in syncEstablished causes sourceLost, sourceAddFailed notification
         // and removing cache because scanning is active
@@ -891,16 +906,18 @@ public class BassClientServiceTest {
                         eq(mCurrentDevice),
                         eq(meta),
                         eq(BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES));
-
-        // Add source to not cached broadcast causes addFailed notification
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        mLooper.dispatchAll();
-        inOrderCallback
-                .verify(mCallback)
-                .onSourceAddFailed(
-                        eq(mCurrentDevice),
-                        eq(meta),
-                        eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
+        assertThat(mBassClientService.getCachedBroadcast(broadcastId1)).isNull();
+        if (!Flags.leaudioBroadcastImproveSourceOperations()) {
+            // Add source to not cached broadcast causes addFailed notification
+            mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
+            mLooper.dispatchAll();
+            inOrderCallback
+                    .verify(mCallback)
+                    .onSourceAddFailed(
+                            eq(mCurrentDevice),
+                            eq(meta),
+                            eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
+        }
 
         // Scan and sync again
         onScanResult(device1, broadcastId1);
@@ -927,10 +944,12 @@ public class BassClientServiceTest {
                         eq(mCurrentDevice),
                         eq(meta),
                         eq(BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES));
-
-        // Add source to unsynced broadcast, causes synchronization first
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        verifyRegisterSyncCalled(device1);
+        assertThat(mBassClientService.getCachedBroadcast(broadcastId1)).isNotNull();
+        if (!Flags.leaudioBroadcastImproveSourceOperations()) {
+            // Add source to unsynced broadcast, causes synchronization first
+            mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
+            verifyRegisterSyncCalled(device1);
+        }
     }
 
     @Test
@@ -5616,6 +5635,8 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNotNull();
 
         // Add source force syncing to broadcaster
         // Not finished to not add BIG_MONITORING or to not unsync
@@ -5644,24 +5665,8 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
-
-        // Sync lost without triggering timeout to keep cache
-        onSyncLost();
-
-        // Finish adding source without PA and BIS to detect BIG_MONITORING which will sync
-        // again. This will confirm that cache is available
-        injectRemoteSourceStateSourceAdded(
-                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
-        verifyRegisterSyncCalled(mSourceDevice);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Remove source to allow add again
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        // Check if cache is NOT remaining for second broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
-        verifyRegisterSyncNeverCalled();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNull();
     }
 
     @Test
@@ -5682,6 +5687,8 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNotNull();
 
         // Start searching sources syncs to the broadcasters already synced with sinks
         startSearchingForSourcesWithAutoSync(mSourceDevice);
@@ -5695,6 +5702,8 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNull();
 
         // Synced
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -5706,21 +5715,6 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
-
-        // Sync lost without triggering timeout to keep cache
-        onSyncLost();
-
-        // Remove source to allow add again
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        // Check if cache is NOT remaining for second broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
-        verifyRegisterSyncNeverCalled();
-
-        // Check if cache is remaining for already synced broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verifyRegisterSyncCalled(mSourceDevice);
     }
 
     @Test
@@ -5741,6 +5735,8 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNotNull();
 
         // Sync info request force syncing to broadcaster and add sinks pending for PAST
         mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
@@ -5760,6 +5756,8 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNull();
 
         // Synced
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -5772,21 +5770,6 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
-
-        // Sync lost without triggering timeout to keep cache
-        onSyncLost();
-
-        // Remove source to allow add again
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        // Check if cache is NOT remaining for second broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
-        verifyRegisterSyncNeverCalled();
-
-        // Check if cache is remaining for already synced broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verifyRegisterSyncCalled(mSourceDevice);
     }
 
     @Test
@@ -5808,6 +5791,8 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNotNull();
 
         // Add source force syncing to broadcaster
         // Not finished to not add BIG_MONITORING or to not unsync
@@ -5826,6 +5811,8 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNull();
 
         // Synced
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -5838,24 +5825,6 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
-
-        // Sync lost without triggering timeout to keep cache
-        onSyncLost();
-
-        // Finish adding source without PA and BIS to detect BIG_MONITORING which will sync
-        // again. This will confirm that cache is available
-        injectRemoteSourceStateSourceAdded(
-                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
-        verifyRegisterSyncCalled(mSourceDevice);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Remove source to allow add again
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        // Check if cache is NOT remaining for second broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
-        verifyRegisterSyncNeverCalled();
     }
 
     @Test
@@ -5876,6 +5845,8 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNotNull();
 
         // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
@@ -5893,6 +5864,8 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNull();
 
         // Synced
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -5911,22 +5884,8 @@ public class BassClientServiceTest {
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
-
-        // Sync lost without triggering timeout to keep cache
-        onSyncLost();
-
-        // Remove source to allow add again
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID + 1);
-        verifyRemoveMessageAndInjectSourceRemoval();
-
-        // Check if cache is NOT remaining for second broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
-        verifyRegisterSyncNeverCalled();
-
-        // Check if cache is remaining for already synced broadcaster by adding source
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verifyRegisterSyncCalled(mSourceDevice);
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID)).isNotNull();
+        assertThat(mBassClientService.getCachedBroadcast(TEST_BROADCAST_ID_2)).isNull();
     }
 
     @Test

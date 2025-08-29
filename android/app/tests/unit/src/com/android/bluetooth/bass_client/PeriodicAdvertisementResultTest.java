@@ -147,7 +147,6 @@ public class PeriodicAdvertisementResultTest {
         info.audioConfigQuality =
                 (BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD
                         | BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH);
-        info.metaDataLength = 3;
         info.metaData = new byte[] {0x06, 0x07, 0x08};
         return new PublicBroadcastData(info);
     }
