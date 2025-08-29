@@ -215,3 +215,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "check_call_state_atd"
+    namespace: "bluetooth"
+    description: "End outgoing call on CHLD"
+    bug: "441983109"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
