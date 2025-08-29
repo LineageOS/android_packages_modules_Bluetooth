@@ -2143,6 +2143,14 @@ public class HeadsetService extends ConnectableProfile {
                 && ashaPolicy != CONNECTION_POLICY_ALLOWED;
     }
 
+    public boolean isInCall() {
+        return mSystemInterface.isInCall();
+    }
+
+    public boolean isRinging() {
+        return mSystemInterface.isRinging();
+    }
+
     private boolean shouldCallAudioBeActive() {
         return mSystemInterface.isInCall()
                 || (mSystemInterface.isRinging() && isInbandRingingEnabled());
