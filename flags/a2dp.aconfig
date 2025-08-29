@@ -149,3 +149,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_cancel_acceptor_alarm_for_avdt_init"
+    namespace: "bluetooth"
+    description: "Cancel unnecessary timer for signalling as ACP"
+    bug: "440264270"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
