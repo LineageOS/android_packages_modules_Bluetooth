@@ -106,3 +106,27 @@ template <>
 struct std::hash<BtStatus> {
   size_t operator()(const BtStatus& status) const { return status.toUint32(); }
 };
+
+// All std::formatter specializations must be inside the std namespace
+namespace std {
+
+// Concept to identify any class that inherits from BtStatus
+template <typename T>
+concept IsBtStatusDerived = std::derived_from<T, BtStatus>;
+
+// The primary formatter specialization for the base class, BtStatus.
+// This formatter will handle the core logic.
+template <>
+struct formatter<BtStatus> : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(const BtStatus& status, FormatContext& ctx) const {
+    return formatter<string_view>::format(status.toString(), ctx);
+  }
+};
+
+// A constrained partial specialization for any class T that derives from BtStatus.
+// This formatter simply inherits from the base class formatter, reusing its logic.
+template <IsBtStatusDerived T>
+struct formatter<T> : formatter<BtStatus> {};
+
+}  // namespace std
