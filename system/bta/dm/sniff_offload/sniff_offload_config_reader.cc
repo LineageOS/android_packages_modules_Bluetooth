@@ -112,11 +112,15 @@ public:
         }
         break;
       }
-      case ProfileState::BTA_SYS_SCO_OPEN:
-      case ProfileState::BTA_SYS_SCO_CLOSE: {
+      case ProfileState::BTA_SYS_SCO_OPEN: {
         valid_sniff_params = true;
         break;
       }
+
+      // Parameters resulting from the BTA_SYS_SCO_CLOSE and
+      // BTA_SYS_CONN_CLOSE should be returned as parameters with
+      // kNoPriority.
+      case ProfileState::BTA_SYS_SCO_CLOSE:
       case ProfileState::BTA_SYS_CONN_CLOSE: {
         break;
       }
