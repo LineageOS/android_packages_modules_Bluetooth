@@ -156,9 +156,7 @@ protected:
             .WillByDefault(
                     [](uint8_t /*inst_id*/, ::BleAdvertiserInterface::GetAddressCallback cb) {
                       uint8_t address_type = 0x02;
-                      RawAddress address;
-                      const uint8_t addr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
-                      address.FromOctets(addr);
+                      RawAddress address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
                       cb.Run(address_type, address);
                     });
 

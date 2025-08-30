@@ -413,8 +413,7 @@ static jboolean connectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray 
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_source_connect(bd_addr);
@@ -433,8 +432,7 @@ static jboolean disconnectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArr
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_source_disconnect(bd_addr);
@@ -450,10 +448,10 @@ static jboolean setSilenceDeviceNative(JNIEnv* env, jobject /* object */, jbyteA
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
 
   jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  RawAddress bd_addr = RawAddress::kEmpty;
-  if (addr) {
-    bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
-  }
+
+  RawAddress bd_addr = addr ? RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr))
+                            : RawAddress::kEmpty;
+
   if (bd_addr == RawAddress::kEmpty) {
     return JNI_FALSE;
   }
@@ -471,10 +469,9 @@ static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteAr
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
 
   jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  RawAddress bd_addr = RawAddress::kEmpty;
-  if (addr) {
-    bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
-  }
+
+  RawAddress bd_addr = addr ? RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr))
+                            : RawAddress::kEmpty;
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_source_set_active_device(bd_addr);
@@ -494,8 +491,7 @@ static jboolean setCodecConfigPreferenceNative(JNIEnv* env, jobject object, jbyt
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
   std::vector<btav_a2dp_codec_config_t> codec_preferences =
           prepareCodecPreferences(env, object, codecConfigArray);
 

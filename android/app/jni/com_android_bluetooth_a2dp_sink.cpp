@@ -173,8 +173,7 @@ static jboolean connectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray 
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_sink_connect(bd_addr);
@@ -193,8 +192,7 @@ static jboolean disconnectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArr
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_sink_disconnect(bd_addr);
@@ -221,8 +219,7 @@ static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteAr
     return JNI_FALSE;
   }
 
-  RawAddress rawAddress;
-  rawAddress.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress rawAddress = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", rawAddress);
   bt_status_t status = btif_av_sink_set_active_device(rawAddress);
