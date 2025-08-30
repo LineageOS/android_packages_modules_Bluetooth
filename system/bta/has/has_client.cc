@@ -1905,7 +1905,7 @@ private:
       return false;
     }
 
-    /* If deatails are loaded from storage we are done here */
+    /* If details are loaded from storage we are done here */
     if (LoadHasDetailsFromStorage(device)) {
       return true;
     }

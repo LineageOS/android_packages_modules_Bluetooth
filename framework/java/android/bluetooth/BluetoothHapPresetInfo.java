@@ -31,23 +31,23 @@ import android.text.TextUtils;
  */
 @SystemApi
 public final class BluetoothHapPresetInfo implements Parcelable {
-    private final int mPresetIndex;
-    private final String mPresetName;
+    private final int mIndex;
+    private final String mName;
     private final boolean mIsWritable;
     private final boolean mIsAvailable;
 
     /**
      * HapPresetInfo constructor
      *
-     * @param presetIndex Preset index
-     * @param presetName Preset Name
+     * @param index Preset index
+     * @param name Preset Name
      * @param isWritable Is writable flag
      * @param isAvailable Is available flag
      */
-    /*package*/ BluetoothHapPresetInfo(
-            int presetIndex, @NonNull String presetName, boolean isWritable, boolean isAvailable) {
-        this.mPresetIndex = presetIndex;
-        this.mPresetName = presetName;
+    BluetoothHapPresetInfo(
+            int index, @NonNull String name, boolean isWritable, boolean isAvailable) {
+        this.mIndex = index;
+        this.mName = name;
         this.mIsWritable = isWritable;
         this.mIsAvailable = isAvailable;
     }
@@ -58,8 +58,8 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      * @param in HapPresetInfo parcel
      */
     private BluetoothHapPresetInfo(@NonNull Parcel in) {
-        mPresetIndex = in.readInt();
-        mPresetName = in.readString();
+        mIndex = in.readInt();
+        mName = in.readString();
         mIsWritable = in.readBoolean();
         mIsAvailable = in.readBoolean();
     }
@@ -71,7 +71,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      */
     @RequiresNoPermission
     public int getIndex() {
-        return mPresetIndex;
+        return mIndex;
     }
 
     /**
@@ -81,7 +81,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      */
     @RequiresNoPermission
     public @NonNull String getName() {
-        return mPresetName;
+        return mName;
     }
 
     /**
@@ -104,6 +104,17 @@ public final class BluetoothHapPresetInfo implements Parcelable {
         return mIsAvailable;
     }
 
+    @Override
+    public String toString() {
+        return (getClass().getSimpleName()
+                        + "@"
+                        + Integer.toHexString(System.identityHashCode(this)))
+                + (" {mIndex=" + mIndex)
+                + (", mIsWritable=" + mIsWritable)
+                + (", mIsAvailable=" + mIsAvailable)
+                + (", mName=" + mName + "}");
+    }
+
     /** HapPresetInfo array creator */
     public static final @NonNull Creator<BluetoothHapPresetInfo> CREATOR =
             new Creator<BluetoothHapPresetInfo>() {
@@ -124,8 +135,8 @@ public final class BluetoothHapPresetInfo implements Parcelable {
 
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
-        dest.writeInt(mPresetIndex);
-        BluetoothUtils.writeStringToParcel(dest, mPresetName);
+        dest.writeInt(mIndex);
+        BluetoothUtils.writeStringToParcel(dest, mName);
         dest.writeBoolean(mIsWritable);
         dest.writeBoolean(mIsAvailable);
     }
@@ -140,8 +151,8 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      * @hide
      */
     public static final class Builder {
-        private int mPresetIndex = BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
-        private String mPresetName = "";
+        private int mIndex = BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
+        private String mName = "";
         private boolean mIsWritable = false;
         private boolean mIsAvailable = false;
 
@@ -162,8 +173,8 @@ public final class BluetoothHapPresetInfo implements Parcelable {
                         "Preset index for HAP shall be a non-negative value.");
             }
 
-            mPresetIndex = index;
-            mPresetName = name;
+            mIndex = index;
+            mName = name;
         }
 
         /**
@@ -197,7 +208,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
          */
         @RequiresNoPermission
         public @NonNull BluetoothHapPresetInfo build() {
-            return new BluetoothHapPresetInfo(mPresetIndex, mPresetName, mIsWritable, mIsAvailable);
+            return new BluetoothHapPresetInfo(mIndex, mName, mIsWritable, mIsAvailable);
         }
     }
 }

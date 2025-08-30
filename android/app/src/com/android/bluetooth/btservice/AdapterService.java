@@ -3245,96 +3245,8 @@ public class AdapterService extends Service {
             Log.e(TAG, "setActiveDevice: Bluetooth is not enabled");
             return false;
         }
-        boolean setHeadset = false;
-        boolean setA2dp = false;
 
-        // Determine for which profiles we want to set device as our active device
-        switch (profiles) {
-            case BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL -> setHeadset = true;
-            case BluetoothAdapter.ACTIVE_DEVICE_AUDIO -> setA2dp = true;
-            case BluetoothAdapter.ACTIVE_DEVICE_ALL -> {
-                setHeadset = true;
-                setA2dp = true;
-            }
-            default -> {
-                return false;
-            }
-        }
-
-        final var headset = getHeadsetService();
-        boolean hfpSupported =
-                headset.isPresent()
-                        && (device == null
-                                || headset.get().getConnectionPolicy(device)
-                                        == CONNECTION_POLICY_ALLOWED);
-        final var a2dp = getA2dpService();
-        boolean a2dpSupported =
-                a2dp.isPresent()
-                        && (device == null
-                                || a2dp.get().getConnectionPolicy(device)
-                                        == CONNECTION_POLICY_ALLOWED);
-        final var leAudio = getLeAudioService();
-        boolean leAudioSupported =
-                leAudio.isPresent()
-                        && (device == null
-                                || leAudio.get().getConnectionPolicy(device)
-                                        == CONNECTION_POLICY_ALLOWED);
-
-        if (leAudioSupported) {
-            Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
-            if (device == null) {
-                /* If called by BluetoothAdapter it means Audio should not be stopped.
-                 * For this reason let's say that fallback device exists
-                 */
-                leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
-            } else {
-                if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
-                    // TODO:  b/312396770
-                    a2dp.get().removeActiveDevice(false);
-                }
-                leAudio.get().setActiveDevice(device);
-            }
-        }
-
-        // Order matters, some devices do not accept A2DP connection before HFP connection
-        if (setHeadset && hfpSupported) {
-            Log.i(TAG, "setActiveDevice: Setting active Headset " + device);
-            headset.get().setActiveDevice(device);
-        }
-
-        if (setA2dp && a2dpSupported) {
-            Log.i(TAG, "setActiveDevice: Setting active A2dp device " + device);
-            if (device == null) {
-                a2dp.get().removeActiveDevice(false);
-            } else {
-                /* Workaround for the controller issue which is not able to handle correctly
-                 * A2DP offloader vendor specific command while ISO Data path is set.
-                 * Proper solutions should be delivered in b/312396770
-                 */
-                if (leAudio.isPresent()) {
-                    List<BluetoothDevice> activeLeAudioDevices = leAudio.get().getActiveDevices();
-                    if (activeLeAudioDevices.get(0) != null) {
-                        leAudio.get().removeActiveDevice(true);
-                    }
-                }
-                a2dp.get().setActiveDevice(device);
-            }
-        }
-
-        final var hearingAid = getHearingAidService();
-        if (hearingAid.isPresent()) {
-            if (device == null
-                    || hearingAid.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
-                Log.i(TAG, "setActiveDevice: Setting active Hearing Aid " + device);
-                if (device == null) {
-                    hearingAid.get().removeActiveDevice(false);
-                } else {
-                    hearingAid.get().setActiveDevice(device);
-                }
-            }
-        }
-
-        return true;
+        return mActiveDeviceManager.setActiveDevice(device, profiles);
     }
 
     /**
@@ -3540,7 +3452,11 @@ public class AdapterService extends Service {
         }
         disconnectEnabledProfile(BluetoothProfile.HEADSET, device);
         disconnectEnabledProfile(BluetoothProfile.HEADSET_CLIENT, device);
-        disconnectEnabledProfile(BluetoothProfile.A2DP, device);
+        if (Flags.a2dpDelayDisconnect()) {
+            disconnectEnabledA2dpProfile(device);
+        } else {
+            disconnectEnabledProfile(BluetoothProfile.A2DP, device);
+        }
         disconnectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         disconnectEnabledProfile(BluetoothProfile.MAP_CLIENT, device);
         disconnectEnabledProfile(BluetoothProfile.MAP, device);
@@ -3572,6 +3488,52 @@ public class AdapterService extends Service {
                             Log.i(TAG, "Disconnecting " + profile);
                             profile.disconnect(device);
                         });
+    }
+
+    /**
+     * Disconnect enabled A2DP profile.
+     *
+     * <p>This function takes into account interop checks.
+     *
+     * @param device is the remote device with which to disconnect this profile
+     */
+    private void disconnectEnabledA2dpProfile(BluetoothDevice device) {
+        final var headset = getHeadsetService();
+        getStartedConnectableProfile(BluetoothProfile.A2DP)
+                .filter(
+                        profile -> {
+                            final int state = profile.getConnectionState(device);
+                            return state == STATE_CONNECTED || state == STATE_CONNECTING;
+                        })
+                .filter(
+                        profile -> {
+                            return shouldDelayA2dpDisconnection(device) && headset.isPresent();
+                        })
+                .ifPresent(
+                        profile -> {
+                            if (headset.get().isInCall() || headset.get().isRinging()) {
+                                Log.i(TAG, "Post a delayed message to disconnect A2DP profile");
+                                mHandler.postDelayed(
+                                        () -> {
+                                            Log.i(TAG, "Disconnecting " + profile);
+                                            profile.disconnect(device);
+                                        },
+                                        400);
+                                return;
+                            }
+                            Log.i(TAG, "Disconnecting " + profile);
+                            profile.disconnect(device);
+                        });
+    }
+
+    /** Check if A2DP disconnection should be delayed for interop device. */
+    private boolean shouldDelayA2dpDisconnection(BluetoothDevice device) {
+        Objects.requireNonNull(device, "device must not be null");
+        boolean matched =
+                interopMatchAddrOrName(
+                        InteropUtil.InteropFeature.INTEROP_A2DP_DELAY_DISCONNECT,
+                        device.getAddress());
+        return matched;
     }
 
     /**

@@ -121,6 +121,16 @@ flag {
 }
 
 flag {
+    name: "a2dp_adjust_sbc_bitpool"
+    namespace: "bluetooth"
+    description: "Correct invalid SBC bitpool values received from remote devices"
+    bug: "441146545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "a2dp_reject_sho_request"
     namespace: "bluetooth"
     description: "Reject SHO request when rsp pending from active device"
@@ -135,6 +145,16 @@ flag {
     namespace: "bluetooth"
     description: "Delay A2DP profile disconnection to fix interoperability issues"
     bug: "440507683"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_cancel_acceptor_alarm_for_avdt_init"
+    namespace: "bluetooth"
+    description: "Cancel unnecessary timer for signalling as ACP"
+    bug: "440264270"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

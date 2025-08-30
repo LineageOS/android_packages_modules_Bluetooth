@@ -170,6 +170,117 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
     }
 
     /**
+     * Set device as the active devices for the given profiles.
+     *
+     * @param device is the remote bluetooth device
+     * @param profiles is a constant that references for which profiles we'll be setting the remote
+     *     device as our active device. One of the following: {@link
+     *     BluetoothAdapter#ACTIVE_DEVICE_AUDIO}, {@link BluetoothAdapter#ACTIVE_DEVICE_PHONE_CALL}
+     *     {@link BluetoothAdapter#ACTIVE_DEVICE_ALL}
+     */
+    public boolean setActiveDevice(BluetoothDevice device, int profiles) {
+        boolean setHeadset = false;
+        boolean setA2dp = false;
+
+        // Determine for which profiles we want to set device as our active device
+        switch (profiles) {
+            case BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL -> setHeadset = true;
+            case BluetoothAdapter.ACTIVE_DEVICE_AUDIO -> setA2dp = true;
+            case BluetoothAdapter.ACTIVE_DEVICE_ALL -> {
+                setHeadset = true;
+                setA2dp = true;
+            }
+            default -> {
+                return false;
+            }
+        }
+
+        Log.i(
+                TAG,
+                "setActiveDevice: "
+                        + device
+                        + ", setHeadset="
+                        + setHeadset
+                        + ", setA2dp="
+                        + setA2dp);
+
+        final var headset = mAdapterService.getHeadsetService();
+        boolean hfpSupported =
+                headset.isPresent()
+                        && (device == null
+                                || headset.get().getConnectionPolicy(device)
+                                        == CONNECTION_POLICY_ALLOWED);
+        final var a2dp = mAdapterService.getA2dpService();
+        boolean a2dpSupported =
+                a2dp.isPresent()
+                        && (device == null
+                                || a2dp.get().getConnectionPolicy(device)
+                                        == CONNECTION_POLICY_ALLOWED);
+        final var leAudio = mAdapterService.getLeAudioService();
+        boolean leAudioSupported =
+                leAudio.isPresent()
+                        && (device == null
+                                || leAudio.get().getConnectionPolicy(device)
+                                        == CONNECTION_POLICY_ALLOWED);
+
+        if (leAudioSupported) {
+            Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
+            if (device == null) {
+                /* If called by BluetoothAdapter it means Audio should not be stopped.
+                 * For this reason let's say that fallback device exists
+                 */
+                leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+            } else {
+                if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
+                    // TODO:  b/312396770
+                    a2dp.get().removeActiveDevice(false);
+                }
+                leAudio.get().setActiveDevice(device);
+            }
+        }
+
+        // Order matters, some devices do not accept A2DP connection before HFP connection
+        if (setHeadset && hfpSupported) {
+            Log.i(TAG, "setActiveDevice: Setting active Headset " + device);
+            headset.get().setActiveDevice(device);
+        }
+
+        if (setA2dp && a2dpSupported) {
+            Log.i(TAG, "setActiveDevice: Setting active A2dp device " + device);
+            if (device == null) {
+                a2dp.get().removeActiveDevice(false);
+            } else {
+                /* Workaround for the controller issue which is not able to handle correctly
+                 * A2DP offloader vendor specific command while ISO Data path is set.
+                 * Proper solutions should be delivered in b/312396770
+                 */
+                if (leAudio.isPresent()) {
+                    List<BluetoothDevice> activeLeAudioDevices = leAudio.get().getActiveDevices();
+                    if (activeLeAudioDevices.get(0) != null) {
+                        leAudio.get().removeActiveDevice(true);
+                    }
+                }
+                a2dp.get().setActiveDevice(device);
+            }
+        }
+
+        final var hearingAid = mAdapterService.getHearingAidService();
+        if (hearingAid.isPresent()) {
+            if (device == null
+                    || hearingAid.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
+                Log.i(TAG, "setActiveDevice: Setting active Hearing Aid " + device);
+                if (device == null) {
+                    hearingAid.get().removeActiveDevice(false);
+                } else {
+                    hearingAid.get().setActiveDevice(device);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Called when audio profile connection state changed
      *
      * @param profile The Bluetooth profile of which connection state changed
