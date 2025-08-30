@@ -1414,8 +1414,7 @@ static jboolean createBondOutOfBandNative(JNIEnv* env, jobject /* obj */, jbyteA
     return JNI_FALSE;
   }
 
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   // Convert P192 data from Java POJO to C Struct
@@ -1751,8 +1750,7 @@ static jbyteArray obfuscateAddressNative(JNIEnv* env, jobject /* obj */, jbyteAr
     jniThrowIOException(env, EINVAL);
     return env->NewByteArray(0);
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
   std::string output = sBluetoothInterface->obfuscate_address(addr_obj);
   jsize output_size = output.size() * sizeof(char);
@@ -1889,8 +1887,7 @@ static int getMetricIdNative(JNIEnv* env, jobject /* obj */, jbyteArray address)
     jniThrowIOException(env, EINVAL);
     return 0;
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
   return sBluetoothInterface->get_metric_id(addr_obj);
 }
@@ -1907,8 +1904,7 @@ static jboolean allowLowLatencyAudioNative(JNIEnv* env, jobject /* obj */, jbool
     return false;
   }
 
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
   sBluetoothInterface->allow_low_latency_audio(allowed, addr_obj);
   return true;
@@ -1925,8 +1921,7 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
     jniThrowIOException(env, EINVAL);
     return;
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   if (value == NULL) {
@@ -2171,8 +2166,7 @@ static jboolean disconnectAclNative(JNIEnv* env, jobject /* obj */, jbyteArray a
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   return sBluetoothInterface->disconnect_acl(addr_obj, transport);

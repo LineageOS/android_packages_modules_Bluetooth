@@ -88,6 +88,7 @@ import pandora.HIDGrpc;
 import pandora.HidProto.HidServiceType;
 import pandora.HidProto.ServiceRequest;
 import pandora.HostProto.AdvertiseRequest;
+import pandora.HostProto.AdvertiseResponse;
 import pandora.HostProto.DiscoverabilityMode;
 import pandora.HostProto.OwnAddressType;
 import pandora.HostProto.SetDiscoverabilityModeRequest;
@@ -228,7 +229,14 @@ public class HidHeadTrackerTest {
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-
+        // Restart advertise
+        mBumble.hostBlocking()
+                .advertise(
+                        AdvertiseRequest.newBuilder()
+                                .setLegacy(true)
+                                .setConnectable(true)
+                                .setOwnAddressType(OwnAddressType.RANDOM)
+                                .build());
         // HOGP CONNECTING and ACL CONNECTED has race connection hence unordered here
         verifyIntentReceivedUnorderedAtLeast(
                 1,
@@ -370,18 +378,21 @@ public class HidHeadTrackerTest {
                 PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
         // Make Bumble connectable with some delay
         Thread.sleep(300);
-        mBumble.hostBlocking()
+        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
+                new StreamObserverSpliterator<>();
+        mBumble.host()
                 .advertise(
                         AdvertiseRequest.newBuilder()
                                 .setLegacy(true)
                                 .setConnectable(true)
                                 .setOwnAddressType(OwnAddressType.RANDOM)
-                                .build());
+                                .build(),
+                        responseObserver);
         // Verify  ACL connection on classic transport first and then LE transport
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
-
+        responseObserver.cancel("Canceling advertise request");
         // Ensure that pairing succeeds
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
