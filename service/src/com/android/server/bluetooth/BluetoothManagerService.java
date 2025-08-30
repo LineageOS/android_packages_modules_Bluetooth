@@ -170,7 +170,7 @@ class BluetoothManagerService {
     private String mAddress;
     private String mName;
     private AdapterBinder mAdapter;
-    Context mUserContext; // TODO: b/432337346 - put as private once fixed
+    private Context mUserContext;
     private UserHandle mUser;
     private UserHandle mNextUser; // Non null if a user switch is in progress
 
