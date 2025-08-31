@@ -598,6 +598,19 @@ class ScanManager {
             return;
         }
 
+        if (Flags.adapterSuspendMgmt()
+                && Flags.stopLeScanSystemSuspend()
+                && mScanController.isSystemSuspended()) {
+            Log.w(
+                    TAG,
+                    "Cannot start LE scan in system-suspend."
+                            + (" This scan will be resumed later for " + client));
+            mSuspendedScanClients.add(client);
+            client.getAppScanStats()
+                    .ifPresent(stats -> stats.recordScanSuspend(client.getScannerId()));
+            return;
+        }
+
         if (requiresScreenOn(client) && !mScreenOn) {
             Log.w(
                     TAG,
@@ -2168,6 +2181,17 @@ class ScanManager {
         return false;
     }
 
+    void onDisplayChanged(boolean screenOn) {
+        if (Flags.scanControllerThread()) {
+            mScanController.doOnScanThread(
+                    screenOn
+                            ? ScanManager.this::handleScreenOn
+                            : ScanManager.this::handleScreenOff);
+        } else {
+            sendMessage(screenOn ? MSG_SCREEN_ON : MSG_SCREEN_OFF, null);
+        }
+    }
+
     private final DisplayManager.DisplayListener mDisplayListener =
             new DisplayManager.DisplayListener() {
                 @Override
@@ -2182,6 +2206,10 @@ class ScanManager {
 
                 @Override
                 public void onDisplayChanged(int displayId) {
+                    if (Flags.adapterSuspendMgmt() && Flags.stopLeScanSystemSuspend()) {
+                        Log.d(TAG, "Listen to display changes from adapter suspend manager");
+                        return;
+                    }
                     final var screenOn = isScreenOn();
                     if (Flags.scanControllerThread()) {
                         mScanController.doOnScanThread(
