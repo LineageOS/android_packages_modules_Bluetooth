@@ -244,7 +244,7 @@ cc_library_static {
         "-DUSE_FAKE_TIMERS",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_types",
         "libbt-common",
         "libchrome",
@@ -592,7 +592,7 @@ cc_defaults {
         "packages/modules/Bluetooth/system",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd_fuzzing",
         "libbluetooth_log",
@@ -691,7 +691,7 @@ cc_benchmark {
         "os/thread_benchmark.cc",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_gd",
         "libbluetooth_log",

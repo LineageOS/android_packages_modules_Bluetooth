@@ -116,7 +116,7 @@ cc_fuzz {
     ],
     static_libs: [
         "avrcp-target-service",
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "lib-bt-packets",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
