@@ -136,6 +136,7 @@ public class ScanController {
     // TODO(b/397863857) Used when `Flags.scanControllerThread()`. Remove @Nullable on flag cleanup
     @Nullable private final Handler mScanHandler;
     private final ScanManager mScanManager;
+    private final ScanSuspendManager mScanSuspendManager;
     private final PeriodicScanManager mPeriodicScanManager;
 
     private volatile boolean mIsAvailable = true;
@@ -219,6 +220,7 @@ public class ScanController {
                                         scanNativeInterface,
                                         mScanLooper,
                                         timeProvider));
+        mScanSuspendManager = new ScanSuspendManager(this, mScanManager, mScanLooper);
         mPeriodicScanManager =
                 requireNonNullElseGet(
                         periodicScanManager,
@@ -276,6 +278,22 @@ public class ScanController {
                 "0201060303AAFE1116AAFE20000BF017000008874803FB93540916802069080EFE13551109426C7565436861726D5F313639363835000000000000000000",
                 "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
             };
+
+    /** onDisplayChanged notifies ScanManager when the screen status changes. */
+    public void onDisplayChanged(boolean screenOn) {
+        Log.d(TAG, "onDisplayChanged() screen on: " + screenOn);
+        mScanManager.onDisplayChanged(screenOn);
+    }
+
+    /** onSystemSuspendChanged notifies ScanSuspendManager when the system suspends and resumes. */
+    public void onSystemSuspendChanged(boolean suspended) {
+        Log.d(TAG, "onSystemSuspendChanged() suspended: " + suspended);
+        mScanSuspendManager.onSystemSuspendChanged(suspended);
+    }
+
+    boolean isSystemSuspended() {
+        return mScanSuspendManager.isSystemSuspended();
+    }
 
     public void setTestModeEnabled(boolean enableTestMode) {
         synchronized (mTestModeLock) {
