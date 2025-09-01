@@ -180,10 +180,44 @@ public class ContextMapTest {
     }
 
     @Test
-    public void testDump_doesNotCrash() throws Exception {
+    public void dump_withActiveApps_doesNotShowLastApps() {
         StringBuilder sb = new StringBuilder();
         ContextMap<IBluetoothGattCallback> contextMap = getMapWithAppAndConnection();
         contextMap.dump(sb);
+
+        String dumpOutput = sb.toString();
+        assertThat(dumpOutput).contains("Entries: 2");
+        assertThat(dumpOutput).contains("Last apps:");
+        // Check that no AppRecord is printed
+        assertThat(dumpOutput).doesNotContain("AppRecord<");
+    }
+
+    @Test
+    public void dump_withRemovedApp_containsAppRecord() {
+        ContextMap<IBluetoothGattCallback> contextMap = new ContextMap<>();
+        App app =
+                contextMap.add(
+                        RANDOM_UUID1,
+                        mMockCallback,
+                        TRANSPORT_LE,
+                        mAdapterService,
+                        mAttributionSource);
+        app.id = APP_ID1;
+
+        // Remove the app to create an AppRecord in mLastRecords
+        contextMap.remove(APP_ID1, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+
+        StringBuilder sb = new StringBuilder();
+        contextMap.dump(sb);
+
+        String dumpOutput = sb.toString();
+        assertThat(dumpOutput).contains("Last apps:");
+        assertThat(dumpOutput).contains("app_if: " + APP_ID1);
+        assertThat(dumpOutput).contains("appName: " + APP_NAME);
+        assertThat(dumpOutput)
+                .contains("reason: " + ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        // Also check that the app is no longer in the main list
+        assertThat(dumpOutput).contains("Entries: 0");
     }
 
     private ContextMap<IBluetoothGattCallback> getMapWithAppAndConnection() {
