@@ -60,8 +60,6 @@ std::string EpochMillisToString(uint64_t time_ms) {
   return std::format("{}.{:03}", s, time_ms % MillisPerSecond);
 }
 
-}  // namespace
-
 struct SniffOffloadStartedState {
   bool is_started;
   tHCI_STATUS status_code;
@@ -69,10 +67,13 @@ struct SniffOffloadStartedState {
     return std::format("is_started:{} status_code:{}", is_started, status_code);
   }
 };
+
 SniffOffloadStartedState sniff_offload_started_state_ = {
         .is_started = false,
         .status_code = HCI_SUCCESS,
 };
+
+}  // namespace
 
 struct SniffOffloadParametersUpdateEntry {
   tHCI_STATUS status_code;

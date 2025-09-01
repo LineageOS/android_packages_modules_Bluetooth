@@ -38,3 +38,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "increase_contact_image_resolution"
+    namespace: "bluetooth"
+    description: "Makes PBAP server provide higher resolution contact images to PBAP clients"
+    bug: "442281149"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

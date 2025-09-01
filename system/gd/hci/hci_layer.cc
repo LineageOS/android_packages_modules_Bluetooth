@@ -310,7 +310,8 @@ struct HciLayer::impl {
 #endif
 
     common::StopWatch::DumpStopWatchLog();
-    log::error("Timed out waiting for {} for {}ms", OpCodeText(op_code), getHciTimeoutMs().count());
+    log::error("Timed out waiting for {} for {}ms, which was armed at: {}", OpCodeText(op_code),
+               getHciTimeoutMs().count(), hci_timeout_alarm_->GetArmedTime());
 
     bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
