@@ -93,6 +93,7 @@ class A2DPProxy(ProfileProxy):
                 "A2DP/SRC/SET/BV-04-C",
                 "A2DP/SRC/SET/BV-06-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BI-14-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BI-23-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BI-26-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BV-16-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BV-18-C",
