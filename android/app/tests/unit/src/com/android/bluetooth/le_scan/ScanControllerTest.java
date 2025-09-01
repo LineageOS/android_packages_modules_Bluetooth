@@ -46,6 +46,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.content.res.Resources;
@@ -102,6 +103,7 @@ public class ScanControllerTest {
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
+    @Mock private CompanionDeviceManager mCompanionDeviceManager;
     @Mock private Resources mResources;
     @Mock private ScannerMap mScannerMap;
     @Mock private ScannerMap.ScannerApp mApp;
@@ -151,6 +153,7 @@ public class ScanControllerTest {
                         mPeriodicScanManager,
                         mPeriodicScanNativeInterface,
                         mScannerMap,
+                        mCompanionDeviceManager,
                         mLooper.getLooper(),
                         mTimeProvider);
     }

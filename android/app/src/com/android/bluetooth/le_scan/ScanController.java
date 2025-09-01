@@ -147,7 +147,8 @@ public class ScanController {
     public ScanController(
             AdapterService service,
             ScanNativeInterface scanNativeInterface,
-            PeriodicScanNativeInterface periodicScanNativeInterface) {
+            PeriodicScanNativeInterface periodicScanNativeInterface,
+            CompanionDeviceManager companionDeviceManager) {
         this(
                 service,
                 null,
@@ -155,6 +156,7 @@ public class ScanController {
                 null,
                 periodicScanNativeInterface,
                 new ScannerMap(),
+                companionDeviceManager,
                 null,
                 getSystemClock());
     }
@@ -167,13 +169,14 @@ public class ScanController {
             PeriodicScanManager periodicScanManager,
             PeriodicScanNativeInterface periodicScanNativeInterface,
             ScannerMap scannerMap,
+            CompanionDeviceManager companionDeviceManager,
             @Nullable Looper looper,
             TimeProvider timeProvider) {
         Log.i(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
-        mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
+        mCompanionManager = companionDeviceManager;
         mBinder = new ScanBinder(mAdapterService, this);
         mScannerMap = scannerMap;
         mScanRadioStats = new ScanRadioStats(timeProvider);
