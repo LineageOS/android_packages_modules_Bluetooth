@@ -285,7 +285,7 @@ TEST_F(SniffOffloadTest, single_profile_event) {
           .allow_subrating_update_ = true,
   };
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(test_profile_id, _, _))
-          .WillOnce(Return(test_config));
+          .WillRepeatedly(Return(test_config));
   auto params_set_future = ExpectSuccessfulParamsUpdate(test_handle, test_config.parameters_);
 
   // Step 1: Start
@@ -523,10 +523,13 @@ TEST_F(SniffOffloadTest, state_is_managed_per_connection_handle) {
           .priority_ = Priority::kPriority4,
           .allow_subrating_update_ = true,
   };
+
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_AG, _, _))
-          .WillOnce(Return(config_a));
+          .Times(2)
+          .WillRepeatedly(Return(config_a));
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_OPC, _, _))
-          .WillOnce(Return(config_b));
+          .Times(2)
+          .WillRepeatedly(Return(config_b));
 
   // Step 1: Open profile connection on connection 'a'
   auto future_a = ExpectSuccessfulParamsUpdate(handle_a, config_a.parameters_);
@@ -553,8 +556,7 @@ TEST_F(SniffOffloadTest, is_parameter_update_failure_reported) {
           .priority_ = Priority::kPriority5,
           .allow_subrating_update_ = true,
   };
-  EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(_, _, _)).WillOnce(Return(test_config));
-
+  EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(_, _, _)).WillRepeatedly(Return(test_config));
   // Expect a failure.
   auto future = ExpectFailedParamsUpdate(test_handle, test_config.parameters_,
                                          HCI_ERR_COMMAND_DISALLOWED);
@@ -632,9 +634,11 @@ TEST_F(SniffOffloadTest, subrating_params_from_min_latency_profile) {
   };
 
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_AG, _, _))
-          .WillOnce(Return(config_a));
+          .Times(2)
+          .WillRepeatedly(Return(config_a));
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_OPC, _, _))
-          .WillOnce(Return(config_b));
+          .Times(2)
+          .WillRepeatedly(Return(config_b));
 
   // Assemble the expected final parameters:
   // Base parameters are from 'a', but the three subrating fields are from 'b'.
@@ -673,7 +677,8 @@ TEST_F(SniffOffloadTest, subrating_params_preserved_when_new_high_prio_profile_d
           .allow_subrating_update_ = true,
   };
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_OPC, _, _))
-          .WillOnce(Return(config_b));
+          .Times(2)
+          .WillRepeatedly(Return(config_b));
   auto future1 = ExpectSuccessfulParamsUpdate(test_handle, config_b.parameters_);
 
   // Step 2: Issue Profile B's state change.
@@ -688,7 +693,8 @@ TEST_F(SniffOffloadTest, subrating_params_preserved_when_new_high_prio_profile_d
           .allow_subrating_update_ = false,
   };
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_AG, _, _))
-          .WillOnce(Return(config_a));
+          .Times(2)
+          .WillRepeatedly(Return(config_a));
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_OPC, _, _))
           .WillOnce(Return(config_b));
 
@@ -727,7 +733,8 @@ TEST_F(SniffOffloadTest, profile_with_no_priority_triggers_no_update) {
 
   // Set up the mock reader to return "no priority" config.
   EXPECT_CALL(*mock_config_reader_, ReadSniffConfig(ProfileId::BTA_ID_AG, _, _))
-          .WillOnce(Return(no_prio_config));
+          .Times(2)
+          .WillRepeatedly(Return(no_prio_config));
 
   // Since activating this profile does not change the effective link
   // parameters (they remain the default), no VSC should be sent.
@@ -751,8 +758,6 @@ TEST_F(SniffOffloadTest, high_priority_profile_params_persist_in_idle_state) {
   // later moves to an idle state that has kNoPriority. A new, lower-priority
   // profile (B) becoming active should NOT cause a parameter update.
 
-  // Use InSequence to enforce the order of mock calls.
-  testing::InSequence s;
   StartOffloadSuccessfully();
 
   uint16_t test_handle = 0x1234;
@@ -778,7 +783,8 @@ TEST_F(SniffOffloadTest, high_priority_profile_params_persist_in_idle_state) {
 
   EXPECT_CALL(*mock_config_reader_,
               ReadSniffConfig(ProfileId::BTA_ID_AG, _, ProfileState::BTA_SYS_CONN_OPEN))
-          .WillOnce(Return(profile_a_active_config));
+          .Times(2)
+          .WillRepeatedly(Return(profile_a_active_config));
 
   // The first update uses Profile A's high-priority parameters.
   auto future1 = ExpectSuccessfulParamsUpdate(test_handle, profile_a_active_config.parameters_);
@@ -794,11 +800,12 @@ TEST_F(SniffOffloadTest, high_priority_profile_params_persist_in_idle_state) {
 
   // Setup mock calls for the subsequent state changes.
   EXPECT_CALL(*mock_config_reader_,
+              ReadSniffConfig(ProfileId::BTA_ID_OPC, _, ProfileState::BTA_SYS_CONN_OPEN))
+          .Times(2)
+          .WillRepeatedly(Return(profile_b_active_config));
+  EXPECT_CALL(*mock_config_reader_,
               ReadSniffConfig(ProfileId::BTA_ID_AG, _, ProfileState::BTA_SYS_CONN_IDLE))
           .WillOnce(Return(profile_a_idle_config));
-  EXPECT_CALL(*mock_config_reader_,
-              ReadSniffConfig(ProfileId::BTA_ID_OPC, _, ProfileState::BTA_SYS_CONN_OPEN))
-          .WillOnce(Return(profile_b_active_config));
 
   // NO parameter update should occur. The system should remember
   // Profile A's priority-5 config and see that the new active profile (B) has a
@@ -817,6 +824,63 @@ TEST_F(SniffOffloadTest, high_priority_profile_params_persist_in_idle_state) {
   std::promise<void> timer_promise;
   auto timer_future = timer_promise.get_future();
   timer_future.wait_for(std::chrono::milliseconds(kDebounceDelay20Ms + kWaitJitterMs));
+}
+
+TEST_F(SniffOffloadTest, rapid_state_changes_after_open__use_open_config) {
+  // 1. A profile connection opens, which establishes a baseline configuration with a real priority.
+  // 2. Before the debounce delay expires, the same profile transitions to BUSY and then to IDLE.
+  // 3. The IDLE state is configured to have kNoPriority.
+  //
+  // The expected outcome is that the system handles rapid state changes, and when
+  // the debounce timer finally fires, it evaluates the final state. Because the IDLE state has
+  // kNoPriority, the logic MUST fall back to the saved configuration from the initial CONN_OPEN
+  // state. Therefore, a single parameter update should occur using the CONN_OPEN parameters.
+
+  testing::InSequence s;
+  StartOffloadSuccessfully();
+
+  uint16_t test_handle = 0x1234;
+  ProfileId test_profile_id = ProfileId::BTA_ID_AV;
+
+  // Define distinct configs for each state.
+  SniffOffloadConfig open_config = {
+          .parameters_ = {.sniff_max_interval = 100},
+          .priority_ = Priority::kPriority5,
+          .allow_subrating_update_ = true,
+  };
+
+  SniffOffloadConfig idle_config = {
+          .parameters_ = {.sniff_max_interval = 999},
+          .priority_ = Priority::kNoPriority,
+          .allow_subrating_update_ = true,
+  };
+
+  // Set up mock reader to be called for state change OPEN and IDLE
+  // and not for the BUSY state as intermediate states within the debounce period
+  // do not cause a read config to take place.
+  EXPECT_CALL(*mock_config_reader_,
+              ReadSniffConfig(test_profile_id, _, ProfileState::BTA_SYS_CONN_OPEN))
+          .WillOnce(Return(open_config));
+
+  EXPECT_CALL(*mock_config_reader_,
+              ReadSniffConfig(test_profile_id, _, ProfileState::BTA_SYS_CONN_IDLE))
+          .WillOnce(Return(idle_config));
+
+  // The final parameter update MUST use the parameters from the 'open_config'.
+  auto future = ExpectSuccessfulParamsUpdate(test_handle, open_config.parameters_);
+
+  // Trigger three state changes in quick succession, within the debounce delay.
+  sniff_offload_->OnProfileStateChanged(test_handle, test_profile_id, 0xFF,
+                                        ProfileState::BTA_SYS_CONN_OPEN);
+  sniff_offload_->OnProfileStateChanged(test_handle, test_profile_id, 0xFF,
+                                        ProfileState::BTA_SYS_CONN_BUSY);
+  sniff_offload_->OnProfileStateChanged(test_handle, test_profile_id, 0xFF,
+                                        ProfileState::BTA_SYS_CONN_IDLE);
+
+  // Wait for the single, debounced update to complete and verify it used the correct params.
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kDebounceDelay20Ms + kWaitJitterMs)),
+            std::future_status::ready)
+          << "Timeout waiting for the debounced parameter update";
 }
 
 }  // namespace
