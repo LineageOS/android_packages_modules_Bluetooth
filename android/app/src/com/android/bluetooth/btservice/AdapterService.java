@@ -1234,7 +1234,7 @@ public class AdapterService extends Service {
                                 mDistanceMeasurementNativeInterface);
                 yield mGattService;
             }
-            case BluetoothProfile.A2DP -> new A2dpService(this);
+            case BluetoothProfile.A2DP -> new A2dpService(this, mCompanionDeviceManager);
             case BluetoothProfile.A2DP_SINK -> new A2dpSinkService(this);
             case BluetoothProfile.AVRCP_CONTROLLER -> new AvrcpControllerService(this);
             case BluetoothProfile.AVRCP -> new AvrcpTargetService(this);

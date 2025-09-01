@@ -106,14 +106,15 @@ public class A2dpServiceTest {
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
 
-    private InOrder mInOrder = null;
-
-    private TestLooper mLooper;
-    private A2dpService mA2dpService;
     private final CompanionDeviceManager mCompanionDeviceManager =
             InstrumentationRegistry.getInstrumentation()
                     .getContext()
                     .getSystemService(CompanionDeviceManager.class);
+
+    private InOrder mInOrder = null;
+
+    private TestLooper mLooper;
+    private A2dpService mA2dpService;
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
@@ -130,8 +131,6 @@ public class A2dpServiceTest {
         mLooper = new TestLooper();
 
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
-        TestUtils.mockGetSystemService(
-                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
         doReturn(InstrumentationRegistry.getInstrumentation().getContext().getResources())
                 .when(mAdapterService)
                 .getResources();
@@ -147,7 +146,12 @@ public class A2dpServiceTest {
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
-        mA2dpService = new A2dpService(mAdapterService, mMockNativeInterface, mLooper.getLooper());
+        mA2dpService =
+                new A2dpService(
+                        mAdapterService,
+                        mMockNativeInterface,
+                        mCompanionDeviceManager,
+                        mLooper.getLooper());
         mA2dpService.setAvailable(true);
 
         // Get a device for testing
