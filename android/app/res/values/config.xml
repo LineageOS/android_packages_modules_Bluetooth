@@ -108,12 +108,12 @@
          should have priorities in the interval [1, 999999], and each priority
          value should be unique. -->
     <integer name="a2dp_source_codec_priority_sbc">1001</integer>
+    <integer name="a2dp_source_codec_priority_opus">1501</integer>
     <integer name="a2dp_source_codec_priority_aac">2001</integer>
     <integer name="a2dp_source_codec_priority_aptx">3001</integer>
     <integer name="a2dp_source_codec_priority_aptx_hd">4001</integer>
     <integer name="a2dp_source_codec_priority_ldac">5001</integer>
     <integer name="a2dp_source_codec_priority_lc3">6001</integer>
-    <integer name="a2dp_source_codec_priority_opus">7001</integer>
 
     <!-- Package that is responsible for user interaction on pairing request,
          success or cancel.
