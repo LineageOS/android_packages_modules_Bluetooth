@@ -419,7 +419,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void remove_advertiser(AdvertiserId advertiser_id) {
-    std::unique_lock lock(id_mutex_);
     if (!advertising_sets_.contains(advertiser_id)) {
       return;
     }
@@ -762,7 +761,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       } break;
     }
 
-    std::unique_lock lock(id_mutex_);
     enabled_sets_[advertiser_id].advertising_handle_ = kInvalidHandle;
   }
 
@@ -1552,7 +1550,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   bool address_manager_registered = false;
   bool paused = false;
 
-  std::recursive_mutex id_mutex_;
   size_t num_instances_;
   std::vector<hci::EnabledSet> enabled_sets_;
   // map to mapping the id from java layer and advertiser id
