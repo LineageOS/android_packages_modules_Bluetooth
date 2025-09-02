@@ -73,6 +73,7 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.eq
 import org.mockito.Mockito.inOrder
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
@@ -228,6 +229,8 @@ class HidDeviceTest {
 
         verifyRemoteDeviceConnectToHidHostService()
 
+        callback = mock(BluetoothHidDevice.Callback::class.java)
+        inOrder = inOrder(receiver, callback)
         assertThat(hidDeviceService.registerApp(sdpSettings, null, outQos, executor, callback))
             .isTrue()
         verifyAppStatusChanged(null, true)
@@ -236,13 +239,18 @@ class HidDeviceTest {
     /**
      * Test disable HID Device role and connect a remote device to HID Host service.
      * 1. Unregister the app.
-     * 2. Register the app with a bad descriptor.
+     * 2. Bond and remove a remote device.
+     * 3. Register the app with a bad descriptor.
      */
     @Test
     fun badDescriptorHidDeviceTest() {
         assertThat(hidDeviceService.unregisterApp()).isTrue()
         verifyAppStatusChanged(null, false)
 
+        verifyRemoteDeviceBondToHidHostService()
+
+        callback = mock(BluetoothHidDevice.Callback::class.java)
+        inOrder = inOrder(receiver, callback)
         assertThat(
                 hidDeviceService.registerApp(
                     sdpSettingsBadDescriptor,
@@ -300,6 +308,11 @@ class HidDeviceTest {
             .isEqualTo(BluetoothHidDevice.STATE_DISCONNECTED)
     }
 
+    private fun verifyRemoteDeviceBondToHidHostService() {
+        createBond(device)
+        removeBond(device)
+    }
+
     private fun verifyRemoteDeviceConnectToHidHostService() {
         createBond(device)
         assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
@@ -310,9 +323,7 @@ class HidDeviceTest {
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED))
         assertThat(hidService.getPreferredTransport(device)).isEqualTo(TRANSPORT_BREDR)
-        if (device.bondState == BOND_BONDED) {
-            removeBond(device)
-        }
+        removeBond(device)
     }
 
     private fun verifyConnectionState(
