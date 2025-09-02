@@ -2730,7 +2730,7 @@ public class GattService extends ProfileService {
                 applicationUid);
         Log.d(
                 TAG,
-                "Gatt Logging:"
+                "Logging:"
                         + (" metric_id=" + mAdapterService.getMetricId(device))
                         + (", app_uid=" + applicationUid));
     }
@@ -2752,7 +2752,7 @@ public class GattService extends ProfileService {
                 connectionStatus);
         Log.d(
                 TAG,
-                "Gatt Logging:"
+                "Logging:"
                         + (" metric_id=" + mAdapterService.getMetricId(device))
                         + (", session_index=" + sessionIndex)
                         + (", connectionState=" + connectionState)
