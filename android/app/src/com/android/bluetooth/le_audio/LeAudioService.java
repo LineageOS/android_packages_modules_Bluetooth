@@ -32,6 +32,7 @@ import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_RE
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
+import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMachineCleanup;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -727,7 +728,11 @@ public class LeAudioService extends ConnectableProfile {
                     if (sm == null) {
                         continue;
                     }
-                    sm.quit();
+                    if (leaudioIntentBroadcastInStateMachineCleanup()) {
+                        sm.doQuit();
+                    } else {
+                        sm.quit();
+                    }
                     sm.cleanup();
                 }
             } finally {
@@ -4191,7 +4196,11 @@ public class LeAudioService extends ConnectableProfile {
                     return;
                 }
                 Log.i(TAG, "removeStateMachine: removing state machine for device: " + device);
-                sm.quit();
+                if (leaudioIntentBroadcastInStateMachineCleanup()) {
+                    sm.doQuit();
+                } else {
+                    sm.quit();
+                }
                 sm.cleanup();
                 descriptor.mStateMachine = null;
             } finally {
