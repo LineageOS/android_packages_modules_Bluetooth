@@ -42,6 +42,7 @@
 #include "a2dp_codec_api.h"
 #include "a2dp_constants.h"
 #include "avdt_api.h"
+#include "gd/common/utils.h"
 #include "hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/properties.h"
@@ -692,6 +693,13 @@ static void aac_source_caps_initialize() {
   a2dp_aac_source_caps = osi_property_get_bool("persist.bluetooth.a2dp_aac.vbr_supported", false)
                                  ? a2dp_aac_vbr_source_caps
                                  : a2dp_aac_cbr_source_caps;
+
+  if (bluetooth::common::IsPtsTestMode()) {
+    // Test AVDTP/SRC/INT/SIG/SMG/BV-33-C requires AVDT_ReconfigReq.
+    // Add 48kHz capability to enable switching 44.1kHz <-> 48kHz
+    a2dp_aac_source_caps.sampleRate |= A2DP_AAC_SAMPLING_FREQ_48000;
+  }
+
   aac_source_caps_configured = true;
 }
 

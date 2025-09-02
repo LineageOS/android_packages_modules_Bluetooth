@@ -37,7 +37,6 @@
     "AVDTP/SRC/INT/SIG/SMG/BV-11-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-13-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-23-C",
-    "AVDTP/SRC/INT/SIG/SMG/BV-33-C",
     "AVRCP/TG/CA/BI-01-C",
     "AVRCP/TG/CA/BI-04-C",
     "AVRCP/TG/CA/BI-06-C",
@@ -2718,7 +2717,9 @@
         "VCP/VC/SPE/BI-19-C",
         "VCP/VC/SPE/BI-20-C",
         "VCP/VC/VCCP/BV-05-C",
-        "VCP/VC/VOCP/BV-01-C"
+        "VCP/VC/VOCP/BV-01-C",
+        // Enable AAC 48kHz support
+        "AVDTP/SRC/INT/SIG/SMG/BV-33-C"
       ]
     },
     {
