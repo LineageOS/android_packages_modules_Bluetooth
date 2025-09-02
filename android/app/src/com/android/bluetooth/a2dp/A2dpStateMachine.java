@@ -792,9 +792,6 @@ final class A2dpStateMachine extends StateMachine {
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         mA2dpService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
-
-        // Log the A2DP stream state change to the metrics logger.
-        logA2dpStateMetric(mDevice, newState);
     }
 
     @Override
@@ -926,12 +923,6 @@ final class A2dpStateMachine extends StateMachine {
             case BluetoothProfile.STATE_DISCONNECTING ->
                     BluetoothStatsLog
                             .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__A2DP_STATE_DISCONNECTING;
-            case BluetoothA2dp.STATE_NOT_PLAYING ->
-                    BluetoothStatsLog
-                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__A2DP_STATE_NOT_PLAYING;
-            case BluetoothA2dp.STATE_PLAYING ->
-                    BluetoothStatsLog
-                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__A2DP_STATE_PLAYING;
             default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_UNKNOWN;
         };
     }
