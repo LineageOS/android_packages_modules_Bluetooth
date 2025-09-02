@@ -55,18 +55,19 @@ static constexpr uint8_t kStartWaitInMs = 50;
 static constexpr uint16_t kDefaultSubrateMaxLatency = 0xAAAA;
 static constexpr uint16_t kDefaultSubrateMinRemoteTimeout = 0xBCBC;
 static constexpr uint16_t kDefaultSubrateMinLocalTimeout = 0xEEDD;
-
+static constexpr uint16_t kTestDefaultSniffMaxInterval = 0x0001;
 // =================================================
 // Test Data
 // =================================================
 
 // Factory for the default parameters used to start the offload module.
-// The combination:- link_idle_timeout = 0, allow_exit_on_rx = allow_exit_on_tx = true
-// Refers to the Prefer-Sniff Sniff_Offload mode. This should be default state of parameters
+// The combination:- sniff_max_interval > 0, link_idle_timeout = 0,
+// allow_exit_on_rx = allow_exit_on_tx = true refers to the Prefer-Active
+// Sniff_Offload mode. This should be default state of parameters
 // when all profiles have relinquished control.
 SniffOffloadParameters CreateDefaultStartParams() {
   return {
-          .sniff_max_interval = 0,
+          .sniff_max_interval = kTestDefaultSniffMaxInterval,
           .sniff_min_interval = 0,
           .sniff_attempts = 0,
           .sniff_timeout = 0,
@@ -241,9 +242,6 @@ class SniffOffloadTest : public ::testing::Test {
 // =================================================================
 
 TEST_F(SniffOffloadTest, start_success) {
-  // Setup
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
-
   // Call helper that does the start and does the verification of started
   StartOffloadSuccessfully();
 }
@@ -273,7 +271,6 @@ TEST_F(SniffOffloadTest, start_failure) {
 
 TEST_F(SniffOffloadTest, single_profile_event) {
   // Setup: Start the module
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
   StartOffloadSuccessfully();
 
   // Define test data and expectations for the profile event
@@ -298,7 +295,6 @@ TEST_F(SniffOffloadTest, single_profile_event) {
 
 TEST_F(SniffOffloadTest, profile_a_blinks) {
   // Setup: Start the module
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
   StartOffloadSuccessfully();
 
   // Setup: Set expectations that no parameter update should occur
@@ -320,7 +316,6 @@ TEST_F(SniffOffloadTest, profile_a_blinks) {
 
 TEST_F(SniffOffloadTest, profile_a_blinks2) {
   // Setup: Start the module
-  SniffOffloadParameters start_params = CreateDefaultStartParams();
   StartOffloadSuccessfully();
 
   // Setup: Set expectations that no parameter update should occur
