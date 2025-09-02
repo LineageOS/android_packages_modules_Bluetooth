@@ -1162,7 +1162,11 @@ public class AdapterService extends Service {
     private void startScanController() {
         Log.i(TAG, "startScanController() called");
         mScanController =
-                new ScanController(this, mScanNativeInterface, mPeriodicScanNativeInterface);
+                new ScanController(
+                        this,
+                        mScanNativeInterface,
+                        mPeriodicScanNativeInterface,
+                        mCompanionDeviceManager);
         mNativeInterface.enable();
     }
 
