@@ -1417,6 +1417,8 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb, uint16_t max_packet_lengt
     if (p_buf->event == 0) {
       first_seg = true;
       sdu_len = p_buf->len;
+      // Need to send the SDU length in "Start of L2CAP SDU" packet.
+      max_pdu -= L2CAP_SDU_LEN_OVERHEAD;
     } else {
       mid_seg = true;
     }
@@ -1828,8 +1830,14 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
       }
 
-      max_retrans_size = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET -
-                         L2CAP_SDU_LEN_OFFSET - fcs_len;
+      if (com::android::bluetooth::flags::l2cap_improve_segmented_sdu() &&
+          p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE) {
+        max_retrans_size = BT_ERTM_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET -
+                           L2CAP_SDU_LEN_OFFSET - fcs_len;
+      } else {
+        max_retrans_size = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET -
+                           L2CAP_SDU_LEN_OFFSET - fcs_len;
+      }
 
       /* Ensure the MPS is not bigger than the MTU */
       if ((p_cfg->fcr.mps == 0) || (p_cfg->fcr.mps > p_ccb->peer_cfg.mtu)) {
