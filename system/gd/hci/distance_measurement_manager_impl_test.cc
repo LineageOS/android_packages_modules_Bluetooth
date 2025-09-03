@@ -1508,7 +1508,6 @@ class DistanceMeasurementManagerInvalidRasTest
 public:
   static void make_invalid_testing_segment(std::vector<uint8_t>& segment_data,
                                            InvalidRasTestingItem testing_item) {
-    uint8_t origin_value = 0;
     switch (testing_item) {
       case RANGING_DONE_STATUS:
         segment_data.at(9) = (segment_data.at(9) & 0xF0) | 0x02;

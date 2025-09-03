@@ -155,7 +155,6 @@ protected:
   void set_sample_database(uint16_t conn_id) {
     static constexpr uint16_t kGapSvcStartHdl = 0x0001;
     static constexpr uint16_t kGapDeviceNameValHdl = 0x0003;
-    static constexpr uint16_t kGapSvcEndHdl = kGapDeviceNameValHdl;
 
     gatt::DatabaseBuilder bob;
 

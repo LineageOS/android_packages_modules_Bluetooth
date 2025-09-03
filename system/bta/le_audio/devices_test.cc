@@ -585,8 +585,6 @@ protected:
             (requirements.audio_context_type != types::LeAudioContextType::UNSPECIFIED);
     if ((direction == kLeAudioDirectionSink) || sourceAsesNeeded) {
       // Create ASE configurations with the proper audio channel allocation
-      uint8_t count = 0;
-      uint32_t allocations = 0;
       for (auto const& req : *direction_requirements) {
         auto req_allocations = VEC_UINT8_TO_UINT32(
                 req.params.At(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation));

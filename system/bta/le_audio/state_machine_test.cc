@@ -10275,7 +10275,6 @@ TEST_F(StateMachineTest, testAutonomousDisableOneDeviceAndGoBackToStream_CisDisc
 
   auto* leAudioDevice = group->GetFirstDevice();
 
-  LeAudioDevice* firstDevice = leAudioDevice;
   LeAudioDevice* lastDevice;
 
   auto expected_devices_written = 0;
@@ -10383,7 +10382,6 @@ TEST_F(StateMachineTest, testAutonomousDisableOneDeviceAndGoBackToStream_CisConn
 
   auto* leAudioDevice = group->GetFirstDevice();
 
-  LeAudioDevice* firstDevice = leAudioDevice;
   LeAudioDevice* lastDevice;
 
   auto expected_devices_written = 0;

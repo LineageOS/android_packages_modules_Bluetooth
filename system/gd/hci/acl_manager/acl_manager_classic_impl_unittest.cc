@@ -56,9 +56,6 @@ constexpr char kRemotePublicDeviceStringB[] = "11:B2:B3:B4:B5:B6";
 constexpr uint16_t kHciHandleA = 123;
 constexpr uint16_t kHciHandleB = 456;
 
-constexpr auto kMinimumRotationTime = std::chrono::milliseconds(7 * 60 * 1000);
-constexpr auto kMaximumRotationTime = std::chrono::milliseconds(15 * 60 * 1000);
-
 const AddressWithType empty_address_with_type = hci::AddressWithType();
 
 struct {

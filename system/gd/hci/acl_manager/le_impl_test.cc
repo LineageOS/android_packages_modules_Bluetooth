@@ -76,10 +76,7 @@ constexpr std::chrono::milliseconds kMaximumRotationTime(16 * 1000);
 constexpr uint16_t kIntervalMax = 0x40;
 constexpr uint16_t kIntervalMin = 0x20;
 constexpr uint16_t kLatency = 0x60;
-constexpr uint16_t kLength = 0x5678;
-constexpr uint16_t kTime = 0x1234;
 constexpr uint16_t kTimeout = 0x80;
-constexpr uint16_t kContinuationNumber = 0x32;
 constexpr std::array<uint8_t, 16> kPeerIdentityResolvingKey({
         0x00,
         0x01,
