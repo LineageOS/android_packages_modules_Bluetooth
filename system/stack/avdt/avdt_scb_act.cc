@@ -693,7 +693,7 @@ void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
     // Delay reporting is sent before open request (i.e., in configured state).
     avdt_scb_snd_snk_delay_rpt_req(p_scb, p_data);
 
-    if (com::android::bluetooth::flags::avdt_wait_for_initial_delay_report_as_initiator() &&
+    if (com_android_bluetooth_flags_avdt_wait_for_initial_delay_report_as_initiator() &&
         (p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
       log::verbose("set alarm init_delay_report_timer");
       alarm_set_on_mloop(p_scb->init_delay_report_timer, AVDT_INIT_DELAY_REPORT_TIMEOUT_MS,
@@ -863,7 +863,7 @@ void avdt_scb_hdl_delay_rpt_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
 
   avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
 
-  if (!com::android::bluetooth::flags::avdt_wait_for_initial_delay_report_as_initiator()) {
+  if (!com_android_bluetooth_flags_avdt_wait_for_initial_delay_report_as_initiator()) {
     return;
   }
 

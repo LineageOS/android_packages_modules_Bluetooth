@@ -37,7 +37,7 @@ constexpr std::chrono::microseconds kMinimumPeriod = std::chrono::microseconds(1
 RepeatingTimer::~RepeatingTimer() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   bool is_running = false;
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     is_running = message_loop_thread_ != nullptr && message_loop_thread_->IsRunning();
   } else {
     is_running =
@@ -68,7 +68,7 @@ bool RepeatingTimer::SchedulePeriodic(MessageLoopThread* thread, base::Repeating
   expected_time_next_task_us_ = time_next_task_us;
   task_ = std::move(task);
   task_wrapper_.Reset(base::Bind(&RepeatingTimer::RunTask, base::Unretained(this)));
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     message_loop_thread_ = thread;
   } else {
     message_loop_thread_weak_ptr_ = thread->GetWeakPtr();
@@ -107,7 +107,7 @@ void RepeatingTimer::CancelHelper(std::promise<void> promise) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   MessageLoopThread* scheduled_thread;
 
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     scheduled_thread = message_loop_thread_;
     if (scheduled_thread == nullptr) {
       promise.set_value();
@@ -151,7 +151,7 @@ void RepeatingTimer::CancelClosure(std::promise<void> promise) {
 // This runs on user thread
 bool RepeatingTimer::IsScheduled() const {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     return message_loop_thread_ != nullptr && message_loop_thread_->IsRunning();
   }
 
@@ -161,7 +161,7 @@ bool RepeatingTimer::IsScheduled() const {
 // This runs on message loop thread
 void RepeatingTimer::RunTask() {
   bool is_running = false;
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     is_running = message_loop_thread_ != nullptr && message_loop_thread_->IsRunning();
   } else {
     is_running =
@@ -172,7 +172,7 @@ void RepeatingTimer::RunTask() {
     return;
   }
 
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     log::assert_that(message_loop_thread_->IsRunningOnSameThread(),
                      "task must run on message loop thread");
   } else {
@@ -190,7 +190,7 @@ void RepeatingTimer::RunTask() {
     // multiple of period
     remaining_time_us = (remaining_time_us % period_us + period_us) % period_us;
   }
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     message_loop_thread_->DoInThreadDelayed(task_wrapper_.callback(),
                                             std::chrono::microseconds(remaining_time_us));
   } else {

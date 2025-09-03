@@ -114,7 +114,7 @@ bt_status_t do_in_jni_thread(base::OnceClosure task) {
 }
 
 bool is_on_jni_thread() {
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     return jni_thread.IsRunningOnSameThread();
   }
   return jni_thread.GetThreadId() == PlatformThread::CurrentId();

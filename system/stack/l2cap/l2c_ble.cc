@@ -189,7 +189,7 @@ bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
   p_lcb->timeout = conn_timeout;
   p_lcb->latency = conn_latency;
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
-  if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+  if (com_android_bluetooth_flags_initial_conn_params_p1()) {
     uint16_t min_conn_interval_aggressive = LeConnectionParameters::GetMinConnIntervalAggressive();
     uint16_t max_conn_interval_aggressive = LeConnectionParameters::GetMaxConnIntervalAggressive();
 
@@ -375,7 +375,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           p_lcb->latency = latency;
           p_lcb->timeout = timeout;
           p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
-          if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+          if (com_android_bluetooth_flags_initial_conn_params_p1()) {
             p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
           }
 
@@ -874,50 +874,50 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
                 p_ccb->remote_cid, p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps,
                 p_ccb->peer_conn_cfg.credits, con_info.l2cap_result);
 
-        if (com::android::bluetooth::flags::check_l2c_conn_status_before_param_validation()) {
-            if (con_info.l2cap_result ==
-                static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
-                if (validate_l2cap_params(p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps)) {
-                    p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
-                    p_ccb->ble_sdu = NULL;
-                    p_ccb->ble_sdu_length = 0;
-                    p_ccb->is_first_seg = true;
-                    p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
-                    l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
-                } else {
-                    con_info.l2cap_result =
-                    static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
-                    l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-                    break;
-                }
+        if (com_android_bluetooth_flags_check_l2c_conn_status_before_param_validation()) {
+          if (con_info.l2cap_result ==
+              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
+            if (validate_l2cap_params(p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps)) {
+              p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
+              p_ccb->ble_sdu = NULL;
+              p_ccb->ble_sdu_length = 0;
+              p_ccb->is_first_seg = true;
+              p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+              l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
             } else {
-                l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-                break;
-            }
-        } else {
-            /* validate the parameters */
-            if (p_ccb->peer_conn_cfg.mtu < L2CAP_LE_MIN_MTU ||
-               p_ccb->peer_conn_cfg.mps < L2CAP_LE_MIN_MPS ||
-               p_ccb->peer_conn_cfg.mps > L2CAP_LE_MAX_MPS) {
-               log::error("L2CAP invalid params");
-               con_info.l2cap_result =
-                  static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
-                l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+              con_info.l2cap_result =
+                      static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
+              l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
               break;
             }
-
-           p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
-           p_ccb->ble_sdu = NULL;
-           p_ccb->ble_sdu_length = 0;
-           p_ccb->is_first_seg = true;
-           p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
-
-           if (con_info.l2cap_result ==
-            static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
-               l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
-           } else {
+          } else {
             l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-           }
+            break;
+          }
+        } else {
+          /* validate the parameters */
+          if (p_ccb->peer_conn_cfg.mtu < L2CAP_LE_MIN_MTU ||
+              p_ccb->peer_conn_cfg.mps < L2CAP_LE_MIN_MPS ||
+              p_ccb->peer_conn_cfg.mps > L2CAP_LE_MAX_MPS) {
+            log::error("L2CAP invalid params");
+            con_info.l2cap_result =
+                    static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+            break;
+          }
+
+          p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
+          p_ccb->ble_sdu = NULL;
+          p_ccb->ble_sdu_length = 0;
+          p_ccb->is_first_seg = true;
+          p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+
+          if (con_info.l2cap_result ==
+              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
+          } else {
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+          }
         }
       } else {
         log::verbose("I DO NOT remember the connection req");
@@ -1502,7 +1502,7 @@ void L2CA_AdjustConnectionIntervals(uint16_t* /* min_interval */, uint16_t* max_
 }
 
 void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
-  if (com::android::bluetooth::flags::leaudio_check_ecosystem_base_interval_support() &&
+  if (com_android_bluetooth_flags_leaudio_check_ecosystem_base_interval_support() &&
       !bluetooth::shim::GetController()->IsSupported(
               bluetooth::hci::OpCode::SET_ECOSYSTEM_BASE_INTERVAL)) {
     // Command not supported! Just exit, no need to update the BLE conn parameter.

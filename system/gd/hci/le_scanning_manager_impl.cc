@@ -212,14 +212,14 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   ~impl() {
     stop();
     if (address_manager_registered_) {
-      if (com::android::bluetooth::flags::fix_use_after_object_destroyed()) {
+      if (com_android_bluetooth_flags_fix_use_after_object_destroyed()) {
         le_address_manager_->UnregisterSync(this);
       } else {
         le_address_manager_->Unregister(this);
       }
     }
 
-    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
       handler_->Clear();
       handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
       delete handler_;
@@ -227,10 +227,9 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   void stop() {
-    if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
       hci_layer_->ReleaseLeScanningInterface();
-    }
-    else {
+    } else {
       for (auto subevent_code : LeScanningEvents) {
         hci_layer_->UnregisterLeEventHandler(subevent_code);
       }
@@ -419,7 +418,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
                                            int8_t tx_power, int8_t rssi,
                                            uint16_t periodic_advertising_interval,
                                            const std::vector<uint8_t>& advertising_data) {
-    if (com::android::bluetooth::flags::resolve_address_for_adv_report()) {
+    if (com_android_bluetooth_flags_resolve_address_for_adv_report()) {
       RawAddress raw_address = ToRawAddress(address);
       tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 

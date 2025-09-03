@@ -200,7 +200,7 @@ public:
     fixed_queue_free(tx_audio_queue, nullptr);
     tx_audio_queue = nullptr;
     tx_flush = false;
-    if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+    if (!com_android_bluetooth_flags_ref_counted_native_wakelock() ||
         btif_a2dp_source_is_streaming()) {
       media_alarm.CancelAndWait();
       wakelock_release();
@@ -332,7 +332,7 @@ bool btif_a2dp_source_init(void) {
   // Start A2DP Source media task
   btif_a2dp_source_thread.StartUp();
 
-  if (com::android::bluetooth::flags::a2dp_source_null_fixed_queue()) {
+  if (com_android_bluetooth_flags_a2dp_source_null_fixed_queue()) {
     if (!btif_a2dp_source_thread.EnableRealTimeScheduling()) {
 #if defined(__ANDROID__)
       log::fatal("unable to enable real time scheduling");
@@ -438,7 +438,7 @@ static bool btif_a2dp_source_startup(void) {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateStartingUp);
   btif_a2dp_source_cb.tx_audio_queue = fixed_queue_new(SIZE_MAX);
 
-  if (com::android::bluetooth::flags::a2dp_source_null_fixed_queue()) {
+  if (com_android_bluetooth_flags_a2dp_source_null_fixed_queue()) {
     if (!bluetooth::audio::a2dp::init(get_main_thread(), &a2dp_stream_callbacks,
                                       btif_av_is_a2dp_offload_enabled())) {
       log::warn("Failed to setup the bluetooth audio HAL");
@@ -570,7 +570,7 @@ void btif_a2dp_source_shutdown(std::promise<void> shutdown_complete_promise) {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateShuttingDown);
 
   // Stop the timer.
-  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() ||
       btif_a2dp_source_is_streaming()) {
     btif_a2dp_source_cb.media_alarm.CancelAndWait();
     wakelock_release();
@@ -893,7 +893,7 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
     return;
   }
 
-  if (!com::android::bluetooth::flags::a2dp_fmq_read_exact()) {
+  if (!com_android_bluetooth_flags_a2dp_fmq_read_exact()) {
     /* Drain data still left in the queue */
     static constexpr size_t AUDIO_STREAM_OUTPUT_BUFFER_SZ = 28 * 512;
     uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];

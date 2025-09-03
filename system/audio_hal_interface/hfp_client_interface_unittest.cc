@@ -255,7 +255,7 @@ static void init_message_loop_thread() {
     bluetooth::log::warn("Unable to set real time scheduling");
   }
 
-  if (!com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (!com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     if (message_loop_thread.message_loop() == nullptr) {
       FAIL() << "unable to get message loop.";
     }

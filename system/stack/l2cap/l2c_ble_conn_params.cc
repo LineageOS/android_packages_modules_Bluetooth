@@ -88,7 +88,7 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int, uint1
   p_lcb->latency = latency;
   p_lcb->timeout = timeout;
   p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
-  if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+  if (com_android_bluetooth_flags_initial_conn_params_p1()) {
     p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
   }
 
@@ -125,7 +125,7 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda, bool l
   if (lock == p_lcb->conn_update_blocked_by_service_discovery) {
     log::warn("{} service discovery already locked/unlocked conn params: {}", rem_bda, lock);
 
-    if (!lock && com::android::bluetooth::flags::initial_conn_params_p1() &&
+    if (!lock && com_android_bluetooth_flags_initial_conn_params_p1() &&
         (p_lcb->conn_update_mask & L2C_BLE_AGGRESSIVE_INITIAL_PARAM)) {
       p_lcb->conn_update_mask &= ~L2C_BLE_NOT_DEFAULT_PARAM;
       p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
@@ -287,7 +287,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
        If parameters are already updated, lets set them
        up to what has been requested during connection establishement */
     if (p_lcb->conn_update_mask & L2C_BLE_NOT_DEFAULT_PARAM) {
-      if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+      if (com_android_bluetooth_flags_initial_conn_params_p1()) {
         min_conn_int = LeConnectionParameters::GetMinConnIntervalAggressive();
         max_conn_int = LeConnectionParameters::GetMaxConnIntervalAggressive();
         log::info("min_conn_int={}, max_conn_int={}", min_conn_int, max_conn_int);
@@ -349,7 +349,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       if (p_lcb->IsLinkRoleCentral() ||
           (bluetooth::shim::GetController()->SupportsBleConnectionParametersRequest() &&
            acl_peer_supports_ble_connection_parameters_request(p_lcb->remote_bd_addr))) {
-        if (com::android::bluetooth::flags::initial_conn_params_p1() &&
+        if (com_android_bluetooth_flags_initial_conn_params_p1() &&
             (p_lcb->conn_update_mask & L2C_BLE_AGGRESSIVE_INITIAL_PARAM)) {
           log::info("Relaxing aggressive initial connection parameters. addr={}",
                     p_lcb->remote_bd_addr);
@@ -440,7 +440,7 @@ void l2cble_process_rc_param_request_evt(uint16_t handle, uint16_t int_min, uint
   p_lcb->max_interval = int_max;
   p_lcb->latency = latency;
   p_lcb->timeout = timeout;
-  if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+  if (com_android_bluetooth_flags_initial_conn_params_p1()) {
     p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
   }
 
@@ -492,7 +492,7 @@ void l2cble_use_preferred_conn_params(const RawAddress& bda) {
     p_lcb->max_interval = p_dev_rec->conn_params.max_conn_int;
     p_lcb->timeout = p_dev_rec->conn_params.supervision_tout;
     p_lcb->latency = p_dev_rec->conn_params.peripheral_latency;
-    if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+    if (com_android_bluetooth_flags_initial_conn_params_p1()) {
       p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
     }
 

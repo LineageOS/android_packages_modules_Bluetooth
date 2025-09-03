@@ -181,12 +181,12 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   ~impl() {
-    if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
       hci_->ReleaseLeAdvertisingInterface();
     }
 
     if (address_manager_registered) {
-      if (com::android::bluetooth::flags::fix_use_after_object_destroyed()) {
+      if (com_android_bluetooth_flags_fix_use_after_object_destroyed()) {
         le_address_manager_->UnregisterSync(this);
       } else {
         le_address_manager_->Unregister(this);
@@ -194,7 +194,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
     advertising_sets_.clear();
 
-    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
       handler_->Clear();
       handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
       delete handler_;

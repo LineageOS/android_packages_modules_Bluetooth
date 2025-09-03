@@ -239,7 +239,7 @@ TEST_F(MessageLoopThreadTest, test_set_realtime_priority_success) {
 }
 
 TEST_F(MessageLoopThreadTest, test_message_loop_null_before_start) {
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     GTEST_SKIP()
             << "Skipping this test, flag replace_message_loop_thread_with_gd_handler is enabled.";
   }
@@ -249,7 +249,7 @@ TEST_F(MessageLoopThreadTest, test_message_loop_null_before_start) {
 }
 
 TEST_F(MessageLoopThreadTest, test_message_loop_not_null_start) {
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     GTEST_SKIP()
             << "Skipping this test, flag replace_message_loop_thread_with_gd_handler is enabled.";
   }
@@ -260,7 +260,7 @@ TEST_F(MessageLoopThreadTest, test_message_loop_not_null_start) {
 }
 
 TEST_F(MessageLoopThreadTest, test_message_loop_null_after_stop) {
-  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     GTEST_SKIP()
             << "Skipping this test, flag replace_message_loop_thread_with_gd_handler is enabled.";
   }

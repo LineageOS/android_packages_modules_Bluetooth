@@ -209,14 +209,14 @@ static void bta_dm_init_cb(void) {
 static void bta_dm_deinit_cb(void) {
   alarm_free(bta_dm_cb.disable_timer);
   alarm_free(bta_dm_cb.switch_delay_timer);
-  if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+  if (com_android_bluetooth_flags_set_ptr_null_after_free()) {
     bta_dm_cb.switch_delay_timer = nullptr;
     bta_dm_cb.disable_timer = nullptr;
   }
   for (size_t i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     for (size_t j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
       alarm_free(bta_dm_cb.pm_timer[i].timer[j]);
-      if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+      if (com_android_bluetooth_flags_set_ptr_null_after_free()) {
         bta_dm_cb.pm_timer[i].timer[j] = nullptr;
       }
     }
@@ -299,7 +299,7 @@ void BTA_dm_on_hw_on() {
   /* if sniff is offload, no need to handle it in the stack */
   if (osi_property_get_bool(kPropertySniffOffloadEnabled, false)) {
     log::info("Sniff offloaded. Skip bta_dm_init_pm.");
-    if(com::android::bluetooth::flags::sniff_offload_with_vsc_based_control()) {
+    if (com_android_bluetooth_flags_sniff_offload_with_vsc_based_control()) {
       bta_dm_init_pm_offload();
     }
   } else {
@@ -995,7 +995,7 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
             }
           } else {
             uint64_t delay = BTA_DM_SWITCH_DELAY_TIMER_MS;
-            if (com::android::bluetooth::flags::extend_and_randomize_role_switch_delay()) {
+            if (com_android_bluetooth_flags_extend_and_randomize_role_switch_delay()) {
               delay = bluetooth::os::GenerateRandom() %
                               (BTA_DM_MAX_SWITCH_DELAY_MS - BTA_DM_MIN_SWITCH_DELAY_MS) +
                       BTA_DM_MIN_SWITCH_DELAY_MS;

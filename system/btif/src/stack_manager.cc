@@ -327,7 +327,7 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   future_await(local_hack_future);
 
   gatt_free();
-  if (com::android::bluetooth::flags::call_sdp_free_in_main_thread()) {
+  if (com_android_bluetooth_flags_call_sdp_free_in_main_thread()) {
     do_in_main_thread(base::BindOnce(sdp_free));
   } else {
     sdp_free();
@@ -364,7 +364,7 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   btif_cleanup_bluetooth();
 
-  if (com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+  if (com_android_bluetooth_flags_shutdown_main_thread_before_cleanup()) {
     main_thread_shut_down();
   }
 
@@ -379,7 +379,7 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   module_clean_up(get_local_module(OSI_MODULE));
 
-  if (!com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+  if (!com_android_bluetooth_flags_shutdown_main_thread_before_cleanup()) {
     main_thread_shut_down();
   }
 

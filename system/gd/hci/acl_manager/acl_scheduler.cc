@@ -70,7 +70,7 @@ struct AclScheduler::impl {
         outgoing_entry_.reset();
         handle_outgoing_connection();
         // Check if incoming request also exists for this address
-        if (com::android::bluetooth::flags::acl_fix_in_and_out_connection_reqs() &&
+        if (com_android_bluetooth_flags_acl_fix_in_and_out_connection_reqs() &&
             incoming_connecting_address_set_.find(address) !=
                     incoming_connecting_address_set_.end()) {
           log::warn("Incoming connection request also exists for {}", address);
@@ -171,7 +171,7 @@ struct AclScheduler::impl {
 
   void Stop() {
     stopped_ = true;
-    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
       handler_->Clear();
       handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
       delete handler_;

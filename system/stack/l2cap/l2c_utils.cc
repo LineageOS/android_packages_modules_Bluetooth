@@ -2810,7 +2810,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
       l2cu_process_fixed_disc_cback(p_lcb);
       /* BTM SEC will make sure that link is release (probably after pairing is
        * done) */
-      if (com::android::bluetooth::flags::l2c_not_cancel_timeout() &&
+      if (com_android_bluetooth_flags_l2c_not_cancel_timeout() &&
           p_lcb->link_state == LST_CONNECTING) {
         // If connecting, trigger alarm to release lcb right now since no callbacks are expected.
         start_timeout = true;
@@ -3664,7 +3664,7 @@ void l2c_acl_flush(uint16_t handle) { btm_acl_flush(handle); }
 void l2cu_update_outstanding_packets_lcb(tL2C_LCB* p_lcb, uint16_t num_sent) {
   p_lcb->update_outstanding_packets(num_sent);
 
-  if (com::android::bluetooth::flags::delay_offload_le_coc_connection_ind()) {
+  if (com_android_bluetooth_flags_delay_offload_le_coc_connection_ind()) {
     for (tL2C_CCB* p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
       if (p_ccb->tx_packet_complete_cb) {
         log::debug("handle:0x{:04x}, num_sent:{}, CCB CID:0x{:04x}", p_lcb->Handle(), num_sent,

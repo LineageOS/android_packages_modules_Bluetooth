@@ -128,7 +128,7 @@ static void btif_storage_set_mode(RawAddress* remote_bd_addr) {
 }
 
 static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
-  if (com::android::bluetooth::flags::prevent_storage_access_without_gd_running()) {
+  if (com_android_bluetooth_flags_prevent_storage_access_without_gd_running()) {
     if (!bluetooth::shim::is_gd_stack_started_up()) {
       log::error("is_gd_stack_started_up=false");
       return false;
@@ -245,7 +245,7 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 }
 
 static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
-  if (com::android::bluetooth::flags::prevent_storage_access_without_gd_running()) {
+  if (com_android_bluetooth_flags_prevent_storage_access_without_gd_running()) {
     if (!bluetooth::shim::is_gd_stack_started_up()) {
       log::error("is_gd_stack_started_up=false");
       return false;
@@ -863,7 +863,7 @@ bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) 
   btif_config_remove_device(bdstr);
 
   /* Check the length of the paired devices, and if 0 then reset IRK */
-  if (com::android::bluetooth::flags::btsec_cycle_irks()) {
+  if (com_android_bluetooth_flags_btsec_cycle_irks()) {
     auto paired_devices = btif_config_get_paired_devices();
     if (paired_devices.empty()) {
       btif_remove_local_irk_from_resolving_list();

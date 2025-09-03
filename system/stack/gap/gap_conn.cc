@@ -217,7 +217,7 @@ uint16_t GAP_ConnOpen(const char* /* p_serv_name */, uint8_t service_id, bool is
             (p_ccb->cfg.init_credit_present) ? p_ccb->cfg.init_credit : L2CA_LeCreditDefault();
     p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
 
-    if (com::android::bluetooth::flags::consider_l2c_header_bytes_for_mps_selection()) {
+    if (com_android_bluetooth_flags_consider_l2c_header_bytes_for_mps_selection()) {
       uint16_t max_le_buf_size =
               bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_ -
               L2CAP_PKT_OVERHEAD;
@@ -756,7 +756,7 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
     tGAP_CB_DATA* cb_data_ptr = nullptr;
     tGAP_CB_DATA cb_data;
     uint16_t l2cap_remote_cid;
-    if (com::android::bluetooth::flags::bt_socket_api_l2cap_cid() &&
+    if (com_android_bluetooth_flags_bt_socket_api_l2cap_cid() &&
         stack::l2cap::get_interface().L2CA_GetRemoteChannelId(p_ccb->local_cid,
                                                               &l2cap_remote_cid)) {
       cb_data.l2cap_cids.local_cid = p_ccb->local_cid;
@@ -882,7 +882,7 @@ static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
     p_ccb->rem_mtu_size = L2CAP_DEFAULT_MTU;
   } else {
     if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-      if (com::android::bluetooth::flags::l2cap_improve_segmented_sdu()) {
+      if (com_android_bluetooth_flags_l2cap_improve_segmented_sdu()) {
         local_mtu_size = BT_ERTM_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET;
       } else {
         local_mtu_size = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET;

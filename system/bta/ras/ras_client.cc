@@ -922,7 +922,7 @@ public:
   void SetTimeOutAlarm(std::shared_ptr<RasTracker> tracker, uint16_t interval_ms,
                        TimeoutType timeout_type) {
     if (tracker->ranging_type_ == RangingType::REAL_TIME) {
-      if (com::android::bluetooth::flags::channel_sounding_offload() &&
+      if (com_android_bluetooth_flags_channel_sounding_offload() &&
           is_ranging_hardware_offload_enabled_) {
         log::info(
                 "Channel sounding offload is enabled and ranging type is "

@@ -1056,7 +1056,7 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type, uint32
 
   switch (type & 7) {
     case SIZE_ONE_BYTE:
-      if (com::android::bluetooth::flags::stack_sdp_detect_nil_property_type()) {
+      if (com_android_bluetooth_flags_stack_sdp_detect_nil_property_type()) {
         // Return NIL type if appropriate
         *p_len = (type == 0) ? 0 : sizeof(uint8_t);
       } else {

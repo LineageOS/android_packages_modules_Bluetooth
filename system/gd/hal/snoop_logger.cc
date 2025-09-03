@@ -1404,7 +1404,7 @@ SnoopLogger::~SnoopLogger() {
     delete_btsnoop_files(snooz_log_path_);
   }
 
-  if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+  if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
     handler_->Clear();
     handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
     delete handler_;

@@ -537,7 +537,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
       bool discovery_already_in_progress = false;
       if (!db.IsEmpty()) {
-        if (!com::android::bluetooth::flags::service_rediscovery_fix()) {
+        if (!com_android_bluetooth_flags_service_rediscovery_fix()) {
           p_clcb->p_srcb->gatt_database = db;
         } else {
           if (p_clcb->p_srcb->srvc_hdl_chg == false) {
@@ -568,7 +568,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
           /* cache load failure, start discovery */
           bta_gattc_start_discover(p_clcb, NULL);
         } else {
-          if (com::android::bluetooth::flags::initial_conn_params_p1() &&
+          if (com_android_bluetooth_flags_initial_conn_params_p1() &&
               p_clcb->transport == BT_TRANSPORT_LE) {
             log::info("Using cached database without robust caching.");
             bluetooth::stack::l2cap::get_interface().L2CA_LockBleConnParamsForServiceDiscovery(
@@ -904,7 +904,7 @@ void bta_gattc_continue_with_version_and_cache_known(tBTA_GATTC_CLCB* p_clcb,
                                                      RobustCachingSupport cache_support,
                                                      bool is_svc_chg) {
   if (cache_support == RobustCachingSupport::UNSUPPORTED ||
-      (com::android::bluetooth::flags::skip_unknown_robust_caching() &&
+      (com_android_bluetooth_flags_skip_unknown_robust_caching() &&
        cache_support == RobustCachingSupport::UNKNOWN)) {
     // Skip initial DB hash read if no DB hash is known, or if
     // we have strong reason (due to interop,
@@ -967,10 +967,10 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /* p_da
     if (!bta_gattc_is_data_queued(p_clcb, p_q_cmd)) {
       osi_free_and_reset((void**)&p_q_cmd);
     }
-  } else if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+  } else if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
     bta_gattc_continue(p_clcb);
   }
-  if (com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+  if (com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
       p_clcb->p_q_cmd == nullptr) {
     bta_gattc_continue(p_clcb);
   }
@@ -1339,7 +1339,7 @@ void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   }
 
   if (p_clcb->p_srcb && p_clcb->p_srcb->gatt_database.IsEmpty() &&
-      com::android::bluetooth::flags::service_rediscovery_fix() &&
+      com_android_bluetooth_flags_service_rediscovery_fix() &&
       (p_clcb->p_srcb->srvc_hdl_chg == true || p_clcb->p_srcb->state == BTA_GATTC_SERV_DISC ||
        p_clcb->p_srcb->state == BTA_GATTC_SERV_DISC_ACT)) {
     /* Service discovery to device is scheduled. Do not return failure. Client will be notified when
@@ -1475,7 +1475,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   Uuid srvc_chg_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
 
   if (p_srcb->gatt_database.IsEmpty() && p_srcb->state == BTA_GATTC_SERV_IDLE &&
-      (!com::android::bluetooth::flags::service_rediscovery_fix() || p_srcb->update_count == 0)) {
+      (!com_android_bluetooth_flags_service_rediscovery_fix() || p_srcb->update_count == 0)) {
     gatt::Database db = bta_gattc_cache_load(p_srcb->server_bda);
     if (!db.IsEmpty()) {
       p_srcb->gatt_database = db;
@@ -1527,12 +1527,12 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
       }
     }
     // Use a busy CLCB to start discovery if no CLCB is available, this will be queued.
-    if (com::android::bluetooth::flags::start_discover_service_changed() && p_clcb == NULL) {
+    if (com_android_bluetooth_flags_start_discover_service_changed() && p_clcb == NULL) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb) {
           log::info("will use busy client to {}", p_srcb->server_bda);
           p_clcb = p_clcb_i.get();
-          if (com::android::bluetooth::flags::service_rediscovery_fix()) {
+          if (com_android_bluetooth_flags_service_rediscovery_fix()) {
             bta_gattc_init_cache(p_clcb->p_srcb);
           }
           break;
@@ -1554,7 +1554,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
     } else {
       log::warn("No clcb is available to handle service change indication");
       // To respond to the next service change indication
-      if (com::android::bluetooth::flags::reset_service_change_ind_counter()) {
+      if (com_android_bluetooth_flags_reset_service_change_ind_counter()) {
         p_srcb->update_count = 0;
       }
     }

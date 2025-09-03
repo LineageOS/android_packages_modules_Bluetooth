@@ -115,7 +115,7 @@ static void smp_connect_callback(uint16_t /* channel */, const RawAddress& bd_ad
       log::debug("connect_initialized: {}, smp_over_br: {}", p_cb->connect_initialized,
                  p_cb->smp_over_br);
 
-      if (!com::android::bluetooth::flags::ignore_le_smp_conn_when_sm_over_br_progress()) {
+      if (!com_android_bluetooth_flags_ignore_le_smp_conn_when_sm_over_br_progress()) {
         if (!p_cb->connect_initialized) {
           p_cb->connect_initialized = true;
           /* initiating connection established */
@@ -303,7 +303,7 @@ static void smp_br_connect_callback(uint16_t /* channel */, const RawAddress& bd
   if (connected) {
     log::debug("connect_initialized: {}, smp_over_br: {}", p_cb->connect_initialized,
                p_cb->smp_over_br);
-    if (!com::android::bluetooth::flags::ignore_le_smp_conn_when_sm_over_br_progress()) {
+    if (!com_android_bluetooth_flags_ignore_le_smp_conn_when_sm_over_br_progress()) {
       if (!p_cb->connect_initialized) {
         p_cb->connect_initialized = true;
         /* initialize local i/r key to be default keys */
