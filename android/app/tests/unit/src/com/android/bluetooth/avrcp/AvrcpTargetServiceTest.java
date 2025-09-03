@@ -74,6 +74,7 @@ public class AvrcpTargetServiceTest {
     @Mock private Resources mMockResources;
     @Mock private SharedPreferences mMockSharedPreferences;
     @Mock private SharedPreferences.Editor mMockSharedPreferencesEditor;
+    @Mock private UserManager mUserManager;
 
     @Captor private ArgumentCaptor<AudioDeviceCallback> mAudioDeviceCb;
 
@@ -102,7 +103,6 @@ public class AvrcpTargetServiceTest {
         doReturn(mLooper.getNewExecutor()).when(mMockAdapterService).getMainExecutor();
 
         doReturn(mMockAdapterService).when(mMockAdapterService).getApplicationContext();
-        mockGetSystemService(mMockAdapterService, UserManager.class);
         doReturn(mMockResources).when(mMockAdapterService).getResources();
 
         doReturn(mMockSharedPreferencesEditor).when(mMockSharedPreferences).edit();
@@ -165,6 +165,7 @@ public class AvrcpTargetServiceTest {
                         mMockAudioManager,
                         mMockNativeInterface,
                         volumeManager,
+                        mUserManager,
                         mLooper.getLooper());
 
         verify(mMockAudioManager).registerAudioDeviceCallback(mAudioDeviceCb.capture(), any());
