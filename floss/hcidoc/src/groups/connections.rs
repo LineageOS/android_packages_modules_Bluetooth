@@ -114,6 +114,9 @@ struct OddDisconnectionsRule {
     /// make this a special case.
     pending_disconnect_due_to_host_power_off: HashSet<ConnectionHandle>,
 
+    /// When cancelling le connection, we will receive LE connection complete with failure status.
+    is_cancelling_le_conn: bool,
+
     /// Pre-defined signals discovered in the logs.
     signals: Vec<Signal>,
 
@@ -140,6 +143,7 @@ impl OddDisconnectionsRule {
             pending_le_feat: HashMap::new(),
             last_feat_handle: HashMap::new(),
             pending_disconnect_due_to_host_power_off: HashSet::new(),
+            is_cancelling_le_conn: false,
             signals: vec![],
             reportable: vec![],
         }
@@ -182,8 +186,14 @@ impl OddDisconnectionsRule {
         self.last_le_connection_filter_policy = Some(policy);
         if let Some(p) = self.le_connection_attempt.insert(address, packet.clone()) {
             self.reportable.push((
-                p.ts,
+                packet.ts,
                 format!("Dangling LE connection attempt at {:?} replaced with {:?}", p, packet),
+            ));
+        }
+        if self.is_cancelling_le_conn {
+            self.reportable.push((
+                packet.ts,
+                format!("Creating LE conn when LE conn cancellation is in progress"),
             ));
         }
     }
@@ -488,30 +498,43 @@ impl OddDisconnectionsRule {
         let addr_to_remove =
             if use_accept_list { hcidoc_packets::hci::EMPTY_ADDRESS } else { address };
 
+        let mut msg = None;
         if let Some(_) = self.le_connection_attempt.remove(&addr_to_remove) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
                 self.pending_disconnect_due_to_host_power_off.remove(&handle);
-            } else {
-                let message = if use_accept_list {
-                    format!("LeConnectionComplete error {:?} for accept list", status)
+                if self.is_cancelling_le_conn {
+                    msg = Some(format!(
+                        "Receive connection success when cancelling LE conn, addr {}, (handle={})",
+                        address, handle
+                    ));
+                }
+            } else if !self.is_cancelling_le_conn {
+                // if we're cancelling LE conn, it's expected that controller pass an error here.
+                msg = if use_accept_list {
+                    Some(format!("LeConnectionComplete error {:?} for accept list", status))
                 } else {
-                    format!(
+                    Some(format!(
                         "LeConnectionComplete error {:?} for addr {} (handle={})",
                         status, address, handle
-                    )
-                };
-                self.reportable.push((packet.ts, message));
+                    ))
+                }
             }
         } else {
-            self.reportable.push((
-                packet.ts,
-                format!(
-                    "LeConnectionComplete with status {:?} for unknown addr {} (handle={})",
-                    status, address, handle
-                ),
-            ));
+            msg = Some(format!(
+                "LeConnectionComplete with status {:?} for unknown addr {} (handle={}), is_cancelling_le_conn {}",
+                status, address, handle, self.is_cancelling_le_conn
+            ))
         }
+
+        self.is_cancelling_le_conn = false;
+        if let Some(m) = msg {
+            self.reportable.push((packet.ts, m));
+        }
+    }
+
+    fn process_le_cancel_connection(&mut self) {
+        self.is_cancelling_le_conn = true;
     }
 
     fn process_acl_tx(&mut self, acl_tx: &Acl, packet: &Packet) {
@@ -613,6 +636,7 @@ impl OddDisconnectionsRule {
         self.pending_le_feat.clear();
         self.last_feat_handle.clear();
         self.pending_disconnect_due_to_host_power_off.clear();
+        self.is_cancelling_le_conn = false;
     }
 
     fn process_system_note(&mut self, note: &String) {
@@ -682,6 +706,9 @@ impl Rule for OddDisconnectionsRule {
                         lecc.get_initiator_filter_policy(),
                         packet,
                     );
+                }
+                CommandChild::LeCreateConnectionCancel(_lccc) => {
+                    self.process_le_cancel_connection();
                 }
                 CommandChild::LeAddDeviceToFilterAcceptList(laac) => {
                     self.process_add_accept_list(laac.get_address(), packet);
