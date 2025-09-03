@@ -127,6 +127,7 @@ cc_test {
         "libaconfig_storage_read_api_cc",
         "libbinder_ndk",
         "libcrypto",
+        "libutils",
         "server_configurable_flags",
     ],
     target: {
