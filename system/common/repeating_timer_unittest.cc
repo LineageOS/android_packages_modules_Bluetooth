@@ -17,6 +17,7 @@
 #include "repeating_timer.h"
 
 #include <base/functional/bind.h>
+#include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
 #include <chrono>
@@ -25,7 +26,6 @@
 #include <thread>
 
 #include "bind_helpers.h"
-#include <com_android_bluetooth_flags.h>
 #include "message_loop_thread.h"
 
 using bluetooth::common::MessageLoopThread;
@@ -234,6 +234,16 @@ TEST_F(RepeatingTimerTest, message_loop_thread_down_cancel_scheduled_periodic_ta
                                                base::Unretained(this), num_tasks, promise_),
                            std::chrono::milliseconds(delay_ms));
   future.wait();
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    /**
+     * Need to cancel the timer, as previously we were using weak_ptr, hence the internal checks
+     * were working fine even when the thread is stopped. But with the change to GD handler, we now
+     * need to explicitly set the message_loop_thread to null, hence doing so by calling Cancel().
+     * All usages of SchedulePeriodic already uses CancelAndWait(), hence doing this here is safe
+     * and required by design for GD handler usage.
+     */
+    timer_->Cancel();
+  }
   message_loop_thread.ShutDown();
   std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms + delay_error_ms));
   int counter = counter_;

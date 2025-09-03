@@ -1947,7 +1947,7 @@ protected:
   void SyncOnMainLoop() {
     // Wait for the main loop to flush
     // WARNING: Not tested with Timers pushing periodic tasks to the main loop
-    if (message_loop_thread.GetThreadId() == base::PlatformThread::CurrentId()) {
+    if (message_loop_thread.IsRunningOnSameThread()) {
       log::warn("Tried syncing on the main loop from inside the main loop thread.");
       return;
     }
