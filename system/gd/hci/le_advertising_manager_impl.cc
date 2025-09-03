@@ -88,6 +88,11 @@ struct Advertiser {
   std::optional<std::chrono::time_point<std::chrono::system_clock>> address_rotation_interval_max;
 };
 
+struct RemovedAdvertiser {
+  AddressWithType current_address;
+  bool discoverable;
+};
+
 /**
  * Determines the address type to use, based on the requested type and the address manager policy,
  * by selecting the "strictest" of the two. Strictness is defined in ascending order as
@@ -319,6 +324,18 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
 
     if (!advertising_sets_.contains(advertiser_id)) {
       log::warn("Unknown advertiser id {}", advertiser_id);
+
+      if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list() &&
+          removed_advertising_sets_.contains(advertiser_id)) {
+        log::info("Found advertiser id {} in removed advertisers.", advertiser_id);
+        AddressWithType advertiser_address =
+                removed_advertising_sets_[advertiser_id].current_address;
+        bool is_discoverable = removed_advertising_sets_[advertiser_id].discoverable;
+
+        on_set_terminated_->OnAdvertisingSetTerminated(status, event_view.GetConnectionHandle(),
+                                                       advertiser_id, advertiser_address,
+                                                       is_discoverable);
+      }
       return;
     }
 
@@ -415,6 +432,13 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
     advertising_sets_[id] = Advertiser();
     advertising_sets_[id].in_use = true;
+
+    if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list() &&
+        removed_advertising_sets_.contains(id)) {
+      log::info("Removing advertiser id {} from removed advertisers.", id);
+      removed_advertising_sets_.erase(id);
+    }
+
     return id;
   }
 
@@ -450,6 +474,13 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         advertising_sets_[advertiser_id].address_rotation_interval_max.reset();
       }
     }
+
+    if (com::android::bluetooth::flags::ensure_acl_connection_is_removed_from_pending_list()) {
+      removed_advertising_sets_[advertiser_id] =
+              RemovedAdvertiser(advertising_sets_[advertiser_id].current_address,
+                                advertising_sets_[advertiser_id].discoverable);
+    }
+
     advertising_sets_.erase(advertiser_id);
     if (advertising_sets_.empty() && address_manager_registered) {
       le_address_manager_->Unregister(this);
@@ -1547,6 +1578,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   int8_t le_tx_path_loss_comp_ = 0;
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
+  std::map<AdvertiserId, RemovedAdvertiser> removed_advertising_sets_;
   bool address_manager_registered = false;
   bool paused = false;
 
