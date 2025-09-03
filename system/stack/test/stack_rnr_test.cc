@@ -39,8 +39,6 @@ const BD_NAME kEmptyName = "";
 tBTM_REMOTE_DEV_NAME gBTM_REMOTE_DEV_NAME{};
 bool gBTM_REMOTE_DEV_NAME_sent{false};
 
-static constexpr uint8_t kNumCommandPackets = 1;
-
 }  // namespace
 
 class BtmRnrTest : public ::testing::Test {
