@@ -322,6 +322,10 @@ public class GattService extends ProfileService {
         return mCompanionDeviceManager;
     }
 
+    public AdvertiseManager getAdvertiseManager() {
+        return mAdvertiseManager;
+    }
+
     private class ServerDeathRecipient implements IBinder.DeathRecipient {
         private final IBluetoothGattServerCallback mCallback;
         private final String mPackageName;

@@ -62,6 +62,7 @@ public class AdvertiseManager {
     private final AdvertiserMap mAdvertiserMap;
     private final ActivityManager mActivityManager;
     private final Handler mHandler;
+    private final AdvertiseSuspendManager mAdvertiseSuspendManager;
 
     private volatile boolean mIsAvailable = true;
     @VisibleForTesting int mTempRegistrationId = -1;
@@ -92,6 +93,7 @@ public class AdvertiseManager {
         mNativeInterface.init();
         mHandler = new Handler(advertiseLooper);
         mAdvertiseBinder = new AdvertiseBinder(mAdapterService, this);
+        mAdvertiseSuspendManager = new AdvertiseSuspendManager(this, adapterService);
     }
 
     void cleanup() {
@@ -104,6 +106,7 @@ public class AdvertiseManager {
                     mAdvertiseBinder.cleanup();
                     mNativeInterface.cleanup();
                     mAdvertisers.clear();
+                    mAdvertiseSuspendManager.cleanup();
                 });
     }
 
@@ -160,6 +163,7 @@ public class AdvertiseManager {
         if (entry == null) {
             Log.i(TAG, "onAdvertisingSetStarted() - no callback found for regId " + regId);
             // Advertising set was stopped before it was properly registered.
+            mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
             mNativeInterface.stopAdvertisingSet(advertiserId);
             return;
         }
@@ -167,6 +171,7 @@ public class AdvertiseManager {
         final var advertiserInfo = entry.getValue();
         final var deathRecipient = advertiserInfo.deathRecipient;
         final var callback = advertiserInfo.callback;
+
         if (status == 0) {
             entry.setValue(new AdvertiserInfo(advertiserId, deathRecipient, callback));
             mAdvertiserMap.setAdvertiserIdByRegId(regId, advertiserId);
@@ -182,6 +187,8 @@ public class AdvertiseManager {
             }
             mAdvertiserMap.removeAppAdvertiseStats(regId);
         }
+
+        mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
 
         callbackToApp(
                 () ->
@@ -209,14 +216,17 @@ public class AdvertiseManager {
             return;
         }
 
-        final var callback = entry.getValue().callback;
-        callbackToApp(() -> callback.onAdvertisingEnabled(advertiserId, enable, status));
-
         if (!enable && status != 0) {
             final var appAdvertiseStats = mAdvertiserMap.getAppAdvertiseStatsById(advertiserId);
             if (appAdvertiseStats != null) {
                 appAdvertiseStats.recordAdvertiseStop(mAdvertisers.size());
             }
+        }
+
+        mAdvertiseSuspendManager.onAdvertisingEnabled(advertiserId, enable, status);
+        if (!mAdvertiseSuspendManager.shouldSkipCallback()) {
+            final var callback = entry.getValue().callback;
+            callbackToApp(() -> callback.onAdvertisingEnabled(advertiserId, enable, status));
         }
     }
 
@@ -252,6 +262,23 @@ public class AdvertiseManager {
             IAdvertisingSetCallback callback,
             AttributionSource source) {
         checkThread();
+
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueStartAdvertisingSet(
+                    parameters,
+                    advertiseData,
+                    scanResponse,
+                    periodicParameters,
+                    periodicData,
+                    duration,
+                    maxExtAdvEvents,
+                    gattServerCallback,
+                    callback,
+                    source);
+            return;
+        }
+
         // If we are using an isolated server, force usage of an NRPA
         int serverIf = 0;
         if (gattServerCallback != null) {
@@ -303,6 +330,7 @@ public class AdvertiseManager {
 
             final int cbId = --mTempRegistrationId;
             mAdvertisers.put(binder, new AdvertiserInfo(cbId, deathRecipient, callback));
+            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents);
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
@@ -359,6 +387,12 @@ public class AdvertiseManager {
 
     void getOwnAddress(int advertiserId) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueGetOwnAddress(advertiserId);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "getOwnAddress() - bad advertiserId " + advertiserId);
@@ -369,6 +403,12 @@ public class AdvertiseManager {
 
     void stopAdvertisingSet(IAdvertisingSetCallback callback) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueStopAdvertisingSet(callback);
+            return;
+        }
+
         final var binder = callback.asBinder();
         Log.d(TAG, "stopAdvertisingSet() " + binder);
 
@@ -387,6 +427,7 @@ public class AdvertiseManager {
             return;
         }
 
+        mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
         mNativeInterface.stopAdvertisingSet(advertiserId);
 
         try {
@@ -400,11 +441,21 @@ public class AdvertiseManager {
 
     void enableAdvertisingSet(int advertiserId, boolean enable, int duration, int maxExtAdvEvents) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueEnableAdvertisingSet(
+                    advertiserId, enable, duration, maxExtAdvEvents);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "enableAdvertisingSet() - bad advertiserId " + advertiserId);
             return;
         }
+
+        mAdvertiseSuspendManager.onEnableAdvertisingSet(advertiserId);
+
         fetchAppForegroundState(advertiserId);
         mNativeInterface.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
         mAdvertiserMap.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
@@ -412,6 +463,12 @@ public class AdvertiseManager {
 
     void setAdvertisingData(int advertiserId, AdvertiseData data) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueSetAdvertisingData(advertiserId, data);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setAdvertisingData() - bad advertiserId " + advertiserId);
@@ -434,6 +491,12 @@ public class AdvertiseManager {
 
     void setScanResponseData(int advertiserId, AdvertiseData data) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueSetScanResponseData(advertiserId, data);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setScanResponseData() - bad advertiserId " + advertiserId);
@@ -456,6 +519,12 @@ public class AdvertiseManager {
 
     void setAdvertisingParameters(int advertiserId, AdvertisingSetParameters parameters) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueSetAdvertisingParameters(advertiserId, parameters);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setAdvertisingParameters() - bad advertiserId " + advertiserId);
@@ -468,6 +537,13 @@ public class AdvertiseManager {
     void setPeriodicAdvertisingParameters(
             int advertiserId, PeriodicAdvertisingParameters parameters) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueSetPeriodicAdvertisingParameters(
+                    advertiserId, parameters);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setPeriodicAdvertisingParameters() - bad advertiserId " + advertiserId);
@@ -479,6 +555,12 @@ public class AdvertiseManager {
 
     void setPeriodicAdvertisingData(int advertiserId, AdvertiseData data) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueSetPeriodicAdvertisingData(advertiserId, data);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setPeriodicAdvertisingData() - bad advertiserId " + advertiserId);
@@ -501,6 +583,12 @@ public class AdvertiseManager {
 
     void setPeriodicAdvertisingEnable(int advertiserId, boolean enable) {
         checkThread();
+        if (mAdvertiseSuspendManager.shouldQueueCommand()) {
+            Log.i(TAG, "Suspending! Queue command and return early.");
+            mAdvertiseSuspendManager.queueSetPeriodicAdvertisingEnable(advertiserId, enable);
+            return;
+        }
+
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setPeriodicAdvertisingEnable() - bad advertiserId " + advertiserId);
@@ -635,6 +723,16 @@ public class AdvertiseManager {
         if (!posted) {
             Log.w(TAG, "Unable to post async task to the handler");
         }
+    }
+
+    /** Called by AdapterSuspend. We need to prepare for suspend by pausing all advertisements. */
+    public void enterSuspend() {
+        doOnAdvertiseThread(() -> mAdvertiseSuspendManager.enterSuspend());
+    }
+
+    /** Called by AdapterSuspend. We should re-enable paused advertisements. */
+    public void exitSuspend() {
+        doOnAdvertiseThread(() -> mAdvertiseSuspendManager.exitSuspend());
     }
 
     private void forceRunSyncOnAdvertiseThread(Runnable r) {
