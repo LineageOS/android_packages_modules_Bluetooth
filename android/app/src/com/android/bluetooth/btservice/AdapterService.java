@@ -1263,7 +1263,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.MAP -> new BluetoothMapService(this);
             case BluetoothProfile.MCP_SERVER -> new McpService(this);
             case BluetoothProfile.OPP -> new BluetoothOppService(this);
-            case BluetoothProfile.PAN -> new PanService(this);
+            case BluetoothProfile.PAN -> new PanService(this, mUserManager);
             case BluetoothProfile.PBAP_CLIENT -> new PbapClientService(this);
             case BluetoothProfile.PBAP ->
                     new BluetoothPbapService(this, getSystemService(NotificationManager.class));
