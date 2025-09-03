@@ -113,3 +113,12 @@ flag {
     }
 }
 
+flag {
+    name: "consistent_battery_level"
+    namespace: "bluetooth"
+    description: "Do not reset battey level from BAS to prevent battey level fluctuation"
+    bug: "442696675"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
