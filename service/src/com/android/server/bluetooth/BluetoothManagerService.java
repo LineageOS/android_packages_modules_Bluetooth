@@ -1537,6 +1537,9 @@ class BluetoothManagerService {
                     mContext.unbindService(mConnection);
                     bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
                     mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
+                    if (mEnable) {
+                        prepareRestartMessage();
+                    }
                 }
 
                 default -> {} // Nothing to do
@@ -1630,7 +1633,6 @@ class BluetoothManagerService {
         mEnable = false;
 
         mErrorRecoveryRetryCounter++;
-        Log.d(TAG, "prepareRestartMessage: retry count=" + mErrorRecoveryRetryCounter);
         if (mErrorRecoveryRetryCounter > MAX_ERROR_RESTART_RETRIES) {
             resetAdapter();
             Log.e(TAG, "Reached maximum retry to restart Bluetooth!");
@@ -1643,7 +1645,7 @@ class BluetoothManagerService {
             delay = delay * 10;
         }
 
-        Log.d(TAG, "Crash recovery will be attempted in " + delay + "ms");
+        Log.d(TAG, "Recovery " + mErrorRecoveryRetryCounter + " scheduled in " + delay + "ms");
         mHandler.sendEmptyMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, delay);
     }
 
