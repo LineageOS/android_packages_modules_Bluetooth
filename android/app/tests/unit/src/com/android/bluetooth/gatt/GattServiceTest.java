@@ -115,6 +115,9 @@ public class GattServiceTest {
     private GattService mService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final CompanionDeviceManager mCompanionDeviceManager =
+            mContext.getSystemService(CompanionDeviceManager.class);
+
     private CompanionManager mBtCompanionManager;
     private final BluetoothDevice mDevice = getTestDevice(109);
     private MockContentResolver mMockContentResolver;
@@ -222,8 +225,6 @@ public class GattServiceTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
         mockGetSystemService(mAdapterService, ActivityManager.class);
-        final var companionDeviceManager = mContext.getSystemService(CompanionDeviceManager.class);
-        mockGetSystemService(mAdapterService, CompanionDeviceManager.class, companionDeviceManager);
 
         mBtCompanionManager = new CompanionManager(mAdapterService);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
@@ -234,6 +235,7 @@ public class GattServiceTest {
                         mNativeInterface,
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
+                        mCompanionDeviceManager,
                         mTimeProvider);
 
         mService.mClientMap = mClientMap;
@@ -262,6 +264,7 @@ public class GattServiceTest {
                             mNativeInterface,
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,
+                            mCompanionDeviceManager,
                             mTimeProvider);
         }
     }

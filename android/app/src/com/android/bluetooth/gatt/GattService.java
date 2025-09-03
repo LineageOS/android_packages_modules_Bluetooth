@@ -180,20 +180,18 @@ public class GattService extends ProfileService {
     private final TimeProvider mTimeProvider;
     @VisibleForTesting int mRssiReadThrottleMs;
 
-    public GattService(AdapterService adapterService) {
-        this(adapterService, null, null, null);
-    }
-
     public GattService(
             AdapterService adapterService,
             GattNativeInterface nativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
-            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+            CompanionDeviceManager companionDeviceManager) {
         this(
                 adapterService,
                 nativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface,
+                companionDeviceManager,
                 getSystemClock());
     }
 
@@ -203,11 +201,12 @@ public class GattService extends ProfileService {
             GattNativeInterface nativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+            CompanionDeviceManager companionDeviceManager,
             TimeProvider timeProvider) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
-        mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
+        mCompanionDeviceManager = companionDeviceManager;
         mTimeProvider = timeProvider;
 
         Settings.Global.putInt(
@@ -321,6 +320,10 @@ public class GattService extends ProfileService {
 
     CompanionDeviceManager getCompanionDeviceManager() {
         return mCompanionDeviceManager;
+    }
+
+    public AdvertiseManager getAdvertiseManager() {
+        return mAdvertiseManager;
     }
 
     private class ServerDeathRecipient implements IBinder.DeathRecipient {
@@ -2730,7 +2733,7 @@ public class GattService extends ProfileService {
                 applicationUid);
         Log.d(
                 TAG,
-                "Gatt Logging:"
+                "Logging:"
                         + (" metric_id=" + mAdapterService.getMetricId(device))
                         + (", app_uid=" + applicationUid));
     }
@@ -2752,7 +2755,7 @@ public class GattService extends ProfileService {
                 connectionStatus);
         Log.d(
                 TAG,
-                "Gatt Logging:"
+                "Logging:"
                         + (" metric_id=" + mAdapterService.getMetricId(device))
                         + (", session_index=" + sessionIndex)
                         + (", connectionState=" + connectionState)

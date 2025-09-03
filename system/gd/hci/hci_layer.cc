@@ -401,7 +401,12 @@ struct HciLayer::impl {
   }
 
   void unregister_le_event(SubeventCode event) {
-    le_event_handlers_.erase(le_event_handlers_.find(event));
+    auto it = le_event_handlers_.find(event);
+    if (it == le_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}", SubeventCodeText(event));
+      return;
+    }
+    le_event_handlers_.erase(it);
   }
 
   void register_vs_event(VseSubeventCode event,
@@ -412,7 +417,12 @@ struct HciLayer::impl {
   }
 
   void unregister_vs_event(VseSubeventCode event) {
-    vs_event_handlers_.erase(vs_event_handlers_.find(event));
+    auto it = vs_event_handlers_.find(event);
+    if (it == vs_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}", VseSubeventCodeText(event));
+      return;
+    }
+    vs_event_handlers_.erase(it);
   }
 
   void register_vs_event_default(ContextualCallback<void(VendorSpecificEventView)> handler) {

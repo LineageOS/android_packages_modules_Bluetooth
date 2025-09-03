@@ -31,7 +31,6 @@ using ::testing::Return;
 
 namespace {
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress kRawAddress2({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
 const DEV_CLASS kDeviceClass = {0x11, 0x22, 0x33};
 
 constexpr char kRemoteName[] = "TheRemoteName";

@@ -101,12 +101,17 @@ public class A2dpService extends ConnectableProfile {
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
 
-    public A2dpService(AdapterService adapterService) {
-        this(adapterService, null, Looper.getMainLooper());
+    public A2dpService(
+            AdapterService adapterService, CompanionDeviceManager companionDeviceManager) {
+        this(adapterService, null, companionDeviceManager, Looper.getMainLooper());
     }
 
     @VisibleForTesting
-    A2dpService(AdapterService adapterService, A2dpNativeInterface nativeInterface, Looper looper) {
+    A2dpService(
+            AdapterService adapterService,
+            A2dpNativeInterface nativeInterface,
+            CompanionDeviceManager companionDeviceManager,
+            Looper looper) {
         super(BluetoothProfile.A2DP, requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
@@ -116,7 +121,7 @@ public class A2dpService extends ConnectableProfile {
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
-        mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
+        mCompanionDeviceManager = companionDeviceManager;
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
 

@@ -101,16 +101,20 @@ public class PanService extends ConnectableProfile {
                 }
             };
 
-    public PanService(AdapterService adapterService) {
-        this(adapterService, null, Looper.getMainLooper());
+    public PanService(AdapterService adapterService, UserManager userManager) {
+        this(adapterService, null, userManager, Looper.getMainLooper());
     }
 
     @VisibleForTesting
-    PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
+    PanService(
+            AdapterService adapterService,
+            PanNativeInterface nativeInterface,
+            UserManager userManager,
+            Looper looper) {
         super(BluetoothProfile.PAN, requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
-        mUserManager = requireNonNull(obtainSystemService(UserManager.class));
+        mUserManager = userManager;
         mTetheringManager = requireNonNull(obtainSystemService(TetheringManager.class));
         mHandler = new PanServiceHandler(looper);
 
@@ -277,8 +281,7 @@ public class PanService extends ConnectableProfile {
             IBluetoothPanCallback callback, int id, int callerUid, boolean value) {
         Log.d(TAG, "setBluetoothTethering: " + value + ", mTetherOn: " + mTetherOn);
 
-        UserManager um = obtainSystemService(UserManager.class);
-        if (um.hasUserRestriction(UserManager.DISALLOW_CONFIG_TETHERING) && value) {
+        if (mUserManager.hasUserRestriction(UserManager.DISALLOW_CONFIG_TETHERING) && value) {
             throw new SecurityException("DISALLOW_CONFIG_TETHERING is enabled for this user.");
         }
         final String key = id + "/" + callerUid;

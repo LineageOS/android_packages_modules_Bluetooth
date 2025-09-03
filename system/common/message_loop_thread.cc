@@ -27,6 +27,7 @@
 #include <format>
 #include <future>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <utility>
@@ -145,8 +146,21 @@ void MessageLoopThread::ShutDown() {
       return;
     }
 
+    /**
+     * Synchronize the handler first, to make sure that all the tasks are posted to the handler, and
+     * then clear the handler. This is needed because MessageLoopThread's previous implementation
+     * has some issues due to global definition of threads and its shutdown. So this is just a
+     * safeguard for the Handler's shutdown.
+     *
+     * This will make sure that Handler has processed everything that was posted to it before
+     * Clear() is called.
+     */
+    // TODO: Need to replace Synchronize() with a better solution (similar to QuitWhenIdle())
+    log::assert_that(handler_->Synchronize(kHandlerStopTimeout),
+                     "Could not synchronize the handler for thread: {}",
+                     handler_thread_->GetThreadName());
+
     handler_->Clear();
-    handler_->WaitUntilStopped(kHandlerStopTimeout);
     delete handler_;
     delete handler_thread_;
     // The destructor of os::Thread will stop and join the thread.
@@ -189,7 +203,8 @@ base::PlatformThreadId MessageLoopThread::GetThreadId() const {
     // Invalidate this call, as Handler's Thread ID is std::thread::id, which is not compatible with
     // base::PlatformThreadId (pid_t).
     log::fatal(
-      "GetThreadId should not be called when flag replace_message_loop_thread_with_gd_handler is enabled.");
+            "GetThreadId should not be called when flag "
+            "replace_message_loop_thread_with_gd_handler is enabled.");
 #if defined(TARGET_FLOSS) && BASE_VER >= 1419016
     return base::PlatformThreadId(-1);
 #else
@@ -206,7 +221,7 @@ bool MessageLoopThread::IsRunningOnSameThread() const {
     return handler_thread_->IsSameThread();
   }
 
-  return false;
+  return thread_id_ == base::PlatformThread::CurrentId();
 }
 
 std::string MessageLoopThread::GetName() const { return thread_name_; }
@@ -214,8 +229,13 @@ std::string MessageLoopThread::GetName() const { return thread_name_; }
 std::string MessageLoopThread::ToString() const {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
-    return std::format("{} ({})", thread_name_, pthread_self());
+    // TODO: In C++23, std::thread::id will have a formatter, use that instead.
+    std::string thread_id = (handler_thread_ != nullptr)
+                                    ? (std::stringstream{} << handler_thread_->GetThreadId()).str()
+                                    : "null";
+    return std::format("{} (thread_id: {})", thread_name_, thread_id);
   }
+
 #if defined(TARGET_FLOSS) && BASE_VER >= 1419016
   return std::format("{}({})", thread_name_, thread_id_.raw());
 #else

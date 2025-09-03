@@ -794,6 +794,10 @@ public class AdapterService extends Service {
         return mBluetoothHciVendorSpecificNativeInterface;
     }
 
+    public AdapterSuspend getAdapterSuspend() {
+        return mAdapterSuspend;
+    }
+
     public Optional<A2dpService> getA2dpService() {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
@@ -1162,7 +1166,11 @@ public class AdapterService extends Service {
     private void startScanController() {
         Log.i(TAG, "startScanController() called");
         mScanController =
-                new ScanController(this, mScanNativeInterface, mPeriodicScanNativeInterface);
+                new ScanController(
+                        this,
+                        mScanNativeInterface,
+                        mPeriodicScanNativeInterface,
+                        mCompanionDeviceManager);
         mNativeInterface.enable();
     }
 
@@ -1231,13 +1239,14 @@ public class AdapterService extends Service {
                                 this,
                                 mGattNativeInterface,
                                 mAdvertiseManagerNativeInterface,
-                                mDistanceMeasurementNativeInterface);
+                                mDistanceMeasurementNativeInterface,
+                                mCompanionDeviceManager);
                 yield mGattService;
             }
-            case BluetoothProfile.A2DP -> new A2dpService(this);
+            case BluetoothProfile.A2DP -> new A2dpService(this, mCompanionDeviceManager);
             case BluetoothProfile.A2DP_SINK -> new A2dpSinkService(this);
             case BluetoothProfile.AVRCP_CONTROLLER -> new AvrcpControllerService(this);
-            case BluetoothProfile.AVRCP -> new AvrcpTargetService(this);
+            case BluetoothProfile.AVRCP -> new AvrcpTargetService(this, mUserManager);
             case BluetoothProfile.BATTERY -> new BatteryService(this);
             case BluetoothProfile.CSIP_SET_COORDINATOR -> new CsipSetCoordinatorService(this);
             case BluetoothProfile.HAP_CLIENT -> new HapClientService(this);
@@ -1254,7 +1263,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.MAP -> new BluetoothMapService(this);
             case BluetoothProfile.MCP_SERVER -> new McpService(this);
             case BluetoothProfile.OPP -> new BluetoothOppService(this);
-            case BluetoothProfile.PAN -> new PanService(this);
+            case BluetoothProfile.PAN -> new PanService(this, mUserManager);
             case BluetoothProfile.PBAP_CLIENT -> new PbapClientService(this);
             case BluetoothProfile.PBAP ->
                     new BluetoothPbapService(this, getSystemService(NotificationManager.class));

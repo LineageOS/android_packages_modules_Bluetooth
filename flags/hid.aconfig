@@ -98,3 +98,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hidd_handle_set_protocol_before_interrupt_connected"
+    namespace: "bluetooth"
+    description: "Handle incoming SET_PROTOCOL command even when the host hasn't established the interrupt channel"
+    bug: "442379143"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
