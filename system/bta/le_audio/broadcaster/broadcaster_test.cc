@@ -259,6 +259,8 @@ class BroadcasterTest : public Test {
 protected:
   void SetUp() override {
     com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_
+            ->leaudio_use_game_sonification_as_regular_sonification(true);
 
     test::mock::osi_alarm::alarm_free.body = [](alarm_t* alarm) {
       if (alarm) {
@@ -829,7 +831,7 @@ static BasicAudioAnnouncementData prepareAnnouncement(
 }
 
 TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
-  // Add Audio Actie State while broadcast created
+  // Add Audio Active State while broadcast created
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
   EXPECT_CALL(*mock_audio_source_, Start)
           .WillOnce(DoAll(SaveArg<1>(&audio_receiver), Return(true)))
@@ -864,7 +866,7 @@ TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
   ON_CALL(*sm, GetBroadcastAnnouncement()).WillByDefault(ReturnRef(announcement));
 
   std::vector<struct playback_track_metadata> multitrack_source_metadata = {
-          {{AUDIO_USAGE_GAME, AUDIO_CONTENT_TYPE_SONIFICATION, 0},
+          {{AUDIO_USAGE_GAME, AUDIO_CONTENT_TYPE_MUSIC, 0},
            {AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, 0},
            {AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING, AUDIO_CONTENT_TYPE_SPEECH, 0},
            {AUDIO_USAGE_UNKNOWN, AUDIO_CONTENT_TYPE_UNKNOWN, 0}}};
