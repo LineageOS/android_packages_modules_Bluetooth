@@ -51,6 +51,12 @@ private:
   static constexpr uint16_t kDefaultSendParametersTimeoutMs = 100;
   static constexpr uint16_t kDefaultInitIdleTimeout = 0;
   static constexpr uint16_t kAllAppId = 0xFF;
+
+  // Valid range of Sniff Max Interval is 0x0002 to 0xFFFE as per
+  // Bluetooth Core Spec. V6.0, Vol 4, Part E, 7.2.2
+  // Sniff Offload shall use 0x0001 to select Prefer-Active operation mode.
+  static constexpr uint16_t kDefaultSniffMaxInterval = 0x0001;
+
   // Manages the state for a single connection handle.
   class LinkStateManager {
   public:
@@ -213,7 +219,7 @@ void SniffOffloadImpl::PerformStart(uint16_t subrating_max_latency,
   // ever issued to controller for an ACL, these are the parameters the link should be
   // reverted to when all the profiles have indicated that they have closed.
   default_params_ = {
-          .sniff_max_interval = 0,
+          .sniff_max_interval = kDefaultSniffMaxInterval,
           .sniff_min_interval = 0,
           .sniff_attempts = 0,
           .sniff_timeout = 0,
