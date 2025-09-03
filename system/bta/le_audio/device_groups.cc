@@ -18,6 +18,7 @@
 
 #include "device_groups.h"
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/bt_transport.h>
 #include <stdio.h>
@@ -57,6 +58,7 @@
 #include "le_audio_utils.h"
 #include "main/shim/entry.h"
 #include "metrics_collector.h"
+#include "osi/include/properties.h"
 #include "stack/include/btm_client_interface.h"
 
 namespace bluetooth::le_audio {
@@ -617,11 +619,21 @@ uint8_t LeAudioDeviceGroup::GetSCA(void) const {
 }
 
 uint8_t LeAudioDeviceGroup::GetPacking(void) const {
-  if (!stream_conf.conf) {
-    log::error("No stream configuration has been set.");
-    return bluetooth::hci::kIsoCigPackingSequential;
+  if (stream_conf.conf) {
+    log::info("packing type: {}",
+              stream_conf.conf->packing == bluetooth::hci::kIsoCigPackingSequential
+                      ? "Sequential"
+                      : "Interleaved");
+    return stream_conf.conf->packing;
   }
-  return stream_conf.conf->packing;
+
+  if (android::sysprop::bluetooth::LeAudio::iso_interleaved_packing_enabled().value_or(false)) {
+    log::info("No stream configuration has been set, return Interleaved packing type");
+    return bluetooth::hci::kIsoCigPackingInterleaved;
+  }
+
+  log::info("No stream configuration has been set, return Sequential packing type");
+  return bluetooth::hci::kIsoCigPackingSequential;
 }
 
 uint8_t LeAudioDeviceGroup::GetFraming(void) const {
