@@ -484,7 +484,11 @@ static bt_status_t dial(const RawAddress bd_addr, const char* number) {
 
   CHECK_BTHF_CLIENT_SLC_CONNECTED(cb);
 
-  if (number) {
+  // If 'number' is a valid pointer to a non-empty string, send an ATD command.
+  // Otherwise, send a BLDN command. This logic is needed because serialization
+  // processes in JNI or protobuf can convert null arguments into empty strings,
+  // which would prevent the 'BLDN' command from ever being executed.
+  if (number && *number != '\0') {
     BTA_HfClientSendAT(cb->handle, BTA_HF_CLIENT_AT_CMD_ATD, 0, 0, number);
   } else {
     BTA_HfClientSendAT(cb->handle, BTA_HF_CLIENT_AT_CMD_BLDN, 0, 0, NULL);
