@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "kill_instead_of_exit"
-    namespace: "bluetooth"
-    description: "There is no value in pretending we are exiting properly. This is a kill and we should express it this way when finishing the process"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "339553092"
-}
-
-flag {
     name: "graceful_disable_without_message"
     namespace: "bluetooth"
     description: "Handle disable requests gracefully without a delayed message"

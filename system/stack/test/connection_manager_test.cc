@@ -166,7 +166,7 @@ TEST_F(BleConnectionManager, test_direct_connection_client) {
   EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _)).Times(1);
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
 
-  if (com::android::bluetooth::flags::idempotent_direct_connect_add()) {
+  if (com_android_bluetooth_flags_idempotent_direct_connect_add()) {
     // App already doing a direct connection, do nothing
     EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
   } else {

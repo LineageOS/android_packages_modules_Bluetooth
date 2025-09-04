@@ -959,8 +959,8 @@ struct shim::Acl::impl {
     }
 
     auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
-    if (com::android::bluetooth::flags::disconnect_acl_on_gatt_timeout() ||
-        !com::android::bluetooth::flags::remove_device_with_connection_manager()) {
+    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout() ||
+        !com_android_bluetooth_flags_remove_device_with_connection_manager()) {
       GetAclManagerLe()->RemoveFromBackgroundList(remote_address_with_type);
     } else {
       connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
@@ -1214,7 +1214,7 @@ shim::Acl::~Acl() {
 }
 
 bool shim::Acl::CheckForOrphanedAclConnections() const {
-  if (com::android::bluetooth::flags::fix_race_in_orphaned_acls()) {
+  if (com_android_bluetooth_flags_fix_race_in_orphaned_acls()) {
     std::promise<bool> promise;
     auto future = promise.get_future();
     handler_->CallOn(pimpl_.get(), &Acl::impl::check_for_orphaned_acl_connections,
@@ -1381,7 +1381,7 @@ void shim::Acl::OnConnectRequest(hci::Address address, hci::ClassOfDevice cod) {
   const RawAddress bd_addr = ToRawAddress(address);
   const DEV_CLASS dev_class = ToDevClass(cod);
 
-  if (com::android::bluetooth::flags::adapter_suspend_mgmt()) {
+  if (com_android_bluetooth_flags_adapter_suspend_mgmt()) {
     if (pimpl_->system_suspend_) {
       pimpl_->wakeup_wakelock_.acquire(
               (uint64_t)osi_property_get_int32(kWakelockTimeoutMsSysprop, 0));
@@ -1411,7 +1411,7 @@ void shim::Acl::OnLeConnectSuccess(hci::AddressWithType address_with_type,
   log::assert_that(connection != nullptr, "assert failed: connection != nullptr");
   auto handle = connection->GetHandle();
 
-  if (com::android::bluetooth::flags::adapter_suspend_mgmt()) {
+  if (com_android_bluetooth_flags_adapter_suspend_mgmt()) {
     if (pimpl_->system_suspend_) {
       pimpl_->wakeup_wakelock_.acquire(
               (uint64_t)osi_property_get_int32(kWakelockTimeoutMsSysprop, 0));
@@ -1463,7 +1463,7 @@ void shim::Acl::OnLeConnectSuccess(hci::AddressWithType address_with_type,
     BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type), "Connection canceled",
                    "Le");
 
-    if (com::android::bluetooth::flags::gatt_failure_callback_on_cancel()) {
+    if (com_android_bluetooth_flags_gatt_failure_callback_on_cancel()) {
       // When reporting back, remote becomes local.
       OnLeConnectFail(address_with_type, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
     }
@@ -1589,7 +1589,7 @@ void shim::Acl::ClearFilterAcceptList() {
 }
 
 void shim::Acl::SetSystemSuspendState(bool suspended) {
-  if (com::android::bluetooth::flags::adapter_suspend_mgmt()) {
+  if (com_android_bluetooth_flags_adapter_suspend_mgmt()) {
     pimpl_->system_suspend_ = suspended;
     if (!suspended) {
       pimpl_->wakeup_wakelock_.release();

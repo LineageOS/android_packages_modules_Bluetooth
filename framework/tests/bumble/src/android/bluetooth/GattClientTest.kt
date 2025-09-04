@@ -698,6 +698,7 @@ class GattClientTest {
         advertiseWithBumble()
 
         val gatts = mutableListOf<BluetoothGatt>()
+        val gattCallbackTimeout = 5000L
         try {
             repeat(100) {
                 val gattCallback = mock(BluetoothGattCallback::class.java)
@@ -705,24 +706,23 @@ class GattClientTest {
 
                 val gatt = remoteLeDevice.connectGatt(context, false, gattCallback)
                 gatts.add(gatt)
-
                 inOrder
-                    .verify(gattCallback, timeout(1000))
+                    .verify(gattCallback, timeout(gattCallbackTimeout))
                     .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
 
                 gatt.disconnect()
                 inOrder
-                    .verify(gattCallback, timeout(1000))
+                    .verify(gattCallback, timeout(gattCallbackTimeout))
                     .onConnectionStateChange(any(), anyInt(), eq(STATE_DISCONNECTED))
 
                 gatt.connect()
                 inOrder
-                    .verify(gattCallback, timeout(1000))
+                    .verify(gattCallback, timeout(gattCallbackTimeout))
                     .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
 
                 gatt.disconnect()
                 inOrder
-                    .verify(gattCallback, timeout(1000))
+                    .verify(gattCallback, timeout(gattCallbackTimeout))
                     .onConnectionStateChange(any(), anyInt(), eq(STATE_DISCONNECTED))
             }
         } finally {

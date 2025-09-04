@@ -16,9 +16,24 @@
 
 package com.android.bluetooth.lint
 
+import com.android.tools.lint.detector.api.getUMethod
+import org.jetbrains.uast.UAnnotation
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UParameter
 
-val BLUETOOTH_PLATFORM_PACKAGE = "com.android.bluetooth"
+const val BLUETOOTH_PLATFORM_PACKAGE = "com.android.bluetooth"
+
+const val ANNOTATION_ENFORCE_PERMISSION = "android.annotation.EnforcePermission"
+const val ANNOTATION_REQUIRES_PERMISSION = "android.annotation.RequiresPermission"
+const val ANNOTATION_PERMISSION_METHOD = "android.annotation.PermissionMethod"
+const val ANNOTATION_PERMISSION_NAME = "android.annotation.PermissionName"
+
+const val CLASS_BINDER = "android.os.Binder"
+const val CLASS_CONTEXT = "android.content.Context"
+const val CLASS_PERMISSION_CHECKER = "android.content.PermissionChecker"
+const val CLASS_PERMISSION_MANAGER = "android.permission.PermissionManager"
 
 /** Returns true */
 fun isBluetoothClass(node: UClass?): Boolean {
@@ -29,3 +44,17 @@ fun isBluetoothClass(node: UClass?): Boolean {
 fun debug(tag: String, message: String, indent: String = "") {
     println("$indent[$tag]: $message")
 }
+
+fun isPermissionMethodCall(callExpression: UCallExpression): Boolean {
+    val method = callExpression.resolve()?.getUMethod() ?: return false
+    return hasPermissionMethodAnnotation(method)
+}
+
+fun hasPermissionMethodAnnotation(method: UMethod): Boolean =
+    getPermissionMethodAnnotation(method) != null
+
+fun getPermissionMethodAnnotation(method: UMethod?): UAnnotation? =
+    method?.uAnnotations?.firstOrNull { it.qualifiedName == ANNOTATION_PERMISSION_METHOD }
+
+fun hasPermissionNameAnnotation(parameter: UParameter) =
+    parameter.annotations.any { it.hasQualifiedName(ANNOTATION_PERMISSION_NAME) }

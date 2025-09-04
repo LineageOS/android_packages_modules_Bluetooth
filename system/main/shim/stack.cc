@@ -238,7 +238,7 @@ void Stack::Stop() {
   log::info("GD stack is not running");
 
   stack_handler_->Clear();
-  if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+  if (com_android_bluetooth_flags_same_handler_for_all_modules()) {
     stack_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
   }
 
@@ -381,7 +381,7 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(std::promise<void> promise) {
-  if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+  if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
     // Create a new handler for each module to remain consistent with the old implementation.
     pimpl_ = std::make_unique<Stack::impl>(stack_thread_);
   } else {

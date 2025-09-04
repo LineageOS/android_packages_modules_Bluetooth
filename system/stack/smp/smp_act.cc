@@ -1184,7 +1184,7 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description   processing for discard security request
  ******************************************************************************/
 void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  if (com::android::bluetooth::flags::unrelated_device_smp_cancellation()) {
+  if (com_android_bluetooth_flags_unrelated_device_smp_cancellation()) {
     if (p_data == nullptr) {
       log::warn("Invalid data for discard request");
       return;
@@ -1366,7 +1366,7 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       }
 
       if (p_cb->total_tx_unacked == 0) {
-        if (com::android::bluetooth::flags::conclude_le_pairing_immediately()) {
+        if (com_android_bluetooth_flags_conclude_le_pairing_immediately()) {
           log::verbose("SMP pairing concluded {}", p_cb->pairing_bda);
           tSMP_INT_DATA smp_int_data;
           smp_int_data.status = SMP_SUCCESS;

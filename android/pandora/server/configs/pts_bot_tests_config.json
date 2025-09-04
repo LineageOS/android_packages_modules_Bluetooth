@@ -2583,7 +2583,8 @@
     {
       "flags": [
         "a2dp_set_configuration_during_discovery",
-        "a2dp_cancel_acceptor_alarm_for_avdt_init"
+        "a2dp_cancel_acceptor_alarm_for_avdt_init",
+        "a2dp_adjust_sbc_bitpool"
       ],
       "tests": [
         "A2DP"
@@ -2679,14 +2680,19 @@
         "A2DP/SNK/SYN/BV-01-C"
       ]
     },
-    // VCP does not require CSIS,
-    // in PTS test mode, enabling this system property will
-    // add device to DeviceGroups without CSIS
     {
       "system_properties": {
         "persist.bluetooth.pts": "true"
       },
       "tests": [
+        // A2DP tests for bitpool validation fail with a workaround added
+        // for interoperability for the Toyota Highlander.
+        // TODO(b/404201032): Remove pts test mode when an interop is added.
+        "A2DP/SNK/AVP/BI-14-C",
+        "A2DP/SNK/AVP/BI-15-C",
+        // VCP does not require CSIS,
+        // in PTS test mode, enabling this system property will
+        // add device to DeviceGroups without CSIS
         "VCP/VC/AICP/BV-01-C",
         "VCP/VC/AICP/BV-02-C",
         "VCP/VC/AICP/BV-03-C",

@@ -522,7 +522,7 @@ public:
       return true;  // Nothing has changed
     }
 
-    if (com::android::bluetooth::flags::a2dp_reject_sho_request()) {
+    if (com_android_bluetooth_flags_a2dp_reject_sho_request()) {
       if (!peer_address.IsEmpty() && peer && (peer->IsSink() && AllowedToConnect(peer_address)) &&
           !active_peer_.IsEmpty() && active_peer &&
           active_peer->CheckFlags(BtifAvPeer::kFlagPendingStart)) {
@@ -4050,7 +4050,7 @@ void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay,
 
   BtifAvPeer* peer = btif_av_find_peer(peer_address, local_a2dp_type);
   if (peer != nullptr && peer->IsSink()) {
-    if (com::android::bluetooth::flags::a2dp_delay_report_in_dumpsys()) {
+    if (com_android_bluetooth_flags_a2dp_delay_report_in_dumpsys()) {
       btif_report_audio_delay(peer_address, delay);
     }
     peer->SetDelayReport(delay);

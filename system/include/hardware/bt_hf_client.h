@@ -341,7 +341,7 @@ typedef struct {
                                 int volume);
 
   /** place a call with number a number
-   * if number is NULL last called number is called (aka re-dial)*/
+   * if number is NULL or empty, last called number is called (aka re-dial)*/
   bt_status_t (*dial)(const RawAddress bd_addr, const char* number);
 
   /** place a call with number specified by location (speed dial) */

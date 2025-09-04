@@ -169,7 +169,7 @@ void bta_ag_deregister(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /*data*/) {
   /* remove rfcomm servers */
   bta_ag_close_servers(p_scb, p_scb->reg_services);
 
-  if (com::android::bluetooth::flags::hfp_sco_state_reset_when_profile_restart()) {
+  if (com_android_bluetooth_flags_hfp_sco_state_reset_when_profile_restart()) {
     /* reset sco state */
     bta_ag_sco_reset(p_scb);
   }
@@ -365,7 +365,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("reset p_scb with index={}", bta_ag_scb_to_idx(p_scb));
   RawAddress peer_addr = p_scb->peer_addr;
 
-  if (com::android::bluetooth::flags::release_port_in_bta_ag_rfc_fail_before_reset_context()) {
+  if (com_android_bluetooth_flags_release_port_in_bta_ag_rfc_fail_before_reset_context()) {
     for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
       if (p_scb->serv_handle[i] != 0) {
         log::info("SCB idx {}: Removing server on serv_handle[{}] = {}",
@@ -496,7 +496,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
       log::warn("Unable to remove RFCOMM server peer:{} handle:{}", p_scb->peer_addr,
                 p_scb->conn_handle);
     }
-    if (com::android::bluetooth::flags::hfp_sco_state_reset_when_profile_restart()) {
+    if (com_android_bluetooth_flags_hfp_sco_state_reset_when_profile_restart()) {
       /* reset sco state */
       bta_ag_sco_reset(p_scb);
     }
@@ -599,7 +599,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   int status = PORT_CheckConnection(data.rfc.port_handle, &dev_addr, &lcid);
   if (status != PORT_SUCCESS) {
     log::error("PORT_CheckConnection returned {}", status);
-    if (com::android::bluetooth::flags::rfcomm_fix_bta_ag_rfc_acp_open_error()) {
+    if (com_android_bluetooth_flags_rfcomm_fix_bta_ag_rfc_acp_open_error()) {
       bta_ag_rfc_fail(p_scb, tBTA_AG_DATA::kEmpty);
     }
     return;

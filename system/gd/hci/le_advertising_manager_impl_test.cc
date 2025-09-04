@@ -159,7 +159,7 @@ protected:
   }
 
   void TearDown() override {
-    TEST_BT::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->reset_flags();
 
     sync_client_handler();
 
@@ -1856,7 +1856,7 @@ TEST_F(LeExtendedAdvertisingManagerTest,
 }
 
 TEST_F(LeExtendedAdvertisingManagerTest, use_nrpa_if_public_address_policy_non_connectable) {
-  TEST_BT::provider_->nrpa_non_connectable_adv(true);
+  com::android::bluetooth::flags::provider_->nrpa_non_connectable_adv(true);
 
   // arrange: use PUBLIC address policy
   test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
@@ -1891,7 +1891,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_nrpa_if_public_address_policy_non_c
 
 TEST_F(LeExtendedAdvertisingManagerTest,
        use_public_if_requested_with_public_address_policy_non_connectable) {
-  TEST_BT::provider_->nrpa_non_connectable_adv(true);
+  com::android::bluetooth::flags::provider_->nrpa_non_connectable_adv(true);
   // arrange: use PUBLIC address policy
   test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 

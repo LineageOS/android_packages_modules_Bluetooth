@@ -78,6 +78,7 @@ cc_defaults {
         // Override global.go that demote the error to a warning
         "-Werror=format",
         "-Werror=reorder-init-list",
+        "-Werror=unused-variable",
         "-Wthread-safety",
     ],
     c_std: "c99",

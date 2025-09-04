@@ -994,7 +994,7 @@ class BluetoothQualityReportInterfaceImpl : public bluetooth::bqr::BluetoothQual
     }
 
     std::vector<uint8_t> raw_data;
-    if (com::android::bluetooth::flags::bqr_common_part_unified_length()) {
+    if (com_android_bluetooth_flags_bqr_common_part_unified_length()) {
       raw_data = generate_unified_bqr_data(bqr_raw_data, bqr_raw_data_len);
       if (raw_data.empty()) {
         log::error("unified bqr data is empty");
@@ -1130,7 +1130,7 @@ static void vendor_specific_event_callback(
     case QUALITY_REPORT_ID_CONNECT_FAIL:
     case QUALITY_REPORT_ID_ENERGY_MONITOR:
     case QUALITY_REPORT_ID_RF_STATS:
-      if (com::android::bluetooth::flags::fix_unhandled_bqr_subevent()) {
+      if (com_android_bluetooth_flags_fix_unhandled_bqr_subevent()) {
         CategorizeBqrEvent(bytes.size(), bytes.data());
       }
       break;
@@ -1158,7 +1158,7 @@ static void vendor_specific_event_callback(
       log::info("Unhandled BQR subevent 0x{:02x}", quality_report_id);
   }
 
-  if (!com::android::bluetooth::flags::fix_unhandled_bqr_subevent()) {
+  if (!com_android_bluetooth_flags_fix_unhandled_bqr_subevent()) {
     CategorizeBqrEvent(bytes.size(), bytes.data());
   }
 }

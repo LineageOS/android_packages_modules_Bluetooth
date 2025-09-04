@@ -207,7 +207,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, tBTA_HH_INT_EVT event, const tBTA_H
     case BTA_HH_W4_CONN_ST:
       switch (event) {
         case BTA_HH_API_OPEN_EVT:
-          if (!com::android::bluetooth::flags::hogp_direct_connection_upgrade()) {
+          if (!com_android_bluetooth_flags_hogp_direct_connection_upgrade()) {
             unexpected_event = true;
             break;
           }

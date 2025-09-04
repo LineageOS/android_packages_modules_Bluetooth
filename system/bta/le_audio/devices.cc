@@ -973,7 +973,7 @@ bool LeAudioDevice::IsReadyToCreateStream(void) {
             if (ase.direction == types::kLeAudioDirectionSink &&
                 (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
                  ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
-              if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+              if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
                 if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
                     ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
                   return false;
@@ -987,7 +987,7 @@ bool LeAudioDevice::IsReadyToCreateStream(void) {
 
             if (ase.direction == types::kLeAudioDirectionSource &&
                 ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-              if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+              if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
                 if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
                     ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
                   return false;
@@ -1003,7 +1003,7 @@ bool LeAudioDevice::IsReadyToCreateStream(void) {
             return false;
           });
 
-  if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+  if (com_android_bluetooth_flags_leaudio_dynamic_direction_opening()) {
     /* This is actually just for testing code, but still valid check. If it turns out that
      * device has all directions in QoS state, it could be reported as Ready To Stream which is not
      * true. At least one direction need to be enabled per device.
@@ -1461,7 +1461,7 @@ void LeAudioDevice::StartLinkQualityReports(uint16_t cis_handle) {
 }
 
 void LeAudioDevice::StartConnSubrate() {
-  if (!com::android::bluetooth::flags::leaudio_connection_subrating()) {
+  if (!com_android_bluetooth_flags_leaudio_connection_subrating()) {
     return;
   }
 

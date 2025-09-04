@@ -24,11 +24,9 @@ import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
 import android.annotation.RequiresPermission;
 import android.bluetooth.IAdapter;
 import android.bluetooth.IBluetoothCallback;
-import android.os.Process;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -68,13 +66,8 @@ class AdapterBinder extends IAdapter.Stub {
 
         final Runnable killAction =
                 () -> {
-                    if (Flags.killInsteadOfExit()) {
-                        Log.i(TAG, "killBluetoothProcess: Calling killProcess(myPid())");
-                        Process.killProcess(Process.myPid());
-                    } else {
-                        Log.i(TAG, "killBluetoothProcess: Calling System.exit");
-                        System.exit(0);
-                    }
+                    Log.i(TAG, "killBluetoothProcess: Calling System.exit");
+                    System.exit(0);
                 };
 
         // Post on the main handler to let the cleanup complete before calling exit
@@ -90,12 +83,7 @@ class AdapterBinder extends IAdapter.Stub {
         // Bluetooth cannot be killed on the main thread; it is in a deadLock.
         // Trying to recover by killing the Bluetooth from the binder thread.
         // This is bad :(
-        final var killType = Flags.killInsteadOfExit() ? "Process.killProcess" : "System.exit";
-        Log.wtf(
-                TAG,
-                "Failed to kill Bluetooth via "
-                        + killType
-                        + " using its main thread. Trying from binder");
+        Log.wtf(TAG, "Failed to kill Bluetooth using its main thread. Trying from binder");
         killAction.run();
     }
 

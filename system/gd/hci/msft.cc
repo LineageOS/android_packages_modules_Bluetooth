@@ -66,7 +66,7 @@ struct MsftExtensionManager::impl {
   }
 
   ~impl() {
-    if(!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
       handler_->Clear();
       handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
       delete handler_;
@@ -129,7 +129,7 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    if (com::android::bluetooth::flags::msft_addr_tracking_quirk()) {
+    if (com_android_bluetooth_flags_msft_addr_tracking_quirk()) {
       if (monitor.condition_type != MSFT_CONDITION_TYPE_ADDRESS &&
           monitor.condition_type != MSFT_CONDITION_TYPE_PATTERNS) {
         log::warn("Disallowed as MSFT condition type {} is not supported.", monitor.condition_type);

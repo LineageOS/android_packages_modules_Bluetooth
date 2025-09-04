@@ -345,7 +345,7 @@ TEST_F(LeScanningManagerTest, legacy_adv_scan_ind_report_with_scan_response) {
   // Scannable & not connectable!
   report.event_type_ = AdvertisingEventType::ADV_SCAN_IND;
 
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     uint16_t extended_event_type = kLegacy | kScannable;
     EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
   }
@@ -376,7 +376,7 @@ TEST_F(LeScanningManagerTest, legacy_adv_ind_report_with_scan_response) {
   LeAdvertisingResponse report = make_advertising_report();
   // Scannable & connectable!
   report.event_type_ = AdvertisingEventType::ADV_IND;
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     uint16_t extended_event_type = kLegacy | kScannable | kConnectable;
     EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
   }
@@ -878,7 +878,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   }
   scan_response_report.advertising_data_ = adv_data;
 
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     auto result_without_scan_response = std::vector<uint8_t>();
     packet::BitInserter it(result_without_scan_response);
     flags_data.Serialize(it);

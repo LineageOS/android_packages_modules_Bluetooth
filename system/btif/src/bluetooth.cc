@@ -850,7 +850,7 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** /*arguments*/) {
-  if (com::android::bluetooth::flags::protect_dumpsys_during_stack_shutdown() &&
+  if (com_android_bluetooth_flags_protect_dumpsys_during_stack_shutdown() &&
       !stack_manager_get_interface()->get_stack_is_running()) {
     log::error("Stack is not running, skipping dumpsys!!");
     return;

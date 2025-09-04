@@ -42,9 +42,6 @@
  #include "bluetooth/types/uuid.h"
  #include "bluetooth/types/address.h"
 
- using bluetooth::le_audio::LeAudioDeviceGroup;
- using bluetooth::le_audio::LeAudioDevice;
-
  using namespace bluetooth;
  using namespace ::vaps;
  using namespace ::vaps::uuid;

@@ -279,7 +279,7 @@ class GuardedLogLineDetector : Detector(), SourceCodeScanner {
                     "The BT stack defines a process default log level, which allows the Android" +
                         " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
                         " levels for us. Using Log#isLoggable() calls to guard invocations is at the" +
-                        " very least redunant. It's also typically used in patterns where non-log" +
+                        " very least redundant. It's also typically used in patterns where non-log" +
                         " code is guarded, like string builders and loops. In rare cases, we've " +
                         " even seen abuse of log level checking to hide different logic/behavior, or " +
                         " forms of debug, like writing to disk. Please reconsider what you're logging" +

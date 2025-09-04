@@ -46,7 +46,7 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   connecting_bda = RawAddress::kEmpty;
   connecting_dc = kDevClassEmpty;
 
-  if (!com::android::bluetooth::flags::separate_encryption_queue()) {
+  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
     sec_pending_q = fixed_queue_new(SIZE_MAX);
   }
 
@@ -66,7 +66,7 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
 }
 
 void tBTM_SEC_CB::Free() {
-  if (com::android::bluetooth::flags::separate_encryption_queue()) {
+  if (com_android_bluetooth_flags_separate_encryption_queue()) {
     service_access_q.clear();
     enc_request_q.clear();
   } else {
@@ -351,7 +351,7 @@ bool tBTM_SEC_REC::is_bonded(tBT_TRANSPORT transport) const {
   // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
   if (transport != BT_TRANSPORT_LE) {
     log::verbose("BREDR bond status - bond_type: {}, sec_flags: {}", bond_type, sec_flags);
-    if (com::android::bluetooth::flags::temporary_pairing_tracking()) {
+    if (com_android_bluetooth_flags_temporary_pairing_tracking()) {
       bonded = is_bond_type_persistent() && is_link_key_known();
     } else {
       bonded = is_link_key_known();

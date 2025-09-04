@@ -18,6 +18,7 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
+import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
@@ -406,6 +407,8 @@ public class RemoteDevices {
         private int mBondingInitiator;
         private int mBatteryLevelFromHfp = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private int mBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+        // This is the cached battery level to handle temporary disconnection from BAS.
+        private int mLastBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private boolean mIsCoordinatedSetMember;
         private int mAshaCapability;
         private int mAshaTruncatedHiSyncId;
@@ -908,9 +911,15 @@ public class RemoteDevices {
          */
         int getBatteryLevel() {
             synchronized (mObject) {
-                if (mBatteryLevelFromBatteryService != BluetoothDevice.BATTERY_LEVEL_UNKNOWN) {
+                if (mBatteryLevelFromBatteryService != BATTERY_LEVEL_UNKNOWN) {
                     return mBatteryLevelFromBatteryService;
                 }
+                // Returns one from BAS to prevent battery level fluctuation.
+                if (Flags.consistentBatteryLevel()
+                        && mLastBatteryLevelFromBatteryService != BATTERY_LEVEL_UNKNOWN) {
+                    return mLastBatteryLevelFromBatteryService;
+                }
+
                 return mBatteryLevelFromHfp;
             }
         }
@@ -936,13 +945,18 @@ public class RemoteDevices {
                     return;
                 }
                 mBatteryLevelFromHfp = batteryLevel;
+                // The battery level from HFP is changed, now HFP value is reliable.
+                if (Flags.consistentBatteryLevel()
+                        && mBatteryLevelFromBatteryService == BATTERY_LEVEL_UNKNOWN) {
+                    mLastBatteryLevelFromBatteryService = BATTERY_LEVEL_UNKNOWN;
+                }
             }
         }
 
         void setBatteryLevelFromBatteryService(int batteryLevel) {
             synchronized (mObject) {
-                if (mBatteryLevelFromBatteryService == batteryLevel) {
-                    return;
+                if (Flags.consistentBatteryLevel() && batteryLevel != BATTERY_LEVEL_UNKNOWN) {
+                    mLastBatteryLevelFromBatteryService = batteryLevel;
                 }
                 mBatteryLevelFromBatteryService = batteryLevel;
             }

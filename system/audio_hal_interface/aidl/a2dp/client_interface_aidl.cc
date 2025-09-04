@@ -536,7 +536,7 @@ size_t BluetoothAudioClientInterface::ReadAudioData(uint8_t* p_buf, size_t len) 
 
   std::lock_guard<std::mutex> guard(internal_mutex_);
 
-  if (com::android::bluetooth::flags::a2dp_fmq_read_exact()) {
+  if (com_android_bluetooth_flags_a2dp_fmq_read_exact()) {
     for (int n = 0; n < 10; n++) {
       if (n > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultDataReadPollIntervalMs));

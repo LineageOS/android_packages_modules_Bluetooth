@@ -590,7 +590,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
     /* This is a Floss only flag. Allow host use random address when privacy
      * mode is not enabled by setting the sysprop true */
-    if (com::android::bluetooth::flags::floss_separate_host_privacy_and_llprivacy()) {
+    if (com_android_bluetooth_flags_floss_separate_host_privacy_and_llprivacy()) {
       if (osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, privacy_mode)) {
         btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
       }
@@ -603,7 +603,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
     /* This is a Floss only flag. Allow host use public address when privacy
      * mode is enabled by setting the sysprop false */
-    if (com::android::bluetooth::flags::floss_separate_host_privacy_and_llprivacy()) {
+    if (com_android_bluetooth_flags_floss_separate_host_privacy_and_llprivacy()) {
       /* use public address if own address privacy is false in sysprop */
       if (!osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, privacy_mode)) {
         btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
@@ -976,7 +976,7 @@ static void msft_adv_mon_enable_cb(bool /* enable */, uint8_t status) {
 
 /* Update MSFT-based scan to align with active scan requirements */
 static void btm_ble_update_msft_scan(tBTM_BLE_SCAN_COND_OP action) {
-  if (!com::android::bluetooth::flags::le_scan_msft_support() ||
+  if (!com_android_bluetooth_flags_le_scan_msft_support() ||
       !osi_property_get_bool("bluetooth.core.le.use_msft_hci_ext", false) ||
       !scanner->IsMsftSupported()) {
     return;
@@ -1140,7 +1140,7 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda, tBTM_NAME_CMP
 
   tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
   if (p_i && !ble_evt_type_is_connectable(p_i->inq_info.results.ble_evt_type)) {
-    if (com::android::bluetooth::flags::ble_rnr_when_connected() &&
+    if (com_android_bluetooth_flags_ble_rnr_when_connected() &&
         BTM_IsAclConnectionUp(remote_bda, BT_TRANSPORT_LE)) {
       log::verbose("name request to non-connectable device, but already connected");
     } else {

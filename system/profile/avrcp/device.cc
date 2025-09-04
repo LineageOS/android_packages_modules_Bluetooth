@@ -151,7 +151,7 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
         // about the response to this message.
         active_labels_.erase(label);
 
-        if (!com::android::bluetooth::flags::use_returned_absolute_volume()) {
+        if (!com_android_bluetooth_flags_use_returned_absolute_volume()) {
           break;
         }
 
@@ -584,7 +584,7 @@ void Device::HandleVolumeChanged(uint8_t label,
   int8_t vol = pkt->GetVolume();
   vol &= ~0x80;  // remove RFA bit
 
-  bool use_returned_volume_flag = com::android::bluetooth::flags::use_returned_absolute_volume();
+  bool use_returned_volume_flag = com_android_bluetooth_flags_use_returned_absolute_volume();
 
   if (!use_returned_volume_flag || (use_returned_volume_flag && volume_ != vol)) {
     volume_ = vol;
@@ -605,7 +605,7 @@ void Device::SetVolume(int8_t volume) {
 
   volume_ = volume;
 
-  bool use_returned_volume_flag = com::android::bluetooth::flags::use_returned_absolute_volume();
+  bool use_returned_volume_flag = com_android_bluetooth_flags_use_returned_absolute_volume();
 
   if (use_returned_volume_flag) {
     if (set_vol_cmd_in_progress_) {
@@ -821,7 +821,7 @@ void Device::GetElementAttributesResponse(uint8_t label,
                                           SongInfo info) {
   auto get_element_attributes_pkt = pkt;
   auto attributes_requested = get_element_attributes_pkt->GetAttributesRequested();
-  bool all_attributes_flag = com::android::bluetooth::flags::get_all_element_attributes_empty();
+  bool all_attributes_flag = com_android_bluetooth_flags_get_all_element_attributes_empty();
 
   auto response = GetElementAttributesResponseBuilder::MakeBuilder(ctrl_mtu_);
 
@@ -1333,7 +1333,7 @@ void Device::GetItemAttributesNowPlayingResponse(uint8_t label,
   }
 
   auto attributes_requested = pkt->GetAttributesRequested();
-  bool all_attributes_flag = com::android::bluetooth::flags::get_all_element_attributes_empty();
+  bool all_attributes_flag = com_android_bluetooth_flags_get_all_element_attributes_empty();
 
   if (attributes_requested.size() != 0) {
     for (const auto& attribute : attributes_requested) {

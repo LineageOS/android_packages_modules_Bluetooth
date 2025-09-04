@@ -432,7 +432,7 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
     return HID_ERR_INVALID_PARAM;
   }
 
-  if (!com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused()) {
+  if (!com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
     HID_HostCloseDev(dev_handle);
     hh_cb.devices[dev_handle].in_use = false;
     hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
