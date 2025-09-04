@@ -44,7 +44,6 @@ import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 import com.google.protobuf.ByteString;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
-import io.grpc.stub.StreamObserver;
 
 import org.junit.After;
 import org.junit.Before;
@@ -57,9 +56,7 @@ import org.mockito.MockitoAnnotations;
 import pandora.HostProto;
 import pandora.SecurityProto;
 
-import java.time.Duration;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @RunWith(TestParameterInjector.class)
 public class PairingTestDualMode {
@@ -76,7 +73,6 @@ public class PairingTestDualMode {
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
     private static final String TAG = PairingTestDualMode.class.getSimpleName();
-    private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final String BUMBLE_ALIAS = "Bumble";
 
     private final Context mTargetContext =
@@ -84,8 +80,6 @@ public class PairingTestDualMode {
     private final BluetoothAdapter mAdapter =
             mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
 
-    private final StreamObserverSpliterator<Void, SecurityProto.PairingEvent>
-            mPairingEventStreamObserver = new StreamObserverSpliterator<>();
     private TestUtil mUtil;
     private BluetoothDevice mBumbleDevice;
     private BluetoothDevice mRemoteLeDevice;
@@ -160,12 +154,6 @@ public class PairingTestDualMode {
                                 BluetoothDevice.ACTION_ACL_CONNECTED,
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
-        // Pairing Event Observer
-        StreamObserver<SecurityProto.PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
-
         // Start advertising for LE
         mBumble.hostBlocking()
                 .advertise(
@@ -182,14 +170,6 @@ public class PairingTestDualMode {
 
         // Approve pairing from Android
         assertThat(mRemoteLeDevice.setPairingConfirmation(true)).isTrue();
-
-        SecurityProto.PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                SecurityProto.PairingEventAnswer.newBuilder()
-                        .setEvent(pairingEvent)
-                        .setConfirm(true)
-                        .build());
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
@@ -208,14 +188,6 @@ public class PairingTestDualMode {
 
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
-        pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                SecurityProto.PairingEventAnswer.newBuilder()
-                        .setEvent(pairingEvent)
-                        .setConfirm(true)
-                        .build());
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
@@ -272,11 +244,6 @@ public class PairingTestDualMode {
                                 BluetoothDevice.ACTION_PAIRING_REQUEST)
                         .build();
 
-        StreamObserver<SecurityProto.PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
-
         // Start advertising for LE
         mBumble.hostBlocking()
                 .advertise(
@@ -295,14 +262,6 @@ public class PairingTestDualMode {
         // Approve pairing from Android
         assertThat(mRemoteLeDevice.setPairingConfirmation(true)).isTrue();
 
-        SecurityProto.PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                SecurityProto.PairingEventAnswer.newBuilder()
-                        .setEvent(pairingEvent)
-                        .setConfirm(true)
-                        .build());
-
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
@@ -314,14 +273,6 @@ public class PairingTestDualMode {
 
         // Start bonding from remote side
         testStep_BondBredrFromRemote(intentReceiver);
-
-        pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
-        pairingEventAnswerObserver.onNext(
-                SecurityProto.PairingEventAnswer.newBuilder()
-                        .setEvent(pairingEvent)
-                        .setConfirm(true)
-                        .build());
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
