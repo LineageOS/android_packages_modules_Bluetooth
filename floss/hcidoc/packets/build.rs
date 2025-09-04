@@ -44,7 +44,7 @@ fn generate_packets() {
     );
 
     let out_file = File::create(out_dir.join("hci_packets.rs")).unwrap();
-    let in_file = PathBuf::from("../../../tools/rootcanal/packets/hci_packets.pdl");
+    let in_file = PathBuf::from("hci_packets.pdl");
 
     println!("cargo:rerun-if-changed={}", in_file.display());
     let output = Command::new("pdlc")
