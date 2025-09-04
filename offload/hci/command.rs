@@ -37,6 +37,8 @@ pub enum Command {
     LeRemoveIsoDataPath(LeRemoveIsoDataPath),
     /// Vendor-specific LE Get Vendor Capabilities
     LeGetVendorCapabilities(LeGetVendorCapabilities),
+    /// Vendor A2dp Hardware Offload
+    A2dpHardwareOffload(A2dpHardwareOffload),
     /// Unknown command
     Unknown(OpCode),
 }
@@ -60,6 +62,8 @@ pub enum ReturnParameters {
     LeRemoveIsoDataPath(LeIsoDataPathComplete),
     /// Vendor-specific LE Get Vendor Capabilities
     LeGetVendorCapabilities(LeGetVendorCapabilitiesComplete),
+    /// Vendor A2dp Hardware Offload
+    A2dpHardwareOffload(A2dpHardwareOffloadComplete),
     /// Unknown command
     Unknown(OpCode),
 }
@@ -77,6 +81,7 @@ impl Command {
         let Some((opcode, mut r)) = parse_packet(data) else {
             return Err(None);
         };
+
         Self::dispatch_read(opcode, &mut r).ok_or(Some(opcode))
     }
 
@@ -90,6 +95,7 @@ impl Command {
             LeSetupIsoDataPath::OPCODE => Self::LeSetupIsoDataPath(r.read()?),
             LeRemoveIsoDataPath::OPCODE => Self::LeRemoveIsoDataPath(r.read()?),
             LeGetVendorCapabilities::OPCODE => Self::LeGetVendorCapabilities(r.read()?),
+            A2dpHardwareOffload::OPCODE => Self::A2dpHardwareOffload(r.read()?),
             opcode => Self::Unknown(opcode),
         })
     }
@@ -142,11 +148,9 @@ pub trait CommandOpCode {
 }
 
 /// Build command from definition
-pub trait CommandToBytes: CommandOpCode + Write {
+pub trait CommandToBytes: CommandOpCode + Sized + Write {
     /// Output the HCI Command packet
-    fn to_bytes(&self) -> Vec<u8>
-    where
-        Self: Sized + CommandOpCode + Write;
+    fn to_bytes(&self) -> Vec<u8>;
 }
 
 use crate::derive::CommandToBytes;
@@ -652,5 +656,127 @@ fn test_le_get_vendor_capabilities_complete() {
     assert_eq!(p.dynamic_audio_buffer_support, Some(0x23));
     assert_eq!(p.a2dp_offload_v2_support, Some(0));
     assert_eq!(p.iso_link_feedback_support, Some(1));
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
+
+// A2dp Hardware Offload
+
+#[derive(Debug, CommandToBytes)]
+pub enum A2dpHardwareOffload {
+    StartA2dpOffload(StartA2dpOffload),
+    StopA2dpOffload(StopA2dpOffload),
+    Unknown(u8),
+}
+
+#[derive(Debug, Read, Write)]
+pub struct A2dpHardwareOffloadComplete {
+    status: Status,
+    sub_opcode: u8,
+}
+
+impl CommandOpCode for A2dpHardwareOffload {
+    const OPCODE: OpCode = OpCode::from(0x3f, 0x15d);
+}
+
+impl Read for A2dpHardwareOffload {
+    fn read(r: &mut Reader) -> Option<Self> {
+        let sub_opcode = r.read_u8()?;
+        Some(match sub_opcode {
+            StartA2dpOffload::OPCODE => Self::StartA2dpOffload(r.read()?),
+            StopA2dpOffload::OPCODE => Self::StopA2dpOffload(r.read()?),
+            _ => Self::Unknown(sub_opcode),
+        })
+    }
+}
+
+impl Write for A2dpHardwareOffload {
+    fn write(&self, w: &mut Writer) {
+        match self {
+            A2dpHardwareOffload::StartA2dpOffload(c) => {
+                w.write_u8(StartA2dpOffload::OPCODE);
+                w.write(c);
+            }
+            A2dpHardwareOffload::StopA2dpOffload(c) => {
+                w.write_u8(StopA2dpOffload::OPCODE);
+                w.write(c);
+            }
+            A2dpHardwareOffload::Unknown(opc) => {
+                w.write_u8(*opc);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Read, Write)]
+pub struct StartA2dpOffload {
+    pub connection_handle: u16,
+    pub l2cap_channel_id: u16,
+    pub data_path_direction: u8,
+    pub peer_mtu: u16,
+    pub cp_enable_scms_t: u8,
+    pub cp_header_scms_t: u8,
+    pub vendor_specific_parameters: Vec<u8>,
+}
+
+impl StartA2dpOffload {
+    const OPCODE: u8 = 0x03;
+}
+
+#[derive(Debug, Read, Write)]
+pub struct StopA2dpOffload {}
+
+impl StopA2dpOffload {
+    const OPCODE: u8 = 0x04;
+}
+
+#[test]
+fn test_start_a2dp_offload() {
+    let dump = [
+        0x5d, 0xfd, 14, 0x03, 0x23, 0x01, 0x67, 0x45, 0x00, 0x00, 0x01, 0x00, 0x42, 0x03, 0x01,
+        0x02, 0x03,
+    ];
+    let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StartA2dpOffload(c))) =
+        Command::from_bytes(&dump)
+    else {
+        panic!()
+    };
+    assert_eq!(c.connection_handle, 0x0123);
+    assert_eq!(c.l2cap_channel_id, 0x4567);
+    assert_eq!(c.data_path_direction, 0);
+    assert_eq!(c.peer_mtu, 0x0100);
+    assert_eq!(c.cp_enable_scms_t, 0);
+    assert_eq!(c.cp_header_scms_t, 0x42);
+    assert_eq!(c.vendor_specific_parameters, &[0x01, 0x02, 0x03]);
+    assert_eq!(A2dpHardwareOffload::StartA2dpOffload(c).to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_start_a2dp_complete() {
+    let dump = [0x0e, 0x05, 0x01, 0x5d, 0xfd, 0x00, 0x03];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::A2dpHardwareOffload(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.status, Status::Success);
+    assert_eq!(p.sub_opcode, StartA2dpOffload::OPCODE);
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_stop_a2dp_offload() {
+    let dump = [0x5d, 0xfd, 1, 0x04];
+    let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StopA2dpOffload(c))) =
+        Command::from_bytes(&dump)
+    else {
+        panic!()
+    };
+    assert_eq!(A2dpHardwareOffload::StopA2dpOffload(c).to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_stop_a2dp_complete() {
+    let dump = [0x0e, 0x05, 0x01, 0x5d, 0xfd, 0x00, 0x04];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::A2dpHardwareOffload(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.status, Status::Success);
+    assert_eq!(p.sub_opcode, StopA2dpOffload::OPCODE);
     assert_eq!(e.to_bytes(), &dump[..]);
 }
