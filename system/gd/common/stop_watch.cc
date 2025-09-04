@@ -29,63 +29,71 @@
 namespace bluetooth {
 namespace common {
 
-static const int LOG_BUFFER_LENGTH = 10;
-static std::array<StopWatchLog, LOG_BUFFER_LENGTH> stopwatch_logs;
-static int current_buffer_index;
-static std::recursive_mutex stopwatch_log_mutex;
+StopWatchBuffer StopWatch::hciHalTxBuffer_("HciHalTx");
+StopWatchBuffer StopWatch::hciHalRxBuffer_("HciHalRx");
 
-void StopWatch::RecordLog(StopWatchLog log) {
-  std::unique_lock<std::recursive_mutex> lock(stopwatch_log_mutex, std::defer_lock);
+void StopWatchBuffer::RecordLog(StopWatchLog log) {
+  std::unique_lock<std::recursive_mutex> lock(stopwatch_log_mutex_, std::defer_lock);
+
   if (!lock.try_lock()) {
     log::info("try_lock fail. log content: {}, took {} us", log.message,
               static_cast<size_t>(std::chrono::duration_cast<std::chrono::microseconds>(
-                                          stopwatch_logs[current_buffer_index].end_timestamp -
-                                          stopwatch_logs[current_buffer_index].start_timestamp)
+                                          stopwatch_logs_[current_buffer_index_].end_timestamp -
+                                          stopwatch_logs_[current_buffer_index_].start_timestamp)
                                           .count()));
     return;
   }
-  if (current_buffer_index >= LOG_BUFFER_LENGTH) {
-    current_buffer_index = 0;
-  }
-  stopwatch_logs[current_buffer_index] = std::move(log);
-  current_buffer_index++;
+
+  // Update the input `log` to the respective stopwatch_logs buffer
+  stopwatch_logs_[current_buffer_index_] = std::move(log);
+  current_buffer_index_ = (current_buffer_index_ + 1) % LOG_BUFFER_LENGTH;
   lock.unlock();
 }
 
-void StopWatch::DumpStopWatchLog() {
-  std::lock_guard<std::recursive_mutex> lock(stopwatch_log_mutex);
+void StopWatchBuffer::Dump() {
+  std::lock_guard<std::recursive_mutex> lock(stopwatch_log_mutex_);
   log::info("=-----------------------------------=");
-  log::info("bluetooth stopwatch log history:");
+  log::info("Bluetooth stopwatch log history for {}:", buffer_name_);
+  int current_buffer_index = current_buffer_index_;
   for (int i = 0; i < LOG_BUFFER_LENGTH; i++) {
-    if (current_buffer_index >= LOG_BUFFER_LENGTH) {
-      current_buffer_index = 0;
-    }
-    if (stopwatch_logs[current_buffer_index].message.empty()) {
-      current_buffer_index++;
+    // Start dumping the logs
+    if (stopwatch_logs_[current_buffer_index].message.empty()) {
+      current_buffer_index = (current_buffer_index + 1) % LOG_BUFFER_LENGTH;
       continue;
     }
     std::stringstream ss;
-    auto now = stopwatch_logs[current_buffer_index].timestamp;
+    auto now = stopwatch_logs_[current_buffer_index].timestamp;
     auto millis =
             std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
     auto now_time_t = std::chrono::system_clock::to_time_t(now);
     ss << std::put_time(std::localtime(&now_time_t), "%Y-%m-%d %H:%M:%S");
     ss << '.' << std::setfill('0') << std::setw(3) << millis.count();
     std::string start_timestamp = ss.str();
-    log::info("{}: {}: took {} us", start_timestamp, stopwatch_logs[current_buffer_index].message,
+    log::info("{}: {}: took {} us", start_timestamp, stopwatch_logs_[current_buffer_index].message,
               static_cast<size_t>(std::chrono::duration_cast<std::chrono::microseconds>(
-                                          stopwatch_logs[current_buffer_index].end_timestamp -
-                                          stopwatch_logs[current_buffer_index].start_timestamp)
+                                          stopwatch_logs_[current_buffer_index].end_timestamp -
+                                          stopwatch_logs_[current_buffer_index].start_timestamp)
                                           .count()));
-    current_buffer_index++;
+    current_buffer_index = (current_buffer_index + 1) % LOG_BUFFER_LENGTH;
   }
   log::info("=-----------------------------------=");
 }
 
-StopWatch::StopWatch(std::string text)
-    : text_(std::move(text)),
+void StopWatch::DumpStopWatchLog() {
+  StopWatch::hciHalTxBuffer_.Dump();
+  StopWatch::hciHalRxBuffer_.Dump();
+}
+
+StopWatch::StopWatch(StopWatchBuffer& buffer, std::string text)
+    : current_buffer_(buffer),
+      text_(std::move(text)),
       timestamp_(std::chrono::system_clock::now()),
-      start_timestamp_(std::chrono::high_resolution_clock::now()) {}
+      start_timestamp_(std::chrono::high_resolution_clock::now()) {
+  // check that current_buffer_ is hciHalTxBuffer or hciCallbackRxBuffer
+  log::assert_that(&current_buffer_ == &StopWatch::hciHalTxBuffer_ ||
+                           &current_buffer_ == &StopWatch::hciHalRxBuffer_,
+                   "current_buffer_ is not hciHalTxBuffer or hciHalRxBuffer");
+}
 
 StopWatch::~StopWatch() {
   StopWatchLog sw_log;
@@ -94,7 +102,7 @@ StopWatch::~StopWatch() {
   sw_log.end_timestamp = std::chrono::high_resolution_clock::now();
   sw_log.message = std::move(text_);
 
-  RecordLog(std::move(sw_log));
+  current_buffer_.RecordLog(std::move(sw_log));
 }
 
 }  // namespace common
