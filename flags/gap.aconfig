@@ -327,3 +327,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "delay_jv_pm_idle"
+    namespace: "bluetooth"
+    description: "Delay the transition to the idle state for JV PM connection"
+    bug: "440618134"
+}
