@@ -298,7 +298,7 @@ bool LeAddressManager::UnregisterSync(LeAddressManagerCallback* callback,
   handler_->BindOnceOn(this, &LeAddressManager::unregister_client, callback)();
   std::promise<void> promise;
   auto future = promise.get_future();
-  if (com::android::bluetooth::flags::use_shared_promise_for_le_address_manager()) {
+  if (com_android_bluetooth_flags_use_shared_promise_for_le_address_manager()) {
     handler_->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); },
                                     std::move(promise)));
   } else {

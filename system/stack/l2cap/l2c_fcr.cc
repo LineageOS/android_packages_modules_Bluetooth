@@ -685,7 +685,7 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   BT_HDR* p_data = NULL;
 
   uint16_t local_mps = p_ccb->local_conn_cfg.mps;
-  if (com::android::bluetooth::flags::fix_buf_len_check_for_first_k_frame()) {
+  if (com_android_bluetooth_flags_fix_buf_len_check_for_first_k_frame()) {
     if (p_ccb->is_first_seg) {
       // for the first k-frame, donot consider sdu_length
       // as part of the information payload
@@ -1830,7 +1830,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
       }
 
-      if (com::android::bluetooth::flags::l2cap_improve_segmented_sdu() &&
+      if (com_android_bluetooth_flags_l2cap_improve_segmented_sdu() &&
           p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE) {
         max_retrans_size = BT_ERTM_BUFFER_SIZE - sizeof(BT_HDR) - L2CAP_MIN_OFFSET -
                            L2CAP_SDU_LEN_OFFSET - fcs_len;

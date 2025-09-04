@@ -774,7 +774,7 @@ void gatt_rsp_timeout(void* data) {
     EattExtension::GetInstance()->Disconnect(p_clcb->p_tcb->peer_bda, p_clcb->cid);
   } else {
     log::warn("conn_id: 0x{:04x} disconnecting GATT...", p_clcb->conn_id);
-    if (com::android::bluetooth::flags::disconnect_acl_on_gatt_timeout()) {
+    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
       gatt_force_disconnect(p_clcb->p_tcb, "stack::gatt::gatt_utils::gatt_rsp_timeout");
     } else {
       gatt_disconnect(p_clcb->p_tcb);
@@ -816,7 +816,7 @@ void gatt_indication_confirmation_timeout(void* data) {
   }
 
   log::warn("disconnecting... bda:{} transport:{}", p_tcb->peer_bda, p_tcb->transport);
-  if (com::android::bluetooth::flags::disconnect_acl_on_gatt_timeout()) {
+  if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
     gatt_force_disconnect(p_tcb, "stack::gatt::gatt_utils::gatt_indication_confirmation_timeout");
   } else {
     gatt_disconnect(p_tcb);

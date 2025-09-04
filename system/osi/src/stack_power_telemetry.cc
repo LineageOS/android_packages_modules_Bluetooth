@@ -155,7 +155,7 @@ struct power_telemetry::PowerTelemetryImpl {
             osi_property_get_bool(std::string(kPowerTelemetryEnabledProperty).c_str(), true);
 
     // Enable this feature when both feature flag and sysprops turn on.
-    power_telemerty_enabled_ = com::android::bluetooth::flags::bluetooth_power_telemetry() &&
+    power_telemerty_enabled_ = com_android_bluetooth_flags_bluetooth_power_telemetry() &&
                                power_telemetry_enabled_property_;
   }
 

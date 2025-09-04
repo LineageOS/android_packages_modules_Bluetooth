@@ -767,7 +767,7 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_handles_first) {
     device->VerifyReady(handle);
   }
 
-  if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+  if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
     ASSERT_EQ(true, device->device_ready);
   } else {
     ASSERT_EQ(false, device->device_ready);

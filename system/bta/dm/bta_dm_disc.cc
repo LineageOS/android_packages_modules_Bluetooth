@@ -219,7 +219,7 @@ void bta_dm_sdp_callback(const RawAddress& /* bd_addr */, tSDP_STATUS sdp_status
 
   if (bta_dm_discovery_get_state() == BTA_DM_DISCOVER_IDLE || !sdp_pending ||
       !bta_dm_discovery_cb.sdp_state) {
-    if (com::android::bluetooth::flags::sdp_reset_transport_status_if_disconnect()) {
+    if (com_android_bluetooth_flags_sdp_reset_transport_status_if_disconnect()) {
       log::info("Clearing transport mask (was: 0x{:02x})", bta_dm_discovery_cb.transports);
       bta_dm_discovery_cb.transports &= ~BT_TRANSPORT_BR_EDR;
     }
@@ -287,7 +287,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
       // Some devices provide PPCP values that are incompatible with the device-side firmware.
       log::info("disable PPCP read: interop matched name {} address {}", remote_name,
                 bta_dm_discovery_cb.peer_bdaddr);
-    } else if (!com::android::bluetooth::flags::read_ppcp_only_for_success() ||
+    } else if (!com_android_bluetooth_flags_read_ppcp_only_for_success() ||
                disc_result.result == BTA_SUCCESS) {
       log::info("reading PPCP");
       GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
@@ -606,7 +606,7 @@ static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
     return;
   }
 
-  if (com::android::bluetooth::flags::gatt_discovery_is_non_opportunistic_client()) {
+  if (com_android_bluetooth_flags_gatt_discovery_is_non_opportunistic_client()) {
     /* GATT Discovery always uses non oportunistic direct connected */
     log::debug(" {} , transport:{}", bd_addr, bt_transport_text(BT_TRANSPORT_LE));
     get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,

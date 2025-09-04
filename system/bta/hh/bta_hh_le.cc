@@ -1131,7 +1131,7 @@ static void bta_hh_start_security_(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* 
 }
 
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
-  if (!com::android::bluetooth::flags::hogp_encryption_collision()) {
+  if (!com_android_bluetooth_flags_hogp_encryption_collision()) {
     bta_hh_start_security_(p_cb, p_buf);
     return;
   }

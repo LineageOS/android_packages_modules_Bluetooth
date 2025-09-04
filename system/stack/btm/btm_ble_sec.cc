@@ -479,7 +479,7 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, boo
   bool is_bonded = BTM_IsBonded(bd_addr, BT_TRANSPORT_LE);
 
   if (!is_originator) {
-    if (!com::android::bluetooth::flags::donot_mandate_auth_along_with_encryption()) {
+    if (!com_android_bluetooth_flags_donot_mandate_auth_along_with_encryption()) {
       if ((p_serv_rec->security_flags & BTM_SEC_IN_ENCRYPT) && !is_encrypted) {
         log::error("BTM_NOT_ENCRYPTED. service security_flags=0x{:x}", p_serv_rec->security_flags);
         return tBTM_STATUS::BTM_NOT_ENCRYPTED;
@@ -1514,7 +1514,7 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
 
   if (p_dev_rec == nullptr) {
     log::warn("Unexpected event '{}' for unknown device.", smp_evt_to_text(event));
-    if (com::android::bluetooth::flags::clear_pairing_state_when_no_devrec() &&
+    if (com_android_bluetooth_flags_clear_pairing_state_when_no_devrec() &&
         bd_addr == btm_sec_cb.link_spec.addrt.bda && event == SMP_COMPLT_EVT) {
       btm_sec_cb.link_spec = {};
       btm_sec_cb.link_spec.addrt.bda = RawAddress::kAny;

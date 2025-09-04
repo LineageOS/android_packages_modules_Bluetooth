@@ -139,7 +139,7 @@ static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint64_t 
       clock_offset = get_clock_offset_from_storage(remote_bda);
     }
     page_scan_rep_mode = p_cur->results.page_scan_rep_mode;
-    if (com::android::bluetooth::flags::rnr_validate_page_scan_repetition_mode() &&
+    if (com_android_bluetooth_flags_rnr_validate_page_scan_repetition_mode() &&
         page_scan_rep_mode >= HCI_PAGE_SCAN_REP_MODE_RESERVED_START) {
       log::info(
               "Invalid page scan repetition mode {} from remote_bda:{}, "

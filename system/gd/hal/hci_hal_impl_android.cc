@@ -158,7 +158,7 @@ void HciHalImpl::sendIsoData(HciPacket packet) {
 }
 
 uint16_t HciHalImpl::getMsftOpcode() {
-  if (com::android::bluetooth::flags::le_scan_msft_support()) {
+  if (com_android_bluetooth_flags_le_scan_msft_support()) {
     return android::sysprop::bluetooth::Hci::msft_vendor_opcode().value_or(0);
   }
   return 0;
@@ -171,7 +171,7 @@ HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLog
                    "Start can't be called more than once before Stop is called.");
 
   log::info("Initializing HCI HAL backend and callbacks !!");
-  if (com::android::bluetooth::flags::hci_instance_name_use_injected()) {
+  if (com_android_bluetooth_flags_hci_instance_name_use_injected()) {
     backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
   } else {
     backend_ = HciBackend::CreateAidl();

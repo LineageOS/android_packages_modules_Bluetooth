@@ -645,7 +645,7 @@ protected:
     TestConnect(address);
     GetConnectedEvent(address, conn_id);
 
-    if (!com::android::bluetooth::flags::le_ase_read_multiple_variable()) {
+    if (!com_android_bluetooth_flags_le_ase_read_multiple_variable()) {
       EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, _, _, _)).WillRepeatedly(DoDefault());
       for (auto const& handle : handles) {
         EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, handle, _, _)).WillOnce(DoDefault());
@@ -1338,7 +1338,7 @@ protected:
 
 TEST_F(VolumeControlCallbackTest, test_volume_state_changed_stress) {
   std::vector<uint8_t> value({0x03, 0x01, 0x02});
-  if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+  if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
     EXPECT_CALL(callbacks, OnVolumeStateChanged(test_address, 0x03, true, _, true));
   } else {
     EXPECT_CALL(callbacks, OnGroupVolumeStateChanged(group_id, 0x03, true, true));
@@ -2301,7 +2301,7 @@ protected:
   void SetUp(void) override {
     VolumeControlTest::SetUp();
 
-  if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+    if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
       ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
 
       // Report working CSIS

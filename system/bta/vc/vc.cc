@@ -437,7 +437,7 @@ public:
     }
 
     auto csis_api = CsisClient::Get();
-    if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+    if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
       if (!csis_api) {
         bluetooth::log::warn("Csis module is not available");
         callbacks_->OnVolumeStateChanged(device->address, device->volume, device->mute,
@@ -447,7 +447,7 @@ public:
     }
 
     int group_id;
-    if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+    if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
       group_id = csis_api->GetGroupId(device->address, bluetooth::le_audio::uuid::kCapServiceUuid);
     } else {
       group_id = device->group_id;
@@ -463,7 +463,7 @@ public:
     std::vector<RawAddress> devices_for_volume_change;
     std::vector<RawAddress> devices_for_mute_remove;
     std::vector<RawAddress> devices_for_mute_change;
-    if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+    if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
       for (auto deviceAddr : csis_api->GetDeviceList(group_id)) {
         auto groupDevice = volume_control_devices_.FindByAddress(deviceAddr);
         if ((groupDevice == nullptr) || (groupDevice->address == device->address)) {
@@ -1207,7 +1207,7 @@ public:
       auto group_id = std::get<int>(addr_or_group_id);
       bluetooth::log::debug("group: {}", group_id);
       auto csis_api = CsisClient::Get();
-      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
         if (!csis_api) {
           bluetooth::log::error("Csis is not there");
           return;
@@ -1215,7 +1215,7 @@ public:
       }
 
       std::vector<RawAddress> devices;
-      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
         devices = csis_api->GetDeviceList(group_id);
       } else {
         devices = volume_control_devices_.getGroupDevicesAddresses(group_id);
@@ -1231,7 +1231,7 @@ public:
       bool muteNotChanged = false;
       bool deviceNotReady = false;
 
-      if (com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
         devices.clear();
         for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
           if (IsMuteOrUnmuteRequired(groupDevice, mute)) {
@@ -1308,7 +1308,7 @@ public:
       auto group_id = std::get<int>(addr_or_group_id);
       bluetooth::log::debug("group_id: {}, vol: {}", group_id, volume);
       auto csis_api = CsisClient::Get();
-      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
         if (!csis_api) {
           bluetooth::log::error("Csis is not there");
           return;
@@ -1316,7 +1316,7 @@ public:
       }
 
       std::vector<RawAddress> devices;
-      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
         devices = csis_api->GetDeviceList(group_id);
       } else {
         devices = volume_control_devices_.getGroupDevicesAddresses(group_id);
@@ -1333,7 +1333,7 @@ public:
       bool volumeNotChanged = false;
       bool deviceNotReady = false;
 
-      if (com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
         devices.clear();
         for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
           if (IsSetAbsoluteVolumeRequired(groupDevice, volume)) {
@@ -1651,7 +1651,7 @@ private:
     device->group_id = DeviceGroups::Get()->GetGroupId(device->address,
                                                        bluetooth::le_audio::uuid::kCapServiceUuid);
 
-    if (com::android::bluetooth::flags::vcp_handle_group_id_internally() &&
+    if (com_android_bluetooth_flags_vcp_handle_group_id_internally() &&
         device->group_id == bluetooth::groups::kGroupUnknown &&
         bluetooth::common::IsPtsTestMode()) {
       // Fix PTS VCP/VC tests by adding device to DeviceGroups, normally added by CSIS or LeAudio

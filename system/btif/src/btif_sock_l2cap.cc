@@ -681,7 +681,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
       }
     }
     // Update data length to get better throughput on CoC
-    if (com::android::bluetooth::flags::set_max_data_length_for_lecoc()) {
+    if (com_android_bluetooth_flags_set_max_data_length_for_lecoc()) {
       if (get_btm_client_interface().ble.BTM_SetBleDataLength(
                   le_open->rem_bda, BTM_BLE_DATA_SIZE_MAX,
                   /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
@@ -1365,7 +1365,7 @@ static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_
   log::info(
           "L2CAP socket opened successful. Will send connect signal in "
           "on_btsocket_l2cap_opened_complete() asynchronously.");
-  if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+  if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
     btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
   }
 }
@@ -1413,7 +1413,7 @@ static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap
     btsock_l2cap_free_l(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("L2CAP socket opened successful. Will send connect signal in async callback.");
-    if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+    if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
       btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, accept_rs->id);
     }
   }

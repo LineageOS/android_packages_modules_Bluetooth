@@ -1011,7 +1011,7 @@ uint16_t AVRC_GetProfileVersion() {
   uint16_t profile_version = AVRC_REV_1_4;
   char avrcp_version[PROPERTY_VALUE_MAX] = {0};
 
-  if (!com::android::bluetooth::flags::avrcp_16_default()) {
+  if (!com_android_bluetooth_flags_avrcp_16_default()) {
     osi_property_get(AVRC_VERSION_PROPERTY, avrcp_version, AVRC_1_5_STRING);
   } else {
     osi_property_get(AVRC_VERSION_PROPERTY, avrcp_version, AVRC_1_6_STRING);

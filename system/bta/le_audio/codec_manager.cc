@@ -374,7 +374,7 @@ public:
       return;
     }
 
-    if (!com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
+    if (!com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type()) {
       log::verbose("Skipped due to disabled `leaudio_add_opus_hi_res_codec_type` flag.");
       return;
     }

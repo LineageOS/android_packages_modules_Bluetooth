@@ -174,7 +174,7 @@ void BleScannerInterfaceImpl::Scan(bool start) {
 
   // TODO (b/432614634): When the flag remove_address_cache_from_ble_scanner is removed,
   //                     also remove the AddressCache class entirely.
-  if (!com::android::bluetooth::flags::remove_address_cache_from_ble_scanner()) {
+  if (!com_android_bluetooth_flags_remove_address_cache_from_ble_scanner()) {
     do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
                                     base::Unretained(&address_cache_)));
   }
@@ -474,7 +474,7 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 
   btm_cb.neighbor.le_scan.results++;
-  if (!com::android::bluetooth::flags::resolve_address_for_adv_report() &&
+  if (!com_android_bluetooth_flags_resolve_address_for_adv_report() &&
       ble_addr_type != BLE_ADDR_ANONYMOUS) {
     btm_ble_process_adv_addr(raw_address, &ble_addr_type);
   }
@@ -492,9 +492,8 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
           advertising_sid, tx_power, rssi, periodic_advertising_interval, advertising_data));
 
   // TODO: Remove when StartInquiry in GD part implemented
-  if (!com::android::bluetooth::flags::support_passive_scanning() ||
-      !(event_type & kScannableMask) || (event_type & kScanResponseMask) ||
-      msft_adv_monitor_enabled_) {
+  if (!com_android_bluetooth_flags_support_passive_scanning() || !(event_type & kScannableMask) ||
+      (event_type & kScanResponseMask) || msft_adv_monitor_enabled_) {
     btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
                                              secondary_phy, advertising_sid, tx_power, rssi,
                                              periodic_advertising_interval, advertising_data);
@@ -720,9 +719,9 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
 
   // update device name
   if (p_eir_remote_name) {
-    if (com::android::bluetooth::flags::remove_address_cache_from_ble_scanner() ||
+    if (com_android_bluetooth_flags_remove_address_cache_from_ble_scanner() ||
         !address_cache_.find(bd_addr)) {
-      if (!com::android::bluetooth::flags::remove_address_cache_from_ble_scanner()) {
+      if (!com_android_bluetooth_flags_remove_address_cache_from_ble_scanner()) {
         address_cache_.add(bd_addr);
       }
 

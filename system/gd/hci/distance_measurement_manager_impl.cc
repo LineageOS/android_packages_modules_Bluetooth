@@ -364,7 +364,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
   ~impl() {
     stop();
-    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
       handler_->Clear();
       handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
       delete handler_;
@@ -372,7 +372,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   void stop() {
-    if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
       hci_layer_->ReleaseDistanceMeasurementInterface();
     }
 

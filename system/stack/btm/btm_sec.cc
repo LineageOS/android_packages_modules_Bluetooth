@@ -484,7 +484,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
   /* Other security process is in progress */
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
-    if (com::android::bluetooth::flags::pairing_collision_with_same_device() &&
+    if (com_android_bluetooth_flags_pairing_collision_with_same_device() &&
         btm_sec_cb.link_spec.addrt.bda == bd_addr) {
       log::warn("Already pairing with {}", btm_sec_cb.link_spec);
       return tBTM_STATUS::BTM_CMD_STARTED;
@@ -599,7 +599,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
       BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4)) {
     /* local is 2.1 and peer is unknown */
     if ((p_dev_rec->sm4 & BTM_SM4_CONN_PEND) == 0) {
-      if (com::android::bluetooth::flags::skip_excess_name_discovery() &&
+      if (com_android_bluetooth_flags_skip_excess_name_discovery() &&
           btif_storage_get_stored_remote_name(bd_addr,
                                               reinterpret_cast<char*>(&p_dev_rec->sec_bd_name))) {
         /* Skip name discovery if the name is already known */
@@ -653,7 +653,7 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
     if (addr_type == BLE_ADDR_PUBLIC) {
       bool is_discovered_over_le_only = false;
       tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
-      if (p_inq_info != nullptr && com::android::bluetooth::flags::auto_transport_pairing()) {
+      if (p_inq_info != nullptr && com_android_bluetooth_flags_auto_transport_pairing()) {
         uint8_t inq_result_type = 0;
         inq_result_type = p_inq_info->results.inq_result_type;
         is_discovered_over_le_only = (inq_result_type == BT_DEVICE_TYPE_BLE);
@@ -1252,7 +1252,7 @@ static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool is_ori
 
     /*if authentication is requirement & currently on temp bonding
      * trigger pairing */
-    if (com::android::bluetooth::flags::upgrade_temp_bonding_on_auth_req() &&
+    if (com_android_bluetooth_flags_upgrade_temp_bonding_on_auth_req() &&
         (p_dev_rec->sec_rec.security_required & BTM_SEC_OUT_AUTHENTICATE ||
          p_dev_rec->sec_rec.security_required & BTM_SEC_IN_AUTHENTICATE) &&
         p_dev_rec->sec_rec.is_bond_type_temporary()) {
@@ -1437,7 +1437,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
             p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED,
             p_dev_rec->sec_rec.sec_flags & BTM_SEC_ENCRYPTED);
 
-    if (!com::android::bluetooth::flags::trigger_sec_proc_on_inc_access_req()) {
+    if (!com_android_bluetooth_flags_trigger_sec_proc_on_inc_access_req()) {
       /* SM4, but we do not know for sure which level of security we need.
        * as long as we have a link key, it's OK */
       if ((0 == (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) ||
@@ -1456,7 +1456,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
         return tBTM_STATUS::BTM_SUCCESS;
       }
     } else {
-       log::debug("force fallthrough to trigger sec proceudure");
+      log::debug("force fallthrough to trigger sec proceudure");
     }
   }
 
@@ -1638,7 +1638,7 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
     if (rc == tBTM_STATUS::BTM_CMD_STARTED) {
       btm_sec_queue_service_access_request(bd_addr, BT_PSM_RFCOMM, is_originator, security_required,
                                            p_callback, p_ref_data);
-      if (com::android::bluetooth::flags::separate_encryption_queue()) {
+      if (com_android_bluetooth_flags_separate_encryption_queue()) {
         return tBTM_STATUS::BTM_CMD_STORED;
       }
     } else /* rc == tBTM_STATUS::BTM_SUCCESS */
@@ -1736,7 +1736,7 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
 void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   tBTM_SEC_DEV_REC* p_dev_rec = nullptr;
 
-  if (!com::android::bluetooth::flags::concurrent_incoming_outgoing_pairing()) {
+  if (!com_android_bluetooth_flags_concurrent_incoming_outgoing_pairing()) {
     if ((btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
         (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
         (btm_sec_cb.link_spec.addrt.bda == bda)) {
@@ -1764,7 +1764,7 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
 
   // CoD may be missing for devices bonded without BR/EDR device discovery
-  if (com::android::bluetooth::flags::update_cod_if_missing() && p_dev_rec->sec_rec.is_bonded() &&
+  if (com_android_bluetooth_flags_update_cod_if_missing() && p_dev_rec->sec_rec.is_bonded() &&
       (p_dev_rec->dev_class == kDevClassEmpty || p_dev_rec->dev_class == kDevClassUnclassified)) {
     log::debug("Updating CoD for bonded device {} to [0x{:x}, 0x{:x}, 0x{:x}]", bda, dc[0], dc[1],
                dc[2]);
@@ -1900,7 +1900,7 @@ static void btm_sec_check_pending_reqs_(void) {
 }
 
 static void btm_sec_check_pending_reqs(void) {
-  if (!com::android::bluetooth::flags::separate_encryption_queue()) {
+  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
     btm_sec_check_pending_reqs_();
     return;
   }
@@ -2386,7 +2386,7 @@ void btm_io_capabilities_req(RawAddress p) {
     return;
   }
 
-  if (p_dev_rec->sec_rec.is_bonded(com::android::bluetooth::flags::bond_loss_transport_check()
+  if (p_dev_rec->sec_rec.is_bonded(com_android_bluetooth_flags_bond_loss_transport_check()
                                            ? BT_TRANSPORT_BR_EDR
                                            : BT_TRANSPORT_AUTO)) {
     /* Encrypted link means that the device is already authenticated and is trying to upgrade
@@ -2577,12 +2577,12 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
    * If it's bonded and not encrypted, it's remote missing keys scenario
    * Do not process this RSP and return, REQ will handle generation of
    * key missing event and disconnect.*/
-  if (p_dev_rec->sec_rec.is_bonded(com::android::bluetooth::flags::bond_loss_transport_check()
+  if (p_dev_rec->sec_rec.is_bonded(com_android_bluetooth_flags_bond_loss_transport_check()
                                            ? BT_TRANSPORT_BR_EDR
                                            : BT_TRANSPORT_AUTO) &&
       !p_dev_rec->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
-    if (!com::android::bluetooth::flags::gen_key_missing_evt_only_from_iocapreq()) {
+    if (!com_android_bluetooth_flags_gen_key_missing_evt_only_from_iocapreq()) {
       btm_sec_report_bond_loss(p_dev_rec, BT_TRANSPORT_BR_EDR,
                                BTM_KEY_MISSING_BREDR_INCOMING_PAIRING);
     }
@@ -3085,7 +3085,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
                 p_dev_rec, HCI_ERR_PEER_USER, p_dev_rec->hci_handle,
                 "stack::btm::btm_sec::btm_sec_auth_retry Auth fail while bonding");
       }
-    } else if (!com::android::bluetooth::flags::immediate_encryption_after_pairing()) {
+    } else if (!com_android_bluetooth_flags_immediate_encryption_after_pairing()) {
       BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
 
@@ -3157,7 +3157,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
  *
  *****************************************************************************/
 static bool btm_sec_perform_ctkd(tBTM_SEC_DEV_REC* p_dev_rec) {
-  if (!com::android::bluetooth::flags::avoid_ctkd_for_temp_pairing()) {
+  if (!com_android_bluetooth_flags_avoid_ctkd_for_temp_pairing()) {
     /* if BR key is temporary no need for LE LTK derivation */
     bool derive_ltk = true;
     if (p_dev_rec->sec_rec.rmt_auth_req == BTM_AUTH_SP_NO &&
@@ -3378,7 +3378,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
       log::warn("Unable to get link policy role peer:{}", p_dev_rec->bd_addr);
     }
 
-    if (com::android::bluetooth::flags::role_switch_after_encryption() &&
+    if (com_android_bluetooth_flags_role_switch_after_encryption() &&
         p_dev_rec->switch_role_after_encryption) {
       p_dev_rec->switch_role_after_encryption = false;
       if (role == HCI_ROLE_PERIPHERAL) {
@@ -3392,14 +3392,14 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     }
   }
 
-  if (com::android::bluetooth::flags::reset_collision_state_on_encryption() &&
-      status == HCI_SUCCESS && !p_dev_rec->sec_rec.is_security_state_bredr_encrypting() &&
+  if (com_android_bluetooth_flags_reset_collision_state_on_encryption() && status == HCI_SUCCESS &&
+      !p_dev_rec->sec_rec.is_security_state_bredr_encrypting() &&
       alarm_is_scheduled(btm_sec_cb.sec_collision_timer) && btm_sec_cb.p_collided_dev_rec &&
       btm_sec_cb.p_collided_dev_rec->bd_addr == p_dev_rec->bd_addr) {
     log::debug("Clear collision info after incoming encryption {}", p_dev_rec->bd_addr);
     btm_sec_cb.p_collided_dev_rec = NULL;
     alarm_cancel(btm_sec_cb.sec_collision_timer);
-  } else if (com::android::bluetooth::flags::reset_collision_state_on_encryption() &&
+  } else if (com_android_bluetooth_flags_reset_collision_state_on_encryption() &&
              status == HCI_SUCCESS &&
              p_dev_rec->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING) {
     log::debug("Incoming encryption occur during auth, so continue next security procedure");
@@ -3523,7 +3523,7 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
   }
 
   if (status == HCI_ERR_CONNECTION_TOUT &&
-      (!com::android::bluetooth::flags::unrelated_device_smp_cancellation() ||
+      (!com_android_bluetooth_flags_unrelated_device_smp_cancellation() ||
        BTM_IsBleConnection(handle))) {
     smp_cancel_start_encryption_attempt(acl_address_from_handle(handle));
     return;
@@ -3578,7 +3578,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
                        tHCI_ROLE assigned_role) {
   uint8_t bit_shift = 0;
 
-  if (com::android::bluetooth::flags::concurrent_incoming_outgoing_pairing()) {
+  if (com_android_bluetooth_flags_concurrent_incoming_outgoing_pairing()) {
     if (status == HCI_ERR_CONNECTION_EXISTS) {
       log::warn("Connection already exists, ignore");
       return;
@@ -4012,7 +4012,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   p_dev_rec->sec_rec.classic_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
-  if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
+  if (com_android_bluetooth_flags_reset_security_flags_on_pairing_failure() &&
       !p_dev_rec->sec_rec.is_bonded()) {
     log::warn("Clearing security flags for unbonded device {}", p_dev_rec->bd_addr);
     p_dev_rec->sec_rec.sec_flags = 0;
@@ -4596,7 +4596,7 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
     }
 
     if (start_auth) {
-      if (com::android::bluetooth::flags::ignore_auth_req_when_collision_timer_active() &&
+      if (com_android_bluetooth_flags_ignore_auth_req_when_collision_timer_active() &&
           alarm_is_scheduled(btm_sec_cb.sec_collision_timer) &&
           (btm_sec_cb.p_collided_dev_rec->bd_addr == p_dev_rec->bd_addr)) {
         log::debug(
@@ -4929,7 +4929,7 @@ static bool btm_sec_queue_service_access_request_(const RawAddress& bd_addr, uin
 static bool btm_sec_queue_service_access_request(const RawAddress& bd_addr, uint16_t psm,
                                                  bool is_orig, uint16_t security_required,
                                                  tBTM_SEC_CALLBACK* callback, void* ref) {
-  if (!com::android::bluetooth::flags::separate_encryption_queue()) {
+  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
     return btm_sec_queue_service_access_request_(bd_addr, psm, is_orig, security_required, callback,
                                                  ref);
   }
@@ -5032,7 +5032,7 @@ static void btm_sec_queue_encrypt_request_(const RawAddress& bd_addr, tBT_TRANSP
 static void btm_sec_queue_encrypt_request(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                           tBTM_BLE_SEC_ACT sec_act, tBTM_SEC_CALLBACK* callback,
                                           void* ref) {
-  if (!com::android::bluetooth::flags::separate_encryption_queue()) {
+  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
     btm_sec_queue_encrypt_request_(bd_addr, transport, sec_act, callback, ref);
     return;
   }
@@ -5105,11 +5105,10 @@ static void btm_sec_check_pending_enc_req_(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRAN
 
 static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANSPORT transport,
                                           bool encrypted) {
-  if (!com::android::bluetooth::flags::separate_encryption_queue()) {
+  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
     btm_sec_check_pending_enc_req_(p_dev_rec, transport, encrypted);
     return;
   }
-
 
   // Remove all the encryption requests for the given device and transport, and inform the callers.
   // If the link is encrypted but the link key is not authenticated, retry the security procedure.

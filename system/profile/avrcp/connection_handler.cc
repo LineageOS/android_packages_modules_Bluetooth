@@ -148,7 +148,7 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
 
     instance_->feature_map_[bdaddr] = features;
 
-    if (com::android::bluetooth::flags::abs_volume_sdp_conflict()) {
+    if (com_android_bluetooth_flags_abs_volume_sdp_conflict()) {
       // Peer may connect avrcp during SDP. Check the connection state when
       // SDP completed to resolve the conflict.
       for (const auto& pair : instance_->device_map_) {

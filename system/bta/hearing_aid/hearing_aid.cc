@@ -693,14 +693,14 @@ public:
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
       if (hearingDevice->first_connection ||
-          com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+          com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       }
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
-    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
       if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
           hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
           hearingDevice->read_psm_handle) {
@@ -794,7 +794,7 @@ public:
       return;
     }
 
-    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
         !hearingDevice->first_connection) {
       log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
       return;
@@ -803,7 +803,7 @@ public:
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-      if (com::android::bluetooth::flags::continue_queued_command_after_discovery() ||
+      if (com_android_bluetooth_flags_continue_queued_command_after_discovery() ||
           hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       }
@@ -879,7 +879,7 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (hearingDevice->service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error("Service change received before PSM read. Read omitted.");
           return;
         } else {
@@ -948,7 +948,7 @@ public:
       return;
     }
 
-    if (com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    if (com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
       hearingDevice->first_connection = true;
     }
 
@@ -1153,7 +1153,7 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (hearingDevice->service_changed_rcvd) {
-      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+      if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
         log::error("Stream is starting, but service change received. Aborting.");
         return;
       } else {
@@ -1246,7 +1246,7 @@ public:
          * Just in case, log such occurrence, letting us know we may use the old handle.
          */
         if (device.service_changed_rcvd) {
-          if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
             log::error(
                     "Service change received during active stream."
                     "Omit write to Audio Control Point");
@@ -1326,7 +1326,7 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (device->service_changed_rcvd) {
-      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+      if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
         log::error(
                 "Service change received, but stream is starting."
                 "Omit write to Service Changed CCC");
@@ -1375,7 +1375,7 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (device->service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error(
                   "Service change received, but stream is starting."
                   "Omit write using to Audio Control Point");
@@ -1991,7 +1991,7 @@ public:
 
       std::vector<uint8_t> volume_value({static_cast<unsigned char>(volume)});
       if (device.volume_handle == 0 || device.service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error(
                   "Volume handle not set or service changed received: bd_addr={}"
                   "Write to Volume omitted",
