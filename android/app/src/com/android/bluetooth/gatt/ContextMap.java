@@ -252,7 +252,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Remove the context for a given UUID */
-    void remove(UUID uuid, RemoveReason reason) {
+    App remove(UUID uuid, RemoveReason reason) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -261,21 +261,22 @@ class ContextMap<C extends IInterface> {
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
-                    break;
+                    return entry;
                 }
             }
         }
+        return null;
     }
 
     /** Remove the context for a given application ID. */
-    void remove(int id, RemoveReason reason) {
-        boolean find = false;
+    App remove(int id, RemoveReason reason) {
+        App removedApp = null;
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
                 App entry = i.next();
                 if (entry.id == id) {
-                    find = true;
+                    removedApp = entry;
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
@@ -283,9 +284,10 @@ class ContextMap<C extends IInterface> {
                 }
             }
         }
-        if (find) {
+        if (removedApp != null) {
             removeConnectionsByAppId(id);
         }
+        return removedApp;
     }
 
     List<Integer> getAllAppsIds() {

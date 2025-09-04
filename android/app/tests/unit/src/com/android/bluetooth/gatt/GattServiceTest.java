@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -168,6 +169,9 @@ public class GattServiceTest {
         clientApp.id = CLIENT_IF;
         doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
         doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
+        doReturn(clientApp, null)
+                .when(mClientMap)
+                .remove(anyInt(), any(com.android.bluetooth.gatt.ContextMap.RemoveReason.class));
 
         doAnswer(
                         (Answer<Void>)
@@ -375,6 +379,24 @@ public class GattServiceTest {
                 ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
         verify(mClientMap).remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
         verify(mNativeInterface).gattClientUnregisterApp(CLIENT_IF);
+    }
+
+    @Test
+    public void unregisterClientTwice() {
+        // Simulate simultaneous unregistering from different threads by mocking mClientMap.
+        mService.unregisterClient(
+                mGattCallback,
+                mAttributionSource,
+                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        mService.unregisterClient(
+                mGattCallback,
+                mAttributionSource,
+                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        verify(mClientMap, atLeastOnce())
+                .remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+
+        // The second call is not propagated to the native stack.
+        verify(mNativeInterface, times(1)).gattClientUnregisterApp(CLIENT_IF);
     }
 
     @Test
