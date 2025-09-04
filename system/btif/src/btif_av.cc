@@ -2572,6 +2572,12 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event, void* p_data
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateClosing);
       break;
 
+    case BTIF_AV_CONNECT_REQ_EVT: {
+      log::warn("Peer {} : Ignore {} for same device", peer_.PeerAddress(),
+                BtifAvEvent::EventName(event));
+      btif_queue_advance();
+    } break;
+
     case BTA_AV_SUSPEND_EVT: {
       log::info("Peer {} : event={} status={} initiator={} flags={}", peer_.PeerAddress(),
                 BtifAvEvent::EventName(event), p_av->suspend.status, p_av->suspend.initiator,
