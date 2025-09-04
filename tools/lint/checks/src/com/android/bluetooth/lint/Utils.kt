@@ -51,11 +51,10 @@ fun isPermissionMethodCall(callExpression: UCallExpression): Boolean {
 }
 
 fun hasPermissionMethodAnnotation(method: UMethod): Boolean =
-        getPermissionMethodAnnotation(method) != null
+    getPermissionMethodAnnotation(method) != null
 
-fun getPermissionMethodAnnotation(method: UMethod?): UAnnotation? = method?.uAnnotations
-        ?.firstOrNull { it.qualifiedName == ANNOTATION_PERMISSION_METHOD }
+fun getPermissionMethodAnnotation(method: UMethod?): UAnnotation? =
+    method?.uAnnotations?.firstOrNull { it.qualifiedName == ANNOTATION_PERMISSION_METHOD }
 
-fun hasPermissionNameAnnotation(parameter: UParameter) = parameter.annotations.any {
-    it.hasQualifiedName(ANNOTATION_PERMISSION_NAME)
-}
+fun hasPermissionNameAnnotation(parameter: UParameter) =
+    parameter.annotations.any { it.hasQualifiedName(ANNOTATION_PERMISSION_NAME) }

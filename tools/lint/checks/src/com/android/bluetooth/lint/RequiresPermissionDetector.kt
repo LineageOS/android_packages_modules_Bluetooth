@@ -43,29 +43,23 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
  * A lint detector that ensures correctness for `@RequiresPermission` annotations.
  *
  * This detector performs two main functions:
- *
  * 1. Override Verification: For a method that overrides a super-method annotated with
- * `@RequiresPermission` (such as an AIDL interface method), this check verifies that the
- * permission contract is fulfilled. The contract can be satisfied in two ways:
- *
+ *    `@RequiresPermission` (such as an AIDL interface method), this check verifies that the
+ *    permission contract is fulfilled. The contract can be satisfied in two ways:
  * - The overriding method itself has a semantically identical `@RequiresPermission` annotation.
- *
- * - The body of the overriding method calls other APIs that, in aggregate, require or enforce
- * the same permissions as the super-method. This allows implementations to delegate
- * permission-sensitive logic to helper methods without redundantly annotating the override
- * itself.
+ * - The body of the overriding method calls other APIs that, in aggregate, require or enforce the
+ *   same permissions as the super-method. This allows implementations to delegate
+ *   permission-sensitive logic to helper methods without redundantly annotating the override
+ *   itself.
  *
  * (See `ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION`)
- *
  * 2. Permission Propagation: For any method, it checks that its `@RequiresPermission` annotation
- * correctly reflects the permissions required by the methods it calls and the permission checks it
- * performs.
- *
- * - It reports an error if the annotation is "too narrow" (i.e., it fails to declare a
- * permission that a called API requires).
- *
- * - It also reports an error if the annotation is "too broad" (i.e., it declares a permission
- * that is not actually required or enforced by its body).
+ *    correctly reflects the permissions required by the methods it calls and the permission checks
+ *    it performs.
+ * - It reports an error if the annotation is "too narrow" (i.e., it fails to declare a permission
+ *   that a called API requires).
+ * - It also reports an error if the annotation is "too broad" (i.e., it declares a permission that
+ *   is not actually required or enforced by its body).
  *
  * (See `ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION`)
  *
@@ -74,15 +68,13 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
  */
 class RequiresPermissionDetector : Detector(), SourceCodeScanner {
 
-    override fun getApplicableUastTypes(): List<Class<out UElement>> =
-        listOf(UMethod::class.java)
+    override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
         RequiresPermissionVisitor(context)
 
-    private inner class RequiresPermissionVisitor(
-        private val context: JavaContext
-    ) : UElementHandler() {
+    private inner class RequiresPermissionVisitor(private val context: JavaContext) :
+        UElementHandler() {
         override fun visitMethod(node: UMethod) {
             if (context.evaluator.isAbstract(node)) {
                 return
@@ -91,9 +83,8 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             val containingClass = node.containingClass ?: return
             if (context.evaluator.inheritsFrom(containingClass, CLASS_BINDER, true)) {
                 val isBinderMethod = node.name == "onTransact" || node.name == "dump"
-                val isGeneratedBinderClass = containingClass.name?.matches(
-                    BINDER_INTERNALS_REGEX
-                ) == true
+                val isGeneratedBinderClass =
+                    containingClass.name?.matches(BINDER_INTERNALS_REGEX) == true
 
                 if (isBinderMethod || isGeneratedBinderClass) {
                     return
@@ -101,7 +92,8 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             }
 
             val superPermissions = getRequiredPermissionsFromSuper(context, node)
-            val enforcedPermissions = PermissionEnforcementVisitor(context)
+            val enforcedPermissions =
+                PermissionEnforcementVisitor(context)
                     .apply { node.accept(this) }
                     .enforcedPermissions
 
@@ -118,7 +110,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     node,
                     context.getNameLocation(node),
                     "Method `$nodeName` must have an equivalent @RequiresPermission annotation to the one in " +
-                            "the super method. Expected: $superPermissions but found: $declaredPermissions."
+                        "the super method. Expected: $superPermissions but found: $declaredPermissions.",
                 )
                 return
             }
@@ -136,7 +128,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     node,
                     context.getNameLocation(node),
                     "Method `$nodeName` is missing a @RequiresPermission annotation or it's too narrow. " +
-                            "It calls APIs that require $enforcedPermissions but is only annotated with $declaredPermissions."
+                        "It calls APIs that require $enforcedPermissions but is only annotated with $declaredPermissions.",
                 )
             } else if (tooBroad) {
                 context.report(
@@ -144,15 +136,14 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     node,
                     context.getNameLocation(node),
                     "Method `$nodeName` has a broader @RequiresPermission annotation than necessary. " +
-                            "It is annotated with $declaredPermissions but only calls APIs requiring $enforcedPermissions."
+                        "It is annotated with $declaredPermissions but only calls APIs requiring $enforcedPermissions.",
                 )
             }
         }
     }
 
-    private inner class PermissionEnforcementVisitor(
-        private val context: JavaContext
-    ) : AbstractUastVisitor() {
+    private inner class PermissionEnforcementVisitor(private val context: JavaContext) :
+        AbstractUastVisitor() {
         val enforcedPermissions = PermissionHolder()
         private var isIdentityCleared = false
 
@@ -177,13 +168,15 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                 return true
             }
 
-            // Enforcement of a method annotated `@RequiresPermission` is done by `RequiresPermissionVisitor`
+            // Enforcement of a method annotated `@RequiresPermission` is done by
+            // `RequiresPermissionVisitor`
             context.evaluator.getAnnotation(method, ANNOTATION_REQUIRES_PERMISSION)?.let {
                 enforcedPermissions.addAll(parseAnnotation(context, it))
                 return true
             }
 
-            // Enforcement of a method annotated `@EnforcePermission` is done by `EnforcePermissionDetector`
+            // Enforcement of a method annotated `@EnforcePermission` is done by
+            // `EnforcePermissionDetector`
             context.evaluator.getAnnotation(method, ANNOTATION_ENFORCE_PERMISSION)?.let {
                 enforcedPermissions.addAll(parseAnnotation(context, it))
                 return true
@@ -202,28 +195,35 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     }
                 }
             }
-            if (context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT, false)
-                && method.name.matches(CONTEXT_ENFORCEMENT_METHOD_REGEX)) {
+            if (
+                context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT, false) &&
+                    method.name.matches(CONTEXT_ENFORCEMENT_METHOD_REGEX)
+            ) {
                 extractPermissionFromArgument(node, 0)
-            } else if (context.evaluator.isMemberInSubClassOf(method, CLASS_PERMISSION_CHECKER, false)
-                && method.name.matches(PERMISSION_CHECKER_ENFORCEMENT_METHOD_REGEX)) {
+            } else if (
+                context.evaluator.isMemberInSubClassOf(method, CLASS_PERMISSION_CHECKER, false) &&
+                    method.name.matches(PERMISSION_CHECKER_ENFORCEMENT_METHOD_REGEX)
+            ) {
                 extractPermissionFromArgument(node, 1)
-            } else if (context.evaluator.isMemberInSubClassOf(method, CLASS_PERMISSION_MANAGER, false)
-                && method.name.matches(PERMISSION_MANAGER_ENFORCEMENT_METHOD_REGEX)) {
+            } else if (
+                context.evaluator.isMemberInSubClassOf(method, CLASS_PERMISSION_MANAGER, false) &&
+                    method.name.matches(PERMISSION_MANAGER_ENFORCEMENT_METHOD_REGEX)
+            ) {
                 extractPermissionFromArgument(node, 0)
             } else if (isPermissionMethodCall(node)) {
-                node.resolve()?.getUMethod()
-                    ?.uastParameters
-                    ?.forEachIndexed { index, parameter ->
-                        if (hasPermissionNameAnnotation(parameter)) {
-                            extractPermissionFromArgument(node, index)
-                        }
+                node.resolve()?.getUMethod()?.uastParameters?.forEachIndexed { index, parameter ->
+                    if (hasPermissionNameAnnotation(parameter)) {
+                        extractPermissionFromArgument(node, index)
                     }
+                }
             }
         }
     }
 
-    private fun getRequiredPermissionsFromSuper(context: JavaContext, method: UMethod): PermissionHolder {
+    private fun getRequiredPermissionsFromSuper(
+        context: JavaContext,
+        method: UMethod,
+    ): PermissionHolder {
         val permissionHolder = PermissionHolder()
         method.javaPsi.findSuperMethods().forEach { superMethod ->
             permissionHolder.addAll(getRequiredPermissionsFromMethod(context, superMethod))
@@ -231,10 +231,13 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
         return permissionHolder
     }
 
-    private fun getRequiredPermissionsFromMethod(context: JavaContext, method: PsiMethod): PermissionHolder {
-        return context.evaluator.getAnnotation(method, ANNOTATION_REQUIRES_PERMISSION)
-            ?.let { parseAnnotation(context, it) }
-            ?: PermissionHolder()
+    private fun getRequiredPermissionsFromMethod(
+        context: JavaContext,
+        method: PsiMethod,
+    ): PermissionHolder {
+        return context.evaluator.getAnnotation(method, ANNOTATION_REQUIRES_PERMISSION)?.let {
+            parseAnnotation(context, it)
+        } ?: PermissionHolder()
     }
 
     private fun parseAnnotation(context: JavaContext, annotation: UAnnotation): PermissionHolder {
@@ -257,10 +260,11 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             }
 
             if (value is UCallExpression && value.kind.name == "array_initializer") {
-                return value.valueArguments.mapNotNull { arg ->
-                    val evaluated = ConstantEvaluator.evaluate(context, arg)
-                    evaluated?.toString() ?: extractStringFromPsi(arg.sourcePsi)
-                }
+                return value.valueArguments
+                    .mapNotNull { arg ->
+                        val evaluated = ConstantEvaluator.evaluate(context, arg)
+                        evaluated?.toString() ?: extractStringFromPsi(arg.sourcePsi)
+                    }
                     .filter { it.isNotEmpty() }
                     .toSet()
             }
@@ -299,11 +303,12 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
         fun covers(other: PermissionHolder): Boolean {
             val allMet = allOf.containsAll(other.allOf)
 
-            val anyMet = if (other.anyOf.isEmpty()) {
-                true
-            } else {
-                other.anyOf.any { it in allOf || it in anyOf }
-            }
+            val anyMet =
+                if (other.anyOf.isEmpty()) {
+                    true
+                } else {
+                    other.anyOf.any { it in allOf || it in anyOf }
+                }
             return allMet && anyMet
         }
 
@@ -320,46 +325,46 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
         private val BINDER_INTERNALS_REGEX = "^(Stub|Default|Proxy)$".toRegex()
         private val CONTEXT_ENFORCEMENT_METHOD_REGEX =
             "^(enforce|check)(Calling)?(OrSelf)?Permission$".toRegex()
-        private val PERMISSION_CHECKER_ENFORCEMENT_METHOD_REGEX =
-            "^check.*Permission$".toRegex()
-        private val PERMISSION_MANAGER_ENFORCEMENT_METHOD_REGEX =
-            "^checkPermission.*".toRegex()
+        private val PERMISSION_CHECKER_ENFORCEMENT_METHOD_REGEX = "^check.*Permission$".toRegex()
+        private val PERMISSION_MANAGER_ENFORCEMENT_METHOD_REGEX = "^checkPermission.*".toRegex()
 
         @JvmField
-        val ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION = Issue.create(
-            id = "MissingOrMismatchedRequiresPermissionAnnotation",
-            briefDescription = "Missing or mismatched @RequiresPermission on implementation.",
-            explanation = """
+        val ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION =
+            Issue.create(
+                id = "MissingOrMismatchedRequiresPermissionAnnotation",
+                briefDescription = "Missing or mismatched @RequiresPermission on implementation.",
+                explanation =
+                    """
                 An overriding method must be annotated with @RequiresPermission and it must be
                 equivalent to the annotation on the super method.",
-            """.trimIndent(),
-            category = Category.SECURITY,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation(
-                RequiresPermissionDetector::class.java,
-                Scope.JAVA_FILE_SCOPE
+            """
+                        .trimIndent(),
+                category = Category.SECURITY,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(RequiresPermissionDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
-        )
 
         @JvmField
-        val ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION = Issue.create(
-            id = "IncorrectRequiresPermissionPropagation",
-            briefDescription = "Incorrectly propagating @RequiresPermission",
-            explanation = """
+        val ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION =
+            Issue.create(
+                id = "IncorrectRequiresPermissionPropagation",
+                briefDescription = "Incorrectly propagating @RequiresPermission",
+                explanation =
+                    """
                 Methods that call other APIs requiring permissions must be annotated with their own
                 @RequiresPermission annotation.
                 This annotation must be specific enough to cover all permissions required by the
                 APIs it calls (not "too narrow"), but should not declare permissions that are
                 never used (not "too broad").
-            """.trimIndent(),
-            category = Category.SECURITY,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation(
-                RequiresPermissionDetector::class.java,
-                Scope.JAVA_FILE_SCOPE
+            """
+                        .trimIndent(),
+                category = Category.SECURITY,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(RequiresPermissionDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
-        )
     }
 }
