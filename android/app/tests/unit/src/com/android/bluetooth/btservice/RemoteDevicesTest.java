@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -520,8 +521,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testUpdateBatteryLevelWithBas_overridesHfpBatteryLevel() {
-        int batteryLevel = 10;
-        int batteryLevel2 = 20;
+        int batteryLevelHfp = 10;
+        int batteryLevelBas = 15;
 
         makeBatteryServiceAvailable(mDevice);
         assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
@@ -531,16 +532,58 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
 
         // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent
-        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevel, /* fromBas= */ false);
-        verifyBatteryLevelUpdate(batteryLevel);
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelHfp, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(batteryLevelHfp);
 
         // Verify that updating battery service overrides hfp battery level
-        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevel2, /* fromBas= */ true);
-        verifyBatteryLevelUpdate(batteryLevel2);
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelBas, /* fromBas= */ true);
+        verifyBatteryLevelUpdate(batteryLevelBas);
 
-        // Verify that the battery level isn't reset
+        // Verify that the battery level persists
         mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ true);
-        verifyBatteryLevelUpdate(batteryLevel);
+        if (Flags.consistentBatteryLevel()) {
+            verifyNoMoreInteractions(mAdapterService);
+
+            // We lost both connection and battery level is reset
+            mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ false);
+            verifyBatteryLevelUpdate(BATTERY_LEVEL_UNKNOWN);
+        } else {
+            verifyBatteryLevelUpdate(batteryLevelHfp);
+        }
+
+        doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
+        verifyNoMoreInteractions(mAdapterService);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_CONSISTENT_BATTERY_LEVEL)
+    public void testUpdateBatteryLevelWithHfp_overridesUnknownBasBatteryLevel() {
+        int batteryLevelHfp = 10;
+        int batteryLevelBas = 15;
+        int batteryLevelHfp2 = 20;
+
+        makeBatteryServiceAvailable(mDevice);
+        assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
+        verify(mAdapterService).getBatteryService();
+
+        // Verify that device property is null initially
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
+
+        // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelHfp, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(batteryLevelHfp);
+
+        // Verify that updating battery service overrides hfp battery level
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelBas, /* fromBas= */ true);
+        verifyBatteryLevelUpdate(batteryLevelBas);
+
+        // Verify that the battery level persists
+        mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ true);
+        verifyNoIntentSentForBatteryLevelUpdate();
+
+        // Verify that the battery level
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelHfp2, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(batteryLevelHfp2);
 
         doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
         verifyNoMoreInteractions(mAdapterService);
