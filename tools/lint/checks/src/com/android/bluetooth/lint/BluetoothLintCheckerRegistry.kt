@@ -29,6 +29,9 @@ class BluetoothLintCheckerIssueRegistry : IssueRegistry() {
             LogEnforcementVariableCreationDetector.ISSUE,
             GuardedLogLineDetector.ISSUE,
             GuardedLogLineDetector.WARNING,
+            // TODO(b/409768276): Enable once all known issues are resolved
+            // RequiresPermissionDetector.ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION,
+            // RequiresPermissionDetector.ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION,
         )
 
     override val api: Int
