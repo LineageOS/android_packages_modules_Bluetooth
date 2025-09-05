@@ -311,7 +311,7 @@ public class AvrcpControllerService extends ConnectableProfile {
         // Return an empty list instead.
         if (requestedNode == null) {
             Log.e(TAG, "getContents(" + parentMediaId + "): Failed to find node");
-            return new BrowseResult(new ArrayList(0), BrowseResult.ERROR_MEDIA_ID_INVALID);
+            return new BrowseResult(new ArrayList<>(0), BrowseResult.ERROR_MEDIA_ID_INVALID);
         }
         Log.d(
                 TAG,

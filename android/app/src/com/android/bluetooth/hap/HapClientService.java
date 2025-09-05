@@ -163,7 +163,7 @@ public class HapClientService extends ConnectableProfile {
         Utils.enforceMainLooperIsNotUsed();
 
         FutureTask<T> task =
-                new FutureTask(
+                new FutureTask<>(
                         () -> {
                             // Service can become unavailable while the message is being posted
                             if (!isAvailable()) {

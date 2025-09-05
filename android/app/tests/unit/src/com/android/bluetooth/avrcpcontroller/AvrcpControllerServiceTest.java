@@ -265,7 +265,7 @@ public class AvrcpControllerServiceTest {
         String parentMediaId = "test_parent_media_id";
         BrowseTree.BrowseNode node = mock(BrowseTree.BrowseNode.class);
         when(mStateMachine.findNode(parentMediaId)).thenReturn(node);
-        when(node.getContents()).thenReturn(new ArrayList(0));
+        when(node.getContents()).thenReturn(new ArrayList<>(0));
         when(node.isCached()).thenReturn(true);
 
         BrowseResult result = mService.getContents(parentMediaId);
