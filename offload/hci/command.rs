@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(missing_docs)]
+
 use crate::derive::{Read, Write};
 use crate::reader::{Read, Reader};
 use crate::writer::{pack, Write, Writer};
@@ -147,19 +149,11 @@ pub trait CommandToBytes: CommandOpCode + Write {
         Self: Sized + CommandOpCode + Write;
 }
 
-pub use defs::*;
-
-#[allow(missing_docs)]
-#[rustfmt::skip]
-mod defs {
-
-use super::*;
 use crate::derive::CommandToBytes;
 use crate::status::*;
 
 #[cfg(test)]
 use crate::{Event, EventToBytes};
-
 
 // 7.3.2 Reset Command
 
@@ -190,7 +184,6 @@ fn test_reset_complete() {
     assert_eq!(p.status, Status::Success);
     assert_eq!(e.to_bytes(), &dump[..]);
 }
-
 
 // 7.8.2 LE Read Buffer Size
 
@@ -248,7 +241,6 @@ fn test_le_read_buffer_size_v2_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.97 LE Set CIG Parameters
 
 impl CommandOpCode for LeSetCigParameters {
@@ -256,6 +248,7 @@ impl CommandOpCode for LeSetCigParameters {
 }
 
 #[derive(Debug, Read, Write, CommandToBytes)]
+#[rustfmt::skip]
 pub struct LeSetCigParameters {
     pub cig_id: u8,
     #[N(3)] pub sdu_interval_c_to_p: u32,
@@ -282,9 +275,9 @@ pub struct LeCisInCigParameters {
 #[test]
 fn test_le_set_cig_parameters() {
     let dump = [
-        0x62, 0x20, 0x21, 0x01, 0x10, 0x27, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x64, 0x00, 0x05,
-        0x00, 0x02, 0x00, 0x78, 0x00, 0x00, 0x00, 0x02, 0x03, 0x0d, 0x00, 0x01, 0x78, 0x00, 0x00, 0x00,
-        0x02, 0x03, 0x0d, 0x00
+        0x62, 0x20, 0x21, 0x01, 0x10, 0x27, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x64, 0x00,
+        0x05, 0x00, 0x02, 0x00, 0x78, 0x00, 0x00, 0x00, 0x02, 0x03, 0x0d, 0x00, 0x01, 0x78, 0x00,
+        0x00, 0x00, 0x02, 0x03, 0x0d, 0x00,
     ];
     let Ok(Command::LeSetCigParameters(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.cig_id, 0x01);
@@ -333,7 +326,6 @@ fn test_le_set_cig_parameters_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.99 LE Create CIS
 
 impl CommandOpCode for LeCreateCis {
@@ -352,7 +344,7 @@ pub struct CisAclConnectionHandle {
 }
 
 #[test]
-fn test_le_create_cis () {
+fn test_le_create_cis() {
     let dump = [0x64, 0x20, 0x09, 0x02, 0x60, 0x00, 0x40, 0x00, 0x61, 0x00, 0x41, 0x00];
     let Ok(Command::LeCreateCis(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.connection_handles.len(), 2);
@@ -362,7 +354,6 @@ fn test_le_create_cis () {
     assert_eq!(c.connection_handles[1].acl, 0x41);
     assert_eq!(c.to_bytes(), &dump[..]);
 }
-
 
 // 7.8.100 LE Remove CIG
 
@@ -399,7 +390,6 @@ fn test_le_remove_cig_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.103 LE Create BIG
 
 impl CommandOpCode for LeCreateBig {
@@ -407,6 +397,7 @@ impl CommandOpCode for LeCreateBig {
 }
 
 #[derive(Debug, Read, Write, CommandToBytes)]
+#[rustfmt::skip]
 pub struct LeCreateBig {
     pub big_handle: u8,
     pub advertising_handle: u8,
@@ -425,9 +416,9 @@ pub struct LeCreateBig {
 #[test]
 fn test_le_create_big() {
     let dump = [
-        0x68, 0x20, 0x1f, 0x00, 0x00, 0x02, 0x10, 0x27, 0x00, 0x78, 0x00, 0x3c, 0x00, 0x04, 0x02, 0x00,
-        0x00, 0x01, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32,
-        0x33, 0x34
+        0x68, 0x20, 0x1f, 0x00, 0x00, 0x02, 0x10, 0x27, 0x00, 0x78, 0x00, 0x3c, 0x00, 0x04, 0x02,
+        0x00, 0x00, 0x01, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34,
+        0x31, 0x32, 0x33, 0x34,
     ];
     let Ok(Command::LeCreateBig(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.big_handle, 0x00);
@@ -441,13 +432,15 @@ fn test_le_create_big() {
     assert_eq!(c.packing, 0x00);
     assert_eq!(c.framing, 0x00);
     assert_eq!(c.encryption, 1);
-    assert_eq!(c.broadcast_code, [
-        0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34,
-        0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34
-    ]);
+    assert_eq!(
+        c.broadcast_code,
+        [
+            0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32,
+            0x33, 0x34
+        ]
+    );
     assert_eq!(c.to_bytes(), &dump[..]);
 }
-
 
 // 7.8.109 LE Setup ISO Data Path
 
@@ -456,6 +449,7 @@ impl CommandOpCode for LeSetupIsoDataPath {
 }
 
 #[derive(Clone, Debug, Read, Write, CommandToBytes)]
+#[rustfmt::skip]
 pub struct LeSetupIsoDataPath {
     pub connection_handle: u16,
     pub data_path_direction: LeDataPathDirection,
@@ -500,7 +494,8 @@ pub struct LeIsoDataPathComplete {
 #[test]
 fn test_le_setup_iso_data_path() {
     let dump = [
-        0x6e, 0x20, 0x0d, 0x60, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        0x6e, 0x20, 0x0d, 0x60, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
     ];
     let Ok(Command::LeSetupIsoDataPath(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.connection_handle, 0x60);
@@ -524,7 +519,6 @@ fn test_le_setup_iso_data_path_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.110 LE Remove ISO Data Path
 
 impl CommandOpCode for LeRemoveIsoDataPath {
@@ -545,7 +539,6 @@ fn test_le_remove_iso_data_path() {
     assert_eq!(c.data_path_direction, 0x01);
     assert_eq!(c.to_bytes(), &dump[..]);
 }
-
 
 // Vendor-specific LE Get Vendor Capabilities
 
@@ -636,8 +629,9 @@ fn test_le_get_vendor_capabilities() {
 #[test]
 fn test_le_get_vendor_capabilities_complete() {
     let dump = [
-        0x0e, 0x1e, 0x01, 0x53, 0xfd, 0x00, 0x01, 0x01, 0x00, 0x28, 0x00, 0x01, 0x39, 0x01, 0x05, 0x01,
-        0x14, 0x00, 0x01, 0x01, 0x00, 0x23, 0x00, 0x00, 0x00, 0x01, 0x23, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x0e, 0x1e, 0x01, 0x53, 0xfd, 0x00, 0x01, 0x01, 0x00, 0x28, 0x00, 0x01, 0x39, 0x01, 0x05,
+        0x01, 0x14, 0x00, 0x01, 0x01, 0x00, 0x23, 0x00, 0x00, 0x00, 0x01, 0x23, 0x00, 0x00, 0x00,
+        0x00, 0x01,
     ];
     let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
     let ReturnParameters::LeGetVendorCapabilities(ref p) = e.return_parameters else { panic!() };
@@ -659,6 +653,4 @@ fn test_le_get_vendor_capabilities_complete() {
     assert_eq!(p.a2dp_offload_v2_support, Some(0));
     assert_eq!(p.iso_link_feedback_support, Some(1));
     assert_eq!(e.to_bytes(), &dump[..]);
-}
-
 }
