@@ -36,5 +36,6 @@ rust_ffi {
     visibility: [
         "//hardware/interfaces/bluetooth:__subpackages__",
         "//vendor:__subpackages__",
+        "//device:__subpackages__",
     ],
 }
