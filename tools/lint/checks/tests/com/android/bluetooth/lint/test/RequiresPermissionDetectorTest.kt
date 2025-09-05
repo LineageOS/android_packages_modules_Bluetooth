@@ -883,6 +883,54 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             )
     }
 
+    fun testLambdaAndDirectCall_PermissionsAreCorrect_Passes() {
+        lint()
+            .files(
+                java(
+                        """
+            package test.pkg;
+            import android.annotation.RequiresPermission;
+            import android.content.Context;
+            class FooBinder extends IFoo.Stub {
+                private final Context context;
+                public FooBinder(Context context) {
+                    this.context = context;
+                }
+                @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+                private Service getServiceAndEnforceConnect() {
+                    context.enforceCallingOrSelfPermission(
+                        android.Manifest.permission.BLUETOOTH_CONNECT, null);
+                    return new Service();
+                }
+                public void post(Service service, Consumer<Service> action) {
+                    action.run();
+                }
+                @Override
+                public void connect() {
+                    post(getServiceAndEnforceConnect(), s -> s.connectNow());
+                }
+            }
+            class Service {
+                public void connectNow() {}
+            }
+            """
+                    )
+                    .indented(),
+                java(
+                        """
+                package java.util.function;
+                public interface Consumer<T> {
+                    void accept(T t);
+                }
+                """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expectClean()
+    }
+
     private val manifestPermissionStub: TestFile =
         java(
                 """
