@@ -466,7 +466,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             // Fix references to included services, as they doesn't point to right objects.
             for (BluetoothGattService fixedService : mServices) {
                 ArrayList<BluetoothGattService> includedServices =
-                        new ArrayList(fixedService.getIncludedServices());
+                        new ArrayList<>(fixedService.getIncludedServices());
                 fixedService.getIncludedServices().clear();
 
                 for (BluetoothGattService brokenRef : includedServices) {

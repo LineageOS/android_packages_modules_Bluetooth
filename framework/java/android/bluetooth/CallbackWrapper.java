@@ -60,7 +60,7 @@ public class CallbackWrapper<T, S> {
      * @param unregisterConsumer is called when the last callback is removed
      */
     CallbackWrapper(Consumer<S> registerConsumer, Consumer<S> unregisterConsumer) {
-        this(registerConsumer, unregisterConsumer, new HashMap());
+        this(registerConsumer, unregisterConsumer, new HashMap<>());
     }
 
     /**

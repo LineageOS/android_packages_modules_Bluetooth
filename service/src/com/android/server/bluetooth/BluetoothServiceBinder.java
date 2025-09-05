@@ -96,7 +96,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     private <T> T postFromBinder(Callable<T> callable) {
-        FutureTask<T> task = new FutureTask(callable);
+        FutureTask<T> task = new FutureTask<>(callable);
 
         mHandler.post(task);
         try {
