@@ -179,11 +179,7 @@ HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLog
                    "Start can't be called more than once before Stop is called.");
 
   log::info("Initializing HCI HAL backend and callbacks !!");
-  if (com_android_bluetooth_flags_hci_instance_name_use_injected()) {
-    backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
-  } else {
-    backend_ = HciBackend::CreateAidl();
-  }
+  backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
   if (!backend_) {
     log::info("AIDL backend not available, falling back to HIDL");
     backend_ = HciBackend::CreateHidl(handler);
