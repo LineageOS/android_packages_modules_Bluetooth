@@ -26,6 +26,8 @@ import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 
+private const val TAG = "AdvertiseSuspendManager"
+
 /**
  * Manages the queueing of advertisement commands during Bluetooth suspend state. This class is
  * responsible for holding commands when the adapter is suspending or suspended, and processing them
@@ -36,7 +38,6 @@ class AdvertiseSuspendManager(
     private val advertiseManager: AdvertiseManager,
     private val adapterService: AdapterService,
 ) {
-    private val TAG = "AdvertiseSuspendManager"
 
     enum class SuspendState {
         NORMAL, // Carry out requests as usual.
@@ -420,13 +421,13 @@ class AdvertiseSuspendManager(
             return
         }
         val wasEnabled = suspendInfo.currentlyEnabled
-        var skipCallback = false
+        var skipCallbackForThisEvent = false
 
         if (suspendState == SuspendState.PAUSING) {
             if (wasEnabled && !enable) {
                 // Normal disablement - don't invoke callback
                 suspendAdvCounter -= 1
-                skipCallback = true
+                skipCallbackForThisEvent = true
                 if (suspendAdvCounter == 0) {
                     finalizeSuspend()
                 }
@@ -439,7 +440,7 @@ class AdvertiseSuspendManager(
                 // Normal re-enablement - don't invoke callback.
                 suspendAdvCounter -= 1
                 suspendInfo.needEnableOnResume = false
-                skipCallback = true
+                skipCallbackForThisEvent = true
             } else if (!wasEnabled && !enable && status != 0 && needEnable) {
                 // Re-enablement failed! Let's invoke callback to let the app know.
                 suspendAdvCounter -= 1
@@ -470,7 +471,7 @@ class AdvertiseSuspendManager(
             }
         }
 
-        skipCallback = skipCallback
+        skipCallback = skipCallbackForThisEvent
     }
 
     /** Returns whether we should call the callback of AdvertiseManager's onAdvertisingEnabled. */

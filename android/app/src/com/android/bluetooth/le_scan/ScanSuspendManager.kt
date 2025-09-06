@@ -22,23 +22,22 @@ import android.os.Message
 import android.util.Log
 import com.android.bluetooth.flags.Flags
 
+private const val TAG = "ScanSuspendManager"
+
 /** Class that handles Bluetooth LE scan related operations when the system suspends. */
 internal class ScanSuspendManager(
     private val scanController: ScanController,
     private val scanManager: ScanManager,
     looper: Looper,
 ) {
-    private val clientHandler: ClientHandler?
+    private val clientHandler =
+        if (!Flags.scanControllerThread()) {
+            ClientHandler(looper)
+        } else {
+            null
+        }
 
     @get:JvmName("isSystemSuspended") var systemSuspended = false
-
-    init {
-        if (!Flags.scanControllerThread()) {
-            clientHandler = ClientHandler(looper)
-        } else {
-            clientHandler = null
-        }
-    }
 
     private fun sendMessage(what: Int) {
         if (Flags.scanControllerThread()) {
@@ -114,7 +113,6 @@ internal class ScanSuspendManager(
     }
 
     companion object {
-        private val TAG = ScanSuspendManager::class.java.simpleName
         const val MSG_SYSTEM_SUSPEND = 1
         const val MSG_SYSTEM_RESUME = 2
     }

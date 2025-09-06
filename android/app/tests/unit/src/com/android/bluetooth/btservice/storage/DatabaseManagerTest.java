@@ -1970,7 +1970,7 @@ public final class DatabaseManagerTest {
         final int key = 3;
         final byte[] newValue = new byte[2];
 
-        CompletableFuture<byte[]> future = new CompletableFuture();
+        CompletableFuture<byte[]> future = new CompletableFuture<>();
 
         Answer answer =
                 invocation -> {

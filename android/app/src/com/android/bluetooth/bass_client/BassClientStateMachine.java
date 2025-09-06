@@ -1108,8 +1108,7 @@ class BassClientStateMachine extends StateMachine {
 
     /** getAllSources */
     public List<BluetoothLeBroadcastReceiveState> getAllSources() {
-        List list = new ArrayList(mBluetoothLeBroadcastReceiveStates.values());
-        return list;
+        return new ArrayList<>(mBluetoothLeBroadcastReceiveStates.values());
     }
 
     void acquireAllBassChars() {

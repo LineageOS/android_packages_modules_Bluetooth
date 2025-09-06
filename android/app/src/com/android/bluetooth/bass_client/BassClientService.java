@@ -1278,7 +1278,7 @@ public class BassClientService extends ConnectableProfile {
     private Pair<BluetoothLeBroadcastMetadata, Map<BluetoothDevice, Integer>>
             getGroupManagedDeviceSources(BluetoothDevice sink, Integer sourceId) {
         Log.d(TAG, "getGroupManagedDeviceSources device: " + sink + " sourceId: " + sourceId);
-        Map map = new HashMap<BluetoothDevice, Integer>();
+        Map<BluetoothDevice, Integer> map = new HashMap<>();
 
         if (mGroupManagedSources.containsKey(sink)
                 && mGroupManagedSources.get(sink).contains(sourceId)) {

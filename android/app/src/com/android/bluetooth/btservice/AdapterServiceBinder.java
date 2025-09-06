@@ -1375,7 +1375,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 .post(
                         () ->
                                 service.getMetadataListeners()
-                                        .computeIfAbsent(device, k -> new RemoteCallbackList())
+                                        .computeIfAbsent(device, k -> new RemoteCallbackList<>())
                                         .register(listener));
         return true;
     }

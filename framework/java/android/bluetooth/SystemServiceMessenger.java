@@ -144,7 +144,7 @@ public class SystemServiceMessenger {
     }
 
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
-        CompletableFuture<U> future = new CompletableFuture();
+        CompletableFuture<U> future = new CompletableFuture<>();
 
         Handler.Callback replyFn =
                 (reply) -> {
