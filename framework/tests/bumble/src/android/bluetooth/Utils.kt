@@ -36,8 +36,10 @@ object Utils {
     const val TAG = "Utils"
 
     @JvmField val BUMBLE_DEVICE_NAME = "Bumble"
+    @JvmField val BUMBLE_DEVICE_NAME_2 = "Bumble_2"
 
     @JvmField val BUMBLE_RANDOM_ADDRESS = "51:F7:A8:75:AC:5E"
+    @JvmField val BUMBLE_RANDOM_ADDRESS_2 = "51:F7:A8:75:AC:5F"
 
     @JvmField val BUMBLE_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213")
 
