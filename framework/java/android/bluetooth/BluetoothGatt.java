@@ -23,8 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 
-import static java.util.Objects.requireNonNull;
-
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -931,14 +929,14 @@ public final class BluetoothGatt implements BluetoothProfile {
     }
 
     BluetoothGatt(
-            IBluetoothGatt iGatt,
-            BluetoothDevice device,
+            @NonNull IBluetoothGatt iGatt,
+            @NonNull BluetoothDevice device,
             int transport,
             boolean opportunistic,
             int phy,
             AttributionSource source) {
-        mService = requireNonNull(iGatt);
-        mDevice = requireNonNull(device);
+        mService = iGatt;
+        mDevice = device;
         mTransport = transport;
         mPhy = phy;
         mOpportunistic = opportunistic;
