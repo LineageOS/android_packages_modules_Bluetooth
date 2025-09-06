@@ -678,12 +678,17 @@ public class BondStateMachineTest {
             verifyBondStateChangeIntent(
                     broadcastOldState, broadcastNewState, intentArgument.getValue());
         } else {
-            verify(mAdapterService, times(mVerifyCount))
-                    .sendBroadcastAsUser(
-                            any(Intent.class),
-                            any(UserHandle.class),
-                            anyString(),
-                            any(Bundle.class));
+            if (Flags.onlyBroadcastToLocalUser()) {
+                verify(mAdapterService, times(mVerifyCount))
+                        .sendBroadcast(any(Intent.class), anyString(), any(Bundle.class));
+            } else {
+                verify(mAdapterService, times(mVerifyCount))
+                        .sendBroadcastAsUser(
+                                any(Intent.class),
+                                any(UserHandle.class),
+                                anyString(),
+                                any(Bundle.class));
+            }
         }
 
         if (shouldDelayMessageExist) {

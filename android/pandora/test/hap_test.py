@@ -14,6 +14,7 @@
 
 import asyncio
 import secrets
+import copy
 from typing import List, Optional, Tuple
 
 from avatar import (BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous, enableFlag)
@@ -105,7 +106,7 @@ class HearingAidDevice:
             writable_presets_support=WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
         self.has = HearingAccessService(
             self.ref.device, device_features,
-            [FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET])
+            copy.deepcopy([FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET]))
         self.ref.device.add_service(self.has)
 
     async def __advertise_monaural(self) -> AioStream[AdvertiseResponse]:
@@ -134,7 +135,7 @@ class HearingAidDevice:
 
         self.has = HearingAccessService(
             self.ref.device, device_features,
-            [FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET])
+            copy.deepcopy([FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET]))
         self.ref.device.add_service(self.has)
 
         self.csis = CoordinatedSetIdentificationService(
@@ -348,9 +349,7 @@ class HapTest(base_test.BaseTestClass):
         self.ref_left.has.preset_records[added_preset.index] = added_preset
 
         await self.logcat.Log("Preset added in server. Notify now")
-        await self.ref_left.has.generic_update(
-            PresetChangedOperation(PresetChangedOperation.ChangeId.GENERIC_UPDATE,
-                                   PresetChangedOperation.Generic(BAR_PRESET.index, added_preset)))
+        await self.ref_left.generic_update(BAR_PRESET.index, added_preset)
         await self.dut_hap.WaitPresetChanged()
 
         await self.ref_left.assert_all_presets(self.dut_hap)
