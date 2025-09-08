@@ -17,6 +17,9 @@
 package com.android.bluetooth.a2dp;
 
 import static android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED;
+import static android.bluetooth.BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED;
+import static android.bluetooth.BluetoothA2dp.STATE_NOT_PLAYING;
+import static android.bluetooth.BluetoothA2dp.STATE_PLAYING;
 import static android.bluetooth.BluetoothProfile.EXTRA_PREVIOUS_STATE;
 import static android.bluetooth.BluetoothProfile.EXTRA_STATE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -389,6 +392,49 @@ public class A2dpStateMachineTest {
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(A2dpStateMachine.Disconnected.class);
         assertThat(mLooper.dispatchAll()).isEqualTo(0);
+    }
+
+    @Test
+    public void audioStateChange_sendsBroadcast() {
+        // Start in connected state
+        generateConnectionMessageFromNative(STATE_CONNECTING, STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(STATE_CONNECTED, STATE_CONNECTING);
+        assertThat(mStateMachine.getCurrentState()).isInstanceOf(A2dpStateMachine.Connected.class);
+        // Verify initial audio state broadcast. This is also verified in another test,
+        // but serves as a good baseline here.
+        verifyIntentSent(
+                hasAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED),
+                hasExtra(EXTRA_STATE, STATE_NOT_PLAYING),
+                hasExtra(EXTRA_PREVIOUS_STATE, STATE_PLAYING));
+        assertThat(mStateMachine.isPlaying()).isFalse();
+
+        // --- Test audio started ---
+        A2dpStackEvent audioStarted =
+                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
+        audioStarted.device = mDevice;
+        audioStarted.valueInt = A2dpStackEvent.AUDIO_STATE_STARTED;
+        sendAndDispatchMessage(MESSAGE_STACK_EVENT, audioStarted);
+
+        // Verify broadcast and state for playing
+        verifyIntentSent(
+                hasAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED),
+                hasExtra(EXTRA_STATE, STATE_PLAYING),
+                hasExtra(EXTRA_PREVIOUS_STATE, STATE_NOT_PLAYING));
+        assertThat(mStateMachine.isPlaying()).isTrue();
+
+        // --- Test audio stopped ---
+        A2dpStackEvent audioStopped =
+                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
+        audioStopped.device = mDevice;
+        audioStopped.valueInt = A2dpStackEvent.AUDIO_STATE_STOPPED;
+        sendAndDispatchMessage(MESSAGE_STACK_EVENT, audioStopped);
+
+        // Verify broadcast and state for not playing
+        verifyIntentSent(
+                hasAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED),
+                hasExtra(EXTRA_STATE, STATE_NOT_PLAYING),
+                hasExtra(EXTRA_PREVIOUS_STATE, STATE_PLAYING));
+        assertThat(mStateMachine.isPlaying()).isFalse();
     }
 
     private void sendAndDispatchMessage(int what, Object obj) {
