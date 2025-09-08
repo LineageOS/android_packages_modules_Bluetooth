@@ -349,7 +349,11 @@ public final class BluetoothUtils {
         }
     }
 
-    /** A {@link Runnable} that automatically logs {@link RemoteException} @hide */
+    /**
+     * A {@link Runnable} that automatically logs {@link RemoteException}
+     *
+     * @hide
+     */
     @FunctionalInterface
     public interface RemoteExceptionIgnoringRunnable {
         /** Called by {@code accept}. */
@@ -365,7 +369,11 @@ public final class BluetoothUtils {
         }
     }
 
-    /** A {@link Consumer} that automatically logs {@link RemoteException} @hide */
+    /**
+     * A {@link Consumer} that automatically logs {@link RemoteException}
+     *
+     * @hide
+     */
     @FunctionalInterface
     public interface RemoteExceptionIgnoringConsumer<T> {
         /** Called by {@code accept}. */
@@ -381,7 +389,11 @@ public final class BluetoothUtils {
         }
     }
 
-    /** A {@link Function} that automatically logs {@link RemoteException} @hide */
+    /**
+     * A {@link Function} that automatically logs {@link RemoteException}
+     *
+     * @hide
+     */
     @FunctionalInterface
     public interface RemoteExceptionIgnoringFunction<T, R> {
         R applyOrThrow(T t) throws RemoteException;
@@ -435,7 +447,11 @@ public final class BluetoothUtils {
         consumer.accept(service);
     }
 
-    /** return the current stack trace as a string without new line @hide */
+    /**
+     * return the current stack trace as a string without new line
+     *
+     * @hide
+     */
     public static String inlineStackTrace() {
         StringBuilder sb = new StringBuilder();
         Arrays.stream(new Throwable().getStackTrace())
@@ -444,7 +460,11 @@ public final class BluetoothUtils {
         return sb.toString();
     }
 
-    /** Gracefully print a RemoteException as a one line warning @hide */
+    /**
+     * Gracefully print a RemoteException as a one line warning
+     *
+     * @hide
+     */
     public static void logRemoteException(String tag, RemoteException ex) {
         Log.w(tag, ex.toString() + ": " + inlineStackTrace());
     }

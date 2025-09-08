@@ -18,7 +18,7 @@ package com.android.server.bluetooth;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 
-/** {@hide} */
+/** @hide */
 interface SystemServiceMessage {
     parcelable RegisterAdapter {
         IBluetoothManagerCallback binder;

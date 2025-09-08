@@ -18,7 +18,7 @@ package bluetooth.constants;
 
 /**
  * See Bluetooth SIG Assigned Numbers 6.12.2 Audio Input Type Definitions
- * {@hide}
+ * @hide
  */
 @JavaDerive(toString = true)
 @Backing(type="int")

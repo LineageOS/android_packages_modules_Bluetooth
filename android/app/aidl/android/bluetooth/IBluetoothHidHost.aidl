@@ -22,7 +22,7 @@ import android.content.AttributionSource;
 /**
  * API for Bluetooth HID service
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothHidHost {
     // Public API

@@ -22,7 +22,7 @@ import android.content.AttributionSource;
 /**
  * System private API for talking with the Bluetooth service.
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothManager
 {

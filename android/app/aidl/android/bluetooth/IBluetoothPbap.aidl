@@ -22,7 +22,7 @@ import android.content.AttributionSource;
 /**
  * System private API for Bluetooth pbap service
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothPbap {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

@@ -19,7 +19,7 @@ import android.content.AttributionSource;
 
 /**
  * Expose adapter method to be called by the Bluetooth System Server only
- * {@hide}
+ * @hide
  */
 oneway interface IAdapter
 {
