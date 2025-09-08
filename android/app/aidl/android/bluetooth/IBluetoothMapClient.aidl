@@ -24,7 +24,7 @@ import android.net.Uri;
 /**
  * System private API for Bluetooth MAP MCE service
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothMapClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf = { android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED })")

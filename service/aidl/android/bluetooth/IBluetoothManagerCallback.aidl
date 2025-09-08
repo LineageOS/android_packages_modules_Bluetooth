@@ -19,7 +19,7 @@ package android.bluetooth;
 /**
  * API for Communication between BluetoothAdapter and BluetoothManager
  *
- * {@hide}
+ * @hide
  */
 oneway interface IBluetoothManagerCallback {
     void onBluetoothServiceUp(in IBinder bluetoothService);

@@ -23,7 +23,7 @@ import android.os.ParcelFileDescriptor;
 /**
  * API for Bluetooth Sockets service.
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothSocketManager
 {

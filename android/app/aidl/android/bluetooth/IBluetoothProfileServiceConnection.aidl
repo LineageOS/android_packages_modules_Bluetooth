@@ -22,7 +22,7 @@ import android.os.IBinder;
 /**
  * Callback for bluetooth profile connections.
  *
- * {@hide}
+ * @hide
  */
 oneway interface IBluetoothProfileServiceConnection {
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")

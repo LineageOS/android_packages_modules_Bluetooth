@@ -22,7 +22,7 @@ import android.content.AttributionSource;
 /**
  * System private API for Bluetooth MAP service
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothMap {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

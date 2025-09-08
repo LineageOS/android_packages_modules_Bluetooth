@@ -25,7 +25,7 @@ import android.os.Bundle;
 /**
  * API for Bluetooth Headset Client service (HFP HF Role)
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothHeadsetClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

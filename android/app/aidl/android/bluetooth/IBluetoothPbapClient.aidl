@@ -22,7 +22,7 @@ import android.content.AttributionSource;
 /**
  * API for Bluetooth Phone Book Access Provile Client Side
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothPbapClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
