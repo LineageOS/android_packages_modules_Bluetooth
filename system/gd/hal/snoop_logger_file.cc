@@ -18,6 +18,11 @@
 
 #include <sys/stat.h>
 
+#ifdef __ANDROID__
+#include <private/android_filesystem_config.h>
+#include <unistd.h>
+#endif  // __ANDROID__
+
 #include "hal/snoop_logger.h"
 #include "hal/snoop_logger_common.h"
 
@@ -34,7 +39,9 @@ using bluetooth::os::fake_timer::fake_timerfd_get_clock;
 namespace bluetooth::hal {
 
 #ifdef __ANDROID__
-static bool create_log_directories() {
+// The expected permissions and group for the created directory is like:
+//   drwxrwxr-x bluetooth bluetooth
+bool create_log_directories() {
   std::filesystem::path default_path = os::ParameterProvider::SnoopLogFilePath();
   std::filesystem::path default_dir_path = default_path.parent_path();
 
@@ -44,7 +51,23 @@ static bool create_log_directories() {
   }
 
   log::info("Creating directory: {}", default_dir_path.string());
-  return std::filesystem::create_directories(default_dir_path);
+  mode_t prevmask = umask(0002);
+  bool created = std::filesystem::create_directories(default_dir_path);
+  umask(prevmask);
+  if (created && geteuid() != AID_BLUETOOTH) {
+    // If somehow the log directory is removed but now we're not running as AID_BLUETOOTH (e.g. HSUM
+    // mode may run Bluetooth process under a namespace), we should make sure the group is
+    // AID_BLUETOOTH so bluetooth users under any namespace can add/remove the files inside.
+    log::warn("Not running as AID_BLUETOOTH, changing directory group");
+    if (chown(default_dir_path.c_str(), geteuid(), AID_BLUETOOTH) < 0) {
+      log::error("Failed to chown, error: \"{}\"", strerror(errno));
+      if (std::error_code ec; !std::filesystem::remove(default_dir_path, ec)) {
+        log::error("Failed to remove directory: ", ec.message());
+      }
+      return false;
+    }
+  }
+  return created;
 }
 #endif  // __ANDROID__
 
