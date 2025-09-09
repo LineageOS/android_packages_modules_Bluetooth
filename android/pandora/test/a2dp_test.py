@@ -882,6 +882,9 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             accept_pairing(self.ref1, self.dut.address),
         )
 
+        # Start AVDT connection from DUT
+        self.dut_a2dp.OpenSource(connection=dut_ref1)
+
         # Wait until RD1 will initiate and open L2CAP channel for AVDTP
         channel = await asyncio.wait_for(wait_for_l2cap_open, timeout=10.0)
 
