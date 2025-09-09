@@ -19,6 +19,7 @@ package com.android.bluetooth.avrcp;
 import android.os.SystemProperties;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.internal.annotations.VisibleForTesting;
 
 /** A class to represent an AVRCP version */
 final class AvrcpVersion {
@@ -28,11 +29,13 @@ final class AvrcpVersion {
     public static final AvrcpVersion AVRCP_VERSION_1_6 = new AvrcpVersion(1, 6);
 
     // System settings version strings
-    private static final String AVRCP_VERSION_PROPERTY = "persist.bluetooth.avrcpversion";
-    private static final String AVRCP_VERSION_1_3_STRING = "avrcp13";
-    private static final String AVRCP_VERSION_1_4_STRING = "avrcp14";
-    private static final String AVRCP_VERSION_1_5_STRING = "avrcp15";
-    private static final String AVRCP_VERSION_1_6_STRING = "avrcp16";
+    @VisibleForTesting static final String AVRCP_VERSION_1_3_STRING = "avrcp13";
+    @VisibleForTesting static final String AVRCP_VERSION_1_4_STRING = "avrcp14";
+    @VisibleForTesting static final String AVRCP_VERSION_1_5_STRING = "avrcp15";
+    @VisibleForTesting static final String AVRCP_VERSION_1_6_STRING = "avrcp16";
+
+    @VisibleForTesting
+    static final String AVRCP_VERSION_PROPERTY = "persist.bluetooth.avrcpversion";
 
     public int major;
     public int minor;

@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -109,6 +110,14 @@ public class TestUtils {
     public static void mockSystemPropertyGet(String key, boolean value) {
         ExtendedMockito.doReturn(value)
                 .when(() -> SystemProperties.getBoolean(eq(key), anyBoolean()));
+    }
+
+    /**
+     * Make use of the ExtendedMockito framework to mock the return value of SystemProperty.get.
+     * This method require the test to use a {@link StaticMockitoRule}
+     */
+    public static void mockSystemPropertyGet(String key, String value) {
+        ExtendedMockito.doReturn(value).when(() -> SystemProperties.get(eq(key), anyString()));
     }
 
     /**
