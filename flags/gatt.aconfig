@@ -41,6 +41,7 @@ flag {
     namespace: "bluetooth"
     description: "New gatt API to offload characteristics"
     bug: "427099808"
+    is_exported: true
 }
 
 flag {

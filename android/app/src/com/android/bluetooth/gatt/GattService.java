@@ -48,6 +48,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.GattOffloadSession;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.companion.CompanionDeviceManager;
@@ -169,6 +170,8 @@ public class GattService extends ProfileService {
 
     /** HashMap used for storing RSSI cache entries */
     @VisibleForTesting final Map<String, RssiCacheEntry> mRssiCache = new HashMap<>();
+
+    private final Object mOffloadLock = new Object();
 
     private final ActivityManager mActivityManager;
     private final PackageManager mPackageManager;
@@ -861,6 +864,30 @@ public class GattService extends ProfileService {
                                             callbackInfo.handle(),
                                             callbackInfo.valueByteArray()));
         }
+    }
+
+    void onClientCharacteristicsUnoffloadedFromNative(int connId, int sessionId, int status) {
+        Log.d(
+                TAG,
+                "onClientCharacteristicsUnoffloadedFromNative() - connId="
+                        + connId
+                        + ", sessionId="
+                        + sessionId
+                        + ", status="
+                        + status);
+
+        BluetoothDevice device = mClientMap.deviceByConnId(connId);
+        if (device == null) {
+            return;
+        }
+
+        ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
+        if (app == null) {
+            return;
+        }
+
+        callbackToApp(
+                () -> app.getCallback().onCharacteristicsUnoffloaded(device, sessionId, status));
     }
 
     /**************************************************************************
@@ -2129,6 +2156,30 @@ public class GattService extends ProfileService {
         callbackToApp(() -> app.getCallback().onMtuChanged(device, mtu));
     }
 
+    void onServerCharacteristicsUnoffloadedFromNative(int connId, int sessionId, int status) {
+        Log.d(
+                TAG,
+                "onServerCharacteristicsUnoffloadedFromNative() - connId="
+                        + connId
+                        + ", sessionId="
+                        + sessionId
+                        + ", status="
+                        + status);
+
+        BluetoothDevice device = mServerMap.deviceByConnId(connId);
+        if (device == null) {
+            return;
+        }
+
+        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
+        if (app == null) {
+            return;
+        }
+
+        callbackToApp(
+                () -> app.getCallback().onCharacteristicsUnoffloaded(device, sessionId, status));
+    }
+
     /**************************************************************************
      * GATT Service functions - SERVER
      *************************************************************************/
@@ -2310,15 +2361,14 @@ public class GattService extends ProfileService {
         }
 
         for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
-            int permission =
-                    ((characteristic.getKeySize() - 7) << 12) + characteristic.getPermissions();
+            int permissionEncodingKeySize = (characteristic.getKeySize() - 7) << 12;
+            int permission = permissionEncodingKeySize + characteristic.getPermissions();
             db.add(
                     GattDbElement.createCharacteristic(
                             characteristic.getUuid(), characteristic.getProperties(), permission));
 
             for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
-                permission =
-                        ((characteristic.getKeySize() - 7) << 12) + descriptor.getPermissions();
+                permission = permissionEncodingKeySize + descriptor.getPermissions();
                 db.add(GattDbElement.createDescriptor(descriptor.getUuid(), permission));
             }
         }
@@ -2487,6 +2537,163 @@ public class GattService extends ProfileService {
         }
 
         return BluetoothStatusCodes.SUCCESS;
+    }
+
+    GattOffloadSession.InnerParcel offloadClientCharacteristics(
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            BluetoothGattService service,
+            List<BluetoothGattCharacteristic> characteristics,
+            long endpointId,
+            long hubId,
+            AttributionSource source) {
+        if (!isGattClientOffloadSupported()) {
+            throw new IllegalStateException("GATT client offload is not supported");
+        }
+        ContextMap<IBluetoothGattCallback>.App clientApp = mClientMap.getByCallbackId(callback);
+        if (clientApp == null) {
+            throw new IllegalArgumentException(callback + ": App not registered");
+        }
+        int clientIf = clientApp.id;
+        Log.v(
+                TAG,
+                "offloadClientCharacteristics() - clientIf="
+                        + clientIf
+                        + " device="
+                        + device
+                        + " service uuid="
+                        + service.getUuid()
+                        + " endpointId="
+                        + endpointId
+                        + " hubId="
+                        + hubId);
+
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
+        if (connId == null) {
+            throw new IllegalArgumentException("No connection to " + device);
+        }
+
+        synchronized (mOffloadLock) {
+            return mNativeInterface.gattClientOffloadCharacteristics(
+                    connId, getGattDatabaseForOffload(service, characteristics), endpointId, hubId);
+        }
+    }
+
+    void unoffloadClientCharacteristics(
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int sessionId,
+            AttributionSource source) {
+        if (!isGattClientOffloadSupported()) {
+            throw new IllegalStateException("GATT client offload is not supported");
+        }
+        ContextMap<IBluetoothGattCallback>.App clientApp = mClientMap.getByCallbackId(callback);
+        if (clientApp == null) {
+            throw new IllegalArgumentException(callback + ": App not registered");
+        }
+        int clientIf = clientApp.id;
+        Log.v(
+                TAG,
+                "unoffloadClientCharacteristics() - clientIf="
+                        + clientIf
+                        + " device="
+                        + device
+                        + " sessionId="
+                        + sessionId);
+
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
+        if (connId == null) {
+            throw new IllegalArgumentException("No connection to " + device);
+        }
+        synchronized (mOffloadLock) {
+            mNativeInterface.gattClientUnoffloadCharacteristics(connId, sessionId);
+        }
+    }
+
+    GattOffloadSession.InnerParcel offloadServerCharacteristics(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            BluetoothGattService service,
+            List<BluetoothGattCharacteristic> characteristics,
+            long endpointId,
+            long hubId,
+            AttributionSource source) {
+        if (!isGattServerOffloadSupported()) {
+            throw new IllegalStateException("GATT server offload is not supported");
+        }
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                mServerMap.getByCallbackId(callback);
+        if (serverApp == null) {
+            throw new IllegalArgumentException(callback + ": App not registered");
+        }
+        int serverIf = serverApp.id;
+        Log.v(
+                TAG,
+                "offloadServerCharacteristics() - serverIf="
+                        + serverIf
+                        + " device="
+                        + device
+                        + " service uuid="
+                        + service.getUuid()
+                        + " endpointId="
+                        + endpointId
+                        + " hubId="
+                        + hubId);
+
+        List<ContextMap.Connection> connections =
+                mServerMap.getConnectionsByDevice(serverIf, device);
+        Integer connId = connections.isEmpty() ? null : connections.get(0).connId();
+        if (connId == null) {
+            throw new IllegalArgumentException("No connection to " + device);
+        }
+
+        // Lock the thread until onServerCharacteristicsOffloaded comes back.
+        synchronized (mOffloadLock) {
+            return mNativeInterface.gattServerOffloadCharacteristics(
+                    connId, getGattDatabaseForOffload(service, characteristics), endpointId, hubId);
+        }
+    }
+
+    void unoffloadServerCharacteristics(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            int sessionId,
+            AttributionSource source) {
+        if (!isGattServerOffloadSupported()) {
+            throw new IllegalStateException("GATT server offload is not supported");
+        }
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                mServerMap.getByCallbackId(callback);
+        if (serverApp == null) {
+            throw new IllegalArgumentException(callback + ": App not registered");
+        }
+        int serverIf = serverApp.id;
+        Log.v(
+                TAG,
+                "unoffloadServerCharacteristics() - serverIf="
+                        + serverIf
+                        + " device="
+                        + device
+                        + " sessionId="
+                        + sessionId);
+
+        List<ContextMap.Connection> connections =
+                mServerMap.getConnectionsByDevice(serverIf, device);
+        Integer connId = connections.isEmpty() ? null : connections.get(0).connId();
+        if (connId == null) {
+            throw new IllegalArgumentException("No connection to " + device);
+        }
+        synchronized (mOffloadLock) {
+            mNativeInterface.gattServerUnoffloadCharacteristics(connId, sessionId);
+        }
+    }
+
+    boolean isGattClientOffloadSupported() {
+        return mAdapterService.isGattClientOffloadSupported();
+    }
+
+    boolean isGattServerOffloadSupported() {
+        return mAdapterService.isGattServerOffloadSupported();
     }
 
     /**************************************************************************
@@ -2773,6 +2980,42 @@ public class GattService extends ProfileService {
             // For now all other errors are bucketed together.
             default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL;
         };
+    }
+
+    private static List<GattDbElement> getGattDatabaseForOffload(
+            BluetoothGattService service, List<BluetoothGattCharacteristic> characteristics) {
+        List<GattDbElement> db = new ArrayList<>();
+
+        db.add(GattDbElement.createPrimaryService(service.getUuid()));
+
+        for (BluetoothGattCharacteristic characteristic : characteristics) {
+            int permissionEncodingKeySize = (characteristic.getKeySize() - 7) << 12;
+            int permissions = permissionEncodingKeySize + characteristic.getPermissions();
+            db.add(
+                    GattDbElement.createCharacteristic(
+                            characteristic.getUuid(),
+                            characteristic.getProperties(),
+                            permissions,
+                            characteristic.getInstanceId()));
+        }
+
+        StringBuilder builder = new StringBuilder("getGattDatabaseForOffload{");
+        builder.append("database size=").append(db.size());
+        for (GattDbElement element : db) {
+            builder.append(", type=")
+                    .append(element.type)
+                    .append(", attributeHandle=")
+                    .append(element.attributeHandle)
+                    .append(", uuid=")
+                    .append(element.uuid)
+                    .append(", properties=")
+                    .append(element.properties)
+                    .append(", permissions=")
+                    .append(element.permissions);
+        }
+        builder.append("}");
+        Log.d(TAG, builder.toString());
+        return db;
     }
 
     /**************************************************************************

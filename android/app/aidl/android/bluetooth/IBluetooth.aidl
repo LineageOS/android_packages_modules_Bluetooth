@@ -35,6 +35,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothQualityReport;
 import android.bluetooth.EncryptionStatus;
+import android.bluetooth.GattOffloadCapabilities;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
 import android.content.AttributionSource;
@@ -325,4 +326,7 @@ interface IBluetooth
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean isConnected(in BluetoothDevice device, in AttributionSource source, in int transport);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
+    GattOffloadCapabilities.InnerParcel getSupportedGattOffloadCapabilities(in AttributionSource source);
 }

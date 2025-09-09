@@ -74,6 +74,35 @@ public class GattDbElement {
         return el;
     }
 
+    /**
+     * Creates a new {@code GattDbElement} representing a GATT characteristic.
+     *
+     * <p>A characteristic is a fundamental data element in the GATT profile.
+     *
+     * @param uuid The {@link UUID} of the characteristic. This universally unique identifier
+     *     distinguishes this characteristic from others. Standard GATT characteristics have
+     *     well-known UUIDs, while custom characteristics will have vendor-specific UUIDs.
+     * @param properties A bitmask of characteristic properties as defined by the Bluetooth GATT
+     *     specification.
+     * @param permissions A bitmask of characteristic permissions, specifying the security
+     *     requirements for accessing the characteristic's value.
+     * @param attributeHandle The 16-bit handle assigned to this characteristic declaration within
+     *     the GATT database. This handle is unique within the server's GATT database and is used by
+     *     clients to reference this specific characteristic.
+     * @return A new {@code GattDbElement} instance configured as a characteristic with the provided
+     *     parameters.
+     */
+    public static GattDbElement createCharacteristic(
+            UUID uuid, int properties, int permissions, int attributeHandle) {
+        GattDbElement el = new GattDbElement();
+        el.type = TYPE_CHARACTERISTIC;
+        el.uuid = uuid;
+        el.properties = properties;
+        el.permissions = permissions;
+        el.attributeHandle = attributeHandle;
+        return el;
+    }
+
     public static GattDbElement createDescriptor(UUID uuid, int permissions) {
         GattDbElement el = new GattDbElement();
         el.type = TYPE_DESCRIPTOR;

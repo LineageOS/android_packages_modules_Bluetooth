@@ -17,14 +17,18 @@
 package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
+import static java.util.Objects.requireNonNull;
 
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
+import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.content.AttributionSource;
@@ -71,9 +75,14 @@ public final class BluetoothGattServer implements BluetoothProfile {
     // Max length of an attribute value, defined in gatt_api.h
     private static final int GATT_MAX_ATTR_LEN = 512;
 
-    /** Bluetooth GATT interface callbacks */
+    /**
+     * Bluetooth GATT server callbacks. Overrides the default BluetoothGattServerCallback
+     * implementation.
+     */
     private final IBluetoothGattServerCallback mBluetoothGattServerCallback =
-            new IBluetoothGattServerCallback.Stub() {
+            new GattServerCallback();
+
+    private class GattServerCallback extends IBluetoothGattServerCallback.Stub {
                 /**
                  * Application interface registered - app is ready to go
                  *
@@ -478,6 +487,55 @@ public final class BluetoothGattServer implements BluetoothProfile {
                         Log.w(TAG, "Unhandled exception: " + ex);
                     }
                 }
+
+        /**
+         * Callback indicating whether GATT characteristics offload has been added.
+         *
+         * @hide
+         */
+        @RequiresNoPermission
+        @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
+        /* package */ void onCharacteristicsOffloaded(
+                BluetoothDevice device, GattOffloadSession session, int status) {
+            Log.d(
+                    TAG,
+                    "onCharacteristicsOffloaded() -"
+                            + (" device=" + device)
+                            + (" session=" + session)
+                            + (" status=" + status));
+
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onCharacteristicsOffloaded(device, session, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
+
+        /**
+         * Callback indicating whether GATT characteristics offload has been removed.
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission
+        @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
+        public void onCharacteristicsUnoffloaded(
+                BluetoothDevice device, int sessionId, int status) {
+            Log.d(
+                    TAG,
+                    "onCharacteristicsUnoffloaded() -"
+                            + (" device=" + device)
+                            + (" sessionId=" + sessionId)
+                            + (" status=" + status));
+
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onCharacteristicsUnoffloaded(device, sessionId, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
             };
 
     /** Create a BluetoothGattServer proxy object. */
@@ -1045,6 +1103,171 @@ public final class BluetoothGattServer implements BluetoothProfile {
         }
 
         return null;
+    }
+
+    /**
+     * Initiates an offload of a specified list of {@link BluetoothGattCharacteristic}s for a
+     * connected GATT client to an endpoint.
+     *
+     * <p>This method enables a GATT Server application to delegate the handling of specific
+     * attribute handles associated with the provided {@code characteristics} to an endpoint for a
+     * given GATT Client {@code device} after a successful connection has been established and
+     * services have been added to the GATT server.
+     *
+     * <p>This is an asynchronous operation. The result of the offload attempt, including the {@link
+     * GattOffloadSession} object on success, will be delivered via the {@link
+     * BluetoothGattServerCallback#onCharacteristicsOffloaded} callback.
+     *
+     * <p>The {@code service} parameter must already contain all {@link
+     * BluetoothGattCharacteristic}s specified in the {@code characteristics} list. The {@code
+     * characteristics} list itself should exclusively contain the {@link
+     * BluetoothGattCharacteristic}s intended for offloading.
+     *
+     * <p>It's important to note that {@link BluetoothGattDescriptor}s associated with the offloaded
+     * {@link BluetoothGattCharacteristic}s are NOT offloaded.
+     *
+     * <p>The current security state of the GATT connection should meet or exceed the permissions
+     * required for all {@link BluetoothGattCharacteristic}s being offloaded. If not, the host
+     * application will need to perform additional security steps (e.g., pairing) to fulfill these
+     * requirements.
+     *
+     * @param device The {@link BluetoothDevice} representing the GATT Client connected to this
+     *     server.
+     * @param service The {@link BluetoothGattService} that contains the characteristics to be
+     *     offloaded. This service object should correspond to a service registered with the GATT
+     *     server.
+     * @param characteristics A list of {@link BluetoothGattCharacteristic}s from the specified
+     *     {@code service} that are to be offloaded.
+     * @param endpointId The unique identifier of the target endpoint within the hub.
+     * @param hubId The unique identifier of the hub to which the endpoint belongs.
+     * @return An integer status code indicating the immediate result of the request, such as {@link
+     *     GattOffloadSession#STATUS_SUCCESS} if the request was initiated successfully. A non-zero
+     *     status indicates an immediate failure to start the operation.
+     * @throws SecurityException if the caller does not have the necessary permissions.
+     * @throws IllegalArgumentException if the service or characteristics are not valid.
+     * @throws IllegalStateException if GATT server offload is not supported.
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+    public @GattOffloadSession.Status int offloadCharacteristics(
+            @NonNull BluetoothDevice device,
+            @NonNull BluetoothGattService service,
+            @NonNull List<BluetoothGattCharacteristic> characteristics,
+            long endpointId,
+            long hubId) {
+        requireNonNull(device);
+        if (mService == null) {
+            Log.e(TAG, "BluetoothGatt service not available");
+            return GattOffloadSession.STATUS_SERVICE_UNAVAILABLE;
+        }
+        if (requireNonNull(service).getUuid() == null) {
+            Log.e(TAG, "GattService uuid is null");
+            return GattOffloadSession.STATUS_ILLEGAL_PARAMETER;
+        }
+        if (requireNonNull(characteristics).isEmpty()) {
+            Log.e(TAG, "GattCharacteristics are empty");
+            return GattOffloadSession.STATUS_ILLEGAL_PARAMETER;
+        }
+        StringBuilder builder = new StringBuilder("offloadCharacteristics{");
+        builder.append("serviceUuid=").append(service.getUuid());
+        for (BluetoothGattCharacteristic characteristic : characteristics) {
+            if (VDBG) {
+                builder.append(", CharUuid=")
+                        .append(characteristic.getUuid())
+                        .append(", CharInstanceId=")
+                        .append(characteristic.getInstanceId());
+            }
+            if (characteristic.getInstanceId() == 0) {
+                Log.e(TAG, "Characteristic instanceId is not configured");
+                return GattOffloadSession.STATUS_ILLEGAL_PARAMETER;
+            }
+            if (characteristic.getService() == null) {
+                Log.e(TAG, "GattService is null in characteristic");
+                return GattOffloadSession.STATUS_ILLEGAL_PARAMETER;
+            }
+            if (!characteristic.getService().equals(service)) {
+                Log.e(
+                        TAG,
+                        "Characteristic not bound to input service: expected="
+                                + service.getUuid()
+                                + " actual="
+                                + characteristic.getService().getUuid());
+                return GattOffloadSession.STATUS_ILLEGAL_PARAMETER;
+            }
+        }
+        builder.append(", endpointId=").append(endpointId).append(", hubId=").append(hubId);
+        builder.append("}");
+        Log.d(TAG, builder.toString());
+
+        GattOffloadSession.InnerParcel sessionParcel;
+        try {
+            sessionParcel =
+                    mService.offloadServerCharacteristics(
+                            mBluetoothGattServerCallback,
+                            device,
+                            service,
+                            characteristics,
+                            endpointId,
+                            hubId,
+                            mAttributionSource);
+        } catch (RemoteException e) {
+            Log.e(TAG, "", e);
+            return GattOffloadSession.STATUS_SERVICE_UNAVAILABLE;
+        }
+        @GattOffloadSession.Status int status = requireNonNull(sessionParcel).getStatus();
+        if (status == GattOffloadSession.STATUS_SUCCESS) {
+            ((GattServerCallback) mBluetoothGattServerCallback)
+                    .onCharacteristicsOffloaded(
+                            device,
+                            new GattOffloadSession(
+                                    requireNonNull(sessionParcel).getSessionId(),
+                                    device,
+                                    null,
+                                    this,
+                                    service,
+                                    characteristics,
+                                    endpointId,
+                                    hubId),
+                            status);
+        }
+        return status;
+    }
+
+    /**
+     * Stops the offloading of characteristics associated with a given offload session for a
+     * specific GATT Client.
+     *
+     * @param device The {@link BluetoothDevice} representing the GATT Client for which the offload
+     *     session is to be terminated.
+     * @param session The offload session to be terminated. This was returned by a previous
+     *     successful call to {@link #offloadCharacteristics}.
+     * @throws SecurityException if the caller does not have the necessary permissions.
+     * @throws IllegalArgumentException if session id is not valid
+     * @throws IllegalStateException if BluetoothGatt service not available.
+     * @hide
+     */
+    @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+    public void unoffloadCharacteristics(
+            @NonNull BluetoothDevice device, @NonNull GattOffloadSession session) {
+        if (mService == null) {
+            throw new IllegalStateException("BluetoothGatt service not available");
+        }
+        int sessionId = session.getSessionId();
+        Log.d(TAG, "unoffloadCharacteristics sessionId= " + sessionId);
+        if (sessionId == GattOffloadSession.OFFLOAD_SESSION_ID_UNKNOWN) {
+            throw new IllegalArgumentException("session id is not valid");
+        }
+        try {
+            mService.unoffloadServerCharacteristics(
+                    mBluetoothGattServerCallback, device, sessionId, mAttributionSource);
+        } catch (RemoteException e) {
+            Log.e(TAG, "", e);
+        }
     }
 
     /**
