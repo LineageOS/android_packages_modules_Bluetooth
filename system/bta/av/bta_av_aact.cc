@@ -3229,7 +3229,10 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /*p_data*/) {
   }
 
   A2dpCodecConfig* codec_config = bta_av_get_a2dp_current_codec();
-  log::assert_that(codec_config != nullptr, "assert failed: codec_config != nullptr");
+  if (codec_config == nullptr) {
+    log::error("current codec is null, ignore request");
+    return;
+  }
 
   if (codec_config->isHardwareProviderCodec()) {
     bta_av_vendor_offload_start_v2(p_scb, static_cast<A2dpCodecConfigExt*>(codec_config));
