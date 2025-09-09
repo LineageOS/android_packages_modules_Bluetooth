@@ -22,11 +22,10 @@ enum BtStatusOrigin : uint16_t {
   HCI = 0x0000,
 
   // 0x0080 - 0x00FF are reserved for native stack origins
+  BTIF = 0x0080,
+
   // 0x0100 - 0x01FF are reserved for Java stack origins
   // 0x0200 - 0xFFFE are reserved for future use
-
-  // Reserved for the stopgap Legacy status origin
-  LEGACY = 0xFFFF,
 };
 
 // Stringify origin status codes.
@@ -34,8 +33,8 @@ static const std::string toStringBtStatusOrigin(BtStatusOrigin origin) {
   switch (origin) {
     case HCI:
       return "HCI";
-    case LEGACY:
-      return "LEGACY";
+    case BTIF:
+      return "BTIF";
     default:
       return std::format("Unknown origin {:#x}", (uint16_t)origin);
   }
