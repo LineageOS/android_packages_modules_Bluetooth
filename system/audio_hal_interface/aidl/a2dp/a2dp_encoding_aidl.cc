@@ -472,38 +472,89 @@ void ack_stream_started(Status ack) {
     log::error("BluetoothAudio HAL is not enabled");
     return;
   }
-  log::info("result={}", ack);
-  auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
-  auto pending_cmd = a2dp_sink->GetPendingCmd();
-  if (pending_cmd == A2DP_CTRL_CMD_START) {
-    active_hal_interface->StreamStarted(ack);
+
+  if (com::android::bluetooth::flags::a2dp_clear_pending_status_before_binder_call()) {
+    if (ack == Status::PENDING) {
+      log::warn("ignoring PENDING status");
+      return;
+    }
+
+    log::info("result={}", ack);
+
+    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
+    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    if (pending_cmd == A2DP_CTRL_CMD_START) {
+      // Clear the pending cmd state before reporting the status to the IBluetoothAudioProvider.
+      // The BT audio HAL can invoke another command immediately after on the same thread and the
+      // state would be incorrect.
+      a2dp_sink->ResetPendingCmd();
+      active_hal_interface->StreamStarted(ack);
+    } else {
+      log::warn("pending={} ignore result={}", pending_cmd, ack);
+    }
+
   } else {
-    log::warn("pending={} ignore result={}", pending_cmd, ack);
-    return;
-  }
-  if (ack != Status::PENDING) {
-    a2dp_sink->ResetPendingCmd();
+    log::info("result={}", ack);
+    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
+    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    if (pending_cmd == A2DP_CTRL_CMD_START) {
+      active_hal_interface->StreamStarted(ack);
+    } else {
+      log::warn("pending={} ignore result={}", pending_cmd, ack);
+      return;
+    }
+    if (ack != Status::PENDING) {
+      a2dp_sink->ResetPendingCmd();
+    }
   }
 }
 
+// Executed from the BT main thread.
 void ack_stream_suspended(Status ack) {
   if (!is_hal_enabled()) {
     log::error("BluetoothAudio HAL is not enabled");
     return;
   }
-  log::info("result={}", ack);
-  auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
-  auto pending_cmd = a2dp_sink->GetPendingCmd();
-  if (pending_cmd == A2DP_CTRL_CMD_SUSPEND) {
-    active_hal_interface->StreamSuspended(ack);
-  } else if (pending_cmd == A2DP_CTRL_CMD_STOP) {
-    log::info("A2DP_CTRL_CMD_STOP result={}", ack);
-  } else {
-    log::warn("pending={} ignore result={}", pending_cmd, ack);
+
+  if (ack == Status::PENDING) {
+    log::warn("ignoring PENDING status");
     return;
   }
-  if (ack != Status::PENDING) {
-    a2dp_sink->ResetPendingCmd();
+
+  if (com::android::bluetooth::flags::a2dp_clear_pending_status_before_binder_call()) {
+    log::info("result={}", ack);
+
+    // The pending cmd state is set from one of the binder threads.
+    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
+    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    if (pending_cmd == A2DP_CTRL_CMD_SUSPEND) {
+      // Clear the pending cmd state before reporting the status to the IBluetoothAudioProvider.
+      // The BT audio HAL can invoke another command immediately after on the same thread and the
+      // state would be incorrect.
+      a2dp_sink->ResetPendingCmd();
+      active_hal_interface->StreamSuspended(ack);
+    } else if (pending_cmd == A2DP_CTRL_CMD_STOP) {
+      a2dp_sink->ResetPendingCmd();
+      log::info("A2DP_CTRL_CMD_STOP result={}", ack);
+    } else {
+      log::warn("pending={} ignore result={}", pending_cmd, ack);
+    }
+
+  } else {
+    log::info("result={}", ack);
+    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
+    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    if (pending_cmd == A2DP_CTRL_CMD_SUSPEND) {
+      active_hal_interface->StreamSuspended(ack);
+    } else if (pending_cmd == A2DP_CTRL_CMD_STOP) {
+      log::info("A2DP_CTRL_CMD_STOP result={}", ack);
+    } else {
+      log::warn("pending={} ignore result={}", pending_cmd, ack);
+      return;
+    }
+    if (ack != Status::PENDING) {
+      a2dp_sink->ResetPendingCmd();
+    }
   }
 }
 
