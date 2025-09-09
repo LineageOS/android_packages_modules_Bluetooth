@@ -1192,7 +1192,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Places a call with specified number.
      *
      * @param device remote device
-     * @param number valid phone number
+     * @param number The phone number to dial. If {@code null} or an empty string, this method will
+     *     attempt to redial the last dialed number.
      * @return <code>{@link BluetoothHeadsetClientCall} call</code> if command has been issued
      *     successfully; <code>{@code null}</code> otherwise; upon completion HFP sends {@link
      *     #ACTION_CALL_CHANGED} intent in case of success; {@link #ACTION_RESULT} is sent
