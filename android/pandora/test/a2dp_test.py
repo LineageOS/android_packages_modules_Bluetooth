@@ -663,6 +663,10 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         pending_configuration_request: L2capConfigurationRequest | None = L2capConfigurationRequest(
         )
 
+        # Prepare a function to call when expecting DUT to connect AVDTP
+        def dut_open_source() -> None:
+            pass
+
         class TestChannelManager(ChannelManager):
 
             def __init__(
@@ -726,6 +730,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                     pending_configuration_request.connection = self.connection
                     pending_configuration_request.cid = self.source_cid
                     pending_configuration_request.request = request
+                    dut_open_source()
                 else:
                     super().on_configure_request(request)
 
@@ -736,6 +741,9 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             initiate_pairing(self.dut, self.ref1.address),
             accept_pairing(self.ref1, self.dut.address),
         )
+
+        def dut_open_source() -> None:
+            self.dut_a2dp.OpenSource(connection=dut_ref1)
 
         # Retrieve Bumble connection object from Pandora connection token
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
