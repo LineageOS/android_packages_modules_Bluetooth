@@ -29,6 +29,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <ios>
 #include <list>
@@ -677,6 +678,9 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if, const RawAdd
   } else {
     log::error("client_if={} Not Registered", client_if);
   }
+  if (com::android::bluetooth::flags::gatt_offload_api() && status == GATT_SUCCESS) {
+    GATTC_InformNotificationHandle(bda, handle);
+  }
 
   return status;
 }
@@ -734,4 +738,61 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if, const RawA
  ******************************************************************************/
 void BTA_GATTC_Refresh(const RawAddress& remote_bda) {
   do_in_main_thread(base::Bind(&bta_gattc_process_api_refresh, remote_bda));
+}
+
+/*******************************************************************************
+ *
+ * Function         BTA_GATTC_OffloadCharacteristics
+ *
+ * Description      This function is called to offload characteristics.
+ *
+ * Parameters       conn_id - connection ID.
+ *                  service - vector describing service.
+ *                  endpoint_id - ID of the hub end point.
+ *                  hub_id - ID of the hub to which the end point belongs.
+ *                  promise - object used to signal the completion status.
+ *
+ ******************************************************************************/
+void BTA_GATTC_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
+                                      uint64_t endpoint_id, uint64_t hub_id,
+                                      std::promise<btgatt_offload_result_t> promise) {
+  log::verbose("conn_id: {}, endpoint_id: {}, hub_id: {}", conn_id, endpoint_id, hub_id);
+
+  RawAddress remote_bda;
+  tGATT_IF gatt_if;
+  tBT_TRANSPORT transport;
+
+  if (!GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
+    log::error("Invalid conn_id: {}", conn_id);
+    promise.set_value(btgatt_offload_result_t{BTGATT_OFFLOAD_SESSION_ID_UNKNOWN,
+                                              tGATT_STATUS::GATT_INVALID_HANDLE});
+    return;
+  }
+  for (auto const& element : service) {
+    if (element.type != BTGATT_DB_CHARACTERISTIC) {
+      continue;
+    }
+    if (bta_gattc_get_regcb_by_notification_handle(element.attribute_handle, remote_bda)) {
+      log::error("Handle 0x{:x} was already registered for notification", element.attribute_handle);
+      promise.set_value(
+              btgatt_offload_result_t{BTGATT_OFFLOAD_SESSION_ID_UNKNOWN, tGATT_STATUS::GATT_BUSY});
+      return;
+    }
+  }
+  GATTC_OffloadCharacteristics(conn_id, service.data(), service.size(), endpoint_id, hub_id,
+                               std::move(promise));
+}
+
+/*******************************************************************************
+ *
+ * Function         BTA_GATTC_UnoffloadCharacteristics
+ *
+ * Description      This function is called to unoffload characteristics.
+ *
+ * Parameters       conn_id - connection ID.
+ *                  session_id - session ID.
+ *
+ ******************************************************************************/
+void BTA_GATTC_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id) {
+  do_in_main_thread(base::BindOnce(&GATTC_UnoffloadCharacteristics, conn_id, session_id));
 }

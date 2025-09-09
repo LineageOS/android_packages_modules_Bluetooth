@@ -132,7 +132,6 @@ typedef union {
   tBTA_GATTS_API_RSP api_rsp;
   tBTA_GATTS_API_OPEN api_open;
   tBTA_GATTS_API_CANCEL_OPEN api_cancel_open;
-
   tBTA_GATTS_INT_START_IF int_start_if;
 } tBTA_GATTS_DATA;
 

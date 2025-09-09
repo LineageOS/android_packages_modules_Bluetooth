@@ -485,6 +485,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackGattOffload",
+    srcs: [
+        "mock/mock_stack_gatt_offload.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStackBtu",
     srcs: [
         "mock/mock_stack_btu*.cc",

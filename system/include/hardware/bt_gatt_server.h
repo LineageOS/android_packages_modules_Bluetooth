@@ -114,6 +114,11 @@ typedef void (*conn_updated_callback)(int conn_id, uint16_t interval, uint16_t l
  * is received */
 typedef void (*subrate_change_callback)(int conn_id, uint16_t subrate_factor, uint16_t latency,
                                         uint16_t cont_num, uint16_t timeout, uint8_t status);
+
+/** Callback invoked when the characteristics unoffloaded event for a given connection is received
+ */
+typedef void (*characteristics_unoffloaded_callback)(int conn_id, int session_id, uint8_t status);
+
 typedef struct {
   register_server_callback register_server_cb;
   connection_callback connection_cb;
@@ -132,6 +137,7 @@ typedef struct {
   phy_updated_callback phy_updated_cb;
   conn_updated_callback conn_updated_cb;
   subrate_change_callback subrate_chg_cb;
+  characteristics_unoffloaded_callback characteristics_unoffloaded_cb;
 } btgatt_server_callbacks_t;
 
 /** Represents the standard BT-GATT server interface. */
@@ -172,6 +178,14 @@ typedef struct {
 
   bt_status_t (*read_phy)(const RawAddress& bd_addr,
                           base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
+
+  /** Offload GATT characteristics */
+  bt_status_t (*offload_characteristics)(int conn_id, btgatt_db_element_t* service,
+                                         size_t element_count, uint64_t endpoint_id,
+                                         uint64_t hub_id, btgatt_offload_result_t* result);
+
+  /** Unoffload GATT characteristics */
+  bt_status_t (*unoffload_characteristics)(int conn_id, int session_id);
 } btgatt_server_interface_t;
 
 __END_DECLS

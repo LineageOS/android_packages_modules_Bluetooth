@@ -280,6 +280,13 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
                 p_data->subrate_chg.status);
       break;
 
+    case BTA_GATTS_CHARACTERISTICS_UNOFFLOADED_EVT:
+      HAL_CBACK(callbacks, server->characteristics_unoffloaded_cb,
+                static_cast<int>(p_data->characteristics_unoffloaded.conn_id),
+                static_cast<int>(p_data->characteristics_unoffloaded.session_id),
+                p_data->characteristics_unoffloaded.status);
+      break;
+
     default:
       log::error("Unhandled event ({})!", event);
       break;
@@ -459,10 +466,49 @@ static bt_status_t btif_gatts_read_phy(
   return BT_STATUS_SUCCESS;
 }
 
-const btgatt_server_interface_t btgattServerInterface = {
-        btif_gatts_register_app,   btif_gatts_unregister_app,
-        btif_gatts_open,           btif_gatts_close,
-        btif_gatts_add_service,    btif_gatts_stop_service,
-        btif_gatts_delete_service, btif_gatts_send_indication,
-        btif_gatts_send_response,  btif_gatts_set_preferred_phy,
-        btif_gatts_read_phy};
+static bt_status_t btif_gatts_offload_characteristics(int conn_id, btgatt_db_element_t* service,
+                                                      size_t elements_count, uint64_t endpoint_id,
+                                                      uint64_t hub_id,
+                                                      btgatt_offload_result_t* result) {
+  CHECK_BTGATT_INIT();
+  std::promise<btgatt_offload_result_t> promise;
+  std::future future = promise.get_future();
+
+  bt_status_t status = do_in_main_thread(base::BindOnce(
+          &BTA_GATTS_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id),
+          std::vector(service, service + elements_count), endpoint_id, hub_id, std::move(promise)));
+  if (status != BT_STATUS_SUCCESS) {
+    return status;
+  }
+  log::info("Waiting for request status");
+  auto request_status = future.wait_for(std::chrono::seconds(5));
+
+  if (request_status != std::future_status::ready) {
+    log::error("Offload request is not ready");
+    return BT_STATUS_TIMEOUT;
+  }
+  btgatt_offload_result_t request_result = future.get();
+  log::info("session_id: {} status: {}", request_result.session_id, request_result.status);
+  *result = request_result;
+  return BT_STATUS_SUCCESS;
+}
+
+static bt_status_t btif_gatts_unoffload_characteristics(int conn_id, int session_id) {
+  CHECK_BTGATT_INIT();
+  return do_in_jni_thread(Bind(base::IgnoreResult(&BTA_GATTS_UnoffloadCharacteristics),
+                               static_cast<tCONN_ID>(conn_id), session_id));
+}
+
+const btgatt_server_interface_t btgattServerInterface = {btif_gatts_register_app,
+                                                         btif_gatts_unregister_app,
+                                                         btif_gatts_open,
+                                                         btif_gatts_close,
+                                                         btif_gatts_add_service,
+                                                         btif_gatts_stop_service,
+                                                         btif_gatts_delete_service,
+                                                         btif_gatts_send_indication,
+                                                         btif_gatts_send_response,
+                                                         btif_gatts_set_preferred_phy,
+                                                         btif_gatts_read_phy,
+                                                         btif_gatts_offload_characteristics,
+                                                         btif_gatts_unoffload_characteristics};

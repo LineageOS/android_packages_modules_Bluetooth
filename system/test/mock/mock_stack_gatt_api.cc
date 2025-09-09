@@ -47,6 +47,10 @@ struct GATTC_ExecuteWrite GATTC_ExecuteWrite;
 struct GATTC_Read GATTC_Read;
 struct GATTC_SendHandleValueConfirm GATTC_SendHandleValueConfirm;
 struct GATTC_Write GATTC_Write;
+struct GATTC_OffloadCharacteristics GATTC_OffloadCharacteristics;
+struct GATTC_UnoffloadCharacteristics GATTC_UnoffloadCharacteristics;
+struct GATTC_InformNotificationHandle GATTC_InformNotificationHandle;
+struct GATTC_InformServiceChangedIndication GATTC_InformServiceChangedIndication;
 struct GATTS_AddService GATTS_AddService;
 struct GATTS_DeleteService GATTS_DeleteService;
 struct GATTS_HandleValueIndication GATTS_HandleValueIndication;
@@ -54,6 +58,8 @@ struct GATTS_HandleValueNotification GATTS_HandleValueNotification;
 struct GATTS_NVRegister GATTS_NVRegister;
 struct GATTS_SendRsp GATTS_SendRsp;
 struct GATTS_StopService GATTS_StopService;
+struct GATTS_OffloadCharacteristics GATTS_OffloadCharacteristics;
+struct GATTS_UnoffloadCharacteristics GATTS_UnoffloadCharacteristics;
 struct GATT_CancelConnect GATT_CancelConnect;
 struct GATT_Connect GATT_Connect;
 struct GATT_Deregister GATT_Deregister;
@@ -221,6 +227,36 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout, tBT_TRAN
 void GATT_StartIf(tGATT_IF gatt_if) {
   inc_func_call_count(__func__);
   test::mock::stack_gatt_api::GATT_StartIf(gatt_if);
+}
+void GATTC_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
+                                  size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  std::promise<btgatt_offload_result_t> promise) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATTC_OffloadCharacteristics(conn_id, service, elements_count,
+                                                           endpoint_id, hub_id, std::move(promise));
+}
+void GATTC_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATTC_UnoffloadCharacteristics(conn_id, session_id);
+}
+void GATTC_InformNotificationHandle(const RawAddress& remote_bda, uint16_t handle) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATTC_InformNotificationHandle(remote_bda, handle);
+}
+void GATTC_InformServiceChangedIndication(const RawAddress& remote_bda) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATTC_InformServiceChangedIndication(remote_bda);
+}
+void GATTS_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
+                                  size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  std::promise<btgatt_offload_result_t> promise) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATTS_OffloadCharacteristics(conn_id, service, elements_count,
+                                                           endpoint_id, hub_id, std::move(promise));
+}
+void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATTS_UnoffloadCharacteristics(conn_id, session_id);
 }
 // Mocked functions complete
 //

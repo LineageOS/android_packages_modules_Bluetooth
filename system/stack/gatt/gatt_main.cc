@@ -157,6 +157,10 @@ void gatt_init(void) {
   gatt_profile_db_init();
 
   EattExtension::GetInstance()->Start();
+
+  if (com::android::bluetooth::flags::gatt_offload_api() && !gatt_offload_init()) {
+    log::warn("error initializing gatt offload");
+  }
 }
 
 /*******************************************************************************
@@ -431,6 +435,9 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
                   p_tcb->peer_bda);
           return;
         }
+      }
+      if (com::android::bluetooth::flags::gatt_offload_api()) {
+        gatt_offload_clear_sessions_by_conn_id(gatt_create_conn_id(p_tcb->tcb_idx, gatt_if));
       }
       // acl link is connected but no application needs to use the link
       if (p_tcb->att_lcid == L2CAP_ATT_CID && is_valid_handle) {

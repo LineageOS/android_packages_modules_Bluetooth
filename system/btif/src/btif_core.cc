@@ -534,6 +534,14 @@ void btif_get_adapter_property(bt_property_type_t type) {
             socket_offload_capabilities.le_coc_capabilities.number_of_supported_sockets;
     lpp_offload_features.number_of_supported_offloaded_rfcomm_sockets =
             socket_offload_capabilities.rfcomm_capabilities.number_of_supported_sockets;
+    if (com::android::bluetooth::flags::gatt_offload_api()) {
+      hal::GattCapabilities gatt_offload_capabilities =
+              bluetooth::shim::GetLppOffloadManager()->GetGattCapabilities();
+      lpp_offload_features.supported_offloaded_gatt_client_properties =
+              gatt_offload_capabilities.supported_gatt_client_properties;
+      lpp_offload_features.supported_offloaded_gatt_server_properties =
+              gatt_offload_capabilities.supported_gatt_server_properties;
+    }
     prop.len = sizeof(bt_lpp_offload_features_t);
     memcpy(prop.val, &lpp_offload_features, prop.len);
   } else {

@@ -33,6 +33,7 @@
 #include "common/circular_buffer.h"
 #include "common/strings.h"
 #include "gatt_api.h"
+#include "hal/gatt_hal.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "osi/include/fixed_queue.h"
@@ -402,6 +403,15 @@ typedef struct {
 } tGATT_PROFILE_CLCB;
 
 typedef struct {
+  bluetooth::hal::GattSession hal_session;
+  tCONN_ID conn_id;
+  std::optional<std::promise<btgatt_offload_result_t>> promise_opt;
+  tGATT_STATUS status{tGATT_STATUS::GATT_SUCCESS};
+  bool in_unregistering_service{false};
+  bool in_clearing_services{false};
+} tGATT_OFFLOAD_SESSION;
+
+typedef struct {
   tGATT_TCB tcb[GATT_MAX_PHY_CHANNEL];
   fixed_queue_t* sign_op_queue;
 
@@ -452,6 +462,8 @@ typedef struct {
 
   tGATT_HDL_CFG hdl_cfg;
   bool over_br_enabled;
+
+  std::unordered_map<uint16_t, tGATT_OFFLOAD_SESSION> offload_sessions;
 } tGATT_CB;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
@@ -570,6 +582,8 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 tCONN_ID gatt_create_conn_id(tTCB_IDX tcb_idx, tGATT_IF gatt_if);
 tTCB_IDX gatt_get_tcb_idx(tCONN_ID conn_id);
 tGATT_IF gatt_get_gatt_if(tCONN_ID conn_id);
+uint16_t gatt_get_acl_handle_by_tcb(tGATT_TCB* p_tcb);
+tGATT_TCB* gatt_find_tcb_by_acl_handle(uint16_t acl_handle);
 
 /* reserved handle list */
 std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
@@ -689,6 +703,18 @@ void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb);
 
 /* gatt_sr_hash.cc */
 Octet16 gatts_calculate_database_hash(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> lst_ptr);
+
+/* gatt_offload.cc */
+bool gatt_offload_init();
+void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_element_t* service,
+                                  size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  std::promise<btgatt_offload_result_t> promise);
+bool gatt_offload_clear_sessions_by_acl_handle(uint16_t acl_connection_handle);
+void gatt_offload_clear_sessions_by_conn_id(tCONN_ID conn_id);
+void gatt_unoffload_session(tCONN_ID conn_id, uint16_t session_id,
+                            tGATT_STATUS status = tGATT_STATUS::GATT_SUCCESS);
+void gattc_inform_notification_handle(tGATT_TCB* p_tcb, uint16_t handle);
+void gattc_offload_handle_service_changed_indication(tGATT_TCB* p_tcb);
 
 namespace bluetooth {
 namespace legacy {

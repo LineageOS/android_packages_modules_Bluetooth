@@ -868,6 +868,9 @@ static void dump(int fd, const char** /*arguments*/) {
   btif_sock_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
   gatt_tcb_dump(fd);
+  if (com::android::bluetooth::flags::gatt_offload_api()) {
+    gatt_offload_sessions_dump(fd);
+  }
   bta_gatt_client_dump(fd);
   device_debug_iot_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
