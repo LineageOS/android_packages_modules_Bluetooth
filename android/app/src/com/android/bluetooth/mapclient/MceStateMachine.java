@@ -490,7 +490,8 @@ class MceStateMachine extends StateMachine {
             if (Utils.isPtsTestMode()) {
                 int messageType = SystemProperties.getInt(SEND_MESSAGE_TYPE, -1);
                 if (messageType > 0 && messageType < Bmessage.Type.values().length) {
-                    return Bmessage.Type.values()[messageType];
+                    //return Bmessage.Type.values()[messageType]; //fixme
+                    return mDefaultMessageType;
                 }
             }
             return mDefaultMessageType;
