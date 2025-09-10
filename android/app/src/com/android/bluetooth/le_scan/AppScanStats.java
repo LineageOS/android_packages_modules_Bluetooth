@@ -286,7 +286,7 @@ class AppScanStats {
         if (isFilterScan) {
             for (ScanFilter filter : filters) {
                 scan.mFilterString
-                        .append("\n      └ ")
+                        .append("\n        └ ")
                         .append(scanFilterToStringWithoutNullParam(filter));
             }
         }
@@ -722,19 +722,25 @@ class AppScanStats {
             boolean isOngoing) {
         for (LastScan scan : scans) {
             final var bootEpochMillis = currentTimeMillis - elapsedRealtimeMillis;
+
             final var start = Instant.ofEpochMilli(bootEpochMillis + scan.mStartTimestamp);
-            sb.append("\n      ").append(Utils.formatInstant(start)).append(" - ");
+            sb.append("\n      [").append(Utils.formatInstant(start));
+            if (!isOngoing) {
+                final var end = Instant.ofEpochMilli(bootEpochMillis + scan.mEndTimestamp);
+                sb.append(" --> ").append(Utils.formatInstant(end));
+            }
+            sb.append("]  (");
 
             final long duration;
             if (isOngoing) {
                 duration = elapsedRealtimeMillis - scan.mStartTimestamp;
-                sb.append("Elapsed: ").append(duration).append("ms ");
+                sb.append("Elapsed: ").append(duration).append("ms");
             } else {
                 duration = scan.mEndTimestamp - scan.mStartTimestamp;
-                sb.append("Duration: ").append(duration).append("ms ");
-                final var end = Instant.ofEpochMilli(bootEpochMillis + scan.mEndTimestamp);
-                sb.append("End: ").append(Utils.formatInstant(end)).append(" ");
+                sb.append("Duration: ").append(duration).append("ms");
             }
+
+            sb.append(")\n        └ Info: ");
 
             if (scan.mIsOpportunisticScan) sb.append("(Opp) ");
             if (scan.mIsBackgroundScan) sb.append("(Back) ");
@@ -742,11 +748,11 @@ class AppScanStats {
             if (scan.mIsFilterScan) sb.append("(Filter) ");
             if (isOngoing && scan.mIsSuspended) sb.append("(Suspended) ");
 
-            sb.append("Results: ").append(scan.mResults);
-            sb.append(" id: (").append(scan.mScannerId).append(") ");
+            sb.append("Results: ").append(scan.mResults).append(" | ");
+            sb.append("id: (").append(scan.mScannerId).append(") | ");
 
             if (scan.mAttributionTag != null) {
-                sb.append("[").append(scan.mAttributionTag).append("] ");
+                sb.append("[").append(scan.mAttributionTag).append("] | ");
             }
 
             sb.append(scan.mIsCallbackScan ? "CB " : "PI ");
@@ -786,7 +792,7 @@ class AppScanStats {
                 sb.append(", Suspended Time: ").append(suspendDuration).append("ms");
             }
 
-            sb.append("\n        └ ").append("Scan Config: ");
+            sb.append("\n        └ ").append("Config: ");
             sb.append("[ScanMode=").append(scanModeToString(scan.mScanMode));
             sb.append(", callbackType=").append(callbackTypeToString(scan.mScanCallbackType));
             sb.append("]");
