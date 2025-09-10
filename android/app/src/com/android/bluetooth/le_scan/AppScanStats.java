@@ -721,10 +721,9 @@ class AppScanStats {
             long elapsedRealtimeMillis,
             boolean isOngoing) {
         for (LastScan scan : scans) {
-            final var timestamp =
-                    Instant.ofEpochMilli(
-                            currentTimeMillis - elapsedRealtimeMillis + scan.mStartTimestamp);
-            sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
+            final var bootEpochMillis = currentTimeMillis - elapsedRealtimeMillis;
+            final var start = Instant.ofEpochMilli(bootEpochMillis + scan.mStartTimestamp);
+            sb.append("\n      ").append(Utils.formatInstant(start)).append(" - ");
 
             final long duration;
             if (isOngoing) {
@@ -733,6 +732,8 @@ class AppScanStats {
             } else {
                 duration = scan.mEndTimestamp - scan.mStartTimestamp;
                 sb.append("Duration: ").append(duration).append("ms ");
+                final var end = Instant.ofEpochMilli(bootEpochMillis + scan.mEndTimestamp);
+                sb.append("End: ").append(Utils.formatInstant(end)).append(" ");
             }
 
             if (scan.mIsOpportunisticScan) sb.append("(Opp) ");
