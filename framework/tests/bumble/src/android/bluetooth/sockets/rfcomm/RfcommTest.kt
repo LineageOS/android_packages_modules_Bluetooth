@@ -818,9 +818,9 @@ class RfcommTest {
             // disable Bluetooth to BLE_ON mode
             mAdapter.disable()
             waitingBluetoothLeStates(BluetoothAdapter.STATE_BLE_ON)
-
-            // Validate Bluetooth is in BLE_ON and didn't just "transition" out of it
-            Truth.assertThat(mAdapter.leState).isEqualTo(BluetoothAdapter.STATE_BLE_ON)
+            // Note: There is no guarantee that BT will stay in BLE_ON state for the duration of the
+            // test. The test is intended to verify ACL is already disconnected at this point,
+            // even before reaching OFF state
 
             // 1. In Bluetooth disabled state, under BLE_ON mode, it's impossible to determine the
             // device's connection status.
@@ -832,9 +832,6 @@ class RfcommTest {
 
             // Verify that Rfcomm Socket is disconnected
             assertThrows(IOException::class.java) { socketOs.write(data) }
-
-            // Validate that the test run while Bluetooth stayed in BLE_ON all along
-            Truth.assertThat(mAdapter.leState).isEqualTo(BluetoothAdapter.STATE_BLE_ON)
         }
     }
 
