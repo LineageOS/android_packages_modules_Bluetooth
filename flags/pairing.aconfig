@@ -308,3 +308,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "device_record_wipe_ranking"
+    namespace: "bluetooth"
+    description: "New ranking for wiping oldest device record"
+    bug: "444268274"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
