@@ -600,8 +600,8 @@ class AppScanStats {
     }
 
     synchronized void dump(StringBuilder sb, List<ScannerMap.ScannerApp> scannerApps) {
-        final long currentTime = System.currentTimeMillis();
-        final long currTime = mTimeProvider.elapsedRealtime();
+        final long currentTimeMillis = System.currentTimeMillis();
+        final long elapsedRealtimeMillis = mTimeProvider.elapsedRealtime();
         final int oppScan = mOppScan;
         final int lowPowerScan = mLowPowerScan;
         final int balancedScan = mBalancedScan;
@@ -617,9 +617,11 @@ class AppScanStats {
         long ambientDiscoveryScanTime = mAmbientDiscoveryScanTime;
 
         for (var ongoingScan : mOngoingScans.values()) {
-            final var scanDuration = currTime - ongoingScan.mStartTimestamp;
+            final var scanDuration = elapsedRealtimeMillis - ongoingScan.mStartTimestamp;
             final long suspendDuration =
-                    ongoingScan.mIsSuspended ? currTime - ongoingScan.mSuspendStartTime : 0;
+                    ongoingScan.mIsSuspended
+                            ? elapsedRealtimeMillis - ongoingScan.mSuspendStartTime
+                            : 0;
             final var activeDuration =
                     scanDuration - ongoingScan.mSuspendDuration - suspendDuration;
             totalScanTime += scanDuration;
@@ -700,12 +702,13 @@ class AppScanStats {
 
         if (!mLastScans.isEmpty()) {
             sb.append("\n    Last ").append(mLastScans.size()).append(" scans:");
-            appendScanDetails(sb, mLastScans, currentTime, currTime, false);
+            appendScanDetails(sb, mLastScans, currentTimeMillis, elapsedRealtimeMillis, false);
         }
 
         if (!mOngoingScans.isEmpty()) {
             sb.append("\n    Ongoing ").append(mOngoingScans.size()).append(" scans:");
-            appendScanDetails(sb, mOngoingScans.values(), currentTime, currTime, true);
+            appendScanDetails(
+                    sb, mOngoingScans.values(), currentTimeMillis, elapsedRealtimeMillis, true);
         }
 
         sb.append("\n\n");
@@ -714,17 +717,18 @@ class AppScanStats {
     private static void appendScanDetails(
             StringBuilder sb,
             Collection<LastScan> scans,
-            long currentTime,
-            long currTime,
+            long currentTimeMillis,
+            long elapsedRealtimeMillis,
             boolean isOngoing) {
         for (LastScan scan : scans) {
             final var timestamp =
-                    Instant.ofEpochMilli(currentTime - currTime + scan.mStartTimestamp);
+                    Instant.ofEpochMilli(
+                            currentTimeMillis - elapsedRealtimeMillis + scan.mStartTimestamp);
             sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
 
             final long duration;
             if (isOngoing) {
-                duration = currTime - scan.mStartTimestamp;
+                duration = elapsedRealtimeMillis - scan.mStartTimestamp;
                 sb.append("Elapsed: ").append(duration).append("ms ");
             } else {
                 duration = scan.mEndTimestamp - scan.mStartTimestamp;
@@ -768,7 +772,9 @@ class AppScanStats {
             if (scan.mSuspendStartTime != 0) {
                 final long suspendDuration;
                 if (isOngoing && scan.mIsSuspended) {
-                    suspendDuration = (currTime - scan.mSuspendStartTime) + scan.mSuspendDuration;
+                    suspendDuration =
+                            (elapsedRealtimeMillis - scan.mSuspendStartTime)
+                                    + scan.mSuspendDuration;
                 } else {
                     suspendDuration = scan.mSuspendDuration;
                 }
