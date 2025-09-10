@@ -191,6 +191,18 @@ void HciLayerFake::IncomingEvent(std::unique_ptr<EventBuilder> event_builder) {
   }
 }
 
+void HciLayerFake::IncomingVendorSpecificEvent(
+        std::unique_ptr<VendorSpecificEventBuilder> event_builder) {
+  std::lock_guard lock(mutex_);
+  auto packet = GetPacketView(std::move(event_builder));
+  EventView event = EventView::Create(packet);
+  VendorSpecificEventView vs_event_view = VendorSpecificEventView::Create(event);
+  ASSERT_TRUE(vs_event_view.IsValid());
+  VseSubeventCode subevent_code = vs_event_view.GetSubeventCode();
+  ASSERT_TRUE(registered_vs_events_.find(subevent_code) != registered_vs_events_.end());
+  registered_vs_events_[subevent_code](vs_event_view);
+}
+
 void HciLayerFake::IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder) {
   std::lock_guard lock(mutex_);
   auto packet = GetPacketView(std::move(event_builder));
