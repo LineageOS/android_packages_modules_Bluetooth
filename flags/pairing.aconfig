@@ -52,16 +52,6 @@ flag {
 }
 
 flag {
-    name: "auto_transport_pairing"
-    namespace: "bluetooth"
-    description: "Fix transport selection for auto transport pairing"
-    bug: "398329326"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reset_security_flags_on_pairing_failure"
     namespace: "bluetooth"
     description: "Reset security flags on pairing failure"
