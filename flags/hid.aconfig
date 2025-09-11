@@ -128,3 +128,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hogp_fix_reconnection"
+    namespace: "bluetooth"
+    description: "Always remove background connection when hogp disconnected so it can be re-armed later"
+    bug: "444365103"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
