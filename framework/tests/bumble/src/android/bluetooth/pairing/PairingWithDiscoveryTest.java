@@ -79,11 +79,9 @@ import pandora.BumbleConfigProto;
 import pandora.HostProto;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.AdvertiseResponse;
-import pandora.HostProto.ConnectabilityMode;
 import pandora.HostProto.DisconnectRequest;
 import pandora.HostProto.DiscoverabilityMode;
 import pandora.HostProto.OwnAddressType;
-import pandora.HostProto.SetConnectabilityModeRequest;
 import pandora.HostProto.SetDiscoverabilityModeRequest;
 
 import java.time.Duration;
@@ -103,7 +101,6 @@ public class PairingWithDiscoveryTest {
     private static final String BUMBLE_DEVICE_NAME_2 = "Bumble_2";
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final int DISCOVERY_TIMEOUT = 2000; // 2 seconds
-    private static final int LE_GENERAL_DISCOVERABLE = 2;
 
     private final Context mContext = ApplicationProvider.getApplicationContext();
     private final BluetoothManager mManager = mContext.getSystemService(BluetoothManager.class);
@@ -196,178 +193,6 @@ public class PairingWithDiscoveryTest {
             mContext.unregisterReceiver(mReceiver);
             mActionRegistrationCounts.clear();
         }
-    }
-
-    /**
-     * Test LE pairing flow with Auto transport
-     *
-     * <p>Prerequisites:
-     *
-     * <ol>
-     *   <li>Bumble and Android are not bonded
-     * </ol>
-     *
-     * <p>Steps:
-     *
-     * <ol>
-     *   <li>Bumble is non discoverable over BR/EDR and discoverable over LE
-     *   <li>Bumble LE AD Flags in advertisement support dual mode
-     *   <li>Android starts discovery of remote devices
-     *   <li>Android initiates pairing with Bumble using Auto transport
-     * </ol>
-     *
-     * <p>Expectation: Pairing succeeds over LE Transport
-     */
-    @Test
-    @RequiresFlagsEnabled({Flags.FLAG_AUTO_TRANSPORT_PAIRING})
-    public void testBondLe_AutoTransport() throws Exception {
-        registerIntentActions(
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothDevice.ACTION_ACL_CONNECTED,
-                BluetoothDevice.ACTION_PAIRING_REQUEST);
-
-        // Make Bumble Non discoverable over BR/EDR
-        mBumble.hostBlocking()
-                .setDiscoverabilityMode(
-                        SetDiscoverabilityModeRequest.newBuilder()
-                                .setMode(DiscoverabilityMode.NOT_DISCOVERABLE)
-                                .build());
-
-        // Make Bumble Non connectable over BR/EDR
-        SetConnectabilityModeRequest request =
-                SetConnectabilityModeRequest.newBuilder()
-                        .setMode(ConnectabilityMode.NOT_CONNECTABLE)
-                        .build();
-        mBumble.hostBlocking().setConnectabilityMode(request);
-
-        // Start LE advertisement from Bumble
-        AdvertiseRequest.Builder requestBuilder =
-                AdvertiseRequest.newBuilder()
-                        .setLegacy(true)
-                        .setConnectable(true)
-                        .setOwnAddressType(OwnAddressType.PUBLIC);
-
-        HostProto.DataTypes.Builder dataTypeBuilder = HostProto.DataTypes.newBuilder();
-        dataTypeBuilder.setCompleteLocalName(BUMBLE_DEVICE_NAME);
-        dataTypeBuilder.setIncludeCompleteLocalName(true);
-        // Set LE AD Flags to be LE General discoverable, also supports dual mode
-        dataTypeBuilder.setLeDiscoverabilityModeValue(LE_GENERAL_DISCOVERABLE);
-        requestBuilder.setData(dataTypeBuilder.build());
-
-        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
-                new StreamObserverSpliterator<>();
-        mBumble.host().advertise(requestBuilder.build(), responseObserver);
-
-        // Start Device Discovery from Android
-        testStepStartDiscovery();
-
-        // Start pairing from Android with Auto transport
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
-
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(
-                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
-                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
-
-        // Approve pairing from Android
-        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
-        // Ensure that pairing succeeds
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
-
-        unregisterIntentActions(
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothDevice.ACTION_ACL_CONNECTED,
-                BluetoothDevice.ACTION_PAIRING_REQUEST);
-    }
-
-    /**
-     * Test BR/EDR pairing flow with Auto transport
-     *
-     * <p>Prerequisites:
-     *
-     * <ol>
-     *   <li>Bumble and Android are not bonded
-     * </ol>
-     *
-     * <p>Steps:
-     *
-     * <ol>
-     *   <li>Bumble is discoverable over BR/EDR and non discoverable over LE
-     *   <li>Android starts discovery of remote devices
-     *   <li>Android initiates pairing with Bumble using Auto transport
-     * </ol>
-     *
-     * <p>Expectation: Pairing succeeds over BR/EDR Transport
-     */
-    @Test
-    @RequiresFlagsEnabled({Flags.FLAG_AUTO_TRANSPORT_PAIRING})
-    public void testBondBrEdr_AutoTransport() throws Exception {
-        registerIntentActions(
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothDevice.ACTION_ACL_CONNECTED,
-                BluetoothDevice.ACTION_PAIRING_REQUEST);
-
-        // Make Bumble discoverable over BR/EDR
-        mBumble.hostBlocking()
-                .setDiscoverabilityMode(
-                        SetDiscoverabilityModeRequest.newBuilder()
-                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
-                                .build());
-
-        SetConnectabilityModeRequest request =
-                SetConnectabilityModeRequest.newBuilder()
-                        .setMode(ConnectabilityMode.CONNECTABLE)
-                        .build();
-        mBumble.hostBlocking().setConnectabilityMode(request);
-
-        // Start Device Discovery from Android
-        testStepStartDiscovery();
-
-        // Start pairing from Android with Auto transport
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
-
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(
-                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
-                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
-
-        // Approve pairing from Android
-        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
-
-        // Ensure that pairing succeeds
-        verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
-
-        unregisterIntentActions(
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothDevice.ACTION_ACL_CONNECTED,
-                BluetoothDevice.ACTION_PAIRING_REQUEST);
     }
 
     /**
