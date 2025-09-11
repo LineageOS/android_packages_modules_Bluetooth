@@ -408,6 +408,7 @@ protected:
             /*a2dp_source_offload_capability_mask=*/0x4,
             /*bluetooth_quality_report_support=*/1, kDynamicAudioBufferSupport,
             /*a2dp_offload_v2_support=*/1,
+            /*iso_link_feedback_support=*/1,
             /*sniff_offload_support=*/1, std::make_unique<RawBuilder>());
     ControllerTest::SetUp();
   }
