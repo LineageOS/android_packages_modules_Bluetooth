@@ -151,7 +151,7 @@ def sbc_codec_capabilities() -> MediaCodecCapabilities:
     )
 
 
-def sbc_service_capabilites() -> List[ServiceCapability]:
+def sbc_service_capabilites() -> list[ServiceCapability]:
     return [
         MediaTransportCapability(),
         MediaCodecCapability(
@@ -191,7 +191,7 @@ def aac_codec_capabilities() -> MediaCodecCapabilities:
     )
 
 
-def aac_service_capabilites() -> List[ServiceCapability]:
+def aac_service_capabilites() -> list[ServiceCapability]:
     return [
         MediaTransportCapability(),
         MediaCodecCapability(
