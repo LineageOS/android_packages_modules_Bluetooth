@@ -336,3 +336,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_sync_handle_to_device_fix"
+    namespace: "bluetooth"
+    description: "Fix updating sync handle to device map for the same device"
+    bug: "444365749"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
