@@ -54,3 +54,13 @@ flag {
     description: "Use the volume returned in an accepted SetAbsoluteVolume command"
     bug: "429364070"
 }
+
+flag {
+    name: "avrcp_volumechanged_wait_for_interim"
+    namespace: "bluetooth"
+    description: "Instead of registering for VolumeChanged each time for Changed notification, check if corresponding Interim is already received"
+    bug: "444339743"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
