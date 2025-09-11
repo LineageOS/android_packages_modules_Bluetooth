@@ -3811,6 +3811,39 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SYNC_HANDLE_TO_DEVICE_FIX)
+    public void onSyncEstablished_forSameDevice_doesNotRemoveOtherSyncs() {
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Sync to the first broadcast from mSourceDevice
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // Verify the first sync is correctly mapped
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+
+        // Sync to a second broadcast from the *same* source device
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID_2);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE_2);
+
+        // Verify the second sync is correctly mapped
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE_2))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
+                .isEqualTo(TEST_BROADCAST_ID_2);
+
+        // Verify the first sync is still present
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+    }
+
+    @Test
     public void testSyncHandleToBroadcastIdMap_getSyncHandleAndGetBroadcastId() {
         final int testSyncHandle = 1;
         final int testSyncHandleInvalid = 2;

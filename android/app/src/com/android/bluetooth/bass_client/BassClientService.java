@@ -28,6 +28,7 @@ import static com.android.bluetooth.flags.Flags.leaudioBroadcastAllowMonitoringO
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastFixAutonomousSourceAdding;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastSyncHandleToDeviceFix;
 
 import static java.util.Objects.requireNonNull;
 
@@ -646,9 +647,13 @@ public class BassClientService extends ConnectableProfile {
             }
             if (syncHandle != BassConstants.INVALID_SYNC_HANDLE
                     && syncHandle != BassConstants.PENDING_SYNC_HANDLE) {
-                mSyncHandleToDeviceMap
-                        .entrySet()
-                        .removeIf(entry -> entry.getValue().equals(device));
+                if (!leaudioBroadcastSyncHandleToDeviceFix()) {
+                    mSyncHandleToDeviceMap
+                            .entrySet()
+                            .removeIf(entry -> entry.getValue().equals(device));
+                } else {
+                    mSyncHandleToDeviceMap.remove(BassConstants.PENDING_SYNC_HANDLE);
+                }
                 mSyncHandleToDeviceMap.put(syncHandle, device);
                 paRes.updateSyncHandle(syncHandle);
                 if (paRes.getBroadcastId() != BassConstants.INVALID_BROADCAST_ID) {
