@@ -357,7 +357,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service, in
                elem.e_hdl, elem.type, elem.sdp_handle);
 
   gatt_update_for_database_change();
-  gatt_proc_srv_chg();
+  gatt_proc_srv_chg(s_hdl);
 
   return GATT_SERVICE_STARTED;
 }
@@ -409,7 +409,7 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, Uuid* p_svc_uuid, uint16_t svc_inst) 
   }
 
   gatt_update_for_database_change();
-  gatt_proc_srv_chg();
+  gatt_proc_srv_chg(svc_inst);
 
   log::verbose("released handles s_hdl=0x{:x}, e_hdl=0x{:x}", it->asgn_range.s_handle,
                it->asgn_range.e_handle);

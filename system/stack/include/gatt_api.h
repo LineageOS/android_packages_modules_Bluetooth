@@ -785,6 +785,7 @@ typedef uint8_t tGATTS_SRV_CHG_CMD;
 typedef struct {
   RawAddress bda;
   bool srv_changed;
+  uint16_t start_handle;
 } tGATTS_SRV_CHG;
 
 typedef union {

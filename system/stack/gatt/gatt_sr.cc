@@ -1260,6 +1260,7 @@ void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb) {
   if (p_buf != NULL) {
     log::verbose("NV update set srv chg = false");
     p_buf->srv_changed = false;
+    p_buf->start_handle = 0xFFFF;
     memcpy(&req.srv_chg, p_buf, sizeof(tGATTS_SRV_CHG));
     if (gatt_cb.cb_info.p_srv_chg_callback) {
       (*gatt_cb.cb_info.p_srv_chg_callback)(GATTS_SRV_CHG_CMD_UPDATE_CLIENT, &req, NULL);

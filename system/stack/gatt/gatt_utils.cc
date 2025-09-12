@@ -171,8 +171,8 @@ void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr) {
  * Returns        None
  *
  ******************************************************************************/
-void gatt_set_srv_chg(void) {
-  log::verbose("");
+void gatt_set_srv_chg(uint16_t start_handle) {
+  log::verbose("start_handle {:#x}", start_handle);
 
   if (fixed_queue_is_empty(gatt_cb.srv_chg_clt_q)) {
     return;
@@ -183,9 +183,10 @@ void gatt_set_srv_chg(void) {
     log::verbose("found a srv_chg clt");
 
     tGATTS_SRV_CHG* p_buf = (tGATTS_SRV_CHG*)list_node(node);
-    if (!p_buf->srv_changed) {
-      log::verbose("set srv_changed to true");
+    if (!p_buf->srv_changed || (start_handle < p_buf->start_handle)) {
       p_buf->srv_changed = true;
+      p_buf->start_handle = start_handle;
+      log::verbose("set srv_changed to true from {:#x}", p_buf->start_handle);
       tGATTS_SRV_CHG_REQ req;
       memcpy(&req.srv_chg, p_buf, sizeof(tGATTS_SRV_CHG));
       if (gatt_cb.cb_info.p_srv_chg_callback) {
