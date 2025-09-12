@@ -413,4 +413,15 @@ bool BTM_BleConfigPrivacy(bool enable);
  ******************************************************************************/
 bool BTM_BleLocalPrivacyEnabled(void);
 
+/*******************************************************************************
+ *
+ * Function         BTM_BleIsFilteringSupported
+ *
+ * Description      Checks if the device supports filtering.
+ *
+ * Returns          Return true if filtering is supported else false
+ *
+ ******************************************************************************/
+bool BTM_BleIsFilteringSupported(void);
+
 #endif

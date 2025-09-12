@@ -961,6 +961,15 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint1
   }
 }
 
+/* Whether or not to use MSFT-based scan filtering */
+static bool use_msft_filtering() {
+  // We prefer to use APCF-based filtering over MSFT if it's available, so only use MSFT
+  // filtering if APCF is not supported.
+  return !BTM_BleIsFilteringSupported() && com_android_bluetooth_flags_le_scan_msft_support() &&
+         osi_property_get_bool("bluetooth.core.le.use_msft_hci_ext", false) &&
+         scanner->IsMsftSupported();
+}
+
 /* MSFT advertisement enable callback */
 static void msft_adv_mon_enable_cb(bool /* enable */, uint8_t status) {
   if (status == MSFT_FILTER_ENABLE_SUCCESS) {
@@ -976,9 +985,7 @@ static void msft_adv_mon_enable_cb(bool /* enable */, uint8_t status) {
 
 /* Update MSFT-based scan to align with active scan requirements */
 static void btm_ble_update_msft_scan(tBTM_BLE_SCAN_COND_OP action) {
-  if (!com_android_bluetooth_flags_le_scan_msft_support() ||
-      !osi_property_get_bool("bluetooth.core.le.use_msft_hci_ext", false) ||
-      !scanner->IsMsftSupported()) {
+  if (!use_msft_filtering()) {
     return;
   }
 
