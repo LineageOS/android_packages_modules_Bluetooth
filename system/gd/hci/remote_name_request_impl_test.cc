@@ -68,6 +68,9 @@ protected:
     client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
 
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->rnr_multiple_name_request(true);
+
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(client_handler_);
     remote_name_request_module_ = std::make_unique<RemoteNameRequestModuleImpl>(
