@@ -53,6 +53,7 @@
 
  static uint8_t kVaeUuid[kVaeUuidSize] = {};
  static uint8_t kVapsCcid = 0;
+ static uint8_t kVaSupportedFeatures = 0;
 
  class VapsServerImpl : public bluetooth::vaps::VapsServer {
  public:
@@ -438,6 +439,19 @@
      //CCC descriptor for VA Session State characteristic
      service.push_back(ccc_descriptor);
 
+     if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
+       // VA Supported Features characteristic
+       btgatt_db_element_t va_supported_features_characteristic;
+       va_supported_features_characteristic.uuid = kVaSupportedFeaturesCharacteristic;
+       va_supported_features_characteristic.type = BTGATT_DB_CHARACTERISTIC;
+       va_supported_features_characteristic.properties =
+            (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+       va_supported_features_characteristic.permissions = GATT_PERM_READ_ENCRYPTED;
+       service.push_back(va_supported_features_characteristic);
+       //CCC descriptor for VA Supported Features characteristic
+       service.push_back(ccc_descriptor);
+     }
+
      BTA_GATTS_AddService(server_if_, service,
                           base::BindRepeating([](tGATT_STATUS status, int server_if,
                                                  std::vector<btgatt_db_element_t> service) {
@@ -498,6 +512,10 @@
        case kVaSessionStateCharacteristic16bit: {
          p_msg.attr_value.len = 1;
          memcpy(p_msg.attr_value.value, &va_session_state_, sizeof(uint8_t));
+       } break;
+       case kVaSupportedFeaturesCharacteristic16bit: {
+         p_msg.attr_value.len = 1;
+         memcpy(p_msg.attr_value.value, &kVaSupportedFeatures, sizeof(uint8_t));
        } break;
        default:
          log::warn("Unhandled uuid {}", uuid.ToString());
@@ -620,6 +638,7 @@
      stream << "    VAE Name: " << +vae_name_.c_str() << "\n"
             << "    VA Session State: " << +GetVaSessionStateText(va_session_state_).c_str()<< "\n"
             << "    VAPS CCID: " << +kVapsCcid << "\n"
+            << "    VA Supported Features: " << +kVaSupportedFeatures << "\n"
             << "    VAPS GATT Server IF: " << +server_if_ << "\n";
      for (auto& [address, remote_client] : remote_clients_) {
        stream << "    Remote Client: " << address.ToString() << "\n";
