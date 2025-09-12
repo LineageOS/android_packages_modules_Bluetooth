@@ -1412,6 +1412,16 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_
   }
 
   BTM_BLE_SEC_CALLBACK(BTM_LE_COMPLT_EVT, bd_addr, p_data);
+
+  /* Reset BTM state if the callback address matches pairing address */
+  if (com_android_bluetooth_flags_btm_le_pairing_state_reset() &&
+      bd_addr == btm_sec_cb.link_spec.addrt.bda) {
+    btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
+    btm_sec_cb.link_spec = {};
+    btm_sec_cb.link_spec.addrt.bda = RawAddress::kAny;
+    btm_sec_cb.pairing_flags = 0;
+  }
+
   p_dev_rec = btm_find_dev(bd_addr);  // BTM_LE_COMPLT_EVT event may have removed the device
   if (p_dev_rec == nullptr) {
     log::warn("Device record removed {}", bd_addr);
@@ -1469,7 +1479,8 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_
           btm_sec_cb.pairing_state, btm_sec_cb.pairing_flags, btm_sec_cb.pin_code_len);
 
   /* Reset btm state only if the callback address matches pairing address */
-  if (bd_addr == btm_sec_cb.link_spec.addrt.bda) {
+  if (!com_android_bluetooth_flags_btm_le_pairing_state_reset() &&
+      bd_addr == btm_sec_cb.link_spec.addrt.bda) {
     btm_sec_cb.link_spec = {};
     btm_sec_cb.link_spec.addrt.bda = RawAddress::kAny;
     btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;
@@ -1533,9 +1544,13 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
     log::warn("Unexpected event '{}' for unknown device.", smp_evt_to_text(event));
     if (com_android_bluetooth_flags_clear_pairing_state_when_no_devrec() &&
         bd_addr == btm_sec_cb.link_spec.addrt.bda && event == SMP_COMPLT_EVT) {
+      if (com_android_bluetooth_flags_btm_le_pairing_state_reset()) {
+        btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
+      } else {
+        btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;
+      }
       btm_sec_cb.link_spec = {};
       btm_sec_cb.link_spec.addrt.bda = RawAddress::kAny;
-      btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;
       btm_sec_cb.pairing_flags = 0;
     }
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
