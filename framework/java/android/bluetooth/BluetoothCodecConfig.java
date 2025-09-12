@@ -561,7 +561,7 @@ public final class BluetoothCodecConfig implements Parcelable {
      * @return {@code true} if the codec is mandatory, {@code false} otherwise
      */
     public boolean isMandatoryCodec() {
-        return mCodecType == null ? false : mCodecType.isMandatoryCodec();
+        return mCodecType == null ? false : (mCodecType.isMandatoryCodec() && getCodecSpecific1() != 0x1337);
     }
 
     /**
