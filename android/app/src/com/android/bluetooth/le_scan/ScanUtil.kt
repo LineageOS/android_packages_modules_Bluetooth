@@ -98,9 +98,11 @@ object ScanUtil {
         when (scanMode) {
             ScanSettings.SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
             ScanSettings.SCAN_MODE_LOW_POWER -> "LOW_POWER"
-            ScanSettings.SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
             ScanSettings.SCAN_MODE_BALANCED -> "BALANCED"
+            ScanSettings.SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
             ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
+            ScanSettings.SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
+            ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
             else -> "UNKNOWN($scanMode)"
         }
 

@@ -19,6 +19,7 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.UserHandle
+import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
 import java.util.Objects
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
@@ -82,11 +83,9 @@ private constructor(
     override fun toString(): String {
         val sb = StringBuilder("ScanClient(")
         sb.append("scannerId=").append(scannerId)
-        sb.append(", scanModeApp=").append(ScanSettings.getScanModeString(scanModeApp))
-        sb.append(", scanModeUsed=").append(ScanSettings.getScanModeString(settings.scanMode))
-        appScanStats.getOrNull()?.let { stats ->
-            sb.append(", appScanStats.appName=").append(stats.mAppName)
-        }
+        sb.append(", scanModeApp=").append(scanModeToString(scanModeApp))
+        sb.append(", scanModeUsed=").append(scanModeToString(settings.scanMode))
+        appScanStats.getOrNull()?.let { stats -> sb.append(", appName=").append(stats.mAppName) }
         return sb.append(")").toString()
     }
 
