@@ -1945,7 +1945,9 @@ class BluetoothManagerService {
             broadcastIntentStateChange(ACTION_STATE_CHANGED, prevBrEdrState, newBrEdrState);
             if (newBrEdrState == State.OFF) {
                 sendBluetoothOffCallback();
-                sendBrEdrDownCallback();
+                if (!Flags.skipBleOnWhenTurningOff()) {
+                    sendBrEdrDownCallback();
+                }
             }
         }
 

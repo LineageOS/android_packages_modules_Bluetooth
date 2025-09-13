@@ -49,6 +49,16 @@ flag {
 }
 
 flag {
+    name: "skip_ble_on_when_turning_off"
+    namespace: "bluetooth"
+    description: "Now that transitioning from ON to BLE_ON go through OFF, we should not broadcast BLE_ON when going OFF."
+    bug: "444761370"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "watch_device_override_airplane_mode"
     namespace: "bluetooth"
     description: "If there is a watch connected, keep Bluetooth on"

@@ -54,6 +54,24 @@ import com.android.internal.util.StateMachine;
 //        |                    ^
 //        |                    |
 //        +----->   On   ------+
+//
+// Once skip_ble_on_when_turning_off is released it will be:
+//      {@link TurningOffState} : OnState to TurningBleOffState
+//
+//           OFF ⮜─────────────────╮
+//             ⮟                   │
+//             │                   ⮝
+//  TurningBleOn ➤─── Timeout ➤─── TurningBleOff
+//             ⮟                   │
+//             │                   ⮝
+//        BLE_ON ➤─────────────────┤
+//             ⮟                   │
+//             │                   ⮝
+//     TurningOn ➤─── Timeout ➤─── TurningOff
+//             ⮟                   │
+//             │                   │
+//            ON ➤─────────────────╯
+//
 final class AdapterState extends StateMachine {
     private static final String TAG = Utils.BT_PREFIX + AdapterState.class.getSimpleName();
 
@@ -387,7 +405,13 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BREDR_STOPPED -> transitionTo(mBleOnState);
+                case BREDR_STOPPED -> {
+                    if (Flags.skipBleOnWhenTurningOff()) {
+                        transitionTo(mTurningBleOffState);
+                    } else {
+                        transitionTo(mBleOnState);
+                    }
+                }
 
                 case BREDR_STOP_TIMEOUT -> {
                     errorLog(messageString(msg.what));

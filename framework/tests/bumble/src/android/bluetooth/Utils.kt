@@ -16,6 +16,7 @@
 
 package android.bluetooth
 
+import android.bluetooth.BluetoothAdapter.STATE_OFF
 import android.bluetooth.BluetoothProfile.getConnectionStateName
 import android.content.BroadcastReceiver
 import android.content.Intent
@@ -75,6 +76,18 @@ object Utils {
     fun intentLogger(tag: String, intent: Intent) {
         val action = intent.getAction()
         when (action) {
+            BluetoothAdapter.ACTION_BLE_STATE_CHANGED,
+            BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                val fromState =
+                    BluetoothAdapter.nameForState(
+                        intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, STATE_OFF)
+                    )
+                val toState =
+                    BluetoothAdapter.nameForState(
+                        intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, STATE_OFF)
+                    )
+                Log.d("intentLogger", "$tag/$action $fromState -> $toState")
+            }
             BluetoothAdapter.ACTION_DISCOVERY_STARTED,
             BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> Log.d("intentLogger", "$tag/$action")
             BluetoothDevice.ACTION_ACL_CONNECTED,
