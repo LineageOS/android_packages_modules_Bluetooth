@@ -164,6 +164,8 @@ public class GattService extends ProfileService {
      */
     private final HashMap<BluetoothDevice, Integer> mPermits = new HashMap<>();
 
+    private final Map<BluetoothDevice, Integer> mCachedPeripheralLatency = new HashMap<>();
+
     /** Record data class for RSSI caching */
     record RssiCacheEntry(long readTimeStamp, int rssi) {}
 
@@ -539,7 +541,7 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
-
+        mCachedPeripheralLatency.put(device, latency); // cache new peripheral latency
         callbackToApp(
                 () ->
                         app.getCallback()
@@ -1536,8 +1538,13 @@ public class GattService extends ProfileService {
                 getGattSubratingParameters(GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX, subrateMode);
         int subrateMax =
                 getGattSubratingParameters(GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX, subrateMode);
-        int maxLatency = getGattSubratingParameters(GATT_SUBRATE_LATENCY_INDEX, subrateMode);
         int contNumber = getGattSubratingParameters(GATT_SUBRATE_CONT_NUM_INDEX, subrateMode);
+        int maxLatency = getGattSubratingParameters(GATT_SUBRATE_LATENCY_INDEX, subrateMode);
+
+        // Restore to cached Peripheral Latency
+        if (subrateMode == BluetoothGatt.SUBRATE_MODE_OFF) {
+            maxLatency = mCachedPeripheralLatency.getOrDefault(device, 0);
+        }
 
         int supervisionTimeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
 
@@ -1818,6 +1825,8 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
+
+        mCachedPeripheralLatency.put(device, latency); // cache new peripheral latency
 
         callbackToApp(
                 () ->
