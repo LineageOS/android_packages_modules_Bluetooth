@@ -262,12 +262,12 @@ bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr) {
   }
 }
 
-// Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
+// Return DEV_CLASS (uint8_t[3]) of bda
 DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
 
   if (p_dev_rec == nullptr) {
-    log::error("No memory to allocate new p_dev_rec");
+    log::error("No record found for bda: {}", bda);
     return kDevClassEmpty;
   }
 
