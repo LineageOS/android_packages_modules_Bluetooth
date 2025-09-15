@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "bt_status.h"
 #include "bta/include/bta_av_api.h"
 #include "include/hardware/bt_av.h"
 
@@ -93,27 +94,27 @@ typedef struct {
 
 /* Interface methods for the A2DP source stack. */
 
-bt_status_t btif_av_source_init(btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
-                                const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
-                                const std::vector<btav_a2dp_codec_config_t>& offloading_preference,
-                                std::vector<btav_a2dp_codec_info_t>* supported_codecs);
-bt_status_t btif_av_source_connect(const RawAddress& peer_address);
-bt_status_t btif_av_source_disconnect(const RawAddress& peer_address);
-bt_status_t btif_av_source_set_silence_device(const RawAddress& peer_address, bool silence);
-bt_status_t btif_av_source_set_active_device(const RawAddress& peer_address);
-bt_status_t btif_av_source_set_codec_config_preference(
+BtStatus btif_av_source_init(btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
+                             const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+                             const std::vector<btav_a2dp_codec_config_t>& offloading_preference,
+                             std::vector<btav_a2dp_codec_info_t>* supported_codecs);
+BtStatus btif_av_source_connect(const RawAddress& peer_address);
+BtStatus btif_av_source_disconnect(const RawAddress& peer_address);
+BtStatus btif_av_source_set_silence_device(const RawAddress& peer_address, bool silence);
+BtStatus btif_av_source_set_active_device(const RawAddress& peer_address);
+BtStatus btif_av_source_set_codec_config_preference(
         const RawAddress& peer_address, std::vector<btav_a2dp_codec_config_t> codec_preferences);
 void btif_av_source_cleanup();
 
 /* Interface methods for the A2DP sink stack. */
 
-bt_status_t btif_av_sink_init(btav_sink_callbacks_t* callbacks, int max_connected_audio_devices);
-bt_status_t btif_av_sink_connect(const RawAddress& peer_address);
-bt_status_t btif_av_sink_disconnect(const RawAddress& peer_address);
+BtStatus btif_av_sink_init(btav_sink_callbacks_t* callbacks, int max_connected_audio_devices);
+BtStatus btif_av_sink_connect(const RawAddress& peer_address);
+BtStatus btif_av_sink_disconnect(const RawAddress& peer_address);
 void btif_av_sink_cleanup();
 void btif_av_sink_set_audio_focus_state(int focus_state);
 void btif_av_sink_set_audio_track_gain(float gain);
-bt_status_t btif_av_sink_set_active_device(const RawAddress& peer_address);
+BtStatus btif_av_sink_set_active_device(const RawAddress& peer_address);
 
 /**
  * Enum to represent the type of local a2dp profile.
@@ -253,17 +254,17 @@ void btif_av_report_source_codec_state(
  * Initialize / shut down the A2DP Source service.
  *
  * @param enable true to enable the A2DP Source service, false to disable it
- * @return BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+ * @return BtifStatus() on success, BtifStatus(FAIL) otherwise
  */
-bt_status_t btif_av_source_execute_service(bool enable);
+BtStatus btif_av_source_execute_service(bool enable);
 
 /**
  * Initialize / shut down the A2DP Sink service.
  *
  * @param enable true to enable the A2DP Sink service, false to disable it
- * @return BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+ * @return BtifStatus() on success, BtifStatus(FAIL) otherwise
  */
-bt_status_t btif_av_sink_execute_service(bool enable);
+BtStatus btif_av_sink_execute_service(bool enable);
 
 /**
  * Peer ACL disconnected.
