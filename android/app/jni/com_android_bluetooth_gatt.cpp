@@ -38,6 +38,7 @@
 #include <utility>
 #include <vector>
 
+#include "bt_status.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_ras_api.h"
 #include "com_android_bluetooth.h"
@@ -1036,9 +1037,9 @@ static void initializeNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  bt_status_t status = sGattIf->init(&sGattCallbacks);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to initialize Bluetooth GATT, status: {}", bt_status_text(status));
+  BtStatus status = sGattIf->init(&sGattCallbacks);
+  if (!status) {
+    log::error("Failed to initialize Bluetooth GATT, status: {}", status);
     sGattIf = NULL;
     return;
   }
@@ -1330,7 +1331,7 @@ static int gattSubrateRequestNative(JNIEnv* env, jobject /* object */, jint /* c
   if (!sGattIf) {
     return 1;  // BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
   }
-  // TODO does bt_status_t align with BluetoothStatusCodes ?
+  // TODO does BtStatus align with BluetoothStatusCodes ?
   sGattIf->client->subrate_request(str2addr(env, address), subrate_min, subrate_max, max_latency,
                                    cont_num, sup_timeout);
   return 0;  // BluetoothStatusCodes.SUCCESS
