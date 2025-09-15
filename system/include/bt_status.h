@@ -29,7 +29,7 @@
 
 #include "bt_status_origin.h"
 
-#define BT_SUCCESS 0
+#define BT_UNIVERSAL_SUCCESS 0
 typedef uint16_t BtStatusCode;
 
 // The base class for all Bluetooth status codes.
@@ -52,12 +52,12 @@ public:
   BtStatusCode code() { return code_; }
   BtStatusOrigin origin() { return origin_; }
 
-  bool isSuccess() const { return code_ == BT_SUCCESS; }
+  bool isSuccess() const { return code_ == BT_UNIVERSAL_SUCCESS; }
 
   // To easily pass around between stacks and compare
   uint32_t toUint32() const {
-    if (code_ == BT_SUCCESS) {
-      return BT_SUCCESS;
+    if (code_ == BT_UNIVERSAL_SUCCESS) {
+      return BT_UNIVERSAL_SUCCESS;
     }
     return static_cast<uint16_t>(origin_) << 16 | static_cast<uint16_t>(code_);
   }
@@ -77,14 +77,14 @@ public:
   }
 
   // Used to cast to bool, true if is success, false otherwise.
-  operator bool() const { return code_ == BT_SUCCESS; }
+  operator bool() const { return code_ == BT_UNIVERSAL_SUCCESS; }
 
   // To allow use as map keys
   bool operator<(const BtStatus& other) const { return toUint32() < other.toUint32(); }
 
   // Used for logging
   const std::string toString() const {
-    if (code_ == BT_SUCCESS) {
+    if (code_ == BT_UNIVERSAL_SUCCESS) {
       // If successful, return generic success string
       return "BT_SUCCESS";
     }

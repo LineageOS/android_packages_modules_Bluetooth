@@ -33,6 +33,7 @@
 #include "abstract_message_loop.h"
 #include "bta/include/bta_api.h"
 #include "common/message_loop_thread.h"
+#include "include/hardware/bluetooth.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 
