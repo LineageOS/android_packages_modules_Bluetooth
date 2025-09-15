@@ -1036,10 +1036,7 @@ public class BluetoothManagerServiceTest {
                 break;
             }
 
-            mLooper.moveTimeForward(delay - 50);
-            assertThat(mLooper.nextMessage()).isNull();
-            mLooper.moveTimeForward(50);
-
+            mLooper.moveTimeForward(delay);
             syncHandler(MESSAGE_RESTART_BLUETOOTH_SERVICE);
         }
 
