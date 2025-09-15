@@ -17,9 +17,11 @@
 package android.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
+import android.bluetooth.GattOffloadSession;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 /**
@@ -107,4 +109,12 @@ interface IBluetoothGatt {
     void disconnectAll(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true)")
     int subrateModeRequest(in IBluetoothGattCallback callback, in BluetoothDevice device, in int subrateMode, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    GattOffloadSession.InnerParcel offloadClientCharacteristics(in IBluetoothGattCallback callback, in BluetoothDevice device, in BluetoothGattService service, in List<BluetoothGattCharacteristic> characteristics, in long endpointId, in long hubId, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    void unoffloadClientCharacteristics(in IBluetoothGattCallback callback, in BluetoothDevice device, in int sessionId, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    GattOffloadSession.InnerParcel offloadServerCharacteristics(in IBluetoothGattServerCallback callback, in BluetoothDevice device, in BluetoothGattService service, in List<BluetoothGattCharacteristic> characteristics, in long endpointId, in long hubId, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    void unoffloadServerCharacteristics(in IBluetoothGattServerCallback callback, in BluetoothDevice device, in int sessionId, in AttributionSource attributionSource);
 }

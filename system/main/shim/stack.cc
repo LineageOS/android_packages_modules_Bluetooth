@@ -29,6 +29,7 @@
 #include <string>
 
 #include "common/strings.h"
+#include "hal/gatt_hal_impl.h"
 #include "hal/hci_hal_impl.h"
 #include "hal/link_clocker.h"
 #include "hal/ranging_hal_impl.h"
@@ -94,7 +95,9 @@ struct Stack::impl {
         distance_measurement_manager_(handler, &hci_layer_, &controller_, &acl_manager_,
                                       &ranging_hal_) {
     socket_hal_ = std::make_unique<hal::SocketHalImpl>();
-    lpp_offload_manager_ = std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get());
+    gatt_hal_ = std::make_unique<hal::GattHalImpl>();
+    lpp_offload_manager_ =
+            std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get(), gatt_hal_.get());
   }
 
   // TODO: Remove this constructor once the flag (same_handler_for_all_modules) is fully rolled out.
@@ -124,13 +127,18 @@ struct Stack::impl {
         distance_measurement_manager_(new os::Handler(thread), &hci_layer_, &controller_,
                                       &acl_manager_, &ranging_hal_) {
     socket_hal_ = std::make_unique<hal::SocketHalImpl>();
-    lpp_offload_manager_ =
-            std::make_unique<lpp::LppOffloadManager>(new os::Handler(thread), socket_hal_.get());
+    gatt_hal_ = std::make_unique<hal::GattHalImpl>();
+    lpp_offload_manager_ = std::make_unique<lpp::LppOffloadManager>(
+            new os::Handler(thread), socket_hal_.get(), gatt_hal_.get());
   }
 
   ~impl() {
     if (lpp_offload_manager_) {
       lpp_offload_manager_.reset();
+    }
+
+    if (gatt_hal_) {
+      gatt_hal_.reset();
     }
 
     if (socket_hal_) {
@@ -144,6 +152,7 @@ struct Stack::impl {
 #if TARGET_FLOSS
   sysprops::SyspropsModule sysprops_module_;
 #endif
+  std::unique_ptr<hal::GattHal> gatt_hal_ = nullptr;
   std::unique_ptr<hal::SocketHal> socket_hal_ = nullptr;
   std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
   hal::LinkClocker link_clocker_;

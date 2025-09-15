@@ -77,6 +77,7 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BufferConstraints;
 import android.bluetooth.EncryptionStatus;
+import android.bluetooth.GattOffloadCapabilities;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
@@ -5026,5 +5027,24 @@ public class AdapterService extends Service {
                 }
             }
         }
+    }
+
+    /** Check if the offloaded GATT client is supported. */
+    public boolean isGattClientOffloadSupported() {
+        int val = mAdapterProperties.getSupportedOffloadedGattClientProperties();
+        return val != 0;
+    }
+
+    /** Check if the offloaded GATT server is supported. */
+    public boolean isGattServerOffloadSupported() {
+        int val = mAdapterProperties.getSupportedOffloadedGattServerProperties();
+        return val != 0;
+    }
+
+    /** Get the supported GATT offload capabilities. */
+    public GattOffloadCapabilities.InnerParcel getSupportedGattOffloadCapabilities() {
+        return new GattOffloadCapabilities.InnerParcel(
+                mAdapterProperties.getSupportedOffloadedGattClientProperties(),
+                mAdapterProperties.getSupportedOffloadedGattServerProperties());
     }
 }

@@ -32,8 +32,6 @@
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 
-#include <string>
-
 #include "stack/include/gatt_api.h"
 
 // Original usings
@@ -398,6 +396,77 @@ struct GATT_StartIf {
   void operator()(tGATT_IF gatt_if) { body(gatt_if); }
 };
 extern struct GATT_StartIf GATT_StartIf;
+
+// Name: GATTC_OffloadCharacteristics
+// Params: tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count, uint64_t
+// endpoint_id, uint64_t hub_id, std::promise<btgatt_offload_result_t> promise
+struct GATTC_OffloadCharacteristics {
+  std::function<void(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
+                     uint64_t endpoint_id, uint64_t hub_id,
+                     std::promise<btgatt_offload_result_t> promise)>
+          body{[](tCONN_ID /* conn_id */, btgatt_db_element_t* /* service */,
+                  size_t /* elements_count */, uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                  std::promise<btgatt_offload_result_t> /* promise */) {}};
+  void operator()(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
+                  uint64_t endpoint_id, uint64_t hub_id,
+                  std::promise<btgatt_offload_result_t> promise) {
+    body(conn_id, service, elements_count, endpoint_id, hub_id, std::move(promise));
+  }
+};
+extern struct GATTC_OffloadCharacteristics GATTC_OffloadCharacteristics;
+
+// Name: GATTC_UnoffloadCharacteristics
+// Params: tCONN_ID conn_id, uint16_t session_id
+struct GATTC_UnoffloadCharacteristics {
+  std::function<void(tCONN_ID conn_id, uint16_t session_id)> body{
+          [](tCONN_ID /* conn_id */, uint16_t /* session_id */) {}};
+  void operator()(tCONN_ID conn_id, uint16_t session_id) { body(conn_id, session_id); }
+};
+extern struct GATTC_UnoffloadCharacteristics GATTC_UnoffloadCharacteristics;
+
+// Name: GATTC_InformNotificationHandle
+// Params: const RawAddress& remote_bda, uint16_t handle
+struct GATTC_InformNotificationHandle {
+  std::function<void(const RawAddress& remote_bda, uint16_t handle)> body{
+          [](const RawAddress& /* remote_bda */, uint16_t /* handle */) {}};
+  void operator()(const RawAddress& remote_bda, uint16_t handle) { body(remote_bda, handle); }
+};
+extern struct GATTC_InformNotificationHandle GATTC_InformNotificationHandle;
+
+// Name: GATTC_InformServiceChangedIndication
+// Params: const RawAddress& remote_bda
+struct GATTC_InformServiceChangedIndication {
+  std::function<void(const RawAddress& remote_bda)> body{[](const RawAddress& /* remote_bda */) {}};
+  void operator()(const RawAddress& remote_bda) { body(remote_bda); }
+};
+extern struct GATTC_InformServiceChangedIndication GATTC_InformServiceChangedIndication;
+
+// Name: GATTS_OffloadCharacteristics
+// Params: tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count, uint64_t
+// endpoint_id, uint64_t hub_id, std::promise<btgatt_offload_result_t> promise
+struct GATTS_OffloadCharacteristics {
+  std::function<void(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
+                     uint64_t endpoint_id, uint64_t hub_id,
+                     std::promise<btgatt_offload_result_t> promise)>
+          body{[](tCONN_ID /* conn_id */, btgatt_db_element_t* /* service */,
+                  size_t /* elements_count */, uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                  std::promise<btgatt_offload_result_t> /* promise */) {}};
+  void operator()(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
+                  uint64_t endpoint_id, uint64_t hub_id,
+                  std::promise<btgatt_offload_result_t> promise) {
+    body(conn_id, service, elements_count, endpoint_id, hub_id, std::move(promise));
+  }
+};
+extern struct GATTS_OffloadCharacteristics GATTS_OffloadCharacteristics;
+
+// Name: GATTS_UnoffloadCharacteristics
+// Params: tCONN_ID conn_id, uint16_t session_id
+struct GATTS_UnoffloadCharacteristics {
+  std::function<void(tCONN_ID conn_id, uint16_t session_id)> body{
+          [](tCONN_ID /* conn_id */, uint16_t /* session_id */) {}};
+  void operator()(tCONN_ID conn_id, uint16_t session_id) { body(conn_id, session_id); }
+};
+extern struct GATTS_UnoffloadCharacteristics GATTS_UnoffloadCharacteristics;
 
 }  // namespace stack_gatt_api
 }  // namespace mock

@@ -266,6 +266,13 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
                 p_data->subrate_chg.status);
       break;
 
+    case BTA_GATTC_CHARACTERISTICS_UNOFFLOADED_EVT:
+      HAL_CBACK(callbacks, client->characteristics_unoffloaded_cb,
+                static_cast<int>(p_data->characteristics_unoffloaded.conn_id),
+                static_cast<int>(p_data->characteristics_unoffloaded.session_id),
+                p_data->characteristics_unoffloaded.status);
+      break;
+
     default:
       log::error("Unhandled event ({})!", event);
       break;
@@ -566,8 +573,8 @@ bt_status_t btif_gattc_reg_for_notification(int client_if, const RawAddress& bd_
                                             uint16_t handle) {
   CHECK_BTGATT_INIT();
 
-  return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_reg_for_notification_impl), client_if,
-                               bd_addr, handle));
+  return do_in_main_thread(Bind(base::IgnoreResult(&btif_gattc_reg_for_notification_impl),
+                                client_if, bd_addr, handle));
 }
 
 static void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if, const RawAddress& bda,
@@ -584,8 +591,8 @@ bt_status_t btif_gattc_dereg_for_notification(int client_if, const RawAddress& b
                                               uint16_t handle) {
   CHECK_BTGATT_INIT();
 
-  return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_dereg_for_notification_impl),
-                               client_if, bd_addr, handle));
+  return do_in_main_thread(Bind(base::IgnoreResult(&btif_gattc_dereg_for_notification_impl),
+                                client_if, bd_addr, handle));
 }
 
 static bt_status_t btif_gattc_read_remote_rssi(int client_if, const RawAddress& bd_addr) {
@@ -674,6 +681,39 @@ static bt_status_t btif_gattc_subrate_request(const RawAddress& bd_addr, int sub
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_subrate_request_impl), bd_addr,
                                subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
+}
+
+static bt_status_t btif_gattc_offload_characteristics(int conn_id, btgatt_db_element_t* service,
+                                                      size_t elements_count, uint64_t endpoint_id,
+                                                      uint64_t hub_id,
+                                                      btgatt_offload_result_t* result) {
+  CHECK_BTGATT_INIT();
+  std::promise<btgatt_offload_result_t> promise;
+  std::future future = promise.get_future();
+
+  bt_status_t status = do_in_main_thread(base::BindOnce(
+          &BTA_GATTC_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id),
+          std::vector(service, service + elements_count), endpoint_id, hub_id, std::move(promise)));
+  if (status != BT_STATUS_SUCCESS) {
+    return status;
+  }
+  log::info("Waiting for request status");
+  auto request_status = future.wait_for(std::chrono::seconds(5));
+
+  if (request_status != std::future_status::ready) {
+    log::error("Offload request is not ready");
+    return BT_STATUS_TIMEOUT;
+  }
+  btgatt_offload_result_t request_result = future.get();
+  log::info("session_id: {} status: {}", request_result.session_id, request_result.status);
+  *result = request_result;
+  return BT_STATUS_SUCCESS;
+}
+
+static bt_status_t btif_gattc_unoffload_characteristics(int conn_id, int session_id) {
+  CHECK_BTGATT_INIT();
+  return do_in_jni_thread(Bind(base::IgnoreResult(&BTA_GATTC_UnoffloadCharacteristics),
+                               static_cast<tCONN_ID>(conn_id), session_id));
 }
 
 static void btif_test_connect_cback(tGATT_IF, const RawAddress&, tCONN_ID conn_id, bool connected,
@@ -878,4 +918,6 @@ const btgatt_client_interface_t btgattClientInterface = {
         btif_gattc_read_phy,
         btif_gattc_test_command,
         btif_gattc_subrate_request,
+        btif_gattc_offload_characteristics,
+        btif_gattc_unoffload_characteristics,
 };

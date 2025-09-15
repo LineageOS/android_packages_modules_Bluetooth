@@ -121,6 +121,7 @@ package android.bluetooth {
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public java.util.List<android.bluetooth.BluetoothDevice> getMostRecentlyConnectedDevices();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getOffloadedTransportDiscoveryDataScanSupported();
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.os.Bundle getPreferredAudioProfiles(@NonNull android.bluetooth.BluetoothDevice);
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public android.bluetooth.GattOffloadCapabilities getSupportedGattOffloadCapabilities();
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public java.util.List<java.lang.Integer> getSupportedProfiles();
     method @NonNull @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public java.util.List<android.os.ParcelUuid> getUuidsList();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public boolean isAutoOnEnabled();
@@ -377,6 +378,24 @@ package android.bluetooth {
     field public static final int FILTER_TYPE_NAP = 4; // 0x4
     field public static final int FILTER_TYPE_PANU = 3; // 0x3
     field public static final int FILTER_TYPE_TRANSFER = 2; // 0x2
+  }
+
+  public final class BluetoothGatt implements android.bluetooth.BluetoothProfile {
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int offloadCharacteristics(@NonNull android.bluetooth.BluetoothGattService, @NonNull java.util.List<android.bluetooth.BluetoothGattCharacteristic>, long, long);
+  }
+
+  public abstract class BluetoothGattCallback {
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") public void onCharacteristicsOffloaded(@NonNull android.bluetooth.BluetoothGatt, @Nullable android.bluetooth.GattOffloadSession, int);
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") public void onCharacteristicsUnoffloaded(@NonNull android.bluetooth.BluetoothGatt, int, int);
+  }
+
+  public final class BluetoothGattServer implements android.bluetooth.BluetoothProfile {
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int offloadCharacteristics(@NonNull android.bluetooth.BluetoothDevice, @NonNull android.bluetooth.BluetoothGattService, @NonNull java.util.List<android.bluetooth.BluetoothGattCharacteristic>, long, long);
+  }
+
+  public abstract class BluetoothGattServerCallback {
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") public void onCharacteristicsOffloaded(@NonNull android.bluetooth.BluetoothDevice, @NonNull android.bluetooth.GattOffloadSession, int);
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") public void onCharacteristicsUnoffloaded(@NonNull android.bluetooth.BluetoothDevice, int, int);
   }
 
   public final class BluetoothHapClient implements java.lang.AutoCloseable android.bluetooth.BluetoothProfile {
@@ -1309,6 +1328,34 @@ package android.bluetooth {
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field public static final int BUFFER_CODEC_MAX_NUM = 32; // 0x20
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.BufferConstraints> CREATOR;
+  }
+
+  @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") public final class GattOffloadCapabilities {
+    method public int getSupportedClientProperties();
+    method public int getSupportedServerProperties();
+    method public boolean isClientOffloadSupported();
+    method public boolean isServerOffloadSupported();
+  }
+
+  @FlaggedApi("com.android.bluetooth.flags.gatt_offload_api") public final class GattOffloadSession implements java.lang.AutoCloseable {
+    method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public void close();
+    method public long getEndpointId();
+    method @NonNull public java.util.List<android.bluetooth.BluetoothGattCharacteristic> getGattCharacteristics();
+    method @NonNull public android.bluetooth.BluetoothGattService getGattService();
+    method public long getHubId();
+    method public int getSessionId();
+    field public static final int OFFLOAD_SESSION_ID_UNKNOWN = 0; // 0x0
+    field public static final int STATUS_CHARACTERISTIC_BUSY = 132; // 0x84
+    field public static final int STATUS_DATABASE_OUT_OF_SYNC = 18; // 0x12
+    field public static final int STATUS_DUPLICATE_SESSION = 144; // 0x90
+    field public static final int STATUS_FAILURE = 257; // 0x101
+    field public static final int STATUS_HAL_ERROR = 129; // 0x81
+    field public static final int STATUS_ILLEGAL_PARAMETER = 135; // 0x87
+    field public static final int STATUS_INSUFFICIENT_SECURITY = 5; // 0x5
+    field public static final int STATUS_INVALID_CONNECTION = 1; // 0x1
+    field public static final int STATUS_REQUEST_TIMEOUT = 133; // 0x85
+    field public static final int STATUS_SERVICE_UNAVAILABLE = 130; // 0x82
+    field public static final int STATUS_SUCCESS = 0; // 0x0
   }
 
   public final class OobData implements android.os.Parcelable {

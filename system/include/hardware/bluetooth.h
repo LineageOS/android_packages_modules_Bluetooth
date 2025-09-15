@@ -245,6 +245,8 @@ typedef struct {
 typedef struct {
   uint8_t number_of_supported_offloaded_le_coc_sockets;
   uint8_t number_of_supported_offloaded_rfcomm_sockets;
+  uint8_t supported_offloaded_gatt_client_properties;
+  uint8_t supported_offloaded_gatt_server_properties;
 } bt_lpp_offload_features_t;
 
 /** Bluetooth Vendor and Product ID info */

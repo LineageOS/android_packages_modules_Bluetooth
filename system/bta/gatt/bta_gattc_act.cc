@@ -68,6 +68,9 @@ static void bta_gattc_subrate_chg_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint
                                         uint16_t latency, uint16_t cont_num, uint16_t timeout,
                                         tGATT_STATUS status);
 static void bta_gattc_init_bk_conn(const tBTA_GATTC_API_OPEN* p_data, tBTA_GATTC_RCB* p_clreg);
+static void bta_gattc_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
+                                                        uint32_t session_id, tGATT_STATUS status);
+static void bta_gattc_offloaded_service_chg_cback(tCONN_ID conn_id);
 
 static tGATT_CBACK bta_gattc_cl_cback = {
         .p_conn_cb = bta_gattc_conn_cback,
@@ -80,6 +83,8 @@ static tGATT_CBACK bta_gattc_cl_cback = {
         .p_phy_update_cb = bta_gattc_phy_update_cback,
         .p_conn_update_cb = bta_gattc_conn_update_cback,
         .p_subrate_chg_cb = bta_gattc_subrate_chg_cback,
+        .p_characteristics_unoffloaded_cb = bta_gattc_characteristics_unoffloaded_cback,
+        .p_offloaded_service_chg_cb = bta_gattc_offloaded_service_chg_cback,
 };
 
 /* opcode(tGATTC_OPTYPE) order has to be comply with internal event order */
@@ -1503,6 +1508,10 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   log::info("{} service changed s_handle=0x{:x}, e_handle=0x{:x}", p_srcb->server_bda, s_handle,
             e_handle);
 
+  if (com::android::bluetooth::flags::gatt_offload_api()) {
+    GATTC_InformServiceChangedIndication(p_srcb->server_bda);
+  }
+
   /* mark service handle change pending */
   p_srcb->srvc_hdl_chg = true;
   /* clear up all notification/indication registration */
@@ -1791,4 +1800,40 @@ static void bta_gattc_subrate_chg_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint
   cb_data.subrate_chg.timeout = timeout;
   cb_data.subrate_chg.status = status;
   (*p_clreg->p_cback)(BTA_GATTC_SUBRATE_CHG_EVT, &cb_data);
+}
+
+static void bta_gattc_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
+                                                        uint32_t session_id, tGATT_STATUS status) {
+  tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(gatt_if);
+
+  if (!p_clreg || !p_clreg->p_cback) {
+    log::error("client_if: {} not found", gatt_if);
+    return;
+  }
+
+  tBTA_GATTC cb_data;
+  cb_data.characteristics_unoffloaded.conn_id = conn_id;
+  cb_data.characteristics_unoffloaded.session_id = session_id;
+  cb_data.characteristics_unoffloaded.status = status;
+  (*p_clreg->p_cback)(BTA_GATTC_CHARACTERISTICS_UNOFFLOADED_EVT, &cb_data);
+}
+
+static void bta_gattc_offloaded_service_chg_cback(tCONN_ID conn_id) {
+  log::info("conn_id:{}", conn_id);
+  tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+  if (!p_clcb || !p_clcb->p_srcb) {
+    log::error("conn_id:{} not found", conn_id);
+    return;
+  }
+  p_clcb->p_srcb->srvc_hdl_db_hash = true;
+  bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
+
+  /* notify application for service change */
+  if (p_clcb->p_rcb && p_clcb->p_rcb->p_cback) {
+    tBTA_GATTC bta_gattc = {.service_changed = {
+                                    .remote_bda = p_clcb->p_srcb->server_bda,
+                                    .conn_id = conn_id,
+                            }};
+    (*p_clcb->p_rcb->p_cback)(BTA_GATTC_SRVC_CHG_EVT, &bta_gattc);
+  }
 }

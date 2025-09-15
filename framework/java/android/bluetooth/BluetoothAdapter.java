@@ -38,6 +38,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -5529,5 +5530,32 @@ public final class BluetoothAdapter {
         }
         return callServiceIfEnabled(
                 s -> s.isRfcommSocketOffloadSupported(mAttributionSource), false);
+    }
+
+    /**
+     * Get the supported GATT offload capabilities.
+     *
+     * @return instance of {@link GattOffloadCapabilities} or null if an error has occurred
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    public @Nullable GattOffloadCapabilities getSupportedGattOffloadCapabilities() {
+        if (!isEnabled()) {
+            return null;
+        }
+        mServiceLock.readLock().lock();
+        try {
+            if (mService != null) {
+                return mService.getSupportedGattOffloadCapabilities(mAttributionSource)
+                        .toGattOffloadCapabilities();
+            }
+        } catch (RemoteException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+        return null;
     }
 }

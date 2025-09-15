@@ -374,3 +374,38 @@ void BTA_GATTS_InitBonded(void) {
   p_buf->event = BTA_GATTS_API_INIT_BONDED_EVT;
   bta_sys_sendmsg(p_buf);
 }
+
+/*******************************************************************************
+ *
+ * Function         BTA_GATTS_OffloadCharacteristics
+ *
+ * Description      This function is called to offload a service.
+ *
+ * Parameters       conn_id - connection ID.
+ *                  service - vector describing service.
+ *                  endpoint_id - ID of the hub end point.
+ *                  hub_id - ID of the hub to which the end point belongs.
+ *                  promise - object used to signal the completion status.
+ *
+ ******************************************************************************/
+void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
+                                      uint64_t endpoint_id, uint64_t hub_id,
+                                      std::promise<btgatt_offload_result_t> promise) {
+  log::verbose("conn_id: {}, endpoint_id: {}, hub_id: {}", conn_id, endpoint_id, hub_id);
+  GATTS_OffloadCharacteristics(conn_id, service.data(), service.size(), endpoint_id, hub_id,
+                               std::move(promise));
+}
+
+/*******************************************************************************
+ *
+ * Function         BTA_GATTS_UnoffloadCharacteristics
+ *
+ * Description      This function is called to unoffload a session.
+ *
+ * Parameters       conn_id - connection ID.
+ *                  session_id - session ID.
+ *
+ ******************************************************************************/
+void BTA_GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id) {
+  do_in_main_thread(base::BindOnce(&GATTS_UnoffloadCharacteristics, conn_id, session_id));
+}

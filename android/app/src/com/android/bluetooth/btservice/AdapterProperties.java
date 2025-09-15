@@ -139,6 +139,8 @@ class AdapterProperties {
 
     private int mNumberOfSupportedOffloadedLeCocSockets;
     private int mNumberOfSupportedOffloadedRfcommSockets;
+    private int mSupportedOffloadedGattClientProperties;
+    private int mSupportedOffloadedGattServerProperties;
 
     // Lock for all getters and setters.
     // If finer grained locking is needer, more locks can be added here.
@@ -888,20 +890,34 @@ class AdapterProperties {
         return mNumberOfSupportedOffloadedRfcommSockets;
     }
 
+    int getSupportedOffloadedGattClientProperties() {
+        return mSupportedOffloadedGattClientProperties;
+    }
+
+    int getSupportedOffloadedGattServerProperties() {
+        return mSupportedOffloadedGattServerProperties;
+    }
+
     private void updateLppOffloadFeatureSupport(byte[] val) {
-        if (val == null || val.length < 2) {
+        if (val == null || val.length < 4) {
             Log.e(TAG, "BT_PROPERTY_LPP_OFFLOAD_FEATURES: invalid value length");
             return;
         }
         mNumberOfSupportedOffloadedLeCocSockets = (0xFF & ((int) val[0]));
         mNumberOfSupportedOffloadedRfcommSockets = (0xFF & ((int) val[1]));
+        mSupportedOffloadedGattClientProperties = (0xFF & ((int) val[2]));
+        mSupportedOffloadedGattServerProperties = (0xFF & ((int) val[3]));
 
         debugLog(
                 "BT_PROPERTY_LPP_OFFLOAD_FEATURES: update from Offload HAL"
                         + " mNumberOfSupportedOffloadedLeCocSockets = "
                         + mNumberOfSupportedOffloadedLeCocSockets
                         + " mNumberOfSupportedOffloadedRfcommSockets = "
-                        + mNumberOfSupportedOffloadedRfcommSockets);
+                        + mNumberOfSupportedOffloadedRfcommSockets
+                        + " mSupportedOffloadedGattClientProperties = "
+                        + mSupportedOffloadedGattClientProperties
+                        + " mSupportedOffloadedGattServerProperties = "
+                        + mSupportedOffloadedGattServerProperties);
     }
 
     void onBluetoothReady() {
