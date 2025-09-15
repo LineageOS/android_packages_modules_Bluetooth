@@ -117,6 +117,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -8165,6 +8166,44 @@ public class BassClientServiceTest {
         mInOrderPeriodicAdvertisingManager
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FALLBACK_GROUP_SELECTION)
+    public void testUpdateDefaultBroadcastToUnicastFallbackGroupWhenFlagEnabled()
+            throws RemoteException {
+        // Preparation: A connected device and a mock LeAudioService.
+        prepareConnectedDeviceGroup();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        doReturn(new ArrayList<>()).when(mLeAudioService).getConnectedDevices();
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+
+        // Create an ArgumentCaptor to capture the Set arguments.
+        ArgumentCaptor<Set> setCaptor = ArgumentCaptor.forClass(Set.class);
+
+        // 1. Simulate adding a broadcast receiver. This triggers the update logic twice.
+        // The first call is from the setup, and the second from this action.
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        injectRemoteSourceStateSourceAdded(mBroadcastMetadata1, true, true);
+
+        // Verification: We expect a total of two invocations for this step.
+        verify(mLeAudioService, times(2))
+                .selectDefaultBroadcastToUnicastFallbackGroup(setCaptor.capture());
+
+        // Check that both captured sets are correct.
+        List<Set> capturedSets = setCaptor.getAllValues();
+        Set<BluetoothDevice> expectedSet = new HashSet<>(Arrays.asList(mCurrentDevice));
+        assertThat(capturedSets.get(0)).containsExactlyElementsIn(expectedSet);
+        expectedSet = new HashSet<>(Arrays.asList(mCurrentDevice, mCurrentDevice1));
+        assertThat(capturedSets.get(1)).containsExactlyElementsIn(expectedSet);
+
+        // 2. Simulate a broadcast stopping, which is the fourth invocation.
+        mBassClientService.notifyBroadcastStateChanged(
+                LeAudioStackEvent.BROADCAST_STATE_STOPPED, TEST_BROADCAST_ID);
+
+        // Verification: The function should have been called a total of 4 times.
+        verify(mLeAudioService, times(3))
+                .selectDefaultBroadcastToUnicastFallbackGroup(any(Set.class));
     }
 
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
