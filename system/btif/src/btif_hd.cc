@@ -48,6 +48,7 @@
 #include "btif/include/btif_hh.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_util.h"
+#include "btif_status.h"
 #include "hardware/bluetooth.h"
 #include "include/hardware/bt_hd.h"
 #include "internal_include/bt_target.h"
@@ -306,7 +307,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
  ******************************************************************************/
 
 static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD* p_data) {
-  bt_status_t status;
+  BtStatus status = BtifStatus();
   int param_len = 0;
   tBTIF_COPY_CBACK* p_copy_cback = NULL;
 
@@ -349,10 +350,10 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD* p_data) {
       break;
   }
 
-  status = btif_transfer_context(btif_hd_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
-                                 p_copy_cback);
+  status = BtifStatus(static_cast<BtifStatusCode>(btif_transfer_context(btif_hd_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
+                                 p_copy_cback)));
 
-  ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
+  ASSERTC(status, "context transfer failed", status);
 }
 
 /*******************************************************************************
@@ -361,10 +362,10 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD* p_data) {
  *
  * Description     Initializes BT-HD interface
  *
- * Returns         BT_STATUS_SUCCESS
+ * Returns         BtifStatus()
  *
  ******************************************************************************/
-static bt_status_t init(bthd_callbacks_t* callbacks) {
+static BtStatus init(bthd_callbacks_t* callbacks) {
   log::verbose("");
 
   bt_hd_callbacks = callbacks;
@@ -372,7 +373,7 @@ static bt_status_t init(bthd_callbacks_t* callbacks) {
 
   btif_enable_service(BTA_HIDD_SERVICE_ID);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -401,16 +402,16 @@ static void cleanup(void) {
  *
  * Description      Registers HID Device application
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t register_app(bthd_app_param_t* p_app_param, bthd_qos_param_t* p_in_qos,
-                                bthd_qos_param_t* p_out_qos) {
+static BtStatus register_app(bthd_app_param_t* p_app_param, bthd_qos_param_t* p_in_qos,
+                             bthd_qos_param_t* p_out_qos) {
   log::verbose("");
 
   if (btif_hd_cb.app_registered) {
     log::warn("application already registered");
-    return BT_STATUS_DONE;
+    return BtifStatus(DONE);
   }
 
   app_info.p_name = (char*)osi_calloc(BTIF_HD_APP_NAME_LEN);
@@ -442,7 +443,7 @@ static bt_status_t register_app(bthd_app_param_t* p_app_param, bthd_qos_param_t*
   /* Disable HH */
   btif_hh_service_registration(FALSE);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -451,31 +452,31 @@ static bt_status_t register_app(bthd_app_param_t* p_app_param, bthd_qos_param_t*
  *
  * Description      Unregisters HID Device application
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t unregister_app(void) {
+static BtStatus unregister_app(void) {
   log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
     log::warn("application not yet registered");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
     log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.service_dereg_active) {
     log::warn("BT-HD deregistering in progress");
-    return BT_STATUS_BUSY;
+    return BtifStatus(BUSY);
   }
 
   btif_hd_cb.service_dereg_active = TRUE;
   BTA_HdUnregisterApp();
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -484,25 +485,25 @@ static bt_status_t unregister_app(void) {
  *
  * Description      Connects to host
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t connect(RawAddress* bd_addr) {
+static BtStatus connect(RawAddress* bd_addr) {
   log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
     log::warn("application not yet registered");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
     log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   BTA_HdConnect(*bd_addr);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -511,25 +512,25 @@ static bt_status_t connect(RawAddress* bd_addr) {
  *
  * Description      Disconnects from host
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t disconnect(void) {
+static BtStatus disconnect(void) {
   log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
     log::warn("application not yet registered");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
     log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   BTA_HdDisconnect();
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -538,22 +539,22 @@ static bt_status_t disconnect(void) {
  *
  * Description      Sends Reports to hid host
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t send_report(bthd_report_type_t type, uint8_t id, uint16_t len, uint8_t* p_data) {
+static BtStatus send_report(bthd_report_type_t type, uint8_t id, uint16_t len, uint8_t* p_data) {
   tBTA_HD_REPORT report;
 
   log::verbose("type={} id={} len={}", type, id, len);
 
   if (!btif_hd_cb.app_registered) {
     log::warn("application not yet registered");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
     log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (type == BTHD_REPORT_TYPE_INTRDATA) {
@@ -570,7 +571,7 @@ static bt_status_t send_report(bthd_report_type_t type, uint8_t id, uint16_t len
 
   BTA_HdSendReport(&report);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -579,25 +580,25 @@ static bt_status_t send_report(bthd_report_type_t type, uint8_t id, uint16_t len
  *
  * Description      Sends HANDSHAKE with error info for invalid SET_REPORT
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t report_error(uint8_t error) {
+static BtStatus report_error(uint8_t error) {
   log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
     log::warn("application not yet registered");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
     log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   BTA_HdReportError(error);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -606,25 +607,25 @@ static bt_status_t report_error(uint8_t error) {
  *
  * Description      Sends Virtual Cable Unplug to host
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t virtual_cable_unplug(void) {
+static BtStatus virtual_cable_unplug(void) {
   log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
     log::warn("application not yet registered");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
     log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   BTA_HdVirtualCableUnplug();
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static const bthd_interface_t bthdInterface = {
@@ -646,17 +647,17 @@ static const bthd_interface_t bthdInterface = {
  *
  * Description      Enabled/disables BT-HD service
  *
- * Returns          BT_STATUS_SUCCESS
+ * Returns          BtifStatus()
  *
  ******************************************************************************/
-bt_status_t btif_hd_execute_service(bool b_enable) {
+BtStatus btif_hd_execute_service(bool b_enable) {
   log::verbose("b_enable={}", b_enable);
 
   if (!b_enable) {
     BTA_HdDisable();
   }
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************

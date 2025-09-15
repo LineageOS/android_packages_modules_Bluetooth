@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "btif_status.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_hd.h"
@@ -151,8 +152,7 @@ static bthd_callbacks_t sHiddCb = {
 
 static void initNative(JNIEnv* env, jobject object) {
   const bt_interface_t* btif;
-  bt_status_t status;
-
+  BtStatus status = BtifStatus();
   log::verbose("enter");
 
   if ((btif = getBluetoothInterface()) == NULL) {
@@ -177,8 +177,8 @@ static void initNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  if ((status = sHiddIf->init(&sHiddCb)) != BT_STATUS_SUCCESS) {
-    log::error("Failed to initialize interface ({})", bt_status_text(status));
+  if (!(status = sHiddIf->init(&sHiddCb))) {
+    log::error("Failed to initialize interface ({})", status);
     sHiddIf = NULL;
     return;
   }
@@ -273,11 +273,11 @@ static jboolean registerAppNative(JNIEnv* env, jobject /* thiz */, jstring name,
     fill_qos(env, p_in_qos, &in_qos);
     fill_qos(env, p_out_qos, &out_qos);
 
-    bt_status_t ret = sHiddIf->register_app(&app_param, &in_qos, &out_qos);
+    BtStatus ret = sHiddIf->register_app(&app_param, &in_qos, &out_qos);
 
-    log::verbose("register_app() returned {}", bt_status_text(ret));
+    log::verbose("register_app() returned {}", ret);
 
-    if (ret == BT_STATUS_SUCCESS) {
+    if (ret) {
       result = JNI_TRUE;
     }
 
@@ -303,11 +303,11 @@ static jboolean unregisterAppNative(JNIEnv* /* env */, jobject /* thiz */) {
     return JNI_FALSE;
   }
 
-  bt_status_t ret = sHiddIf->unregister_app();
+  BtStatus ret = sHiddIf->unregister_app();
 
-  log::verbose("unregister_app() returned {}", bt_status_text(ret));
+  log::verbose("unregister_app() returned {}", ret);
 
-  if (ret == BT_STATUS_SUCCESS) {
+  if (ret) {
     result = JNI_TRUE;
   }
 
@@ -333,9 +333,9 @@ static jboolean sendReportNative(JNIEnv* env, jobject /* thiz */, jint id, jbyte
   if (buf != NULL) {
     env->GetByteArrayRegion(data, 0, size, (jbyte*)buf);
 
-    bt_status_t ret = sHiddIf->send_report(BTHD_REPORT_TYPE_INTRDATA, id, size, buf);
+    BtStatus ret = sHiddIf->send_report(BTHD_REPORT_TYPE_INTRDATA, id, size, buf);
 
-    if (ret == BT_STATUS_SUCCESS) {
+    if (ret) {
       result = JNI_TRUE;
     }
 
@@ -365,11 +365,11 @@ static jboolean replyReportNative(JNIEnv* env, jobject /* thiz */, jbyte type, j
     int report_type = (type & 0x03);
     env->GetByteArrayRegion(data, 0, size, (jbyte*)buf);
 
-    bt_status_t ret = sHiddIf->send_report((bthd_report_type_t)report_type, id, size, buf);
+    BtStatus ret = sHiddIf->send_report((bthd_report_type_t)report_type, id, size, buf);
 
-    log::verbose("send_report() returned {}", bt_status_text(ret));
+    log::verbose("send_report() returned {}", ret);
 
-    if (ret == BT_STATUS_SUCCESS) {
+    if (ret) {
       result = JNI_TRUE;
     }
 
@@ -391,11 +391,11 @@ static jboolean reportErrorNative(JNIEnv* /* env */, jobject /* thiz */, jbyte e
 
   jboolean result = JNI_FALSE;
 
-  bt_status_t ret = sHiddIf->report_error(error);
+  BtStatus ret = sHiddIf->report_error(error);
 
-  log::verbose("report_error() returned {}", bt_status_text(ret));
+  log::verbose("report_error() returned {}", ret);
 
-  if (ret == BT_STATUS_SUCCESS) {
+  if (ret) {
     result = JNI_TRUE;
   }
 
@@ -414,11 +414,11 @@ static jboolean unplugNative(JNIEnv* /* env */, jobject /* thiz */) {
 
   jboolean result = JNI_FALSE;
 
-  bt_status_t ret = sHiddIf->virtual_cable_unplug();
+  BtStatus ret = sHiddIf->virtual_cable_unplug();
 
-  log::verbose("virtual_cable_unplug() returned {}", bt_status_text(ret));
+  log::verbose("virtual_cable_unplug() returned {}", ret);
 
-  if (ret == BT_STATUS_SUCCESS) {
+  if (ret) {
     result = JNI_TRUE;
   }
 
@@ -443,13 +443,13 @@ static jboolean connectNative(JNIEnv* env, jobject /* thiz */, jbyteArray addres
     return JNI_FALSE;
   }
 
-  bt_status_t ret = sHiddIf->connect((RawAddress*)addr);
+  BtStatus ret = sHiddIf->connect((RawAddress*)addr);
 
   env->ReleaseByteArrayElements(address, addr, 0);
 
-  log::verbose("connect() returned {}", bt_status_text(ret));
+  log::verbose("connect() returned {}", ret);
 
-  if (ret == BT_STATUS_SUCCESS) {
+  if (ret) {
     result = JNI_TRUE;
   }
 
@@ -468,11 +468,11 @@ static jboolean disconnectNative(JNIEnv* /* env */, jobject /* thiz */) {
 
   jboolean result = JNI_FALSE;
 
-  bt_status_t ret = sHiddIf->disconnect();
+  BtStatus ret = sHiddIf->disconnect();
 
-  log::verbose("disconnect() returned {}", bt_status_text(ret));
+  log::verbose("disconnect() returned {}", ret);
 
-  if (ret == BT_STATUS_SUCCESS) {
+  if (ret) {
     result = JNI_TRUE;
   }
 

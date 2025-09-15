@@ -26,6 +26,7 @@
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_hh_api.h"
 #include "btcore/include/module.h"
+#include "btif_status.h"
 #include "include/hardware/bt_hh.h"
 #include "test/common/core_interface.h"
 #include "test/common/mock_functions.h"
@@ -87,7 +88,7 @@ struct connection_state_cb_t {
 
 // Globals allow usage within function pointers
 std::promise<bt_cb_thread_evt> g_thread_evt_promise;
-std::promise<bt_status_t> g_status_promise;
+std::promise<BtStatus> g_status_promise;
 std::promise<get_report_cb_t> g_bthh_callbacks_get_report_promise;
 std::promise<connection_state_cb_t> g_bthh_connection_state_promise;
 
@@ -169,7 +170,7 @@ protected:
   void SetUp() override {
     BtifHhWithHalCallbacksTest::SetUp();
     test::mock::bluetooth_shim_is_gd_stack_started_up = true;
-    ASSERT_EQ(BT_STATUS_SUCCESS, btif_hh_get_interface()->init(&bthh_callbacks));
+    ASSERT_EQ(BtifStatus(), btif_hh_get_interface()->init(&bthh_callbacks));
   }
 
   void TearDown() override {
@@ -273,7 +274,7 @@ TEST_F(BtifHHVirtualUnplugTest, test_btif_hh_virtual_unplug_device_not_open) {
   auto future = g_bthh_connection_state_promise.get_future();
 
   /* Make device in connecting state */
-  ASSERT_EQ(btif_hh_connect(kDeviceConnecting), BT_STATUS_SUCCESS);
+  ASSERT_EQ(btif_hh_connect(kDeviceConnecting), BtifStatus());
 
   ASSERT_EQ(std::future_status::ready, future.wait_for(2s));
 
