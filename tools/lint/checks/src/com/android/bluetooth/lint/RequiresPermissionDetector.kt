@@ -182,6 +182,8 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                 return true
             }
 
+            node.valueArguments.forEach { argument -> argument.accept(this) }
+
             checkEnforcement(node, method)
 
             return true
