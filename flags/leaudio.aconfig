@@ -386,3 +386,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_fallback_group_selection"
+    namespace: "bluetooth"
+    description: "Allow only local broadcast receiver device to be select as fallback"
+    bug: "445133566"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
