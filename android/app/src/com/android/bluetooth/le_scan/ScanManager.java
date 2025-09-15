@@ -21,7 +21,6 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREG
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-import static android.bluetooth.le.ScanSettings.getScanModeString;
 
 import static com.android.bluetooth.le_scan.ScanUtil.ACTION_REFRESH_BATCHED_SCAN;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
@@ -47,6 +46,7 @@ import static com.android.bluetooth.le_scan.ScanUtil.minScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.priorityForScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresLocationOn;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresScreenOn;
+import static com.android.bluetooth.le_scan.ScanUtil.scanModeToString;
 import static com.android.bluetooth.le_scan.ScanUtil.setAutoBatchScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.setOpportunisticScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.shouldUpdateScan;
@@ -448,7 +448,7 @@ class ScanManager {
                     "sendMessage using `mClientHandler` should not be called on scan thread");
         }
         final var message = mClientHandler.messageToString(what);
-        Log.d(TAG, "Sending message " + message + " for client: " + client);
+        Log.d(TAG, "Sending message=" + message + " to=" + client);
         mClientHandler.obtainMessage(what, client).sendToTarget();
     }
 
@@ -907,7 +907,7 @@ class ScanManager {
             return false;
         }
         int updatedScanMode = client.getScanModeApp();
-        final var scanModeString = getScanModeString(updatedScanMode);
+        final var scanModeString = scanModeToString(updatedScanMode);
         if (!isAppForeground(client) || isForceDowngradedScanClient(client)) {
             updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
         } else {
@@ -925,12 +925,13 @@ class ScanManager {
                 }
             }
         }
+        final var updatedScanModeString = scanModeToString(updatedScanMode);
         Log.d(
                 TAG,
-                "Scan mode update during screen off from "
-                        + scanModeString
-                        + " to "
-                        + getScanModeString(updatedScanMode));
+                "updateScanModeScreenOff(): "
+                        + ("for=" + client)
+                        + (" from=" + scanModeString)
+                        + (" to=" + updatedScanModeString));
         return client.updateScanMode(updatedScanMode);
     }
 
@@ -991,8 +992,12 @@ class ScanManager {
                 mClientHandler.sendMessageDelayed(
                         msg, mAdapterService.getScanUpgradeDuration().toMillis());
             }
-            final var scanModeString = getScanModeString(client.getSettings().getScanMode());
-            Log.d(TAG, "Scan mode is upgraded to " + scanModeString + " for " + client);
+            final var scanModeString = scanModeToString(client.getSettings().getScanMode());
+            Log.d(
+                    TAG,
+                    "upgradeScanModeBeforeStart(): "
+                            + ("for=" + client)
+                            + (" to=" + scanModeString));
             return true;
         }
         return false;
@@ -1007,10 +1012,9 @@ class ScanManager {
         if (client.updateScanMode(scanModeApp)) {
             Log.d(
                     TAG,
-                    "scanMode upgrade is reverted to "
-                            + getScanModeString(scanModeApp)
-                            + " for "
-                            + client);
+                    "handleRevertScanModeUpgrade(): "
+                            + ("for=" + client)
+                            + (" to=" + scanModeToString(scanModeApp)));
             configureRegularScanParams();
         }
     }
@@ -1052,9 +1056,11 @@ class ScanManager {
             }
             Log.d(
                     TAG,
-                    ("uid " + uid)
-                            + (" isForeground " + isForeground)
-                            + (" scanMode " + getScanModeString(scanSettings.getScanMode())));
+                    "handleImportanceChange(): "
+                            + ("for=" + client)
+                            + (" uid=" + uid)
+                            + (" isForeground=" + isForeground)
+                            + (" scanMode=" + scanModeToString(scanSettings.getScanMode())));
         }
 
         if (updatedScanParams) {
@@ -1072,10 +1078,10 @@ class ScanManager {
                 isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
         Log.d(
                 TAG,
-                "Scan mode update during screen on from "
-                        + getScanModeString(scanModeApp)
-                        + " to "
-                        + getScanModeString(minScanMode(scanMode, maxScanMode)));
+                "updateScanModeScreenOn(): "
+                        + ("for=" + client)
+                        + (" from=" + scanModeToString(scanModeApp))
+                        + (" to=" + scanModeToString(minScanMode(scanMode, maxScanMode))));
         return client.updateScanMode(minScanMode(scanMode, maxScanMode));
     }
 
@@ -1090,8 +1096,9 @@ class ScanManager {
             client.getAppScanStats().get().setScanDowngrade(client.getScannerId(), true);
             Log.d(
                     TAG,
-                    ("downgradeScanModeFromMaxDuty() to " + getScanModeString(updatedScanMode))
-                            + (" for " + client));
+                    "downgradeScanModeFromMaxDuty(): "
+                            + ("for=" + client)
+                            + (" to=" + scanModeToString(updatedScanMode)));
             return true;
         }
         return false;
@@ -1463,7 +1470,9 @@ class ScanManager {
                                     Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
                                     SCAN_MODE_LOW_POWER_WINDOW_MS);
                 };
-        Log.d(TAG, "Scan window is " + windowMs + "ms for mode " + getScanModeString(scanMode));
+        Log.d(
+                TAG,
+                "BatchScan windowMs=" + windowMs + " for scan mode=" + scanModeToString(scanMode));
         return windowMs;
     }
 
@@ -1484,7 +1493,11 @@ class ScanManager {
                                     Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
                                     SCAN_MODE_LOW_POWER_INTERVAL_MS);
                 };
-        Log.d(TAG, "Scan interval is " + internalMs + "ms for mode " + getScanModeString(scanMode));
+        Log.d(
+                TAG,
+                "BatchScan "
+                        + ("internalMs=" + internalMs)
+                        + (" for scan mode=" + scanModeToString(scanMode)));
         return internalMs;
     }
 
