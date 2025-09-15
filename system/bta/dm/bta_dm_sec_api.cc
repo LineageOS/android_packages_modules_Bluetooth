@@ -25,10 +25,14 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
+
+#include <future>
 
 #include "bta/dm/bta_dm_sec_int.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
@@ -161,7 +165,22 @@ void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
  ******************************************************************************/
 void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_DEVICE_TYPE dev_type) {
-  bta_dm_add_ble_device(bd_addr, addr_type, dev_type);
+  if (!com_android_bluetooth_flags_modify_dev_rec_in_main_thread() || is_main_thread()) {
+    bta_dm_add_ble_device(bd_addr, addr_type, dev_type);
+  } else {
+    std::promise<void> promise;
+    std::future future = promise.get_future();
+    do_in_main_thread(base::BindOnce(
+            [](const RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE dev_type,
+               std::promise<void> promise) {
+              bta_dm_add_ble_device(bd_addr, addr_type, dev_type);
+              promise.set_value();
+            },
+            bd_addr, addr_type, dev_type, std::move(promise)));
+    if (future.wait_for(std::chrono::milliseconds(100)) == std::future_status::timeout) {
+      log::warn("Timed out waiting to add {}", bd_addr);
+    }
+  }
 }
 
 /*******************************************************************************
