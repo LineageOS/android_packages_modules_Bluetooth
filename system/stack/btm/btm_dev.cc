@@ -387,13 +387,17 @@ tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr) {
   // Find by matching identity address or pseudo address.
   list_node_t* n = list_foreach(btm_sec_cb.sec_dev_rec, is_not_same_identity_or_pseudo_address,
                                 (void*)&bd_addr);
-  // If not found by matching identity address or pseudo address, find by RPA
-  if (n == nullptr) {
-    n = list_foreach(btm_sec_cb.sec_dev_rec, is_rpa_unresolvable, (void*)&bd_addr);
-  }
-
   if (n != nullptr) {
     return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+  }
+
+  // If not found by matching identity address or pseudo address, find by RPA
+  n = list_foreach(btm_sec_cb.sec_dev_rec, is_rpa_unresolvable, (void*)&bd_addr);
+  if (n != nullptr) {
+    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+    log::warn("Found via address resolution bd_addr:{}, pseudo_addr:{}, identity_addr:{}", bd_addr,
+              p_dev_rec->ble.pseudo_addr, p_dev_rec->bd_addr);
+    return p_dev_rec;
   }
 
   return nullptr;
