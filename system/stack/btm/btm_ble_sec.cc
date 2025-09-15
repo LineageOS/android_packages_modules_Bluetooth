@@ -1421,6 +1421,26 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_
     return;
   }
 
+  if (com_android_bluetooth_flags_role_switch_after_encryption() &&
+      p_dev_rec->role_switch_pending == tBTM_SEC_DEV_REC::RoleSwitchPending::kAfterCtkd &&
+      p_data->complt.smp_over_br) {
+    tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+    if (get_btm_client_interface().link_policy.BTM_GetRole(bd_addr, BT_TRANSPORT_BR_EDR, &role) !=
+        tBTM_STATUS::BTM_SUCCESS) {
+      log::warn("Unable to get link policy role peer:{}", bd_addr);
+    }
+
+    if (role == HCI_ROLE_PERIPHERAL) {
+      if (get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
+                  p_dev_rec->RemoteAddress()) == tBTM_STATUS::BTM_CMD_STARTED) {
+        log::info("Trying to switch role to central peer: {}", bd_addr);
+      } else {
+        log::warn("Unable to switch role to central peer:{}", bd_addr);
+      }
+    }
+    p_dev_rec->role_switch_pending = tBTM_SEC_DEV_REC::RoleSwitchPending::kNone;
+  }
+
   log::verbose("before update sec_level=0x{:x} sec_flags=0x{:x}", p_data->complt.sec_level,
                p_dev_rec->sec_rec.sec_flags);
 

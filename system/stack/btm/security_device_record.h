@@ -376,7 +376,7 @@ public:
 
   bool role_central;  /* true if current mode is central (BLE) */
   bool is_originator; /* true if device is originating ACL connection */
-  bool switch_role_after_encryption; /* true if role switch must be requested after encryption */
+  enum class RoleSwitchPending { kNone = 0, kAfterEnc, kAfterCtkd } role_switch_pending;
 
   // BLE connection parameters
   tBTM_LE_CONN_PRAMS conn_params;
