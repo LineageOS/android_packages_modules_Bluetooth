@@ -2908,16 +2908,29 @@ public class BassClientService extends ConnectableProfile {
             paCb = new PACallback();
             // put PENDING_SYNC_HANDLE and update it in onSyncEstablished
             mPeriodicAdvCallbacksMap.put(BassConstants.PENDING_SYNC_HANDLE, paCb);
-            updatePeriodicAdvertisementResultMap(
-                    scanRes.getDevice(),
-                    scanRes.getDevice().getAddressType(),
-                    BassConstants.PENDING_SYNC_HANDLE,
-                    BassConstants.INVALID_ADV_SID,
-                    scanRes.getPeriodicAdvertisingInterval(),
-                    broadcastId,
-                    scanRes.getRssi(),
-                    pbData,
-                    broadcastName);
+            if (leaudioBroadcastImproveSourceOperations()) {
+                updatePeriodicAdvertisementResultMap(
+                        scanRes.getDevice(),
+                        scanRes.getDevice().getAddressType(),
+                        BassConstants.PENDING_SYNC_HANDLE,
+                        scanRes.getAdvertisingSid(),
+                        scanRes.getPeriodicAdvertisingInterval(),
+                        broadcastId,
+                        scanRes.getRssi(),
+                        pbData,
+                        broadcastName);
+            } else {
+                updatePeriodicAdvertisementResultMap(
+                        scanRes.getDevice(),
+                        scanRes.getDevice().getAddressType(),
+                        BassConstants.PENDING_SYNC_HANDLE,
+                        BassConstants.INVALID_ADV_SID,
+                        scanRes.getPeriodicAdvertisingInterval(),
+                        broadcastId,
+                        scanRes.getRssi(),
+                        pbData,
+                        broadcastName);
+            }
 
             // Check if there are resources for sync
             if (activeSyncedSrc.size() >= MAX_ACTIVE_SYNCED_SOURCES_NUM) {
