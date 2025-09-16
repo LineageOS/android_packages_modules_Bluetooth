@@ -301,7 +301,7 @@ class SignalingChannel(pyee.EventEmitter):
             self.transport_queue.get_nowait()
         logger.info(f"RTP channel queue cleared")
 
-    async def accept_discover(self, seid_information: typing.List[av.SeidInformation]):
+    async def accept_discover(self, seid_information: list[av.SeidInformation]):
         cmd = await self.expect_signal(av.DiscoverCommand(transaction_label=ANY))
         self.send_signal(
             av.DiscoverResponse(transaction_label=cmd.transaction_label,
@@ -313,8 +313,7 @@ class SignalingChannel(pyee.EventEmitter):
                                                             seid_information=ANY),
                                         timeout=5.0)
 
-    async def accept_get_all_capabilities(self,
-                                          service_capabilities: typing.List[av.ServiceCapability]):
+    async def accept_get_all_capabilities(self, service_capabilities: list[av.ServiceCapability]):
         cmd = await self.expect_signal(
             av.GetAllCapabilitiesCommand(acp_seid=ANY, transaction_label=ANY))
         self.send_signal(
@@ -331,8 +330,7 @@ class SignalingChannel(pyee.EventEmitter):
             av.GetAllCapabilitiesResponse(transaction_label=transaction_label,
                                           service_capabilities=ANY))
 
-    async def accept_set_configuration(self,
-                                       expected_configuration: typing.List[av.ServiceCapability]):
+    async def accept_set_configuration(self, expected_configuration: list[av.ServiceCapability]):
         cmd = await self.expect_signal(
             av.SetConfigurationCommand(transaction_label=ANY,
                                        acp_seid=ANY,
@@ -381,12 +379,12 @@ class SignalingChannel(pyee.EventEmitter):
         self.send_signal(av.CloseResponse(transaction_label=cmd.transaction_label))
 
     async def accept_open_stream(self,
-                                 seid_information: typing.List[av.SeidInformation],
-                                 service_capabilities: typing.List[av.ServiceCapability],
+                                 seid_information: list[av.SeidInformation],
+                                 service_capabilities: list[av.ServiceCapability],
                                  timeout: float = 10.0):
         await self.wait_signaling_channel_connected()
 
-        expected_configuration: typing.List[av.ServiceCapability] = []
+        expected_configuration: list[av.ServiceCapability] = []
         for capability in service_capabilities:
             if isinstance(capability, av.MediaTransportCapability) or isinstance(
                     capability, av.DelayReportingCapability):
