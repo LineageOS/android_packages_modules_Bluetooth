@@ -709,6 +709,21 @@ void Device::PlaybackStatusNotificationResponse(uint8_t label, bool interim, Pla
     return;
   }
 
+  log::verbose("last playstate: {}, new playstate: {}, interim: {}", last_play_status_.state,
+               state_to_send, interim);
+
+  // If the state has changed after the last changed event and before the interim, send the last
+  // state as interim and the new state as changed.
+  if (interim && last_play_status_.state != state_to_send &&
+      (last_play_status_.state == PlayState::PAUSED ||
+       last_play_status_.state == PlayState::PLAYING)) {
+    log::verbose("Sending interim with last state and changed with new state");
+    auto lastresponse = RegisterNotificationResponseBuilder::MakePlaybackStatusBuilder(
+            interim, last_play_status_.state);
+    send_message_cb_.Run(label, false, std::move(lastresponse));
+    interim = false;
+  }
+
   last_play_status_.state = state_to_send;
 
   auto response = RegisterNotificationResponseBuilder::MakePlaybackStatusBuilder(
