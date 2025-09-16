@@ -30,6 +30,8 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
 
     override fun getIssues(): List<Issue> =
         listOf(
+            RequiresPermissionDetector
+                .ISSUE_MISSING_OR_MISMATCHED_SEND_BROADCAST_REQUIRES_PERMISSION,
             RequiresPermissionDetector.ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION,
             RequiresPermissionDetector.ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION,
         )
@@ -73,11 +75,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:3: Error: Method FooBinder.connect must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_CONNECT]} but found: [none]. [MissingOrMismatchedRequiresPermissionAnnotation]
-                    override fun connect() {
-                                 ~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:3: Error: Method FooBinder.connect must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_CONNECT]} but found: [none]. [MissingOrMismatchedRequiresPermissionAnnotation]
+                        override fun connect() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -101,11 +103,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:4: Error: Method FooBinder.connect has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    override fun connect() {
-                                 ~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:4: Error: Method FooBinder.connect has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                        override fun connect() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -192,11 +194,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:8: Error: Method FooBinder.foo is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]. [IncorrectRequiresPermissionPropagation]
-                    override fun foo() {
-                                 ~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:8: Error: Method FooBinder.foo is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]. [IncorrectRequiresPermissionPropagation]
+                        override fun foo() {
+                                     ~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -266,11 +268,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:5: Error: Method FooBinder.scanAndAdvertise must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]} but found: {allOf=[android.permission.BLUETOOTH_CONNECT]}. [MissingOrMismatchedRequiresPermissionAnnotation]
-                    override fun scanAndAdvertise() {
-                                 ~~~~~~~~~~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:5: Error: Method FooBinder.scanAndAdvertise must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]} but found: {allOf=[android.permission.BLUETOOTH_CONNECT]}. [MissingOrMismatchedRequiresPermissionAnnotation]
+                        override fun scanAndAdvertise() {
+                                     ~~~~~~~~~~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -326,11 +328,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:8: Error: Method FooBinder.scanAndAdvertise has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_SCAN]}. [IncorrectRequiresPermissionPropagation]
-                    override fun scanAndAdvertise() {
-                                 ~~~~~~~~~~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:8: Error: Method FooBinder.scanAndAdvertise has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_SCAN]}. [IncorrectRequiresPermissionPropagation]
+                        override fun scanAndAdvertise() {
+                                     ~~~~~~~~~~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -357,11 +359,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:7: Error: Method FooBinder.disable must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {anyOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_ADMIN]} but found: {anyOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADMIN]}. [MissingOrMismatchedRequiresPermissionAnnotation]
-                    override fun disable() {
-                                 ~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:7: Error: Method FooBinder.disable must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {anyOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_ADMIN]} but found: {anyOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADMIN]}. [MissingOrMismatchedRequiresPermissionAnnotation]
+                        override fun disable() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -433,11 +435,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:7: Error: Method FooBinder.scanAndAdvertise must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]} but found: {anyOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]}. [MissingOrMismatchedRequiresPermissionAnnotation]
-                    override fun scanAndAdvertise() {
-                                 ~~~~~~~~~~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:7: Error: Method FooBinder.scanAndAdvertise must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]} but found: {anyOf=[android.permission.BLUETOOTH_SCAN, android.permission.BLUETOOTH_ADVERTISE]}. [MissingOrMismatchedRequiresPermissionAnnotation]
+                        override fun scanAndAdvertise() {
+                                     ~~~~~~~~~~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -464,11 +466,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:5: Error: Method FooBinder.connect has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    override fun connect() {
-                                 ~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:5: Error: Method FooBinder.connect has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                        override fun connect() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -531,11 +533,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/FooBinder.kt:6: Error: Method FooBinder.connect has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    override fun connect() {
-                                 ~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/FooBinder.kt:6: Error: Method FooBinder.connect has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                        override fun connect() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -604,11 +606,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/DataManager.kt:5: Error: Method DataManager.doNothing has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    fun doNothing() {
-                        ~~~~~~~~~
-                1 errors, 0 warnings
-        """
+                        src/test/pkg/DataManager.kt:5: Error: Method DataManager.doNothing has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                            fun doNothing() {
+                                ~~~~~~~~~
+                        1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -639,11 +641,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/DataManager.kt:12: Error: Method ConnectionHelper.connectToBluetooth has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    fun connectToBluetooth() { /* ... */ }
-                        ~~~~~~~~~~~~~~~~~~
-                1 errors, 0 warnings
-            """
+                    src/test/pkg/DataManager.kt:12: Error: Method ConnectionHelper.connectToBluetooth has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                        fun connectToBluetooth() { /* ... */ }
+                            ~~~~~~~~~~~~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -672,14 +674,14 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/DataManager.kt:4: Error: Method DataManager.doConnect is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]. [IncorrectRequiresPermissionPropagation]
-                    fun doConnect(helper: ConnectionHelper) {
-                        ~~~~~~~~~
-                src/test/pkg/DataManager.kt:10: Error: Method ConnectionHelper.connectToBluetooth has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    fun connectToBluetooth() { /* ... */ }
-                        ~~~~~~~~~~~~~~~~~~
-                2 errors, 0 warnings
-        """
+                        src/test/pkg/DataManager.kt:4: Error: Method DataManager.doConnect is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]. [IncorrectRequiresPermissionPropagation]
+                            fun doConnect(helper: ConnectionHelper) {
+                                ~~~~~~~~~
+                        src/test/pkg/DataManager.kt:10: Error: Method ConnectionHelper.connectToBluetooth has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                            fun connectToBluetooth() { /* ... */ }
+                                ~~~~~~~~~~~~~~~~~~
+                        2 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -771,14 +773,14 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-                src/test/pkg/DataManager.kt:5: Error: Method DataManager.disableBluetooth is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {anyOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_ADMIN]} but is only annotated with {allOf=[android.permission.BLUETOOTH_SCAN]}. [IncorrectRequiresPermissionPropagation]
-                    fun disableBluetooth(helper: ConnectionHelper) {
-                        ~~~~~~~~~~~~~~~~
-                src/test/pkg/DataManager.kt:14: Error: Method ConnectionHelper.disable has a broader @RequiresPermission annotation than necessary. It is annotated with {anyOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_ADMIN]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
-                    fun disable() { /* ... */ }
-                        ~~~~~~~
-                2 errors, 0 warnings
-            """
+                    src/test/pkg/DataManager.kt:5: Error: Method DataManager.disableBluetooth is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {anyOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_ADMIN]} but is only annotated with {allOf=[android.permission.BLUETOOTH_SCAN]}. [IncorrectRequiresPermissionPropagation]
+                        fun disableBluetooth(helper: ConnectionHelper) {
+                            ~~~~~~~~~~~~~~~~
+                    src/test/pkg/DataManager.kt:14: Error: Method ConnectionHelper.disable has a broader @RequiresPermission annotation than necessary. It is annotated with {anyOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_ADMIN]} but only calls APIs requiring [none]. [IncorrectRequiresPermissionPropagation]
+                        fun disable() { /* ... */ }
+                            ~~~~~~~
+                    2 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -836,11 +838,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-            src/test/pkg/FooBinder.kt:3: Error: Method FooBinder.connect must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_CONNECT]} but found: [none]. [MissingOrMismatchedRequiresPermissionAnnotation]
-                override fun connect() {
-                             ~~~~~~~
-            1 errors, 0 warnings
-        """
+                    src/test/pkg/FooBinder.kt:3: Error: Method FooBinder.connect must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_CONNECT]} but found: [none]. [MissingOrMismatchedRequiresPermissionAnnotation]
+                        override fun connect() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -874,11 +876,11 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-            src/test/pkg/FooBinder.kt:10: Error: Method Util.checkConnectPermission is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN]} but is only annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]}. [IncorrectRequiresPermissionPropagation]
-                fun checkConnectPermission() {
-                    ~~~~~~~~~~~~~~~~~~~~~~
-            1 errors, 0 warnings
-        """
+                    src/test/pkg/FooBinder.kt:10: Error: Method Util.checkConnectPermission is missing a @RequiresPermission annotation or it's too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN]} but is only annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]}. [IncorrectRequiresPermissionPropagation]
+                        fun checkConnectPermission() {
+                            ~~~~~~~~~~~~~~~~~~~~~~
+                    1 errors, 0 warnings
+                """
                     .trimIndent()
             )
     }
@@ -931,6 +933,136 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .expectClean()
     }
 
+    fun testBroadcastPermissionMismatch_Fails() {
+        lint()
+            .files(
+                kotlin(
+                        """
+                    package test.pkg
+                    import android.content.Context
+                    import android.content.Intent
+                    import android.annotation.RequiresPermission
+                    class MyManager {
+                        companion object {
+                            @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+                            const val ACTION_SCAN = "test.ACTION_SCAN"
+                        }
+                        fun testMismatch(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            context.sendBroadcast(intent)
+                        }
+                    }
+                    """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expect(
+                """
+                src/test/pkg/MyManager.kt:12: Error: Broadcast action requires {allOf=[android.permission.BLUETOOTH_SCAN]} but call is protected with [none]. [MissingOrMismatchedSendBroadcastRequiresPermission]
+                        context.sendBroadcast(intent)
+                                ~~~~~~~~~~~~~
+                1 errors, 0 warnings
+                """
+                    .trimIndent()
+            )
+    }
+
+    fun testBroadcastPermissionMismatch_Passes() {
+        lint()
+            .files(
+                kotlin(
+                        """
+                    package test.pkg
+                    import android.content.Context
+                    import android.content.Intent
+                    import android.annotation.RequiresPermission
+                    class MyManager {
+                        companion object {
+                            @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+                            const val ACTION_SCAN = "test.ACTION_SCAN"
+                        }
+                        fun testMismatch(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            context.sendBroadcast(intent, android.Manifest.permission.BLUETOOTH_SCAN)
+                        }
+                    }
+                    """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expectClean()
+    }
+
+    fun testBroadcastAsUserPermissionMismatch_Fails() {
+        lint()
+            .files(
+                kotlin(
+                        """
+                        package test.pkg
+                        import android.content.Context
+                        import android.content.Intent
+                        import android.os.UserHandle
+                        import android.annotation.RequiresPermission
+                        class MyManager {
+                            companion object {
+                                @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+                                const val ACTION_SCAN = "test.ACTION_SCAN"
+                            }
+                            fun testMismatch(context: Context) {
+                                val intent = Intent(ACTION_SCAN)
+                                context.sendBroadcastAsUser(intent, null as UserHandle?)
+                            }
+                        }
+                        """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expect(
+                """
+                src/test/pkg/MyManager.kt:13: Error: Broadcast action requires {allOf=[android.permission.BLUETOOTH_SCAN]} but call is protected with [none]. [MissingOrMismatchedSendBroadcastRequiresPermission]
+                        context.sendBroadcastAsUser(intent, null as UserHandle?)
+                                ~~~~~~~~~~~~~~~~~~~
+                1 errors, 0 warnings
+                """
+                    .trimIndent()
+            )
+    }
+
+    fun testBroadcastAsUserPermissionMismatch_Passes() {
+        lint()
+            .files(
+                kotlin(
+                        """
+                        package test.pkg
+                        import android.content.Context
+                        import android.content.Intent
+                        import android.os.UserHandle
+                        import android.annotation.RequiresPermission
+                        class MyManager {
+                            companion object {
+                                @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+                                const val ACTION_SCAN = "test.ACTION_SCAN"
+                            }
+                            fun testMismatch(context: Context) {
+                                val intent = Intent(ACTION_SCAN)
+                                context.sendBroadcastAsUser(intent, null as UserHandle?, android.Manifest.permission.BLUETOOTH_SCAN)
+                            }
+                        }
+                        """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expectClean()
+    }
+
     private val manifestPermissionStub: TestFile =
         java(
                 """
@@ -975,9 +1107,23 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
         java(
                 """
         package android.content;
+        import android.os.UserHandle;
         public class Context {
             public void enforceCallingOrSelfPermission(String permission, String message) {}
+            public void sendBroadcast(Intent intent) {}
+            public void sendBroadcast(Intent intent, String receiverPermission) {}
+            public void sendBroadcastAsUser(Intent intent, UserHandle user) {}
+            public void sendBroadcastAsUser(Intent intent, UserHandle user, String receiverPermission) {}
         }
+        """
+            )
+            .indented()
+
+    private val userHandleStub: TestFile =
+        java(
+                """
+        package android.os;
+        public class UserHandle {}
         """
             )
             .indented()
@@ -1050,7 +1196,7 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             public static long clearCallingIdentity() { return 0L; }
             public static void restoreCallingIdentity(long token) {}
         }
-    """
+        """
             )
             .indented()
 
@@ -1103,6 +1249,7 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             requiresPermissionAnnotationStub,
             enforcePermissionAnnotationStub,
             contextStub,
+            userHandleStub,
             broadcastStub,
             intentStub,
             permissionCheckerStub,
