@@ -113,7 +113,7 @@ struct codec_manager_impl {
 public:
   codec_manager_impl() {
     offload_enable_ = osi_property_get_bool("ro.bluetooth.leaudio_offload.supported", false) &&
-                      !osi_property_get_bool("persist.bluetooth.leaudio_offload.disabled", true);
+                      !osi_property_get_bool("persist.bluetooth.leaudio_offload.disabled", false);
     if (offload_enable_ == false) {
       log::info("offload disabled");
       return;
