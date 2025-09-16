@@ -246,10 +246,7 @@ class BluetoothManagerService {
                 @Override
                 public void onMediaProfileConnectionChange(boolean connected) {
                     Log.d(TAG, "IBluetoothCallback.onMediaProfileConnectionChange: " + connected);
-                    mHandler.post(
-                            () -> {
-                                AirplaneModeListener.setIsMediaProfileConnected(connected);
-                            });
+                    mHandler.post(() -> AirplaneModeListener.setIsMediaProfileConnected(connected));
                 }
 
                 @Override
@@ -1103,6 +1100,10 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
+    private static boolean isAirplaneModeOn() {
+        return AirplaneModeListener.isOnOverrode();
+    }
+
     boolean enableNoAutoConnect(String packageName) {
         if (isSatelliteModeOn()) {
             Log.d(TAG, "enableNoAutoConnect(" + packageName + "): Blocked by satellite mode");
@@ -1249,7 +1250,14 @@ class BluetoothManagerService {
         mUserContext = mContext.createContextAsUser(userHandle, 0);
 
         if (mConfigAllowAutoOn) {
-            mAutoOn = new AutoOn(mLooper, mUserContext, mUser, mState, this::enableFromAutoOn);
+            mAutoOn =
+                    new AutoOn(
+                            mLooper,
+                            mUserContext,
+                            mUser,
+                            mState,
+                            this::enableFromAutoOn,
+                            BluetoothManagerService::isAirplaneModeOn);
         }
 
         AirplaneModeListener.initialize(
@@ -1697,7 +1705,14 @@ class BluetoothManagerService {
         mUserContext = mContext.createContextAsUser(mUser, 0);
 
         if (mConfigAllowAutoOn) {
-            mAutoOn = new AutoOn(mLooper, mUserContext, mUser, mState, this::enableFromAutoOn);
+            mAutoOn =
+                    new AutoOn(
+                            mLooper,
+                            mUserContext,
+                            mUser,
+                            mState,
+                            this::enableFromAutoOn,
+                            BluetoothManagerService::isAirplaneModeOn);
         }
         if (Flags.userRestrictionRefactor()) {
             mSharingRestriction =
