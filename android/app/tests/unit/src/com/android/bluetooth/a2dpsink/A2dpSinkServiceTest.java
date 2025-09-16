@@ -108,9 +108,8 @@ public class A2dpSinkServiceTest {
 
         assertThat(mService.connect(device)).isTrue();
         syncHandler(-2 /* SM_INIT_CMD */, A2dpSinkStateMachine.MESSAGE_CONNECT);
-        StackEvent nativeEvent = StackEvent.connectionStateChanged(device, STATE_CONNECTED);
-        mService.messageFromNative(nativeEvent);
-        syncHandler(A2dpSinkStateMachine.MESSAGE_STACK_EVENT);
+        mService.onConnectionStateChangedFromNative(device, STATE_CONNECTED);
+        syncHandler(A2dpSinkStateMachine.MESSAGE_CONNECTION_STATE_CHANGED);
         assertThat(mService.getConnectionState(device)).isEqualTo(STATE_CONNECTED);
     }
 
@@ -241,10 +240,8 @@ public class A2dpSinkServiceTest {
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
 
-        StackEvent audioConfigChanged =
-                StackEvent.audioConfigChanged(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
-        mService.messageFromNative(audioConfigChanged);
-        syncHandler(A2dpSinkStateMachine.MESSAGE_STACK_EVENT);
+        mService.onAudioConfigChangedFromNative(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
+        syncHandler(A2dpSinkStateMachine.MESSAGE_AUDIO_CONFIG_CHANGED);
 
         BluetoothAudioConfig expected =
                 new BluetoothAudioConfig(
@@ -257,9 +254,7 @@ public class A2dpSinkServiceTest {
     /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
     @Test
     public void testOnAudioConfigChanged_withNullDevice_eventDropped() {
-        StackEvent audioConfigChanged =
-                StackEvent.audioConfigChanged(null, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
-        mService.messageFromNative(audioConfigChanged);
+        mService.onAudioConfigChangedFromNative(null, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
         assertThat(mService.getAudioConfig(null)).isNull();
         assertThat(mLooper.nextMessage()).isNull();
     }
@@ -268,9 +263,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testOnAudioConfigChanged_withUnknownDevice_eventDropped() {
         assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
-        StackEvent audioConfigChanged =
-                StackEvent.audioConfigChanged(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
-        mService.messageFromNative(audioConfigChanged);
+        mService.onAudioConfigChangedFromNative(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
         assertThat(mService.getAudioConfig(mDevice1)).isNull();
         assertThat(mLooper.nextMessage()).isNull();
     }

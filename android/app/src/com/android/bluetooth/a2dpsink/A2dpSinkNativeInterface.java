@@ -19,7 +19,6 @@ package com.android.bluetooth.a2dpsink;
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -30,6 +29,11 @@ public class A2dpSinkNativeInterface {
 
     private final AdapterService mAdapterService;
     private final A2dpSinkService mService;
+
+    // match up with btav_audio_state_t enum of bt_av.h
+    static final int AUDIO_STATE_REMOTE_SUSPEND = 0;
+    static final int AUDIO_STATE_STOPPED = 1;
+    static final int AUDIO_STATE_STARTED = 2;
 
     A2dpSinkNativeInterface(AdapterService adapterService, A2dpSinkService service) {
         mAdapterService = requireNonNull(adapterService);
@@ -107,24 +111,17 @@ public class A2dpSinkNativeInterface {
 
     /** For the JNI to send messages about connection state changes */
     public void onConnectionStateChanged(byte[] address, int state) {
-        StackEvent event = StackEvent.connectionStateChanged(getDevice(address), state);
-        Log.d(TAG, "onConnectionStateChanged: " + event);
-        mService.messageFromNative(event);
+        mService.onConnectionStateChangedFromNative(getDevice(address), state);
     }
 
     /** For the JNI to send messages about audio stream state changes */
-    public void onAudioStateChanged(byte[] address, int state) {
-        StackEvent event = StackEvent.audioStateChanged(getDevice(address), state);
-        Log.d(TAG, "onAudioStateChanged: " + event);
-        mService.messageFromNative(event);
+    public void onAudioStateChanged(int state) {
+        mService.onAudioStateChangedFromNative(state);
     }
 
     /** For the JNI to send messages about audio configuration changes */
     public void onAudioConfigChanged(byte[] address, int sampleRate, int channelCount) {
-        StackEvent event =
-                StackEvent.audioConfigChanged(getDevice(address), sampleRate, channelCount);
-        Log.d(TAG, "onAudioConfigChanged: " + event);
-        mService.messageFromNative(event);
+        mService.onAudioConfigChangedFromNative(getDevice(address), sampleRate, channelCount);
     }
 
     // Native methods that call into the JNI interface

@@ -355,32 +355,20 @@ public class A2dpSinkService extends ConnectableProfile {
         return stateMachine.getAudioConfig();
     }
 
-    /** Receive and route a stack event from the JNI */
-    protected void messageFromNative(StackEvent event) {
-        switch (event.mType) {
-            case StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> onConnectionStateChanged(event);
-            case StackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED -> onAudioStateChanged(event);
-            case StackEvent.EVENT_TYPE_AUDIO_CONFIG_CHANGED -> onAudioConfigChanged(event);
-            default -> Log.e(TAG, "Received unknown stack event of type " + event.mType);
-        }
-    }
-
-    private void onConnectionStateChanged(StackEvent event) {
-        BluetoothDevice device = event.mDevice;
+    void onConnectionStateChangedFromNative(BluetoothDevice device, int state) {
         if (device == null) {
             return;
         }
         A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
-        stateMachine.onStackEvent(event);
+        stateMachine.sendMessage(A2dpSinkStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
     }
 
-    private void onAudioStateChanged(StackEvent event) {
-        int state = event.mState;
+    void onAudioStateChangedFromNative(int state) {
         synchronized (mStreamHandlerLock) {
-            if (state == StackEvent.AUDIO_STATE_STARTED) {
+            if (state == A2dpSinkNativeInterface.AUDIO_STATE_STARTED) {
                 mA2dpSinkStreamHandler.sendEmptyMessage(A2dpSinkStreamHandler.SRC_STR_START);
-            } else if (state == StackEvent.AUDIO_STATE_STOPPED
-                    || state == StackEvent.AUDIO_STATE_REMOTE_SUSPEND) {
+            } else if (state == A2dpSinkNativeInterface.AUDIO_STATE_STOPPED
+                    || state == A2dpSinkNativeInterface.AUDIO_STATE_REMOTE_SUSPEND) {
                 mA2dpSinkStreamHandler.sendEmptyMessage(A2dpSinkStreamHandler.SRC_STR_STOP);
             } else {
                 Log.w(TAG, "Unhandled audio state change, state=" + state);
@@ -388,20 +376,26 @@ public class A2dpSinkService extends ConnectableProfile {
         }
     }
 
-    private void onAudioConfigChanged(StackEvent event) {
-        BluetoothDevice device = event.mDevice;
+    void onAudioConfigChangedFromNative(BluetoothDevice device, int sampleRate, int channelCount) {
+        Log.d(
+                TAG,
+                "onAudioConfigChangedFromNative("
+                        + device
+                        + ", "
+                        + sampleRate
+                        + ", "
+                        + channelCount
+                        + ")");
         if (device == null) {
             return;
         }
         A2dpSinkStateMachine stateMachine = getStateMachineForDevice(device);
         if (stateMachine == null) {
-            Log.w(
-                    TAG,
-                    "Received audio config changed event for an unconnected device, device="
-                            + device);
+            Log.w(TAG, "onAudioConfigChangedFromNative on unconnected " + device);
             return;
         }
-        stateMachine.onStackEvent(event);
+        stateMachine.sendMessage(
+                A2dpSinkStateMachine.MESSAGE_AUDIO_CONFIG_CHANGED, sampleRate, channelCount);
     }
 
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
