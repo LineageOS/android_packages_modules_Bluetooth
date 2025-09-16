@@ -1797,10 +1797,10 @@ public:
 
       char eventtime[20];
       char temptime[20];
-      struct tm* tstamp = localtime(&rssi_logs.timestamp.tv_sec);
-      if (!strftime(temptime, sizeof(temptime), "%H:%M:%S", tstamp)) {
-        log::error("strftime fails. tm_sec={}, tm_min={}, tm_hour={}", tstamp->tm_sec,
-                   tstamp->tm_min, tstamp->tm_hour);
+      struct tm tstamp;
+      if (localtime_r(&rssi_logs.timestamp.tv_sec, &tstamp) == nullptr ||
+          !strftime(temptime, sizeof(temptime), "%H:%M:%S", &tstamp)) {
+        log::error("Failed to format time for sec: %ld", (long)rssi_logs.timestamp.tv_sec);
         osi_strlcpy(temptime, "UNKNOWN TIME", sizeof(temptime));
       }
       snprintf(eventtime, sizeof(eventtime), "%s.%03ld", temptime,
