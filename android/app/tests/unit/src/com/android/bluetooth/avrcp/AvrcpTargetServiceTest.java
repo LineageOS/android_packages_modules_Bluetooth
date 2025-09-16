@@ -19,6 +19,9 @@ package com.android.bluetooth.avrcp;
 import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
 
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
+import static com.android.bluetooth.avrcp.AvrcpVersion.AVRCP_VERSION_1_5_STRING;
+import static com.android.bluetooth.avrcp.AvrcpVersion.AVRCP_VERSION_PROPERTY;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -28,14 +31,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioDeviceCallback;
 import android.media.AudioManager;
 import android.media.session.MediaSessionManager;
 import android.net.Uri;
+import android.os.SystemProperties;
 import android.os.UserManager;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -46,7 +48,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.audio_util.Metadata;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.tests.bluetooth.MockitoRule;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -64,11 +66,10 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpTargetServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
 
     @Mock private AdapterService mMockAdapterService;
-    @Mock private BluetoothManager mBluetoothManager;
-    @Mock private BluetoothAdapter mAdapter;
     @Mock private AudioManager mMockAudioManager;
     @Mock private AvrcpNativeInterface mMockNativeInterface;
     @Mock private Resources mMockResources;
@@ -95,10 +96,9 @@ public class AvrcpTargetServiceTest {
         mLooper = new TestLooper();
         mLooper.startAutoDispatch();
 
+        mockSystemPropertyGet(AVRCP_VERSION_PROPERTY, AVRCP_VERSION_1_5_STRING);
         mockGetSystemService(mMockAdapterService, AudioManager.class, mMockAudioManager);
         mockGetSystemService(mMockAdapterService, MediaSessionManager.class, mMediaSessionManager);
-        mockGetSystemService(mMockAdapterService, BluetoothManager.class, mBluetoothManager);
-        doReturn(mAdapter).when(mBluetoothManager).getAdapter();
 
         doReturn(mLooper.getNewExecutor()).when(mMockAdapterService).getMainExecutor();
 
