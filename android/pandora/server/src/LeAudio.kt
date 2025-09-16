@@ -213,6 +213,10 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
     }
 
     override fun close() {
+        audioTrack?.release()
+        audioTrack = null
+        mediaRecorder?.release()
+        mediaRecorder = null
         bluetoothAdapter.closeProfileProxy(BluetoothProfile.LE_AUDIO, bluetoothLeAudio)
         scope.cancel()
     }
