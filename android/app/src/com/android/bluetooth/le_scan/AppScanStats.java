@@ -286,7 +286,7 @@ class AppScanStats {
         if (isFilterScan) {
             for (ScanFilter filter : filters) {
                 scan.mFilterString
-                        .append("\n      └ ")
+                        .append("\n        └ ")
                         .append(scanFilterToStringWithoutNullParam(filter));
             }
         }
@@ -600,8 +600,8 @@ class AppScanStats {
     }
 
     synchronized void dump(StringBuilder sb, List<ScannerMap.ScannerApp> scannerApps) {
-        final long currentTime = System.currentTimeMillis();
-        final long currTime = mTimeProvider.elapsedRealtime();
+        final long currentTimeMillis = System.currentTimeMillis();
+        final long elapsedRealtimeMillis = mTimeProvider.elapsedRealtime();
         final int oppScan = mOppScan;
         final int lowPowerScan = mLowPowerScan;
         final int balancedScan = mBalancedScan;
@@ -617,9 +617,11 @@ class AppScanStats {
         long ambientDiscoveryScanTime = mAmbientDiscoveryScanTime;
 
         for (var ongoingScan : mOngoingScans.values()) {
-            final var scanDuration = currTime - ongoingScan.mStartTimestamp;
+            final var scanDuration = elapsedRealtimeMillis - ongoingScan.mStartTimestamp;
             final long suspendDuration =
-                    ongoingScan.mIsSuspended ? currTime - ongoingScan.mSuspendStartTime : 0;
+                    ongoingScan.mIsSuspended
+                            ? elapsedRealtimeMillis - ongoingScan.mSuspendStartTime
+                            : 0;
             final var activeDuration =
                     scanDuration - ongoingScan.mSuspendDuration - suspendDuration;
             totalScanTime += scanDuration;
@@ -700,12 +702,13 @@ class AppScanStats {
 
         if (!mLastScans.isEmpty()) {
             sb.append("\n    Last ").append(mLastScans.size()).append(" scans:");
-            appendScanDetails(sb, mLastScans, currentTime, currTime, false);
+            appendScanDetails(sb, mLastScans, currentTimeMillis, elapsedRealtimeMillis, false);
         }
 
         if (!mOngoingScans.isEmpty()) {
             sb.append("\n    Ongoing ").append(mOngoingScans.size()).append(" scans:");
-            appendScanDetails(sb, mOngoingScans.values(), currentTime, currTime, true);
+            appendScanDetails(
+                    sb, mOngoingScans.values(), currentTimeMillis, elapsedRealtimeMillis, true);
         }
 
         sb.append("\n\n");
@@ -714,22 +717,30 @@ class AppScanStats {
     private static void appendScanDetails(
             StringBuilder sb,
             Collection<LastScan> scans,
-            long currentTime,
-            long currTime,
+            long currentTimeMillis,
+            long elapsedRealtimeMillis,
             boolean isOngoing) {
         for (LastScan scan : scans) {
-            final var timestamp =
-                    Instant.ofEpochMilli(currentTime - currTime + scan.mStartTimestamp);
-            sb.append("\n      ").append(Utils.formatInstant(timestamp)).append(" - ");
+            final var bootEpochMillis = currentTimeMillis - elapsedRealtimeMillis;
+
+            final var start = Instant.ofEpochMilli(bootEpochMillis + scan.mStartTimestamp);
+            sb.append("\n      [").append(Utils.formatInstant(start));
+            if (!isOngoing) {
+                final var end = Instant.ofEpochMilli(bootEpochMillis + scan.mEndTimestamp);
+                sb.append(" --> ").append(Utils.formatInstant(end));
+            }
+            sb.append("]  (");
 
             final long duration;
             if (isOngoing) {
-                duration = currTime - scan.mStartTimestamp;
-                sb.append("Elapsed: ").append(duration).append("ms ");
+                duration = elapsedRealtimeMillis - scan.mStartTimestamp;
+                sb.append("Elapsed: ").append(duration).append("ms");
             } else {
                 duration = scan.mEndTimestamp - scan.mStartTimestamp;
-                sb.append("Duration: ").append(duration).append("ms ");
+                sb.append("Duration: ").append(duration).append("ms");
             }
+
+            sb.append(")\n        └ Info: ");
 
             if (scan.mIsOpportunisticScan) sb.append("(Opp) ");
             if (scan.mIsBackgroundScan) sb.append("(Back) ");
@@ -737,11 +748,11 @@ class AppScanStats {
             if (scan.mIsFilterScan) sb.append("(Filter) ");
             if (isOngoing && scan.mIsSuspended) sb.append("(Suspended) ");
 
-            sb.append("Results: ").append(scan.mResults);
-            sb.append(" id: (").append(scan.mScannerId).append(") ");
+            sb.append("Results: ").append(scan.mResults).append(" | ");
+            sb.append("id: (").append(scan.mScannerId).append(") | ");
 
             if (scan.mAttributionTag != null) {
-                sb.append("[").append(scan.mAttributionTag).append("] ");
+                sb.append("[").append(scan.mAttributionTag).append("] | ");
             }
 
             sb.append(scan.mIsCallbackScan ? "CB " : "PI ");
@@ -768,7 +779,9 @@ class AppScanStats {
             if (scan.mSuspendStartTime != 0) {
                 final long suspendDuration;
                 if (isOngoing && scan.mIsSuspended) {
-                    suspendDuration = (currTime - scan.mSuspendStartTime) + scan.mSuspendDuration;
+                    suspendDuration =
+                            (elapsedRealtimeMillis - scan.mSuspendStartTime)
+                                    + scan.mSuspendDuration;
                 } else {
                     suspendDuration = scan.mSuspendDuration;
                 }
@@ -779,7 +792,7 @@ class AppScanStats {
                 sb.append(", Suspended Time: ").append(suspendDuration).append("ms");
             }
 
-            sb.append("\n        └ ").append("Scan Config: ");
+            sb.append("\n        └ ").append("Config: ");
             sb.append("[ScanMode=").append(scanModeToString(scan.mScanMode));
             sb.append(", callbackType=").append(callbackTypeToString(scan.mScanCallbackType));
             sb.append("]");

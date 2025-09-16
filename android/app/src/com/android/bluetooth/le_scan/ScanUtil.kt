@@ -243,7 +243,7 @@ object ScanUtil {
     @JvmStatic
     fun scanFilterToStringWithoutNullParam(filter: ScanFilter): String {
         return buildString {
-            append("BluetoothLeScanFilter [")
+            append("Filter: [")
             filter.deviceName?.let { append(" DeviceName=").append(it) }
             filter.deviceAddress?.let { append(" DeviceAddress=").append(it) }
             filter.serviceUuid?.let { append(" ServiceUuid=").append(it) }
