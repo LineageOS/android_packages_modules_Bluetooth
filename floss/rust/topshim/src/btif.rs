@@ -169,6 +169,11 @@ pub enum BtPropertyType {
     //  BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
     //  BT_PROPERTY_REMOTE_MODEL_NUM,
     RemoteAddrType = 0x18,
+    // Unimplemented:
+    // BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED,
+    // BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE,
+    // BT_PROPERTY_LPP_OFFLOAD_FEATURES,
+    UuidsLe = 0x1C,
 
     Unknown = 0xFE,
     RemoteDeviceTimestamp = 0xFF,
@@ -816,7 +821,7 @@ impl From<bindings::bt_property_t> for BluetoothProperty {
             BtPropertyType::BdAddr => {
                 BluetoothProperty::BdAddr(RawAddress::from_bytes(slice).unwrap_or_default())
             }
-            BtPropertyType::Uuids => {
+            BtPropertyType::Uuids | BtPropertyType::UuidsLe => {
                 let count = len / mem::size_of::<Uuid>();
                 BluetoothProperty::Uuids(ptr_to_vec(prop.val as *const Uuid, count))
             }
