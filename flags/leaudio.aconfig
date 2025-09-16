@@ -308,6 +308,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_vaps_improvements"
+    namespace: "bluetooth"
+    description: "LE Audio VAPS improvements"
+    bug: "444029563"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_intent_broadcast_in_state_machine_cleanup"
     namespace: "bluetooth"
     description: "Broadcast connection changed intent when state machine is cleaned up"
