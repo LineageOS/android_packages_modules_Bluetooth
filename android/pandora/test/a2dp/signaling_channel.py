@@ -354,10 +354,11 @@ class SignalingChannel(pyee.EventEmitter):
         return await self.expect_signal(
             av.SetConfigurationResponse(transaction_label=transaction_label))
 
-    async def accept_open(self, timeout: float = 3.0):
+    async def accept_open(self, timeout: float = 3.0) -> int:
         cmd = await self.expect_signal(av.OpenCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.OpenResponse(transaction_label=cmd.transaction_label))
+        return cmd.acp_seid
 
     async def initiate_open(self, acp_seid: int, transaction_label: int = 0x04):
         self.send_signal(av.OpenCommand(transaction_label=transaction_label, acp_seid=acp_seid))
@@ -368,10 +369,18 @@ class SignalingChannel(pyee.EventEmitter):
                                        timeout=timeout)
         self.send_signal(av.StartResponse(transaction_label=cmd.transaction_label))
 
+    async def initiate_start(self, acp_seid: int, transaction_label: int = 0x05):
+        self.send_signal(av.StartCommand(transaction_label=transaction_label, acp_seid=acp_seid))
+        return await self.expect_signal(av.StartResponse(transaction_label=transaction_label))
+
     async def accept_suspend(self, timeout: float = 8.0):
         cmd = await self.expect_signal(av.SuspendCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.SuspendResponse(transaction_label=cmd.transaction_label))
+
+    async def initiate_suspend(self, acp_seid: int, transaction_label: int = 0x06):
+        self.send_signal(av.SuspendCommand(transaction_label=transaction_label, acp_seid=acp_seid))
+        return await self.expect_signal(av.SuspendResponse(transaction_label=transaction_label))
 
     async def accept_close(self, timeout: float = 3.0):
         cmd = await self.expect_signal(av.CloseCommand(transaction_label=ANY, acp_seid=ANY),
@@ -381,8 +390,8 @@ class SignalingChannel(pyee.EventEmitter):
     async def accept_open_stream(self,
                                  seid_information: list[av.SeidInformation],
                                  service_capabilities: list[av.ServiceCapability],
-                                 timeout: float = 10.0):
-        await self.wait_signaling_channel_connected()
+                                 timeout: float = 10.0) -> int:
+        await self.wait_signaling_channel_connected(timeout=timeout)
 
         expected_configuration: list[av.ServiceCapability] = []
         for capability in service_capabilities:
@@ -395,7 +404,9 @@ class SignalingChannel(pyee.EventEmitter):
         await self.accept_discover(seid_information)
         await self.accept_get_all_capabilities(service_capabilities)
         await self.accept_set_configuration(expected_configuration)
-        await self.accept_open()
+        acp_seid = await self.accept_open()
+        await self.wait_transport_channel_connected(timeout=timeout)
+        return acp_seid
 
     async def initiate_delay_report(self, delay_ms: int = 100, timeout: float = 3.0):
         delay_one_tenth = delay_ms * 10

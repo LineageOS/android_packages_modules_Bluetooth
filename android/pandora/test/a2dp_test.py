@@ -1550,6 +1550,61 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await channel.accept_get_all_capabilities(sbc_service_capabilites())
         await channel.accept_get_all_capabilities(aac_service_capabilites())
 
+    @avatar.asynchronous
+    async def test_avdt_suspend_and_start_from_remote(self) -> None:
+        """Test AVDTP suspend and start from remote.
+
+        Test steps after DUT and RD1 connected and paired:
+        1. DUT starts stream.
+        2. RD1 sends AVDT suspend request.
+        3. RD1 sends AVDT start request - the stream should restart.
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
+        channel = SignalingChannel.accept(connection)
+
+        seid_information = [
+            SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+        ]
+
+        # Connect AVDTP to RD1.
+        acp_seid, dut_ref1_source = await asyncio.gather(
+            channel.accept_open_stream(seid_information=seid_information,
+                                       service_capabilities=sbc_service_capabilites()),
+            open_source(self.dut_a2dp, dut_ref1))
+
+        logger.info("1. DUT starts stream")
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
+
+        # Verify that audio is received on the transport channel.
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=10.0)
+
+        async def suspend_after_timeout(timeout: float = 4.0) -> None:
+            await asyncio.sleep(timeout)
+            logger.info("2. RD1 sends AVDT suspend request")
+            await channel.initiate_suspend(acp_seid=acp_seid)
+
+        self.dut_a2dp.PlaybackAudio(generated_audio)
+        await asyncio.gather(
+            channel.receive_audio_data(test_log_path=self.log_path, filename="sbc",
+                                       duration_s=10.0), suspend_after_timeout())
+
+        await asyncio.sleep(3)
+
+        logger.info("3. RD1 sends AVDT start request - the stream should restart")
+        await channel.initiate_start(acp_seid=acp_seid)
+
+        await channel.receive_audio_data(test_log_path=self.log_path,
+                                         filename="sbc2",
+                                         duration_s=10.0)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
