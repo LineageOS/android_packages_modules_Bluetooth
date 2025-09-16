@@ -61,3 +61,10 @@ flag {
     description: "Check userVisible API to determine if user should startup bluetooth instance"
     bug: "438756896"
 }
+
+flag {
+    name: "concurrent_user_instances"
+    namespace: "bluetooth"
+    description: "Allow concurent stack instances given multiple published hci instances"
+    bug: "444519431"
+}
