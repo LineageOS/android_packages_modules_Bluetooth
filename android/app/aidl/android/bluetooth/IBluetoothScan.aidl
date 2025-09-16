@@ -32,7 +32,7 @@ import android.bluetooth.le.IPeriodicAdvertisingCallback;
  * @hide
  */
 interface IBluetoothScan {
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_SCAN,android.Manifest.permission.UPDATE_DEVICE_STATS}, conditional=true)")
     void registerScanner(in IScannerCallback callback, in WorkSource workSource, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void unregisterScanner(in int scannerId, in AttributionSource attributionSource);
