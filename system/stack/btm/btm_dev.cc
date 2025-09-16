@@ -579,18 +579,8 @@ tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr) {
   return p_dev_rec;
 }
 
-/*******************************************************************************
- *
- * Function         btm_find_oldest_dev_rec
- *
- * Description      Locates the oldest device record in use. It first looks for
- *                  the oldest non-paired device.  If all devices are paired it
- *                  returns the oldest paired device.
- *
- * Returns          Pointer to the record or NULL
- *
- ******************************************************************************/
-static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
+// TODO(b/315241296): Remove this function once the device_record_wipe_ranking flag is shipped
+static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec_(void) {
   tBTM_SEC_DEV_REC* p_oldest = NULL;
   uint32_t ts_oldest = 0xFFFFFFFF;
   tBTM_SEC_DEV_REC* p_oldest_paired = NULL;
@@ -623,6 +613,66 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
   }
 
   return p_oldest;
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_find_oldest_dev_rec
+ *
+ * Description      Locates the oldest device record suitable for removal. It first looks for
+ *                  the oldest non-bonded and non-connected device. If all devices are bonded, it
+ *                  lookes for the oldest connected device. Else, it returns the oldest bonded
+ *                  device.
+ *
+ * Returns          Pointer to the record or NULL
+ *
+ ******************************************************************************/
+static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
+  if (!com_android_bluetooth_flags_device_record_wipe_ranking()) {
+    return btm_find_oldest_dev_rec_();
+  }
+
+  tBTM_SEC_DEV_REC* oldest = nullptr;            // Oldest non-bonded, non-connected device
+  tBTM_SEC_DEV_REC* oldest_connected = nullptr;  // Oldest non-bonded, connected device
+  tBTM_SEC_DEV_REC* oldest_bonded = nullptr;     // Oldest bonded device
+
+  list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
+  for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
+       node = list_next(node)) {
+    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+
+    if (p_dev_rec->sec_rec.is_bonded()) {  // Device is bonded
+      if (oldest_bonded == nullptr || p_dev_rec->timestamp < oldest_bonded->timestamp) {
+        oldest_bonded = p_dev_rec;
+      }
+    } else if (p_dev_rec->get_br_edr_hci_handle() != HCI_INVALID_HANDLE ||
+               p_dev_rec->get_ble_hci_handle() != HCI_INVALID_HANDLE) {  // Device is connected
+      if (oldest_connected == nullptr || p_dev_rec->timestamp < oldest_connected->timestamp) {
+        oldest_connected = p_dev_rec;
+      }
+    } else {  // Device is neither bonded nor connected
+      if (oldest == nullptr || p_dev_rec->timestamp < oldest->timestamp) {
+        oldest = p_dev_rec;
+      }
+    }
+  }
+
+  if (oldest != nullptr) {
+    return oldest;
+  }
+
+  if (oldest_connected != nullptr) {
+    log::warn("No non-connected device found: {}", oldest_connected->bd_addr);
+    return oldest_connected;
+  }
+
+  if (oldest_bonded != nullptr) {
+    log::warn("No non-bonded, non-connected device found: {}", oldest_bonded->bd_addr);
+    return oldest_bonded;
+  }
+
+  log::error("No suitable device found!");
+  return nullptr;
 }
 
 /*******************************************************************************
