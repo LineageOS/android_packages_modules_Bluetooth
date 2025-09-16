@@ -3069,7 +3069,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
                                                            &role) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get link role peer:{}", p_dev_rec->bd_addr);
     }
-    p_dev_rec->switch_role_after_encryption = false;
+    p_dev_rec->role_switch_pending = tBTM_SEC_DEV_REC::RoleSwitchPending::kNone;
     p_dev_rec->sec_rec.security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
 
     if (status != HCI_SUCCESS) {
@@ -3101,8 +3101,10 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     } else {
       BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
-      p_dev_rec->switch_role_after_encryption =
-              p_dev_rec->IsLocallyInitiated() && role == HCI_ROLE_PERIPHERAL;
+      p_dev_rec->role_switch_pending =
+              (p_dev_rec->IsLocallyInitiated() && role == HCI_ROLE_PERIPHERAL)
+                      ? tBTM_SEC_DEV_REC::RoleSwitchPending::kAfterEnc
+                      : tBTM_SEC_DEV_REC::RoleSwitchPending::kNone;
       BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
       l2cu_start_post_bond_timer(p_dev_rec->hci_handle);
     }
@@ -3372,15 +3374,19 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     }
 
     if (com_android_bluetooth_flags_role_switch_after_encryption() &&
-        p_dev_rec->switch_role_after_encryption) {
-      p_dev_rec->switch_role_after_encryption = false;
-      if (role == HCI_ROLE_PERIPHERAL) {
+        p_dev_rec->role_switch_pending != tBTM_SEC_DEV_REC::RoleSwitchPending::kNone &&
+        role == HCI_ROLE_PERIPHERAL) {
+      if (btm_sec_use_smp_br_chnl(p_dev_rec)) {
+        /* Role switch request might prevent remote central device from initiating CTKD */
+        p_dev_rec->role_switch_pending = tBTM_SEC_DEV_REC::RoleSwitchPending::kAfterCtkd;
+      } else {
         if (get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
                     p_dev_rec->RemoteAddress()) == tBTM_STATUS::BTM_CMD_STARTED) {
           log::info("Trying to switch role to central peer: {}", p_dev_rec->RemoteAddress());
         } else {
           log::warn("Unable to switch role to central peer:{}", p_dev_rec->RemoteAddress());
         }
+        p_dev_rec->role_switch_pending = tBTM_SEC_DEV_REC::RoleSwitchPending::kNone;
       }
     }
   }
@@ -3661,6 +3667,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
     }
   }
 
+  p_dev_rec->role_switch_pending = tBTM_SEC_DEV_REC::RoleSwitchPending::kNone;
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
   bool is_pairing_device = false;
   const bool addr_matched = (btm_sec_cb.link_spec.addrt.bda == bda);
