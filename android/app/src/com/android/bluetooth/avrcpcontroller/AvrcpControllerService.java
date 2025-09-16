@@ -355,11 +355,9 @@ public class AvrcpControllerService extends ConnectableProfile {
     // Called by JNI when a device has connected or disconnected.
     synchronized void onConnectionStateChanged(
             boolean remoteControlConnected, boolean browsingConnected, BluetoothDevice device) {
-        StackEvent event =
-                StackEvent.connectionStateChanged(remoteControlConnected, browsingConnected);
         AvrcpControllerStateMachine stateMachine = getOrCreateStateMachine(device);
         if (remoteControlConnected || browsingConnected) {
-            stateMachine.connect(event);
+            stateMachine.connect(remoteControlConnected, browsingConnected);
             // The first device to connect gets to be the active device
             if (getActiveDevice() == null) {
                 setActiveDevice(device);

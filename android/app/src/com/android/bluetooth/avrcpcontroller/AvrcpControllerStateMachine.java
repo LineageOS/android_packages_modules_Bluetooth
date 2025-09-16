@@ -216,11 +216,11 @@ class AvrcpControllerStateMachine extends StateMachine {
     }
 
     /** send the connection event asynchronously */
-    public boolean connect(StackEvent event) {
-        if (event.mBrowsingConnected) {
+    public boolean connect(boolean remoteControlConnected, boolean browsingConnected) {
+        if (browsingConnected) {
             onBrowsingConnected();
         }
-        mRemoteControlConnected = event.mRemoteControlConnected;
+        mRemoteControlConnected = remoteControlConnected;
         sendMessage(CONNECT);
         return true;
     }
@@ -251,7 +251,7 @@ class AvrcpControllerStateMachine extends StateMachine {
      * @param sb output string
      */
     public void dump(StringBuilder sb) {
-        ProfileService.println(sb, "mDevice: " + mDevice + "(" + mDevice + ") " + this.toString());
+        ProfileService.println(sb, "mDevice: " + mDevice + this.toString());
         ProfileService.println(sb, "isActive: " + isActive());
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);

@@ -332,12 +332,7 @@ public class AvrcpControllerServiceTest {
 
         mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice1);
 
-        ArgumentCaptor<StackEvent> captor = ArgumentCaptor.forClass(StackEvent.class);
-        verify(mStateMachine).connect(captor.capture());
-        StackEvent event = captor.getValue();
-        assertThat(event.mType).isEqualTo(StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        assertThat(event.mRemoteControlConnected).isEqualTo(remoteControlConnected);
-        assertThat(event.mBrowsingConnected).isEqualTo(browsingConnected);
+        verify(mStateMachine).connect(eq(remoteControlConnected), eq(browsingConnected));
         assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
