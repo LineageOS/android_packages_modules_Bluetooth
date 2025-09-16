@@ -218,6 +218,9 @@ class AndroidCrownAdapter(CrownAdapter):
         # Sync time.
         adb_snippets.sync_time(self.ad)
 
+        # Enable BT Snoop.
+        adb_snippets.enable_btsnoop(self.ad)
+
         # Enable Satellite Mode to avoid turning on Bluetooth.
         self.ad.adb.shell(['settings', 'put', 'global', 'satellite_mode_enabled', '1'])
         # Disable Bluetooth auto on.

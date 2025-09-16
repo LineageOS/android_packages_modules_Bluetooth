@@ -128,9 +128,6 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
         if not self._broadcast_enabled and not self._bass_enabled:
             raise signals.TestAbortClass("Broadcast source and BASS are not enabled.")
 
-        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
-            await self.ref.open()
-
         if not self.ref.device.supports_le_features(
                 hci.LeFeatureMask.PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT |
                 hci.LeFeatureMask.PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER |
@@ -287,9 +284,6 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_lea_cb,
                 self.dut.bl4a.register_callback(bl4a_api.Module.BASS) as dut_bass_cb,
         ):
-            # TODO: Currently, there must be another audio device to
-            # enable broadcast, so we add a PACS and ASCS to make the Bumble device
-            # look like an LEHS.
             self.ref.device.add_service(
                 pacs.PublishedAudioCapabilitiesService(
                     supported_source_context=bap.ContextType(0x0000),
@@ -376,9 +370,6 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
     """
         if not self._broadcast_enabled:
             self.skipTest("Broadcast source is not enabled.")
-
-        # TODO: LEHS must be connected before starting broadcast.
-        await self._prepare_paired_devices()
 
         self.logger.info("[DUT] Start broadcasting")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
@@ -504,7 +495,11 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Set default periodic advertising sync transfer parameters")
             await self.ref.device.send_command(
                 hci.HCI_LE_Set_Default_Periodic_Advertising_Sync_Transfer_Parameters_Command(
-                    mode=0x03, skip=0x00, sync_timeout=0x4000, cte_type=0x00),
+                    mode=0x02,  # PA Report enabled, duplicate non-filtered.
+                    skip=0x00,
+                    sync_timeout=0x4000,
+                    cte_type=0x00,  # No CTE type limitation,
+                ),
                 check_result=True,
             )
 

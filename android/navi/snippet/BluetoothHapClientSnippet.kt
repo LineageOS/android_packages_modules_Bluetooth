@@ -104,16 +104,18 @@ class BluetoothHapClientSnippet : Snippet {
         val receiver =
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
+                    val device =
+                        intent.getParcelableExtra(
+                            BluetoothDevice.EXTRA_DEVICE,
+                            BluetoothDevice::class.java,
+                        )
                     when (intent.action) {
                         BluetoothHapClient.ACTION_HAP_CONNECTION_STATE_CHANGED -> {
                             Utils.postSnippetEvent(
                                 callbackId,
                                 SnippetConstants.PROFILE_CONNECTION_STATE_CHANGE,
                             ) {
-                                putString(
-                                    SnippetConstants.FIELD_DEVICE,
-                                    intent.getStringExtra(BluetoothDevice.EXTRA_DEVICE),
-                                )
+                                putString(SnippetConstants.FIELD_DEVICE, device?.address)
                                 putInt(
                                     SnippetConstants.FIELD_STATE,
                                     intent.getIntExtra(
@@ -158,6 +160,21 @@ class BluetoothHapClientSnippet : Snippet {
 
     /* Select HAP preset. */
     @Rpc(description = "Select HAP preset.")
-    fun selectHapPreset(address: String, index: Int) =
+    fun selectHapPreset(address: String, index: Int): Unit =
         proxy.selectPreset(bluetoothAdapter.getRemoteDevice(address), index)
+
+    /* Select HAP preset for group. */
+    @Rpc(description = "Select HAP preset for group.")
+    fun selectHapPresetForGroup(groudId: Int, index: Int): Unit =
+        proxy.selectPresetForGroup(groudId, index)
+
+    /* Get HAP group ID of the device. */
+    @Rpc(description = "Get HAP group ID of the device.")
+    fun getHapGroup(address: String): Int =
+        proxy.getHapGroup(bluetoothAdapter.getRemoteDevice(address))
+
+    /* Set HAP connection policy. */
+    @Rpc(description = "Set HAP connection policy.")
+    fun setHapConnectionPolicy(address: String, policy: Int): Boolean =
+        proxy.setConnectionPolicy(bluetoothAdapter.getRemoteDevice(address), policy)
 }

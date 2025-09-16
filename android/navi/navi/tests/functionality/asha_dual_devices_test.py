@@ -198,9 +198,9 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
             await asyncio.to_thread(self.dut.bt.audioPlaySine)
             for i in range(len(self.refs)):
                 async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                    self.logger.info('[REF] Wait for audio started on %dth device', i)
+                    self.logger.info('[REF-%d] Wait for audio started', i)
                     await start_event_lists[i].get()
-                    self.logger.info('[REF] Wait for audio data on %dth device', i)
+                    self.logger.info('[REF-%d] Wait for audio data', i)
                     await audio_sinks[i].get()
 
             await asyncio.sleep(_STREAMING_TIME_SECONDS)
@@ -209,7 +209,7 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
             await asyncio.to_thread(self.dut.bt.audioStop)
             for i in range(len(self.refs)):
                 async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                    self.logger.info('[REF] Wait for audio stopped on %dth device', i)
+                    self.logger.info('[REF-%d] Wait for audio stopped', i)
                     await stop_event_lists[i].get()
 
     async def test_set_volume(self) -> None:
@@ -239,14 +239,14 @@ class AshaDualDevicesTest(navi_test_base.MultiDevicesTestBase):
             self.logger.info('[DUT] Set volume to min')
             self.dut.bt.setVolume(stream_type, self.dut.bt.getMinVolume(stream_type))
             for i in range(len(self.refs)):
-                self.logger.info('[REF] Wait for volume changed on %dth device', i)
+                self.logger.info('[REF-%d] Wait for volume changed', i)
                 await volume_lists[i].wait_for_target_value(-128)
 
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
             self.logger.info('[DUT] Set volume to max')
             self.dut.bt.setVolume(stream_type, self.dut.bt.getMaxVolume(stream_type))
             for i in range(len(self.refs)):
-                self.logger.info('[REF] Wait for volume changed on %dth device', i)
+                self.logger.info('[REF-%d] Wait for volume changed', i)
                 await volume_lists[i].wait_for_target_value(0)
 
 

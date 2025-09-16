@@ -42,6 +42,8 @@ _UI_TIMEOUT = datetime.timedelta(seconds=10.0)
 _TEST_FILE_MIME_TYPE = 'text/plain'
 _VIDEO_SERVICE_NAME = 'video'
 _TEST_DATA = bytes(i % 256 for i in range(500000))
+_POSITIVE_BUTTON_RESOURCE_ID = 'android:id/button1'
+_NEGATIVE_BUTTON_RESOURCE_ID = 'android:id/button2'
 
 _CallbackHandler: TypeAlias = bl4a_api.CallbackHandler
 _Module: TypeAlias = bl4a_api.Module
@@ -77,7 +79,8 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
     @retry.retry_on_exception()
     async def _setup_paired_devices(self) -> None:
         # Reset devices.
-        self.dut.bt.enable()
+        self.assertTrue(self.dut.bt.enable())
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
         self.dut.bt.factoryReset()
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             await self.ref.reset()
@@ -112,20 +115,15 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
         # Stop staying awake during the test.
         self.dut.shell('svc power stayon false')
 
-        if self.dut.device.services.has_service_by_name(_VIDEO_SERVICE_NAME):
-            self.dut.device.services.unregister(_VIDEO_SERVICE_NAME)
-
     @override
     @retry.retry_on_exception()
     async def async_setup_test(self) -> None:
         # Restart Bluetooth on DUT to clear any stale state.
-        self.dut.bt.disable()
-        self.dut.bt.enable()
-
-    @override
-    async def async_teardown_test(self) -> None:
-        await super().async_teardown_test()
-        self.dut.device.services.create_output_excerpts_all(self.current_test_info)
+        self.assertTrue(self.dut.bt.disable())
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.OFF)
+        self.assertTrue(self.dut.bt.enable())
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
+        self.dut.shell('input keyevent KEYCODE_HOME')
 
     async def _make_opp_client_from_ref(self) -> opp.Client:
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
@@ -181,9 +179,9 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info('[DUT] Select the target device')
         # After receiving the sharing file intent, OPP service will pop a Device
         # Selector Activity, showing all available devices with their alias names.
-        ui_result = await asyncio.to_thread(lambda: self.dut.ui(text=self.dut.bt.getAlias(
+        ui_result = await asyncio.to_thread(lambda: self.dut.ui(textContains=self.dut.bt.getAlias(
             self.ref.address)).wait.click(timeout=_UI_TIMEOUT))
-        self.assertTrue(ui_result)
+        self.assertTrue(ui_result, 'Failed to click the target device.')
 
         self.logger.info('[REF] Wait for OPP connection.')
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
@@ -232,14 +230,15 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
         # A notification will be popped up on DUT when there is an incoming file
         # transfer request. We need to click the notification to pop a dialog, and
         # then click the ACCEPT button to accept the file transfer.
+        self.dut.shell('cmd statusbar expand-notifications')
         ui_result = await asyncio.to_thread(
-            lambda: self.dut.ui(text=file_name).wait.click(timeout=_UI_TIMEOUT))
-        self.assertTrue(ui_result)
+            lambda: self.dut.ui(textContains=file_name).wait.click(timeout=_UI_TIMEOUT))
+        self.assertTrue(ui_result, 'Failed to click the file name.')
         ui_result = await asyncio.to_thread(lambda: self.dut.ui(
-            text='ACCEPT',
+            res=_POSITIVE_BUTTON_RESOURCE_ID,
             clickable=True,
         ).wait.click(timeout=_UI_TIMEOUT))
-        self.assertTrue(ui_result)
+        self.assertTrue(ui_result, 'Failed to click the accept button.')
 
         self.logger.info('[REF] Wait file transfer to complete.')
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
@@ -282,14 +281,15 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
                 file_type=_TEST_FILE_MIME_TYPE,
             ))
         self.logger.info('[DUT] Reject file transfer.')
+        self.dut.shell('cmd statusbar expand-notifications')
         ui_result = await asyncio.to_thread(
-            lambda: self.dut.ui(text=file_name).wait.click(timeout=_UI_TIMEOUT))
-        self.assertTrue(ui_result)
+            lambda: self.dut.ui(textContains=file_name).wait.click(timeout=_UI_TIMEOUT))
+        self.assertTrue(ui_result, 'Failed to click the file name.')
         ui_result = await asyncio.to_thread(lambda: self.dut.ui(
-            text='DECLINE',
+            res=_NEGATIVE_BUTTON_RESOURCE_ID,
             clickable=True,
         ).wait.click(timeout=_UI_TIMEOUT))
-        self.assertTrue(ui_result)
+        self.assertTrue(ui_result, 'Failed to click the reject button.')
 
         self.logger.info('[REF] Wait file transfer to complete.')
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):

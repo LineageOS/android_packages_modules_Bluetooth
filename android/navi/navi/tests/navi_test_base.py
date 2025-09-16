@@ -86,6 +86,7 @@ class AndroidSnippetDeviceWrapper:
     _SNIPPET_NAME: ClassVar[str] = "bt"
     _UI_AUTOMATOR_NAME: ClassVar[str] = "ui"
 
+    @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
     def __init__(self, device: android_device.AndroidDevice) -> None:
         self.device = device
         # Sync time.
@@ -169,6 +170,7 @@ class AndroidSnippetDeviceWrapper:
     """
         # Bluetooth must be on to get firmware version.
         if not self.bt.enable():
+            self.bt.waitForAdapterState(android_constants.AdapterState.ON)
             raise signals.TestFailure("Failed to enable Bluetooth")
         with contextlib.suppress(adb.AdbError):
             response = self.shell("dumpsys android.hardware.bluetooth.IBluetoothHci/default | "
@@ -483,13 +485,11 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
                 "Setting max_retry_count to %s for all test methods.",
                 max_retry_count,
             )
-            max_retry_count = int(max_retry_count)
             for test_method in self._generated_test_table.values():
-                old_max_retry_count = getattr(test_method, base_test.ATTR_MAX_RETRY_CNT, 0)
                 setattr(
                     test_method,
                     base_test.ATTR_MAX_RETRY_CNT,
-                    max(old_max_retry_count, max_retry_count),
+                    int(max_retry_count),
                 )
 
     def _get_android_controllers(self, counts: int = 1) -> list[android_device.AndroidDevice]:
@@ -736,6 +736,7 @@ class AndroidBumbleTestBase(BaseTestBase):
             device=self.dut.device,
             destination_base_path=self.current_test_info.output_path,
         )
+        adb_snippets.cleanup_btsnoop(device=self.dut.device)
         adb_snippets.download_dumpsys(
             device=self.dut.device,
             destination_base_path=self.current_test_info.output_path,
@@ -756,6 +757,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                     destination_base_path=self.current_test_info.output_path,
                     filename_prefix="bumble",
                 )
+                adb_snippets.cleanup_btsnoop(device=ref.adapter.ad)
 
     @retry_lib.retry_on_exception()
     @override
@@ -775,6 +777,7 @@ class AndroidBumbleTestBase(BaseTestBase):
 
         # Make sure Bluetooth is enabled before factory reset.
         self.assertTrue(self.dut.bt.enable())
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
 
         # Clean GATT cache - or it may skip GATT service discovery and break some
         # LE profile tests.
@@ -789,6 +792,7 @@ class AndroidBumbleTestBase(BaseTestBase):
 
         # Make sure Bluetooth is enabled after factory reset.
         self.assertTrue(self.dut.bt.enable())
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
 
     @override
     async def async_teardown_test(self) -> None:

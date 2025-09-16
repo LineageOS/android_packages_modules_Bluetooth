@@ -16,7 +16,6 @@
 
 package com.google.android.bluetooth.snippet
 
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothServerSocket
@@ -41,48 +40,26 @@ class BluetoothL2capSnippet : Snippet {
 
     /**
      * Connects an L2CAP channel to device with [address] over [transport] on server of [psm], and
-     * encrypt if [secure] is true. If [transport] is [BluetoothDevice.TRANSPORT_LE], [addressType]
-     * will be used to specify the type of remote address.
+     * encrypt if [secure] is true. [addressType] will be used to specify the type of remote
+     * address.
      */
     @Rpc(description = "Connect an L2CAP channel")
     fun l2capConnect(
         address: String,
         secure: Boolean,
         psm: Int,
-        transport: Int,
         @RpcOptional addressType: Int?,
     ): String {
+        val device =
+            bluetoothAdapter.getRemoteLeDevice(
+                address,
+                addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            )
         val socket =
-            when (transport) {
-                BluetoothDevice.TRANSPORT_LE -> {
-                    val device =
-                        bluetoothAdapter.getRemoteLeDevice(
-                            address,
-                            addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
-                        )
-                    when (secure) {
-                        true -> device.createL2capChannel(psm)
-                        false -> device.createInsecureL2capChannel(psm)
-                    }
-                }
-                BluetoothDevice.TRANSPORT_BREDR -> {
-                    val device = bluetoothAdapter.getRemoteDevice(address)
-                    when (secure) {
-                        true ->
-                            BluetoothDevice::class
-                                .java
-                                .getMethod("createL2capSocket", Int::class.java)
-                                .invoke(device, psm)
-                        false ->
-                            BluetoothDevice::class
-                                .java
-                                .getMethod("createInsecureL2capSocket", Int::class.java)
-                                .invoke(device, psm)
-                    }
-                }
-                else -> throw RuntimeException("Unexpected transport:$transport")
+            when (secure) {
+                true -> device.createL2capChannel(psm)
+                false -> device.createInsecureL2capChannel(psm)
             }
-                as BluetoothSocket
         socket.connect()
         val cookie = UUID.randomUUID().toString()
         sockets[cookie] = socket
@@ -90,36 +67,16 @@ class BluetoothL2capSnippet : Snippet {
     }
 
     /**
-     * Listens for L2CAP channel on [psm] over [transport], requiring encryption if [secure], and
-     * returns the allocated PSM.
+     * Listens for L2CAP channel on [psm] requiring encryption if [secure], and returns the
+     * allocated PSM.
      */
     @Rpc(description = "Open an L2CAP server")
-    fun l2capOpenServer(secure: Boolean, transport: Int, psm: Int): Int {
+    fun l2capOpenServer(secure: Boolean, psm: Int): Int {
         val serverSocket =
-            when (transport) {
-                BluetoothDevice.TRANSPORT_LE -> {
-                    when (secure) {
-                        true -> bluetoothAdapter.listenUsingL2capChannel()
-                        false -> bluetoothAdapter.listenUsingInsecureL2capChannel()
-                    }
-                }
-                BluetoothDevice.TRANSPORT_BREDR -> {
-                    when (secure) {
-                        true ->
-                            BluetoothAdapter::class
-                                .java
-                                .getMethod("listenUsingL2capOn", Int::class.java)
-                                .invoke(bluetoothAdapter, psm)
-                        false ->
-                            BluetoothAdapter::class
-                                .java
-                                .getMethod("listenUsingInsecureL2capOn", Int::class.java)
-                                .invoke(bluetoothAdapter, psm)
-                    }
-                }
-                else -> throw RuntimeException("Unexpected transport:$transport")
+            when (secure) {
+                true -> bluetoothAdapter.listenUsingL2capChannel()
+                false -> bluetoothAdapter.listenUsingInsecureL2capChannel()
             }
-                as BluetoothServerSocket
         servers[serverSocket.psm] = serverSocket
         return serverSocket.psm
     }
