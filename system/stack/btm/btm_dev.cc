@@ -49,6 +49,7 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_interface.h"
+#include "stack/include/main_thread.h"
 
 using namespace bluetooth;
 
@@ -59,6 +60,9 @@ constexpr char kBtmLogTag[] = "BOND";
 }
 
 static void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec) {
+  if (!is_main_thread()) {
+    log::error("From non-main thread");
+  }
   p_dev_rec->sec_rec.link_key.fill(0);
   memset(&p_dev_rec->sec_rec.ble_keys, 0, sizeof(tBTM_SEC_BLE_KEYS));
   list_remove(btm_sec_cb.sec_dev_rec, p_dev_rec);
@@ -634,6 +638,9 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
  *
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
+  if (!is_main_thread()) {
+    log::error("Called from non-main thread");
+  }
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
 
   if (btm_sec_cb.sec_dev_rec == nullptr) {
@@ -643,6 +650,7 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
 
   if (list_length(btm_sec_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
     p_dev_rec = btm_find_oldest_dev_rec();
+    log::warn("Removing oldest device record: {}", p_dev_rec->bd_addr);
     wipe_secrets_and_remove(p_dev_rec);
   }
 

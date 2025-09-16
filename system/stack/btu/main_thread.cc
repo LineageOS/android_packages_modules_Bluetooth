@@ -36,6 +36,8 @@ static MessageLoopThread main_thread("bt_main_thread", os::Thread::Priority::REA
 bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
 bluetooth::common::PostableContext* get_main() { return main_thread.Postable(); }
 
+bool is_main_thread() { return main_thread.IsRunningOnSameThread(); }
+
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   if (!main_thread.DoInThread(std::move(task))) {
     log::error("failed to post task to task runner!");
