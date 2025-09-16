@@ -66,6 +66,16 @@ using ::bluetooth::os::Thread;
 using ::bluetooth::os::WakelockManager;
 
 namespace bluetooth {
+static std::chrono::milliseconds get_gd_stack_timeout_ms(bool is_start) {
+  log::assert_that(!com::android::bluetooth::flags::unify_timeout_property(),
+                   "unify_timeout_property is enabled");
+  auto gd_timeout = os::GetSystemPropertyUint32(
+          is_start ? "bluetooth.gd.start_timeout" : "bluetooth.gd.stop_timeout",
+          is_start ? 3000 : 5000);
+  return std::chrono::milliseconds(gd_timeout *
+                                   os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1));
+}
+
 namespace shim {
 
 struct Stack::impl {
@@ -197,8 +207,24 @@ void Stack::StartEverything() {
   auto future = promise.get_future();
   management_handler_->Post(
           common::BindOnce(&Stack::handle_start_up, common::Unretained(this), std::move(promise)));
-  auto init_status = future.wait_for(
-          std::chrono::milliseconds(get_gd_stack_timeout_ms(/* is_start = */ true)));
+
+  std::chrono::milliseconds start_timeout;
+  if (!com::android::bluetooth::flags::unify_timeout_property()) {
+    start_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
+  } else {
+    if (android::sysprop::bluetooth::Hardware::degraded_performance_mode().value_or(false) ||
+        os::GetSystemPropertyUint32("ro.hw_timeout_multiplier", 1) != 1) {
+      log::warn("Running in degraded performance mode due to slow hardware");
+      start_timeout = std::chrono::milliseconds(8000);
+    } else if (bluetooth::os::GetSystemPropertyUint32("ro.build.version.sdk", 99) < 37) {
+      start_timeout = std::chrono::milliseconds(
+              os::GetSystemPropertyUint32("bluetooth.gd.start_timeout", 3000));
+    } else {
+      start_timeout = std::chrono::milliseconds(3000);
+    }
+  }
+
+  auto init_status = future.wait_for(start_timeout);
 
   log::info("init_status == {}", int(init_status));
 
@@ -258,8 +284,16 @@ void Stack::Stop() {
   management_handler_->Post(
           common::BindOnce(&Stack::handle_shut_down, common::Unretained(this), std::move(promise)));
 
-  auto stop_status = future.wait_for(
-          std::chrono::milliseconds(get_gd_stack_timeout_ms(/* is_start = */ false)));
+  std::chrono::milliseconds stop_timeout;
+  if (com::android::bluetooth::flags::unify_timeout_property()) {
+    stop_timeout = std::chrono::milliseconds(12000);
+  } else {
+    stop_timeout = get_gd_stack_timeout_ms(/* is_start = */ true);
+  }
+
+  // This timeout is racing with the Kill from SystemServer, it should never fire here.
+  // The management_handler_ thread should be removed and this run synchronously instead
+  auto stop_status = future.wait_for(stop_timeout);
 
   WakelockManager::Get().Release();
   WakelockManager::Get().CleanUp();
@@ -404,15 +438,5 @@ void Stack::handle_shut_down(std::promise<void> promise) {
   pimpl_.reset();
   promise.set_value();
 }
-
-std::chrono::milliseconds Stack::get_gd_stack_timeout_ms(bool is_start) {
-  auto gd_timeout = os::GetSystemPropertyUint32(
-          is_start ? "bluetooth.gd.start_timeout" : "bluetooth.gd.stop_timeout",
-          /* default_value = */ is_start ? 3000 : 5000);
-  return std::chrono::milliseconds(gd_timeout *
-                                   os::GetSystemPropertyUint32("ro.hw_timeout_multiplier",
-                                                               /* default_value = */ 1));
-}
-
 }  // namespace shim
 }  // namespace bluetooth
