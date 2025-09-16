@@ -108,7 +108,7 @@ class SignalingChannel(pyee.EventEmitter):
             raise TimeoutError(
                 "TimeoutError while waiting for AVDT signaling channel to open") from None
 
-    async def wait_transport_channel_connected(self, timeout: float = 5):
+    async def wait_transport_channel_connected(self, timeout: float = 8.0):
         if (self.role != "acceptor"):
             raise ValueError("wait_transport_channel_connected failed. role is not acceptor")
 
@@ -139,6 +139,14 @@ class SignalingChannel(pyee.EventEmitter):
             raise ValueError("RTP L2CAP channel already exists")
         self.transport_channel = await self.connection.create_l2cap_channel(
             l2cap.ClassicChannelSpec(psm=avdtp.AVDTP_PSM))
+
+        def _on_channel_close():
+            logger.info('RTP channel closed')
+            self.transport_channel = None
+
+        # Register to receive PDUs from the channel
+        self.transport_channel.sink = self._on_avdtp_packet
+        self.transport_channel.on('close', _on_channel_close)
 
     async def disconnect_transport_channel(self):
         if not self.transport_channel:
@@ -225,8 +233,14 @@ class SignalingChannel(pyee.EventEmitter):
         self.role = "initiator"
         self.signaling_channel = await self.connection.create_l2cap_channel(
             spec=l2cap.ClassicChannelSpec(psm=avdtp.AVDTP_PSM))
+
+        def _on_channel_close() -> None:
+            logger.info("Signaling channel closed")
+            self.signaling_channel = None
+
         # Register to receive PDUs from the channel
         self.signaling_channel.sink = self._on_pdu
+        self.signaling_channel.on('close', _on_channel_close)
 
     def _accept_signaling_channel(self):
         if self.avdtp_server:
@@ -293,6 +307,12 @@ class SignalingChannel(pyee.EventEmitter):
             av.DiscoverResponse(transaction_label=cmd.transaction_label,
                                 seid_information=seid_information))
 
+    async def initiate_discover(self, transaction_label: int = 0x01):
+        self.send_signal(av.DiscoverCommand(transaction_label=transaction_label))
+        return await self.expect_signal(av.DiscoverResponse(transaction_label=transaction_label,
+                                                            seid_information=ANY),
+                                        timeout=5.0)
+
     async def accept_get_all_capabilities(self,
                                           service_capabilities: typing.List[av.ServiceCapability]):
         cmd = await self.expect_signal(
@@ -300,6 +320,16 @@ class SignalingChannel(pyee.EventEmitter):
         self.send_signal(
             av.GetAllCapabilitiesResponse(transaction_label=cmd.transaction_label,
                                           service_capabilities=service_capabilities))
+
+    async def initiate_get_all_capabilities(self,
+                                            seid_information: av.SeidInformation,
+                                            transaction_label: int = 0x02):
+        self.send_signal(
+            av.GetAllCapabilitiesCommand(transaction_label=transaction_label,
+                                         acp_seid=seid_information.acp_seid))
+        return await self.expect_signal(
+            av.GetAllCapabilitiesResponse(transaction_label=transaction_label,
+                                          service_capabilities=ANY))
 
     async def accept_set_configuration(self,
                                        expected_configuration: typing.List[av.ServiceCapability]):
@@ -313,10 +343,27 @@ class SignalingChannel(pyee.EventEmitter):
         self.int_seid = cmd.int_seid
         self.send_signal(av.SetConfigurationResponse(transaction_label=cmd.transaction_label))
 
+    async def initiate_set_configuration(self,
+                                         acp_seid: int,
+                                         int_seid: int,
+                                         configuration: list[av.ServiceCapability],
+                                         transaction_label: int = 0x03):
+        self.send_signal(
+            av.SetConfigurationCommand(transaction_label=transaction_label,
+                                       acp_seid=acp_seid,
+                                       int_seid=int_seid,
+                                       service_capabilities=configuration))
+        return await self.expect_signal(
+            av.SetConfigurationResponse(transaction_label=transaction_label))
+
     async def accept_open(self, timeout: float = 3.0):
         cmd = await self.expect_signal(av.OpenCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.OpenResponse(transaction_label=cmd.transaction_label))
+
+    async def initiate_open(self, acp_seid: int, transaction_label: int = 0x04):
+        self.send_signal(av.OpenCommand(transaction_label=transaction_label, acp_seid=acp_seid))
+        return await self.expect_signal(av.OpenResponse(transaction_label=transaction_label))
 
     async def accept_start(self, timeout: float = 8.0):
         cmd = await self.expect_signal(av.StartCommand(transaction_label=ANY, acp_seid=ANY),

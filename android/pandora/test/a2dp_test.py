@@ -1482,6 +1482,74 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Expect the DUT to close connection.
         await channel.accept_close(timeout=10.0)
 
+    @avatar.asynchronous
+    async def test_avdt_handles_stream_discover_response_in_open_state(self) -> None:
+        """Test AVDTP handling stream discovery response in open state.
+
+        Test steps after DUT and RD1 connected and paired:
+        1. RD1 initiates AVDT signalling channel connection to DUT.
+        2. RD1 configures AVDT.
+        3. RD1 sets AVDT configuration and expects discover command from DUT.
+        4. RD1 initiates AVDT open before responding to discover command.
+        5. RD1 resposonds to discover command after media channel is opened.
+        6. DUT should be able to get capabilities from RD1.
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        logger.info("1. RD1 initiates AVDT signalling channel connection to DUT")
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
+        channel = await SignalingChannel.initiate(connection)
+
+        logger.info("2. RD1 configures AVDT")
+        discover_rsp = await channel.initiate_discover()
+        logger.debug(f"SEID information: {discover_rsp.seid_information}")
+
+        service_capabilities: list[ServiceCapability] = []
+        for seid in discover_rsp.seid_information:
+            getcap_rsp = await channel.initiate_get_all_capabilities(seid_information=seid)
+            service_capabilities.append(getcap_rsp.service_capabilities)
+        assert_equal(len(service_capabilities), len(discover_rsp.seid_information))
+        logger.debug(f"Service capabilities: {service_capabilities}")
+
+        acp_seid = 0
+        aac_configuration: ServiceCapability | None = None
+        for capabilities, seid_info in zip(service_capabilities, discover_rsp.seid_information):
+            if (capabilities[1].media_codec_type == A2DP_MPEG_2_4_AAC_CODEC_TYPE):
+                acp_seid = seid_info.acp_seid
+                aac_configuration = capabilities
+                break
+
+        local_seid_information = [
+            SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE),
+            SeidInformation(acp_seid=0x02, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+        ]
+
+        logger.info("3. RD1 sets AVDT configuration and expects discover command from DUT")
+        await channel.initiate_set_configuration(acp_seid=acp_seid,
+                                                 int_seid=local_seid_information[1].acp_seid,
+                                                 configuration=aac_configuration)
+        discover_cmd = await channel.expect_signal(DiscoverCommand(transaction_label=ANY))
+
+        logger.info("4. RD1 initiates AVDT open before responding to discover command")
+        await channel.initiate_open(acp_seid=acp_seid)
+        await channel.initiate_transport_channel()
+
+        logger.info("5. RD1 resposonds to discover command after media channel is opened")
+
+        channel.send_signal(
+            DiscoverResponse(transaction_label=discover_cmd.transaction_label,
+                             seid_information=local_seid_information))
+
+        logger.info("6. DUT should be able to get capabilities from RD1")
+        await channel.accept_get_all_capabilities(sbc_service_capabilites())
+        await channel.accept_get_all_capabilities(aac_service_capabilites())
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
