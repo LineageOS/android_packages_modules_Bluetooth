@@ -23,7 +23,7 @@ from mmi2grpc._helpers import assert_description, match_description
 from mmi2grpc._proxy import ProfileProxy
 from mmi2grpc._rootcanal import Dongle
 from pandora.a2dp_grpc import A2DP
-from pandora.a2dp_pb2 import PlaybackAudioRequest, Sink, Source
+from pandora.a2dp_pb2 import MONO, PlaybackAudioRequest, Sink, Source, STEREO
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
 
@@ -93,6 +93,7 @@ class A2DPProxy(ProfileProxy):
                 "A2DP/SRC/SET/BV-04-C",
                 "A2DP/SRC/SET/BV-06-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BI-14-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BI-23-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BI-26-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BV-16-C",
                 "AVDTP/SRC/ACP/SIG/SMG/BV-18-C",
@@ -719,7 +720,19 @@ class A2DPProxy(ProfileProxy):
         Send a reconfigure command to PTS.
         """
 
-        # TODO
+        currentConfig = self.a2dp.GetConfiguration(connection=self.connection)
+        if currentConfig.configuration.id.HasField('sbc'):
+            currentConfig.configuration.parameters.channel_mode = (
+                STEREO if currentConfig.configuration.parameters.channel_mode == MONO else MONO)
+        elif currentConfig.configuration.id.HasField('mpeg_aac'):
+            currentConfig.configuration.parameters.sampling_frequency_hz = (
+                48000
+                if currentConfig.configuration.parameters.sampling_frequency_hz == 44100 else 44100)
+        else:
+            raise Exception(f"Unsupported codec type {currentConfig.configuration.id}")
+
+        self.a2dp.SetConfiguration(connection=self.connection,
+                                   configuration=currentConfig.configuration)
         return "OK"
 
     @assert_description

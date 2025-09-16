@@ -902,6 +902,9 @@ uint8_t avdt_scb_to_hdl(AvdtpScb* p_scb) { return p_scb->ScbHandle(); }
  * Function         avdt_scb_by_hdl
  *
  * Description      Given an scb handle (or seid), return a pointer to the scb.
+ *                  SCBs are allocated on BT init for all stack known codecs
+ *                  and for each peer. It will return scb if allocated regardless
+ *                  of ccb state for given scb.
  *
  *
  * Returns          Pointer to scb or NULL if index is out of range or scb
@@ -933,6 +936,34 @@ AvdtpScb* avdt_scb_by_hdl(uint8_t hdl) {
 
 /*******************************************************************************
  *
+ * Function         avdt_connected_scb_by_hdl
+ *
+ * Description      Given an scb handle (or seid), return a pointer to the scb.
+ *                  This will only return an scb for allocated ccb. The ccb is
+ *                  allocated on connection.
+ *
+ *
+ * Returns          Pointer to scb or NULL if index is out of range, scb or ccb
+ *                  is not allocated.
+ *
+ ******************************************************************************/
+AvdtpScb* avdt_connected_scb_by_hdl(uint8_t hdl) {
+  AvdtpScb* p_scb = avdt_scb_by_hdl(hdl);
+
+  if (p_scb == NULL) {
+    log::warn("SCB for handle: {} is null", hdl);
+    return nullptr;
+  }
+
+  if (!p_scb->p_ccb || !p_scb->p_ccb->allocated) {
+    log::warn("SCB: {} - CCB is null or not allocated", hdl);
+    return nullptr;
+  }
+  return p_scb;
+}
+
+/*******************************************************************************
+ *
  * Function         avdt_scb_verify
  *
  * Description      Verify the condition of a list of scbs.
@@ -956,12 +987,12 @@ uint8_t avdt_scb_verify(AvdtpCcb* p_ccb, uint8_t state, uint8_t* p_seid, uint16_
   for (int i = 0; (i < num_seid) && (i < AVDT_NUM_SEPS); i++) {
     AvdtpScb* p_scb = avdt_scb_by_hdl(p_seid[i]);
     if (p_scb == NULL) {
-      *p_err_code = AVDT_ERR_BAD_STATE;
+      *p_err_code = AVDT_ERR_SEID;
       return p_seid[i];
     }
 
     if (p_scb->p_ccb != p_ccb) {
-      *p_err_code = AVDT_ERR_BAD_STATE;
+      *p_err_code = AVDT_ERR_SEID;
       return p_seid[i];
     }
 
