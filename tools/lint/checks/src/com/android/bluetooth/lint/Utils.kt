@@ -20,6 +20,7 @@ import com.android.tools.lint.detector.api.getUMethod
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParameter
 
@@ -32,6 +33,7 @@ const val ANNOTATION_PERMISSION_NAME = "android.annotation.PermissionName"
 
 const val CLASS_BINDER = "android.os.Binder"
 const val CLASS_CONTEXT = "android.content.Context"
+const val CLASS_INTENT = "android.content.Intent"
 const val CLASS_PERMISSION_CHECKER = "android.content.PermissionChecker"
 const val CLASS_PERMISSION_MANAGER = "android.permission.PermissionManager"
 
@@ -58,3 +60,6 @@ fun getPermissionMethodAnnotation(method: UMethod?): UAnnotation? =
 
 fun hasPermissionNameAnnotation(parameter: UParameter) =
     parameter.annotations.any { it.hasQualifiedName(ANNOTATION_PERMISSION_NAME) }
+
+fun UField?.getRequiresPermissionAnnotation(): UAnnotation? =
+    this?.uAnnotations?.firstOrNull { it.qualifiedName == ANNOTATION_REQUIRES_PERMISSION }
