@@ -54,6 +54,7 @@ class PeriodicScanManagerTest {
 
     private val device: BluetoothDevice =
         getRealDevice(REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+    private val sid: Int = 123
 
     private lateinit var periodicScanManager: PeriodicScanManager
     private lateinit var scanResult: ScanResult
@@ -65,7 +66,7 @@ class PeriodicScanManagerTest {
 
         periodicScanManager =
             PeriodicScanManager(adapterService, scanController, periodicScanNativeInterface)
-        scanResult = ScanResult(device, 0, 0, 0, 0, 0, 0, 0, null, 0)
+        scanResult = ScanResult(device, 0, 0, 0, sid, 0, 0, 0, null, 0)
 
         doReturn(binder).whenever(callback).asBinder()
         doNothing().whenever(binder).linkToDeath(any(), eq(0))
@@ -80,24 +81,24 @@ class PeriodicScanManagerTest {
 
     @Test
     fun startSync_invokesNative() {
-        periodicScanManager.startSync(scanResult, 0, 0, callback)
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
 
         verify(periodicScanNativeInterface)
-            .startSync(eq(0), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
     }
 
     @Test
     fun startSync_onSyncStarted() {
-        periodicScanManager.startSync(scanResult, 0, 0, callback)
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
 
         val regIdCaptor = argumentCaptor<Int>()
         verify(periodicScanNativeInterface)
-            .startSync(eq(0), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
 
         periodicScanManager.onSyncStarted(
             regIdCaptor.firstValue,
             syncHandle,
-            0,
+            sid,
             BluetoothDevice.ADDRESS_TYPE_RANDOM,
             REMOTE_DEVICE_ADDRESS,
             0,
@@ -105,7 +106,37 @@ class PeriodicScanManagerTest {
             0,
         )
 
-        verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(0), eq(0), eq(0), eq(0))
+        verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(sid), eq(0), eq(0), eq(0))
+    }
+
+    @Test
+    fun startSyncScanResult_invokesNative() {
+        periodicScanManager.startSync(scanResult, 0, 0, callback)
+
+        verify(periodicScanNativeInterface)
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+    }
+
+    @Test
+    fun startSyncScanResult_onSyncStarted() {
+        periodicScanManager.startSync(scanResult, 0, 0, callback)
+
+        val regIdCaptor = argumentCaptor<Int>()
+        verify(periodicScanNativeInterface)
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
+
+        periodicScanManager.onSyncStarted(
+            regIdCaptor.firstValue,
+            syncHandle,
+            sid,
+            BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            REMOTE_DEVICE_ADDRESS,
+            0,
+            100,
+            0,
+        )
+
+        verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(sid), eq(0), eq(0), eq(0))
     }
 
     companion object {

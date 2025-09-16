@@ -552,6 +552,17 @@ public class ScanControllerTest {
 
     @Test
     public void registerSync() {
+        int sid = 123;
+        int skip = 1;
+        int timeout = 2;
+        IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
+
+        mScanController.registerSync(mDevice, sid, skip, timeout, callback);
+        verify(mPeriodicScanManager).startSync(mDevice, sid, skip, timeout, callback);
+    }
+
+    @Test
+    public void registerSyncScanResult() {
         ScanResult scanResult = new ScanResult(mDevice, 1, 2, 3, 4, 5, 6, 7, null, 8);
         int skip = 1;
         int timeout = 2;

@@ -243,6 +243,16 @@ public class PeriodicScanManager {
     public void startSync(
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         mScanController.enforceScanThread();
+        startSync(scanResult.getDevice(), scanResult.getAdvertisingSid(), skip, timeout, callback);
+    }
+
+    public void startSync(
+            BluetoothDevice device,
+            int sid,
+            int skip,
+            int timeout,
+            IPeriodicAdvertisingCallback callback) {
+        mScanController.enforceScanThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = callback.asBinder();
         try {
@@ -251,9 +261,8 @@ public class PeriodicScanManager {
             throw new IllegalArgumentException("Can't link to periodic scanner death");
         }
 
-        String address = scanResult.getDevice().getAddress();
-        int addressType = scanResult.getDevice().getAddressType();
-        int sid = scanResult.getAdvertisingSid();
+        String address = device.getAddress();
+        int addressType = device.getAddressType();
         Log.d(
                 TAG,
                 "startSync for Device: "
