@@ -105,7 +105,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -902,6 +901,10 @@ public final class BluetoothAdapter {
 
         @GuardedBy("BluetoothAdapter.sProfileLock")
         void connect(BluetoothProfile proxy, IBinder binder) {
+            if (Flags.getProfileOneway() && mConnected) {
+                Log.v(TAG, getProfileName(mProfile) + " already connected");
+                return;
+            }
             Log.d(TAG, getProfileName(mProfile) + " connected");
             mConnected = true;
             proxy.onServiceConnected(binder);
@@ -910,6 +913,10 @@ public final class BluetoothAdapter {
 
         @GuardedBy("BluetoothAdapter.sProfileLock")
         void disconnect(BluetoothProfile proxy) {
+            if (Flags.getProfileOneway() && !mConnected) {
+                Log.v(TAG, getProfileName(mProfile) + " already disconnected");
+                return;
+            }
             Log.d(TAG, getProfileName(mProfile) + " disconnected");
             mConnected = false;
             proxy.onServiceDisconnected();
@@ -920,8 +927,7 @@ public final class BluetoothAdapter {
     private static final Object sProfileLock = new Object();
 
     @GuardedBy("sProfileLock")
-    private final Map<BluetoothProfile, ProfileConnection> mProfileConnections =
-            new ConcurrentHashMap<>();
+    private final Map<BluetoothProfile, ProfileConnection> mProfileConnections = new HashMap<>();
 
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
