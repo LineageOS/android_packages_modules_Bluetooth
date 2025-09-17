@@ -300,12 +300,20 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             isAsUser: Boolean,
         ): PermissionHolder {
             val holder = PermissionHolder()
-            // sendBroadcast(Intent, String) -> index 1
-            // sendBroadcastAsUser(Intent, UserHandle, String) -> index 2
+            // sendBroadcast(Intent, String OR String[]) -> index 1
+            // sendBroadcastAsUser(Intent, UserHandle, String OR String[]) -> index 2
             val permissionIndex = if (isAsUser) 2 else 1
 
             node.valueArguments.getOrNull(permissionIndex)?.let { arg ->
-                ConstantEvaluator.evaluate(context, arg)?.toString()?.let { holder.allOf.add(it) }
+                ConstantEvaluator.evaluate(context, arg).let { result ->
+                    when (result) {
+                        is String -> holder.allOf.add(result)
+                        is Array<*> ->
+                            result.filterIsInstance<String>().forEach { permission ->
+                                holder.allOf.add(permission)
+                            }
+                    }
+                }
             }
             return holder
         }
@@ -421,9 +429,10 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
         private val PERMISSION_CHECKER_ENFORCEMENT_METHOD_REGEX = "^check.*Permission$".toRegex()
         private val PERMISSION_MANAGER_ENFORCEMENT_METHOD_REGEX = "^checkPermission.*".toRegex()
 
-        private val SEND_BROADCAST_REGEX = "^send(Ordered|Sticky)?Broadcast$".toRegex()
+        private val SEND_BROADCAST_REGEX =
+            "^send(Ordered|Sticky)?Broadcast((With)?MultiplePermissions)?$".toRegex()
         private val SEND_BROADCAST_AS_USER_REGEX =
-            "^send(Ordered|Sticky)?BroadcastAsUser$".toRegex()
+            "^send(Ordered|Sticky)?BroadcastAsUser(MultiplePermissions)?$".toRegex()
 
         @JvmField
         val ISSUE_MISSING_OR_MISMATCHED_SEND_BROADCAST_REQUIRES_PERMISSION =
