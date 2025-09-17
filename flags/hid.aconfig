@@ -110,6 +110,16 @@ flag {
 }
 
 flag {
+    name: "hidd_bump_version_to_111"
+    namespace: "bluetooth"
+    description: "Set HID Device version to v1.1.1 on SDP record"
+    bug: "443625090"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "hid_connection_timeout_in_jni_thread"
     namespace: "bluetooth"
     description: "Handle incoming HID connection timeout in JNI thread"
