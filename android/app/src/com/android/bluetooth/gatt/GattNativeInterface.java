@@ -390,7 +390,7 @@ public class GattNativeInterface {
     /**
      * @return type of Bluetooth device 0 for BR/EDR, 1 for BLE, 2 for DUAL mode (To be confirmed)
      */
-    public int gattClientGetDeviceType(BluetoothDevice device) {
+    int gattClientGetDeviceType(BluetoothDevice device) {
         return gattClientGetDeviceTypeNative(device.getAddress());
     }
 
@@ -536,7 +536,7 @@ public class GattNativeInterface {
     }
 
     /** Update connection parameter. */
-    public int gattSubrateRequest(
+    int gattSubrateRequest(
             int clientIf,
             BluetoothDevice device,
             int subrateMin,
@@ -644,24 +644,24 @@ public class GattNativeInterface {
     }
 
     /** Offload client characteristics */
-    public GattOffloadSession.InnerParcel gattClientOffloadCharacteristics(
+    GattOffloadSession.InnerParcel gattClientOffloadCharacteristics(
             int connId, List<GattDbElement> characteristics, long endpointId, long hubId) {
         return gattClientOffloadCharacteristicsNative(connId, characteristics, endpointId, hubId);
     }
 
     /** Offload server characteristics */
-    public GattOffloadSession.InnerParcel gattServerOffloadCharacteristics(
+    GattOffloadSession.InnerParcel gattServerOffloadCharacteristics(
             int connId, List<GattDbElement> characteristics, long endpointId, long hubId) {
         return gattServerOffloadCharacteristicsNative(connId, characteristics, endpointId, hubId);
     }
 
     /** Unoffload client characteristics */
-    public void gattClientUnoffloadCharacteristics(int connId, int sessionId) {
+    void gattClientUnoffloadCharacteristics(int connId, int sessionId) {
         gattClientUnoffloadCharacteristicsNative(connId, sessionId);
     }
 
     /** Unoffload server characteristics */
-    public void gattServerUnoffloadCharacteristics(int connId, int sessionId) {
+    void gattServerUnoffloadCharacteristics(int connId, int sessionId) {
         gattServerUnoffloadCharacteristicsNative(connId, sessionId);
     }
 }
