@@ -1037,18 +1037,18 @@ TEST_F(A2dpCodecConfigTest, setCodecConfig) {
   ASSERT_NE(peer_codec_index, BTAV_A2DP_CODEC_INDEX_MAX);
   codec_config = a2dp_codecs->findSourceCodecConfig(codec_info_aac_vbr);
   ASSERT_NE(codec_config, nullptr);
-  ASSERT_TRUE(a2dp_codecs->setCodecConfig(codec_info_aac_vbr, false /* is_capability */,
-                                          codec_info_result, true /* select_current_codec */));
-  ASSERT_EQ(a2dp_codecs->getCurrentCodecConfig(), codec_config);
-  // Compare the result codec with the local test codec info
   if (aac_vbr_mode_enabled) {
+    ASSERT_TRUE(a2dp_codecs->setCodecConfig(codec_info_aac_vbr, false /* is_capability */,
+                                            codec_info_result, true /* select_current_codec */));
+    ASSERT_EQ(a2dp_codecs->getCurrentCodecConfig(), codec_config);
+
+    // Compare the result codec with the local test codec info
     for (size_t i = 0; i < codec_info_aac[0] + 1; i++) {
       ASSERT_EQ(codec_info_result[i], codec_info_aac_vbr[i]);
     }
   } else {
-    for (size_t i = 0; i < codec_info_aac[0] + 1; i++) {
-      ASSERT_EQ(codec_info_result[i], codec_info_aac[i]);
-    }
+    ASSERT_FALSE(a2dp_codecs->setCodecConfig(codec_info_aac_vbr, false /* is_capability */,
+                                             codec_info_result, true /* select_current_codec */));
   }
   ASSERT_TRUE(codec_config->useRtpHeaderMarkerBit());
 

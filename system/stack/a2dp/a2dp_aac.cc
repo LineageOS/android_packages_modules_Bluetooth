@@ -988,6 +988,13 @@ tA2DP_STATUS A2dpCodecConfigAacBase::setCodecConfig(const uint8_t* p_peer_codec_
   // NOTE: Always assign the Object Type and Variable Bit Rate Support.
   result_config_cie.objectType = p_a2dp_aac_caps->objectType;
 
+  if (!is_capability &&
+      p_a2dp_aac_caps->variableBitRateSupport == A2DP_AAC_VARIABLE_BIT_RATE_DISABLED &&
+      peer_info_cie.variableBitRateSupport == A2DP_AAC_VARIABLE_BIT_RATE_ENABLED) {
+    log::error("VBR not supported, cannot setup VBR");
+    return A2DP_NOT_SUPPORTED_VBR;
+  }
+
   // The Variable Bit Rate Support is disabled if either side disables it
   result_config_cie.variableBitRateSupport =
           p_a2dp_aac_caps->variableBitRateSupport & peer_info_cie.variableBitRateSupport;
