@@ -74,6 +74,7 @@ import android.media.BluetoothProfileConnectionInfo;
 import android.os.Binder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.sysprop.BluetoothProperties;
@@ -355,6 +356,7 @@ public class LeAudioServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_CREATION_TIMEOUT_FIX)
     public void initAndTeardown() {
         mService.cleanup();
         assertThat(LeAudioService.getLeAudioService()).isNull();
@@ -427,6 +429,7 @@ public class LeAudioServiceTest {
 
     /** Test getting LeAudio Service: getLeAudioService() */
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_CREATION_TIMEOUT_FIX)
     public void testGetLeAudioService() {
         assertThat(mService).isEqualTo(LeAudioService.getLeAudioService());
     }

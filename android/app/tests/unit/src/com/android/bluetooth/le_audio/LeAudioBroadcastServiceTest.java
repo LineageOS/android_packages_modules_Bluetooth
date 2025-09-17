@@ -71,6 +71,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.annotation.Nullable;
@@ -232,11 +233,14 @@ public class LeAudioBroadcastServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        assertThat(LeAudioService.getLeAudioService()).isNull();
+        if (!Flags.leaudioBroadcastCreationTimeoutFix()) {
+            assertThat(LeAudioService.getLeAudioService()).isNull();
+        }
         MetricsLogger.setInstanceForTesting(null);
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_CREATION_TIMEOUT_FIX)
     public void testGetLeAudioService() {
         assertThat(LeAudioService.getLeAudioService()).isEqualTo(mService);
     }
@@ -447,6 +451,15 @@ public class LeAudioBroadcastServiceTest {
         mLooper.moveTimeForward(LeAudioService.CREATE_BROADCAST_TIMEOUT_MS);
         mLooper.dispatchAll();
         verify(mCallbacks).onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
+
+        if (Flags.leaudioBroadcastCreationTimeoutFix()) {
+            // Try again
+            mService.createBroadcast(settings);
+            mLooper.moveTimeForward(LeAudioService.CREATE_BROADCAST_TIMEOUT_MS);
+            mLooper.dispatchAll();
+            verify(mCallbacks, times(2))
+                    .onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
+        }
     }
 
     @Test

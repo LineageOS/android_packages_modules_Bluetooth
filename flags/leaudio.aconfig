@@ -326,3 +326,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_creation_timeout_fix"
+    namespace: "bluetooth"
+    description: "Properly clean up state after a broadcast creation timeout"
+    bug: "443811487"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

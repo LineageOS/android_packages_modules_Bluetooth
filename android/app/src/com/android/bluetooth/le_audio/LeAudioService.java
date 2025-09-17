@@ -31,6 +31,7 @@ import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_RE
 import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastCreationTimeoutFix;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMachineCleanup;
 
@@ -120,7 +121,8 @@ public class LeAudioService extends ConnectableProfile {
     /* 5 seconds timeout for Broadcast streaming state transition */
     @VisibleForTesting static final int CREATE_BROADCAST_TIMEOUT_MS = 5000;
 
-    private static LeAudioService sLeAudioService;
+    // TODO Delete on leaudioBroadcastCreationTimeoutFix flag cleanup
+    @Deprecated private static LeAudioService sLeAudioService;
 
     /** Indicates group audio support for none direction */
     private static final int AUDIO_DIRECTION_NONE = 0x00;
@@ -299,8 +301,10 @@ public class LeAudioService extends ConnectableProfile {
 
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
 
-        // Mark service as started
-        setLeAudioService(this);
+        if (!leaudioBroadcastCreationTimeoutFix()) {
+            // Mark service as started
+            setLeAudioService(this);
+        }
 
         // Setup codec config
         mLeAudioCodecConfig = new LeAudioCodecConfig(this);
@@ -670,7 +674,7 @@ public class LeAudioService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sLeAudioService == null) {
+        if (!leaudioBroadcastCreationTimeoutFix() && sLeAudioService == null) {
             Log.w(TAG, "cleanup() called before initialization");
             return;
         }
@@ -757,8 +761,10 @@ public class LeAudioService extends ConnectableProfile {
         mActiveAudioInDevice = null;
         mExposedActiveDevice = null;
 
-        // Set the service and BLE devices as inactive
-        setLeAudioService(null);
+        if (!leaudioBroadcastCreationTimeoutFix()) {
+            // Set the service and BLE devices as inactive
+            setLeAudioService(null);
+        }
 
         // Unregister broadcast callbacks
         synchronized (mBroadcastCallbacks) {
@@ -789,6 +795,7 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     @VisibleForTesting
+    @Deprecated // TODO Delete on leaudioBroadcastCreationTimeoutFix flag cleanup
     static synchronized LeAudioService getLeAudioService() {
         if (sLeAudioService == null) {
             Log.w(TAG, "getLeAudioService(): service is NULL");
@@ -802,6 +809,7 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     @VisibleForTesting
+    @Deprecated // TODO Delete on leaudioBroadcastCreationTimeoutFix flag cleanup
     static synchronized void setLeAudioService(LeAudioService instance) {
         Log.d(TAG, "setLeAudioService(): set to: " + instance);
         sLeAudioService = instance;
@@ -4064,6 +4072,7 @@ public class LeAudioService extends ConnectableProfile {
             boolean success = stackEvent.valueBool1;
 
             if (!success) {
+                /* On fail, EVENT_TYPE_BROADCAST_CREATED will be send with fail too */
                 Log.e(TAG, "EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED: failed to create");
 
                 if (mAwaitingBroadcastCreateResponse) {
@@ -5687,17 +5696,44 @@ public class LeAudioService extends ConnectableProfile {
         public void run() {
             Log.w(TAG, "Failed to start Broadcast in time");
 
-            if (getLeAudioService() == null) {
-                Log.e(TAG, "CreateBroadcastTimeoutEvent: No LE Audio service");
-                return;
-            }
+            if (!leaudioBroadcastCreationTimeoutFix()) {
+                if (getLeAudioService() == null) {
+                    Log.e(TAG, "CreateBroadcastTimeoutEvent: No LE Audio service");
+                    return;
+                }
 
-            if (sLeAudioService.mHandler == null) {
-                Log.w(TAG, "CreateBroadcastTimeoutEvent: No handler");
-                return;
-            }
+                if (sLeAudioService.mHandler == null) {
+                    Log.w(TAG, "CreateBroadcastTimeoutEvent: No handler");
+                    return;
+                }
 
-            mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
+                mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
+            } else {
+                mCreateBroadcastTimeoutEvent = null;
+                mCreateBroadcastQueue.remove();
+                mAwaitingBroadcastCreateResponse = false;
+
+                /* Disconnect Broadcast device which was connected to avoid non LE Audio sound
+                 * leak in handover scenario.
+                 */
+                if ((mUnicastGroupIdDeactivatedForBroadcastTransition != LE_AUDIO_GROUP_ID_INVALID)
+                        && mCreateBroadcastQueue.isEmpty()
+                        && (!Objects.equals(null, mActiveBroadcastAudioDevice))) {
+                    transitionFromBroadcastToUnicast();
+                }
+
+                mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
+                logBroadcastSessionStatsWithStatus(
+                        INVALID_BROADCAST_ID,
+                        BluetoothStatsLog
+                                .BROADCAST_AUDIO_SESSION_REPORTED__SESSION_SETUP_STATUS__SETUP_STATUS_CREATE_FAILED);
+
+                // In case if there were additional calls to create broadcast
+                if (!mCreateBroadcastQueue.isEmpty()) {
+                    BluetoothLeBroadcastSettings settings = mCreateBroadcastQueue.remove();
+                    createBroadcast(settings);
+                }
+            }
         }
     }
 
