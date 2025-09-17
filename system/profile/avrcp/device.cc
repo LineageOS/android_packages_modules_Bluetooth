@@ -129,6 +129,9 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
                   RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
           send_message(label, false, std::move(response));
           active_labels_.erase(label);
+          if (com_android_bluetooth_flags_avrcp_volumechanged_wait_for_interim()) {
+            pending_interim_labels_.erase(label);
+          }
           volume_interface_ = nullptr;
           volume_ = VOL_REGISTRATION_FAILED;
           return;
@@ -528,6 +531,9 @@ void Device::RegisterVolumeChanged() {
     if (active_labels_.find(i) == active_labels_.end()) {
       active_labels_.insert(i);
       label = i;
+      if (com_android_bluetooth_flags_avrcp_volumechanged_wait_for_interim()) {
+        pending_interim_labels_.insert(i);
+      }
       break;
     }
   }
@@ -552,6 +558,9 @@ void Device::HandleVolumeChanged(uint8_t label,
   if (pkt->GetCType() == CType::REJECTED) {
     // Disable Absolute Volume
     active_labels_.erase(label);
+    if (com_android_bluetooth_flags_avrcp_volumechanged_wait_for_interim()) {
+      pending_interim_labels_.erase(label);
+    }
     volume_ = VOL_REGISTRATION_FAILED;
     volume_interface_->DeviceConnected(GetAddress());
     return;
@@ -559,9 +568,20 @@ void Device::HandleVolumeChanged(uint8_t label,
 
   // We only update on interim and just re-register on changes.
   if (!pkt->IsInterim()) {
+    if (com_android_bluetooth_flags_avrcp_volumechanged_wait_for_interim() &&
+        pending_interim_labels_.find(label) != pending_interim_labels_.end()) {
+      log::warn("{}: received Changed event before Interim", address_);
+      return;
+    }
+
     active_labels_.erase(label);
     RegisterVolumeChanged();
     return;
+  }
+
+  // Remove label from pending_interim_labels_
+  if (com_android_bluetooth_flags_avrcp_volumechanged_wait_for_interim()) {
+    pending_interim_labels_.erase(label);
   }
 
   // Handle the first volume update.

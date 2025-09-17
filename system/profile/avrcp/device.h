@@ -376,6 +376,9 @@ private:
   std::set<uint8_t> active_labels_;
   bool set_vol_cmd_in_progress_ = false;
 
+  // pending interim labels for VolumeChanged notification
+  std::set<uint8_t> pending_interim_labels_;
+
   int8_t volume_ = -1;
   std::optional<int8_t> pending_volume_ = {};
 };
