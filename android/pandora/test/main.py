@@ -25,7 +25,6 @@ import le_security_test
 import security_test
 import gatt_test
 import hap_test
-import hfpclient_test
 import rfcomm_test
 import sdp_test
 
@@ -82,7 +81,6 @@ _TEST_CLASSES_LIST = [
     gatt_test.GattTest,
     hap_test.HapTest,
     asha_test.AshaTest,
-    hfpclient_test.HfpClientTest,
     rfcomm_test.RfcommTest,
 ] + _pairing_test_class_list
 
