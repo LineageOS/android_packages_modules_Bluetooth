@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "bt_status.h"
 #include "macros.h"
 
 __BEGIN_DECLS
@@ -170,55 +171,54 @@ typedef struct {
   /**
    * Register the BtHh callbacks
    */
-  bt_status_t (*init)(bthh_callbacks_t* callbacks);
+  BtStatus (*init)(bthh_callbacks_t* callbacks);
 
   /** connect to hid device */
-  bt_status_t (*connect)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);
+  BtStatus (*connect)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);
 
   /** dis-connect from hid device */
-  bt_status_t (*disconnect)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                            bool reconnect_allowed);
+  BtStatus (*disconnect)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                         bool reconnect_allowed);
 
   /** Virtual UnPlug (VUP) the specified HID device */
-  bt_status_t (*virtual_unplug)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                                tBT_TRANSPORT transport);
+  BtStatus (*virtual_unplug)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+                             tBT_TRANSPORT transport);
 
   /** Set the HID device descriptor for the specified HID device. */
-  bt_status_t (*set_info)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                          bthh_hid_info_t hid_info);
+  BtStatus (*set_info)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                       bthh_hid_info_t hid_info);
 
   /** Get the HID proto mode. */
-  bt_status_t (*get_protocol)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                              tBT_TRANSPORT transport, bthh_protocol_mode_t protocolMode);
+  BtStatus (*get_protocol)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                           bthh_protocol_mode_t protocolMode);
 
   /** Set the HID proto mode. */
-  bt_status_t (*set_protocol)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                              tBT_TRANSPORT transport, bthh_protocol_mode_t protocolMode);
+  BtStatus (*set_protocol)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                           bthh_protocol_mode_t protocolMode);
 
   /** Get the HID Idle Time */
-  bt_status_t (*get_idle_time)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                               tBT_TRANSPORT transport);
+  BtStatus (*get_idle_time)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport);
 
   /** Set the HID Idle Time */
-  bt_status_t (*set_idle_time)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                               tBT_TRANSPORT transport, uint8_t idleTime);
+  BtStatus (*set_idle_time)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                            uint8_t idleTime);
 
   /** Send a GET_REPORT to HID device. */
-  bt_status_t (*get_report)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                            bthh_report_type_t reportType, uint8_t reportId, int bufferSize);
+  BtStatus (*get_report)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                         bthh_report_type_t reportType, uint8_t reportId, int bufferSize);
 
   /** Send a GET_REPORT_REPLY to HID driver. */
-  bt_status_t (*get_report_reply)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                                  tBT_TRANSPORT transport, bthh_status_t status, char* report,
-                                  uint16_t size);
+  BtStatus (*get_report_reply)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+                               tBT_TRANSPORT transport, bthh_status_t status, char* report,
+                               uint16_t size);
 
   /** Send a SET_REPORT to HID device. */
-  bt_status_t (*set_report)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                            bthh_report_type_t reportType, char* report);
+  BtStatus (*set_report)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                         bthh_report_type_t reportType, char* report);
 
   /** Send data to HID device. */
-  bt_status_t (*send_data)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
-                           char* data);
+  BtStatus (*send_data)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                        char* data);
 
   /** Closes the interface. */
   void (*cleanup)(void);

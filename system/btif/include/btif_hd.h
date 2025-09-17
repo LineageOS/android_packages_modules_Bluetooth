@@ -26,6 +26,7 @@
 #include <hardware/bt_hd.h>
 #include <stdint.h>
 
+#include "bt_status.h"
 #include "bta/include/bta_hd_api.h"
 
 typedef enum { BTIF_HD_DISABLED = 0, BTIF_HD_ENABLED, BTIF_HD_DISABLING } BTIF_HD_STATUS;
@@ -41,7 +42,7 @@ typedef struct {
 extern btif_hd_cb_t btif_hd_cb;
 
 const bthd_interface_t* btif_hd_get_interface();
-bt_status_t btif_hd_execute_service(bool b_enable);
+BtStatus btif_hd_execute_service(bool b_enable);
 void btif_hd_remove_device(RawAddress bd_addr);
 void btif_hd_service_registration();
 

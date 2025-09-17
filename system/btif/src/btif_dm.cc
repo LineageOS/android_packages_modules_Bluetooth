@@ -2998,8 +2998,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
   link_spec.transport = BT_TRANSPORT_AUTO;
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
 
-  if (GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_virtual_unplug(link_spec) !=
-      BT_STATUS_SUCCESS)
+  if (!GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_virtual_unplug(link_spec))
 #endif
   {
     log::debug("Removing HH device");

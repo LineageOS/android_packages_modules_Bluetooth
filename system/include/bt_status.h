@@ -23,7 +23,6 @@
 #include <string>
 
 #include "bt_status_origin.h"
-#include "macros.h"
 
 #define BT_SUCCESS 0
 typedef uint16_t BtStatusCode;
