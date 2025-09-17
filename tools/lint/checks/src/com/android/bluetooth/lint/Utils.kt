@@ -32,6 +32,7 @@ const val ANNOTATION_PERMISSION_METHOD = "android.annotation.PermissionMethod"
 const val ANNOTATION_PERMISSION_NAME = "android.annotation.PermissionName"
 
 const val CLASS_BINDER = "android.os.Binder"
+const val CLASS_BROADCAST_RECEIVER = "android.content.BroadcastReceiver"
 const val CLASS_CONTEXT = "android.content.Context"
 const val CLASS_INTENT = "android.content.Intent"
 const val CLASS_PERMISSION_CHECKER = "android.content.PermissionChecker"

@@ -79,20 +79,13 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
     private inner class RequiresPermissionVisitor(private val context: JavaContext) :
         UElementHandler() {
         override fun visitMethod(node: UMethod) {
-            if (context.evaluator.isAbstract(node)) {
-                return
-            }
+            if (context.evaluator.isAbstract(node)) return
 
-            val containingClass = node.containingClass ?: return
-            if (context.evaluator.inheritsFrom(containingClass, CLASS_BINDER, true)) {
-                val isBinderMethod = node.name == "onTransact" || node.name == "dump"
-                val isGeneratedBinderClass =
-                    containingClass.name?.matches(BINDER_INTERNALS_REGEX) == true
+            // Ignore certain types of Binder generated code
+            if (isBinderInternals(context, node)) return
 
-                if (isBinderMethod || isGeneratedBinderClass) {
-                    return
-                }
-            }
+            // Ignore known-local methods which don't need to propagate
+            if (isLocalInternals(context, node)) return
 
             val superPermissions = getRequiredPermissionsFromSuper(context, node)
             val enforcedPermissions =
@@ -106,7 +99,7 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             }
 
             val declaredPermissions = getRequiredPermissionsFromMethod(context, node)
-            val nodeName = "${containingClass.name}.${node.name}"
+            val nodeName = "${node.containingClass?.name}.${node.name}"
             if (!superPermissions.isEmpty() && declaredPermissions != superPermissions) {
                 context.report(
                     ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION,
@@ -145,6 +138,25 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                         "APIs requiring $enforcedPermissions.",
                 )
             }
+        }
+
+        private fun isBinderInternals(context: JavaContext, method: UMethod): Boolean {
+            if (context.evaluator.inheritsFrom(method.containingClass, CLASS_BINDER, true)) {
+                val isBinderMethod = method.name == "onTransact" || method.name == "dump"
+                val isGeneratedBinderClass =
+                    method.containingClass?.name?.matches(BINDER_INTERNALS_REGEX) == true
+                if (isBinderMethod || isGeneratedBinderClass) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        private fun isLocalInternals(context: JavaContext, method: UMethod): Boolean {
+            if (context.evaluator.isMemberInSubClassOf(method, CLASS_BROADCAST_RECEIVER, false)) {
+                if (method.name == "onReceive") return true
+            }
+            return false
         }
     }
 
