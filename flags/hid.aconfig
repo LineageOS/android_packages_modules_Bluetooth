@@ -130,6 +130,16 @@ flag {
 }
 
 flag {
+    name: "hid_dont_reconnect_on_uhid_timeout"
+    namespace: "bluetooth"
+    description: "Set connection policy off if we timed out waiting for uhid open"
+    bug: "445363297"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "hogp_mtu_exchange"
     namespace: "bluetooth"
     description: "HOGP host must exchange ATT MTU on GATT connection"
