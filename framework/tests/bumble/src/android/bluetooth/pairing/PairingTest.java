@@ -1313,6 +1313,7 @@ public class PairingTest {
         // Approve pairing from Android
         assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
 
+        Thread.sleep(200);
         // connect and disconnect the LE link
         testStep_ConnectDisconnectLE(intentReceiver);
         // Ensure that pairing succeeds
