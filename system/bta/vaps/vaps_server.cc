@@ -17,6 +17,7 @@
  #include <base/functional/bind.h>
  #include <base/functional/callback.h>
  #include <bluetooth/log.h>
+ #include <com_android_bluetooth_flags.h>
 
  #include <algorithm>
  #include <cstdint>
@@ -25,6 +26,7 @@
  #include <unordered_map>
  #include <vector>
 
+ #include "bta/include/bta_csis_api.h"
  #include "bta/include/bta_gatt_api.h"
  #include "bta/include/bta_vaps_server_api.h"
  #include "bta/vaps/vaps_server_types.h"
@@ -43,6 +45,7 @@
  #include "bluetooth/types/address.h"
 
  using namespace bluetooth;
+ using bluetooth::csis::CsisClient;
  using namespace ::vaps;
  using namespace ::vaps::uuid;
 
@@ -166,10 +169,40 @@
        //Send VAE Control Point notification
        SendVaeControlPointNotification(remote_client, rsp_code_value, ccc_vae_control_point);
 
-       uint8_t va_session_state =
-           static_cast<uint8_t>(VaSessionState::VA_SESSION_READY);
-       //Send VA Session State notification
-       SendVaSessionStateNotification(remote_client, ccc_va_session_state, va_session_state);
+       if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
+         int group_id;
+         auto csis_api = CsisClient::Get();
+         if (csis_api == nullptr) {
+           log::error("csis api is null");
+           return;
+         }
+
+         group_id = csis_api->GetGroupId(bda, bluetooth::le_audio::uuid::kCapServiceUuid);
+         log::info("group_id:{}", group_id);
+         if (group_id != bluetooth::groups::kGroupUnknown) {
+           std::vector<RawAddress> devices = csis_api->GetDeviceList(group_id);
+
+           for (const auto& device : devices) {
+             log::info("NotifyVaSessionInitialized:, device:{}", device);
+             if (remote_clients_.find(device) != remote_clients_.end()) {
+               RemoteClient* remote_client = &remote_clients_[device];
+               uint16_t ccc_va_session_state =
+                   remote_client->ccc_values_[kVaSessionStateCharacteristic];
+
+               uint8_t va_session_state =
+                   static_cast<uint8_t>(VaSessionState::VA_SESSION_READY);
+               //Send VA Session State notification
+               SendVaSessionStateNotification(remote_client, ccc_va_session_state,
+                   va_session_state, /*is_group_device*/ true);
+             }
+           }
+         }
+       } else {
+         uint8_t va_session_state =
+             static_cast<uint8_t>(VaSessionState::VA_SESSION_READY);
+         //Send VA Session State notification
+         SendVaSessionStateNotification(remote_client, ccc_va_session_state, va_session_state);
+       }
      }
    }
 
@@ -202,7 +235,8 @@
 
          uint8_t session_state = ComputeSessionState(true, is_success);
          //Send VA Session State notification
-         SendVaSessionStateNotification(remote_client, ccc_va_session_state, session_state);
+         SendVaSessionStateNotification(remote_client, ccc_va_session_state, session_state,
+             /*is_group_device*/ true);
        }
      }
    }
@@ -235,7 +269,8 @@
 
          uint8_t session_state = ComputeSessionState(false, is_success);
          //Send VA Session State notification
-         SendVaSessionStateNotification(remote_client, ccc_va_session_state, session_state);
+         SendVaSessionStateNotification(remote_client, ccc_va_session_state, session_state,
+             /*is_group_device*/ true);
        }
      }
    }
@@ -279,14 +314,16 @@
 
    void SendVaSessionStateNotification(RemoteClient* remote_client,
                                        uint16_t ccc_va_session_state,
-                                       uint8_t va_session_state) {
+                                       uint8_t va_session_state,
+                                       bool is_group_device = false) {
      uint8_t curr_va_session_state = static_cast<uint8_t>(GetVaSessionState());
      log::info(" conn_id:{}, ccc_va_session_state:{}, Curr VA session state: {},"
-               " New VA session state:{}", remote_client->conn_id_,
+               " New VA session state:{}, is_group_device: {}", remote_client->conn_id_,
                ccc_va_session_state,
                GetVaSessionStateText(static_cast<VaSessionState>(curr_va_session_state)),
-               GetVaSessionStateText(static_cast<VaSessionState>(va_session_state)));
-     if (curr_va_session_state == va_session_state) {
+               GetVaSessionStateText(static_cast<VaSessionState>(va_session_state)),
+               is_group_device);
+     if ((curr_va_session_state == va_session_state) && !is_group_device) {
        log::info(" Not sending VA Session state notification - no change in VA session state");
        return;
      }
