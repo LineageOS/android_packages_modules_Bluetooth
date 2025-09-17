@@ -170,6 +170,12 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config, bool* p_
   min_bitpool = A2DP_GetMinBitpoolSbc(p_codec_info);
   max_bitpool = A2DP_GetMaxBitpoolSbc(p_codec_info);
 
+  if (min_bitpool == -1 || max_bitpool == -1) {
+    log::error("Cannot update the codec encoder for {}: invalid bitpool, min={} max={}",
+               a2dp_codec_config->name(), min_bitpool, max_bitpool);
+    return;
+  }
+
   // The feeding parameters
   tA2DP_FEEDING_PARAMS* p_feeding_params = &a2dp_sbc_encoder_cb.feeding_params;
   p_feeding_params->sample_rate = A2DP_GetTrackSampleRateSbc(p_codec_info);
