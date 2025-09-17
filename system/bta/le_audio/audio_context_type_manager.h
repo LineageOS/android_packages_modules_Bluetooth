@@ -39,7 +39,8 @@ public:
 
   /* Checks if any metadata has been set.
    * If not then calling GetAudioContextsForTheGroup will return empty contexts */
-  virtual bool IsAnyMetadataSet(void) = 0;
+  virtual bool IsAnyMetadataSet(
+          uint8_t local_directions = bluetooth::le_audio::types::kLeAudioDirectionBoth) = 0;
 
   /* Set encoding session metadata from Audio Framework */
   virtual void SetEncodingSessionMetadata(
