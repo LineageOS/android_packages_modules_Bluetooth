@@ -64,3 +64,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "avrcp_fix_set_browsed_player_items"
+    namespace: "bluetooth"
+    description: "When multiple player isn't enabled, setBrowsedPlayer returns the number of browsable players instead of item count in current path"
+    bug: "445280198"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
