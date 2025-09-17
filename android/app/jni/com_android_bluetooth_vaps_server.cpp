@@ -192,7 +192,8 @@
      vae_name = env->GetStringUTFChars(vaeName, nullptr);
    }
 
-   sVapsServerInterface->SetVaeName(vae_name ? vae_name : "");
+   // Assign a default value "None" if vae_name is null (No VA engine selected)
+   sVapsServerInterface->SetVaeName(vae_name ? vae_name : "None");
 
    if (vae_name) {
      env->ReleaseStringUTFChars(vaeName, vae_name);

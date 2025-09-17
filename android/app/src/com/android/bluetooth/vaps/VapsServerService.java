@@ -42,6 +42,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
+import android.text.TextUtils;
 import android.util.Log;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -219,10 +220,11 @@ public class VapsServerService extends ProfileService {
         //Get Default Digital Assistant from Settings
         String assistantName =
             Settings.Secure.getString(getApplicationContext().getContentResolver(), "assistant");
-        Log.d(TAG, " assistantName"+ assistantName);
-        if (assistantName != null) {
-            Log.d(TAG, " component Name:"+ ComponentName.unflattenFromString(assistantName));
+
+        if (TextUtils.isEmpty(assistantName)) {
+            return null;
         }
+
         String vaeName = assistantName;
         String[] parts = assistantName.split("/");
 
