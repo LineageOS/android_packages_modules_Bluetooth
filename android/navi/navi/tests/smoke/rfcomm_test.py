@@ -32,6 +32,8 @@ from navi.utils import bl4a_api
 
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
 _TRANSMISSION_TIMEOUT_SECONDS = 180.0
+_RFCOMM_SERVICE_RECORD_HANDLE = 1
+_RFCOMM_UUID = "130c8436-15ac-4d08-aa60-595af4547e8d"
 _TEST_DATA = bytes(i % 256 for i in range(10000))
 
 
@@ -190,7 +192,12 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
 
         ref_accept_future = asyncio.get_running_loop().create_future()
         channel = rfcomm.Server(self.ref.device).listen(acceptor=ref_accept_future.set_result)
-        self.logger.info("[REF] Listen RFCOMM on channel %d.", channel)
+        self.ref.device.sdp_service_records[_RFCOMM_SERVICE_RECORD_HANDLE] = (
+            rfcomm.make_service_sdp_records(
+                service_record_handle=_RFCOMM_SERVICE_RECORD_HANDLE,
+                channel=channel,
+                uuid=core.UUID(_RFCOMM_UUID),
+            ))
 
         self.logger.info("[DUT] Connect RFCOMM channel to REF.")
         async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
@@ -199,7 +206,7 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.bl4a.create_rfcomm_channel(
                     address=self.ref.address,
                     secure=variant == _Variant.SECURE,
-                    channel_or_uuid=channel,
+                    uuid=_RFCOMM_UUID,
                 ),
             )
 

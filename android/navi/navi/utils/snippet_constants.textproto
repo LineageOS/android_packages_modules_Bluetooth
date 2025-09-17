@@ -143,6 +143,11 @@ constants {
 # BluetoothAdapterSnippet     #
 # =========================== #
 
+constants: {
+  name: "ADAPTER_STATE_CHANGED"
+  string_value: "ADAPTER_STATE_CHANGED"
+}
+
 constants {
   name: "PAIRING_REQUEST"
   string_value: "PAIRING_REQUEST"
@@ -999,4 +1004,13 @@ constants {
 constants {
   name: "SET_PRESET_NAME_FAILED"
   string_value: "SET_PRESET_NAME_FAILED"
+}
+
+# ============================ #
+# OtherSnippet                 #
+# ============================ #
+
+constants {
+  name: "VOICE_COMMAND"
+  string_value: "VOICE_COMMAND"
 }

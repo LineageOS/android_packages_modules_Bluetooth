@@ -24,7 +24,6 @@ from typing_extensions import override
 
 from navi.bumble_ext import hid
 from navi.tests import navi_test_base
-from navi.tests.smoke import hogp_test
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
@@ -40,13 +39,13 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
     def _setup_hid_service(self) -> None:
         self.ref_hid_server = hid.Server(self.ref.device, hid.DeviceProtocol)
         self.ref.device.sdp_service_records = {
-            1: hid.make_device_sdp_record(1, hogp_test.HID_REPORT_MAP)
+            1: hid.make_device_sdp_record(1, hid.DEFAULT_REPORT_MAP)
         }
 
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
-        if (self.dut.device.adb.getprop(hogp_test.PROPERTY_HID_HOST_SUPPORTED) != "true"):
+        if (self.dut.device.adb.getprop(hid.PROPERTY_HID_HOST_SUPPORTED) != "true"):
             raise signals.TestAbortClass("HID host is not supported on DUT")
 
         # Stay awake during the test.

@@ -62,6 +62,7 @@ class HfProtocol(hfp.HfProtocol):
     """Customized HF Protocol."""
 
     controller_supported_codecs: list[hci.CodecID] | None = None
+    slc_initialized: asyncio.Event
 
     @classmethod
     def setup_server(
@@ -110,11 +111,17 @@ class HfProtocol(hfp.HfProtocol):
         auto_accept_sco_request: bool = True,
     ) -> None:
         self.auto_accept_sco_request = auto_accept_sco_request
+        self.slc_initialized = asyncio.Event()
         if auto_accept_sco_request:
             device = dlc.multiplexer.l2cap_channel.connection.device
             device.on(device.EVENT_SCO_REQUEST, self._on_sco_request)
             dlc.once(dlc.EVENT_CLOSE, self._on_disconnection)
         super().__init__(dlc=dlc, configuration=configuration)
+
+    @override
+    async def initiate_slc(self) -> None:
+        await super().initiate_slc()
+        self.slc_initialized.set()
 
     @override
     async def setup_codec_connection(self, codec_id: int) -> None:

@@ -100,9 +100,6 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
         if (self.dut.getprop(android_constants.Property.A2DP_SOURCE_ENABLED) != "true"):
             raise signals.TestAbortClass("A2DP is not enabled on DUT.")
-        if self.dut.device.build_info["hardware"] == "cutf_cvm":
-            # Force enable OPUS on Cuttlefish.
-            self.dut.setprop(_PROPERTY_OPUS_ENABLED, "true")
         self.dut_supported_codecs = [
             codec for codec in _A2dpCodec
             if int(self.dut.getprop(_PROPERTY_CODEC_PRIORITY %

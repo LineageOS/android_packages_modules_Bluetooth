@@ -111,7 +111,7 @@ class BluetoothQualityReportTest(navi_test_base.TwoDevicesTestBase):
     async def test_energy_monitoring_when_power_unplug(self) -> None:
         """Tests power unplug will trigger energy monitoring."""
 
-        if int(self.dut.getprop("ro.build.version.sdk")) < 36:
+        if self.dut.bt.getSdkVersion() < 36:
             self.skipTest("Energy monitor event is not supported before SDK API level: 36.")
         if not self.bqr_event_mask & BqrEventMaskBitIndex.ENERGY_MONITORING_MODE:
             self.skipTest("Energy monitor event is not enabled on DUT.")

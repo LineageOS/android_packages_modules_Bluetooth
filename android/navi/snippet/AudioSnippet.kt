@@ -47,6 +47,7 @@ import com.google.android.mobly.snippet.rpc.RunOnUiThread
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
@@ -68,9 +69,10 @@ class AudioSnippet : Snippet {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    internal var player = ExoPlayer.Builder(context).build()
+    internal val players =
+        mutableMapOf<String?, ExoPlayer>(null to ExoPlayer.Builder(context).build())
     private val callbacks = mutableMapOf<String, AudioCallbacks>()
-    private val playerListeners = mutableMapOf<String, Player.Listener>()
+    private val playerListeners = mutableMapOf<String, Pair<Player, Player.Listener>>()
     private val mainHandler = Handler(context.mainLooper)
     private val dispatcher: CoroutineDispatcher =
         Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -80,6 +82,8 @@ class AudioSnippet : Snippet {
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
         context.mainExecutor.execute {
+            val player = ExoPlayer.Builder(context).build()
+            players[null] = player
             MediaSession.Builder(context, player).build()
             // Add a default media.
             val fileUri =
@@ -190,7 +194,9 @@ class AudioSnippet : Snippet {
 
     /** Registers a player snippet callback with [callbackId]. */
     @AsyncRpc(description = "Registers a player snippet callback")
-    fun registerPlayerListener(callbackId: String) {
+    fun registerPlayerListener(callbackId: String, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         val listener =
             object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -211,20 +217,24 @@ class AudioSnippet : Snippet {
                 }
             }
         player.addListener(listener)
-        playerListeners[callbackId] = listener
+        playerListeners[callbackId] = Pair(player, listener)
     }
 
     /** Unregisters a player snippet callback with [callbackId]. */
     @Rpc(description = "Unregisters a player snippet callback")
     @RunOnUiThread
     fun unregisterPlayerListener(callbackId: String) {
-        playerListeners.remove(callbackId)?.let { player.removeListener(it) }
+        playerListeners.remove(callbackId)?.let { (player, listener) ->
+            player.removeListener(listener)
+        }
     }
 
     /** Set offload of audio playback. */
     @Rpc(description = "Set offload of audio playback")
     @RunOnUiThread
-    fun setAudioPlaybackOffload(enabled: Boolean) {
+    fun setAudioPlaybackOffload(enabled: Boolean, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         val audioOffloadPreferences =
             if (enabled) {
                 AudioOffloadPreferences.Builder()
@@ -246,21 +256,31 @@ class AudioSnippet : Snippet {
     /** Set handle audio becoming noisy. */
     @Rpc(description = "Set handle audio becoming noisy")
     @RunOnUiThread
-    fun setHandleAudioBecomingNoisy(enabled: Boolean) {
+    fun setHandleAudioBecomingNoisy(enabled: Boolean, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.setHandleAudioBecomingNoisy(enabled)
     }
 
     /** Sets audio attribute of player to [attributes] and [handleAudioFocus]. */
     @Rpc(description = "Set Audio Attribute")
     @RunOnUiThread
-    fun setAudioAttributes(attributes: AudioAttributes?, handleAudioFocus: Boolean) {
+    fun setAudioAttributes(
+        attributes: AudioAttributes?,
+        handleAudioFocus: Boolean,
+        @RpcOptional playerId: String? = null,
+    ) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.setAudioAttributes(attributes ?: player.audioAttributes, handleAudioFocus)
     }
 
     /** Plays 1000Hz sine wave. */
     @Rpc(description = "Play 1000Hz sine wave")
     @RunOnUiThread
-    fun audioPlaySine() {
+    fun audioPlaySine(@RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         val fileUri =
             Uri.Builder()
                 .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
@@ -274,7 +294,9 @@ class AudioSnippet : Snippet {
     /** Plays audio file with [fileUri] . */
     @Rpc(description = "Play audio from a given file path")
     @RunOnUiThread
-    fun audioPlayFile(fileUri: String) {
+    fun audioPlayFile(fileUri: String, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.setMediaItem(MediaItem.fromUri(fileUri))
         player.prepare()
         player.play()
@@ -283,41 +305,77 @@ class AudioSnippet : Snippet {
     /** Sets player repeat mode to [repeatMode]. */
     @Rpc(description = "Set repeat mode")
     @RunOnUiThread
-    fun audioSetRepeat(@Player.RepeatMode repeatMode: Int) {
+    fun audioSetRepeat(@Player.RepeatMode repeatMode: Int, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.repeatMode = repeatMode
     }
 
     /** Resumes playing audio. */
     @Rpc(description = "Resume playing audio")
     @RunOnUiThread
-    fun audioResume() {
+    fun audioResume(@RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.play()
     }
 
     /** Pauses playing audio. */
     @Rpc(description = "Pause playing audio")
     @RunOnUiThread
-    fun audioPause() {
+    fun audioPause(@RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.pause()
     }
 
     /** Stops playing audio. */
     @Rpc(description = "stop playing audio")
     @RunOnUiThread
-    fun audioStop() {
+    fun audioStop(@RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.stop()
     }
 
     /** Add a media item to the player. */
     @Rpc(description = "Add a media item")
     @RunOnUiThread
-    fun addMediaItem(fileUri: String) {
+    fun addMediaItem(fileUri: String, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         player.addMediaItem(MediaItem.fromUri(fileUri))
     }
 
-    /** Starts a recorder streaming to [outputPath]. */
+    /** Add a new player. */
+    @Rpc(description = "Add a new player")
+    @RunOnUiThread
+    fun addPlayer(): String {
+        val playerId = UUID.randomUUID().toString()
+        players[playerId] = ExoPlayer.Builder(context).build()
+        return playerId
+    }
+
+    /** Add a new player. */
+    @Rpc(description = "Add a new player")
+    @RunOnUiThread
+    fun removePlayer(playerId: String) {
+        players.remove(playerId)?.let { it.release() }
+    }
+
+    /**
+     * Starts a recorder streaming to [outputPath].
+     *
+     * If [preferredDeviceAddress] or [preferredDeviceType] is provided, the recorder will use the
+     * preferred device to record audio.
+     */
     @Rpc(description = "Start recording")
-    fun startRecording(outputPath: String, @RpcOptional source: Int? = null) {
+    fun startRecording(
+        outputPath: String,
+        @RpcOptional source: Int? = null,
+        @RpcOptional preferredDeviceAddress: String? = null,
+        @RpcOptional preferredDeviceType: Int? = null,
+    ) {
         if (outputPath in recorders) {
             throw IllegalArgumentException("$outputPath is already recording")
         }
@@ -335,6 +393,16 @@ class AudioSnippet : Snippet {
                 AudioFormat.ENCODING_PCM_16BIT,
                 bufferSize,
             )
+        if (preferredDeviceAddress != null || preferredDeviceType != null) {
+            val preferredDevice =
+                audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS).first {
+                    (preferredDeviceType == null || it.type == preferredDeviceType) &&
+                        (preferredDeviceAddress == null || it.address == preferredDeviceAddress)
+                }
+            if (!recorder.setPreferredDevice(preferredDevice)) {
+                throw IllegalArgumentException("Unable to set preferred device $preferredDevice")
+            }
+        }
         val deferred =
             coroutineScope.async {
                 val outputBuffer = mutableListOf<Byte>()
@@ -390,7 +458,9 @@ class AudioSnippet : Snippet {
      */
     @Rpc(description = "Enable SCO route")
     @RunOnUiThread
-    fun audioSetRouteSco(@RpcOptional address: String?) {
+    fun audioSetRouteSco(@RpcOptional address: String?, @RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         audioManager.availableCommunicationDevices
             .first {
                 it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO &&
@@ -405,7 +475,9 @@ class AudioSnippet : Snippet {
     /** Sets audio route to default. */
     @Rpc(description = "Set audio route to default")
     @RunOnUiThread
-    fun audioSetRouteDefault() {
+    fun audioSetRouteDefault(@RpcOptional playerId: String? = null) {
+        val player =
+            players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
         audioManager.clearCommunicationDevice()
         player.setPreferredAudioDevice(null)
     }

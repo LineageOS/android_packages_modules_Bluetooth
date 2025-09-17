@@ -17,6 +17,7 @@ import asyncio
 import collections
 import enum
 import itertools
+import re
 
 from bumble import core
 from bumble import device
@@ -45,6 +46,7 @@ _PROPERTY_SWB_SUPPORTED = "bluetooth.hfp.swb.supported"
 _RECORDING_PATH = "/storage/self/primary/Recordings/record.wav"
 _HFP_FRAME_DURATION = 0.0075  # 7.5ms
 _MAX_FRAME_SIZE = 240
+_ACTION_VOICE_COMMAND = "android.intent.action.VOICE_COMMAND"
 
 _AudioCodec = hfp.AudioCodec
 _AgIndicator = hfp.AgIndicator
@@ -74,8 +76,29 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
         if self.dut.getprop(android_constants.Property.HFP_AG_ENABLED) != "true":
             raise signals.TestAbortClass("HFP(AG) is not enabled on DUT.")
-        # Make sure Bumble is on.
-        await self.ref.open()
+
+        # Disable all other voice command apps to prevent choosing activities.
+        voice_command_packages: set[str] = set(
+            re.findall(
+                r"packageName=(.+)",
+                self.dut.shell([
+                    "pm",
+                    "query-activities",
+                    "-a",
+                    _ACTION_VOICE_COMMAND,
+                ]),
+            ))
+
+        def callback(package: str) -> None:
+            self.logger.info("[DUT] Re-Enable voice command app: %s.", package)
+            self.dut.shell(["pm", "enable", package])
+
+        for package in voice_command_packages:
+            if package == android_constants.PACKAGE_NAME_BLUETOOTH_SNIPPET:
+                continue
+            self.logger.info("[DUT] Disable voice command app: %s.", package)
+            self.dut.shell(["pm", "disable", package])
+            self.test_class_context.callback(callback, package)
 
     @override
     async def async_teardown_test(self) -> None:
@@ -248,10 +271,19 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
         )
 
-    @navi_test_base.parameterized(
-        ([_AudioCodec.CVSD],),
-        ([_AudioCodec.CVSD, _AudioCodec.MSBC],),
-        ([_AudioCodec.LC3_SWB, _AudioCodec.CVSD, _AudioCodec.MSBC],),
+    @navi_test_base.named_parameterized(
+        cvsd_only=dict(supported_audio_codecs=[
+            _AudioCodec.CVSD,
+        ]),
+        cvsd_msbc=dict(supported_audio_codecs=[
+            _AudioCodec.CVSD,
+            _AudioCodec.MSBC,
+        ]),
+        cvsd_msbc_lc3_swb=dict(supported_audio_codecs=[
+            _AudioCodec.CVSD,
+            _AudioCodec.MSBC,
+            _AudioCodec.LC3_SWB,
+        ]),
     )
     async def test_call_sco_connection_with_codec_negotiation(
         self,
@@ -948,6 +980,126 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             ):
                 call_setup_state = await ag_indicators[_AgIndicator.CALL_HELD].get()
                 self.assertEqual(call_setup_state, hfp.CallHeldAgIndicator.NO_CALLS_HELD)
+
+    @navi_test_base.named_parameterized(
+        from_ag=constants.TestRole.DUT,
+        from_hf=constants.TestRole.REF,
+    )
+    async def test_voice_recognition(self, initiator: constants.TestRole) -> None:
+        """Tests voice recognition.
+
+    Test steps:
+      1. Setup HFP connection.
+      2. Start voice recognition.
+      3. Stop voice recognition.
+
+    Args:
+      initiator: The initiator of voice recognition process.
+    """
+        # [REF] Setup HFP.
+        hfp_configuration = hfp.HfConfiguration(
+            supported_hf_features=[
+                hfp.HfFeature.THREE_WAY_CALLING,
+                hfp.HfFeature.VOICE_RECOGNITION_ACTIVATION,
+            ],
+            supported_hf_indicators=[],
+            supported_audio_codecs=[hfp.AudioCodec.CVSD],
+        )
+        ref_hfp_protocol_queue = hfp_ext.HfProtocol.setup_server(
+            self.ref.device,
+            sdp_handle=_HFP_SDP_HANDLE,
+            configuration=hfp_configuration,
+        )
+
+        dut_hfp_cb = self.dut.bl4a.register_callback(_Module.HFP_AG)
+        self.test_case_context.push(dut_hfp_cb)
+
+        await self.classic_connect_and_pair()
+        self.logger.info("[DUT] Wait for HFP connected.")
+        await dut_hfp_cb.wait_for_event(
+            bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),
+            timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+        )
+
+        self.logger.info("[REF] Wait for HFP connected.")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            ref_hfp_protocol = await ref_hfp_protocol_queue.get()
+            await ref_hfp_protocol.slc_initialized.wait()
+
+        if not ref_hfp_protocol.supports_ag_feature(hfp.AgFeature.VOICE_RECOGNITION_FUNCTION):
+            self.skipTest("REF doesn't support voice recognition activation")
+
+        vr_state = [hfp.VoiceRecognitionState.DISABLE]
+        condition = asyncio.Condition()
+
+        @ref_hfp_protocol.on(ref_hfp_protocol.EVENT_VOICE_RECOGNITION)
+        async def _(state: hfp.VoiceRecognitionState):
+            async with condition:
+                vr_state[0] = state
+                condition.notify_all()
+
+        voice_command_callback = self.dut.bl4a.register_voice_command_callback()
+        self.test_case_context.push(voice_command_callback)
+        activation_task: asyncio.Task | None = None
+        if initiator == constants.TestRole.REF:
+            self.logger.info("[REF] Start voice recognition.")
+            # Android stack doesn't reply BVRA until
+            # BluetoothHeadset.startVoiceRecognition() is called, so it must be
+            # executed asynchronously.
+            activation_task = asyncio.create_task(
+                ref_hfp_protocol.execute_command("AT+BVRA=1",
+                                                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS))
+            self.logger.info("[DUT] Wait for voice recognition to be enabled.")
+            await voice_command_callback.wait_for_event(
+                bl4a_api.VoiceCommand(state=True),
+                timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+            )
+        # DUT always needs startVoiceRecognition() to:
+        #   1. (HF-initiated) Send OK response for AT+BVRA.
+        #   2. (AG-initiated) Send +BVRA=1 as AG-initiated voice recognition.
+        self.logger.info("[DUT] Start voice recognition.")
+        self.dut.bt.hfpAgStartVoiceRecognition(self.ref.address)
+
+        if activation_task:
+            self.logger.info("[REF] Wait for AT+BVRA result.")
+            await activation_task
+
+        # Only AG-initiated voice recognition should send +BVRA to the HF.
+        if initiator == constants.TestRole.DUT:
+            self.logger.info("[REF] Wait for voice recognition to be enabled.")
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                async with condition:
+                    await condition.wait_for(lambda: vr_state[0] == hfp.VoiceRecognitionState.ENABLE
+                                            )
+
+        recorder = self.dut.bl4a.start_audio_recording(_RECORDING_PATH)
+        self.test_case_context.push(recorder)
+
+        self.logger.info("[DUT] Wait for SCO connected.")
+        await self._wait_for_sco_state(dut_hfp_cb, _ScoState.CONNECTED)
+
+        if initiator == constants.TestRole.DUT:
+            self.logger.info("[DUT] Stop voice recognition.")
+            self.dut.bt.hfpAgStopVoiceRecognition(self.ref.address)
+            self.logger.info("[REF] Wait for voice recognition to be disabled.")
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                async with condition:
+                    await condition.wait_for(
+                        lambda: vr_state[0] == hfp.VoiceRecognitionState.DISABLE)
+        else:
+            self.logger.info("[REF] Stop voice recognition.")
+            await ref_hfp_protocol.execute_command("AT+BVRA=0",
+                                                   timeout=_DEFAULT_STEP_TIMEOUT_SECONDS)
+            self.logger.info("[DUT] Wait for voice recognition to be disabled.")
+            await voice_command_callback.wait_for_event(
+                bl4a_api.VoiceCommand(state=False),
+                timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+            )
+
+        recorder.close()
+
+        self.logger.info("[DUT] Wait for SCO disconnected.")
+        await self._wait_for_sco_state(dut_hfp_cb, _ScoState.DISCONNECTED)
 
 
 if __name__ == "__main__":
