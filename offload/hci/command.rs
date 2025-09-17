@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(missing_docs)]
+
 use crate::derive::{Read, Write};
 use crate::reader::{Read, Reader};
 use crate::writer::{pack, Write, Writer};
@@ -35,6 +37,8 @@ pub enum Command {
     LeRemoveIsoDataPath(LeRemoveIsoDataPath),
     /// Vendor-specific LE Get Vendor Capabilities
     LeGetVendorCapabilities(LeGetVendorCapabilities),
+    /// Vendor A2dp Hardware Offload
+    A2dpHardwareOffload(A2dpHardwareOffload),
     /// Unknown command
     Unknown(OpCode),
 }
@@ -58,6 +62,8 @@ pub enum ReturnParameters {
     LeRemoveIsoDataPath(LeIsoDataPathComplete),
     /// Vendor-specific LE Get Vendor Capabilities
     LeGetVendorCapabilities(LeGetVendorCapabilitiesComplete),
+    /// Vendor A2dp Hardware Offload
+    A2dpHardwareOffload(A2dpHardwareOffloadComplete),
     /// Unknown command
     Unknown(OpCode),
 }
@@ -75,6 +81,7 @@ impl Command {
         let Some((opcode, mut r)) = parse_packet(data) else {
             return Err(None);
         };
+
         Self::dispatch_read(opcode, &mut r).ok_or(Some(opcode))
     }
 
@@ -88,6 +95,7 @@ impl Command {
             LeSetupIsoDataPath::OPCODE => Self::LeSetupIsoDataPath(r.read()?),
             LeRemoveIsoDataPath::OPCODE => Self::LeRemoveIsoDataPath(r.read()?),
             LeGetVendorCapabilities::OPCODE => Self::LeGetVendorCapabilities(r.read()?),
+            A2dpHardwareOffload::OPCODE => Self::A2dpHardwareOffload(r.read()?),
             opcode => Self::Unknown(opcode),
         })
     }
@@ -140,26 +148,16 @@ pub trait CommandOpCode {
 }
 
 /// Build command from definition
-pub trait CommandToBytes: CommandOpCode + Write {
+pub trait CommandToBytes: CommandOpCode + Sized + Write {
     /// Output the HCI Command packet
-    fn to_bytes(&self) -> Vec<u8>
-    where
-        Self: Sized + CommandOpCode + Write;
+    fn to_bytes(&self) -> Vec<u8>;
 }
 
-pub use defs::*;
-
-#[allow(missing_docs)]
-#[rustfmt::skip]
-mod defs {
-
-use super::*;
 use crate::derive::CommandToBytes;
 use crate::status::*;
 
 #[cfg(test)]
 use crate::{Event, EventToBytes};
-
 
 // 7.3.2 Reset Command
 
@@ -190,7 +188,6 @@ fn test_reset_complete() {
     assert_eq!(p.status, Status::Success);
     assert_eq!(e.to_bytes(), &dump[..]);
 }
-
 
 // 7.8.2 LE Read Buffer Size
 
@@ -248,7 +245,6 @@ fn test_le_read_buffer_size_v2_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.97 LE Set CIG Parameters
 
 impl CommandOpCode for LeSetCigParameters {
@@ -256,6 +252,7 @@ impl CommandOpCode for LeSetCigParameters {
 }
 
 #[derive(Debug, Read, Write, CommandToBytes)]
+#[rustfmt::skip]
 pub struct LeSetCigParameters {
     pub cig_id: u8,
     #[N(3)] pub sdu_interval_c_to_p: u32,
@@ -282,9 +279,9 @@ pub struct LeCisInCigParameters {
 #[test]
 fn test_le_set_cig_parameters() {
     let dump = [
-        0x62, 0x20, 0x21, 0x01, 0x10, 0x27, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x64, 0x00, 0x05,
-        0x00, 0x02, 0x00, 0x78, 0x00, 0x00, 0x00, 0x02, 0x03, 0x0d, 0x00, 0x01, 0x78, 0x00, 0x00, 0x00,
-        0x02, 0x03, 0x0d, 0x00
+        0x62, 0x20, 0x21, 0x01, 0x10, 0x27, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x64, 0x00,
+        0x05, 0x00, 0x02, 0x00, 0x78, 0x00, 0x00, 0x00, 0x02, 0x03, 0x0d, 0x00, 0x01, 0x78, 0x00,
+        0x00, 0x00, 0x02, 0x03, 0x0d, 0x00,
     ];
     let Ok(Command::LeSetCigParameters(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.cig_id, 0x01);
@@ -333,7 +330,6 @@ fn test_le_set_cig_parameters_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.99 LE Create CIS
 
 impl CommandOpCode for LeCreateCis {
@@ -352,7 +348,7 @@ pub struct CisAclConnectionHandle {
 }
 
 #[test]
-fn test_le_create_cis () {
+fn test_le_create_cis() {
     let dump = [0x64, 0x20, 0x09, 0x02, 0x60, 0x00, 0x40, 0x00, 0x61, 0x00, 0x41, 0x00];
     let Ok(Command::LeCreateCis(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.connection_handles.len(), 2);
@@ -362,7 +358,6 @@ fn test_le_create_cis () {
     assert_eq!(c.connection_handles[1].acl, 0x41);
     assert_eq!(c.to_bytes(), &dump[..]);
 }
-
 
 // 7.8.100 LE Remove CIG
 
@@ -399,7 +394,6 @@ fn test_le_remove_cig_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.103 LE Create BIG
 
 impl CommandOpCode for LeCreateBig {
@@ -407,6 +401,7 @@ impl CommandOpCode for LeCreateBig {
 }
 
 #[derive(Debug, Read, Write, CommandToBytes)]
+#[rustfmt::skip]
 pub struct LeCreateBig {
     pub big_handle: u8,
     pub advertising_handle: u8,
@@ -425,9 +420,9 @@ pub struct LeCreateBig {
 #[test]
 fn test_le_create_big() {
     let dump = [
-        0x68, 0x20, 0x1f, 0x00, 0x00, 0x02, 0x10, 0x27, 0x00, 0x78, 0x00, 0x3c, 0x00, 0x04, 0x02, 0x00,
-        0x00, 0x01, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32,
-        0x33, 0x34
+        0x68, 0x20, 0x1f, 0x00, 0x00, 0x02, 0x10, 0x27, 0x00, 0x78, 0x00, 0x3c, 0x00, 0x04, 0x02,
+        0x00, 0x00, 0x01, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34,
+        0x31, 0x32, 0x33, 0x34,
     ];
     let Ok(Command::LeCreateBig(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.big_handle, 0x00);
@@ -441,13 +436,15 @@ fn test_le_create_big() {
     assert_eq!(c.packing, 0x00);
     assert_eq!(c.framing, 0x00);
     assert_eq!(c.encryption, 1);
-    assert_eq!(c.broadcast_code, [
-        0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34,
-        0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34
-    ]);
+    assert_eq!(
+        c.broadcast_code,
+        [
+            0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32, 0x33, 0x34, 0x31, 0x32,
+            0x33, 0x34
+        ]
+    );
     assert_eq!(c.to_bytes(), &dump[..]);
 }
-
 
 // 7.8.109 LE Setup ISO Data Path
 
@@ -456,6 +453,7 @@ impl CommandOpCode for LeSetupIsoDataPath {
 }
 
 #[derive(Clone, Debug, Read, Write, CommandToBytes)]
+#[rustfmt::skip]
 pub struct LeSetupIsoDataPath {
     pub connection_handle: u16,
     pub data_path_direction: LeDataPathDirection,
@@ -500,7 +498,8 @@ pub struct LeIsoDataPathComplete {
 #[test]
 fn test_le_setup_iso_data_path() {
     let dump = [
-        0x6e, 0x20, 0x0d, 0x60, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        0x6e, 0x20, 0x0d, 0x60, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
     ];
     let Ok(Command::LeSetupIsoDataPath(c)) = Command::from_bytes(&dump) else { panic!() };
     assert_eq!(c.connection_handle, 0x60);
@@ -524,7 +523,6 @@ fn test_le_setup_iso_data_path_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
-
 // 7.8.110 LE Remove ISO Data Path
 
 impl CommandOpCode for LeRemoveIsoDataPath {
@@ -545,7 +543,6 @@ fn test_le_remove_iso_data_path() {
     assert_eq!(c.data_path_direction, 0x01);
     assert_eq!(c.to_bytes(), &dump[..]);
 }
-
 
 // Vendor-specific LE Get Vendor Capabilities
 
@@ -636,8 +633,9 @@ fn test_le_get_vendor_capabilities() {
 #[test]
 fn test_le_get_vendor_capabilities_complete() {
     let dump = [
-        0x0e, 0x1e, 0x01, 0x53, 0xfd, 0x00, 0x01, 0x01, 0x00, 0x28, 0x00, 0x01, 0x39, 0x01, 0x05, 0x01,
-        0x14, 0x00, 0x01, 0x01, 0x00, 0x23, 0x00, 0x00, 0x00, 0x01, 0x23, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x0e, 0x1e, 0x01, 0x53, 0xfd, 0x00, 0x01, 0x01, 0x00, 0x28, 0x00, 0x01, 0x39, 0x01, 0x05,
+        0x01, 0x14, 0x00, 0x01, 0x01, 0x00, 0x23, 0x00, 0x00, 0x00, 0x01, 0x23, 0x00, 0x00, 0x00,
+        0x00, 0x01,
     ];
     let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
     let ReturnParameters::LeGetVendorCapabilities(ref p) = e.return_parameters else { panic!() };
@@ -661,4 +659,124 @@ fn test_le_get_vendor_capabilities_complete() {
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
+// A2dp Hardware Offload
+
+#[derive(Debug, CommandToBytes)]
+pub enum A2dpHardwareOffload {
+    StartA2dpOffload(StartA2dpOffload),
+    StopA2dpOffload(StopA2dpOffload),
+    Unknown(u8),
+}
+
+#[derive(Debug, Read, Write)]
+pub struct A2dpHardwareOffloadComplete {
+    status: Status,
+    sub_opcode: u8,
+}
+
+impl CommandOpCode for A2dpHardwareOffload {
+    const OPCODE: OpCode = OpCode::from(0x3f, 0x15d);
+}
+
+impl Read for A2dpHardwareOffload {
+    fn read(r: &mut Reader) -> Option<Self> {
+        let sub_opcode = r.read_u8()?;
+        Some(match sub_opcode {
+            StartA2dpOffload::OPCODE => Self::StartA2dpOffload(r.read()?),
+            StopA2dpOffload::OPCODE => Self::StopA2dpOffload(r.read()?),
+            _ => Self::Unknown(sub_opcode),
+        })
+    }
+}
+
+impl Write for A2dpHardwareOffload {
+    fn write(&self, w: &mut Writer) {
+        match self {
+            A2dpHardwareOffload::StartA2dpOffload(c) => {
+                w.write_u8(StartA2dpOffload::OPCODE);
+                w.write(c);
+            }
+            A2dpHardwareOffload::StopA2dpOffload(c) => {
+                w.write_u8(StopA2dpOffload::OPCODE);
+                w.write(c);
+            }
+            A2dpHardwareOffload::Unknown(opc) => {
+                w.write_u8(*opc);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Read, Write)]
+pub struct StartA2dpOffload {
+    pub connection_handle: u16,
+    pub l2cap_channel_id: u16,
+    pub data_path_direction: u8,
+    pub peer_mtu: u16,
+    pub cp_enable_scms_t: u8,
+    pub cp_header_scms_t: u8,
+    pub vendor_specific_parameters: Vec<u8>,
+}
+
+impl StartA2dpOffload {
+    const OPCODE: u8 = 0x03;
+}
+
+#[derive(Debug, Read, Write)]
+pub struct StopA2dpOffload {}
+
+impl StopA2dpOffload {
+    const OPCODE: u8 = 0x04;
+}
+
+#[test]
+fn test_start_a2dp_offload() {
+    let dump = [
+        0x5d, 0xfd, 14, 0x03, 0x23, 0x01, 0x67, 0x45, 0x00, 0x00, 0x01, 0x00, 0x42, 0x03, 0x01,
+        0x02, 0x03,
+    ];
+    let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StartA2dpOffload(c))) =
+        Command::from_bytes(&dump)
+    else {
+        panic!()
+    };
+    assert_eq!(c.connection_handle, 0x0123);
+    assert_eq!(c.l2cap_channel_id, 0x4567);
+    assert_eq!(c.data_path_direction, 0);
+    assert_eq!(c.peer_mtu, 0x0100);
+    assert_eq!(c.cp_enable_scms_t, 0);
+    assert_eq!(c.cp_header_scms_t, 0x42);
+    assert_eq!(c.vendor_specific_parameters, &[0x01, 0x02, 0x03]);
+    assert_eq!(A2dpHardwareOffload::StartA2dpOffload(c).to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_start_a2dp_complete() {
+    let dump = [0x0e, 0x05, 0x01, 0x5d, 0xfd, 0x00, 0x03];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::A2dpHardwareOffload(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.status, Status::Success);
+    assert_eq!(p.sub_opcode, StartA2dpOffload::OPCODE);
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_stop_a2dp_offload() {
+    let dump = [0x5d, 0xfd, 1, 0x04];
+    let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StopA2dpOffload(c))) =
+        Command::from_bytes(&dump)
+    else {
+        panic!()
+    };
+    assert_eq!(A2dpHardwareOffload::StopA2dpOffload(c).to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_stop_a2dp_complete() {
+    let dump = [0x0e, 0x05, 0x01, 0x5d, 0xfd, 0x00, 0x04];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::A2dpHardwareOffload(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.status, Status::Success);
+    assert_eq!(p.sub_opcode, StopA2dpOffload::OPCODE);
+    assert_eq!(e.to_bytes(), &dump[..]);
 }
