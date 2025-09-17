@@ -367,10 +367,10 @@ static void scanNative(JNIEnv* /* env */, jobject /* object */, jboolean start) 
   sScanner->Scan(start);
 }
 
-static void gattSetScanParametersNative(JNIEnv* /* env */, jobject /* object */, jint client_if_1m,
-                                        jint scan_interval_unit_1m, jint scan_window_unit_1m,
-                                        jint client_if_coded, jint scan_interval_unit_coded,
-                                        jint scan_window_unit_coded, jint scan_phy) {
+static void setScanParametersNative(JNIEnv* /* env */, jobject /* object */, jint client_if_1m,
+                                    jint scan_interval_unit_1m, jint scan_window_unit_1m,
+                                    jint client_if_coded, jint scan_interval_unit_coded,
+                                    jint scan_window_unit_coded, jint scan_phy) {
   if (!sScanner) {
     return;
   }
@@ -950,7 +950,7 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
            (void*)scanFilterAddNative},
           {"scanFilterClearNative", "(II)V", (void*)scanFilterClearNative},
           {"scanFilterEnableNative", "(IZ)V", (void*)scanFilterEnableNative},
-          {"gattSetScanParametersNative", "(IIIIIII)V", (void*)gattSetScanParametersNative},
+          {"setScanParametersNative", "(IIIIIII)V", (void*)setScanParametersNative},
           // MSFT HCI Extension functions.
           {"isMsftSupportedNative", "()Z", (bool*)isMsftSupportedNative},
           {"msftAdvMonitorAddNative",

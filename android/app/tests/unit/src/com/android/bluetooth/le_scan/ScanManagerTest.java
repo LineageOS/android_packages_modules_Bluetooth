@@ -2021,7 +2021,7 @@ public class ScanManagerTest {
 
                     assertThat(client.getSettings().getPhy()).isEqualTo(phy);
                     verify(mScanNativeInterface)
-                            .gattSetScanParameters(
+                            .setScanParameters(
                                     eq(expect1m ? mClientId : 0),
                                     anyInt(),
                                     anyInt(),
@@ -2052,7 +2052,7 @@ public class ScanManagerTest {
 
         assertThat(client1m.getSettings().getPhy()).isEqualTo(PHY_LE_1M);
         verify(mScanNativeInterface)
-                .gattSetScanParameters(
+                .setScanParameters(
                         eq(clientId1m),
                         eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_INTERVAL_MS)),
                         eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_WINDOW_MS)),
@@ -2071,7 +2071,7 @@ public class ScanManagerTest {
 
         assertThat(clientCoded.getSettings().getPhy()).isEqualTo(PHY_LE_CODED);
         verify(mScanNativeInterface)
-                .gattSetScanParameters(
+                .setScanParameters(
                         eq(clientId1m),
                         eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_INTERVAL_MS)),
                         eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_WINDOW_MS)),
@@ -2084,7 +2084,7 @@ public class ScanManagerTest {
         stopScan(client1m);
 
         verify(mScanNativeInterface)
-                .gattSetScanParameters(
+                .setScanParameters(
                         eq(0),
                         anyInt(),
                         anyInt(),
@@ -2098,7 +2098,7 @@ public class ScanManagerTest {
 
         verify(mScanNativeInterface, atLeastOnce()).scan(false);
         verify(mScanNativeInterface, never())
-                .gattSetScanParameters(
+                .setScanParameters(
                         anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), eq(0));
     }
 

@@ -1228,31 +1228,15 @@ class ScanManager {
             Log.d(
                     TAG,
                     "Start scanNative with"
-                            + " old 1M scanMode "
-                            + mLastConfiguredScanSetting1m
-                            + " new 1M scanMode "
-                            + newScanSetting1m
-                            + " ( in scan unit: "
-                            + scanInterval1m
-                            + " / "
-                            + scanWindow1m
-                            + ", "
-                            + " old coded scanMode "
-                            + mLastConfiguredScanSettingCoded
-                            + " new coded scanMode "
-                            + newScanSettingCoded
-                            + " ( in scan unit: "
-                            + scanIntervalCoded
-                            + " / "
-                            + scanWindowCoded
-                            + ", "
-                            + "scanPhyMask: "
-                            + scanPhyMask
-                            + " ) "
-                            + client1m
-                            + " / "
-                            + clientCoded);
-            mNativeInterface.gattSetScanParameters(
+                            + (" old 1M scanMode=" + mLastConfiguredScanSetting1m)
+                            + (", new 1M scanMode=" + newScanSetting1m)
+                            + (" (in scan unit=" + scanInterval1m + " / " + scanWindow1m + ")")
+                            + (", old coded scanMode=" + mLastConfiguredScanSettingCoded)
+                            + (", new coded scanMode=" + newScanSettingCoded)
+                            + (" (in scan unit=" + scanIntervalCoded + " / " + scanWindowCoded)
+                            + (", " + "scanPhyMask=" + scanPhyMask + " )")
+                            + (", " + client1m + " / " + clientCoded));
+            mNativeInterface.setScanParameters(
                     client1m == null ? 0 : client1m.getScannerId(),
                     scanInterval1m,
                     scanWindow1m,
