@@ -550,10 +550,12 @@ public class DatabaseManager {
 
         // Only update is_active_a2dp_device if an a2dp device is connected
         if (isActiveA2dp) {
+            Log.d(TAG, "Update " + device + " as A2DP active device");
             metadata.is_active_a2dp_device = true;
         }
 
         if (isActiveHfp) {
+            Log.d(TAG, "Update " + device + " as HFP active device");
             metadata.isActiveHfpDevice = true;
         }
 
@@ -597,21 +599,19 @@ public class DatabaseManager {
     }
 
     /**
-     * Sets device profileId's active status to false if currently true
+     * Sets device profile's active status to false if currently true
      *
      * @param device is the remote bluetooth device with which we have disconnected
-     * @param profileId see {@link BluetoothProfile}
+     * @param profile see {@link BluetoothProfile}
      */
-    public void setDisconnection(BluetoothDevice device, int profileId) {
+    public void setDisconnection(BluetoothDevice device, int profile) {
         if (device == null) {
-            Log.e(TAG, "setDisconnection: device is null, profileId: " + getProfileName(profileId));
+            Log.e(TAG, "setDisconnection: device is null, profile: " + getProfileName(profile));
             return;
         }
-        Log.d(
-                TAG,
-                "setDisconnection: device " + device + "profileId: " + getProfileName(profileId));
+        Log.d(TAG, "setDisconnection(" + device + ", " + getProfileName(profile) + ")");
 
-        if (profileId != BluetoothProfile.A2DP && profileId != BluetoothProfile.HEADSET) {
+        if (profile != BluetoothProfile.A2DP && profile != BluetoothProfile.HEADSET) {
             // there is no change on metadata when profile is neither A2DP nor Headset
             return;
         }
@@ -623,20 +623,14 @@ public class DatabaseManager {
                 return;
             }
             Metadata metadata = mMetadataCache.get(address);
-            if (profileId == BluetoothProfile.A2DP && metadata.is_active_a2dp_device) {
+            if (profile == BluetoothProfile.A2DP && metadata.is_active_a2dp_device) {
                 metadata.is_active_a2dp_device = false;
-                Log.d(
-                        TAG,
-                        "setDisconnection: Updating is_active_device to false for device: "
-                                + device);
+                Log.d(TAG, "Update " + device + ". It is no longer an A2DP active device");
                 updateDatabase(metadata);
             }
-            if (profileId == BluetoothProfile.HEADSET && metadata.isActiveHfpDevice) {
+            if (profile == BluetoothProfile.HEADSET && metadata.isActiveHfpDevice) {
                 metadata.isActiveHfpDevice = false;
-                Log.d(
-                        TAG,
-                        "setDisconnection: Updating isActiveHfpDevice to false for device: "
-                                + device);
+                Log.d(TAG, "Update " + device + ". It is no longer a HFP active device");
                 updateDatabase(metadata);
             }
         }
