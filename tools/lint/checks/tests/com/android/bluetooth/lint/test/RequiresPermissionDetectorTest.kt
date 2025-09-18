@@ -1226,6 +1226,7 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             public void sendBroadcastAsUser(Intent intent, UserHandle user) {}
             public void sendBroadcastAsUser(Intent intent, UserHandle user, String receiverPermission) {}
             public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions) {}
+            public void sendBroadcastWithMultiplePermissions(Intent intent, String[] receiverPermissions) {}
             public void sendBroadcastAsUserMultiplePermissions(Intent intent, UserHandle user, String[] receiverPermissions) {}
         }
         """
