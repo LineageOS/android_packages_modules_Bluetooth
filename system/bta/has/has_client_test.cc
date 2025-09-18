@@ -1124,7 +1124,6 @@ protected:
 class HasClientTest : public HasClientTestBase {
   void SetUp(void) override {
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->synchronize_preset_can_timeout(true);
     HasClientTestBase::SetUp();
     TestAppRegister();
   }

@@ -975,11 +975,8 @@ public:
   void OnGroupOpCoordinatorTimeout(void* /*p*/) {
     log::error("Not all the devices notified their state change on time.");
 
-    if (com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
-      for (auto op : pending_group_operation_timeouts_) {
-        callbacks_->OnActivePresetSelectError(op.second.operation.addr_or_group,
-                                              ErrorCode::TIMEOUT);
-      }
+    for (auto op : pending_group_operation_timeouts_) {
+      callbacks_->OnActivePresetSelectError(op.second.operation.addr_or_group, ErrorCode::TIMEOUT);
     }
     pending_group_operation_timeouts_.clear();
     HasCtpGroupOpCoordinator::Cleanup();
@@ -1594,13 +1591,8 @@ private:
     }
     // Always report the current active preset to upper layer to reflect the remote state.
     // Android may not always be aware of the origin of the changes and shouldn't delay the event
-    if (com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
-      callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
-    }
+    callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
     if (pending_group_operation_timeouts_.empty()) {
-      if (!com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
-        callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
-      }
       return;
     }
 
@@ -1627,10 +1619,6 @@ private:
             break;
         }
         if (group_op_coordinator.IsFullyCompleted()) {
-          if (!com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
-            callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
-                                                       device->currently_active_preset);
-          }
           it = decltype(it)(pending_group_operation_timeouts_.erase(std::next(it).base()));
         } else {
           ++it;
@@ -1663,10 +1651,6 @@ private:
           break;
       }
       if (group_op_coordinator.IsFullyCompleted()) {
-        if (!com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
-          callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
-                                                     device->currently_active_preset);
-        }
         pending_group_operation_timeouts_.erase(it->first);
       }
       if (matches) {

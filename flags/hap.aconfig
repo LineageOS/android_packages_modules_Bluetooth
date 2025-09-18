@@ -10,16 +10,6 @@ flag {
 }
 
 flag {
-    name: "synchronize_preset_can_timeout"
-    namespace: "bluetooth"
-    description: "Once a group preset operation timeout, we should be able to recover"
-    bug: "422249143"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hap_safely_erase_pending_operation_timeout"
     namespace: "bluetooth"
     description: "Fixes erasing pending operation timeout"
