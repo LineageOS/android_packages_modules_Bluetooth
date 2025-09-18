@@ -2,24 +2,13 @@
 <issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
 
     <issue
-        id="FlaggedApi"
-        message="Field `METADATA_EXCLUSIVE_MANAGER` is a flagged API and should be inside an `if (Flags.supportExclusiveManager())` check (or annotate the surrounding method `?` with `@FlaggedApi(Flags.FLAG_SUPPORT_EXCLUSIVE_MANAGER) to transfer requirement to caller`)"
-        errorLine1="    private static final int METADATA_MAX_KEY = METADATA_EXCLUSIVE_MANAGER;"
-        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
-            line="902"
-            column="49"/>
-    </issue>
-
-    <issue
         id="WrongConstant"
         message="Flag not allowed here"
         errorLine1="            return (mCapability >> 1) &amp; 1;"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHearingAid.java"
-            line="105"
+            line="108"
             column="20"/>
     </issue>
 
@@ -30,7 +19,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHearingAid.java"
-            line="121"
+            line="125"
             column="20"/>
     </issue>
 
@@ -41,7 +30,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothQualityReport.java"
-            line="778"
+            line="753"
             column="32"/>
     </issue>
 
@@ -52,8 +41,470 @@
         errorLine2="                        ~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/OobData.java"
-            line="781"
+            line="814"
             column="25"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothAdapter.disable` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]}."
+        errorLine1="    public boolean disable() {"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
+            line="1650"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothAdapter.getProfileConnectionState` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public @ConnectionState int getProfileConnectionState(int profile) {"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
+            line="2738"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothAdapter.closeProfileProxy` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="    public void closeProfileProxy(@NonNull BluetoothProfile proxy) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
+            line="3285"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `null.onBluetoothServiceUp` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="                public void onBluetoothServiceUp(@NonNull IBinder bluetoothService) {"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
+            line="3411"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothDevice.getBondState` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public int getBondState() {"
+        errorLine2="               ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
+            line="2302"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothDevice.fetchUuidsWithSdp` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]}."
+        errorLine1="    public boolean fetchUuidsWithSdp() {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
+            line="2613"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `GattCallback.onClientRegistered` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void onClientRegistered(int status) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
+            line="293"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `GattCallback.onCharacteristicRead` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void onCharacteristicRead("
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
+            line="500"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `GattCallback.onCharacteristicWrite` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void onCharacteristicWrite("
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
+            line="564"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `GattCallback.onDescriptorRead` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void onDescriptorRead(BluetoothDevice device, int status, int handle, byte[] value) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
+            line="671"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `GattCallback.onDescriptorWrite` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void onDescriptorWrite("
+        errorLine2="                    ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
+            line="726"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHapClient.BluetoothHapClient` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="    BluetoothHapClient(Context context, BluetoothAdapter adapter) {"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHapClient.java"
+            line="452"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.registerSinkAppConfiguration` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public boolean registerSinkAppConfiguration("
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="148"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.unregisterAppConfiguration` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public boolean unregisterAppConfiguration(BluetoothHealthAppConfiguration config) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="170"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.connectChannelToSource` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public boolean connectChannelToSource("
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="194"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.disconnectChannel` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public boolean disconnectChannel("
+        errorLine2="                   ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="219"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.getMainChannelFd` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public ParcelFileDescriptor getMainChannelFd("
+        errorLine2="                                ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="244"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.getConnectionState` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public int getConnectionState(BluetoothDevice device) {"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="266"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.getConnectedDevices` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public List&lt;BluetoothDevice> getConnectedDevices() {"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="287"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothHealth.getDevicesMatchingConnectionStates` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public List&lt;BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothHealth.java"
+            line="310"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothLeAudio.BluetoothLeAudio` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="    /* package */ BluetoothLeAudio(Context context, BluetoothAdapter adapter) {"
+        errorLine2="                  ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothLeAudio.java"
+            line="729"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothLeBroadcast.onServiceConnected` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="    public void onServiceConnected(IBinder service) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothLeBroadcast.java"
+            line="784"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothLeScanner.startScanFromSource` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_SCAN]}."
+        errorLine1="    public void startScanFromSource("
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
+            line="224"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothLeScanner.startTruncatedScan` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_SCAN]} but only calls APIs requiring [none]."
+        errorLine1="    public void startTruncatedScan("
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
+            line="380"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BleScanCallbackWrapper.startRegistration` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]} but is only annotated with [none]."
+        errorLine1="        void startRegistration() {"
+        errorLine2="             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
+            line="429"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BleScanCallbackWrapper.onScannerRegistered` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN]} but is only annotated with [none]."
+        errorLine1="        public void onScannerRegistered(int status, int scannerId) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
+            line="494"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothMap.getConnectionState` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public int getConnectionState(BluetoothDevice device) {"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothMap.java"
+            line="412"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothSap.getConnectionState` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public int getConnectionState(BluetoothDevice device) {"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothSap.java"
+            line="411"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothVolumeControl.finalize` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    protected void finalize() {"
+        errorLine2="                   ~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothVolumeControl.java"
+            line="269"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `BluetoothVolumeControl.onServiceConnected` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="    public void onServiceConnected(IBinder service) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothVolumeControl.java"
+            line="293"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `CallbackWrapper.registerCallback` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    public void registerCallback("
+        errorLine2="                ~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/CallbackWrapper.java"
+            line="90"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `CallbackWrapper.unregisterCallback` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    public void unregisterCallback(@Nullable S service, @NonNull T callback) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/CallbackWrapper.java"
+            line="113"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public SystemServiceMessage.Enable.Reply send(SystemServiceMessage.Enable data) {"
+        errorLine2="                                             ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="72"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    public SystemServiceMessage.Disable.Reply send(SystemServiceMessage.Disable data) {"
+        errorLine2="                                              ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="79"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    public SystemServiceMessage.FactoryReset.Reply send(SystemServiceMessage.FactoryReset data) {"
+        errorLine2="                                                   ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="86"
+            column="52"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.LOCAL_MAC_ADDRESS]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.GetAddress.Reply send(SystemServiceMessage.GetAddress data) {"
+        errorLine2="                                          ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="93"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.GetName.Reply send(SystemServiceMessage.GetName data) {"
+        errorLine2="                                       ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="100"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.SetSnoopLog.Reply send(SystemServiceMessage.SetSnoopLog data) {"
+        errorLine2="                                           ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="118"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.GetSnoopLog.Reply send(SystemServiceMessage.GetSnoopLog data) {"
+        errorLine2="                                           ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="124"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.IsAutoSupported.Reply send(SystemServiceMessage.IsAutoSupported data) {"
+        errorLine2="                                               ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="130"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.IsAutoEnabled.Reply send(SystemServiceMessage.IsAutoEnabled data) {"
+        errorLine2="                                             ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="136"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `SystemServiceMessenger.send` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="    SystemServiceMessage.SetAutoOnEnabled.Reply send(SystemServiceMessage.SetAutoOnEnabled data) {"
+        errorLine2="                                                ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/SystemServiceMessenger.java"
+            line="142"
+            column="49"/>
     </issue>
 
 </issues>
