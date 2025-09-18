@@ -96,7 +96,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="725"
+            line="726"
             column="9"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="725"
+            line="726"
             column="9"/>
     </issue>
 
@@ -118,7 +118,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="725"
+            line="726"
             column="9"/>
     </issue>
 
@@ -129,7 +129,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="725"
+            line="726"
             column="9"/>
     </issue>
 
@@ -241,6 +241,50 @@
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/MetricsLogger.java"
             line="289"
             column="9"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `Disconnected.processMessage` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="        public boolean processMessage(Message message) {"
+        errorLine2="                       ~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dpsink/A2dpSinkStateMachine.java"
+            line="168"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `Disconnected.processStackEvent` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but only calls APIs requiring [none]."
+        errorLine1="        void processStackEvent(StackEvent event) {"
+        errorLine2="             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dpsink/A2dpSinkStateMachine.java"
+            line="185"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `OffState.enter` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void enter() {"
+        errorLine2="                    ~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterState.java"
+            line="220"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `TurningBleOnState.enter` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void enter() {"
+        errorLine2="                    ~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterState.java"
+            line="290"
+            column="21"/>
     </issue>
 
     <issue
@@ -454,12 +498,23 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
+        message="Method `Disconnected.enter` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
+        errorLine1="        public void enter() {"
+        errorLine2="                    ~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bas/BatteryStateMachine.java"
+            line="235"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
         message="Method `GattCallback.onServicesDiscovered` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
         errorLine1="        public void onServicesDiscovered(BluetoothGatt gatt, int status) {"
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bas/BatteryStateMachine.java"
-            line="460"
+            line="461"
             column="21"/>
     </issue>
 
@@ -470,7 +525,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bas/BatteryStateMachine.java"
-            line="494"
+            line="495"
             column="21"/>
     </issue>
 
@@ -690,7 +745,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/gatt/GattServiceBinder.java"
-            line="618"
+            line="684"
             column="25"/>
     </issue>
 
@@ -850,6 +905,17 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
+        message="Method `PbapClientObexClientHandler.handleMessage` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="        public void handleMessage(Message msg) {"
+        errorLine2="                    ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbapclient/obex/PbapClientObexClient.java"
+            line="373"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
         message="Method `RemoteDevices.keyMissingCallback` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
         errorLine1="    void keyMissingCallback(byte[] address, int reason) {"
         errorLine2="         ~~~~~~~~~~~~~~~~~~">
@@ -992,6 +1058,17 @@
     </issue>
 
     <issue
+        id="MissingOrMismatchedSendBroadcastRequiresPermission"
+        message="Broadcast action requires {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but call is protected with {allOf=[android.permission.BLUETOOTH_CONNECT]}."
+        errorLine1="        mAdapterService.sendOrderedBroadcast("
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/RemoteDevices.java"
+            line="1910"
+            column="25"/>
+    </issue>
+
+    <issue
         id="ExportedReceiver"
         message="Exported receiver does not require permission"
         errorLine1="        &lt;receiver android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.opp.BluetoothOppReceiver&quot; android:exported=&quot;true&quot; android:enabled=&quot;false&quot;>"
@@ -1086,7 +1163,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4203"
+            line="4204"
             column="17"/>
     </issue>
 
@@ -1174,7 +1251,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="1058"
+            line="1059"
             column="9"/>
     </issue>
 

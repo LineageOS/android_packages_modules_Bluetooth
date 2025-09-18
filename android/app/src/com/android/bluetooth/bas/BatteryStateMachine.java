@@ -236,6 +236,7 @@ public class BatteryStateMachine extends StateMachine {
             log(TAG, "Enter (" + mDevice + "): " + messageWhatToString(getCurrentMessage().what));
 
             if (mBluetoothGatt != null) {
+                // TODO(b/445793206): Use internal APIs instead of framework APIs
                 mBluetoothGatt.close();
                 mBluetoothGatt = null;
             }

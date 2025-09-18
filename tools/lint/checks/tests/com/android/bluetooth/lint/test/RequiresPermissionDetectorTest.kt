@@ -148,6 +148,9 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
                 override fun connect() {
                     getServiceAndEnforceConnect()
                 }
+                override fun connectSecond() {
+                    connect()
+                }
             }
             class Util(val context: Context) {
                 @android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -1226,6 +1229,7 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             public void sendBroadcastAsUser(Intent intent, UserHandle user) {}
             public void sendBroadcastAsUser(Intent intent, UserHandle user, String receiverPermission) {}
             public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions) {}
+            public void sendBroadcastWithMultiplePermissions(Intent intent, String[] receiverPermissions) {}
             public void sendBroadcastAsUserMultiplePermissions(Intent intent, UserHandle user, String[] receiverPermissions) {}
         }
         """
@@ -1333,6 +1337,7 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
         public interface IFoo extends android.os.IInterface {
             public static class Default extends android.os.Binder implements IFoo {
                 @Override public void connect() {}
+                @Override public void connectSecond() {}
                 @Override public void scanAndAdvertise() {}
                 @Override public void disable() {}
             }
@@ -1341,6 +1346,8 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             public void foo();
             @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
             public void connect();
+            @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+            public void connectSecond();
             @RequiresPermission(allOf = {
                 android.Manifest.permission.BLUETOOTH_SCAN,
                 android.Manifest.permission.BLUETOOTH_ADVERTISE

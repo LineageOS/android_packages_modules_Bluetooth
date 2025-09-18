@@ -194,16 +194,16 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                 }
             }
 
-            // Enforcement of `@RequiresPermission` is done via `RequiresPermissionVisitor`
-            context.evaluator.getAnnotation(method, ANNOTATION_REQUIRES_PERMISSION)?.let {
-                enforcedPermissions.addAll(parseAnnotation(context, it))
-                return true
-            }
+            listOf(*method.findSuperMethods(), method).forEach { m ->
+                // Enforcement of `@RequiresPermission` is done via `RequiresPermissionVisitor`
+                context.evaluator.getAnnotation(m, ANNOTATION_REQUIRES_PERMISSION)?.let {
+                    enforcedPermissions.addAll(parseAnnotation(context, it))
+                }
 
-            // Enforcement of `@EnforcePermission` is done via `EnforcePermissionDetector`
-            context.evaluator.getAnnotation(method, ANNOTATION_ENFORCE_PERMISSION)?.let {
-                enforcedPermissions.addAll(parseAnnotation(context, it))
-                return true
+                // Enforcement of `@EnforcePermission` is done via `EnforcePermissionDetector`
+                context.evaluator.getAnnotation(m, ANNOTATION_ENFORCE_PERMISSION)?.let {
+                    enforcedPermissions.addAll(parseAnnotation(context, it))
+                }
             }
 
             node.valueArguments.forEach { argument -> argument.accept(this) }
