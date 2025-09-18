@@ -546,7 +546,8 @@ class MceStateMachine extends StateMachine {
             onConnectionStateChanged(mPreviousState, STATE_CONNECTING);
 
             // When commanded to connect begin SDP to find the MAS server.
-            mDevice.sdpSearch(BluetoothUuid.MAS);
+            mAdapterService.sdpSearch(mDevice, BluetoothUuid.MAS);
+
             sendMessageDelayed(MSG_CONNECTING_TIMEOUT, CONNECT_TIMEOUT.toMillis());
             Log.i(TAG, Utils.getLoggableAddress(mDevice) + " [Connecting]: Await SDP results");
         }
@@ -589,7 +590,7 @@ class MceStateMachine extends StateMachine {
                                 TAG,
                                 Utils.getLoggableAddress(mDevice)
                                         + " [Connecting]: SDP was busy, try again");
-                        mDevice.sdpSearch(BluetoothUuid.MAS);
+                        mAdapterService.sdpSearch(mDevice, BluetoothUuid.MAS);
                     } else {
                         // This means the status is 0 (success, but no record) or 1 (organic
                         // failure). We historically have never retried SDP in failure cases, so we
