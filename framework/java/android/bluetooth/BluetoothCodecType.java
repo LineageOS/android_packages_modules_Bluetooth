@@ -39,7 +39,11 @@ public final class BluetoothCodecType implements Parcelable {
 
     private BluetoothCodecType(Parcel in) {
         mNativeCodecType = in.readInt();
-        mCodecId = in.readLong() & 0xFFFFFFFFL;
+        if (Flags.a2dpLdacApi()) {
+            mCodecId = in.readLong();
+        } else {
+            mCodecId = in.readLong() & 0xFFFFFFFFL;
+        }
         mCodecName = in.readString();
     }
 
@@ -55,8 +59,18 @@ public final class BluetoothCodecType implements Parcelable {
     /** Aptx HD codec identifier. See {@link BluetoothCodecType#getCodecId}. */
     public static final long CODEC_ID_APTX_HD = 0x002400d7ff;
 
-    /** LDAC codec identifier. See {@link BluetoothCodecType#getCodecId}. */
+    /**
+     * LDAC codec identifier. See {@link BluetoothCodecType#getCodecId}.
+     *
+     * @deprecated This codec value is invalid. Please use {@link #CODEC_ID_SONY_LDAC} instead.
+     */
+    @FlaggedApi(Flags.FLAG_A2DP_LDAC_API)
+    @Deprecated
     public static final long CODEC_ID_LDAC = 0x00aa012dff;
+
+    /** LDAC codec identifier. See {@link BluetoothCodecType#getCodecId}. */
+    @FlaggedApi(Flags.FLAG_A2DP_LDAC_API)
+    public static final long CODEC_ID_SONY_LDAC = 0x00aa_012d_ffL;
 
     /** Opus codec identifier. See {@link BluetoothCodecType#getCodecId}. */
     public static final long CODEC_ID_OPUS = 0x000100e0ff;
@@ -73,7 +87,11 @@ public final class BluetoothCodecType implements Parcelable {
      */
     private BluetoothCodecType(@BluetoothCodecConfig.SourceCodecType int codecType, long codecId) {
         mNativeCodecType = codecType;
-        mCodecId = codecId & 0xFFFFFFFFL;
+        if (Flags.a2dpLdacApi()) {
+            mCodecId = codecId;
+        } else {
+            mCodecId = codecId & 0xFFFFFFFFL;
+        }
         mCodecName = BluetoothCodecConfig.getCodecName(codecType);
     }
 
@@ -88,7 +106,11 @@ public final class BluetoothCodecType implements Parcelable {
     @SystemApi
     public BluetoothCodecType(int codecType, long codecId, @NonNull String codecName) {
         mNativeCodecType = codecType;
-        mCodecId = codecId & 0xFFFFFFFFL;
+        if (Flags.a2dpLdacApi()) {
+            mCodecId = codecId;
+        } else {
+            mCodecId = codecId & 0xFFFFFFFFL;
+        }
         mCodecName = codecName;
     }
 
@@ -174,6 +196,7 @@ public final class BluetoothCodecType implements Parcelable {
      */
     @Hide
     @SystemApi
+    @SuppressWarnings("FlaggedApi") // Due to deprecated CODEC_ID_LDAC
     public static @Nullable BluetoothCodecType createFromType(
             @BluetoothCodecConfig.SourceCodecType int codecType) {
         long codecId =
@@ -182,7 +205,13 @@ public final class BluetoothCodecType implements Parcelable {
                     case BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC -> CODEC_ID_AAC;
                     case BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX -> CODEC_ID_APTX;
                     case BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD -> CODEC_ID_APTX_HD;
-                    case BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC -> CODEC_ID_LDAC;
+                    case BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC -> {
+                        if (Flags.a2dpLdacApi()) {
+                            yield CODEC_ID_SONY_LDAC;
+                        } else {
+                            yield CODEC_ID_LDAC;
+                        }
+                    }
                     case BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS -> CODEC_ID_OPUS;
                     case BluetoothCodecConfig.SOURCE_CODEC_TYPE_LC3,
                             BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID ->
