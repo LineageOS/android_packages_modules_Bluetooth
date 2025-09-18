@@ -51,6 +51,8 @@ import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
@@ -277,19 +279,33 @@ public class TestUtils {
      * @param what list of Messages.what that are expected to be run by the handler
      */
     public static void syncHandler(TestLooper looper, int... what) {
-        IntStream.of(what)
-                .forEach(
-                        w -> {
-                            Message msg = looper.nextMessage();
-                            assertWithMessage("Expecting [" + w + "] instead of null Msg")
-                                    .that(msg)
-                                    .isNotNull();
-                            assertWithMessage("Not the expected Message:\n" + msg)
-                                    .that(msg.what)
-                                    .isEqualTo(w);
-                            Log.d(TAG, "Processing message: " + msg);
-                            msg.getTarget().dispatchMessage(msg);
-                        });
+        IntStream.of(what).forEach(w -> syncHandlerInternal(looper, w));
+    }
+
+    private static void syncHandlerInternal(TestLooper looper, int what) {
+        Message msg = looper.nextMessage();
+        assertWithMessage("Expecting [" + what + "] instead of null Msg").that(msg).isNotNull();
+        if (msg.what != what) {
+            List<Integer> whatList = new ArrayList<>();
+
+            Message nextMsg;
+            while ((nextMsg = looper.nextMessage()) != null) {
+                whatList.add(nextMsg.what);
+            }
+
+            String customError =
+                    String.format(
+                            """
+                            Not the expected message. Expected what=[%s] but got what=[%s].
+                              -> Received Msg: %s
+                              -> List of queued message 'what' values: %s\
+                            """,
+                            what, msg.what, msg.toString(), whatList.toString());
+
+            assertWithMessage(customError).that(msg.what).isEqualTo(what);
+        }
+        Log.d(TAG, "Processing message: " + msg);
+        msg.getTarget().dispatchMessage(msg);
     }
 
     /**
