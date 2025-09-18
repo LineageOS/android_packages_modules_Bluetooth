@@ -172,6 +172,7 @@ class A2dpSinkStateMachine extends StateMachine {
                     Log.d(TAG, "[" + mDevice + "] Connect");
                     transitionTo(mConnecting);
                 }
+                // TODO(b/445793206): Use internal APIs instead of framework APIs
                 case CLEANUP -> mService.removeStateMachine(A2dpSinkStateMachine.this);
                 default -> {
                     return false;
