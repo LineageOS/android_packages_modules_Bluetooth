@@ -165,16 +165,7 @@ final class HearingAidStateMachine extends StateMachine {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
                         break;
                     }
-                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-                        transitionTo(mConnecting);
-                        break;
-                    }
-                    if (mService.okToConnect(mDevice)) {
-                        transitionTo(mConnecting);
-                    } else {
-                        // Reject the request and stay in Disconnected state
-                        Log.w(TAG, "Outgoing HearingAid Connecting request rejected: " + mDevice);
-                    }
+                    transitionTo(mConnecting);
                 }
                 case MESSAGE_DISCONNECT -> {
                     Log.d(TAG, "Disconnected: DISCONNECT: call native disconnect for " + mDevice);

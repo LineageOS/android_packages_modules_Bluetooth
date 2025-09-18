@@ -18,7 +18,6 @@ package com.android.bluetooth.bass_client;
 
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
@@ -1787,21 +1786,10 @@ public class BassClientService extends ConnectableProfile {
     @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            requireNonNull(device);
+        requireNonNull(device);
 
-            if (!okToConnect(device)) {
-                return false;
-            }
-        } else {
-            if (device == null) {
-                Log.e(TAG, "connect: device is null");
-                return false;
-            }
-            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
-                Log.e(TAG, "connect: connection policy set to forbidden");
-                return false;
-            }
+        if (!okToConnect(device)) {
+            return false;
         }
 
         final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
@@ -1845,40 +1833,6 @@ public class BassClientService extends ConnectableProfile {
             }
 
             stateMachine.sendMessage(BassClientStateMachine.DISCONNECT);
-        }
-        return true;
-    }
-
-    /**
-     * Check whether can connect to a peer device. The check considers a number of factors during
-     * the evaluation.
-     *
-     * @param device the peer device to connect to
-     * @return true if connection is allowed, otherwise false
-     */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public boolean okToConnect(BluetoothDevice device) {
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            return super.okToConnect(device);
-        }
-        // Check if this is an incoming connection in Quiet mode.
-        if (mAdapterService.isQuietModeEnabled()) {
-            Log.e(TAG, "okToConnect: cannot connect to " + device + " : quiet mode enabled");
-            return false;
-        }
-        // Check connection policy and accept or reject the connection.
-        int connectionPolicy = getConnectionPolicy(device);
-        int bondState = mAdapterService.getBondState(device);
-        // Allow this connection only if the device is bonded. Any attempt to connect while
-        // bonding would potentially lead to an unauthorized connection.
-        if (bondState != BluetoothDevice.BOND_BONDED) {
-            Log.w(TAG, "okToConnect: return false, bondState=" + bondState);
-            return false;
-        } else if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
-                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            // Otherwise, reject the connection if connectionPolicy is not valid.
-            Log.w(TAG, "okToConnect: return false, connectionPolicy=" + connectionPolicy);
-            return false;
         }
         return true;
     }

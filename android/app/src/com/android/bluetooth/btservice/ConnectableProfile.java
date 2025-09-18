@@ -52,7 +52,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hid.HidHostService;
 
 import java.util.Arrays;
@@ -156,9 +155,6 @@ public abstract class ConnectableProfile extends ProfileService {
      * @return true if connection to remote device is allowed, otherwise false
      */
     public boolean okToConnect(BluetoothDevice device) {
-        if (!Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            throw new IllegalStateException("Invalid flag configuration to call okToConnect");
-        }
         String log = "okToConnect(" + device + "): Connect rejected: ";
         // Check if this is an incoming connection in Quiet mode.
         if (mAdapterService.isQuietModeEnabled()) {
