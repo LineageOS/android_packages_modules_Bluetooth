@@ -1808,6 +1808,22 @@ public class LeAudioServiceTest {
                 TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_INACTIVE);
     }
 
+    @Test
+    public void testMessageFromNativeGroupStatusChanged_autonomousInactive() {
+        connectTestDevice(mSingleDevice, TEST_GROUP_ID);
+        injectAudioConfChanged(
+                mSingleDevice,
+                TEST_GROUP_ID,
+                BluetoothLeAudio.CONTEXT_TYPE_MEDIA | BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL,
+                3);
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
+
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_AUTONOMOUS_INACTIVE);
+        verify(mBassClientService)
+                .notifyLeAudioGroupAutonomousInactivated(
+                        eq(mService.getConnectedGroupLeadDevice(TEST_GROUP_ID)));
+    }
+
     private void sendEventAndVerifyGroupStreamStatusChanged(int groupId, int groupStreamStatus) {
 
         onGroupStreamStatusCallbackCalled = false;

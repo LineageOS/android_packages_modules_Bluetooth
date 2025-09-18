@@ -7884,6 +7884,379 @@ public class BassClientServiceTest {
                 .selectDefaultBroadcastToUnicastFallbackGroup(any(Set.class));
     }
 
+    private BluetoothLeBroadcastReceiveState createReceiveState(
+            boolean isSourceAdded, int paState, boolean isBisSynced) {
+        if (!isSourceAdded) {
+            return new BluetoothLeBroadcastReceiveState(
+                    TEST_SOURCE_ID,
+                    ADDRESS_TYPE_PUBLIC,
+                    getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_PUBLIC),
+                    0,
+                    0,
+                    BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                    BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                    null,
+                    0,
+                    Arrays.asList(new Long[0]),
+                    Arrays.asList(new BluetoothLeAudioContentMetadata[0]));
+        } else {
+            BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata(TEST_BROADCAST_ID);
+            return new BluetoothLeBroadcastReceiveState(
+                    TEST_SOURCE_ID,
+                    metadata.getSourceAddressType(),
+                    metadata.getSourceDevice(),
+                    metadata.getSourceAdvertisingSid(),
+                    metadata.getBroadcastId(),
+                    paState,
+                    BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                    null,
+                    metadata.getSubgroups().size(),
+                    // Bis sync states
+                    metadata.getSubgroups().stream()
+                            .map(e -> (isBisSynced ? 1L : 0L))
+                            .collect(Collectors.toList()),
+                    metadata.getSubgroups().stream()
+                            .map(e -> e.getContentMetadata())
+                            .collect(Collectors.toList()));
+        }
+    }
+
+    @Test
+    public void broadcastSyncAdvancing() {
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        false /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isTrue();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState
+                                                .PA_SYNC_STATE_SYNCINFO_REQUEST,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        false /* isBisSynced */)))
+                .isTrue();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        true /* isBisSynced */)))
+                .isTrue();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        true /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        true /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        true /* isBisSynced */)))
+                .isTrue();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        false /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isFalse();
+    }
+
+    @Test
+    public void broadcastSyncAdvancing_independentDevicesAndDisconnection() {
+        prepareConnectedDeviceGroup();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isTrue();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isFalse();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice1,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isTrue();
+
+        injectDeviceDisconnection(mCurrentDevice);
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isTrue();
+
+        assertThat(
+                        mBassClientService.isBroadcastSyncAdvancing(
+                                mCurrentDevice1,
+                                createReceiveState(
+                                        true /* isSourceAdded */,
+                                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                                        false /* isBisSynced */)))
+                .isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_afterAddSourceCommand_reactivation() {
+        final int groupId = 1;
+        final int skCtx =
+                BluetoothLeAudio.CONTEXTS_ALL
+                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS);
+        final int srCtx = BluetoothLeAudio.CONTEXTS_ALL;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(groupId).when(mLeAudioService).getActiveGroupId();
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+        InOrder inOrderLeAudio = inOrder(mLeAudioService);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        inOrderLeAudio.verify(mLeAudioService).setActiveDevice(eq(mCurrentDevice));
+        inOrderLeAudio.verify(mLeAudioService).setGroupAllowedContextMask(groupId, skCtx, srCtx);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_afterModifySourceCommand_reactivation() {
+        final int groupId = 1;
+        final int skCtx =
+                BluetoothLeAudio.CONTEXTS_ALL
+                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS);
+        final int srCtx = BluetoothLeAudio.CONTEXTS_ALL;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(groupId).when(mLeAudioService).getActiveGroupId();
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+        InOrder inOrderLeAudio = inOrder(mLeAudioService);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+
+        mBassClientService.modifySource(mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1);
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        inOrderLeAudio.verify(mLeAudioService).setActiveDevice(eq(mCurrentDevice));
+        inOrderLeAudio.verify(mLeAudioService).setGroupAllowedContextMask(groupId, skCtx, srCtx);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_afterSwitchSourceCommand_reactivation() {
+        final int groupId = 1;
+        final int skCtx =
+                BluetoothLeAudio.CONTEXTS_ALL
+                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS);
+        final int srCtx = BluetoothLeAudio.CONTEXTS_ALL;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(groupId).when(mLeAudioService).getActiveGroupId();
+        prepareSynchronizedPair();
+        mLooper.moveTimeForward(BassClientService.sAutoInactiveMonitorTimeout.toMillis());
+        mLooper.dispatchAll();
+        InOrder inOrderLeAudio = inOrder(mLeAudioService);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+
+        // Add another new broadcast source, switch source
+        onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
+        onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        inOrderLeAudio.verify(mLeAudioService).setActiveDevice(eq(mCurrentDevice));
+        inOrderLeAudio.verify(mLeAudioService).setGroupAllowedContextMask(groupId, skCtx, srCtx);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_beforeBroadcastSync_reactivation() {
+        final int groupId = 1;
+        final int skCtx =
+                BluetoothLeAudio.CONTEXTS_ALL
+                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS);
+        final int srCtx = BluetoothLeAudio.CONTEXTS_ALL;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(BluetoothLeAudio.GROUP_ID_INVALID).when(mLeAudioService).getActiveGroupId();
+        prepareSynchronizedPair();
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        mLooper.moveTimeForward(BassClientService.sAutoInactiveMonitorTimeout.toMillis());
+        mLooper.dispatchAll();
+        InOrder inOrderLeAudio = inOrder(mLeAudioService);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        inOrderLeAudio.verify(mLeAudioService).setActiveDevice(eq(mCurrentDevice));
+        inOrderLeAudio.verify(mLeAudioService).setGroupAllowedContextMask(groupId, skCtx, srCtx);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_afterBroadcastSync_reactivation() {
+        final int groupId = 1;
+        final int skCtx =
+                BluetoothLeAudio.CONTEXTS_ALL
+                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS);
+        final int srCtx = BluetoothLeAudio.CONTEXTS_ALL;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(groupId).when(mLeAudioService).getActiveGroupId();
+        prepareSynchronizedPair();
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        mLooper.moveTimeForward(BassClientService.sAutoInactiveMonitorTimeout.toMillis());
+        mLooper.dispatchAll();
+        InOrder inOrderLeAudio = inOrder(mLeAudioService);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        inOrderLeAudio.verify(mLeAudioService).setActiveDevice(eq(mCurrentDevice));
+        inOrderLeAudio.verify(mLeAudioService).setGroupAllowedContextMask(groupId, skCtx, srCtx);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_tooLateBroadcastSync() {
+        final int groupId = 1;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(groupId).when(mLeAudioService).getActiveGroupId();
+        prepareSynchronizedPair();
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        mLooper.moveTimeForward(BassClientService.sAutoInactiveMonitorTimeout.toMillis());
+        mLooper.dispatchAll();
+        InOrder inOrderLeAudio = inOrder(mLeAudioService);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        mLooper.moveTimeForward(BassClientService.sAutoInactiveMonitorTimeout.toMillis());
+        mLooper.dispatchAll();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        inOrderLeAudio.verify(mLeAudioService, never()).setActiveDevice(any());
+        inOrderLeAudio
+                .verify(mLeAudioService, never())
+                .setGroupAllowedContextMask(anyInt(), anyInt(), anyInt());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_REACTIVATE_AUTONOMOUSLY_INACTIVATED_GROUP_BY_BROADCAST)
+    public void autonomousInactive_tooEarlyBroadcastSync() {
+        final int groupId = 1;
+        doReturn(groupId).when(mLeAudioService).getGroupId(any());
+        doReturn(groupId).when(mLeAudioService).getActiveGroupId();
+        prepareSynchronizedPair();
+        mLooper.moveTimeForward(BassClientService.sAutoInactiveMonitorTimeout.toMillis());
+        mLooper.dispatchAll();
+
+        mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
+        verify(mLeAudioService, never()).setActiveDevice(any());
+        verify(mLeAudioService, never()).setGroupAllowedContextMask(anyInt(), anyInt(), anyInt());
+    }
+
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
         verifyIntentSent(
                 hasAction(BluetoothLeBroadcastAssistant.ACTION_CONNECTION_STATE_CHANGED),
