@@ -30,6 +30,7 @@
  static const uint16_t kVaeControlPointCharacteristic16bit = 0x7F61;
  static const uint16_t kVaeCcidCharacteristic16bit = 0x7F5F;
  static const uint16_t kVaSessionStateCharacteristic16bit = 0x7F5E;
+ static const uint16_t kVaSupportedFeaturesCharacteristic16bit = 0x7F5C;
  static const uint16_t kClientCharacteristicConfiguration16bit = 0x2902;
  static const uint16_t kDefaultGattMtu = 23;
 
@@ -44,6 +45,8 @@
          bluetooth::Uuid::From16Bit(kVaeCcidCharacteristic16bit);
  static const bluetooth::Uuid kVaSessionStateCharacteristic =
          bluetooth::Uuid::From16Bit(kVaSessionStateCharacteristic16bit);
+ static const bluetooth::Uuid kVaSupportedFeaturesCharacteristic =
+         bluetooth::Uuid::From16Bit(kVaSupportedFeaturesCharacteristic16bit);
  static const bluetooth::Uuid kClientCharacteristicConfiguration =
          bluetooth::Uuid::From16Bit(kClientCharacteristicConfiguration16bit);
 
@@ -52,8 +55,8 @@
  }  // namespace uuid
 
  enum class VaSessionState : uint8_t {
-   VA_SESSION_UNAVAILABLE = 0x00,
-   VA_SESSION_RESET = 0x01,
+   VA_SESSION_RESET = 0x00,
+   VA_SESSION_UNAVAILABLE = 0x01,
    VA_SESSION_READY = 0x02,
    VA_SESSION_ACTIVE = 0x03,
  };
