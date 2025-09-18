@@ -15,3 +15,13 @@ flag {
     description: "Add mechanism to handle channel sounding offload"
     bug: "423421929"
 }
+
+flag {
+    name: "channel_sounding_26q1_fix"
+    namespace: "bluetooth"
+    description: "Fix issues found in UPF and vendor-reported issues"
+    bug: "445881045"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
