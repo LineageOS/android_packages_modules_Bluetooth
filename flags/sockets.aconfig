@@ -172,3 +172,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "lecoc_with_fixed_psm"
+    namespace: "bluetooth"
+    description: "Support LE CoC with fixed PSM"
+    bug: "443347109"
+}
