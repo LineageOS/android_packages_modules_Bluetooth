@@ -408,7 +408,7 @@ class PbapClientStateMachine extends StateMachine {
             // We can't connect over OBEX until we known where/how to connect. We need the SDP
             // record details to do this. Thus, being connected means we received a valid SDP record
             // and properly connected our OBEX Client afterwards.
-            mDevice.sdpSearch(BluetoothUuid.PBAP_PSE);
+            mAdapterService.sdpSearch(mDevice, BluetoothUuid.PBAP_PSE);
 
             // Wait up to CONNECT_TIMEOUT for SDP to complete and our OBEX client to connect
             sendMessageDelayed(MSG_CONNECT_TIMEOUT, CONNECT_TIMEOUT_MS);
@@ -429,7 +429,7 @@ class PbapClientStateMachine extends StateMachine {
                     int failureCode = message.arg1;
                     info("Connecting: SDP unsuccessful, code=" + sdpCodeToString(failureCode));
                     if (failureCode == SDP_BUSY) {
-                        mDevice.sdpSearch(BluetoothUuid.PBAP_PSE);
+                        mAdapterService.sdpSearch(mDevice, BluetoothUuid.PBAP_PSE);
                     } else {
                         transitionTo(mDisconnecting);
                     }
@@ -453,7 +453,7 @@ class PbapClientStateMachine extends StateMachine {
                         mObexClient.connectRfcomm(mSdpRecord.getRfcommChannelNumber());
                     } else {
                         error("Connecting: Record didn't contain a valid L2CAP PSM/RFCOMM channel");
-                        mDevice.sdpSearch(BluetoothUuid.PBAP_PSE);
+                        mAdapterService.sdpSearch(mDevice, BluetoothUuid.PBAP_PSE);
                     }
 
                     if (mSdpRecord.isRepositorySupported(PbapSdpRecord.REPOSITORY_FAVORITES)) {

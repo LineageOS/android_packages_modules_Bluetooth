@@ -443,7 +443,8 @@ public class BluetoothMapService extends ConnectableProfile {
                 case MSG_MNS_SDP_SEARCH -> {
                     if (mRemoteDevice != null) {
                         Log.d(TAG, "MNS SDP Initiate Search ..");
-                        mRemoteDevice.sdpSearch(BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS);
+                        mAdapterService.sdpSearch(
+                                mRemoteDevice, BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS);
                     } else {
                         Log.w(TAG, "remoteDevice info not available");
                         ContentProfileErrorReportUtils.report(
