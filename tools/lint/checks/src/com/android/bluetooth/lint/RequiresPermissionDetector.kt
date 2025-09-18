@@ -288,6 +288,8 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                         lastSeenActionField = node.valueArguments.getOrNull(0)?.tryResolve()
                     }
 
+                    node.valueArguments.forEach { argument -> argument.accept(this) }
+
                     return true
                 }
             }
