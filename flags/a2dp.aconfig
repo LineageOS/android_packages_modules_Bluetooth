@@ -159,3 +159,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_ldac_api"
+    namespace: "bluetooth"
+    description: "API change for LDAC codec"
+    is_exported: true
+    bug: "445909312"
+}
