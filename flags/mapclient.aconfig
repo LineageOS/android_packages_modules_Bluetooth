@@ -71,3 +71,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "map_bmessage_include_newline"
+    namespace: "bluetooth"
+    description: "Do not remove newlines in bmessage"
+    bug: "445825437"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
