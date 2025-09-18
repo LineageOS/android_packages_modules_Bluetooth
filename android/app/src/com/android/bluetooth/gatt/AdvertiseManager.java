@@ -96,6 +96,16 @@ public class AdvertiseManager {
         mAdvertiseSuspendManager = new AdvertiseSuspendManager(this, adapterService);
     }
 
+    /** Called by AdapterSuspend. We need to prepare for suspend by pausing all advertisements. */
+    public void enterSuspend() {
+        doOnAdvertiseThread(mAdvertiseSuspendManager::enterSuspend);
+    }
+
+    /** Called by AdapterSuspend. We should re-enable paused advertisements. */
+    public void exitSuspend() {
+        doOnAdvertiseThread(mAdvertiseSuspendManager::exitSuspend);
+    }
+
     void cleanup() {
         Log.i(TAG, "cleanup()");
         mIsAvailable = false;
@@ -723,16 +733,6 @@ public class AdvertiseManager {
         if (!posted) {
             Log.w(TAG, "Unable to post async task to the handler");
         }
-    }
-
-    /** Called by AdapterSuspend. We need to prepare for suspend by pausing all advertisements. */
-    public void enterSuspend() {
-        doOnAdvertiseThread(() -> mAdvertiseSuspendManager.enterSuspend());
-    }
-
-    /** Called by AdapterSuspend. We should re-enable paused advertisements. */
-    public void exitSuspend() {
-        doOnAdvertiseThread(() -> mAdvertiseSuspendManager.exitSuspend());
     }
 
     private void forceRunSyncOnAdvertiseThread(Runnable r) {
