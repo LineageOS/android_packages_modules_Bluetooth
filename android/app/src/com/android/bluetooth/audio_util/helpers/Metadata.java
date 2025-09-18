@@ -78,12 +78,7 @@ public class Metadata implements Cloneable {
         if (!Objects.equals(numTracks, m.numTracks)) return false;
         if (!Objects.equals(genre, m.genre)) return false;
         if (!Objects.equals(duration, m.duration)) return false;
-        // Actual image comparisons have shown to be very expensive. Since it's rare that
-        // an application changes the cover artwork between multiple images once it's not
-        // null anymore, we just look for changes between "something" and "nothing".
-        if ((image == null && m.image != null) || (image != null && m.image == null)) {
-            return false;
-        }
+        if (!Image.sameAs(image, m.image)) return false;
         return true;
     }
 
