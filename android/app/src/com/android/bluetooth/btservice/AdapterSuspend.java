@@ -350,10 +350,7 @@ public class AdapterSuspend {
         if (Flags.adapterSuspendAdvertisement()) {
             mAdapterService
                     .getGattService()
-                    .ifPresent(
-                            gattService -> {
-                                gattService.getAdvertiseManager().exitSuspend();
-                            });
+                    .ifPresent(gatt -> gatt.getAdvertiseManager().exitSuspend());
         }
     }
 
