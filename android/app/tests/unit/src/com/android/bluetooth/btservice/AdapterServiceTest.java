@@ -239,7 +239,6 @@ public class AdapterServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
                 Flags.FLAG_BOND_STATE_MACHINE_LOOPER,
                 Flags.FLAG_ON_TO_BLE_ON_VIA_OFF,
                 Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);

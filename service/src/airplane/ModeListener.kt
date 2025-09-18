@@ -26,7 +26,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
 import com.android.bluetooth.BluetoothStatsLog
-import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.initializeRadioModeListener
@@ -212,11 +211,7 @@ private fun airplaneModeValueOverride(
     //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
     if (isMediaProfileConnected) {
         Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
-        if (Flags.watchDeviceOverrideAirplaneMode()) {
-            sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
-            return false
-        }
-        ToastNotification.displayIfNeeded(resolver, getUser)
+        sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
         return false
     }
     if (watchConnectionState) {

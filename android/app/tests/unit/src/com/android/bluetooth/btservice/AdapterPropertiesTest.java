@@ -38,7 +38,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -74,7 +73,7 @@ public class AdapterPropertiesTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+        return FlagsWrapper.progressionOf();
     }
 
     public AdapterPropertiesTest(FlagsWrapper flags) {
