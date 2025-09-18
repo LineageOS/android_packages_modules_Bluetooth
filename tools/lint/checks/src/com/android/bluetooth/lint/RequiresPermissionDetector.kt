@@ -37,6 +37,7 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UField
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.tryResolve
@@ -315,18 +316,9 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
             // sendBroadcast(Intent, String OR String[]) -> index 1
             // sendBroadcastAsUser(Intent, UserHandle, String OR String[]) -> index 2
             val permissionIndex = if (isAsUser) 2 else 1
-
-            node.valueArguments.getOrNull(permissionIndex)?.let { arg ->
-                ConstantEvaluator.evaluate(context, arg).let { result ->
-                    when (result) {
-                        is String -> holder.allOf.add(result)
-                        is Array<*> ->
-                            result.filterIsInstance<String>().forEach { permission ->
-                                holder.allOf.add(permission)
-                            }
-                    }
-                }
-            }
+            holder.allOf.addAll(
+                getPermissions(node.valueArguments.getOrNull(permissionIndex), context)
+            )
             return holder
         }
     }
@@ -352,52 +344,49 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
     }
 
     private fun parseAnnotation(context: JavaContext, annotation: UAnnotation): PermissionHolder {
-        val holder = PermissionHolder()
+        return PermissionHolder().apply {
+            allOf.addAll(getPermissions(annotation.findAttributeValue("value"), context))
+            allOf.addAll(getPermissions(annotation.findAttributeValue("allOf"), context))
+            anyOf.addAll(getPermissions(annotation.findAttributeValue("anyOf"), context))
+        }
+    }
 
-        fun getPermissions(value: UExpression?, context: JavaContext): Set<String> {
-            if (value == null) return emptySet()
+    private fun getPermissions(value: UExpression?, context: JavaContext): Set<String> {
+        if (value == null) return emptySet()
 
-            fun extractStringFromPsi(psi: PsiElement?): String? {
-                return when (psi) {
-                    is PsiReferenceExpression -> {
-                        val text = psi.text
-                        if (text.contains(".permission.")) text else null
-                    }
-                    is PsiLiteralExpression -> {
-                        psi.value as? String
-                    }
-                    else -> null
+        var expr = value
+        while (expr is UParenthesizedExpression) {
+            expr = expr.expression
+        }
+
+        fun extractStringFromPsi(psi: PsiElement?): String? {
+            return when (psi) {
+                is PsiReferenceExpression -> {
+                    val text = psi.text
+                    if (text.contains(".permission.")) text else null
                 }
-            }
-
-            if (value is UCallExpression && value.kind.name == "array_initializer") {
-                return value.valueArguments
-                    .mapNotNull { arg ->
-                        val evaluated = ConstantEvaluator.evaluate(context, arg)
-                        evaluated?.toString() ?: extractStringFromPsi(arg.sourcePsi)
-                    }
-                    .filter { it.isNotEmpty() }
-                    .toSet()
-            }
-
-            val evaluated = ConstantEvaluator.evaluate(context, value)
-            val result = evaluated?.toString() ?: extractStringFromPsi(value.sourcePsi)
-            return if (result != null && result.isNotEmpty()) {
-                setOf(result)
-            } else {
-                emptySet()
+                is PsiLiteralExpression -> psi.value as? String
+                else -> null
             }
         }
 
-        val valuePerms = getPermissions(annotation.findAttributeValue("value"), context)
-        val allOfPerms = getPermissions(annotation.findAttributeValue("allOf"), context)
-        val anyOfPerms = getPermissions(annotation.findAttributeValue("anyOf"), context)
+        if (expr is UCallExpression) {
+            return expr.valueArguments
+                .mapNotNull { arg ->
+                    val evaluated = ConstantEvaluator.evaluate(context, arg)
+                    evaluated?.toString() ?: extractStringFromPsi(arg.sourcePsi)
+                }
+                .filter { it.isNotEmpty() }
+                .toSet()
+        }
 
-        holder.allOf.addAll(valuePerms)
-        holder.allOf.addAll(allOfPerms)
-        holder.anyOf.addAll(anyOfPerms)
-
-        return holder
+        val evaluated = ConstantEvaluator.evaluate(context, expr)
+        val result = evaluated?.toString() ?: extractStringFromPsi(expr.sourcePsi)
+        return if (result != null && result.isNotEmpty()) {
+            setOf(result)
+        } else {
+            emptySet()
+        }
     }
 
     private data class PermissionHolder(
