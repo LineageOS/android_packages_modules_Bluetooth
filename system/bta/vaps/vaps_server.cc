@@ -677,12 +677,20 @@
    void HandleControlPoint(RawAddress bda, RemoteClient* remote_client,
                            tGATT_WRITE_REQ* write_req) {
      ControlPointCommand command;
+     uint16_t ccc_vae_control_point = GATT_CLT_CONFIG_NONE;
      VaSessionState va_session_state = GetVaSessionState();
+
+     if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
+       ccc_vae_control_point = remote_client->ccc_values_[kVaeControlPointCharacteristic];
+       if (ccc_vae_control_point == GATT_CLT_CONFIG_NONE) {
+         log::warn(" VAE Control Point CCCD not configured by remote client, ignore the command");
+         return;
+       }
+     }
+
      ControlPointResponse cp_rsp =
          ValidateControlPointOperation(&command, write_req->value,
                                        write_req->len, va_session_state);
-
-     uint16_t ccc_vae_control_point = remote_client->ccc_values_[kVaeControlPointCharacteristic];
 
      if (!command.isValid_) {
        SendVaeControlPointNotification(remote_client, cp_rsp.code_value_,
