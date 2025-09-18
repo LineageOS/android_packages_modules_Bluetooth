@@ -166,6 +166,7 @@ class SDPProxy(ProfileProxy):
         movable_services = [
             "Message Access Server",
             "TMAS", # TODO: b/341385684 Remove from movable
+            "VAPS", # TODO: b/341385684 Remove from movable
         ]
         # yapf: enable
 
