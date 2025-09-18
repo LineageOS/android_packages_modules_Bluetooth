@@ -7116,12 +7116,20 @@ public:
         }
 
         if (com_android_bluetooth_flags_add_profile_as_intent_extra()) {
-          auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
-          if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+          if (com_android_bluetooth_flags_leaudio_vaps_improvements()) {
             log::info(" Status Idle: NotifyVaSessionStopped");
             if (group) {
               bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
                   GetGroupDevices(group->group_id_), true);
+            }
+          } else {
+            auto metadata_contexts = get_bidirectional(local_metadata_context_types_);
+            if (metadata_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+              log::info(" Status Idle: NotifyVaSessionStopped");
+              if (group) {
+                bluetooth::vaps::GetVapsServer()->NotifyVaSessionStopped(
+                    GetGroupDevices(group->group_id_), true);
+              }
             }
           }
         }
