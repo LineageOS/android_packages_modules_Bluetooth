@@ -923,12 +923,12 @@ static void scanCleanupNative(JNIEnv* env, jobject /* object */) {
   }
 }
 
-static void startSyncNative(JNIEnv* env, jobject /* object */, jint sid, jstring address, jint skip,
-                            jint timeout, jint reg_id) {
+static void startSyncNative(JNIEnv* env, jobject /* object */, jint sid, jstring address,
+                            jint addressType, jint skip, jint timeout, jint reg_id) {
   if (!sScanner) {
     return;
   }
-  sScanner->StartSync(sid, str2addr(env, address), skip, timeout, reg_id);
+  sScanner->StartSync(sid, str2addr(env, address), addressType, skip, timeout, reg_id);
 }
 
 static void stopSyncNative(JNIEnv* /* env */, jobject /* object */, jint sync_handle) {
@@ -1033,7 +1033,7 @@ static int register_com_android_bluetooth_periodic_scan(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)periodicScanInitializeNative},
           {"cleanupNative", "()V", (void*)periodicScanCleanupNative},
-          {"startSyncNative", "(ILjava/lang/String;III)V", (void*)startSyncNative},
+          {"startSyncNative", "(ILjava/lang/String;IIII)V", (void*)startSyncNative},
           {"stopSyncNative", "(I)V", (void*)stopSyncNative},
           {"cancelSyncNative", "(ILjava/lang/String;)V", (void*)cancelSyncNative},
           {"syncTransferNative", "(ILjava/lang/String;II)V", (void*)syncTransferNative},

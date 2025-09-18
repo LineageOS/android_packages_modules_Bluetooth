@@ -40,8 +40,8 @@ public class PeriodicScanNativeInterface extends NativeInterface<PeriodicScanNat
         cleanupNative();
     }
 
-    void startSync(int sid, String address, int skip, int timeout, int regId) {
-        startSyncNative(sid, address, skip, timeout, regId);
+    void startSync(int sid, String address, int addressType, int skip, int timeout, int regId) {
+        startSyncNative(sid, address, addressType, skip, timeout, regId);
     }
 
     void stopSync(int syncHandle) {
@@ -64,7 +64,8 @@ public class PeriodicScanNativeInterface extends NativeInterface<PeriodicScanNat
 
     private native void cleanupNative();
 
-    private native void startSyncNative(int sid, String address, int skip, int timeout, int regId);
+    private native void startSyncNative(
+            int sid, String address, int addressType, int skip, int timeout, int regId);
 
     private native void stopSyncNative(int syncHandle);
 
