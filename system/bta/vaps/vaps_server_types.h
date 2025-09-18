@@ -24,12 +24,12 @@
  static const uint16_t kVaeUuidSize = 16;
 
  namespace uuid {
- static const uint16_t kVapsService16Bit = 0x7F64;
+ static const uint16_t kVapsService16Bit = 0x7F65;
  static const uint16_t kVaeNameCharacteristic16bit = 0x7F63;
  static const uint16_t kVaeUuidCharacteristic16bit = 0x7F62;
  static const uint16_t kVaeControlPointCharacteristic16bit = 0x7F61;
- static const uint16_t kVaeCcidCharacteristic16bit = 0x7F5F;
- static const uint16_t kVaSessionStateCharacteristic16bit = 0x7F5E;
+ static const uint16_t kVaeCcidCharacteristic16bit = 0x2BBA;
+ static const uint16_t kVaSessionStateCharacteristic16bit = 0x7F5F;
  static const uint16_t kVaSupportedFeaturesCharacteristic16bit = 0x7F5C;
  static const uint16_t kClientCharacteristicConfiguration16bit = 0x2902;
  static const uint16_t kDefaultGattMtu = 23;
