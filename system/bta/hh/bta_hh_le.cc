@@ -1142,7 +1142,7 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   } else if (BTM_SecIsLeSecurityPending(p_cb->link_spec.addrt.bda)) {
     log::warn("Some security procedure already pending for {}", p_cb->link_spec);
-    p_cb->security_pending = true; // Wait for encryption to complete
+    p_cb->security_pending = true;  // Wait for encryption to complete
   } else if (BTM_IsBonded(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
     log::info("{} is bonded, but not encrypted", p_cb->link_spec);
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
@@ -1223,6 +1223,11 @@ static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
   if (p_cb == nullptr) {
     log::warn("unknown device:{}", gattc_data.remote_bda);
     return;
+  }
+
+  // remove bg conn here so hogp connection can be re-armed when acl is disconnected.
+  if (com_android_bluetooth_flags_hogp_fix_reconnection()) {
+    bta_hh_le_remove_dev_bg_conn(p_cb);
   }
 
   if (p_cb->hid_srvc.state == BTA_HH_SERVICE_CHANGED) {
@@ -1822,9 +1827,9 @@ void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
 
   BtaGattQueue::Clean(p_cb->conn_id);
   BTA_GATTC_Close(p_cb->conn_id);
-  /* remove device from background connection if intended to disconnect,
-     do not allow reconnection */
-  bta_hh_le_remove_dev_bg_conn(p_cb);
+  if (!com_android_bluetooth_flags_hogp_fix_reconnection()) {
+    bta_hh_le_remove_dev_bg_conn(p_cb);
+  }
 }
 
 /*******************************************************************************
@@ -2382,7 +2387,6 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_CACHE_ENT
 
 static bool bta_hh_le_iso_data_callback(const RawAddress& addr, uint16_t /*cis_conn_hdl*/,
                                         uint8_t* data, uint16_t size, uint32_t /*timestamp*/) {
-
   tAclLinkSpec link_spec = {.addrt.bda = addr, .transport = BT_TRANSPORT_LE};
 
   tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
