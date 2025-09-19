@@ -47,7 +47,8 @@ using ::aidl::android::hardware::bluetooth::audio::LeAudioConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::PcmConfiguration;
 using ::bluetooth::audio::aidl::AudioConfiguration;
 using ::bluetooth::audio::aidl::BluetoothAudioCtrlAck;
-using ::bluetooth::audio::le_audio::StartRequestState;
+using ::bluetooth::audio::le_audio::BluetoothRequest;
+using ::bluetooth::audio::le_audio::BluetoothRequestState;
 using ::bluetooth::audio::le_audio::StreamCallbacks;
 using ::bluetooth::le_audio::types::AseConfiguration;
 
@@ -69,7 +70,7 @@ LeAudioTransport::LeAudioTransport(void (*flush)(void), StreamCallbacks stream_c
       total_bytes_processed_(0),
       data_position_({}),
       pcm_config_(std::move(pcm_config)),
-      start_request_state_(StartRequestState::IDLE),
+      start_request_state_(BluetoothRequestState::IDLE),
       dsa_mode_(DsaMode::DISABLED),
       cached_source_metadata_({}) {}
 
@@ -82,36 +83,38 @@ LeAudioTransport::~LeAudioTransport() {
 
 BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool /*is_low_latency*/) {
   // Check if operation is pending already
-  if (GetStartRequestState() == StartRequestState::PENDING_AFTER_RESUME) {
+  if (GetBluetoothRequestState(BluetoothRequest::RESUME) ==
+      BluetoothRequestState::PENDING_AFTER_REQUEST) {
     log::info("Start request is already pending. Ignore the request");
     return BluetoothAudioCtrlAck::PENDING;
   }
 
-  SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
+  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::PENDING_BEFORE_REQUEST);
   if (stream_cb_.on_resume_(true)) {
     std::lock_guard<std::mutex> guard(start_request_state_mutex_);
 
     switch (start_request_state_) {
-      case StartRequestState::CONFIRMED:
+      case BluetoothRequestState::CONFIRMED:
         log::info("Start completed.");
-        SetStartRequestState(StartRequestState::IDLE);
+        SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
-      case StartRequestState::CANCELED:
+      case BluetoothRequestState::CANCELED:
         log::info("Start request failed.");
-        SetStartRequestState(StartRequestState::IDLE);
+        SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         return BluetoothAudioCtrlAck::FAILURE;
-      case StartRequestState::PENDING_BEFORE_RESUME:
+      case BluetoothRequestState::PENDING_BEFORE_REQUEST:
         log::info("Start pending.");
-        SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
+        SetBluetoothRequestState(BluetoothRequest::RESUME,
+                                 BluetoothRequestState::PENDING_AFTER_REQUEST);
         return BluetoothAudioCtrlAck::PENDING;
       default:
-        SetStartRequestState(StartRequestState::IDLE);
+        SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         log::error("Unexpected state {}", static_cast<int>(start_request_state_.load()));
         return BluetoothAudioCtrlAck::FAILURE;
     }
   }
 
-  SetStartRequestState(StartRequestState::IDLE);
+  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
   log::info("On resume failed.");
   return BluetoothAudioCtrlAck::FAILURE;
 }
@@ -267,29 +270,52 @@ const LeAudioBroadcastConfiguration& LeAudioTransport::LeAudioGetBroadcastConfig
 }
 
 bool LeAudioTransport::IsRequestCompletedAfterUpdate(
-        const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda) {
-  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
-  auto result = lambda(start_request_state_);
-  auto new_state = std::get<0>(result);
-  if (new_state != start_request_state_) {
-    start_request_state_ = new_state;
+        const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>& lambda,
+        BluetoothRequest request) {
+  std::pair<BluetoothRequestState, bool> result = {};
+  BluetoothRequestState new_state = BluetoothRequestState::IDLE;
+
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      result = lambda(start_request_state_);
+      new_state = std::get<0>(result);
+      if (new_state != start_request_state_) {
+        start_request_state_ = new_state;
+      }
+    } break;
   }
 
   auto ret = std::get<1>(result);
-  log::verbose("new state: {}, return {}", (int)(start_request_state_.load()), ret);
+  log::verbose("new state: {}, return {}", new_state, ret);
 
   return ret;
 }
 
-StartRequestState LeAudioTransport::GetStartRequestState(void) {
-  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
-  return start_request_state_;
+BluetoothRequestState LeAudioTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      return start_request_state_;
+    } break;
+  }
 }
-void LeAudioTransport::ClearStartRequestState(void) {
-  start_request_state_ = StartRequestState::IDLE;
+
+void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      start_request_state_ = BluetoothRequestState::IDLE;
+    } break;
+  }
 }
-void LeAudioTransport::SetStartRequestState(StartRequestState state) {
-  start_request_state_ = state;
+
+void LeAudioTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                BluetoothRequestState state) {
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      start_request_state_ = state;
+    } break;
+  }
 }
 
 static void flush_unicast_sink() {
@@ -382,16 +408,20 @@ const LeAudioBroadcastConfiguration& LeAudioSinkTransport::LeAudioGetBroadcastCo
 }
 
 bool LeAudioSinkTransport::IsRequestCompletedAfterUpdate(
-        const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda) {
-  return transport_->IsRequestCompletedAfterUpdate(lambda);
+        const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>& lambda,
+        BluetoothRequest request) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda, request);
 }
 
-StartRequestState LeAudioSinkTransport::GetStartRequestState(void) {
-  return transport_->GetStartRequestState();
+BluetoothRequestState LeAudioSinkTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  return transport_->GetBluetoothRequestState(request);
 }
-void LeAudioSinkTransport::ClearStartRequestState(void) { transport_->ClearStartRequestState(); }
-void LeAudioSinkTransport::SetStartRequestState(StartRequestState state) {
-  transport_->SetStartRequestState(state);
+void LeAudioSinkTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  transport_->ClearBluetoothRequestState(request);
+}
+void LeAudioSinkTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                    BluetoothRequestState state) {
+  transport_->SetBluetoothRequestState(request, state);
 }
 
 void flush_source() {
@@ -464,17 +494,20 @@ void LeAudioSourceTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate
 }
 
 bool LeAudioSourceTransport::IsRequestCompletedAfterUpdate(
-        const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda) {
-  return transport_->IsRequestCompletedAfterUpdate(lambda);
+        const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>& lambda,
+        BluetoothRequest request) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda, request);
 }
 
-StartRequestState LeAudioSourceTransport::GetStartRequestState(void) {
-  return transport_->GetStartRequestState();
+BluetoothRequestState LeAudioSourceTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  return transport_->GetBluetoothRequestState(request);
 }
-void LeAudioSourceTransport::ClearStartRequestState(void) { transport_->ClearStartRequestState(); }
-
-void LeAudioSourceTransport::SetStartRequestState(StartRequestState state) {
-  transport_->SetStartRequestState(state);
+void LeAudioSourceTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  transport_->ClearBluetoothRequestState(request);
+}
+void LeAudioSourceTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                      BluetoothRequestState state) {
+  transport_->SetBluetoothRequestState(request, state);
 }
 
 static std::unordered_map<int32_t, uint8_t> sampling_freq_map{
