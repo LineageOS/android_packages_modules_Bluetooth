@@ -128,11 +128,9 @@ static void btif_storage_set_mode(RawAddress* remote_bd_addr) {
 }
 
 static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
-  if (com_android_bluetooth_flags_prevent_storage_access_without_gd_running()) {
-    if (!bluetooth::shim::is_gd_stack_started_up()) {
-      log::error("is_gd_stack_started_up=false");
-      return false;
-    }
+  if (!bluetooth::shim::is_gd_stack_started_up()) {
+    log::error("is_gd_stack_started_up=false");
+    return false;
   }
 
   std::string bdstr;
@@ -245,11 +243,9 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 }
 
 static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
-  if (com_android_bluetooth_flags_prevent_storage_access_without_gd_running()) {
-    if (!bluetooth::shim::is_gd_stack_started_up()) {
-      log::error("is_gd_stack_started_up=false");
-      return false;
-    }
+  if (!bluetooth::shim::is_gd_stack_started_up()) {
+    log::error("is_gd_stack_started_up=false");
+    return false;
   }
 
   std::string bdstr;
