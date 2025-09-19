@@ -106,6 +106,8 @@ public:
 
   bool PostWithDelay(common::OnceClosure closure, std::chrono::milliseconds delay);
 
+  std::future<void> NotifyWhenIdle();
+
   template <typename T>
   friend class Queue;
 
@@ -123,6 +125,7 @@ private:
   std::unique_ptr<Reactor::Event> event_;
   Reactor::Reactable* reactable_ GUARDED_BY(mutex_);
   mutable std::mutex mutex_;
+  std::optional<std::promise<void>> promise_to_quit_when_idle_ GUARDED_BY(mutex_);
 
   // A priority queue (minimum priority to maximum priority) of delayed tasks, once the delayed task
   // timer expires, the task will be Post()ed to the handler.
@@ -134,6 +137,14 @@ private:
   void handle_next_event();
   void handle_delayed_event();
   void reschedule_delayed_tasks();
+
+  // Notify the promise if the handler is idle (no tasks and no delayed tasks).
+  inline void notify_promise_if_idle() EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
+    if ((promise_to_quit_when_idle_.has_value()) && tasks_->empty()) {
+      promise_to_quit_when_idle_.value().set_value();
+      promise_to_quit_when_idle_ = std::nullopt;
+    }
+  }
 };
 
 }  // namespace os

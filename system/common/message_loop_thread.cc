@@ -147,20 +147,16 @@ void MessageLoopThread::ShutDown() {
     }
 
     /**
-     * Synchronize the handler first, to make sure that all the tasks are posted to the handler, and
-     * then clear the handler. This is needed because MessageLoopThread's previous implementation
-     * has some issues due to global definition of threads and its shutdown. So this is just a
-     * safeguard for the Handler's shutdown.
-     *
-     * This will make sure that Handler has processed everything that was posted to it before
-     * Clear() is called.
+     * Waiting for the handler to be idle.
+     * This replicates RunLoop::QuitWhenIdle() functionality.
      */
-    // TODO: Need to replace Synchronize() with a better solution (similar to QuitWhenIdle())
-    log::assert_that(handler_->Synchronize(kHandlerStopTimeout),
-                     "Could not synchronize the handler for thread: {}",
-                     handler_thread_->GetThreadName());
-
+    auto future = handler_->NotifyWhenIdle();
+    log::assert_that(future.wait_for(kHandlerStopTimeout) == std::future_status::ready,
+                     "assert failed: Thread {} is not idle after waiting for {} ms",
+                     handler_thread_->GetThreadName(), kHandlerStopTimeout.count());
     handler_->Clear();
+    handler_->WaitUntilStopped(
+            kHandlerStopTimeout);  // this should be quick as the handler is already synchronized.
     delete handler_;
     delete handler_thread_;
     // The destructor of os::Thread will stop and join the thread.
