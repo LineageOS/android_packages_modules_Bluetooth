@@ -69,7 +69,6 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionManager;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
@@ -111,9 +110,7 @@ public class BluetoothManagerServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_USER_RESTRICTION_REFACTOR,
-                Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE,
-                Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
+                Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE, Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -239,14 +236,9 @@ public class BluetoothManagerServiceTest {
 
         mLooper = new TestLooper();
 
-        if (Flags.userRestrictionRefactor()) {
-            mManagerService =
-                    new BluetoothManagerService(
-                            mContext, mLooper.getLooper(), "default", mBluetoothComponent);
-        } else {
-            mManagerService =
-                    new BluetoothManagerService(mContext, mLooper.getLooper(), "default", null);
-        }
+        mManagerService =
+                new BluetoothManagerService(
+                        mContext, mLooper.getLooper(), "default", mBluetoothComponent);
         doReturn(false).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
         BluetoothRestriction.initialize(
                 mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
@@ -298,30 +290,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_USER_RESTRICTION_REFACTOR)
-    public void onUserRestrictionsChanged_disallowBluetooth_onlySendDisableMessageOnSystemUser()
-            throws InterruptedException {
-        // Mimic the case when restriction settings changed
-        doReturn(true)
-                .when(mUserManager)
-                .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-
-        // Check if disable message sent once for system user only
-
-        // test run on user -1, should not turning Bluetooth off
-        mManagerService.onUserRestrictionsChanged(UserHandle.CURRENT);
-        assertThat(mLooper.nextMessage()).isNull();
-
-        // called from SYSTEM user, should try to toggle Bluetooth off
-        mManagerService.onUserRestrictionsChanged(UserHandle.SYSTEM);
-
-        endTest();
-    }
-
-    @Test
-    @EnableFlags({
-        Flags.FLAG_USER_RESTRICTION_REFACTOR,
-    })
     public void onUserRestrictionsChanged_whenOn_turnOff() throws Exception {
         mManagerService.enable(0, "onUserRestrictionsChanged_whenOn_turnOff");
         IBluetoothCallback btCallback = transition_offToOn();
@@ -694,14 +662,9 @@ public class BluetoothManagerServiceTest {
     public void initialStart_whenPersistentStorageOn_bluetoothStart() throws Exception {
         mPersistedState = BluetoothManagerService.BLUETOOTH_ON_BLUETOOTH;
 
-        if (Flags.userRestrictionRefactor()) {
-            mManagerService =
-                    new BluetoothManagerService(
-                            mContext, mLooper.getLooper(), "default", mBluetoothComponent);
-        } else {
-            mManagerService =
-                    new BluetoothManagerService(mContext, mLooper.getLooper(), "default", null);
-        }
+        mManagerService =
+                new BluetoothManagerService(
+                        mContext, mLooper.getLooper(), "default", mBluetoothComponent);
         mManagerService.handleOnBootPhase(mUser);
 
         mManagerService.registerAdapter(mManagerCallback);
@@ -714,7 +677,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_USER_RESTRICTION_REFACTOR)
     public void initialStart_whenUserIsRestricted_staysOff() throws Exception {
         doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
         BluetoothRestriction.handleRestrictionChange(

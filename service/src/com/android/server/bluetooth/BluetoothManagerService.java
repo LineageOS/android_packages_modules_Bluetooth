@@ -56,23 +56,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerExemptionManager;
-import android.os.Process;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.UserHandle;
-import android.os.UserManager;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 
@@ -99,7 +95,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 class BluetoothManagerService {
     private static final String TAG = BluetoothManagerService.class.getSimpleName();
@@ -177,7 +172,6 @@ class BluetoothManagerService {
     private final ContentResolver mContentResolver;
     private final Context mContext;
     private final Looper mLooper;
-    private final UserManager mUserManager;
 
     private final boolean mIsHearingAidProfileSupported;
     private final String mHciInstanceName;
@@ -306,29 +300,6 @@ class BluetoothManagerService {
         Log.v(TAG, "storeAddress(" + Log.address(mAddress) + "): Success");
     }
 
-    public void onUserRestrictionsChanged(UserHandle userHandle) {
-        if (Flags.userRestrictionRefactor()) {
-            throw new IllegalStateException("userRestrictionRefactor is enabled");
-        }
-        final boolean newBluetoothDisallowed =
-                mUserManager.hasUserRestrictionForUser(UserManager.DISALLOW_BLUETOOTH, userHandle);
-        // Disallow Bluetooth sharing when either Bluetooth is disallowed or Bluetooth sharing
-        // is disallowed
-        final boolean newBluetoothSharingDisallowed =
-                mUserManager.hasUserRestrictionForUser(
-                                UserManager.DISALLOW_BLUETOOTH_SHARING, userHandle)
-                        || newBluetoothDisallowed;
-
-        // Disable OPP activities for this userHandle
-        updateOppLauncherComponentState(userHandle, newBluetoothSharingDisallowed);
-
-        // DISALLOW_BLUETOOTH can only be set by DO or PO on the system user.
-        // Only trigger once instead of for all users
-        if (UserHandle.SYSTEM.equals(userHandle) && newBluetoothDisallowed) {
-            sendDisableMsg(ENABLE_DISABLE_REASON_DISALLOWED);
-        }
-    }
-
     boolean factoryReset(int count) {
         if (mAutoOn != null) {
             mAutoOn.factoryReset();
@@ -416,14 +387,10 @@ class BluetoothManagerService {
     Unit sendToggleNotification(String notificationReason) {
         Intent intent =
                 new Intent("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION");
-        if (Flags.userRestrictionRefactor()) {
-            intent.setComponent(
-                    new ComponentName(
-                            mBluetoothComponent.getPackageName(),
-                            "com.android.bluetooth.notification.NotificationHelperService"));
-        } else {
-            intent.setComponent(resolveSystemService(intent));
-        }
+        intent.setComponent(
+                new ComponentName(
+                        mBluetoothComponent.getPackageName(),
+                        "com.android.bluetooth.notification.NotificationHelperService"));
         intent.putExtra(
                 "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
         mUserContext.startService(intent);
@@ -608,11 +575,6 @@ class BluetoothManagerService {
         mBluetoothComponent = bluetoothComponent;
         mActiveLogs = new ActiveLogs();
 
-        mUserManager =
-                requireNonNull(
-                        mContext.getSystemService(UserManager.class),
-                        "UserManager system service cannot be null");
-
         mHandler = new BluetoothHandler(mLooper);
         mBleAppManager = new BleAppManager(mLooper, this::bleOnToOffIfNeeded);
 
@@ -639,34 +601,6 @@ class BluetoothManagerService {
         filter.addAction(Intent.ACTION_SHUTDOWN);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mContext.registerReceiver(mReceiver, filter, null, mHandler);
-
-        IntentFilter filterUser = new IntentFilter();
-        if (!Flags.userRestrictionRefactor()) {
-            filterUser.addAction(UserManager.ACTION_USER_RESTRICTIONS_CHANGED);
-        }
-        filterUser.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        if (!Flags.userRestrictionRefactor()) {
-            mContext.registerReceiverForAllUsers(
-                    new BroadcastReceiver() {
-                        @Override
-                        public void onReceive(Context context, Intent intent) {
-                            switch (intent.getAction()) {
-                                case UserManager.ACTION_USER_RESTRICTIONS_CHANGED -> {
-                                    onUserRestrictionsChanged(getSendingUser());
-                                }
-                                default -> {
-                                    Log.e(
-                                            TAG,
-                                            "Unknown broadcast received in BluetoothManagerService"
-                                                    + " receiver registered across all users");
-                                }
-                            }
-                        }
-                    },
-                    filterUser,
-                    null,
-                    mHandler);
-        }
 
         mName =
                 BluetoothServerProxy.getInstance()
@@ -820,12 +754,6 @@ class BluetoothManagerService {
         public void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
             enforceCorrectThread();
             BluetoothManagerService.this.dump(fd, writer, args);
-        }
-
-        @Override
-        public void onUserRestrictionsChanged(UserHandle userHandle) {
-            enforceCorrectThread();
-            BluetoothManagerService.this.onUserRestrictionsChanged(userHandle);
         }
 
         @Override
@@ -1091,7 +1019,7 @@ class BluetoothManagerService {
     }
 
     private Unit enableFromAutoOn() {
-        if (isBluetoothDisallowed()) {
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
             Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn");
             return Unit.INSTANCE;
         }
@@ -1271,12 +1199,10 @@ class BluetoothManagerService {
 
         SatelliteModeListener.initialize(mLooper, mContentResolver, this::onSatelliteModeChanged);
 
-        if (Flags.userRestrictionRefactor()) {
-            mSharingRestriction =
-                    new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
-        }
+        mSharingRestriction =
+                new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
 
-        if (isBluetoothDisallowed()) {
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
             Log.i(TAG, "handleOnBootPhase: Bluetooth is disallowed");
             return;
         }
@@ -1308,9 +1234,7 @@ class BluetoothManagerService {
             Log.d(TAG, "Stopping AutoOn for" + mUser);
         }
 
-        if (Flags.userRestrictionRefactor()) {
-            mSharingRestriction.stop();
-        }
+        mSharingRestriction.stop();
 
         if (mState.oneOf(State.OFF)) {
             executeUserSwitch();
@@ -1714,12 +1638,10 @@ class BluetoothManagerService {
                             this::enableFromAutoOn,
                             BluetoothManagerService::isAirplaneModeOn);
         }
-        if (Flags.userRestrictionRefactor()) {
-            mSharingRestriction =
-                    new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
-        }
+        mSharingRestriction =
+                new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
 
-        if (isBluetoothDisallowed()) {
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
             Log.i(TAG, "executeUserSwitch: Bluetooth is disallowed");
             return;
         }
@@ -1777,11 +1699,7 @@ class BluetoothManagerService {
         requireNonNull(mUser, "There is no user to start for.");
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
-        if (Flags.userRestrictionRefactor()) {
-            intent.setComponent(mBluetoothComponent.getComponentName());
-        } else {
-            intent.setComponent(resolveSystemService(intent));
-        }
+        intent.setComponent(mBluetoothComponent.getComponentName());
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
         if (!mContext.bindServiceAsUser(intent, mConnection, flags, mUser)) {
@@ -2108,99 +2026,6 @@ class BluetoothManagerService {
         }
     }
 
-    private boolean isBluetoothDisallowed() {
-        if (Flags.userRestrictionRefactor()) {
-            return !BluetoothRestriction.isBluetoothAllowed();
-        }
-        final long callingIdentity = Binder.clearCallingIdentity();
-        try {
-            return mContext.getSystemService(UserManager.class)
-                    .hasUserRestrictionForUser(UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM);
-        } finally {
-            Binder.restoreCallingIdentity(callingIdentity);
-        }
-    }
-
-    /**
-     * Disables BluetoothOppLauncherActivity component, so the Bluetooth sharing option is not
-     * offered to the user if Bluetooth or sharing is disallowed. Puts the component to its default
-     * state if Bluetooth is not disallowed.
-     *
-     * @param userHandle user to disable bluetooth sharing for
-     * @param bluetoothSharingDisallowed whether bluetooth sharing is disallowed.
-     */
-    private void updateOppLauncherComponentState(
-            UserHandle userHandle, boolean bluetoothSharingDisallowed) {
-        try {
-            int newState;
-            if (bluetoothSharingDisallowed) {
-                newState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
-            } else if (BluetoothProperties.isProfileOppEnabled().orElse(false)) {
-                newState = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
-            } else {
-                newState = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
-            }
-
-            // Bluetooth OPP activities that should always be enabled,
-            // even when Bluetooth is turned OFF.
-            List<String> baseBluetoothOppActivities =
-                    List.of(
-                            // Base sharing activity
-                            "com.android.bluetooth.opp.BluetoothOppLauncherActivity",
-                            // BT enable activities
-                            "com.android.bluetooth.opp.BluetoothOppBtEnableActivity",
-                            "com.android.bluetooth.opp.BluetoothOppBtEnablingActivity",
-                            "com.android.bluetooth.opp.BluetoothOppBtErrorActivity");
-
-            PackageManager systemPackageManager = mContext.getPackageManager();
-            PackageManager userPackageManager =
-                    mContext.createContextAsUser(userHandle, 0).getPackageManager();
-            var allPackages = systemPackageManager.getPackagesForUid(Process.BLUETOOTH_UID);
-            for (String candidatePackage : allPackages) {
-                Log.v(TAG, "Searching package " + candidatePackage);
-                PackageInfo packageInfo;
-                try {
-                    packageInfo =
-                            systemPackageManager.getPackageInfo(
-                                    candidatePackage,
-                                    PackageManager.PackageInfoFlags.of(
-                                            PackageManager.GET_ACTIVITIES
-                                                    | PackageManager.MATCH_ANY_USER
-                                                    | PackageManager.MATCH_UNINSTALLED_PACKAGES
-                                                    | PackageManager.MATCH_DISABLED_COMPONENTS));
-                } catch (PackageManager.NameNotFoundException e) {
-                    // ignore, try next package
-                    Log.e(TAG, "Could not find package " + candidatePackage);
-                    continue;
-                } catch (Exception e) {
-                    Log.e(TAG, "Error while loading package" + e);
-                    continue;
-                }
-                if (packageInfo.activities == null) {
-                    continue;
-                }
-                for (var activity : packageInfo.activities) {
-                    Log.v(TAG, "Checking activity " + activity.name);
-                    if (baseBluetoothOppActivities.contains(activity.name)) {
-                        for (String activityName : baseBluetoothOppActivities) {
-                            userPackageManager.setComponentEnabledSetting(
-                                    new ComponentName(candidatePackage, activityName),
-                                    newState,
-                                    PackageManager.DONT_KILL_APP);
-                        }
-                        return;
-                    }
-                }
-            }
-
-            Log.e(
-                    TAG,
-                    "Cannot toggle Bluetooth OPP activities, could not find them in any package");
-        } catch (Exception e) {
-            Log.e(TAG, "updateOppLauncherComponentState failed: " + e);
-        }
-    }
-
     void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
         String errorMsg = null;
 
@@ -2313,33 +2138,6 @@ class BluetoothManagerService {
                 PowerExemptionManager.REASON_BLUETOOTH_BROADCAST,
                 "");
         return bOptions.toBundle();
-    }
-
-    private ComponentName resolveSystemService(@NonNull Intent intent) {
-        if (Flags.userRestrictionRefactor()) {
-            throw new IllegalStateException("userRestrictionRefactor is enabled");
-        }
-        List<ComponentName> results =
-                mContext.getPackageManager().queryIntentServices(intent, 0).stream()
-                        .filter(
-                                ri ->
-                                        (ri.serviceInfo.applicationInfo.flags
-                                                        & ApplicationInfo.FLAG_SYSTEM)
-                                                != 0)
-                        .map(
-                                ri ->
-                                        new ComponentName(
-                                                ri.serviceInfo.applicationInfo.packageName,
-                                                ri.serviceInfo.name))
-                        .collect(Collectors.toList());
-        return switch (results.size()) {
-            case 0 -> throw new IllegalStateException("No services can handle intent " + intent);
-            case 1 -> results.get(0);
-            default -> {
-                throw new IllegalStateException(
-                        "Multiples services can handle intent " + intent + ": " + results);
-            }
-        };
     }
 
     int setBtHciSnoopLogMode(int mode) {

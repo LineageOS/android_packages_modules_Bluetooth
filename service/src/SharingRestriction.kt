@@ -72,6 +72,9 @@ internal constructor(
         userContext.unregisterReceiver(receiver)
     }
 
+    // Disables BluetoothOppLauncherActivity component, so the Bluetooth sharing option is not
+    // offered to the user if Bluetooth or sharing is disallowed. Puts the component to its default
+    // state if Bluetooth is not disallowed.
     private fun updateOppLauncherComponentState() {
         val previousSharingState = sharingState
         sharingState = getBluetoothSharingState()

@@ -29,16 +29,6 @@ flag {
 }
 
 flag {
-    name: "user_restriction_refactor"
-    namespace: "bluetooth"
-    description: "Move user restriction to Kotlin and properly check before any attempt to start Bluetooth"
-    bug: "420992261"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "on_to_ble_on_via_off"
     namespace: "bluetooth"
     description: "When transitioning from ON to BLE_ON, go through OFF state completely to reset bluetooth state."
