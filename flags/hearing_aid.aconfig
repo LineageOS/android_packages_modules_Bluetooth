@@ -7,3 +7,13 @@ flag {
     description: "When Service Changed event was received, do not perform GATT operations on outdated handles"
     bug: "419703276"
 }
+
+flag {
+    name: "asha_postpone_connection_update"
+    namespace: "bluetooth"
+    description: "When Connection Parameters are locked by another module, postpone connection update from ASHA side until previous one completes"
+    bug: "445363979"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
