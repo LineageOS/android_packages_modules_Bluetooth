@@ -130,6 +130,7 @@ const Uuid UUID_HAS = Uuid::FromString("1854");
 const Uuid UUID_BASS = Uuid::FromString("184F");
 const Uuid UUID_BATTERY = Uuid::FromString("180F");
 const Uuid UUID_A2DP_SINK = Uuid::FromString("110B");
+const Uuid UUID_GMAP = Uuid::FromString("1858");
 
 #define BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING 2
 
@@ -1888,7 +1889,8 @@ static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len,
 bool btif_is_interesting_le_service(const bluetooth::Uuid& uuid) {
   return uuid.As16Bit() == UUID_SERVCLASS_LE_HID || uuid == UUID_HEARING_AID || uuid == UUID_VC ||
          uuid == UUID_CSIS || uuid == UUID_LE_AUDIO || uuid == UUID_LE_MIDI || uuid == UUID_HAS ||
-         uuid == UUID_BASS || uuid == UUID_BATTERY || uuid == ANDROID_HEADTRACKER_SERVICE_UUID;
+         uuid == UUID_BASS || uuid == UUID_BATTERY || uuid == ANDROID_HEADTRACKER_SERVICE_UUID ||
+         uuid == UUID_GMAP;
 }
 
 static bool btif_should_ignore_uuid(const Uuid& uuid) { return uuid.IsEmpty() || uuid.IsBase(); }
