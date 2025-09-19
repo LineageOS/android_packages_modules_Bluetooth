@@ -1141,6 +1141,14 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
+    private BluetoothLeBroadcastMetadata getMetadataFromSinkWithBroadcastId(
+            BluetoothDevice sink, int broadcastId) {
+        Map<Integer, BluetoothLeBroadcastMetadata> entry =
+                mBroadcastMetadataMap.getOrDefault(sink, Collections.emptyMap());
+
+        return entry.get(broadcastId);
+    }
+
     private void localNotifyReceiveStateChanged(
             BluetoothDevice sink, BluetoothLeBroadcastReceiveState receiveState) {
         int broadcastId = receiveState.getBroadcastId();
@@ -1187,6 +1195,14 @@ public class BassClientService extends ConnectableProfile {
             // stop there was pending past or metadata request
         } else if (isSuspendedByHostPauseReason(broadcastId)) {
             stopActiveSync(broadcastId);
+            if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()
+                    && !isAnyChannelSelected(getMetadataFromSinkWithBroadcastId(sink, broadcastId))
+                    && isReceiveStateSyncedToBis(receiveState)) {
+                mPausedBroadcastSinks.remove(sink);
+                if (isAllReceiversActive(broadcastId) && mPausedBroadcastSinks.isEmpty()) {
+                    stopBroadcastMonitoring(broadcastId, /* hostInitiated */ false);
+                }
+            }
             // If sink unsynced then remove potentially waiting past and check if any broadcast
             // monitoring should be stopped for all broadcast Ids
         } else if (isEmptyBluetoothDevice(receiveState.getSourceDevice())) {
@@ -3387,6 +3403,16 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
+    private static boolean isAnyChannelSelected(BluetoothLeBroadcastMetadata metadata) {
+        if (metadata == null) {
+            return false;
+        }
+
+        return metadata.getSubgroups().stream()
+                .flatMap(subgroup -> subgroup.getChannels().stream())
+                .anyMatch(BluetoothLeBroadcastChannel::isSelected);
+    }
+
     /**
      * Modify the Broadcast Source information on a Broadcast Sink
      *
@@ -3438,6 +3464,16 @@ public class BassClientService extends ConnectableProfile {
 
             /* Update metadata for sink device */
             storeSinkMetadata(device, updatedMetadata.getBroadcastId(), updatedMetadata);
+
+            if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()) {
+                if (!isAnyChannelSelected(updatedMetadata)) {
+                    stopBroadcastMonitoring(
+                            updatedMetadata.getBroadcastId(), /* hostInitiated */ true);
+                } else {
+                    stopBroadcastMonitoring(
+                            updatedMetadata.getBroadcastId(), /* hostInitiated */ false);
+                }
+            }
 
             if (leaudioBisSyncControl()) {
                 sendModifySource(
@@ -4147,6 +4183,12 @@ public class BassClientService extends ConnectableProfile {
                                     + sink);
                     continue;
                 }
+
+                if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()
+                        && !isAnyChannelSelected(metadata)) {
+                    continue;
+                }
+
                 int broadcastId = metadata.getBroadcastId();
 
                 // For each device, find the source ID having this broadcast ID
