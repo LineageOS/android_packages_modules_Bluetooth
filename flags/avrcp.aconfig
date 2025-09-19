@@ -74,3 +74,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_play_item_non_playable_folder"
+    namespace: "bluetooth"
+    description: "During PlayItem command, check if the folder is playable before trying to play it"
+    bug: "446077649"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
