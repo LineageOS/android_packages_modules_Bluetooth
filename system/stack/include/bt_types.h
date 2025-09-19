@@ -208,6 +208,21 @@
     (p) += 4;                 \
   } while (0)
 
+#define BD_ADDR_LEN 6 /* Device address length */
+
+inline void BDADDR_TO_STREAM(uint8_t*& p, const RawAddress& a) {
+  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) {
+    *(p)++ = a.address[BD_ADDR_LEN - 1 - ijk];
+  }
+}
+
+inline void STREAM_TO_BDADDR(RawAddress& a, const uint8_t*& p) {
+  uint8_t* pbda = a.address.data() + BD_ADDR_LEN - 1;
+  for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) {
+    *pbda-- = *(p)++;
+  }
+}
+
 /*******************************************************************************
  * Macros to get and put bytes to and from a stream (Big Endian format)
  */
