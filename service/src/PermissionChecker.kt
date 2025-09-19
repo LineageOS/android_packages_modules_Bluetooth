@@ -15,7 +15,10 @@
  */
 package com.android.server.bluetooth
 
+import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
+import android.Manifest.permission.LOCAL_MAC_ADDRESS
+import android.annotation.RequiresPermission
 import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.app.compat.CompatChanges
@@ -48,32 +51,39 @@ class PermissionChecker(
     class BluetoothPermissionException(message: String? = null, cause: Throwable? = null) :
         Exception(message, cause)
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
     fun enableAllowed(source: AttributionSource, foregroundRequired: Boolean) =
         userCanToggle(source, "enable", foregroundRequired)
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
     fun disableAllowed(source: AttributionSource, foregroundRequired: Boolean) =
         userCanToggle(source, "disable", foregroundRequired)
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
     fun factoryResetAllowed(source: AttributionSource) =
         enforceConnectPermission(source, "factoryReset")
 
+    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS])
     fun getAddressAllowed(source: AttributionSource) {
         enforceConnectPermission(source, "getAddress")
         if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)
         enforceLocalMacAddressPermission(source.uid, "getAddress")
     }
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
     fun getNameAllowed(source: AttributionSource) {
         enforceConnectPermission(source, "getName")
         if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)
     }
 
+    @RequiresPermission(BLUETOOTH_PRIVILEGED)
     fun enforcePrivileged(uid: Int) = context.enforcePermission(BLUETOOTH_PRIVILEGED, -1, uid, null)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////// PRIVATE METHODS ///////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
     private fun userCanToggle(
         source: AttributionSource,
         apiName: String,
@@ -154,11 +164,11 @@ class PermissionChecker(
         }
     }
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
     private fun enforceConnectPermission(clientSource: AttributionSource, apiName: String) {
-        val perm = android.Manifest.permission.BLUETOOTH_CONNECT
+        val perm = BLUETOOTH_CONNECT
         val source = AttributionSource.Builder(attributionSource).setNext(clientSource).build()
         val msg = "${apiName} enforce ${perm}. But permission is missing for source=${source}"
-
         when (permissionManager.checkPermissionForDataDeliveryFromDataSource(perm, source, msg)) {
             PermissionManager.PERMISSION_GRANTED -> {} /* nothing to do, permission granted */
             PermissionManager.PERMISSION_HARD_DENIED -> throw SecurityException(msg)
@@ -166,9 +176,9 @@ class PermissionChecker(
         }
     }
 
+    @RequiresPermission(LOCAL_MAC_ADDRESS)
     private fun enforceLocalMacAddressPermission(uid: Int, apiName: String) {
-        val perm = android.Manifest.permission.LOCAL_MAC_ADDRESS
-
+        val perm = LOCAL_MAC_ADDRESS
         val msg = "${apiName} enforce ${perm}. But permission is missing"
         when (context.checkPermission(perm, -1, uid)) {
             PackageManager.PERMISSION_GRANTED -> {} /* nothing to do, permission granted */
