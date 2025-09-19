@@ -986,9 +986,15 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
                             @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
                             const val ACTION_SCAN = "test.ACTION_SCAN"
                         }
+                        fun scanViaIntentDirectConstructor(context: Context) {
+                            context.sendBroadcast(Intent(ACTION_SCAN), android.Manifest.permission.BLUETOOTH_SCAN)
+                        }
                         fun scanViaIntentConstructor(context: Context) {
                             val intent = Intent(ACTION_SCAN)
                             context.sendBroadcast(intent, android.Manifest.permission.BLUETOOTH_SCAN)
+                        }
+                        fun scanViaIntentDirectConstructorSetAction(context: Context) {
+                            context.sendBroadcast(Intent().setAction(ACTION_SCAN), android.Manifest.permission.BLUETOOTH_SCAN)
                         }
                         fun scanViaIntentSetAction(context: Context) {
                             val intent = Intent()
