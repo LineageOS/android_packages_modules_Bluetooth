@@ -91,6 +91,28 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
+        message="Method `BtPermissionUtils.isPrivileged` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="    private static boolean isPrivileged(Context ctx, int pid, int uid) {"
+        errorLine2="                           ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/service/src/com/android/server/bluetooth/BtPermissionUtils.java"
+            line="176"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
+        message="Method `PermissionChecker.isPrivileged` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
+        errorLine1="    private fun isPrivileged(uid: Int): Boolean {"
+        errorLine2="                ~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/service/src/PermissionChecker.kt"
+            line="207"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="IncorrectRequiresPermissionPropagation"
         message="Method `ServiceMessenger.handleMessage` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED, android.permission.LOCAL_MAC_ADDRESS]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_PRIVILEGED]}."
         errorLine1="    private fun handleMessage(sendingUid: Int, obj: Parcelable): Parcelable {"
         errorLine2="                ~~~~~~~~~~~~~">
