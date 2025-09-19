@@ -271,6 +271,9 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
 
                 override fun visitCallExpression(node: UCallExpression): Boolean {
                     if (foundBroadcastCall) return true
+
+                    node.valueArguments.forEach { argument -> argument.accept(this) }
+
                     if (node.sourcePsi == broadcastCall.sourcePsi) {
                         foundBroadcastCall = true
                         return true
@@ -288,8 +291,6 @@ class RequiresPermissionDetector : Detector(), SourceCodeScanner {
                     ) {
                         lastSeenActionField = node.valueArguments.getOrNull(0)?.tryResolve()
                     }
-
-                    node.valueArguments.forEach { argument -> argument.accept(this) }
 
                     return true
                 }
