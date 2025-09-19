@@ -113,7 +113,6 @@ class BluetoothManagerService {
     private static final Duration STATE_TIMEOUT;
     @VisibleForTesting static final int SERVICE_RESTART_TIME_MS;
     private static final int ADD_PROXY_DELAY_MS;
-    private static final int ENABLE_DISABLE_DELAY_MS;
 
     static {
         if (!Flags.unifyTimeoutProperty()) {
@@ -121,7 +120,6 @@ class BluetoothManagerService {
             STATE_TIMEOUT = Duration.ofSeconds(4L * HW_MULTIPLIER);
             SERVICE_RESTART_TIME_MS = 400 * HW_MULTIPLIER;
             ADD_PROXY_DELAY_MS = 100 * HW_MULTIPLIER;
-            ENABLE_DISABLE_DELAY_MS = 300 * HW_MULTIPLIER;
         } else {
             if (DEGRADED_PERFORMANCE || HW_MULTIPLIER != 1) {
                 TIMEOUT_BIND_MS = 8000;
@@ -132,11 +130,8 @@ class BluetoothManagerService {
             }
             SERVICE_RESTART_TIME_MS = 400;
             ADD_PROXY_DELAY_MS = 100;
-            ENABLE_DISABLE_DELAY_MS = 300;
         }
     }
-
-    private static final int MESSAGE_HANDLE_DISABLE_DELAYED = 4;
 
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_SERVICE_CONNECTED = 40;
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED = 41;
@@ -147,7 +142,6 @@ class BluetoothManagerService {
     private static final int MESSAGE_RESTORE_USER_SETTING_ON = 502;
 
     private static final int MAX_ERROR_RESTART_RETRIES = 6;
-    private static final int MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES = 10;
 
     // Bluetooth persisted setting is off
     @VisibleForTesting static final int BLUETOOTH_OFF = 0;
@@ -333,25 +327,15 @@ class BluetoothManagerService {
     }
 
     private int estimateBusyTime(Object token) {
-        if (!Flags.gracefulDisableWithoutMessage()
-                && mState.oneOf(State.BLE_ON)
-                && isBluetoothPersistedStateOn()) {
-            // Impossible case, if BrEdr is starting, state would be TURNING_ON
-            // Bluetooth is in BLE and is starting classic
-            return SERVICE_RESTART_TIME_MS;
-        } else if (!mState.oneOf(State.ON, State.OFF, State.BLE_ON, State.BLE_TURNING_ON)) {
+        if (!mState.oneOf(State.ON, State.OFF, State.BLE_ON, State.BLE_TURNING_ON)) {
             // Bluetooth is in a temporary turning state
             return ADD_PROXY_DELAY_MS;
-        } else if ((!Flags.gracefulDisableWithoutMessage()
-                        && mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED))
-                || mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
+        } else if (mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                 || isBinding()
                 || (token != ON_SWITCH_USER_TOKEN && mNextUser != null)) {
             Log.d(
                     TAG,
                     "Busy reason:"
-                            + " HANDLE_DISABLE_DELAYED="
-                            + mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
                             + " RESTART_BLUETOOTH_SERVICE="
                             + mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                             + (" isBinding=" + isBinding())
@@ -1333,7 +1317,6 @@ class BluetoothManagerService {
     }
 
     private final BluetoothServiceConnection mConnection = new BluetoothServiceConnection();
-    private int mWaitForDisableRetry;
 
     @VisibleForTesting
     class BluetoothHandler extends Handler {
@@ -1344,14 +1327,6 @@ class BluetoothManagerService {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MESSAGE_HANDLE_DISABLE_DELAYED -> {
-                    if (Flags.gracefulDisableWithoutMessage()) {
-                        throw new IllegalStateException("gracefulDisableWithoutMessage is enabled");
-                    }
-                    Log.d(TAG, "MESSAGE_HANDLE_DISABLE_DELAYED: mAdapter=" + mAdapter);
-
-                    handleDisableDelayed();
-                }
                 case MESSAGE_RESTORE_USER_SETTING_OFF -> {
                     if (!mEnable) {
                         Log.w(TAG, "RESTORE_USER_SETTING_OFF: Unhandled: already disabled");
@@ -1537,7 +1512,7 @@ class BluetoothManagerService {
     private void handleDisableMessage() {
         mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
 
-        if (Flags.gracefulDisableWithoutMessage() && mState.oneOf(State.OFF)) {
+        if (mState.oneOf(State.OFF)) {
             Log.d(TAG, "Disable while already OFF. Nothing to do");
         } else if (isBinding()) {
             Log.d(TAG, "Disable while binding");
@@ -1550,7 +1525,7 @@ class BluetoothManagerService {
             Log.d(TAG, "Disable while BLE_TURNING_ON");
             mEnable = false;
             bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-        } else if (Flags.gracefulDisableWithoutMessage()) {
+        } else {
             if (mState.oneOf(State.ON)) {
                 Log.d(TAG, "Disable while ON");
                 onToBleOn();
@@ -1563,19 +1538,9 @@ class BluetoothManagerService {
             } else {
                 Log.d(TAG, "Disable during state " + mState + ". mEnable is false. Nothing to do");
             }
-        } else if (!Flags.gracefulDisableWithoutMessage()) {
-            if (mEnable && mAdapter != null) {
-                mWaitForDisableRetry = 0;
-                handleDisableDelayed();
-            } else {
-                mEnable = false;
-                onToBleOn();
-            }
         }
 
-        if (Flags.gracefulDisableWithoutMessage()) {
-            mEnable = false;
-        }
+        mEnable = false;
     }
 
     private void prepareRestartMessage() {
@@ -1711,28 +1676,6 @@ class BluetoothManagerService {
             return;
         }
         mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
-    }
-
-    private void handleDisableDelayed() {
-        if (Flags.gracefulDisableWithoutMessage()) {
-            throw new IllegalStateException("gracefulDisableWithoutMessage is enabled");
-        }
-        // The Bluetooth is turning on, wait for State.ON
-        if (!mState.oneOf(State.ON)) {
-            if (mWaitForDisableRetry < MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES) {
-                mWaitForDisableRetry++;
-                mHandler.sendEmptyMessageDelayed(
-                        MESSAGE_HANDLE_DISABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
-                return;
-            } else {
-                Log.e(TAG, "Wait for State.ON timeout");
-            }
-        }
-        // Either state is changed to State.ON or reaches the maximum retry, we
-        // should move forward to the next step.
-        mWaitForDisableRetry = 0;
-        mEnable = false;
-        onToBleOn();
     }
 
     private void propagateOffToBleOn(String hciInstanceName) {
@@ -1890,7 +1833,7 @@ class BluetoothManagerService {
             mAutoOn.notifyBluetoothOn();
         }
 
-        if (Flags.gracefulDisableWithoutMessage() && !mEnable) {
+        if (!mEnable) {
             Log.d(TAG, header + "mEnable is false. Turning off");
             onToBleOn();
             return;

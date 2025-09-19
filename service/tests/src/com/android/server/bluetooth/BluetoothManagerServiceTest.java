@@ -69,14 +69,12 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionManager;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
@@ -109,8 +107,7 @@ public class BluetoothManagerServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(
-                Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE, Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
+        return FlagsWrapper.progressionOf(Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -929,7 +926,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE)
     public void disable_whenTurningOn_shouldAbortAndTurnOff() throws Exception {
         mManagerService.enable(0, "disable_whenTurningOn_shouldAbortAndTurnOff");
         IBluetoothCallback btCallback = transition_offToBleOn();
@@ -957,7 +953,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_GRACEFUL_DISABLE_WITHOUT_MESSAGE)
     public void disableScan_whenBleOn_isTurnedOff() throws Exception {
         mManagerService.enableBle("disableScan_whenBleOn_isTurnedOff", mBleBinder);
         IBluetoothCallback btCallback = transition_offToBleOn();
