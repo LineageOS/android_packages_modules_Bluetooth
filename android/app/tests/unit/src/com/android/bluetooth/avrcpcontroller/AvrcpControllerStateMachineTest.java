@@ -202,7 +202,7 @@ public class AvrcpControllerStateMachineTest {
         assertThat(mAvrcpStateMachine.getCurrentState())
                 .isInstanceOf(AvrcpControllerStateMachine.Disconnected.class);
 
-        mAvrcpStateMachine.connect(StackEvent.connectionStateChanged(control, browsing));
+        mAvrcpStateMachine.connect(control, browsing);
 
         TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
         verify(mAvrcpControllerService, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
@@ -2042,7 +2042,7 @@ public class AvrcpControllerStateMachineTest {
         BrowseTree.BrowseNode deviceRoot = mAvrcpStateMachine.mBrowseTree.mRootNode;
         mAvrcpStateMachine.requestContents(deviceRoot);
         // issues a player list fetch
-        mAvrcpStateMachine.connect(StackEvent.connectionStateChanged(true, true));
+        mAvrcpStateMachine.connect(true, true);
         TestUtils.waitForLooperToBeIdle(mAvrcpStateMachine.getHandler().getLooper());
         verify(mNativeInterface).getPlayerList(eq(mTestAddress), eq(0), eq(19));
     }

@@ -68,7 +68,7 @@ static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
                                (jint)state);
 }
 
-static void a2dp_sink_audio_state_callback(const RawAddress& bd_addr, btav_audio_state_t state) {
+static void a2dp_sink_audio_state_callback(btav_audio_state_t state) {
   log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   if (!mCallbacksObj) {
@@ -80,16 +80,7 @@ static void a2dp_sink_audio_state_callback(const RawAddress& bd_addr, btav_audio
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for connection state");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   (const jbyte*)bd_addr.address.data());
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, addr.get(), (jint)state);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state);
 }
 
 static void a2dp_sink_audio_config_callback(const RawAddress& bd_addr, uint32_t sample_rate,
@@ -251,7 +242,7 @@ int register_com_android_bluetooth_a2dp_sink(JNIEnv* env) {
 
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},
-          {"onAudioStateChanged", "([BI)V", &method_onAudioStateChanged},
+          {"onAudioStateChanged", "(I)V", &method_onAudioStateChanged},
           {"onAudioConfigChanged", "([BII)V", &method_onAudioConfigChanged},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/a2dpsink/A2dpSinkNativeInterface", javaMethods);
