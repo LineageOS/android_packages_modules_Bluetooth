@@ -1982,6 +1982,7 @@ impl Gatt {
             services_removed_cb: None,
             services_added_cb: None,
             subrate_chg_cb: None,
+            characteristics_unoffloaded_cb: None,
         });
 
         let gatt_server_callbacks = Box::new(btgatt_server_callbacks_t {
@@ -2002,6 +2003,7 @@ impl Gatt {
             phy_updated_cb: Some(gs_phy_updated_cb),
             conn_updated_cb: Some(gs_conn_updated_cb),
             subrate_chg_cb: Some(gs_subrate_chg_cb),
+            characteristics_unoffloaded_cb: None,
         });
 
         let callbacks = Box::new(btgatt_callbacks_t {

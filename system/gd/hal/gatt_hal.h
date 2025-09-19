@@ -19,6 +19,7 @@
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
+#include <vector>
 
 #include "hal/endpoint.h"
 
