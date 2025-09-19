@@ -358,6 +358,7 @@ private:
 
   MediaIdMap vfs_ids_;
   MediaIdMap now_playing_ids_;
+  std::set<uint64_t> non_playable_vfs_uids_;
 
   uint32_t play_pos_interval_ = 0;
 
