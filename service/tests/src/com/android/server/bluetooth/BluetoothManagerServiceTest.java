@@ -75,6 +75,7 @@ import android.sysprop.BluetoothProperties;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
@@ -107,7 +108,7 @@ public class BluetoothManagerServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf();
+        return FlagsWrapper.progressionOf(Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -388,6 +389,23 @@ public class BluetoothManagerServiceTest {
         return btCallback;
     }
 
+    private void transition_onToTurningOff() throws Exception {
+        mInOrder.verify(mAdapterBinder).onToBleOn();
+        verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
+        verifyStateIntentSent(State.ON, State.TURNING_OFF);
+    }
+
+    private void transition_turningOffToBleTurningOff() throws Exception {
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_TURNING_OFF);
+        verifyStateIntentSent(State.TURNING_OFF, State.OFF);
+    }
+
+    private void transition_bleTurningOffToOff() throws Exception {
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+        verifyBleStateIntentSent(State.BLE_TURNING_OFF, State.OFF);
+    }
+
     private void transition_onToBleOn(IBluetoothCallback btCallback) throws Exception {
         mInOrder.verify(mAdapterBinder).onToBleOn();
         verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
@@ -410,6 +428,17 @@ public class BluetoothManagerServiceTest {
     }
 
     private void transition_onToOff(IBluetoothCallback btCallback) throws Exception {
+        if (Flags.skipBleOnWhenTurningOff()) {
+            transition_onToTurningOff();
+
+            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+            transition_turningOffToBleTurningOff();
+
+            btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
+            transition_bleTurningOffToOff();
+            return;
+        }
+
         transition_onToBleOn(btCallback);
         transition_bleOnToOff(btCallback);
     }
@@ -571,12 +600,19 @@ public class BluetoothManagerServiceTest {
         // Generate an event that will be delayed due to the TURNING_OFF state
         mManagerService.onAirplaneModeChanged(false);
 
-        transition_onToBleOn(btCallback);
-        mInOrder.verify(mAdapterBinder).bleOnToOff();
-        verifyBleStateIntentSent(State.BLE_ON, State.BLE_TURNING_OFF);
-        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_OFF);
+        if (Flags.skipBleOnWhenTurningOff()) {
+            transition_onToTurningOff();
 
-        // As soon as we left BLE_ON, generate a call from 3p app that request to turn on Bluetooth
+            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+            transition_turningOffToBleTurningOff();
+        } else {
+            transition_onToBleOn(btCallback);
+            mInOrder.verify(mAdapterBinder).bleOnToOff();
+            verifyBleStateIntentSent(State.BLE_ON, State.BLE_TURNING_OFF);
+        }
+
+        // As soon as we start turning down BLE, emulate request to go to BLE_ON
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_TURNING_OFF);
         mManagerService.enableBle(
                 "enableBle_whenDisableAirplaneIsDelayed_startBluetooth", mBleBinder);
 
@@ -734,21 +770,28 @@ public class BluetoothManagerServiceTest {
         mManagerService.onUserSwitching(mNextUser);
 
         // Start the shutdown process
-        mInOrder.verify(mAdapterBinder).onToBleOn();
-        verifyBleStateIntentSent(State.ON, State.TURNING_OFF);
-        verifyStateIntentSent(State.ON, State.TURNING_OFF);
+        transition_onToTurningOff();
         assertThat(mManagerService.getState()).isEqualTo(State.TURNING_OFF);
 
         // Switch user again while shutting down
         UserHandle anotherUser = mock(UserHandle.class);
         mManagerService.onUserSwitching(anotherUser);
 
-        // Complete the shutdown by going to BLE_ON then OFF
-        btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
-        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
-        verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
-        verifyStateIntentSent(State.TURNING_OFF, State.OFF);
-        transition_bleOnToOff(btCallback);
+        if (Flags.skipBleOnWhenTurningOff()) {
+            // Complete the shutdown to OFF
+            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_TURNING_OFF);
+            transition_turningOffToBleTurningOff();
+
+            btCallback.onBluetoothStateChange(State.BLE_TURNING_OFF, State.OFF);
+            transition_bleTurningOffToOff();
+        } else {
+            // Complete the shutdown by going to BLE_ON then OFF
+            btCallback.onBluetoothStateChange(State.TURNING_OFF, State.BLE_ON);
+            syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+            verifyBleStateIntentSent(State.TURNING_OFF, State.BLE_ON);
+            verifyStateIntentSent(State.TURNING_OFF, State.OFF);
+            transition_bleOnToOff(btCallback);
+        }
 
         mCurrentUser = anotherUser;
 
