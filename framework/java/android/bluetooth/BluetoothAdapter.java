@@ -1961,7 +1961,8 @@ public final class BluetoothAdapter {
      * Start the remote device discovery process.
      *
      * <p>The discovery process usually involves an inquiry scan of about 12 seconds, followed by a
-     * page scan of each new device to retrieve its Bluetooth name.
+     * page scan of each new device to retrieve its Bluetooth name. If BLE is supported, a
+     * simultaneous LE scan runs until discovery ends.
      *
      * <p>This is an asynchronous call, it will return immediately. Register for {@link
      * #ACTION_DISCOVERY_STARTED} and {@link #ACTION_DISCOVERY_FINISHED} intents to determine
