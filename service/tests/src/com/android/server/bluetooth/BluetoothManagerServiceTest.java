@@ -107,7 +107,7 @@ public class BluetoothManagerServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_ON_TO_BLE_ON_VIA_OFF);
+        return FlagsWrapper.progressionOf();
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -618,16 +618,15 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ON_TO_BLE_ON_VIA_OFF)
-    public void onToBleOn_whenFlagIsOn_goesThroughOff() throws Exception {
-        mManagerService.enable(0, "onToBleOn_whenFlagIsOn_goesThroughOff");
+    public void onToBleOn_whenBleApp_goesThroughOff() throws Exception {
+        mManagerService.enable(0, "onToBleOn_whenBleApp_goesThroughOff");
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
         // Start a ble app to make sure we restart
-        mManagerService.enableBle("onToBleOn_whenFlagIsOn_goesThroughOff", mBleBinder);
+        mManagerService.enableBle("onToBleOn_whenBleApp_goesThroughOff", mBleBinder);
 
-        mManagerService.disable("onToBleOn_whenFlagIsOn_goesThroughOff", true);
+        mManagerService.disable("onToBleOn_whenBleApp_goesThroughOff", true);
         transition_onToOff(btCallback);
 
         // Because a BLE app is active, it should restart into BLE_ON mode.
@@ -638,15 +637,14 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ON_TO_BLE_ON_VIA_OFF)
-    public void onToBleOn_whenFlagIsOn_noBleApp_staysOff() throws Exception {
-        mManagerService.enable(0, "onToBleOn_whenFlagIsOn_noBleApp_staysOff");
+    public void onToBleOn_whenNoBleApp_staysOff() throws Exception {
+        mManagerService.enable(0, "onToBleOn_whenNoBleApp_staysOff");
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
         // No BLE app started.
 
-        mManagerService.disable("onToBleOn_whenFlagIsOn_noBleApp_staysOff", true);
+        mManagerService.disable("onToBleOn_whenNoBleApp_staysOff", true);
         transition_onToOff(btCallback);
 
         // Because no BLE app is active, it should stay OFF.

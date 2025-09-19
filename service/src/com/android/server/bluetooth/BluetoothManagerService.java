@@ -981,25 +981,8 @@ class BluetoothManagerService {
             Log.d(TAG, "sendBrEdrDownCallback: mAdapter is null");
             return;
         }
-        if (Flags.onToBleOnViaOff()) {
-            Log.i(TAG, "sendBrEdrDownCallback: onToBleOnViaOff is on, going to OFF");
-            bleOnToOff();
-            return;
-        }
-        if (BleScanSettingListener.isScanAllowed()
-                && !AirplaneModeListener.isOn()
-                && mBleAppManager.isBleAppPresent()) {
-            // Need to stay at BLE ON. Disconnect all Gatt connections
-            Log.i(TAG, "sendBrEdrDownCallback: Staying in BLE_ON");
-            try {
-                mAdapter.unregAllGattClient();
-            } catch (RemoteException e) {
-                Log.e(TAG, "sendBrEdrDownCallback: failed to call unregAllGattClient()", e);
-            }
-        } else {
-            Log.i(TAG, "sendBrEdrDownCallback: Stopping ble");
-            bleOnToOff();
-        }
+        Log.i(TAG, "sendBrEdrDownCallback: going to OFF");
+        bleOnToOff();
     }
 
     private Unit enableFromAutoOn() {
@@ -1864,26 +1847,26 @@ class BluetoothManagerService {
             return;
         }
 
-        if (Flags.onToBleOnViaOff()
-                && prevState == State.BLE_TURNING_OFF
-                && !mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)) {
-            if (mBleAppManager.isBleAppPresent() && !AirplaneModeListener.isOn()) {
-                Log.d(TAG, header + "Ble app present, restarting in BLE_ON");
-                sendEnableMsg(
-                        false,
-                        ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                        mContext.getPackageName(),
-                        true);
-            } else {
-                Log.d(
-                        TAG,
-                        header
-                                + "staying OFF and clearing ble apps."
-                                + (" ble app present=" + mBleAppManager)
-                                + (" airplane mode=" + AirplaneModeListener.isOn()));
-                mBleAppManager.clearBleApps();
-            }
+        if (prevState != State.BLE_TURNING_OFF) {
+            Log.d(TAG, header + "Invalid previous state: " + State.$.toString(prevState));
+            return;
         }
+        if (mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)) {
+            Log.d(TAG, header + "Skipped since a restart is already scheduled");
+            return;
+        }
+        if (!mBleAppManager.isBleAppPresent()) {
+            Log.d(TAG, header + "There is no BLE app registered, staying OFF");
+            return;
+        }
+        if (AirplaneModeListener.isOn()) {
+            Log.d(TAG, header + "Airplane mode forces Bluetooth to stay OFF. Clearing BLE apps");
+            mBleAppManager.clearBleApps();
+            return;
+        }
+        Log.d(TAG, header + "Restarting to BLE_ON due to " + mBleAppManager);
+        sendEnableMsg(
+                false, ENABLE_DISABLE_REASON_APPLICATION_REQUEST, mContext.getPackageName(), true);
     }
 
     boolean waitForState(int... states) {

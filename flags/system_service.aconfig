@@ -19,16 +19,6 @@ flag {
 }
 
 flag {
-    name: "on_to_ble_on_via_off"
-    namespace: "bluetooth"
-    description: "When transitioning from ON to BLE_ON, go through OFF state completely to reset bluetooth state."
-    bug: "431079894"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "skip_ble_on_when_turning_off"
     namespace: "bluetooth"
     description: "Now that transitioning from ON to BLE_ON go through OFF, we should not broadcast BLE_ON when going OFF."
