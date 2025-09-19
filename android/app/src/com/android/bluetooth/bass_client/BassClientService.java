@@ -173,6 +173,7 @@ public class BassClientService extends ConnectableProfile {
     private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
+    private final Looper mStateMachinesLooper;
     private final HandlerThread mCallbackHandlerThread;
     private final Callbacks mCallbacks;
 
@@ -520,15 +521,30 @@ public class BassClientService extends ConnectableProfile {
     }
 
     public BassClientService(AdapterService adapterService) {
+        this(adapterService, null);
+    }
+
+    @VisibleForTesting
+    BassClientService(AdapterService adapterService, Looper looper) {
         super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, requireNonNull(adapterService));
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
-        mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
-        mStateMachinesThread = new HandlerThread("BassClientService.StateMachines");
-        mStateMachinesThread.start();
-        mCallbackHandlerThread = new HandlerThread(TAG);
-        mCallbackHandlerThread.start();
-        mCallbacks = new Callbacks(mCallbackHandlerThread.getLooper());
+
+        if (looper == null) {
+            mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
+            mStateMachinesThread = new HandlerThread("BassClientService.StateMachines");
+            mStateMachinesThread.start();
+            mStateMachinesLooper = mStateMachinesThread.getLooper();
+            mCallbackHandlerThread = new HandlerThread(TAG);
+            mCallbackHandlerThread.start();
+            mCallbacks = new Callbacks(mCallbackHandlerThread.getLooper());
+        } else {
+            mHandler = new Handler(looper);
+            mStateMachinesThread = null;
+            mStateMachinesLooper = looper;
+            mCallbackHandlerThread = null;
+            mCallbacks = new Callbacks(looper);
+        }
 
         setBassClientService(this);
     }
@@ -795,17 +811,21 @@ public class BassClientService extends ConnectableProfile {
             mStateMachines.clear();
         }
 
-        try {
-            mStateMachinesThread.quitSafely();
-            mStateMachinesThread.join(THREAD_JOIN_TIMEOUT_MS);
-        } catch (InterruptedException e) {
-            // Do not rethrow as we are shutting down anyway
+        if (mStateMachinesThread != null) {
+            try {
+                mStateMachinesThread.quitSafely();
+                mStateMachinesThread.join(THREAD_JOIN_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                // Do not rethrow as we are shutting down anyway
+            }
         }
-        try {
-            mCallbackHandlerThread.quitSafely();
-            mCallbackHandlerThread.join(THREAD_JOIN_TIMEOUT_MS);
-        } catch (InterruptedException e) {
-            // Do not rethrow as we are shutting down anyway
+        if (mCallbackHandlerThread != null) {
+            try {
+                mCallbackHandlerThread.quitSafely();
+                mCallbackHandlerThread.join(THREAD_JOIN_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                // Do not rethrow as we are shutting down anyway
+            }
         }
 
         mHandler.removeCallbacksAndMessages(null);
@@ -1457,7 +1477,7 @@ public class BassClientService extends ConnectableProfile {
                                     this,
                                     mAdapterService,
                                     mPeriodicAdvertisingManager,
-                                    mStateMachinesThread.getLooper());
+                                    mStateMachinesLooper);
             if (stateMachine != null) {
                 mStateMachines.put(device, stateMachine);
             }
