@@ -1575,10 +1575,12 @@ bool smp_request_oob_data(tSMP_CB* p_cb) {
 
 void print128(const Octet16& x, const char* key_name) {
   uint8_t* p = (uint8_t*)x.data();
+  std::string key_str;
 
-  log::info("{}(MSB~LSB):", key_name);
   for (int i = 0; i < 4; i++) {
-    log::info("{:02x}:{:02x}:{:02x}:{:02x}", p[OCTET16_LEN - i * 4 - 1], p[OCTET16_LEN - i * 4 - 2],
-              p[OCTET16_LEN - i * 4 - 3], p[OCTET16_LEN - i * 4 - 4]);
+    key_str += std::format("{:02x}:{:02x}:{:02x}:{:02x}  ", p[OCTET16_LEN - i * 4 - 1],
+                           p[OCTET16_LEN - i * 4 - 2], p[OCTET16_LEN - i * 4 - 3],
+                           p[OCTET16_LEN - i * 4 - 4]);
   }
+  log::verbose("{}(MSB~LSB): {}", key_name, key_str);
 }
