@@ -110,8 +110,21 @@ void Handler::handle_next_event() {
 
     closure = std::move(tasks_->front());
     tasks_->pop();
+    notify_promise_if_idle();
   }
+
   std::move(closure).Run();
+}
+
+std::future<void> Handler::NotifyWhenIdle() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  log::assert_that(!promise_to_quit_when_idle_.has_value(),
+                   "assert failed: called more than once before setting the promise");
+
+  promise_to_quit_when_idle_ = std::promise<void>();
+  std::future<void> future = promise_to_quit_when_idle_.value().get_future();
+  notify_promise_if_idle();
+  return future;
 }
 
 bool Handler::PostWithDelay(OnceClosure closure, std::chrono::milliseconds delay) {
