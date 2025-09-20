@@ -200,8 +200,8 @@ bool SMP_PairCancel(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
-  log::verbose("addr:{}", bd_addr);
-
+  log::verbose("bd_addr:{} res:{} br_state:{} cb_evt:{} pairing_bda:{}", bd_addr, res,
+               smp_cb.br_state, smp_evt_to_text(smp_cb.cb_evt), smp_cb.pairing_bda);
   // If just showing consent dialog, send response
   if (smp_cb.cb_evt == SMP_CONSENT_REQ_EVT) {
     // If JUSTWORKS, this is used to display the consent dialog
@@ -234,6 +234,8 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
         smp_int_data.status = SMP_NUMERIC_COMPAR_FAIL;
         smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
       }
+    } else {
+      log::warn("Unexpected association model: {}", smp_cb.selected_association_model);
     }
     return;
   }
