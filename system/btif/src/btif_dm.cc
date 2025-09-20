@@ -3661,6 +3661,12 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
+
+  if (com_android_bluetooth_flags_passkey_entry_pairing_approval()) {
+    pairing_cb.is_le_only = true;
+    pairing_cb.is_le_nc = false;
+  }
+
   if (com_android_bluetooth_flags_temporary_pairing_tracking()) {
     pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
   }
