@@ -89,7 +89,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
-import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
@@ -142,8 +142,6 @@ public class BassClientServiceTest {
     @Mock private IBluetoothLeBroadcastAssistantCallback mCallback;
     @Mock private Binder mBinder;
 
-    private static final int TIMEOUT_MS = 1000;
-
     private static final ParcelUuid[] FAKE_SERVICE_UUIDS = {BluetoothUuid.BASS};
 
     private static final int TEST_BROADCAST_ID = 42;
@@ -186,6 +184,7 @@ public class BassClientServiceTest {
 
     private BassClientService mBassClientService;
     private ArgumentCaptor<IScannerCallback> mBassScanCallbackCaptor;
+    private TestLooper mLooper;
 
     private InOrder mInOrderPeriodicAdvertisingManager;
     private InOrder mInOrder;
@@ -369,7 +368,9 @@ public class BassClientServiceTest {
                 .when(mObjectsFactory)
                 .getBluetoothLeScannerWrapper(any());
 
-        mBassClientService = new BassClientService(mAdapterService);
+        mLooper = new TestLooper();
+
+        mBassClientService = new BassClientService(mAdapterService, mLooper.getLooper());
         mBassClientService.setAvailable(true);
 
         doReturn(Optional.of(mCsipService)).when(mAdapterService).getCsipSetCoordinatorService();
@@ -741,7 +742,7 @@ public class BassClientServiceTest {
 
         // Add source to not cached broadcast cause addFailed notification
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         verify(mCallback)
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
@@ -834,7 +835,7 @@ public class BassClientServiceTest {
         // Error in syncEstablished causes sourceLost, sourceAddFailed notification
         // and removing cache because scanning is active
         onSyncEstablishedFailed(device1, handle1);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrderCallback = inOrder(mCallback);
         inOrderCallback.verify(mCallback).onSourceLost(eq(broadcastId1));
         inOrderCallback
@@ -846,7 +847,7 @@ public class BassClientServiceTest {
 
         // Add source to not cached broadcast causes addFailed notification
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrderCallback
                 .verify(mCallback)
                 .onSourceAddFailed(
@@ -873,7 +874,7 @@ public class BassClientServiceTest {
         // Error in syncEstablished causes sourceLost, sourceAddFailed notification
         // and not removing cache because scanning is inactive
         onSyncEstablishedFailed(device1, handle1);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
             inOrderCallback.verify(mCallback).onSourceLost(eq(broadcastId1));
         }
@@ -910,7 +911,7 @@ public class BassClientServiceTest {
 
         // Sync established
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Both add sources should be called to state machines
         expect.that(mStateMachines.size()).isEqualTo(2);
@@ -954,7 +955,7 @@ public class BassClientServiceTest {
 
         // Error in syncEstablished causes sourceLost, sourceAddFailed notification for both sinks
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrderCallback = inOrder(mCallback);
         if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
             inOrderCallback.verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
@@ -1001,7 +1002,7 @@ public class BassClientServiceTest {
 
         // Add same broadcast as already pending not cause onSourceAddFailed
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrder = inOrder(mCallback);
         inOrder.verify(mCallback, never())
                 .onSourceAddFailed(
@@ -1012,7 +1013,7 @@ public class BassClientServiceTest {
 
         // Add source for different broadcast during another pending cause onSourceAddFailed
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ false);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback)
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
@@ -1031,7 +1032,7 @@ public class BassClientServiceTest {
 
         // Add broadcast while not pending cause ADD_BCAST_SOURCE msg to SM
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback, never())
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
@@ -1362,7 +1363,7 @@ public class BassClientServiceTest {
         mBassClientService
                 .getCallbacks()
                 .notifyReceiveStateChanged(sm.getDevice(), recvState.getSourceId(), recvState);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         return recvState;
     }
@@ -1427,7 +1428,7 @@ public class BassClientServiceTest {
         mBassClientService
                 .getCallbacks()
                 .notifyReceiveStateChanged(sm.getDevice(), recvState.getSourceId(), recvState);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         return recvState;
     }
@@ -1539,7 +1540,7 @@ public class BassClientServiceTest {
         mBassClientService
                 .getCallbacks()
                 .notifyReceiveStateChanged(sm.getDevice(), sourceId, receiveState.get());
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
     }
 
     private void incjectDeviceDisconnection(BluetoothDevice device) {
@@ -1585,12 +1586,13 @@ public class BassClientServiceTest {
         prepareSynchronizedPair();
 
         // verify source id
-        verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+        mLooper.dispatchAll();
+        verify(mCallback, atLeast(1))
                 .onSourceAdded(
                         eq(mCurrentDevice),
                         eq(TEST_SOURCE_ID),
                         eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
-        verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+        verify(mCallback, atLeast(1))
                 .onSourceAdded(
                         eq(mCurrentDevice1),
                         eq(TEST_SOURCE_ID + 1),
@@ -2247,7 +2249,7 @@ public class BassClientServiceTest {
 
         // Verify errors are reported for the entire group
         mBassClientService.modifySource(mCurrentDevice, TEST_SOURCE_ID, null);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
@@ -2272,7 +2274,7 @@ public class BassClientServiceTest {
 
         // Verify errors are reported for the entire group
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
@@ -2347,12 +2349,13 @@ public class BassClientServiceTest {
 
         // Verify add source fail, group id does not support HQ, broadcast HQ only
         mBassClientService.addSource(mCurrentDevice, metadataHighQuality, /* isGroupOp */ true);
-        verify(mCallback, timeout(TIMEOUT_MS))
+        mLooper.dispatchAll();
+        verify(mCallback)
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
                         eq(metadataHighQuality),
                         eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
-        verify(mCallback, timeout(TIMEOUT_MS))
+        verify(mCallback)
                 .onSourceAddFailed(
                         eq(mCurrentDevice1),
                         eq(metadataHighQuality),
@@ -3280,7 +3283,7 @@ public class BassClientServiceTest {
                 .getCallbacks()
                 .notifySourceAddFailed(
                         mCurrentDevice, mBroadcastMetadata1, BluetoothStatusCodes.ERROR_UNKNOWN);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify resetting allowed context mask is triggered when switching source failed
         verify(mLeAudioService)
@@ -4108,12 +4111,13 @@ public class BassClientServiceTest {
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         // verify source id
-        verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+        mLooper.dispatchAll();
+        verify(mCallback, atLeast(1))
                 .onSourceAdded(
                         eq(mCurrentDevice),
                         eq(TEST_SOURCE_ID),
                         eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
-        verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+        verify(mCallback, atLeast(1))
                 .onSourceAdded(
                         eq(mCurrentDevice1),
                         eq(TEST_SOURCE_ID + 1),
@@ -4144,7 +4148,8 @@ public class BassClientServiceTest {
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         prepareConnectedDeviceGroup();
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+        mLooper.dispatchAll();
+        verify(mCallback, atLeast(1))
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
                         eq(mBroadcastMetadata1),
@@ -4662,7 +4667,7 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.getBase(TEST_SYNC_HANDLE)).isNotNull();
 
         // Notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         ArgumentCaptor<BluetoothLeBroadcastMetadata> metaData =
                 ArgumentCaptor.forClass(BluetoothLeBroadcastMetadata.class);
         InOrder inOrder = inOrder(mCallback);
@@ -4683,7 +4688,7 @@ public class BassClientServiceTest {
         onBigInfoAdvertisingReport();
 
         // Not notified second time
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback, never()).onSourceFound(any());
     }
 
@@ -4758,7 +4763,7 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.getBase(TEST_SYNC_HANDLE)).isNotNull();
 
         // Not notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrder = inOrder(mCallback);
         inOrder.verify(mCallback, never()).onSourceFound(any());
 
@@ -4766,7 +4771,7 @@ public class BassClientServiceTest {
         onBigInfoAdvertisingReport();
 
         // Notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback).onSourceFound(any());
     }
 
@@ -4779,7 +4784,7 @@ public class BassClientServiceTest {
         onBigInfoAdvertisingReport();
 
         // Not notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrder = inOrder(mCallback);
         inOrder.verify(mCallback, never()).onSourceFound(any());
 
@@ -4795,7 +4800,7 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.getBase(TEST_SYNC_HANDLE)).isNotNull();
 
         // Notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback).onSourceFound(any());
     }
 
@@ -4851,7 +4856,7 @@ public class BassClientServiceTest {
         callback.onPeriodicAdvertisingReport(report);
 
         // Not notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrder = inOrder(mCallback);
         inOrder.verify(mCallback, never()).onSourceFound(any());
 
@@ -4867,7 +4872,7 @@ public class BassClientServiceTest {
         expect.that(mBassClientService.getBase(TEST_SYNC_HANDLE)).isNotNull();
 
         // Notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback).onSourceFound(any());
     }
 
@@ -4884,7 +4889,7 @@ public class BassClientServiceTest {
         onPeriodicAdvertisingReport();
 
         // Notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         InOrder inOrder = inOrder(mCallback);
         inOrder.verify(mCallback).onSourceFound(any());
 
@@ -4898,7 +4903,7 @@ public class BassClientServiceTest {
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
 
         onPeriodicAdvertisingReport();
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
             // Notified
@@ -4910,7 +4915,7 @@ public class BassClientServiceTest {
 
         onPeriodicAdvertisingReport();
         // Notified
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         inOrder.verify(mCallback).onSourceFound(any());
     }
 
@@ -4922,7 +4927,7 @@ public class BassClientServiceTest {
         onSyncLost();
         checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
 
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
 
         // Cleaned all
@@ -4949,7 +4954,7 @@ public class BassClientServiceTest {
         mBassClientService.stopSearchingForSources();
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
 
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         verify(mCallback, never()).onSourceLost(eq(TEST_BROADCAST_ID));
     }
 
@@ -5007,7 +5012,7 @@ public class BassClientServiceTest {
         // Lost should notify about lost and clear cache
         checkAndDispatchTimeout(broadcastId1, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
 
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         verify(mCallback).onSourceLost(eq(broadcastId1));
 
         // Could try to sync again
@@ -6509,7 +6514,7 @@ public class BassClientServiceTest {
                 mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
 
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify modify source when source available but not synced to PA/BIS
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -6536,7 +6541,7 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
 
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // No resuming source if device remain synced to PA/BIS
         assertThat(mStateMachines).hasSize(2);
@@ -6548,7 +6553,7 @@ public class BassClientServiceTest {
         injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
 
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify add source when source not available
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -6591,7 +6596,7 @@ public class BassClientServiceTest {
                 mStateMachines.get(mCurrentDevice1), mBroadcastMetadata1, false, false);
 
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // No resuming during pause
         assertThat(mStateMachines).hasSize(2);
@@ -6615,7 +6620,7 @@ public class BassClientServiceTest {
         injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
 
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // No resuming during monitoring
         assertThat(mStateMachines).hasSize(2);
@@ -6641,10 +6646,10 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
 
         mBassClientService.getCallbacks().notifyBassStateSetupFailed(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify adding source callback is triggered if BASS state initiate failed
-        verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+        verify(mCallback, atLeast(1))
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
                         eq(mBroadcastMetadata1),
@@ -6655,7 +6660,7 @@ public class BassClientServiceTest {
             doReturn(true).when(sm).isBassStateReady();
         }
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
@@ -6674,7 +6679,7 @@ public class BassClientServiceTest {
             doReturn(true).when(sm).isBassStateReady();
         }
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify adding source is resumed once BASS state ready
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -6709,7 +6714,7 @@ public class BassClientServiceTest {
         // First BASS ready
         doReturn(true).when(mStateMachines.get(mCurrentDevice)).isBassStateReady();
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify adding source is resumed once BASS state ready
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -6732,7 +6737,7 @@ public class BassClientServiceTest {
         // Second BASS ready
         doReturn(true).when(mStateMachines.get(mCurrentDevice1)).isBassStateReady();
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice1);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
 
         // Verify adding source is resumed once BASS state ready
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -6929,7 +6934,7 @@ public class BassClientServiceTest {
                 .verify(mPeriodicAdvertisingManager)
                 .registerSync(any(), anyInt(), anyInt(), any(), any());
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        mLooper.dispatchAll();
         if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
             verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
         }
