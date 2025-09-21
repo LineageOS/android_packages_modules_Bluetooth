@@ -39,7 +39,6 @@
 #include "hci/acl_manager/acl_manager_le_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/controller_impl.h"
-#include "hci/distance_measurement_manager_impl.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager_impl.h"
 #include "hci/le_scanning_manager_impl.h"
@@ -59,6 +58,8 @@
 
 #if TARGET_FLOSS
 #include "sysprops/sysprops_module.h"
+#else
+#include "hci/distance_measurement_manager_impl.h"
 #endif
 
 using ::bluetooth::os::Handler;
@@ -82,9 +83,6 @@ struct Stack::impl {
   impl(os::Handler* handler)
       : storage_(handler),
         snoop_logger_(handler),
-#ifdef TARGET_FLOSS
-        sysprops_module_(),
-#endif
         link_clocker_(),
         hci_hal_(handler, link_clocker_, &snoop_logger_),
         ranging_hal_(),
@@ -97,13 +95,17 @@ struct Stack::impl {
                              round_robin_scheduler_),
         acl_manager_(handler, hci_layer_, controller_, storage_, round_robin_scheduler_,
                      acl_manager_classic_),
+#ifdef TARGET_FLOSS
+        sysprops_module_(),
+#else
+        distance_measurement_manager_(handler, &hci_layer_, &controller_, &acl_manager_,
+                                      &ranging_hal_),
+#endif
         le_scanning_manager_(handler, &hci_layer_, &controller_, acl_manager_.GetLeAddressManager(),
                              &storage_),
         msft_extension_manager_(handler, &hci_hal_, &hci_layer_),
         le_advertising_manager_(handler, &hci_layer_, &controller_,
-                                acl_manager_.GetLeAddressManager(), &acl_manager_),
-        distance_measurement_manager_(handler, &hci_layer_, &controller_, &acl_manager_,
-                                      &ranging_hal_) {
+                                acl_manager_.GetLeAddressManager(), &acl_manager_) {
     socket_hal_ = std::make_unique<hal::SocketHalImpl>();
     gatt_hal_ = std::make_unique<hal::GattHalImpl>();
     lpp_offload_manager_ =
@@ -127,9 +129,6 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   storage::StorageModule storage_;
   hal::SnoopLogger snoop_logger_;
-#if TARGET_FLOSS
-  sysprops::SyspropsModule sysprops_module_;
-#endif
   std::unique_ptr<hal::GattHal> gatt_hal_ = nullptr;
   std::unique_ptr<hal::SocketHal> socket_hal_ = nullptr;
   std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
@@ -143,10 +142,14 @@ struct Stack::impl {
   hci::acl_manager::RoundRobinScheduler round_robin_scheduler_;
   hci::acl_manager::AclManagerClassicImpl acl_manager_classic_;
   hci::acl_manager::AclManagerLeImpl acl_manager_;
+#if TARGET_FLOSS
+  sysprops::SyspropsModule sysprops_module_;
+#else
+  hci::DistanceMeasurementManagerImpl distance_measurement_manager_;
+#endif
   hci::LeScanningManagerImpl le_scanning_manager_;
   hci::MsftExtensionManager msft_extension_manager_;
   hci::LeAdvertisingManagerImpl le_advertising_manager_;
-  hci::DistanceMeasurementManagerImpl distance_measurement_manager_;
 };
 
 Stack::Stack() {}
@@ -223,7 +226,9 @@ void Stack::StartEverything() {
     bluetooth::shim::hci_on_reset_complete();
     bluetooth::shim::init_advertising_manager();
     bluetooth::shim::init_scanning_manager();
+#ifndef TARGET_FLOSS
     bluetooth::shim::init_distance_measurement_manager();
+#endif
   }
 }
 
@@ -360,9 +365,13 @@ hci::LeAdvertisingManager* Stack::GetLeAdvertisingManager() const {
 }
 
 hci::DistanceMeasurementManager* Stack::GetDistanceMeasurementManager() const {
+#ifdef TARGET_FLOSS
+  return nullptr;
+#else
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
   return &pimpl_->distance_measurement_manager_;
+#endif
 }
 
 os::Handler* Stack::GetHandler() {

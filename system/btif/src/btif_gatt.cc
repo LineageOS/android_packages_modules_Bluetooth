@@ -83,8 +83,9 @@ static btgatt_interface_t btgattInterface = {
 
         .client = &btgattClientInterface,
         .server = &btgattServerInterface,
-        .scanner = nullptr,    // filled in btif_gatt_get_interface
-        .advertiser = nullptr  // filled in btif_gatt_get_interface
+        .scanner = nullptr,                      // filled in btif_gatt_get_interface
+        .advertiser = nullptr,                   // filled in btif_gatt_get_interface
+        .distance_measurement_manager = nullptr  // filled in btif_gatt_get_interface
 };
 
 /*******************************************************************************
@@ -102,7 +103,9 @@ const btgatt_interface_t* btif_gatt_get_interface() {
   // until those dependencies are properly abstracted for tests.
   btgattInterface.scanner = get_ble_scanner_instance();
   btgattInterface.advertiser = bluetooth::shim::get_ble_advertiser_instance();
+#ifndef TARGET_FLOSS
   btgattInterface.distance_measurement_manager =
           bluetooth::shim::get_distance_measurement_instance();
+#endif
   return &btgattInterface;
 }
