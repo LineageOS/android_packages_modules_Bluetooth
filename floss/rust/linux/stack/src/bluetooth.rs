@@ -1568,6 +1568,7 @@ pub(crate) trait BtifHHCallbacks {
         address_type: BtAddrType,
         transport: BtTransport,
         state: BthhConnectionState,
+        status: BthhStatus,
     );
 
     #[btif_callback(HidInfo)]
@@ -3006,6 +3007,7 @@ impl BtifHHCallbacks for Bluetooth {
         address_type: BtAddrType,
         transport: BtTransport,
         state: BthhConnectionState,
+        _status: BthhStatus,
     ) {
         // HID or HOG is not differentiated by the hid host when callback this function. Assume HOG
         // if the device is LE only and HID if classic only. And assume HOG if UUID said so when
