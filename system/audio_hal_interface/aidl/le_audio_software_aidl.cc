@@ -520,7 +520,6 @@ static std::unordered_map<AudioLocation, uint32_t> audio_location_map{
 bool hal_ucast_capability_to_stack_format(const UnicastCapability& hal_capability,
                                           CodecConfigSetting& stack_capability) {
   if (hal_capability.codecType != CodecType::LC3) {
-    log::warn("Unsupported codecType: {}", toString(hal_capability.codecType));
     return false;
   }
   if (hal_capability.leAudioCodecCapabilities.getTag() !=
@@ -576,7 +575,6 @@ bool hal_ucast_capability_to_stack_format(const UnicastCapability& hal_capabilit
 static bool hal_bcast_capability_to_stack_format(const BroadcastCapability& hal_bcast_capability,
                                                  CodecConfigSetting& stack_capability) {
   if (hal_bcast_capability.codecType != CodecType::LC3) {
-    log::warn("Unsupported codecType: {}", toString(hal_bcast_capability.codecType));
     return false;
   }
   if (hal_bcast_capability.leAudioCodecCapabilities.getTag() !=
