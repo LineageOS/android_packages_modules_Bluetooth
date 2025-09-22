@@ -84,10 +84,12 @@ public class MetadataTest {
     private MockContentResolver mTestContentResolver;
     private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
     private Bitmap mTestBitmap = null;
+    private Bitmap mDifferentTestBitmap = null;
 
     @Before
     public void setUp() throws Exception {
         mTestBitmap = loadImage(R.raw.image_200_200);
+        mDifferentTestBitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
         mTestContentResolver = new MockContentResolver(context);
         mTestContentResolver.addProvider(
@@ -114,6 +116,7 @@ public class MetadataTest {
         mSongImage = null;
         mTestContentResolver = null;
         mTestBitmap = null;
+        mDifferentTestBitmap = null;
         Util.UriImagesSupport.sValue = false;
     }
 
@@ -1206,6 +1209,46 @@ public class MetadataTest {
         Metadata metadata = new Metadata.Builder().fromMediaMetadata(m).build();
         Metadata metadata2 = metadata.clone();
         metadata2.numTracks = Metadata.EMPTY_NUM_TRACKS;
+        assertThat(metadata).isNotEqualTo(metadata2);
+    }
+
+    /** Make sure two Metadata objects are different if image doesn't match */
+    @Test
+    public void testEquals_differentImage() {
+        // Create a metadata object with the default test image
+        MediaMetadata m = getMediaMetadataWithBitmap(MediaMetadata.METADATA_KEY_ART, mTestBitmap);
+        Metadata metadata = new Metadata.Builder().fromMediaMetadata(m).build();
+
+        // Create a second metadata object that is a clone of the first
+        Metadata metadata2 = metadata.clone();
+
+        // Create a different image and assign it to the second metadata object
+        Image differentImage = new Image(mMockContext, mDifferentTestBitmap);
+        metadata2.image = differentImage;
+
+        // Verify that the two metadata objects are not considered equal
+        assertThat(metadata).isNotEqualTo(metadata2);
+    }
+
+    /** Make sure two Metadata objects are different if one has an image and the other doesn't */
+    @Test
+    public void testEquals_oneImageNull() {
+        // Create a metadata object with the default test image
+        MediaMetadata m = getMediaMetadataWithBitmap(MediaMetadata.METADATA_KEY_ART, mTestBitmap);
+        Metadata metadata = new Metadata.Builder().fromMediaMetadata(m).build();
+
+        // Create a second metadata object that is a clone of the first
+        Metadata metadata2 = metadata.clone();
+
+        // Set the image on the second metadata object to null
+        metadata2.image = null;
+
+        // Verify that the two metadata objects are not considered equal
+        assertThat(metadata).isNotEqualTo(metadata2);
+
+        // Verify the reverse is also true (the first has a null image, the second does not)
+        metadata.image = null;
+        metadata2.image = mSongImage;
         assertThat(metadata).isNotEqualTo(metadata2);
     }
 
