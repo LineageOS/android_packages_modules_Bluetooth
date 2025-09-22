@@ -171,11 +171,6 @@ struct AclScheduler::impl {
 
   void Stop() {
     stopped_ = true;
-    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
-      handler_->Clear();
-      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
-      delete handler_;
-    }
   }
 
 private:

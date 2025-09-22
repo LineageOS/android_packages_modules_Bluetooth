@@ -33,16 +33,6 @@ flag {
 }
 
 flag {
-    name: "same_handler_for_all_modules"
-    namespace: "bluetooth"
-    description: "Update all modules to use the same handler"
-    bug: "398195386"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hci_instance_name_use_injected"
     namespace: "bluetooth"
     description: "Inject service manager bluetooth hci instance name"

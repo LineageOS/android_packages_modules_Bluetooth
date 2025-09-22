@@ -90,9 +90,7 @@ protected:
 
   void TearDown() override {
     handler_->Clear();
-    if (com_android_bluetooth_flags_same_handler_for_all_modules()) {
-      handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
-    }
+    handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
     hal.reset();
     link_clocker.reset();
     delete handler_;
