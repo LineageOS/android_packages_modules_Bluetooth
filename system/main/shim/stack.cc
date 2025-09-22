@@ -110,38 +110,6 @@ struct Stack::impl {
             std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get(), gatt_hal_.get());
   }
 
-  // TODO: Remove this constructor once the flag (same_handler_for_all_modules) is fully rolled out.
-  impl(os::Thread* thread)
-      : storage_(new os::Handler(thread)),
-        snoop_logger_(new os::Handler(thread)),
-#ifdef TARGET_FLOSS
-        sysprops_module_(),
-#endif
-        link_clocker_(),
-        hci_hal_(new os::Handler(thread), link_clocker_, &snoop_logger_),
-        ranging_hal_(),
-        hci_layer_(new os::Handler(thread), &hci_hal_, &storage_),
-        controller_(new os::Handler(thread), &hci_layer_),
-        acl_scheduler_(new os::Handler(thread)),
-        remote_name_request_(new os::Handler(thread), hci_layer_, acl_scheduler_),
-        round_robin_scheduler_(new os::Handler(thread), controller_, hci_layer_.GetAclQueueEnd()),
-        acl_manager_classic_(new os::Handler(thread), hci_layer_, acl_scheduler_,
-                             remote_name_request_, round_robin_scheduler_),
-        acl_manager_(new os::Handler(thread), hci_layer_, controller_, storage_,
-                     round_robin_scheduler_, acl_manager_classic_),
-        le_scanning_manager_(new os::Handler(thread), &hci_layer_, &controller_,
-                             acl_manager_.GetLeAddressManager(), &storage_),
-        msft_extension_manager_(new os::Handler(thread), &hci_hal_, &hci_layer_),
-        le_advertising_manager_(new os::Handler(thread), &hci_layer_, &controller_,
-                                acl_manager_.GetLeAddressManager(), &acl_manager_),
-        distance_measurement_manager_(new os::Handler(thread), &hci_layer_, &controller_,
-                                      &acl_manager_, &ranging_hal_) {
-    socket_hal_ = std::make_unique<hal::SocketHalImpl>();
-    gatt_hal_ = std::make_unique<hal::GattHalImpl>();
-    lpp_offload_manager_ = std::make_unique<lpp::LppOffloadManager>(
-            new os::Handler(thread), socket_hal_.get(), gatt_hal_.get());
-  }
-
   ~impl() {
     if (lpp_offload_manager_) {
       lpp_offload_manager_.reset();
@@ -273,9 +241,7 @@ void Stack::Stop() {
   log::info("GD stack is not running");
 
   stack_handler_->Clear();
-  if (com_android_bluetooth_flags_same_handler_for_all_modules()) {
-    stack_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
-  }
+  stack_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
 
   WakelockManager::Get().Acquire();
 
@@ -424,13 +390,7 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(std::promise<void> promise) {
-  if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
-    // Create a new handler for each module to remain consistent with the old implementation.
-    pimpl_ = std::make_unique<Stack::impl>(stack_thread_);
-  } else {
-    pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
-  }
-
+  pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
   promise.set_value();
 }
 

@@ -35,13 +35,7 @@ struct LppOffloadManager::impl {
     gatt_capabilities_ = gatt_hal_->GetGattCapabilities();
   }
 
-  ~impl() {
-    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
-      handler_->Clear();
-      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
-      delete handler_;
-    }
-  }
+  ~impl() = default;
 
   bool register_socket_hal_callbacks(hal::SocketHalCallback* callbacks) {
     log::info("");
