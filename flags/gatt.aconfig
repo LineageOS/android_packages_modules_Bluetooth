@@ -77,3 +77,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_use_better_start_handle_in_service_changed"
+    namespace: "bluetooth"
+    description: "Don't use 0x0001 in all the use cases when application adds or remove a service"
+    bug: "444655559"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
