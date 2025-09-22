@@ -211,7 +211,9 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         mContactChangeObserver);
 
         mSessionStatusHandler.sendEmptyMessage(GET_LOCAL_TELEPHONY_DETAILS);
-        mSessionStatusHandler.sendEmptyMessage(LOAD_CONTACTS);
+        if (!Flags.pbapLazyLoadContacts()) {
+            mSessionStatusHandler.sendEmptyMessage(LOAD_CONTACTS);
+        }
         mSessionStatusHandler.sendEmptyMessage(START_LISTENER);
 
         mIsPseDynamicVersionUpgradeEnabled =
@@ -737,6 +739,9 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                             + " socket="
                             + socket);
             return false;
+        }
+        if (Flags.pbapCleanupUseHandler() && !mContactsLoaded) {
+            mSessionStatusHandler.sendEmptyMessage(LOAD_CONTACTS);
         }
 
         PbapStateMachine sm =
