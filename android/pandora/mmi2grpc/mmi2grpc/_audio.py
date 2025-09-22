@@ -58,7 +58,7 @@ class AudioSignal:
         self.fs = fs
         self.thread = None
 
-    def start(self, duration_s: float = 4.0):
+    def start(self, duration_s: float = 8.0):
         """Generates the audio signal and send it to the transport."""
         self.thread = Thread(target=self._run, args=(duration_s,))
         self.thread.start()
