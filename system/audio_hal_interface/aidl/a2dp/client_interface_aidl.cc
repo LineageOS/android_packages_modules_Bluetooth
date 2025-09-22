@@ -495,7 +495,7 @@ size_t BluetoothAudioClientInterface::ReadAudioDataExact(uint8_t* buf, size_t le
 
   size_t available = data_mq_->availableToRead();
 
-  if (fmq_buffer_size_ + available <= len) {
+  if (fmq_buffer_size_ + available < len) {
     // Reading from the FMQ does not yield enough data to return a complete
     // frame. Read into the temporary buffer instead.
     bool status = data_mq_->read(reinterpret_cast<MqDataType*>(fmq_buffer_) + fmq_buffer_size_,
