@@ -478,6 +478,7 @@ cc_test {
         "hci/le_periodic_sync_manager_test.cc",
         "hci/le_scanning_manager_impl_test.cc",
         "hci/le_scanning_reassembler_test.cc",
+        "hci/msft_unittest.cc",
         "hci/remote_name_request_impl_test.cc",
         "hci/uuid_unittest.cc",
         "os/handler_unittest.cc",
