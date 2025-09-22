@@ -29,6 +29,7 @@ import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOpe
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSyncHandleToDeviceFix;
+import static com.android.bluetooth.flags.Flags.leaudioFallbackGroupSelection;
 
 import static java.util.Objects.requireNonNull;
 
@@ -1294,6 +1295,9 @@ public class BassClientService extends ConnectableProfile {
         } else {
             mLocalBroadcastReceivers.put(broadcastId, new HashSet<>(Arrays.asList(sink)));
         }
+        if (leaudioFallbackGroupSelection()) {
+            updateDefaultBroadcastToUnicastFallbackGroup();
+        }
     }
 
     private void localNotifySourceAddFailed(
@@ -1525,6 +1529,9 @@ public class BassClientService extends ConnectableProfile {
 
             sEventLogger.logd(TAG, "Broadcast timeout: " + mBroadcastId);
             mLocalBroadcastReceivers.remove(mBroadcastId);
+            if (leaudioFallbackGroupSelection()) {
+                updateDefaultBroadcastToUnicastFallbackGroup();
+            }
             leAudio.get().stopBroadcast(mBroadcastId);
         }
 
@@ -4561,6 +4568,9 @@ public class BassClientService extends ConnectableProfile {
             case LeAudioStackEvent.BROADCAST_STATE_STOPPED:
                 if (mLocalBroadcastReceivers.remove(broadcastId) != null) {
                     sEventLogger.logd(TAG, "Broadcast ID: " + broadcastId + ", stopped");
+                    if (leaudioFallbackGroupSelection()) {
+                        updateDefaultBroadcastToUnicastFallbackGroup();
+                    }
                 }
                 break;
             case LeAudioStackEvent.BROADCAST_STATE_CONFIGURING:
@@ -4572,6 +4582,20 @@ public class BassClientService extends ConnectableProfile {
             default:
                 break;
         }
+    }
+
+    private void updateDefaultBroadcastToUnicastFallbackGroup() {
+        final var leAudio = mAdapterService.getLeAudioService();
+        if (leAudio.isEmpty()) {
+            Log.d(TAG, "updateDefaultBroadcastToUnicastFallbackGroup: No available LeAudioService");
+            return;
+        }
+
+        leAudio.get()
+                .selectDefaultBroadcastToUnicastFallbackGroup(
+                        mLocalBroadcastReceivers.values().stream()
+                                .flatMap(Set::stream)
+                                .collect(Collectors.toSet()));
     }
 
     /** Callback handler */

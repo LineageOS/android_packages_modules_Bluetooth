@@ -124,6 +124,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 /** Test cases for {@link LeAudioService}. */
@@ -3559,6 +3560,44 @@ public class LeAudioServiceTest {
         groupStatusChangedEvent.valueInt2 = LeAudioStackEvent.GROUP_STATUS_INACTIVE;
         mService.messageFromNative(groupStatusChangedEvent);
         mLooper.dispatchAll();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FALLBACK_GROUP_SELECTION)
+    public void testSelectDefaultBroadcastToUnicastFallbackGroupWhenFlagEnabled() {
+        List<BluetoothDevice> mostRecentDevices = new ArrayList<>();
+        mostRecentDevices.add(mLeftDevice);
+        mostRecentDevices.add(mRightDevice);
+        doReturn(mostRecentDevices).when(mDatabaseManager).getMostRecentlyConnectedDevices();
+
+        // Prepare: List of broadcast receivers containing only the newer device.
+        Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
+        broadcastReceivers.add(mRightDevice);
+        broadcastReceivers.add(mSingleDevice);
+
+        // Connect devices to groups and create descriptors.
+        int groupIdLeft = 1;
+        int groupIdRight = 2;
+        int groupIdSingle = 3;
+        connectTestDevice(mLeftDevice, groupIdLeft);
+        connectTestDevice(mRightDevice, groupIdRight);
+        connectTestDevice(mSingleDevice, groupIdSingle);
+
+        // Invoke the new group selection function.
+        mService.selectDefaultBroadcastToUnicastFallbackGroup(broadcastReceivers);
+
+        // Verification: Although mLeftDevice is in the "mostRecent" list, it is not a receiver,
+        // so the selected group is from mRightDevice, which is the oldest connection among the
+        // receivers.
+        assertThat(mService.getBroadcastToUnicastFallbackGroup()).isEqualTo(groupIdRight);
+
+        // Change the list of receivers to contain only the oldest device.
+        broadcastReceivers.clear();
+        broadcastReceivers.add(mLeftDevice);
+        mService.selectDefaultBroadcastToUnicastFallbackGroup(broadcastReceivers);
+
+        // Verification: Now the selected group is from mLeftDevice.
+        assertThat(mService.getBroadcastToUnicastFallbackGroup()).isEqualTo(groupIdLeft);
     }
 
     @Test

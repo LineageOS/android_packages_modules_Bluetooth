@@ -574,6 +574,8 @@ public class LeAudioService extends ConnectableProfile {
     List<BluetoothLeAudioCodecConfig> mInputLocalCodecCapabilities = new ArrayList<>();
     List<BluetoothLeAudioCodecConfig> mOutputLocalCodecCapabilities = new ArrayList<>();
 
+    Set<BluetoothDevice> mBroadcastReceivers = new HashSet<>();
+
     private final Map<Integer, Pair<BluetoothLeAudioCodecConfig, BluetoothLeAudioCodecConfig>>
             mActiveGroupCodecPreferences = new LinkedHashMap<>();
 
@@ -683,6 +685,7 @@ public class LeAudioService extends ConnectableProfile {
 
         mAudioManager.unregisterAudioRecordingCallback(mAudioRecordingCallback);
 
+        mBroadcastReceivers.clear();
         mCreateBroadcastQueue.clear();
         mAwaitingBroadcastCreateResponse = false;
         mIsSourceStreamMonitorModeEnabled = false;
@@ -858,17 +861,34 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private void setDefaultBroadcastToUnicastFallbackGroup() {
-        List<BluetoothDevice> devices = mDatabaseManager.getMostRecentlyConnectedDevices();
-
-        int targetDeviceIdx = -1;
+        List<BluetoothDevice> mostRecentDevices =
+                mDatabaseManager.getMostRecentlyConnectedDevices();
+        List<BluetoothDevice> connectedDevices = getConnectedDevices();
         int targetGroupId = LE_AUDIO_GROUP_ID_INVALID;
-        for (BluetoothDevice device : getConnectedDevices()) {
-            LeAudioDeviceDescriptor descriptor = getDeviceDescriptor(device);
-            if (devices.contains(device)) {
-                int idx = devices.indexOf(device);
-                if (idx > targetDeviceIdx) {
-                    targetDeviceIdx = idx;
-                    targetGroupId = descriptor.mGroupId;
+        int targetDeviceIdx = -1;
+
+        if (Flags.leaudioFallbackGroupSelection()) {
+            for (BluetoothDevice device : mBroadcastReceivers) {
+                if (connectedDevices.contains(device) && mostRecentDevices.contains(device)) {
+                    int idx = mostRecentDevices.indexOf(device);
+                    if (idx > targetDeviceIdx) {
+                        targetDeviceIdx = idx;
+                        LeAudioDeviceDescriptor descriptor = getDeviceDescriptor(device);
+                        if (descriptor != null) {
+                            targetGroupId = descriptor.mGroupId;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (BluetoothDevice device : connectedDevices) {
+                LeAudioDeviceDescriptor descriptor = getDeviceDescriptor(device);
+                if (mostRecentDevices.contains(device)) {
+                    int idx = mostRecentDevices.indexOf(device);
+                    if (idx > targetDeviceIdx) {
+                        targetDeviceIdx = idx;
+                        targetGroupId = descriptor.mGroupId;
+                    }
                 }
             }
         }
@@ -1617,6 +1637,16 @@ public class LeAudioService extends ConnectableProfile {
             }
         }
         return deviceList;
+    }
+
+    /**
+     * Selects the default Bluetooth device for the unicast fallback group from a list of
+     * candidates.
+     */
+    public void selectDefaultBroadcastToUnicastFallbackGroup(Set<BluetoothDevice> devices) {
+        mBroadcastReceivers = devices;
+
+        setDefaultBroadcastToUnicastFallbackGroup();
     }
 
     private boolean areBroadcastsAllStopped() {
