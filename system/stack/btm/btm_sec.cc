@@ -4258,8 +4258,8 @@ void btm_sec_link_key_request(const RawAddress bda) {
  *
  ******************************************************************************/
 static void btm_sec_pairing_timeout(void* /* data */) {
-  log::verbose("State: {} Flags: {} Device: {}", btm_pair_state_descr(btm_sec_cb.pairing_state),
-               btm_sec_cb.pairing_flags, btm_sec_cb.link_spec);
+  log::warn("State: {} Flags: {} Device: {}", btm_pair_state_descr(btm_sec_cb.pairing_state),
+            btm_sec_cb.pairing_flags, btm_sec_cb.link_spec);
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(btm_sec_cb.link_spec.addrt.bda);
 
@@ -4327,6 +4327,11 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_AUTH_COMPLETE:
+      if (com_android_bluetooth_flags_passkey_entry_pairing_approval() &&
+          (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_LE_ACTIVE)) {
+        SMP_PairCancel(btm_sec_cb.link_spec.addrt.bda);
+      }
+      ABSL_FALLTHROUGH_INTENDED;
     case BTM_PAIR_STATE_GET_REM_NAME:
       /* We need to notify the UI that timeout has happened while waiting for
        * authentication*/
