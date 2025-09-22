@@ -17,11 +17,9 @@
 
 package com.android.bluetooth.vc;
 
-import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -260,20 +258,10 @@ public class VolumeControlService extends ConnectableProfile {
     public boolean connect(BluetoothDevice device) {
         enforceMainLooperIsUsed();
         Log.d(TAG, "connect(): " + device);
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            requireNonNull(device);
+        requireNonNull(device);
 
-            if (!okToConnect(device)) {
-                return false;
-            }
-        } else {
-            if (device == null) {
-                return false;
-            }
-
-            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
-                return false;
-            }
+        if (!okToConnect(device)) {
+            return false;
         }
 
         final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
@@ -413,43 +401,6 @@ public class VolumeControlService extends ConnectableProfile {
             }
         }
         return devices;
-    }
-
-    /**
-     * @return true if connection to a peer device is allowed, otherwise false
-     */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    @Override
-    public boolean okToConnect(BluetoothDevice device) {
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            return super.okToConnect(device);
-        }
-        enforceMainLooperIsUsed();
-        /* Make sure device is valid */
-        if (device == null) {
-            Log.e(TAG, "okToConnect: Invalid device");
-            return false;
-        }
-        // Check if this is an incoming connection in Quiet mode.
-        if (mAdapterService.isQuietModeEnabled()) {
-            Log.e(TAG, "okToConnect: cannot connect to " + device + " : quiet mode enabled");
-            return false;
-        }
-        // Check connectionPolicy and accept or reject the connection.
-        int connectionPolicy = getConnectionPolicy(device);
-        int bondState = mAdapterService.getBondState(device);
-        // Allow this connection only if the device is bonded. Any attempt to connect while
-        // bonding would potentially lead to an unauthorized connection.
-        if (bondState != BOND_BONDED) {
-            Log.w(TAG, "okToConnect: return false, bondState=" + bondState);
-            return false;
-        } else if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
-                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            // Otherwise, reject the connection if connectionPolicy is not valid.
-            Log.w(TAG, "okToConnect: return false, connectionPolicy=" + connectionPolicy);
-            return false;
-        }
-        return true;
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {

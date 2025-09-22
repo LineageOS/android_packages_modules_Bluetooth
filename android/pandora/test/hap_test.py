@@ -526,7 +526,6 @@ class HapTest(base_test.BaseTestClass):
                                                                    BAR_PRESET)
 
     @asynchronous
-    @enableFlag('com.android.bluetooth.flags.synchronize_preset_can_timeout')
     async def test__synchronize_operation_failed__when_selecting_preset__can_recover(self) -> None:
         await self.setup_binaural()
 

@@ -165,12 +165,7 @@ public class RemoteDevices {
         mAddressMap = new HashMap<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
-        if (Flags.watchDeviceOverrideAirplaneMode()) {
-            mWatchConnectionStateListener =
-                    new WatchConnectionStateListener(mAdapterService, looper);
-        } else {
-            mWatchConnectionStateListener = null;
-        }
+        mWatchConnectionStateListener = new WatchConnectionStateListener(mAdapterService, looper);
         mLocationDenylistPredicate =
                 (device) -> {
                     final MacAddress parsedAddress = MacAddress.fromString(device.getAddress());
@@ -1760,11 +1755,8 @@ public class RemoteDevices {
         RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
-            if (Flags.watchDeviceOverrideAirplaneMode()) {
-                // TODO the whole method should run on the looper
-                mHandler.post(
-                        () -> mWatchConnectionStateListener.onDeviceConnected(device, transport));
-            }
+            // TODO the whole method should run on the looper
+            mHandler.post(() -> mWatchConnectionStateListener.onDeviceConnected(device, transport));
         } else {
             final int disconnectReason;
             if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
@@ -1785,12 +1777,8 @@ public class RemoteDevices {
                             cb.onDeviceDisconnected(
                                     device,
                                     AdapterService.hciToAndroidDisconnectReason(disconnectReason));
-            if (Flags.watchDeviceOverrideAirplaneMode()) {
-                mHandler.post(
-                        () ->
-                                mWatchConnectionStateListener.onDeviceDisconnected(
-                                        device, transport));
-            }
+            mHandler.post(
+                    () -> mWatchConnectionStateListener.onDeviceDisconnected(device, transport));
         }
 
         mAdapterService.aclStateChangeBroadcastCallback(connectionChangeConsumer);

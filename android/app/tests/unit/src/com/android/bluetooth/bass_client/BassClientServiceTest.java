@@ -451,21 +451,10 @@ public class BassClientServiceTest {
     /** Test connecting to a null device. - service.connect() should return false. */
     @Test
     public void testConnect_nullDevice() {
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            assertThrows(NullPointerException.class, () -> mBassClientService.connect(null));
-        } else {
-            when(mAdapterService.getProfileConnectionPolicy(
-                            any(BluetoothDevice.class),
-                            eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
-                    .thenReturn(CONNECTION_POLICY_ALLOWED);
-
-            BluetoothDevice nullDevice = null;
-            assertThat(mBassClientService.connect(nullDevice)).isFalse();
-        }
+        assertThrows(NullPointerException.class, () -> mBassClientService.connect(null));
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void testConnect_isQuietMode() {
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         when(mAdapterService.getProfileConnectionPolicy(
@@ -481,7 +470,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void testConnect_notBonded_bonding_bonded() {
         when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),

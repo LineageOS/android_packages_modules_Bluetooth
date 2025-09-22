@@ -56,16 +56,6 @@ flag {
 }
 
 flag {
-    name: "validate_connection_policy_before_accepting_connection"
-    namespace: "bluetooth"
-    description: "Make native wakelock reference counted"
-    bug: "428276547"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ref_counted_native_wakelock"
     namespace: "bluetooth"
     description: "Make native wakelock reference counted"

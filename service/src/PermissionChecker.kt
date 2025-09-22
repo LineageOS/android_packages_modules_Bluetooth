@@ -34,7 +34,6 @@ import android.os.Process.SYSTEM_UID
 import android.os.UserHandle
 import android.os.UserManager
 import android.permission.PermissionManager
-import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.ChangeIds.RESTRICT_ENABLE_DISABLE
 
 private const val TAG = "PermissionChecker"
@@ -114,16 +113,7 @@ class PermissionChecker(
     }
 
     private fun enforceBluetoothRestriction() {
-        val isBluetoothAllowed =
-            if (Flags.userRestrictionRefactor()) {
-                BluetoothRestriction.isBluetoothAllowed
-            } else {
-                !userManager.hasUserRestrictionForUser(
-                    UserManager.DISALLOW_BLUETOOTH,
-                    UserHandle.SYSTEM,
-                )
-            }
-        if (!isBluetoothAllowed) {
+        if (!BluetoothRestriction.isBluetoothAllowed) {
             throw BluetoothPermissionException("Bluetooth is not allowed")
         }
     }

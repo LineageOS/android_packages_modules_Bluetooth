@@ -112,7 +112,7 @@ public class RemoteDevicesTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+        return FlagsWrapper.progressionOf();
     }
 
     public RemoteDevicesTest(FlagsWrapper flags) {
@@ -133,10 +133,8 @@ public class RemoteDevicesTest {
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         verify(mAdapterService).getSystemService(BluetoothManager.class);
-        if (Flags.watchDeviceOverrideAirplaneMode()) {
-            verify(mAdapterService, times(2)).getPackageManager();
-            verify(mAdapterService).getSystemService(CompanionDeviceManager.class);
-        }
+        verify(mAdapterService, times(2)).getPackageManager();
+        verify(mAdapterService).getSystemService(CompanionDeviceManager.class);
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
     }
 

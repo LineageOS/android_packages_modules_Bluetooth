@@ -209,16 +209,7 @@ final class A2dpStateMachine extends StateMachine {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
                         break;
                     }
-                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-                        transitionTo(mConnecting);
-                        break;
-                    }
-                    if (mA2dpService.okToConnect(mDevice, true)) {
-                        transitionTo(mConnecting);
-                    } else {
-                        // Reject the request and stay in Disconnected state
-                        Log.w(TAG, "Outgoing A2DP Connecting request rejected: " + mDevice);
-                    }
+                    transitionTo(mConnecting);
                 }
                 case MESSAGE_DISCONNECT ->
                         Log.w(TAG, "Disconnected: DISCONNECT ignored: " + mDevice);

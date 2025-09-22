@@ -42,8 +42,6 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.permission.PermissionManager;
 
-import com.android.bluetooth.flags.Flags;
-
 import java.util.Objects;
 
 class BtPermissionUtils {
@@ -121,7 +119,7 @@ class BtPermissionUtils {
             PermissionManager permissionManager,
             String message,
             boolean requireForeground) {
-        if (isBluetoothDisallowed(userManager)) {
+        if (!BluetoothRestriction.isBluetoothAllowed()) {
             return "Bluetooth is not allowed";
         }
 
@@ -243,19 +241,6 @@ class BtPermissionUtils {
             return false;
         } finally {
             Binder.restoreCallingIdentity(ident);
-        }
-    }
-
-    private static boolean isBluetoothDisallowed(UserManager userManager) {
-        if (Flags.userRestrictionRefactor()) {
-            return !BluetoothRestriction.isBluetoothAllowed();
-        }
-        final long callingIdentity = Binder.clearCallingIdentity();
-        try {
-            return userManager.hasUserRestrictionForUser(
-                    UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM);
-        } finally {
-            Binder.restoreCallingIdentity(callingIdentity);
         }
     }
 

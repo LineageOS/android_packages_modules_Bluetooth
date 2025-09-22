@@ -41,12 +41,7 @@ class BluetoothService(context: Context) : SystemService(context) {
 
     init {
         Log.d("Booting now")
-        val bluetoothComponent =
-            if (Flags.userRestrictionRefactor()) {
-                BluetoothComponent(context)
-            } else {
-                null
-            }
+        val bluetoothComponent = BluetoothComponent(context)
         // Run BluetoothManagerService on the correct thread even during constructor
         supervisor =
             runBlocking(serviceDispatcher) {
@@ -54,9 +49,7 @@ class BluetoothService(context: Context) : SystemService(context) {
             }
 
         runOnBmsThread {
-            if (Flags.userRestrictionRefactor()) {
-                BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
-            }
+            BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
         }
     }
 

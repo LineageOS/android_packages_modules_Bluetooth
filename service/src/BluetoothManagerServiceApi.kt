@@ -17,7 +17,6 @@ package com.android.server.bluetooth
 
 import android.bluetooth.IBluetoothManagerCallback
 import android.os.IBinder
-import android.os.UserHandle
 import java.io.FileDescriptor
 import java.io.PrintWriter
 
@@ -67,8 +66,6 @@ interface BluetoothManagerServiceApi {
     fun setAutoOnEnabled(status: Boolean)
 
     fun dump(fd: FileDescriptor?, writer: PrintWriter?, args: Array<String?>?)
-
-    fun onUserRestrictionsChanged(userHandle: UserHandle?)
 
     fun onBleScanDisabled()
 }

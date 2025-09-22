@@ -114,7 +114,6 @@ import android.os.SystemClock;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.DeviceConfig;
-import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.text.TextUtils;
 import android.util.Log;
@@ -226,20 +225,6 @@ public class AdapterService extends Service {
     static final String PHONEBOOK_ACCESS_PERMISSION_PREFERENCE_FILE = "phonebook_access_permission";
     static final String MESSAGE_ACCESS_PERMISSION_PREFERENCE_FILE = "message_access_permission";
     static final String SIM_ACCESS_PERMISSION_PREFERENCE_FILE = "sim_access_permission";
-
-    private static BluetoothProperties.snoop_log_mode_values sSnoopLogSettingAtEnable =
-            BluetoothProperties.snoop_log_mode_values.EMPTY;
-    private static String sDefaultSnoopLogSettingAtEnable = "empty";
-    private static boolean sSnoopLogFilterHeadersSettingAtEnable = false;
-    private static boolean sSnoopLogFilterProfileA2dpSettingAtEnable = false;
-    private static boolean sSnoopLogFilterProfileRfcommSettingAtEnable = false;
-
-    private static BluetoothProperties.snoop_log_filter_profile_pbap_values
-            sSnoopLogFilterProfilePbapModeSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_pbap_values.EMPTY;
-    private static BluetoothProperties.snoop_log_filter_profile_map_values
-            sSnoopLogFilterProfileMapModeSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_map_values.EMPTY;
 
     private static AdapterService sAdapterService;
 
@@ -673,30 +658,16 @@ public class AdapterService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate()");
         // OnCreate must perform the minimum of infallible and mandatory initialization
-        if (Flags.watchDeviceOverrideAirplaneMode()) {
-            mUserManager = requireNonNull(getSystemService(UserManager.class));
-            mAppOps = requireNonNull(getSystemService(AppOpsManager.class));
-            mPowerManager = requireNonNull(getSystemService(PowerManager.class));
-            mBatteryStatsManager = requireNonNull(getSystemService(BatteryStatsManager.class));
-            mCompanionDeviceManager =
-                    requireNonNull(getSystemService(CompanionDeviceManager.class));
-
-            mRemoteDevices = new RemoteDevices(this, mLooper);
-            mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
-            mAdapterStateMachine = new AdapterState(this, mLooper);
-
-            setAdapterService(this);
-            return;
-        }
-
-        mRemoteDevices = new RemoteDevices(this, mLooper);
-        mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
-        mAdapterStateMachine = new AdapterState(this, mLooper);
         mUserManager = requireNonNull(getSystemService(UserManager.class));
         mAppOps = requireNonNull(getSystemService(AppOpsManager.class));
         mPowerManager = requireNonNull(getSystemService(PowerManager.class));
         mBatteryStatsManager = requireNonNull(getSystemService(BatteryStatsManager.class));
         mCompanionDeviceManager = requireNonNull(getSystemService(CompanionDeviceManager.class));
+
+        mRemoteDevices = new RemoteDevices(this, mLooper);
+        mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
+        mAdapterStateMachine = new AdapterState(this, mLooper);
+
         setAdapterService(this);
     }
 
@@ -1686,82 +1657,6 @@ public class AdapterService extends Service {
 
         for (Map.Entry<BluetoothStateCallback, Executor> e : mLocalCallbacks.entrySet()) {
             e.getValue().execute(() -> e.getKey().onBluetoothStateChange(from, to));
-        }
-
-        if (Flags.onToBleOnViaOff()) {
-            // Nothing to do, as we are now guaranteed to go OFF before reaching a stable BLE_ON
-            return;
-        }
-
-        // Turn the Adapter all the way off if we are disabling and the snoop log setting changed.
-        if (to == BluetoothAdapter.STATE_BLE_TURNING_ON) {
-            sSnoopLogSettingAtEnable =
-                    BluetoothProperties.snoop_log_mode()
-                            .orElse(BluetoothProperties.snoop_log_mode_values.EMPTY);
-            sDefaultSnoopLogSettingAtEnable =
-                    Settings.Global.getString(
-                            getContentResolver(), Settings.Global.BLUETOOTH_BTSNOOP_DEFAULT_MODE);
-
-            sSnoopLogFilterHeadersSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_snoop_headers_enabled().orElse(false);
-            sSnoopLogFilterProfileA2dpSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_a2dp_enabled().orElse(false);
-            sSnoopLogFilterProfileRfcommSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_rfcomm_enabled().orElse(false);
-            sSnoopLogFilterProfilePbapModeSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_pbap()
-                            .orElse(BluetoothProperties.snoop_log_filter_profile_pbap_values.EMPTY);
-            sSnoopLogFilterProfileMapModeSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_map()
-                            .orElse(BluetoothProperties.snoop_log_filter_profile_map_values.EMPTY);
-
-            if (Utils.isInstrumentationTestMode()) {
-                return;
-            }
-            BluetoothProperties.snoop_default_mode(
-                    BluetoothProperties.snoop_default_mode_values.DISABLED);
-            for (BluetoothProperties.snoop_default_mode_values value :
-                    BluetoothProperties.snoop_default_mode_values.values()) {
-                if (value.getPropValue().equals(sDefaultSnoopLogSettingAtEnable)) {
-                    BluetoothProperties.snoop_default_mode(value);
-                }
-            }
-        } else if (to == BluetoothAdapter.STATE_BLE_ON && from != BluetoothAdapter.STATE_OFF) {
-            var snoopLogSetting =
-                    BluetoothProperties.snoop_log_mode()
-                            .orElse(BluetoothProperties.snoop_log_mode_values.EMPTY);
-            var snoopDefaultModeSetting =
-                    Settings.Global.getString(
-                            getContentResolver(), Settings.Global.BLUETOOTH_BTSNOOP_DEFAULT_MODE);
-
-            var snoopLogFilterHeadersSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_snoop_headers_enabled().orElse(false);
-            var snoopLogFilterProfileA2dpSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_a2dp_enabled().orElse(false);
-            var snoopLogFilterProfileRfcommSettingAtEnable =
-                    BluetoothProperties.snoop_log_filter_profile_rfcomm_enabled().orElse(false);
-
-            var snoopLogFilterProfilePbapModeSetting =
-                    BluetoothProperties.snoop_log_filter_profile_pbap()
-                            .orElse(BluetoothProperties.snoop_log_filter_profile_pbap_values.EMPTY);
-            var snoopLogFilterProfileMapModeSetting =
-                    BluetoothProperties.snoop_log_filter_profile_map()
-                            .orElse(BluetoothProperties.snoop_log_filter_profile_map_values.EMPTY);
-
-            if (!(sSnoopLogSettingAtEnable == snoopLogSetting)
-                    || !(Objects.equals(sDefaultSnoopLogSettingAtEnable, snoopDefaultModeSetting))
-                    || !(sSnoopLogFilterHeadersSettingAtEnable
-                            == snoopLogFilterHeadersSettingAtEnable)
-                    || !(sSnoopLogFilterProfileA2dpSettingAtEnable
-                            == snoopLogFilterProfileA2dpSettingAtEnable)
-                    || !(sSnoopLogFilterProfileRfcommSettingAtEnable
-                            == snoopLogFilterProfileRfcommSettingAtEnable)
-                    || !(sSnoopLogFilterProfilePbapModeSettingAtEnable
-                            == snoopLogFilterProfilePbapModeSetting)
-                    || !(sSnoopLogFilterProfileMapModeSettingAtEnable
-                            == snoopLogFilterProfileMapModeSetting)) {
-                mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_OFF);
-            }
         }
     }
 
@@ -4399,9 +4294,6 @@ public class AdapterService extends Service {
         StringBuilder sb = new StringBuilder();
         mScanModeChanges.dump(sb);
         writer.println(sb.toString());
-        writer.println();
-        writer.println("sSnoopLogSettingAtEnable = " + sSnoopLogSettingAtEnable);
-        writer.println("sDefaultSnoopLogSettingAtEnable = " + sDefaultSnoopLogSettingAtEnable);
 
         writer.println();
         writer.println("Enabled Profile Services:");

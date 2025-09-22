@@ -177,16 +177,7 @@ final class LeAudioStateMachine extends StateMachine {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
                         break;
                     }
-                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-                        transitionTo(mConnecting);
-                        break;
-                    }
-                    if (mService.okToConnect(mDevice)) {
-                        transitionTo(mConnecting);
-                    } else {
-                        // Reject the request and stay in Disconnected state
-                        Log.w(TAG, "Outgoing LeAudio Connecting request rejected: " + mDevice);
-                    }
+                    transitionTo(mConnecting);
                 }
                 case DISCONNECT -> {
                     Log.d(TAG, "Disconnected: " + mDevice);

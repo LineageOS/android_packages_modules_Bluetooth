@@ -125,7 +125,7 @@ public class BondStateMachineTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+        return FlagsWrapper.progressionOf();
     }
 
     public BondStateMachineTest(FlagsWrapper flags) {
