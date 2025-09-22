@@ -34,6 +34,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_software_bt_request_lock_fix"
+    namespace: "bluetooth"
+    description: "Fix minor locking issue"
+    bug: "446619006"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_dynamic_direction_opening"
     namespace: "bluetooth"
     description: "Enable direction only when needed"
