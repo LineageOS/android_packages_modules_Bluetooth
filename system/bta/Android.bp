@@ -1010,7 +1010,9 @@ cc_test {
         "test/common/mock_csis_client.cc",
         "test/common/mock_device_groups.cc",
         "vaps/vaps_server.cc",
+        "vaps/vaps_server_test.cc",
         "vaps/vaps_server_utils.cc",
+        "vaps/vaps_utils_test.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
