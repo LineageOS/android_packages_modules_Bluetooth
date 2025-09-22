@@ -18,6 +18,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_support_confirm_suspend"
+    namespace: "bluetooth"
+    description: "Add support for confirm suspend"
+    bug: "446634001"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "metadata_api_inactive_audio_device_upon_connection"
     is_exported: true
     namespace: "bluetooth"
