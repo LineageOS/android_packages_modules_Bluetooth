@@ -30,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 
 // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
 private const val SERVICE_NAME = "bluetooth_manager"
+private const val TAG = "BluetoothService"
 
 class BluetoothService(context: Context) : SystemService(context) {
     private val looper = HandlerThread("BluetoothSystemServer").apply { start() }.looper
@@ -37,10 +38,9 @@ class BluetoothService(context: Context) : SystemService(context) {
     private val scope = CoroutineScope(serviceDispatcher + SupervisorJob())
 
     private var supervisor: BluetoothSupervisor
-    private var mInitialized = false
 
     init {
-        Log.d("Booting now")
+        Log.d(TAG, "Booting now")
         val bluetoothComponent = BluetoothComponent(context)
         // Run BluetoothManagerService on the correct thread even during constructor
         supervisor =
@@ -64,10 +64,6 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onUserStarting(user: TargetUser) {
-        if (mInitialized) {
-            Log.i("onUserStarting($user) but already initialized")
-            return
-        }
         if (Flags.userVisibleOnUserStarting()) {
             val isUserVisible =
                 context
@@ -75,10 +71,10 @@ class BluetoothService(context: Context) : SystemService(context) {
                     .getSystemService(android.os.UserManager::class.java)!!
                     .isUserVisible
             if (!isUserVisible) {
-                Log.i("onUserStarting($user) Skipping non visible user ")
+                Log.i(TAG, "onUserStarting($user) Skipping non visible user ")
                 return
             }
-            Log.i("onUserStarting($user) Initializing for visible user ")
+            Log.i(TAG, "onUserStarting($user) Initializing for visible user ")
         } else {
             val isForeground =
                 context
@@ -86,20 +82,16 @@ class BluetoothService(context: Context) : SystemService(context) {
                     .getSystemService(android.os.UserManager::class.java)!!
                     .isUserForeground
             if (!isForeground) {
-                Log.i("onUserStarting($user) Skipping non foreground user ")
+                Log.i(TAG, "onUserStarting($user) Skipping non foreground user ")
                 return
             }
-            Log.i("onUserStarting($user) Initializing for foreground user ")
+            Log.i(TAG, "onUserStarting($user) Initializing for foreground user ")
         }
         runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
-        mInitialized = true
     }
 
-    override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
-        Log.d("onUserSwitching($to)")
-        if (!mInitialized) {
-            throw IllegalStateException("Initialize did not happen")
-        }
+    override fun onUserSwitching(from: TargetUser?, to: TargetUser) {
+        Log.i(TAG, "onUserSwitching:$from => $to")
         runOnBmsThread { supervisor.onUserSwitching(to.userHandle) }
     }
 }

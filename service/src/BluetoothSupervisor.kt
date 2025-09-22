@@ -21,12 +21,15 @@ import android.os.Looper
 import android.os.UserHandle
 import com.android.bluetooth.flags.Flags
 
+private const val TAG = "BluetoothSupervisor"
+
 class BluetoothSupervisor(
     context: Context,
     val looper: Looper,
     bluetoothComponent: BluetoothComponent?,
 ) {
     private val bms: BluetoothManagerService
+    private var mInitialized = false
 
     init {
         val hciInstance =
@@ -37,7 +40,7 @@ class BluetoothSupervisor(
             }
 
         bms = BluetoothManagerService(context, looper, hciInstance, bluetoothComponent)
-        Log.i("Created BluetoothSupervisor")
+        Log.i(TAG, "Created BluetoothSupervisor")
     }
 
     fun api(): BluetoothManagerServiceApi {
@@ -51,11 +54,19 @@ class BluetoothSupervisor(
 
     fun handleOnBootPhase(userHandle: UserHandle) {
         enforceCorrectThread()
+        if (mInitialized) {
+            Log.i(TAG, "onUserStarting($userHandle) but already initialized")
+            return
+        }
         bms.handleOnBootPhase(userHandle)
+        mInitialized = true
     }
 
     fun onUserSwitching(userHandle: UserHandle) {
         enforceCorrectThread()
+        if (!mInitialized) {
+            throw IllegalStateException("Initialize did not happen")
+        }
         bms.onUserSwitching(userHandle)
     }
 
