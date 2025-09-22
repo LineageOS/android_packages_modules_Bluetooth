@@ -28,3 +28,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "stop_batch_scan_only_if_batch_client"
+    namespace: "bluetooth"
+    description: "Stop batch scan only if the client is a known batch scan client"
+    bug: "446532441"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
