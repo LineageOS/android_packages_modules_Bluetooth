@@ -42,6 +42,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
@@ -191,6 +192,34 @@ public class ActiveDeviceManagerTest {
                 .thenReturn(connectedHearingAidDevices);
         when(mHearingAidService.getConnectedPeerDevices(DUAL_MODE_HEARING_AID_HI_SYNC_ID))
                 .thenReturn(connectedDualModeHearingAidDevices);
+
+        when(mA2dpService.getConnectionPolicy(mA2dpDevice)).thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(mHeadsetDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(mA2dpHeadsetDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(mA2dpHeadsetDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mHearingAidService.getConnectionPolicy(mHearingAidDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mLeAudioService.getConnectionPolicy(mLeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mLeAudioService.getConnectionPolicy(mLeAudioDevice2))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mLeAudioService.getConnectionPolicy(mLeAudioDevice3))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mLeAudioService.getConnectionPolicy(mLeAudioDevice4))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mLeAudioService.getConnectionPolicy(mDualModeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(mDualModeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mLeAudioService.getConnectionPolicy(mDualModeHearingAidDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(mDualModeHearingAidDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mHearingAidService.getConnectionPolicy(mDualModeHearingAidDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
 
         when(mA2dpService.getFallbackDevice())
                 .thenAnswer(
@@ -1448,6 +1477,49 @@ public class ActiveDeviceManagerTest {
     }
 
     /**
+     * Dual mode device is an active LE Audio device. It is requested to be active HFP device. It is
+     * unset as active LE Audio device, and set as active Headset device.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void dualModeDeviceActive_phoneCallSetActive() {
+        /* Turn on the dual mode audio flag */
+        Utils.setDualModeAudioStateForTesting(true);
+
+        reset(mLeAudioService);
+        when(mLeAudioService.getLeadDevice(mDualModeAudioDevice)).thenReturn(mDualModeAudioDevice);
+        when(mLeAudioService.isGroupAvailableForStream(anyInt())).thenReturn(true);
+
+        when(mAdapterService.isAllSupportedClassicAudioProfilesActive(mDualModeAudioDevice))
+                .thenReturn(true);
+        when(mAdapterService.isDualModeAudioSinkDevice(mDualModeAudioDevice)).thenReturn(true);
+
+        when(mLeAudioService.getConnectionPolicy(mDualModeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(mDualModeAudioDevice))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+
+        /* LE Audio is the active device */
+        leAudioConnected(mDualModeAudioDevice);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService).setActiveDevice(mDualModeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+        Mockito.clearInvocations(mA2dpDevice);
+
+        assertThat(
+                        mActiveDeviceManager.setActiveDevice(
+                                mDualModeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_PHONE_CALL))
+                .isEqualTo(true);
+        mTestLooper.dispatchAll();
+
+        verify(mLeAudioService, never()).setActiveDevice(mDualModeAudioDevice);
+        verify(mLeAudioService).removeActiveDevice(true);
+        verify(mHeadsetService).setActiveDevice(mDualModeAudioDevice);
+    }
+
+    /**
      * Dual mode device is active. New A2DP device connects. A2DP device is set as active. LE Audio
      * device is set as inactive.
      */
@@ -1962,6 +2034,30 @@ public class ActiveDeviceManagerTest {
         leHearingAidConnected(mLeHearingAidDevice);
         mTestLooper.dispatchAll();
         verify(mLeAudioService, never()).setActiveDevice(any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_CENTRALIZE_ACTIVE_DEVICE_HANDLING)
+    public void hearingAidConnected_leAudioSetActive_ashaSetInactive() {
+        leAudioConnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        Mockito.clearInvocations(mLeAudioService);
+
+        hearingAidConnected(mHearingAidDevice);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
+        verify(mLeAudioService).removeActiveDevice(true);
+
+        Mockito.clearInvocations(mLeAudioService);
+        Mockito.clearInvocations(mHearingAidService);
+
+        when(mHearingAidService.getActiveDevices()).thenReturn(List.of(mHearingAidDevice));
+        mActiveDeviceManager.setActiveDevice(mLeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        mTestLooper.dispatchAll();
+        verify(mHearingAidService).removeActiveDevice(false);
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
     }
 
     /**
