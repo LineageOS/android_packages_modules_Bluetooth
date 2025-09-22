@@ -62,6 +62,23 @@ typedef enum : uint8_t {
   SMP_MODEL_OUT_OF_RANGE = 9,
 } tSMP_ASSO_MODEL;
 
+inline const std::string smp_association_model_text(const tSMP_ASSO_MODEL model) {
+  switch (model) {
+    CASE_RETURN_TEXT(SMP_MODEL_ENCRYPTION_ONLY);
+    CASE_RETURN_TEXT(SMP_MODEL_PASSKEY);
+    CASE_RETURN_TEXT(SMP_MODEL_OOB);
+    CASE_RETURN_TEXT(SMP_MODEL_KEY_NOTIF);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_JUSTWORKS);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_NUM_COMP);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_PASSKEY_ENT);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_PASSKEY_DISP);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_OOB);
+    CASE_RETURN_TEXT(SMP_MODEL_OUT_OF_RANGE);
+    default:
+      return std::format("UNKNOWN_ASSOCIATION_MODEL[{}]", static_cast<uint8_t>(model));
+  }
+}
+
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
 
 /* TODO(b/436319185): Remove when the flag conclude_le_pairing_immediately is shipped */
@@ -511,7 +528,12 @@ struct formatter<tSMP_EVENT> : enum_formatter<tSMP_EVENT> {};
 template <>
 struct formatter<tSMP_OPCODE> : enum_formatter<tSMP_OPCODE> {};
 template <>
-struct formatter<tSMP_ASSO_MODEL> : enum_formatter<tSMP_ASSO_MODEL> {};
+struct formatter<tSMP_ASSO_MODEL> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const tSMP_ASSO_MODEL& association_model, Context& ctx) const {
+    return std::formatter<std::string>::format(smp_association_model_text(association_model), ctx);
+  }
+};
 }  // namespace std
 
 #endif /* SMP_INT_H */
