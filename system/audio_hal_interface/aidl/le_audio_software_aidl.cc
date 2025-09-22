@@ -89,32 +89,43 @@ BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool /*is_low_latency*/) {
     return BluetoothAudioCtrlAck::PENDING;
   }
 
-  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::PENDING_BEFORE_REQUEST);
+  if (com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestState(BluetoothRequest::RESUME,
+                             BluetoothRequestState::PENDING_BEFORE_REQUEST);
+  } else {
+    SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME,
+                                   BluetoothRequestState::PENDING_BEFORE_REQUEST);
+  }
+
   if (stream_cb_.on_resume_(true)) {
     std::lock_guard<std::mutex> guard(start_request_state_mutex_);
 
     switch (start_request_state_) {
       case BluetoothRequestState::CONFIRMED:
         log::info("Start completed.");
-        SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
       case BluetoothRequestState::CANCELED:
         log::info("Start request failed.");
-        SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         return BluetoothAudioCtrlAck::FAILURE;
       case BluetoothRequestState::PENDING_BEFORE_REQUEST:
         log::info("Start pending.");
-        SetBluetoothRequestState(BluetoothRequest::RESUME,
-                                 BluetoothRequestState::PENDING_AFTER_REQUEST);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME,
+                                       BluetoothRequestState::PENDING_AFTER_REQUEST);
         return BluetoothAudioCtrlAck::PENDING;
       default:
-        SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         log::error("Unexpected state {}", static_cast<int>(start_request_state_.load()));
         return BluetoothAudioCtrlAck::FAILURE;
     }
   }
+  if (com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  } else {
+    SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  }
 
-  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
   log::info("On resume failed.");
   return BluetoothAudioCtrlAck::FAILURE;
 }
@@ -300,8 +311,20 @@ BluetoothRequestState LeAudioTransport::GetBluetoothRequestState(BluetoothReques
     } break;
   }
 }
-
 void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    ClearBluetoothRequestStateUnsafe(request);
+    return;
+  }
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      start_request_state_ = BluetoothRequestState::IDLE;
+    } break;
+  }
+}
+
+void LeAudioTransport::ClearBluetoothRequestStateUnsafe(BluetoothRequest request) {
   switch (request) {
     case BluetoothRequest::RESUME: {
       start_request_state_ = BluetoothRequestState::IDLE;
@@ -309,10 +332,24 @@ void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
   }
 }
 
-void LeAudioTransport::SetBluetoothRequestState(BluetoothRequest request,
-                                                BluetoothRequestState state) {
+void LeAudioTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                      BluetoothRequestState state) {
   switch (request) {
     case BluetoothRequest::RESUME: {
+      start_request_state_ = state;
+    } break;
+  }
+}
+
+void LeAudioTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                BluetoothRequestState state) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestStateUnsafe(request, state);
+    return;
+  }
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
       start_request_state_ = state;
     } break;
   }
@@ -423,6 +460,10 @@ void LeAudioSinkTransport::SetBluetoothRequestState(BluetoothRequest request,
                                                     BluetoothRequestState state) {
   transport_->SetBluetoothRequestState(request, state);
 }
+void LeAudioSinkTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                          BluetoothRequestState state) {
+  transport_->SetBluetoothRequestStateUnsafe(request, state);
+}
 
 void flush_source() {
   if (LeAudioSourceTransport::interface == nullptr) {
@@ -508,6 +549,10 @@ void LeAudioSourceTransport::ClearBluetoothRequestState(BluetoothRequest request
 void LeAudioSourceTransport::SetBluetoothRequestState(BluetoothRequest request,
                                                       BluetoothRequestState state) {
   transport_->SetBluetoothRequestState(request, state);
+}
+void LeAudioSourceTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                            BluetoothRequestState state) {
+  transport_->SetBluetoothRequestStateUnsafe(request, state);
 }
 
 static std::unordered_map<int32_t, uint8_t> sampling_freq_map{

@@ -16,6 +16,7 @@
 
 #include "le_audio_software.h"
 
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <hardware/audio.h>
@@ -567,6 +568,8 @@ protected:
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsSourceAcquired());
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSinkAcquired());
     }
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->leaudio_software_bt_request_lock_fix(true);
   }
 
   virtual void TearDown() override {

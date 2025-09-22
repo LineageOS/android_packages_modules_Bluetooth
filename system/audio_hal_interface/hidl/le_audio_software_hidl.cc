@@ -107,24 +107,28 @@ BluetoothAudioCtrlAck LeAudioTransport::StartRequest() {
     std::lock_guard<std::mutex> guard(start_request_state_mutex_);
     if (start_request_state_ == BluetoothRequestState::CONFIRMED) {
       log::info("Start completed.");
-      SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+      SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
       return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
     }
 
     if (start_request_state_ == BluetoothRequestState::CANCELED) {
       log::info("Start request failed.");
-      SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+      SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
       return BluetoothAudioCtrlAck::FAILURE;
     }
 
     log::info("Start pending.");
-    SetBluetoothRequestState(BluetoothRequest::RESUME,
-                             BluetoothRequestState::PENDING_AFTER_REQUEST);
+    SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME,
+                                   BluetoothRequestState::PENDING_AFTER_REQUEST);
     return BluetoothAudioCtrlAck::PENDING;
   }
 
   log::error("Start request failed.");
-  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  if (com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  } else {
+    SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  }
   return BluetoothAudioCtrlAck::FAILURE;
 }
 
@@ -245,6 +249,18 @@ bool LeAudioTransport::IsRequestCompletedAfterUpdate(
 }
 
 BluetoothRequestState LeAudioTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    return GetBluetoothRequestStateUnsafe(request);
+  }
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      return start_request_state_;
+    } break;
+  }
+}
+
+BluetoothRequestState LeAudioTransport::GetBluetoothRequestStateUnsafe(BluetoothRequest request) {
   switch (request) {
     case BluetoothRequest::RESUME: {
       return start_request_state_;
@@ -253,6 +269,19 @@ BluetoothRequestState LeAudioTransport::GetBluetoothRequestState(BluetoothReques
 }
 
 void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    ClearBluetoothRequestStateUnsafe(request);
+    return;
+  }
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      start_request_state_ = BluetoothRequestState::IDLE;
+    } break;
+  }
+}
+
+void LeAudioTransport::ClearBluetoothRequestStateUnsafe(BluetoothRequest request) {
   switch (request) {
     case BluetoothRequest::RESUME: {
       start_request_state_ = BluetoothRequestState::IDLE;
@@ -262,6 +291,21 @@ void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
 
 void LeAudioTransport::SetBluetoothRequestState(BluetoothRequest request,
                                                 BluetoothRequestState state) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestStateUnsafe(request, state);
+    return;
+  }
+
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      start_request_state_ = state;
+    } break;
+  }
+}
+
+void LeAudioTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                      BluetoothRequestState state) {
   switch (request) {
     case BluetoothRequest::RESUME: {
       start_request_state_ = state;
@@ -342,6 +386,10 @@ void LeAudioSinkTransport::SetBluetoothRequestState(BluetoothRequest request,
                                                     BluetoothRequestState state) {
   transport_->SetBluetoothRequestState(request, state);
 }
+void LeAudioSinkTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                          BluetoothRequestState state) {
+  transport_->SetBluetoothRequestStateUnsafe(request, state);
+}
 
 void flush_source() {
   if (LeAudioSourceTransport::interface == nullptr) {
@@ -419,6 +467,10 @@ void LeAudioSourceTransport::ClearBluetoothRequestState(BluetoothRequest request
 void LeAudioSourceTransport::SetBluetoothRequestState(BluetoothRequest request,
                                                       BluetoothRequestState state) {
   transport_->SetBluetoothRequestState(request, state);
+}
+void LeAudioSourceTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                            BluetoothRequestState state) {
+  transport_->SetBluetoothRequestStateUnsafe(request, state);
 }
 }  // namespace le_audio
 }  // namespace hidl

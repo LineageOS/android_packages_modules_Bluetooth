@@ -87,8 +87,11 @@ public:
           BluetoothRequest request);
 
   BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  BluetoothRequestState GetBluetoothRequestStateUnsafe(BluetoothRequest request);
   void ClearBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestStateUnsafe(BluetoothRequest request);
   void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
+  void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
 private:
   void (*flush_)(void);
@@ -138,6 +141,7 @@ public:
   BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
   void ClearBluetoothRequestState(BluetoothRequest request);
   void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
+  void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSinkTransport* instance = nullptr;
   static inline BluetoothAudioSinkClientInterface* interface = nullptr;
@@ -182,6 +186,7 @@ public:
   BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
   void ClearBluetoothRequestState(BluetoothRequest request);
   void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
+  void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSourceTransport* instance = nullptr;
   static inline BluetoothAudioSourceClientInterface* interface = nullptr;
