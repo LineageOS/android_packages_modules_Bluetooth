@@ -28,7 +28,6 @@ namespace storage {
 class MutationEntry {
 public:
   enum EntryType { SET, REMOVE_PROPERTY, REMOVE_SECTION };
-
   enum PropertyType { NORMAL, MEMORY_ONLY };
 
   template <typename T, typename std::enable_if<std::is_integral_v<T>, int>::type = 0>
@@ -54,51 +53,10 @@ public:
                               common::ToString(value_param));
   }
 
-  template <typename T, typename std::enable_if<std::is_same_v<T, std::string>, int>::type = 0>
-  static MutationEntry Set(PropertyType property_type, std::string section_param,
-                           std::string property_param, T value_param) {
-    return MutationEntry::Set(property_type, std::move(section_param), std::move(property_param),
-                              std::move(value_param));
-  }
-
-  template <typename T,
-            typename std::enable_if<std::is_base_of_v<Serializable<T>, T>, int>::type = 0>
-  static MutationEntry Set(PropertyType property_type, std::string section_param,
-                           std::string property_param, const T& value_param) {
-    return MutationEntry::Set(property_type, std::move(section_param), std::move(property_param),
-                              value_param.ToLegacyConfigString());
-  }
-
-  template <typename T, typename std::enable_if<
-                                bluetooth::common::is_specialization_of<T, std::vector>::value &&
-                                        std::is_base_of_v<Serializable<typename T::value_type>,
-                                                          typename T::value_type>,
-                                int>::type = 0>
-  static MutationEntry Set(PropertyType property_type, std::string section_param,
-                           std::string property_param, const T& value_param) {
-    std::vector<std::string> str_values;
-    str_values.reserve(value_param.size());
-    for (const auto& v : value_param) {
-      str_values.push_back(v.ToLegacyConfigString());
-    }
-    return MutationEntry::Set(property_type, std::move(section_param), std::move(property_param),
-                              common::StringJoin(str_values, " "));
-  }
-
   static MutationEntry Set(PropertyType property_type, std::string section_param,
                            std::string property_param, std::string value_param) {
     return MutationEntry(EntryType::SET, property_type, std::move(section_param),
                          std::move(property_param), std::move(value_param));
-  }
-
-  static MutationEntry Remove(PropertyType property_type, std::string section_param) {
-    return MutationEntry(EntryType::REMOVE_SECTION, property_type, std::move(section_param));
-  }
-
-  static MutationEntry Remove(PropertyType property_type, std::string section_param,
-                              std::string property_param) {
-    return MutationEntry(EntryType::REMOVE_PROPERTY, property_type, std::move(section_param),
-                         std::move(property_param));
   }
 
 private:
