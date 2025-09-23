@@ -46,29 +46,30 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 /**
  * A lint detector that ensures correctness for `@RequiresPermission` annotations.
  *
- * This detector performs two main functions:
- * 1. Override Verification: For a method that overrides a super-method annotated with
- *    `@RequiresPermission` (such as an AIDL interface method), this check verifies that the
- *    permission contract is fulfilled. The contract can be satisfied in two ways:
- * - The overriding method itself has a semantically identical `@RequiresPermission` annotation.
- * - The body of the overriding method calls other APIs that, in aggregate, require or enforce the
- *   same permissions as the super-method. This allows implementations to delegate
- *   permission-sensitive logic to helper methods without redundantly annotating the override
- *   itself.
- *
- * (See `ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION`)
- * 2. Permission Propagation: For any method, it checks that its `@RequiresPermission` annotation
- *    correctly reflects the permissions required by the methods it calls and the permission checks
- *    it performs.
- * - It reports an error if the annotation is "too narrow" (i.e., it fails to declare a permission
- *   that a called API requires).
- * - It also reports an error if the annotation is "too broad" (i.e., it declares a permission that
- *   is not actually required or enforced by its body).
- *
- * (See `ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION`)
- *
- * The detector correctly handles `allOf` and `anyOf` permission sets and ignores permission checks
- * made within a `Binder.clearCallingIdentity()` block.
+ * This detector reports three distinct issues:
+ * 1. **Missing or Mismatched Override Annotation
+ *    (`ISSUE_MISSING_OR_MISMATCHED_REQUIRES_PERMISSION_ANNOTATION`):** Checks that a method
+ *    overriding a super-method annotated with `@RequiresPermission` has an equivalent
+ *    `@RequiresPermission` annotation.
+ *     - An exception is made if the overriding method, while unannotated, performs the exact
+ *       runtime permission enforcement (e.g., `context.enforce...`) required by the super-method.
+ * 2. **Incorrect Permission Propagation (`ISSUE_INCORRECT_REQUIRES_PERMISSION_PROPAGATION`):**
+ *    Verifies that a method's declared annotation accurately reflects the permissions required by
+ *    the APIs it calls or the runtime checks it performs.
+ *     - **Too Narrow:** Reported if a method calls APIs that require permissions (e.g., other
+ *       methods annotated with `@RequiresPermission` or `@EnforcePermission`, or runtime checks
+ *       like `context.enforceCallingOrSelfPermission`) but is not annotated, or its annotation does
+ *       not cover all those required permissions.
+ *     - **Too Broad:** Reported if a method is annotated with `@RequiresPermission` but its body
+ *       does not actually call any APIs or perform any runtime checks that require those
+ *       permissions.
+ *     - This check ignores any permission-requiring calls made within a
+ *       `Binder.clearCallingIdentity()` block.
+ * 3. **Mismatched Broadcast Permission
+ *    (`ISSUE_MISSING_OR_MISMATCHED_SEND_BROADCAST_REQUIRES_PERMISSION`):** Ensures that calls to
+ *    `context.sendBroadcast()` (and variants like `sendBroadcastAsUser`) enforce a permission that
+ *    matches the permission declared on the broadcast Intent's action string (via
+ *    `@RequiresPermission`).
  */
 class RequiresPermissionDetector : Detector(), SourceCodeScanner {
 
