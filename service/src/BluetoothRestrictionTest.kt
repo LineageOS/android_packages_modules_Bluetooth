@@ -39,19 +39,6 @@ class BluetoothRestrictionTest {
 
     private var callback_count = 0
 
-    @Suppress("DEPRECATION")
-    private fun setUserRestriction(
-        restriction: String,
-        status: Boolean,
-        user: UserHandle = UserHandle.SYSTEM,
-    ) {
-        shadowOf(userManager).setUserRestriction(user, restriction, status)
-    }
-
-    private fun disallowBluetooth() = setUserRestriction(UserManager.DISALLOW_BLUETOOTH, true)
-
-    private fun allowBluetooth() = setUserRestriction(UserManager.DISALLOW_BLUETOOTH, false)
-
     private fun start() {
         BluetoothRestriction.initialize(context, looper) { callback_count++ }
     }
@@ -76,8 +63,6 @@ class BluetoothRestrictionTest {
         start()
 
         disallowBluetooth()
-        context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
-        shadowOf(looper).idle()
 
         assertThat(isBluetoothAllowed).isFalse()
         assertThat(callback_count).isEqualTo(1)
@@ -89,10 +74,45 @@ class BluetoothRestrictionTest {
         start()
 
         allowBluetooth()
-        context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
-        shadowOf(looper).idle()
 
         assertThat(isBluetoothAllowed).isTrue()
         assertThat(callback_count).isEqualTo(0)
+    }
+
+    companion object {
+        internal fun setup() {
+            val looper = Looper.getMainLooper()
+            val context = ApplicationProvider.getApplicationContext<Context>()
+
+            allowBluetooth()
+
+            BluetoothRestriction.initialize(context, looper) {}
+        }
+
+        @Suppress("DEPRECATION")
+        private fun setUserRestriction(
+            context: Context,
+            restriction: String,
+            status: Boolean,
+            user: UserHandle = UserHandle.SYSTEM,
+        ) {
+            val userManager = context.getSystemService(UserManager::class.java)
+
+            shadowOf(userManager).setUserRestriction(user, restriction, status)
+        }
+
+        internal fun disallowBluetooth() {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            setUserRestriction(context, UserManager.DISALLOW_BLUETOOTH, true)
+            context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+
+        internal fun allowBluetooth() {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            setUserRestriction(context, UserManager.DISALLOW_BLUETOOTH, false)
+            context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
+            shadowOf(Looper.getMainLooper()).idle()
+        }
     }
 }

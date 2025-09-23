@@ -31,7 +31,6 @@ import android.os.UserHandle
 import android.os.UserManager
 import androidx.test.core.app.ApplicationProvider
 import com.android.server.bluetooth.BluetoothComponent
-import com.android.server.bluetooth.BluetoothRestriction
 import com.android.server.bluetooth.SharingRestriction
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -53,6 +52,7 @@ class SharingRestrictionTest {
 
     @Before
     fun setUp() {
+        BluetoothRestrictionTest.setup()
         val pm = Shadows.shadowOf(context.packageManager)
 
         val packageName = "com.android.bluetooth"
@@ -72,7 +72,7 @@ class SharingRestrictionTest {
         pm.setPackagesForUid(Process.BLUETOOTH_UID, packageName)
 
         bluetoothComponent = BluetoothComponent(context)
-        BluetoothRestriction.isBluetoothAllowed = true
+        BluetoothRestrictionTest.allowBluetooth()
     }
 
     @Suppress("DEPRECATION")
@@ -106,7 +106,7 @@ class SharingRestrictionTest {
 
     @Test
     fun disallowUserSharing_whenDisallowed_doNothing() {
-        BluetoothRestriction.isBluetoothAllowed = false
+        BluetoothRestrictionTest.disallowBluetooth()
 
         createSharingRestriction()
 
@@ -135,7 +135,7 @@ class SharingRestrictionTest {
     fun allowUserSharing_whenDisallowed_sharingStayDisableAndNoCallback() {
         ShadowSystemProperties.override("bluetooth.profile.opp.enabled", "true")
         disallowSharing()
-        BluetoothRestriction.isBluetoothAllowed = false
+        BluetoothRestrictionTest.disallowBluetooth()
 
         createSharingRestriction()
 
