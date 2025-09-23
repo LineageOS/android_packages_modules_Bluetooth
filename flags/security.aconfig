@@ -50,3 +50,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "passkey_entry_pairing_approval"
+    namespace: "bluetooth"
+    description: "Don't auto approve passkey entry pairing"
+    bug: "446268763"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
