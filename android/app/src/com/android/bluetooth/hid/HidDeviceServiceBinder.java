@@ -151,22 +151,6 @@ class HidDeviceServiceBinder extends IBluetoothHidDevice.Stub implements IProfil
     }
 
     @Override
-    public boolean setConnectionPolicy(
-            BluetoothDevice device, int connectionPolicy, AttributionSource source) {
-        Log.d(
-                TAG,
-                "setConnectionPolicy():"
-                        + (" device=" + device)
-                        + (" connectionPolicy=" + connectionPolicy));
-
-        HidDeviceService service = getService(source);
-        if (service == null) {
-            return false;
-        }
-        return service.setConnectionPolicy(device, connectionPolicy);
-    }
-
-    @Override
     public boolean reportError(BluetoothDevice device, byte error, AttributionSource source) {
         Log.d(TAG, "reportError(): device=" + device + " error=" + error);
 
