@@ -41,8 +41,7 @@ class BluetoothComponentTest {
 
     @Test
     fun `can create instance when configuration is ready`() {
-        setupBluetoothComponent(context)
-        val component = BluetoothComponent(context)
+        val component = setup()
 
         assertThat(component.packageName).isEqualTo(PACKAGE_NAME)
         assertThat(component.componentName.packageName).isEqualTo(PACKAGE_NAME)
@@ -58,7 +57,7 @@ class BluetoothComponentTest {
     fun `can create instance even when too many packages`() {
         val pm = Shadows.shadowOf(context.packageManager)
 
-        setupBluetoothComponent(context)
+        setup()
 
         pm.setPackagesForUid(
             Process.BLUETOOTH_UID,
@@ -75,7 +74,8 @@ class BluetoothComponentTest {
     }
 
     companion object {
-        internal fun setupBluetoothComponent(context: Context) {
+        internal fun setup(): BluetoothComponent {
+            val context = ApplicationProvider.getApplicationContext<Context>()
             val pm = Shadows.shadowOf(context.packageManager)
 
             val componentName = ComponentName(PACKAGE_NAME, BluetoothComponent.ADAPTER_CLASS)
@@ -92,6 +92,7 @@ class BluetoothComponentTest {
             val intentFilter = IntentFilter(IAdapter::class.java.name)
             pm.addIntentFilterForService(componentName, intentFilter)
             pm.setPackagesForUid(Process.BLUETOOTH_UID, PACKAGE_NAME)
+            return BluetoothComponent(context)
         }
     }
 }

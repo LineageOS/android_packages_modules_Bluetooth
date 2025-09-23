@@ -55,36 +55,33 @@ internal constructor(
     private val receiver =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action == UserManager.ACTION_USER_RESTRICTIONS_CHANGED) {
-                    Log.d(TAG, "Received user restriction changed event for user $user")
-                    updateOppLauncherComponentState()
-                }
+                Log.d(TAG, "User restriction have been updated for $user")
+                updateRestriction()
             }
         }
 
     init {
         val filter = IntentFilter(UserManager.ACTION_USER_RESTRICTIONS_CHANGED)
         userContext.registerReceiver(receiver, filter, null, Handler(looper))
-        updateOppLauncherComponentState()
+        updateRestriction()
     }
 
     fun stop() {
         userContext.unregisterReceiver(receiver)
     }
 
-    // Disables BluetoothOppLauncherActivity component, so the Bluetooth sharing option is not
-    // offered to the user if Bluetooth or sharing is disallowed. Puts the component to its default
-    // state if Bluetooth is not disallowed.
-    private fun updateOppLauncherComponentState() {
-        val previousSharingState = sharingState
-        sharingState = getBluetoothSharingState()
-        if (previousSharingState == sharingState) {
-            Log.v(TAG, "Bluetooth sharing state is already $sharingState")
+    fun updateRestriction() {
+        val oldState = sharingState
+        sharingState = getSharingState()
+        if (oldState == sharingState) {
+            Log.v(TAG, "Nothing to do. Sharing state is already $sharingState")
             return
         }
-        Log.i(TAG, "updateOppLauncherComponentState for user $user, sharing state: $sharingState")
+        Log.i(TAG, "Updating sharing state for $user: $oldState -> $sharingState")
         val bluetoothPackageName = bluetoothComponent.packageName
 
+        // Disables Opp activities components, so the Bluetooth sharing option is not offered to the
+        // user if Bluetooth or if the Sharing is not allowed.
         oppActivities.forEach { activityName ->
             userContext.packageManager.setComponentEnabledSetting(
                 ComponentName(bluetoothPackageName, activityName),
@@ -94,8 +91,9 @@ internal constructor(
         }
     }
 
-    private fun getBluetoothSharingState(): Int {
+    private fun getSharingState(): Int {
         if (!BluetoothRestriction.isBluetoothAllowed) {
+            Log.v(TAG, "Disabling sharing due to global user restriction")
             return PackageManager.COMPONENT_ENABLED_STATE_DISABLED
         }
         if (
@@ -103,14 +101,14 @@ internal constructor(
                 .getSystemService(UserManager::class.java)
                 .hasUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING)
         ) {
-            Log.v(TAG, "Sharing is disallowed due to user restriction")
+            Log.v(TAG, "Disabling sharing due to local sharing user restriction")
             return PackageManager.COMPONENT_ENABLED_STATE_DISABLED
         }
         if (!BluetoothProperties.isProfileOppEnabled().orElse(false)) {
-            Log.v(TAG, "Sharing is set to default due to Opp profile not enabled")
+            Log.v(TAG, "Opp is not enabled. Setting sharing to 'default'.")
             return PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
         }
-        Log.v(TAG, "Sharing is allowed")
+        Log.v(TAG, "Enabling sharing")
         return PackageManager.COMPONENT_ENABLED_STATE_ENABLED
     }
 }

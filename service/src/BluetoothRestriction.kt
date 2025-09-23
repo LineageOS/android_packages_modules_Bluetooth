@@ -30,23 +30,18 @@ private const val TAG = "BluetoothRestriction"
 object BluetoothRestriction {
     @JvmStatic
     var isBluetoothAllowed: Boolean = false
-        @VisibleForTesting set
+        private set
 
     @JvmStatic
     fun initialize(context: Context, looper: Looper, callback: () -> Unit) {
-        val receiver =
-            object : BroadcastReceiver() {
-                override fun onReceive(ctx: Context, intent: Intent) {
-                    if (intent.action == UserManager.ACTION_USER_RESTRICTIONS_CHANGED) {
-                        handleRestrictionChange(context, callback)
-                    }
-                }
-            }
-
         // DISALLOW_BLUETOOTH is a restriction on the system user, so we only need to register for
         // broadcasts to the system user.
         context.registerReceiver(
-            receiver,
+            object : BroadcastReceiver() {
+                override fun onReceive(ctx: Context, intent: Intent) {
+                    handleRestrictionChange(context, callback)
+                }
+            },
             IntentFilter(UserManager.ACTION_USER_RESTRICTIONS_CHANGED),
             null,
             Handler(looper),

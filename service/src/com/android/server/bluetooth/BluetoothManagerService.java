@@ -752,6 +752,10 @@ class BluetoothManagerService {
     }
 
     Unit onBluetoothDisallowed() {
+        if (mSharingRestriction != null) {
+            mSharingRestriction.updateRestriction();
+        }
+
         if (mState.oneOf(State.OFF)) {
             return Unit.INSTANCE;
         }

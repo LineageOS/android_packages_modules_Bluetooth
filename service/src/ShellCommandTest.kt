@@ -206,7 +206,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
 
     companion object {
         @JvmStatic
-        @Parameters(name = "{0}|{1}")
+        @Parameters(name = "{0}|returnValue={1}")
         fun getParams() =
             FlagsWrapper.progressionOf(Flags.FLAG_SYSTEM_SERVER_MESSENGER).flatMap { flag ->
                 listOf(arrayOf(flag, true), arrayOf(flag, false))
