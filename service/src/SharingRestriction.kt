@@ -43,13 +43,13 @@ internal constructor(
     companion object {
         @JvmStatic
         val oppActivities =
-            listOf(
-                    "LauncherActivity", // Base sharing activity
-                    "BtEnableActivity",
-                    "BtEnablingActivity",
-                    "BtErrorActivity",
-                )
-                .map { "com.android.bluetooth.opp.BluetoothOpp$it" }
+            buildSet(4) {
+                val prefix = "com.android.bluetooth.opp.BluetoothOpp"
+                add("${prefix}LauncherActivity")
+                add("${prefix}BtEnableActivity")
+                add("${prefix}BtEnablingActivity")
+                add("${prefix}BtErrorActivity")
+            }
     }
 
     private val receiver =

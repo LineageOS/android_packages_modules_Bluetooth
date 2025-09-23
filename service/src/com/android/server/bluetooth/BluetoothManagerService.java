@@ -88,8 +88,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -2155,7 +2157,7 @@ class BluetoothManagerService {
      */
     private void disableBluetoothComponents(String packageName) {
         PackageManager pm = mContext.getPackageManager();
-        PackageInfo packageInfo = null;
+        PackageInfo packageInfo;
 
         try {
             packageInfo =
@@ -2170,34 +2172,24 @@ class BluetoothManagerService {
             return;
         }
 
-        // Refer to updateOppLauncherComponentState()
-        List<String> baseBluetoothOppActivities =
-                List.of(
-                        "com.android.bluetooth.opp.BluetoothOppLauncherActivity",
-                        "com.android.bluetooth.opp.BluetoothOppBtEnableActivity",
-                        "com.android.bluetooth.opp.BluetoothOppBtEnablingActivity",
-                        "com.android.bluetooth.opp.BluetoothOppBtErrorActivity");
-
-        disableComponents(pm, packageInfo.activities, packageName, baseBluetoothOppActivities);
-        disableComponents(pm, packageInfo.services, packageName, null);
-        disableComponents(pm, packageInfo.receivers, packageName, null);
-        disableComponents(pm, packageInfo.providers, packageName, null);
+        disableComponents(
+                pm, packageInfo.activities, packageName, SharingRestriction.getOppActivities());
+        disableComponents(pm, packageInfo.services, packageName, Collections.emptySet());
+        disableComponents(pm, packageInfo.receivers, packageName, Collections.emptySet());
+        disableComponents(pm, packageInfo.providers, packageName, Collections.emptySet());
     }
 
     private static <T extends android.content.pm.ComponentInfo> void disableComponents(
-            PackageManager pm, T[] components, String packageName, List<String> componentsToKeep) {
+            PackageManager pm, T[] components, String packageName, Set<String> componentsToKeep) {
         if (components == null) {
             return;
         }
 
         Arrays.stream(components)
+                // Only disable components that are supposed to be disabled in the Manifest.
                 .filter(componentInfo -> !componentInfo.enabled)
+                .filter(componentInfo -> !componentsToKeep.contains(componentInfo.name))
                 .map(componentInfo -> new ComponentName(packageName, componentInfo.name))
-                .filter(
-                        componentName ->
-                                (componentsToKeep == null
-                                        || !componentsToKeep.contains(
-                                                componentName.getClassName())))
                 .forEach(
                         componentName -> {
                             pm.setComponentEnabledSetting(
