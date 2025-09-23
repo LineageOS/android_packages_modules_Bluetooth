@@ -328,3 +328,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "btm_iocaps_sysprop_override"
+    namespace: "bluetooth"
+    description: "Override IO capabilities using system properties"
+    bug: "446939944"
+}
