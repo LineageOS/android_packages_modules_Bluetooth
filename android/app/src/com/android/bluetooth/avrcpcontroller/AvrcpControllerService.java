@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
@@ -37,7 +35,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -49,7 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth AVRCP Controller profile, as a service in the Bluetooth application. */
-public class AvrcpControllerService extends ConnectableProfile {
+public class AvrcpControllerService extends ProfileService {
     private static final String TAG = AvrcpControllerService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 5;
@@ -574,31 +571,8 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    /* Generic Profile Code */
-
-    /**
-     * Disconnect the given Bluetooth device.
-     *
-     * @return true if disconnect is successful, false otherwise.
-     */
-    @Override
-    public synchronized boolean disconnect(BluetoothDevice device) {
-        Log.d(TAG, "disconnect(device=" + device + ")");
-        AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
-        // a map state machine instance doesn't exist. maybe it is already gone?
-        if (stateMachine == null) {
-            return false;
-        }
-        int connectionState = stateMachine.getState();
-        if (connectionState != STATE_CONNECTED && connectionState != STATE_CONNECTING) {
-            return false;
-        }
-        stateMachine.disconnect();
-        return true;
-    }
-
     /** Remove state machine from device map once it is no longer needed. */
-    public void removeStateMachine(AvrcpControllerStateMachine stateMachine) {
+    void removeStateMachine(AvrcpControllerStateMachine stateMachine) {
         if (stateMachine == null) {
             return;
         }
@@ -672,8 +646,7 @@ public class AvrcpControllerService extends ConnectableProfile {
         return deviceList;
     }
 
-    @Override
-    public synchronized int getConnectionState(BluetoothDevice device) {
+    synchronized int getConnectionState(BluetoothDevice device) {
         AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
         return (stateMachine == null) ? STATE_DISCONNECTED : stateMachine.getState();
     }

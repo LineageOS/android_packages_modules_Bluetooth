@@ -119,18 +119,16 @@ public abstract class ConnectableProfile extends ProfileService {
                             && arrayContains(remoteDeviceUuids, BluetoothUuid.PBAP_PSE);
             case SAP -> arrayContains(remoteDeviceUuids, BluetoothUuid.SAP);
             case VOLUME_CONTROL -> arrayContains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL);
-            case HID_DEVICE -> {
-                yield adapterService
-                        .getStartedConnectableProfile(id)
-                        .filter(profile -> profile.getConnectionState(device) == STATE_DISCONNECTED)
-                        .isPresent();
-            }
-            case MAP, PBAP -> {
-                yield adapterService
-                        .getStartedConnectableProfile(id)
-                        .filter(profile -> profile.getConnectionState(device) == STATE_CONNECTED)
-                        .isPresent();
-            }
+            case HID_DEVICE ->
+                    adapterService
+                            .getStartedConnectableProfile(id)
+                            .filter(p -> p.getConnectionState(device) == STATE_DISCONNECTED)
+                            .isPresent();
+            case MAP, PBAP ->
+                    adapterService
+                            .getStartedConnectableProfile(id)
+                            .filter(p -> p.getConnectionState(device) == STATE_CONNECTED)
+                            .isPresent();
             default -> {
                 Log.w(TAG, "isSupported() was called but not implemented");
                 yield false;
@@ -143,10 +141,7 @@ public abstract class ConnectableProfile extends ProfileService {
      *
      * @return {@code true} if the connection was successful, {@code false} otherwise.
      */
-    public boolean connect(BluetoothDevice device) {
-        Log.w(mName, "connect() was called but not implemented");
-        return false;
-    }
+    public abstract boolean connect(BluetoothDevice device);
 
     /** Disconnects the given device from the profile. */
     public abstract boolean disconnect(BluetoothDevice device);
@@ -196,14 +191,11 @@ public abstract class ConnectableProfile extends ProfileService {
     /**
      * Get the connection policy of the profile.
      *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
      * @param device Bluetooth device
      * @return connection policy of the device
      */
-    public int getConnectionPolicy(BluetoothDevice device) {
+    public final @BluetoothProfile.ConnectionPolicy int getConnectionPolicy(
+            BluetoothDevice device) {
         return mAdapterService.getProfileConnectionPolicy(device, mProfileId);
     }
 
@@ -212,19 +204,14 @@ public abstract class ConnectableProfile extends ProfileService {
      * BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is {@link
      * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}
      *
-     * <p>The device should already be paired. Connection policy can be one of: {@link
-     * BluetoothProfile#CONNECTION_POLICY_ALLOWED}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
+     * <p>The device should already be paired.
      *
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
-    public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
-        Log.w(mName, "setConnectionPolicy() was called but not implemented");
-        return false;
-    }
+    public abstract boolean setConnectionPolicy(
+            BluetoothDevice device, @BluetoothProfile.ConnectionPolicy int connectionPolicy);
 
     /** Process a change in the bonding state for a device */
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {

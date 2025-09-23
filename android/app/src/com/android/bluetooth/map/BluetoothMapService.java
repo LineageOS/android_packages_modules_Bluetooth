@@ -553,11 +553,12 @@ public class BluetoothMapService extends ConnectableProfile {
         }
     }
 
-    /**
-     * Disconnects MAP from the supplied device
-     *
-     * @param device is the device on which we want to disconnect MAP
-     */
+    @Override
+    public boolean connect(BluetoothDevice device) {
+        Log.w(TAG, "connect() was called but not implemented");
+        return false;
+    }
+
     @Override
     public boolean disconnect(BluetoothDevice device) {
         mSessionStatusHandler.obtainMessage(DISCONNECT_MAP, 0, 0, device).sendToTarget();

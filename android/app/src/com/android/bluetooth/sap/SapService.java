@@ -551,6 +551,12 @@ public class SapService extends ConnectableProfile
     }
 
     @Override
+    public boolean connect(BluetoothDevice device) {
+        Log.w(TAG, "connect() was called but not implemented");
+        return false;
+    }
+
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         synchronized (SapService.this) {
             if (mRemoteDevice == null

@@ -67,6 +67,11 @@ public class ConnectableProfileTest {
         }
 
         @Override
+        public boolean connect(BluetoothDevice device) {
+            return false;
+        }
+
+        @Override
         public boolean disconnect(BluetoothDevice device) {
             return true;
         }
@@ -74,6 +79,11 @@ public class ConnectableProfileTest {
         @Override
         public int getConnectionState(BluetoothDevice device) {
             return STATE_DISCONNECTED;
+        }
+
+        @Override
+        public boolean setConnectionPolicy(BluetoothDevice device, int policy) {
+            return false;
         }
     }
 
