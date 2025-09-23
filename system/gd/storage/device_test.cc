@@ -19,7 +19,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "storage/device.h"
 #include "storage/le_device.h"
 #include "storage/mutation.h"
 
@@ -35,48 +34,40 @@ using ::testing::StrEq;
 
 TEST(DeviceTest, create_new_device_using_legacy_key_address) {
   ConfigCache config(10, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(10, {});
 
   // A new device
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  Device device(&config, &memory_only_config, address,
-                Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+  Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_EQ(device.GetLmpVersion(), std::nullopt);
 
   // An existing device
   Address address2 = {{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}};
   config.SetProperty(address2.ToString(), "LmpVer", "123");
-  Device device2(&config, &memory_only_config, address2,
-                 Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+  Device device2(&config, address2, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_THAT(device2.GetLmpVersion(), Optional(Eq(123)));
 }
 
 TEST(DeviceTest, create_new_device_using_classic_address) {
   ConfigCache config(10, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(10, {});
 
   // A new device
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  Device device(&config, &memory_only_config, address,
-                Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
+  Device device(&config, address, Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
   ASSERT_EQ(device.GetLmpVersion(), std::nullopt);
 
   // An existing device
   Address address2 = {{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}};
   config.SetProperty(address2.ToString(), "LmpVer", "123");
-  Device device2(&config, &memory_only_config, address2,
-                 Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
+  Device device2(&config, address2, Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
   ASSERT_THAT(device2.GetLmpVersion(), Optional(Eq(123)));
 }
 
 TEST(DeviceTest, create_new_device_using_le_identity_address) {
   ConfigCache config(10, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(10, {});
 
   // A new device
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  Device device(&config, &memory_only_config, address,
-                Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
+  Device device(&config, address, Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
   ASSERT_EQ(device.GetLmpVersion(), std::nullopt);
 
   // An existing device
@@ -87,27 +78,24 @@ TEST(DeviceTest, create_new_device_using_le_identity_address) {
   config.SetProperty(pseudo_first_seen_address.ToString(), "LeIdentityAddr",
                      le_identity_address.ToString());
   config.SetProperty(address.ToString(), "LmpVer", "456");
-  Device device2(&config, &memory_only_config, le_identity_address,
-                 Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
+  Device device2(&config, le_identity_address, Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
   ASSERT_THAT(device2.GetLmpVersion(), Optional(Eq(123)));
 }
 
 TEST(DeviceTest, set_device_type) {
   ConfigCache config(10, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(10, {});
 
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  Device device(&config, &memory_only_config, address,
-                Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+  Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_EQ(device.GetDeviceType(), std::nullopt);
   {
-    Mutation mutation(&config, &memory_only_config);
+    Mutation mutation(&config);
     mutation.Add(device.SetDeviceType(DeviceType::BR_EDR));
     mutation.Commit();
   }
   ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::BR_EDR)));
   {
-    Mutation mutation(&config, &memory_only_config);
+    Mutation mutation(&config);
     mutation.Add(device.SetDeviceType(DeviceType::LE));
     mutation.Commit();
   }

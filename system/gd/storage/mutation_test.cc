@@ -31,34 +31,16 @@ using bluetooth::storage::MutationEntry;
 
 TEST(MutationTest, simple_sequence_test) {
   ConfigCache config(100, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(100, {});
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
   config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
   ASSERT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
-  Mutation mutation2(&config, &memory_only_config);
-  mutation2.Add(MutationEntry::Set(MutationEntry::PropertyType::NORMAL, "AA:BB:CC:DD:EE:FF",
-                                   "LinkKey", "CCDDEEFFGG"));
+  Mutation mutation2(&config);
+  mutation2.Add(MutationEntry::Set("AA:BB:CC:DD:EE:FF", "LinkKey", "CCDDEEFFGG"));
   mutation2.Commit();
   ASSERT_THAT(config.GetPersistentSections(),
               ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
-}
-
-TEST(MutationTest, add_to_different_configs) {
-  ConfigCache config(100, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(100, {});
-  ASSERT_FALSE(config.HasSection("A"));
-  Mutation mutation(&config, &memory_only_config);
-  mutation.Add(MutationEntry::Set(MutationEntry::PropertyType::NORMAL, "A", "B", "C"));
-  mutation.Add(MutationEntry::Set(MutationEntry::PropertyType::MEMORY_ONLY, "A", "D", "Hello"));
-  mutation.Commit();
-  ASSERT_TRUE(config.HasProperty("A", "B"));
-  ASSERT_FALSE(config.HasProperty("A", "D"));
-  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("C")));
-  ASSERT_FALSE(memory_only_config.HasProperty("A", "B"));
-  ASSERT_TRUE(memory_only_config.HasProperty("A", "D"));
-  ASSERT_THAT(memory_only_config.GetProperty("A", "D"), Optional(StrEq("Hello")));
 }
 
 }  // namespace testing

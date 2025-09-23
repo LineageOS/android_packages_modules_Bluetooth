@@ -19,11 +19,9 @@
 namespace bluetooth {
 namespace storage {
 
-MutationEntry::MutationEntry(EntryType entry_type_param, PropertyType property_type_param,
-                             std::string section_param, std::string property_param,
-                             std::string value_param)
+MutationEntry::MutationEntry(EntryType entry_type_param, std::string section_param,
+                             std::string property_param, std::string value_param)
     : entry_type(entry_type_param),
-      property_type(property_type_param),
       section(std::move(section_param)),
       property(std::move(property_param)),
       value(std::move(value_param)) {

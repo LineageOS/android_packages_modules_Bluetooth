@@ -34,19 +34,17 @@ using ::testing::Optional;
 
 TEST(LeDeviceTest, create_new_le_device) {
   ConfigCache config(10, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(10, {});
   bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  LeDevice device(&config, &memory_only_config, address.ToString());
+  LeDevice device(&config, address.ToString());
   ASSERT_FALSE(device.GetAddressType());
 }
 
 TEST(LeDeviceTest, set_property) {
   ConfigCache config(10, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(10, {});
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  LeDevice device(&config, &memory_only_config, address.ToString());
+  LeDevice device(&config, address.ToString());
   ASSERT_FALSE(device.GetAddressType());
-  Mutation mutation(&config, &memory_only_config);
+  Mutation mutation(&config);
   mutation.Add(device.SetAddressType(AddressType::RANDOM_DEVICE_ADDRESS));
   mutation.Commit();
   ASSERT_THAT(device.GetAddressType(), Optional(Eq(AddressType::RANDOM_DEVICE_ADDRESS)));
