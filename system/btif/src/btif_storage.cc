@@ -646,7 +646,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     for (uint32_t i = 0; i < bonded_devices.num_devices; ++i) {
       bonded_devices_serialized.push_back(bonded_devices.devices[i].ToSerialized());
     }
-    property->len = bonded_devices.num_devices * bonded_devices_serialized.size();
+    property->len = bonded_devices_serialized.size() * sizeof(tBLE_BD_ADDR_SERIALIZED);
     memcpy(property->val, bonded_devices_serialized.data(), property->len);
 
     /* if there are no bonded_devices, then length shall be 0 */
