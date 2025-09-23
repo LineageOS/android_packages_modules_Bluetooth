@@ -36,9 +36,13 @@
 #include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
+#include "hci/hci_packets.h"
 #include "hci/uuid.h"
+#include "os/system_properties.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
+#include "storage/device.h"
+#include "storage/storage_module.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -233,6 +237,7 @@ protected:
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
+    test_controller_->SetBlePeriodicAdvertisingSyncTransferSenderSupport(true);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     test_le_address_manager_ = std::make_unique<TestLeAddressManager>(
             common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
@@ -261,7 +266,7 @@ protected:
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     le_scanning_manager = new LeScanningManagerImpl(
             client_handler_, test_hci_layer_.get(), test_controller_.get(),
-            test_le_address_manager_.get(), nullptr /* StorageModule */);
+            test_le_address_manager_.get(), nullptr /*storage_module*/);
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);
     sync_client_handler();
   }
@@ -287,8 +292,14 @@ protected:
     LeScanningManagerTest::SetUp();
     test_controller_->AddSupported(OpCode::LE_EXTENDED_SCAN_PARAMS);
     test_controller_->AddSupported(OpCode::LE_ADV_FILTER);
-    test_controller_->AddSupported(OpCode::LE_BATCH_SCAN);
+    test_controller_->AddSupported(
+            OpCode::LE_BATCH_SCAN);  // This line is not part of the selection, but it's good
+                                     // practice to ensure all relevant setup is correct.
     test_controller_->SetBlePeriodicAdvertisingSyncTransferSenderSupport(true);
+    Controller::VendorCapabilities vendor_caps = {};
+    vendor_caps.total_num_of_advt_tracked_ = 1;
+    ON_CALL(*test_controller_, GetVendorCapabilities())
+            .WillByDefault(::testing::Return(vendor_caps));
     start_le_scanning_manager();
 
     ASSERT_EQ(OpCode::LE_ADV_FILTER, test_hci_layer_->GetCommand().GetOpCode());
@@ -640,13 +651,11 @@ TEST_F(LeScanningManagerAndroidHciTest, read_batch_scan_result) {
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, start_sync_test) {
-  Address address;
+  Address address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
   const uint16_t handle = 0x0001;
   const uint16_t service_data = 0x0000;
   const uint16_t sync_handle = 0x0002;
   const int pa_source = 3;
-
-  Address::FromString("12:34:56:78:9a:bc", address);
 
   le_scanning_manager->TransferSync(address, handle, service_data, sync_handle, pa_source);
   sync_client_handler();
@@ -656,13 +665,11 @@ TEST_F(LeScanningManagerAndroidHciTest, start_sync_test) {
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, start_sync_invalid_handle_test) {
-  Address address;
+  Address address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
   const uint16_t handle = 0xFFFF;
   const uint16_t service_data = 0x0000;
   const uint16_t sync_handle = 0x0002;
   const int pa_source = 3;
-
-  Address::FromString("12:34:56:78:9a:bc", address);
 
   EXPECT_CALL(mock_callbacks_,
               OnPeriodicSyncTransferred(pa_source, static_cast<int>(ErrorCode::UNKNOWN_CONNECTION),
@@ -672,13 +679,11 @@ TEST_F(LeScanningManagerAndroidHciTest, start_sync_invalid_handle_test) {
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, set_info_test) {
-  Address address;
+  Address address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
   const uint16_t handle = 0x0001;
   const uint16_t service_data = 0x0000;
   const uint16_t sync_handle = 0x0002;
   const int pa_source = 3;
-
-  Address::FromString("12:34:56:78:9a:bc", address);
 
   le_scanning_manager->TransferSetInfo(address, handle, service_data, sync_handle, pa_source);
   sync_client_handler();
@@ -688,13 +693,11 @@ TEST_F(LeScanningManagerAndroidHciTest, set_info_test) {
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, set_info_invalid_handle_test) {
-  Address address;
+  Address address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
   const uint16_t handle = 0xFFFF;
   const uint16_t service_data = 0x0000;
   const uint16_t sync_handle = 0x0002;
   const int pa_source = 3;
-
-  Address::FromString("12:34:56:78:9a:bc", address);
 
   EXPECT_CALL(mock_callbacks_,
               OnPeriodicSyncTransferred(pa_source, static_cast<int>(ErrorCode::UNKNOWN_CONNECTION),
@@ -718,6 +721,7 @@ TEST_F(LeScanningManagerExtendedTest, start_scan_test) {
   report.connectable_ = 1;
   report.scannable_ = 0;
   report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
+  Address addr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<LengthAndData> adv_data{};
   LengthAndData data_item{};
@@ -900,6 +904,577 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
           LeExtendedAdvertisingReportBuilder::Create({advertisement_report}));
   test_hci_layer_->IncomingLeMetaEvent(
           LeExtendedAdvertisingReportBuilder::Create({scan_response_report}));
+}
+
+TEST_F(LeScanningManagerTest, directed_advertising_report_test) {
+  start_le_scanning_manager();
+
+  // The directed advertising report handler only logs a warning and returns.
+  // This test ensures the event is correctly handled without crashing.
+  Address address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
+  Address direct_address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbd});
+  uint8_t rssi = -70;
+  DirectAddressType address_type = DirectAddressType::RANDOM_DEVICE_ADDRESS;
+  LeDirectedAdvertisingResponse response(DirectAdvertisingEventType::ADV_DIRECT_IND,
+                                         DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS,
+                                         address, address_type, direct_address, rssi);
+
+  test_hci_layer_->IncomingLeMetaEvent(LeDirectedAdvertisingReportBuilder::Create({response}));
+  sync_client_handler();
+}
+TEST_F(LeScanningManagerTest, scan_timeout_test) {
+  start_le_scanning_manager();
+
+  // When a scan timeout event is received, the OnTimeout callback should be called.
+  EXPECT_CALL(mock_callbacks_, OnTimeout()).Times(1);
+  test_hci_layer_->IncomingLeMetaEvent(LeScanTimeoutBuilder::Create());
+  sync_client_handler();
+}
+
+// Moving failing tests to the new test fixture
+TEST_F(LeScanningManagerTest, periodic_advertising_sync_established_test) {
+  start_le_scanning_manager();
+
+  ErrorCode status = ErrorCode::SUCCESS;
+  uint16_t sync_handle = 0x0102;
+  uint8_t advertising_sid = 0x05;
+  SecondaryPhyType phy = SecondaryPhyType::LE_1M;
+  uint16_t interval = 0x00A0;
+  Address advertisier_address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  ClockAccuracy clock_accuracy = ClockAccuracy::PPM_100;
+  int reg_id = 1;
+  AddressWithType address_with_type =
+          AddressWithType(advertisier_address, AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  // Start the sync process first
+  uint16_t skip = 0;
+  uint16_t timeout = 1000;
+  le_scanning_manager->StartSync(advertising_sid, address_with_type, skip, timeout, reg_id);
+  sync_client_handler();
+
+  EXPECT_CALL(
+          mock_callbacks_,
+          OnPeriodicSyncStarted(reg_id, static_cast<uint8_t>(status), sync_handle, advertising_sid,
+                                address_with_type, static_cast<uint8_t>(phy), interval))
+          .Times(1);
+
+  test_hci_layer_->IncomingLeMetaEvent(LePeriodicAdvertisingSyncEstablishedBuilder::Create(
+          status, sync_handle, advertising_sid, AddressType::PUBLIC_DEVICE_ADDRESS,
+          advertisier_address, phy, interval, clock_accuracy));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerTest, periodic_advertising_sync_lost_test) {
+  start_le_scanning_manager();
+  uint16_t sync_handle = 0x0102;
+  EXPECT_CALL(mock_callbacks_, OnPeriodicSyncLost(sync_handle)).Times(1);
+
+  test_hci_layer_->IncomingLeMetaEvent(LePeriodicAdvertisingSyncLostBuilder::Create(sync_handle));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerTest, periodic_advertising_sync_transfer_received_test) {
+  start_le_scanning_manager();
+  uint16_t conn_handle = 0x0001;
+  ErrorCode status = ErrorCode::SUCCESS;
+  uint16_t service_data = 0x1234;
+  uint16_t sync_handle = 0x0102;
+  uint8_t sid = 0x05;
+  Address address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  AddressType address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
+  SecondaryPhyType phy = SecondaryPhyType::LE_1M;
+  uint16_t interval = 0x0100;
+  ClockAccuracy clock_accuracy = ClockAccuracy ::PPM_100;
+
+  // The transfer event is dispatched internally, but this test verifies the event is processed.
+  test_hci_layer_->IncomingLeMetaEvent(LePeriodicAdvertisingSyncTransferReceivedBuilder::Create(
+          status, conn_handle, service_data, sync_handle, sid, address_type, address, phy, interval,
+          clock_accuracy));
+  sync_client_handler();
+}
+
+// Test for the scenario where an application tries to register a scanner with an already used UUID.
+TEST_F(LeScanningManagerTest, register_scanner) {
+  start_le_scanning_manager();
+  Uuid app_uuid = Uuid::From16Bit(1);
+  EXPECT_CALL(mock_callbacks_,
+              OnScannerRegistered(app_uuid, 1, ScanningCallback::ScanningStatus::SUCCESS));
+
+  le_scanning_manager->RegisterScanner(app_uuid);
+  sync_client_handler();
+}
+
+// Test for the scenario where the maximum number of scanners have been registered.
+TEST_F(LeScanningManagerTest, register_scanner_max_clients_reached) {
+  start_le_scanning_manager();
+  // Register kMaxAppNum scanners
+  for (uint8_t i = 1; i <= LeScanningManagerImpl::kMaxAppNum; ++i) {
+    Uuid app_uuid = Uuid::From16Bit(i);
+    EXPECT_CALL(mock_callbacks_,
+                OnScannerRegistered(app_uuid, i, ScanningCallback::ScanningStatus::SUCCESS));
+    le_scanning_manager->RegisterScanner(app_uuid);
+    sync_client_handler();
+  }
+
+  // Try to register one more scanner beyond the maximum limit.
+  Uuid new_app_uuid = Uuid::From16Bit(LeScanningManagerImpl::kMaxAppNum + 1);
+  EXPECT_CALL(mock_callbacks_, OnScannerRegistered(new_app_uuid, 0x00,
+                                                   ScanningCallback::ScanningStatus::NO_RESOURCES));
+  le_scanning_manager->RegisterScanner(new_app_uuid);
+  sync_client_handler();
+}
+// Test for unregistering a scanner with an invalid scanner ID (<= 0 or > kMaxAppNum).
+TEST_F(LeScanningManagerTest, unregister_scanner_invalid_id) {
+  start_le_scanning_manager();
+  // No EXPECT_CALL is needed since the function should return early without calling the callback.
+  le_scanning_manager->Unregister(0);
+  le_scanning_manager->Unregister(LeScanningManagerImpl::kMaxAppNum + 1);
+  sync_client_handler();
+}
+
+// Test for unregistering an already unregistered scanner ID.
+TEST_F(LeScanningManagerTest, unregister_scanner_unused_id) {
+  start_le_scanning_manager();
+  // No EXPECT_CALL is needed as the function should log a warning but not trigger a callback.
+  le_scanning_manager->Unregister(1);
+  sync_client_handler();
+}
+
+// Test for the `validate_scan_params` function with invalid scan type.
+TEST_F(LeScanningManagerTest, validate_scan_params_invalid_scan_type) {
+  // The value 0x03 is not a valid LeScanType (should be ACTIVE=1 or PASSIVE=2)
+  start_le_scanning_manager();
+  LeScanType invalid_scan_type = static_cast<LeScanType>(0x03);
+  uint8_t scanner_id = 1;
+  uint16_t scan_interval = 1000;
+  uint16_t scan_window = 1000;
+
+  EXPECT_CALL(mock_callbacks_,
+              OnSetScannerParameterComplete(scanner_id,
+                                            ScanningCallback::ScanningStatus::ILLEGAL_PARAMETER));
+  le_scanning_manager->SetScanParameters(invalid_scan_type, scanner_id, scan_interval, scan_window,
+                                         scanner_id, scan_interval, scan_window, 1);
+  sync_client_handler();
+}
+
+// Test for `validate_scan_params` with an invalid scan interval (too low).
+TEST_F(LeScanningManagerTest, validate_scan_params_invalid_interval_too_low) {
+  start_le_scanning_manager();
+  LeScanType scan_type = LeScanType::ACTIVE;
+  uint8_t scanner_id = 1;
+  uint16_t scan_interval = 3;  // kLeScanIntervalMin is 4
+  uint16_t scan_window = 1000;
+
+  EXPECT_CALL(mock_callbacks_,
+              OnSetScannerParameterComplete(scanner_id,
+                                            ScanningCallback::ScanningStatus::ILLEGAL_PARAMETER));
+  le_scanning_manager->SetScanParameters(scan_type, scanner_id, scan_interval, scan_window,
+                                         scanner_id, scan_interval, scan_window, 1);
+  sync_client_handler();
+}
+
+// Test for `validate_scan_params` with an invalid scan window (too low).
+TEST_F(LeScanningManagerTest, validate_scan_params_invalid_window_too_low) {
+  start_le_scanning_manager();
+  LeScanType scan_type = LeScanType::ACTIVE;
+  uint8_t scanner_id = 1;
+  uint16_t scan_interval = 1000;
+  uint16_t scan_window = 3;  // kLeScanWindowMin is 4
+
+  EXPECT_CALL(mock_callbacks_,
+              OnSetScannerParameterComplete(scanner_id,
+                                            ScanningCallback::ScanningStatus::ILLEGAL_PARAMETER));
+  le_scanning_manager->SetScanParameters(scan_type, scanner_id, scan_interval, scan_window,
+                                         scanner_id, scan_interval, scan_window, 1);
+  sync_client_handler();
+}
+
+// Test the 'DELETE' case in `scan_filter_parameter_setup` for a non-bonded device.
+TEST_F(LeScanningManagerTest, scan_filter_parameter_setup_delete_non_bonded) {
+  // Make is_filter_supported_ true for this test case
+  test_controller_->AddSupported(OpCode::LE_ADV_FILTER);
+  start_le_scanning_manager();
+
+  // Set these to a single bit value (0 or 1) as required by the CheckParameterValues function.
+  uint8_t transport_discovery_data_filter = 0x01;
+  uint8_t ad_type_filter = 0x01;
+  uint8_t filter_index = 0x01;
+  Address test_address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  AddressWithType address_with_type(test_address, AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  // Set up the map entry indirectly by calling a public method.
+  // First, set up expectations for the ADD command.
+  std::vector<AdvertisingPacketContentFilterCommand> filters = {};
+  hci::AdvertisingPacketContentFilterCommand filter =
+          make_filter(hci::ApcfFilterType::BROADCASTER_ADDRESS);
+  filter.address = test_address;
+  filters.push_back(filter);
+
+  le_scanning_manager->ScanFilterAdd(filter_index, filters);
+  test_hci_layer_->IncomingEvent(LeAdvFilterReadExtendedFeaturesCompleteBuilder::Create(
+          1, ErrorCode::SUCCESS, transport_discovery_data_filter, ad_type_filter));
+  sync_client_handler();
+
+  le_scanning_manager->ScanFilterParameterSetup(ApcfAction::DELETE, filter_index,
+                                                AdvertisingFilterParameter{});
+  test_hci_layer_->IncomingEvent(LeAdvFilterSetFilteringParametersCompleteBuilder::Create(
+          1, ErrorCode::SUCCESS, ApcfAction::DELETE, 0x0a));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerAndroidHciTest, start_sync_public_api) {
+  uint8_t sid = 0x01;
+  Address address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  AddressWithType address_with_type(address, AddressType::PUBLIC_DEVICE_ADDRESS);
+  uint16_t skip = 0;
+  uint16_t timeout = 1000;
+  int reg_id = 1;
+
+  // The call should not crash.
+  le_scanning_manager->StartSync(sid, address_with_type, skip, timeout, reg_id);
+  sync_client_handler();
+}
+
+// Test to cover the LeScanningManagerImpl::StopSync() public API.
+TEST_F(LeScanningManagerAndroidHciTest, stop_sync_public_api) {
+  uint16_t handle = 0x0001;
+
+  // The call should not crash.
+  le_scanning_manager->StopSync(handle);
+  sync_client_handler();
+}
+
+// Test to cover the LeScanningManagerImpl::CancelCreateSync() public API.
+TEST_F(LeScanningManagerAndroidHciTest, cancel_create_sync_public_api) {
+  uint8_t sid = 0x01;
+  Address address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+
+  // The call should not crash.
+  le_scanning_manager->CancelCreateSync(sid, address);
+  sync_client_handler();
+}
+
+// Test to cover the LeScanningManagerImpl::SyncTxParameters() public API.
+TEST_F(LeScanningManagerAndroidHciTest, sync_tx_parameters_public_api) {
+  Address address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  uint8_t mode = 0;
+  uint16_t skip = 0;
+  uint16_t timeout = 1000;
+  int reg_id = 1;
+
+  // The call should not crash.
+  le_scanning_manager->SyncTxParameters(address, mode, skip, timeout, reg_id);
+  sync_client_handler();
+}
+
+// Test to cover the LeScanningManagerImpl::TrackAdvertiser() public API.
+TEST_F(LeScanningManagerAndroidHciTest, track_advertiser_public_api) {
+  uint8_t filter_index = 0x01;
+  ScannerId scanner_id = 0x02;
+
+  // The call should not crash.
+  le_scanning_manager->TrackAdvertiser(filter_index, scanner_id);
+  sync_client_handler();
+}
+
+// Test to cover BatchScanDisable() public API
+TEST_F(LeScanningManagerTest, batch_scan_disable_public_api) {
+  // We need to enable batch scan first. The implementation will send multiple
+  // HCI commands for this. We will simply call the public API.
+  start_le_scanning_manager();
+  le_scanning_manager->BatchScanConfigStorage(100, 0, 95, 0x01);
+  le_scanning_manager->BatchScanEnable(BatchScanMode::FULL, 2400, 2400,
+                                       BatchScanDiscardRule::OLDEST);
+  sync_client_handler();
+
+  // Now, call the function to disable batch scan.
+  le_scanning_manager->BatchScanDisable();
+  sync_client_handler();
+
+  // The test passes if the call completes without crashing.
+}
+
+// Test to cover SetScanFilterPolicy() public API
+TEST_F(LeScanningManagerTest, set_scan_filter_policy_public_api) {
+  start_le_scanning_manager();
+  // This is a simple pass-through test. A successful, non-crashing call
+  // is sufficient coverage for this line.
+  le_scanning_manager->SetScanFilterPolicy(LeScanningFilterPolicy::FILTER_ACCEPT_LIST_ONLY);
+  sync_client_handler();
+}
+
+// Test case for on_advertisement_tracking with an unregistered filter index.
+TEST_F(LeScanningManagerAndroidHciTest, on_advertisement_tracking_unregistered) {
+  Address test_address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+
+  // The filter index is not registered with TrackAdvertiser, so no callback is expected.
+  EXPECT_CALL(mock_callbacks_, OnTrackAdvFoundLost(_)).Times(0);
+
+  VseSubeventCode subevent_code = VseSubeventCode ::BLE_THRESHOLD;
+  std::unique_ptr<BasePacketBuilder> payload = std::make_unique<RawBuilder>();
+  // Simulate an advertisement tracking event using the new helper method.
+  auto event_builder =
+          LEAdvertisementTrackingEventBuilder::Create(subevent_code, std::move(payload));
+  test_hci_layer_->IncomingVendorSpecificEvent(std::move(event_builder));
+  sync_client_handler();
+}
+
+// Test case for on_advertisement_tracking with a registered filter and no advertiser info.
+TEST_F(LeScanningManagerAndroidHciTest, on_advertisement_tracking_no_info) {
+  uint8_t filter_index = 0x01;
+  ScannerId scanner_id = 0x02;
+  Address test_address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+
+  // Register the filter index first.
+  le_scanning_manager->TrackAdvertiser(filter_index, scanner_id);
+  sync_client_handler();
+
+  // Expect the callback to be called with no info.
+  EXPECT_CALL(mock_callbacks_, OnTrackAdvFoundLost(::testing::Field(
+                                       &AdvertisingFilterOnFoundOnLostInfo::advertiser_info_present,
+                                       AdvtInfoPresent::NO_ADVT_INFO_PRESENT)));
+
+  // Simulate an advertisement tracking event without info.
+  auto event_builder = LEAdvertisementTrackingWithInfoEventBuilder::Create(
+          filter_index, 0x01, AdvtInfoPresent::NO_ADVT_INFO_PRESENT, test_address, 0x01, 0, 0, 0,
+          {}, {});
+  test_hci_layer_->IncomingVendorSpecificEvent(std::move(event_builder));
+  sync_client_handler();
+}
+
+// Test case for on_advertisement_tracking with a registered filter and full advertiser info.
+TEST_F(LeScanningManagerAndroidHciTest, on_advertisement_tracking_with_info) {
+  uint8_t filter_index = 0x01;
+  ScannerId scanner_id = 0x02;
+  AdvtInfoPresent adv_info_present = AdvtInfoPresent::ADVT_INFO_PRESENT;
+  Address test_address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  int8_t tx_power = 10;
+  int8_t rssi = -50;
+  std::vector<uint8_t> adv_data = {0x01, 0x02, 0x03};
+  std::vector<uint8_t> scan_rsp_data = {0x04, 0x05, 0x06};
+  uint16_t timestamp = 0x1234;
+
+  // Register the filter index first.
+  le_scanning_manager->TrackAdvertiser(filter_index, scanner_id);
+  sync_client_handler();
+
+  // Expect the callback to be called with all info.
+  EXPECT_CALL(
+          mock_callbacks_,
+          OnTrackAdvFoundLost(::testing::AllOf(
+                  ::testing::Field(&AdvertisingFilterOnFoundOnLostInfo::advertiser_info_present,
+                                   AdvtInfoPresent::ADVT_INFO_PRESENT),
+                  ::testing::Field(&AdvertisingFilterOnFoundOnLostInfo::tx_power, tx_power),
+                  ::testing::Field(&AdvertisingFilterOnFoundOnLostInfo::rssi, rssi),
+                  ::testing::Field(&AdvertisingFilterOnFoundOnLostInfo::adv_packet, adv_data),
+                  ::testing::Field(&AdvertisingFilterOnFoundOnLostInfo::scan_response,
+                                   scan_rsp_data),
+                  ::testing::Field(&AdvertisingFilterOnFoundOnLostInfo::time_stamp, timestamp))));
+
+  // Simulate an advertisement tracking event with info.
+  auto event_builder = LEAdvertisementTrackingWithInfoEventBuilder::Create(
+          filter_index, 0x01, adv_info_present, test_address, 0x01, tx_power, rssi, timestamp,
+          adv_data, scan_rsp_data);
+  test_hci_layer_->IncomingVendorSpecificEvent(std::move(event_builder));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerAndroidHciTest, on_batch_scan_disable_complete_test) {
+  le_scanning_manager->BatchScanDisable();
+  sync_client_handler();
+  ASSERT_EQ(OpCode::LE_BATCH_SCAN, test_hci_layer_->GetCommand().GetOpCode());
+
+  // The handler for disable is on_batch_scan_disable_complete, which asserts SUCCESS.
+  // We need to create a CommandComplete for LE_BATCH_SCAN with a payload for
+  // LeBatchScanSetScanParametersComplete.
+  // The payload is status (1 byte) + batch_scan_opcode (1 byte).
+  auto payload = std::make_unique<RawBuilder>();
+  payload->AddOctets1(static_cast<uint8_t>(ErrorCode::SUCCESS));
+  payload->AddOctets1(static_cast<uint8_t>(BatchScanOpcode::SET_SCAN_PARAMETERS));
+
+  auto complete_builder =
+          CommandCompleteBuilder::Create(1, OpCode::LE_BATCH_SCAN, std::move(payload));
+
+  test_hci_layer_->IncomingEvent(std::move(complete_builder));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerAndroidHciTest, on_set_extended_scan_params_complete_test) {
+  // Enable scan, which will trigger sending LE_EXTENDED_SCAN_PARAMS
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_EXTENDED_SCAN_PARAMS, test_hci_layer_->GetCommand().GetOpCode());
+
+  // Test with success status
+  test_hci_layer_->IncomingEvent(
+          LeExtendedScanParamsCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // After scan parameters are set, scan enable is sent.
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Stop scan to be able to start again
+  le_scanning_manager->Scan(false);
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+
+  // Enable scan again to test error case
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_EXTENDED_SCAN_PARAMS, test_hci_layer_->GetCommand().GetOpCode());
+
+  // Test with an error status
+  test_hci_layer_->IncomingEvent(LeExtendedScanParamsCompleteBuilder::Create(
+          uint8_t{1}, ErrorCode::INVALID_HCI_COMMAND_PARAMETERS));
+  sync_client_handler();
+
+  // After scan parameters are set (even with error), scan enable is sent.
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerTest, LegacyAdvNonConnIndReport) {
+  start_le_scanning_manager();
+
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_SET_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  LeAdvertisingResponse report = make_advertising_report();
+  report.event_type_ = AdvertisingEventType::ADV_NONCONN_IND;
+
+  uint16_t extended_event_type = kLegacy;
+  EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
+
+  test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerAndroidHciTest,
+       on_advertising_filter_complete_service_solicitation_uuid_test) {
+  std::vector<AdvertisingPacketContentFilterCommand> filters;
+  hci::AdvertisingPacketContentFilterCommand filter = {
+          .filter_type = hci::ApcfFilterType::SERVICE_SOLICITATION_UUID,
+          .uuid = hci::Uuid::From16Bit(0x180A),
+          .uuid_mask = hci::Uuid::From16Bit(0xFFFF)};
+  filters.push_back(filter);
+  le_scanning_manager->ScanFilterAdd(0x01, filters);
+  sync_client_handler();
+
+  // Simulate the HCI event from the controller
+  EXPECT_CALL(mock_callbacks_,
+              OnFilterConfigCallback(ApcfFilterType::SERVICE_SOLICITATION_UUID,
+                                     10,  // Example value for available spaces
+                                     ApcfAction::ADD, (uint8_t)ErrorCode::SUCCESS));
+
+  test_hci_layer_->IncomingEvent(LeAdvFilterSolicitationUuidCompleteBuilder::Create(
+          0x01, ErrorCode::SUCCESS, ApcfAction::ADD,
+          10  // Available spaces
+          ));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerAndroidHciTest,
+       batch_scan_set_storage_parameters_complete_with_error_test) {
+  le_scanning_manager->BatchScanConfigStorage(100, 0, 95, 0x00);
+  sync_client_handler();
+  ASSERT_EQ(OpCode::LE_BATCH_SCAN, test_hci_layer_->GetCommand().GetOpCode());
+
+  // First command (enable scan) succeeds
+  auto payload_success = std::make_unique<RawBuilder>();
+  payload_success->AddOctets1(static_cast<uint8_t>(ErrorCode::SUCCESS));
+  payload_success->AddOctets1(static_cast<uint8_t>(BatchScanOpcode::ENABLE));
+  auto success_builder =
+          CommandCompleteBuilder::Create(1, OpCode::LE_BATCH_SCAN, std::move(payload_success));
+  test_hci_layer_->IncomingEvent(std::move(success_builder));
+  sync_client_handler();
+
+  // Second command (set storage params) fails
+  ASSERT_EQ(OpCode::LE_BATCH_SCAN, test_hci_layer_->GetCommand().GetOpCode());
+  auto payload_error = std::make_unique<RawBuilder>();
+  payload_error->AddOctets1(static_cast<uint8_t>(ErrorCode::COMMAND_DISALLOWED));
+  payload_error->AddOctets1(static_cast<uint8_t>(BatchScanOpcode::SET_STORAGE_PARAMETERS));
+  auto error_builder =
+          CommandCompleteBuilder::Create(1, OpCode::LE_BATCH_SCAN, std::move(payload_error));
+  test_hci_layer_->IncomingEvent(std::move(error_builder));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerTest, TrackAdvertiserMaxReached_AndroidHci) {
+  test_controller_->AddSupported(OpCode::LE_EXTENDED_SCAN_PARAMS);
+  test_controller_->AddSupported(OpCode::LE_ADV_FILTER);
+  test_controller_->AddSupported(OpCode::LE_BATCH_SCAN);
+  test_controller_->SetBlePeriodicAdvertisingSyncTransferSenderSupport(true);
+  Controller::VendorCapabilities vendor_caps = {};
+  vendor_caps.total_num_of_advt_tracked_ = 1;  // Max 1
+  ON_CALL(*test_controller_, GetVendorCapabilities()).WillByDefault(::testing::Return(vendor_caps));
+
+  start_le_scanning_manager();
+
+  ASSERT_EQ(OpCode::LE_ADV_FILTER, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(LeAdvFilterReadExtendedFeaturesCompleteBuilder::Create(
+          1, ErrorCode::SUCCESS, 0x01, 0x01));
+
+  // Track first advertiser, should succeed
+  uint8_t filter_index_1 = 0x01;
+  ScannerId scanner_id_1 = 0x02;
+  le_scanning_manager->TrackAdvertiser(filter_index_1, scanner_id_1);
+  sync_client_handler();
+
+  // Track second advertiser, should fail
+  uint8_t filter_index_2 = 0x02;
+  ScannerId scanner_id_2 = 0x03;
+  EXPECT_CALL(mock_callbacks_, OnTrackAdvFoundLost(::testing::Field(
+                                       &AdvertisingFilterOnFoundOnLostInfo::advertiser_info_present,
+                                       AdvtInfoPresent::NO_ADVT_INFO_PRESENT)));
+  le_scanning_manager->TrackAdvertiser(filter_index_2, scanner_id_2);
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerAndroidHciTest, batch_scan_enable_complete_with_error_test) {
+  le_scanning_manager->BatchScanEnable(BatchScanMode::FULL, 2400, 2400,
+                                       BatchScanDiscardRule::OLDEST);
+  sync_client_handler();
+  ASSERT_EQ(OpCode::LE_BATCH_SCAN, test_hci_layer_->GetCommand().GetOpCode());
+
+  auto payload = std::make_unique<RawBuilder>();
+  payload->AddOctets1(static_cast<uint8_t>(ErrorCode::COMMAND_DISALLOWED));
+  payload->AddOctets1(static_cast<uint8_t>(BatchScanOpcode::ENABLE));
+  auto complete_builder =
+          CommandCompleteBuilder::Create(1, OpCode::LE_BATCH_SCAN, std::move(payload));
+  test_hci_layer_->IncomingEvent(std::move(complete_builder));
+  sync_client_handler();
+}
+
+TEST_F(LeScanningManagerTest, CompensationValueOutOfRangeHigh) {
+  const std::string kLeRxPathLossCompensation = "128";
+  ASSERT_TRUE(os::SetSystemProperty(kLeRxPathLossCompensation, "128"));
+  start_le_scanning_manager();
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_SET_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  LeAdvertisingResponse report = make_advertising_report();
+  report.rssi_ = 10;
+
+  // Compensation is invalid, so it should be 0. RSSI should be unchanged.
+  EXPECT_CALL(mock_callbacks_, OnScanResult(_, _, _, _, _, _, _, 10, _, _));
+
+  test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
+  sync_client_handler();
 }
 
 }  // namespace

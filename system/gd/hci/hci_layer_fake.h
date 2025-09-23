@@ -74,6 +74,9 @@ public:
 
   void IncomingEvent(std::unique_ptr<EventBuilder> event_builder) LOCKS_EXCLUDED(mutex_);
 
+  void IncomingVendorSpecificEvent(std::unique_ptr<VendorSpecificEventBuilder> event_builder)
+          LOCKS_EXCLUDED(mutex_);
+
   void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder)
           LOCKS_EXCLUDED(mutex_);
 
