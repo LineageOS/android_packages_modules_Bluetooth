@@ -72,11 +72,16 @@ public:
 
   void InjectEvent(std::unique_ptr<packet::BasePacketBuilder> event);
 
+  void SetMsftOpcode(uint16_t opcode) { msft_opcode_ = opcode; }
+
+  uint16_t getMsftOpcode() override { return msft_opcode_; }
+
 private:
   common::BlockingQueue<hal::HciPacket> outgoing_commands_;
   common::BlockingQueue<hal::HciPacket> outgoing_acl_;
   common::BlockingQueue<hal::HciPacket> outgoing_sco_;
   common::BlockingQueue<hal::HciPacket> outgoing_iso_;
+  uint16_t msft_opcode_ = 0;
 };
 
 }  // namespace hal
