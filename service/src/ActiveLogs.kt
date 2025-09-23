@@ -83,9 +83,41 @@ class ActiveLogs {
     fun dump(writer: PrintWriter) {
         if (activeLogs.isEmpty()) {
             writer.println("Bluetooth never enabled!")
-        } else {
-            writer.println("Enable log:")
-            activeLogs.forEach { writer.println("  $it") }
+            return
+        }
+
+        writer.println("Enable log:")
+
+        // Timestamps are a fixed width "08-30 12:00:00.000"
+        val timeColWidth = 18
+        // Find the max package name length, capping the column header width at max 50.
+        val packageColWidth =
+            activeLogs.maxOfOrNull { it.packageName.length }?.coerceAtMost(50) ?: 50
+        // Longest action is `DisableBle`
+        val actionColWidth = 10
+
+        val headerTime = "TIMESTAMP".padEnd(timeColWidth)
+        val headerPackage = "PACKAGE".padEnd(packageColWidth)
+        val headerAction = "ACTION".padEnd(actionColWidth)
+        val headerReason = "REASON" // Last column doesn't need padding
+
+        writer.println("  $headerTime $headerPackage $headerAction $headerReason")
+
+        val timeSep = "-".repeat(timeColWidth)
+        val packageSep = "-".repeat(packageColWidth)
+        val actionSep = "-".repeat(actionColWidth)
+        val reasonSep = "-".repeat(15) // A fixed length for the reason separator is fine
+
+        writer.println("  $timeSep $packageSep $actionSep $reasonSep")
+
+        activeLogs.forEach { log ->
+            val time = Log.timeToStringWithZone(log.timestamp).padEnd(timeColWidth)
+            val packageStr = log.packageName.padEnd(packageColWidth)
+            val action = (if (log.enable) "Enable" else "Disable") + (if (log.isBle) "Ble" else "")
+            val actionStr = action.padEnd(actionColWidth)
+            val reason = getEnableDisableReasonString(log.reason)
+
+            writer.println("  $time $packageStr $actionStr $reason")
         }
     }
 
@@ -96,10 +128,10 @@ class ActiveLogs {
 
 @VisibleForTesting
 internal class ActiveLog(
-    private val reason: Int,
-    private val packageName: String,
-    val enable: Boolean,
-    private val isBle: Boolean,
+    internal val reason: Int,
+    internal val packageName: String,
+    internal val enable: Boolean,
+    internal val isBle: Boolean,
 ) {
     val timestamp = System.currentTimeMillis()
 

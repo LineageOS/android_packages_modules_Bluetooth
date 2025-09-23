@@ -75,7 +75,8 @@ class ActiveLogTest {
 
         activeLogs.dump(writer)
 
-        assertThat(stringWriter.toString()).matches("Enable log:\n(.*\n){$numberOfLogEntry}")
+        assertThat(stringWriter.toString())
+            .matches("Enable log:\n.*\n.*\n(.*\n){$numberOfLogEntry}")
     }
 
     @Test
@@ -89,7 +90,7 @@ class ActiveLogTest {
         activeLogs.dump(writer)
 
         assertThat(stringWriter.toString())
-            .matches("Enable log:\n(.*\n){${ActiveLogs.MAX_ENTRIES_STORED}}")
+            .matches("Enable log:\n.*\n.*\n(.*\n){${ActiveLogs.MAX_ENTRIES_STORED}}")
     }
 
     @Test
@@ -103,7 +104,7 @@ class ActiveLogTest {
         activeLogs.dump(writer)
 
         assertThat(stringWriter.toString())
-            .matches("Enable log:\n.*Disable.*\n.*EnableBle.*\n.*Enable.*\n")
+            .matches("Enable log:\n.*\n.*\n.*Disable.*\n.*EnableBle.*\n.*Enable.*\n")
     }
 
     @Test
@@ -129,6 +130,8 @@ class ActiveLogTest {
         assertThat(stringWriter.toString())
             .matches(
                 "Enable log:\n" +
+                    ".*\n" + // Header
+                    ".*\n" + // Separator
                     ".*AIRPLANE_MODE\n" +
                     ".*APPLICATION_DIED\n" +
                     ".*APPLICATION_REQUEST\n" +
