@@ -608,7 +608,7 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `BluetoothLeScannerWrapper.startScan` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN]} but is only annotated with [none]."
+        message="Method `BluetoothLeScannerWrapper.startScan` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN]} but is only annotated with [none]."
         errorLine1="    public void startScan("
         errorLine2="                ~~~~~~~~~">
         <location
@@ -934,28 +934,6 @@
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
             line="177"
             column="21"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `ScanBinder.enforcePrivilegedPermissionIfNeeded` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    private fun enforcePrivilegedPermissionIfNeeded(settings: ScanSettings?) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_scan/ScanBinder.kt"
-            line="176"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `ScanBinder.enforcePrivilegedPermissionIfNeeded` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    private fun enforcePrivilegedPermissionIfNeeded(filters: List&lt;ScanFilter>?) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_scan/ScanBinder.kt"
-            line="212"
-            column="17"/>
     </issue>
 
     <issue

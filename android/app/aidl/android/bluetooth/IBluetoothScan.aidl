@@ -36,12 +36,11 @@ interface IBluetoothScan {
     void registerScanner(in IScannerCallback callback, in WorkSource workSource, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void unregisterScanner(in int scannerId, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters,
-                   in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void registerPiAndStartScan(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters,
-                            in AttributionSource attributionSource);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN}, conditional=true)")
+    void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN}, conditional=true)")
+    void registerPiAndStartScan(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void stopScan(in int scannerId, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
@@ -56,7 +55,7 @@ interface IBluetoothScan {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void transferSync(in BluetoothDevice bda, in int serviceData, in int syncHandle, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void transferSetInfo(in BluetoothDevice bda, in int serviceData, in int advertisingHandle, in IPeriodicAdvertisingCallback callback,  in AttributionSource attributionSource);
+    void transferSetInfo(in BluetoothDevice bda, in int serviceData, in int advertisingHandle, in IPeriodicAdvertisingCallback callback, in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     int numHwTrackFiltersAvailable(in AttributionSource attributionSource);

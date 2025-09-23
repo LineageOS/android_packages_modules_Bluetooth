@@ -20,7 +20,6 @@ import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.UPDATE_DEVICE_STATS
 import android.annotation.RequiresPermission
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -172,7 +171,7 @@ class ScanBinder(
         return controller.fetchOnScanThread({ controller.numHwTrackFiltersAvailable() }, 0)
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission")
+    @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
     private fun enforcePrivilegedPermissionIfNeeded(settings: ScanSettings?) {
         if (needsPrivilegedPermissionForScan(settings)) {
             adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
@@ -208,7 +207,7 @@ class ScanBinder(
      * The ScanFilter#setDeviceAddress API overloads are @SystemApi access methods. This requires
      * that the permissions be BLUETOOTH_PRIVILEGED.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission")
+    @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
     private fun enforcePrivilegedPermissionIfNeeded(filters: List<ScanFilter>?) {
         Log.d(TAG, "enforcePrivilegedPermissionIfNeeded($filters))")
         // Some 3p API cases may have null filters, need to allow
