@@ -96,8 +96,8 @@ public:
 
   MutationEntry SetDeviceType(const hci::DeviceType& value) {
     auto current_value = GetDeviceType().value_or(hci::DeviceType::UNKNOWN);
-    return MutationEntry::Set<hci::DeviceType>(section_, BTIF_STORAGE_KEY_DEV_TYPE,
-                                               static_cast<hci::DeviceType>(current_value | value));
+    return MutationEntry::Set(section_, BTIF_STORAGE_KEY_DEV_TYPE,
+                              std::to_string(current_value | value));
   }
 
   GENERATE_PROPERTY_GETTER(ServiceUuidsLe, std::vector<hci::Uuid>,
