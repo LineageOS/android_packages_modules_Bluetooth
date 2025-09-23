@@ -38,7 +38,6 @@ import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
-import static com.android.bluetooth.le_scan.ScanManager.MSFT_HCI_EXT_ENABLED;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_INTERVAL_MS;
@@ -2113,8 +2112,6 @@ public class ScanManagerTest {
                 new ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"));
         final byte[] serviceData = new byte[] {0x01, 0x02, 0x03};
 
-        mockSystemPropertyGet(MSFT_HCI_EXT_ENABLED, true);
-
         // Create new ScanManager since sysprop and MSFT support are only checked when
         // ScanManager is created
         mScanManager =
@@ -2175,8 +2172,6 @@ public class ScanManagerTest {
         final ParcelUuid serviceUuid =
                 new ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"));
         final byte[] serviceData = new byte[] {0x01, 0x02, 0x03};
-
-        mockSystemPropertyGet(MSFT_HCI_EXT_ENABLED, true);
 
         // Create new ScanManager since sysprop and MSFT support are only on ScanManager creation
         mScanManager =

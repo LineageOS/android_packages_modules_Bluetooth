@@ -972,9 +972,7 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint1
 static bool use_msft_filtering() {
   // We prefer to use APCF-based filtering over MSFT if it's available, so only use MSFT
   // filtering if APCF is not supported.
-  return !BTM_BleIsFilteringSupported() && com_android_bluetooth_flags_le_scan_msft_support() &&
-         osi_property_get_bool("bluetooth.core.le.use_msft_hci_ext", false) &&
-         scanner->IsMsftSupported();
+  return !BTM_BleIsFilteringSupported() && scanner->IsMsftSupported();
 }
 
 /* MSFT advertisement enable callback */

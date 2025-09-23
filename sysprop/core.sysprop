@@ -18,14 +18,6 @@ prop {
 }
 
 prop {
-    api_name: "isMsftHciExtEnabled"
-    type: Boolean
-    scope: Internal
-    access: Readonly
-    prop_name: "bluetooth.core.le.use_msft_hci_ext"
-}
-
-prop {
     api_name: "getLeDirectConnectionTimeout"
     type: UInt
     scope: Internal
