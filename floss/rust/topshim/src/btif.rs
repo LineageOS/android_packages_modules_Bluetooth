@@ -1030,9 +1030,9 @@ pub type OobData = bindings::bt_oob_data_s;
 #[derive(Clone, Debug)]
 pub enum BaseCallbacks {
     AdapterState(BtState),
-    AdapterProperties(BtStatus, i32, Vec<BluetoothProperty>),
-    RemoteDeviceProperties(BtStatus, RawAddress, u8, i32, Vec<BluetoothProperty>),
-    DeviceFound(i32, Vec<BluetoothProperty>),
+    AdapterProperties(BtStatus, Vec<BluetoothProperty>),
+    RemoteDeviceProperties(BtStatus, RawAddress, u8, Vec<BluetoothProperty>),
+    DeviceFound(Vec<BluetoothProperty>),
     DiscoveryState(BtDiscoveryState),
     PinRequest(RawAddress, String, u32, bool),
     SspRequest(RawAddress, BtSspVariant, u32),
@@ -1062,16 +1062,16 @@ type BaseCb = Arc<Mutex<BaseCallbacksDispatcher>>;
 
 cb_variant!(BaseCb, adapter_state_cb -> BaseCallbacks::AdapterState, u32 -> BtState);
 cb_variant!(BaseCb, adapter_properties_cb -> BaseCallbacks::AdapterProperties,
-u32 -> BtStatus, i32, *mut bindings::bt_property_t, {
+u32 -> BtStatus, i32 -> _, *mut bindings::bt_property_t, {
     let _2 = ptr_to_vec(_2, _1 as usize);
 });
 cb_variant!(BaseCb, remote_device_properties_cb -> BaseCallbacks::RemoteDeviceProperties,
-u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32, *mut bindings::bt_property_t, {
+u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32 -> _, *mut bindings::bt_property_t, {
     let _1 = unsafe { *(_1 as *const RawAddress) };
     let _4 = ptr_to_vec(_4, _3 as usize);
 });
 cb_variant!(BaseCb, device_found_cb -> BaseCallbacks::DeviceFound,
-i32, *mut bindings::bt_property_t, {
+i32 -> _, *mut bindings::bt_property_t, {
     let _1 = ptr_to_vec(_1, _0 as usize);
 });
 cb_variant!(BaseCb, discovery_state_cb -> BaseCallbacks::DiscoveryState,

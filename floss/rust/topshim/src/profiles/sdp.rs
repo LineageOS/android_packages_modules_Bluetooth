@@ -413,7 +413,7 @@ impl BtSdpRecord {
 
 #[derive(Debug)]
 pub enum SdpCallbacks {
-    SdpSearch(BtStatus, RawAddress, Uuid, i32, Vec<BtSdpRecord>),
+    SdpSearch(BtStatus, RawAddress, Uuid, Vec<BtSdpRecord>),
 }
 
 pub struct SdpCallbacksDispatcher {
@@ -430,7 +430,7 @@ type SdpCb = Arc<Mutex<SdpCallbacksDispatcher>>;
 
 cb_variant!(SdpCb, sdp_search_cb -> SdpCallbacks::SdpSearch,
 bindings::bt_status_t -> BtStatus,
-*const RawAddress, *const Uuid, i32,
+*const RawAddress, *const Uuid, i32 -> _,
 *mut bindings::bluetooth_sdp_record, {
     let _1 = unsafe { *_1 };
     let _2 = unsafe { *_2 };

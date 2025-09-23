@@ -1495,16 +1495,11 @@ pub(crate) trait BtifBluetoothCallbacks {
     fn adapter_state_changed(&mut self, state: BtState) {}
 
     #[btif_callback(AdapterProperties)]
-    fn adapter_properties_changed(
-        &mut self,
-        status: BtStatus,
-        num_properties: i32,
-        properties: Vec<BluetoothProperty>,
-    ) {
+    fn adapter_properties_changed(&mut self, status: BtStatus, properties: Vec<BluetoothProperty>) {
     }
 
     #[btif_callback(DeviceFound)]
-    fn device_found(&mut self, n: i32, properties: Vec<BluetoothProperty>) {}
+    fn device_found(&mut self, properties: Vec<BluetoothProperty>) {}
 
     #[btif_callback(DiscoveryState)]
     fn discovery_state(&mut self, state: BtDiscoveryState) {}
@@ -1528,7 +1523,6 @@ pub(crate) trait BtifBluetoothCallbacks {
         status: BtStatus,
         addr: RawAddress,
         addr_type: u8,
-        num_properties: i32,
         properties: Vec<BluetoothProperty>,
     ) {
     }
@@ -1634,7 +1628,6 @@ pub(crate) trait BtifSdpCallbacks {
         status: BtStatus,
         address: RawAddress,
         uuid: Uuid,
-        count: i32,
         records: Vec<BtSdpRecord>,
     );
 }
@@ -1738,14 +1731,8 @@ impl BtifBluetoothCallbacks for Bluetooth {
         }
     }
 
-    #[allow(unused_variables)]
     #[log_cb_args]
-    fn adapter_properties_changed(
-        &mut self,
-        status: BtStatus,
-        num_properties: i32,
-        properties: Vec<BluetoothProperty>,
-    ) {
+    fn adapter_properties_changed(&mut self, status: BtStatus, properties: Vec<BluetoothProperty>) {
         if status != BtStatus::Success {
             return;
         }
@@ -1791,7 +1778,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
     }
 
     #[log_cb_args]
-    fn device_found(&mut self, _n: i32, properties: Vec<BluetoothProperty>) {
+    fn device_found(&mut self, properties: Vec<BluetoothProperty>) {
         let device_info = BluetoothDevice::from_properties(&properties);
         self.check_new_property_and_potentially_connect_profiles(device_info.address, &properties);
 
@@ -2024,7 +2011,6 @@ impl BtifBluetoothCallbacks for Bluetooth {
         _status: BtStatus,
         addr: RawAddress,
         _addr_type: u8,
-        _num_properties: i32,
         properties: Vec<BluetoothProperty>,
     ) {
         self.check_new_property_and_potentially_connect_profiles(addr, &properties);
@@ -2977,7 +2963,6 @@ impl BtifSdpCallbacks for Bluetooth {
         status: BtStatus,
         address: RawAddress,
         uuid: Uuid,
-        _count: i32,
         records: Vec<BtSdpRecord>,
     ) {
         let device_info = match self.remote_devices.get(&address) {
