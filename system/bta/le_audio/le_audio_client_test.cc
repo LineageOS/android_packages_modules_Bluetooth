@@ -1657,6 +1657,7 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_connection_subrating(true);
     com::android::bluetooth::flags::provider_->start_leaudio_subrate_for_active_set_only(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_unicast_monitor(true);
+    com::android::bluetooth::flags::provider_->leaudio_improve_state_machine_invalid_status(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
@@ -5982,6 +5983,134 @@ TEST_F(UnicastTest, HandleDeviceReconfiguredToSinkOnlyAseRemoved) {
   InjectServiceChangedEvent(test_address0, 1);
   InjectServiceDiscoveryDone(test_address0);
   SyncOnMainLoop();
+}
+
+TEST_F(UnicastTest, AutonomousDisable_ContextTypesAreStillAvailable) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  int conn_id = 1;
+
+  SetSampleDatabaseEarbudsValid(
+          conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Start streaming
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioGroupCurrentCodecConf(group_id, _, _))
+          .Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  log::info("Autonomous disable");
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStatus(group_id, GroupStatus::AUTONOMOUS_INACTIVE))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(_, _, _, _, _)).Times(0);
+
+  // Inject the QoS Configured state as if an autonomous release happened
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
+  auto group = streaming_groups.at(group_id);
+  ASSERT_NE(group, nullptr);
+  for (LeAudioDevice* device = group->GetFirstDevice(); device != nullptr;
+       device = group->GetNextDevice(device)) {
+    for (auto& ase : device->ases_) {
+      ase.cis_state = types::CisState::IDLE;
+      ase.data_path_state = types::DataPathState::IDLE;
+      ase.state = types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED;
+      InjectCisDisconnected(group_id, ase.cis_conn_hdl);
+    }
+  }
+
+  /* This is internal status reported about autonomous disable*/
+  state_machine_callbacks_->OnStateMachineInvalidStatusCb(
+          group_id, StateMachineInvalidStatus::AUTONOMOUS_DISABLE);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F(UnicastTest, AutonomousDisable_ContextTypesAreNotAvailable) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  int conn_id = 1;
+
+  SetSampleDatabaseEarbudsValid(
+          conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Start streaming
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioGroupCurrentCodecConf(group_id, _, _))
+          .Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  log::info("Clear context types");
+  InjectAvailableContextTypes(test_address0, conn_id, AudioContexts(), AudioContexts());
+  SyncOnMainLoop();
+
+  // Inject the QoS Configured state as if an autonomous release happened
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
+  auto group = streaming_groups.at(group_id);
+  ASSERT_NE(group, nullptr);
+  for (LeAudioDevice* device = group->GetFirstDevice(); device != nullptr;
+       device = group->GetNextDevice(device)) {
+    for (auto& ase : device->ases_) {
+      ase.cis_state = types::CisState::IDLE;
+      ase.data_path_state = types::DataPathState::IDLE;
+      ase.state = types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED;
+      InjectCisDisconnected(group_id, ase.cis_conn_hdl);
+    }
+  }
+
+  log::info("Autonomous disable");
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnGroupStatus(group_id, _)).Times(0);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(_, group_id, _, _, 0)).Times(1);
+
+  /* This is internal status reported about autonomous disable*/
+  state_machine_callbacks_->OnStateMachineInvalidStatusCb(
+          group_id, StateMachineInvalidStatus::AUTONOMOUS_DISABLE);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
 TEST_F(UnicastTest, TestUpdateConfigurationCallbackWhileStreaming) {
