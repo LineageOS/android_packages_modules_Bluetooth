@@ -16,9 +16,17 @@
 
 package com.android.bluetooth.bass_client;
 
+import static android.bluetooth.BluetoothDevice.ADDRESS_TYPE_RANDOM;
+
+import static com.android.bluetooth.TestUtils.getTestDevice;
+
 import static com.google.common.truth.Truth.assertThat;
 
+import android.bluetooth.BluetoothLeAudioCodecConfigMetadata;
+import android.bluetooth.BluetoothLeAudioContentMetadata;
+import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
+import android.bluetooth.BluetoothLeBroadcastSubgroup;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -44,9 +52,61 @@ public class PublicBroadcastDataTest {
         info.audioConfigQuality =
                 (BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD
                         | BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH);
-        info.metaDataLength = 3;
         info.metaData = new byte[] {0x06, 0x07, 0x08};
         info.print();
+    }
+
+    BluetoothLeBroadcastSubgroup createBroadcastSubgroup() {
+        BluetoothLeAudioCodecConfigMetadata codecMetadata =
+                new BluetoothLeAudioCodecConfigMetadata.Builder().build();
+        BluetoothLeAudioContentMetadata contentMetadata =
+                new BluetoothLeAudioContentMetadata.Builder().build();
+        BluetoothLeBroadcastSubgroup.Builder builder =
+                new BluetoothLeBroadcastSubgroup.Builder()
+                        .setCodecSpecificConfig(codecMetadata)
+                        .setContentMetadata(contentMetadata);
+
+        BluetoothLeAudioCodecConfigMetadata channelCodecMetadata =
+                new BluetoothLeAudioCodecConfigMetadata.Builder().build();
+
+        // builder expect at least one channel
+        BluetoothLeBroadcastChannel channel =
+                new BluetoothLeBroadcastChannel.Builder()
+                        .setChannelIndex(0)
+                        .setCodecMetadata(channelCodecMetadata)
+                        .build();
+        builder.addChannel(channel);
+        return builder.build();
+    }
+
+    @Test
+    public void buildPublicBroadcastData() {
+        PublicBroadcastData.PublicBroadcastInfo publicBroadcastInfo =
+                new PublicBroadcastData.PublicBroadcastInfo();
+        publicBroadcastInfo.audioConfigQuality =
+                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH;
+        publicBroadcastInfo.isEncrypted = true;
+        publicBroadcastInfo.metaData = new byte[] {0x04, 0x03, 0x02, 0x08, 0x01};
+        PublicBroadcastData publicBroadcastData = new PublicBroadcastData(publicBroadcastInfo);
+
+        BluetoothLeBroadcastMetadata.Builder builder =
+                new BluetoothLeBroadcastMetadata.Builder()
+                        .setSourceDevice(getTestDevice(0), ADDRESS_TYPE_RANDOM)
+                        .addSubgroup(createBroadcastSubgroup())
+                        .setEncrypted(publicBroadcastData.isEncrypted())
+                        .setPublicBroadcast(true)
+                        .setAudioConfigQuality(publicBroadcastData.getAudioConfigQuality())
+                        .setPublicBroadcastMetadata(
+                                BluetoothLeAudioContentMetadata.fromRawBytes(
+                                        publicBroadcastData.getMetadata()));
+        BluetoothLeBroadcastMetadata metadata = builder.build();
+
+        PublicBroadcastData pbData = PublicBroadcastData.buildPublicBroadcastData(metadata);
+
+        assertThat(publicBroadcastData.getAudioConfigQuality())
+                .isEqualTo(pbData.getAudioConfigQuality());
+        assertThat(publicBroadcastData.getMetadataLength()).isEqualTo(pbData.getMetadataLength());
+        assertThat(publicBroadcastData.getMetadata()).isEqualTo(pbData.getMetadata());
     }
 
     @Test
