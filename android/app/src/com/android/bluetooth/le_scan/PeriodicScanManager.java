@@ -17,6 +17,7 @@
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.callbackToApp;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOperations;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -180,6 +181,9 @@ public class PeriodicScanManager {
                                             status));
 
                 } else {
+                    if (leaudioBroadcastImproveSourceOperations()) {
+                        it.remove();
+                    }
                     callbackToApp(
                             () ->
                                     callback.onSyncEstablished(
@@ -191,7 +195,9 @@ public class PeriodicScanManager {
                                             status));
                     IBinder binder = e.getKey();
                     binder.unlinkToDeath(e.getValue().deathRecipient, 0);
-                    it.remove();
+                    if (!leaudioBroadcastImproveSourceOperations()) {
+                        it.remove();
+                    }
                 }
             }
         }
