@@ -468,19 +468,8 @@ struct GATTS_UnoffloadCharacteristics {
 };
 extern struct GATTS_UnoffloadCharacteristics GATTS_UnoffloadCharacteristics;
 
-// Name: gatt_load_bonded
-// Params: void
-// Return: void
-struct gatt_load_bonded {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct gatt_load_bonded gatt_load_bonded;
-
 }  // namespace stack_gatt_api
 }  // namespace mock
 }  // namespace test
-
-void gatt_load_bonded(void);
 
 // END mockcify generation
