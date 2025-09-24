@@ -63,13 +63,10 @@ const std::string StorageModule::kTimeCreatedFormat = "%Y-%m-%d %H:%M:%S";
 const std::string StorageModule::kAdapterSection = BTIF_STORAGE_SECTION_ADAPTER;
 
 struct StorageModule::impl {
-  explicit impl(Handler* handler, ConfigCache cache, size_t in_memory_cache_size_limit)
-      : config_save_alarm_(&handler->thread()),
-        cache_(std::move(cache)),
-        memory_only_cache_(in_memory_cache_size_limit, {}) {}
+  explicit impl(Handler* handler, ConfigCache cache, size_t)
+      : config_save_alarm_(&handler->thread()), cache_(std::move(cache)) {}
   Alarm config_save_alarm_;
   ConfigCache cache_;
-  ConfigCache memory_only_cache_;
   bool has_pending_config_save_ = false;
 };
 
@@ -154,7 +151,7 @@ StorageModule::~StorageModule() {
 
 Mutation StorageModule::Modify() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  return Mutation(&pimpl_->cache_, &pimpl_->memory_only_cache_);
+  return Mutation(&pimpl_->cache_);
 }
 
 void StorageModule::SaveDelayed() {
@@ -198,19 +195,19 @@ void StorageModule::Clear() {
 
 Device StorageModule::GetDeviceByLegacyKey(hci::Address legacy_key_address) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  return Device(&pimpl_->cache_, &pimpl_->memory_only_cache_, std::move(legacy_key_address),
+  return Device(&pimpl_->cache_, std::move(legacy_key_address),
                 Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
 }
 
 Device StorageModule::GetDeviceByClassicMacAddress(hci::Address classic_address) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  return Device(&pimpl_->cache_, &pimpl_->memory_only_cache_, std::move(classic_address),
+  return Device(&pimpl_->cache_, std::move(classic_address),
                 Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
 }
 
 Device StorageModule::GetDeviceByLeIdentityAddress(hci::Address le_identity_address) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  return Device(&pimpl_->cache_, &pimpl_->memory_only_cache_, std::move(le_identity_address),
+  return Device(&pimpl_->cache_, std::move(le_identity_address),
                 Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
 }
 
@@ -220,7 +217,7 @@ std::vector<Device> StorageModule::GetBondedDevices() {
   std::vector<Device> result;
   result.reserve(persistent_sections.size());
   for (const auto& section : persistent_sections) {
-    result.emplace_back(&pimpl_->cache_, &pimpl_->memory_only_cache_, section);
+    result.emplace_back(&pimpl_->cache_, section);
   }
   return result;
 }

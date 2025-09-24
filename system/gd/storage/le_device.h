@@ -28,7 +28,7 @@ namespace storage {
 
 class LeDevice {
 public:
-  LeDevice(ConfigCache* config, ConfigCache*, std::string section)
+  LeDevice(ConfigCache* config, std::string section)
       : config_(config), section_(std::move(section)) {}
 
   // for copy
@@ -47,8 +47,7 @@ public:
   GENERATE_PROPERTY_GETTER(AddressType, hci::AddressType, BTIF_STORAGE_KEY_ADDR_TYPE);
 
   MutationEntry SetAddressType(const hci::AddressType& value) {
-    return MutationEntry::Set<hci::AddressType>(MutationEntry::PropertyType::NORMAL, section_,
-                                                BTIF_STORAGE_KEY_ADDR_TYPE, value);
+    return MutationEntry::Set<hci::AddressType>(section_, BTIF_STORAGE_KEY_ADDR_TYPE, value);
   }
 };
 

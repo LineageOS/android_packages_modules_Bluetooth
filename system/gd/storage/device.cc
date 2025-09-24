@@ -72,12 +72,12 @@ std::string GetConfigSection(ConfigCache* config, const hci::Address& key_addres
 const std::unordered_set<std::string_view> Device::kLinkKeyProperties = {
         "LinkKey", "LE_KEY_PENC", "LE_KEY_PID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
 
-Device::Device(ConfigCache* config, ConfigCache* memory_only_config,
-               const hci::Address& key_address, ConfigKeyAddressType key_address_type)
-    : Device(config, memory_only_config, GetConfigSection(config, key_address, key_address_type)) {}
+Device::Device(ConfigCache* config, const hci::Address& key_address,
+               ConfigKeyAddressType key_address_type)
+    : Device(config, GetConfigSection(config, key_address, key_address_type)) {}
 
-Device::Device(ConfigCache* config, ConfigCache* memory_only_config, std::string section)
-    : config_(config), memory_only_config_(memory_only_config), section_(std::move(section)) {}
+Device::Device(ConfigCache* config, std::string section)
+    : config_(config), section_(std::move(section)) {}
 
 LeDevice Device::Le() {
   auto device_type = GetDeviceType();
@@ -85,7 +85,7 @@ LeDevice Device::Le() {
   log::assert_that(
           device_type == DeviceType::LE || device_type == DeviceType::DUAL,
           "assert failed: device_type == DeviceType::LE || device_type == DeviceType::DUAL");
-  return LeDevice(config_, memory_only_config_, section_);
+  return LeDevice(config_, section_);
 }
 
 hci::Address Device::GetAddress() const {

@@ -70,9 +70,9 @@ public:
     LE_LEGACY_PSEUDO_ADDRESS
   };
 
-  Device(ConfigCache* config, ConfigCache* memory_only_config, const hci::Address& key_address,
+  Device(ConfigCache* config, const hci::Address& key_address,
          ConfigKeyAddressType key_address_type);
-  Device(ConfigCache* config, ConfigCache* memory_only_config, std::string section);
+  Device(ConfigCache* config, std::string section);
 
   // for copy
   Device(const Device& other) noexcept = default;
@@ -89,7 +89,6 @@ public:
 
 private:
   ConfigCache* config_;
-  ConfigCache* memory_only_config_;
   std::string section_;
 
 public:
@@ -97,8 +96,7 @@ public:
 
   MutationEntry SetDeviceType(const hci::DeviceType& value) {
     auto current_value = GetDeviceType().value_or(hci::DeviceType::UNKNOWN);
-    return MutationEntry::Set<hci::DeviceType>(MutationEntry::PropertyType::NORMAL, section_,
-                                               BTIF_STORAGE_KEY_DEV_TYPE,
+    return MutationEntry::Set<hci::DeviceType>(section_, BTIF_STORAGE_KEY_DEV_TYPE,
                                                static_cast<hci::DeviceType>(current_value | value));
   }
 

@@ -25,16 +25,14 @@ namespace storage {
 
 class Mutation {
 public:
-  Mutation(ConfigCache* config, ConfigCache* memory_only_config);
+  Mutation(ConfigCache* config);
   void Add(MutationEntry entry);
   void Commit();
   friend ConfigCache;
 
 private:
   ConfigCache* config_;
-  ConfigCache* memory_only_config_;
   std::queue<MutationEntry> normal_config_entries_;
-  std::queue<MutationEntry> memory_only_config_entries_;
 };
 
 }  // namespace storage

@@ -19,33 +19,13 @@
 namespace bluetooth {
 namespace storage {
 
-Mutation::Mutation(ConfigCache* config, ConfigCache* memory_only_config)
-    : config_(config), memory_only_config_(memory_only_config) {
+Mutation::Mutation(ConfigCache* config) : config_(config) {
   log::assert_that(config_ != nullptr, "assert failed: config_ != nullptr");
-  log::assert_that(memory_only_config_ != nullptr, "assert failed: memory_only_config_ != nullptr");
 }
 
-void Mutation::Add(MutationEntry entry) {
-  switch (entry.property_type) {
-    case MutationEntry::PropertyType::NORMAL:
-      if (entry.entry_type != MutationEntry::EntryType::SET) {
-        // When an item is removed from normal config, it must be removed from temp config as well
-        memory_only_config_entries_.emplace(entry);
-      }
-      normal_config_entries_.emplace(std::move(entry));
-      break;
-    case MutationEntry::PropertyType::MEMORY_ONLY:
-      memory_only_config_entries_.emplace(std::move(entry));
-      break;
-      // do not write a default case so that when a new enum is defined, compilation would fail
-      // automatically
-  }
-}
+void Mutation::Add(MutationEntry entry) { normal_config_entries_.emplace(std::move(entry)); }
 
-void Mutation::Commit() {
-  config_->Commit(normal_config_entries_);
-  memory_only_config_->Commit(memory_only_config_entries_);
-}
+void Mutation::Commit() { config_->Commit(normal_config_entries_); }
 
 }  // namespace storage
 }  // namespace bluetooth
