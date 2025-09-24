@@ -25,7 +25,6 @@
 #include <cstdint>
 #include <string>
 
-#include "gatt_api.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -70,7 +69,6 @@ struct GATT_GetConnectionInfor GATT_GetConnectionInfor;
 struct GATT_Register GATT_Register;
 struct GATT_SetIdleTimeout GATT_SetIdleTimeout;
 struct GATT_StartIf GATT_StartIf;
-struct gatt_load_bonded gatt_load_bonded;
 
 }  // namespace stack_gatt_api
 }  // namespace mock
@@ -267,11 +265,6 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBTM_BLE_CONN_TYP
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_Connect(gatt_if, bd_addr, 0, connection_type, transport,
                                                   opportunistic, LE_PHY_1M, 0, false);
-}
-
-void gatt_load_bonded(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_gatt_api::gatt_load_bonded();
 }
 
 // END mockcify generation
