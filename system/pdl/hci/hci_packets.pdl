@@ -5371,6 +5371,7 @@ packet LeGetVendorCapabilitiesComplete104 : LeGetVendorCapabilitiesComplete103 {
 }
 
 packet LeGetVendorCapabilitiesComplete105 : LeGetVendorCapabilitiesComplete104 {
+  iso_link_feedback_support : 8,
   sniff_offload_support : 8,
   _payload_,
 }
