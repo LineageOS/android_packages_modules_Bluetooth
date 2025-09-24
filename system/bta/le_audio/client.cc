@@ -5030,7 +5030,14 @@ public:
       log::error("invalid resume request for context type: {}",
                  ToString(upcoming_configuration_context_type));
       if (com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
-        handleInvalidContextTypeResumeRequest(group);
+        /* If lack of context type is an internal issue, let's don't report it as a remote issue
+         */
+        if (audioContextTypeManager_->IsAnyMetadataSet(
+                    bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+          handleInvalidContextTypeResumeRequest(group);
+        } else {
+          log::warn("Audio HAL did not set metadata for local source");
+        }
       }
       CancelLocalAudioSourceStreamingRequest();
       return;
@@ -5365,7 +5372,14 @@ public:
       log::error("invalid resume request for context type: {}",
                  ToString(configuration_context_type_));
       if (com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
-        handleInvalidContextTypeResumeRequest(group);
+        /* If lack of context type is an internal issue, let's don't report it as a remote issue
+         */
+        if (audioContextTypeManager_->IsAnyMetadataSet(
+                    bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+          handleInvalidContextTypeResumeRequest(group);
+        } else {
+          log::warn("Audio HAL did not set metadata for local sink");
+        }
       }
       CancelLocalAudioSinkStreamingRequest();
       return;

@@ -167,10 +167,20 @@ public:
   bool IsInCall(void) { return inCallState; }
   bool IsInVoip(void) { return inVoipState; }
 
-  bool IsAnyMetadataSet(void) {
-    log::info("");
-    return !(local_decoding_context_types_.none() && local_encoding_contexts_types_.sink.none() &&
-             local_encoding_contexts_types_.source.none());
+  bool IsAnyMetadataSet(
+          uint8_t local_directions = bluetooth::le_audio::types::kLeAudioDirectionBoth) {
+    log::info("local_direcions: {:#x}", local_directions);
+
+    if (local_directions == bluetooth::le_audio::types::kLeAudioDirectionBoth) {
+      return !(local_decoding_context_types_.none() && local_encoding_contexts_types_.sink.none() &&
+               local_encoding_contexts_types_.source.none());
+    }
+
+    if (local_directions == bluetooth::le_audio::types::kLeAudioDirectionSink) {
+      return !(local_decoding_context_types_.none() && local_encoding_contexts_types_.sink.none());
+    }
+
+    return !local_encoding_contexts_types_.source.none();
   }
 
   BidirectionalPair<bool> GetDirectionsForGivenContext(LeAudioContextType context_type,
