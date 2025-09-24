@@ -36,12 +36,6 @@ TEST(MutationTest, simple_sequence_test) {
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
   config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
-  Mutation mutation(&config, &memory_only_config);
-  mutation.Add(MutationEntry::Set(MutationEntry::PropertyType::NORMAL, "AA:BB:CC:DD:EE:FF",
-                                  "LinkKey", "CCDDEEFFGG"));
-  mutation.Add(MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, "AA:BB:CC:DD:EE:FF",
-                                     "LinkKey"));
-  mutation.Commit();
   ASSERT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
   Mutation mutation2(&config, &memory_only_config);
   mutation2.Add(MutationEntry::Set(MutationEntry::PropertyType::NORMAL, "AA:BB:CC:DD:EE:FF",
@@ -49,65 +43,6 @@ TEST(MutationTest, simple_sequence_test) {
   mutation2.Commit();
   ASSERT_THAT(config.GetPersistentSections(),
               ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
-}
-
-TEST(MutationTest, remove_property_and_section) {
-  ConfigCache config(100, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(100, {});
-  config.SetProperty("A", "B", "C");
-  config.SetProperty("A", "C", "D");
-  config.SetProperty("B", "B", "C");
-  config.SetProperty("B", "C", "D");
-  ASSERT_TRUE(config.HasSection("A"));
-  ASSERT_TRUE(config.HasProperty("A", "B"));
-  ASSERT_TRUE(config.HasProperty("A", "C"));
-  ASSERT_TRUE(config.HasSection("B"));
-  ASSERT_TRUE(config.HasProperty("B", "B"));
-  ASSERT_TRUE(config.HasProperty("B", "C"));
-  {
-    Mutation mutation(&config, &memory_only_config);
-    mutation.Add(MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, "A", "B"));
-    mutation.Commit();
-  }
-  ASSERT_TRUE(config.HasSection("A"));
-  ASSERT_FALSE(config.HasProperty("A", "B"));
-  ASSERT_TRUE(config.HasProperty("A", "C"));
-  ASSERT_TRUE(config.HasSection("B"));
-  ASSERT_TRUE(config.HasProperty("B", "B"));
-  ASSERT_TRUE(config.HasProperty("B", "C"));
-  {
-    Mutation mutation(&config, &memory_only_config);
-    mutation.Add(MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, "B"));
-    mutation.Commit();
-  }
-  ASSERT_TRUE(config.HasSection("A"));
-  ASSERT_FALSE(config.HasProperty("A", "B"));
-  ASSERT_TRUE(config.HasProperty("A", "C"));
-  ASSERT_FALSE(config.HasSection("B"));
-  ASSERT_FALSE(config.HasProperty("B", "B"));
-  ASSERT_FALSE(config.HasProperty("B", "C"));
-  {
-    Mutation mutation(&config, &memory_only_config);
-    mutation.Add(MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, "A", "C"));
-    mutation.Commit();
-  }
-  ASSERT_FALSE(config.HasSection("A"));
-  ASSERT_FALSE(config.HasProperty("A", "B"));
-  ASSERT_FALSE(config.HasProperty("A", "C"));
-  ASSERT_FALSE(config.HasSection("B"));
-  ASSERT_FALSE(config.HasProperty("B", "B"));
-  ASSERT_FALSE(config.HasProperty("B", "C"));
-}
-
-TEST(MutationTest, add_and_remove_cancel_each_other) {
-  ConfigCache config(100, Device::kLinkKeyProperties);
-  ConfigCache memory_only_config(100, {});
-  ASSERT_FALSE(config.HasSection("A"));
-  Mutation mutation(&config, &memory_only_config);
-  mutation.Add(MutationEntry::Set(MutationEntry::PropertyType::NORMAL, "A", "B", "C"));
-  mutation.Add(MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, "A", "B"));
-  mutation.Commit();
-  ASSERT_FALSE(config.HasSection("A"));
 }
 
 TEST(MutationTest, add_to_different_configs) {

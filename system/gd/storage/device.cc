@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "storage/classic_device.h"
 #include "storage/config_cache_helper.h"
 #include "storage/le_device.h"
 
@@ -80,16 +79,6 @@ Device::Device(ConfigCache* config, ConfigCache* memory_only_config,
 Device::Device(ConfigCache* config, ConfigCache* memory_only_config, std::string section)
     : config_(config), memory_only_config_(memory_only_config), section_(std::move(section)) {}
 
-bool Device::Exists() { return config_->HasSection(section_); }
-
-MutationEntry Device::RemoveFromConfig() {
-  return MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, section_);
-}
-
-MutationEntry Device::RemoveFromTempConfig() {
-  return MutationEntry::Remove(MutationEntry::PropertyType::MEMORY_ONLY, section_);
-}
-
 LeDevice Device::Le() {
   auto device_type = GetDeviceType();
   log::assert_that(device_type.has_value(), "assert failed: device_type.has_value()");
@@ -99,23 +88,12 @@ LeDevice Device::Le() {
   return LeDevice(config_, memory_only_config_, section_);
 }
 
-ClassicDevice Device::Classic() {
-  auto device_type = GetDeviceType();
-  log::assert_that(device_type.has_value(), "assert failed: device_type.has_value()");
-  log::assert_that(
-          device_type == DeviceType::BR_EDR || device_type == DeviceType::DUAL,
-          "assert failed: device_type == DeviceType::BR_EDR || device_type == DeviceType::DUAL");
-  return ClassicDevice(config_, memory_only_config_, section_);
-}
-
 hci::Address Device::GetAddress() const {
   // section name of a device is its address
   auto addr = hci::Address::FromString(section_);
   log::assert_that(addr.has_value(), "assert failed: addr.has_value()");
   return addr.value();
 }
-
-std::string Device::ToLogString() const { return section_; }
 
 }  // namespace storage
 }  // namespace bluetooth
