@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "BTAudioClientAIDL"
+#define LOG_TAG "bluetooth-a2dp-aidl"
 
 #include "aidl/a2dp/client_interface_aidl.h"
 
