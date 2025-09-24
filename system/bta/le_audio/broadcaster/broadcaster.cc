@@ -44,6 +44,7 @@
 #include "bta_le_audio_api.h"
 #include "btm_iso_api_types.h"
 #include "common/strings.h"
+#include "gd/common/utils.h"
 #include "hardware/ble_advertiser.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/controller.h"
@@ -571,6 +572,12 @@ public:
       } else if (quality == bluetooth::le_audio::QUALITY_HIGH) {
         public_features |= bluetooth::le_audio::kLeAudioQualityHigh;
       }
+    }
+
+    if (bluetooth::common::IsPtsTestMode()) {
+      // Mark the reserved bits to 1 if we are running PTS test mode.
+      log::warn("PTS test mode, updating the reserved bits to 1");
+      public_features |= 0xF8;
     }
 
     for (const std::vector<uint8_t>& metadata : subgroup_metadata) {
