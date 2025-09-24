@@ -2,6 +2,16 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "leaudio_improve_state_machine_invalid_status"
+    namespace: "bluetooth"
+    description: "Improve handling state machine internal invalid status"
+    bug: "447120781"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_broadcast_monitor_source_sync_status"
     is_exported: true
     namespace: "bluetooth"
