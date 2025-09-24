@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <jni.h>
+
 #include "bt_status.h"
 
 #include "bt_status/bt_status_test.h"
@@ -58,6 +60,16 @@ TEST_F(BtStatusTest, BtStatusEquality) {
   HciStatus s2;
 
   ASSERT_TRUE(s1 == s2);
+}
+
+// Passing objects to Java layer should only pass the internal code
+// to preserve functionality
+TEST_F(BtStatusTest, BtStatusJInt) {
+  BtStatus status = HciStatus(ErrorCode::UNKNOWN_HCI_COMMAND);
+  jint expected_jint = (jint)ErrorCode::UNKNOWN_HCI_COMMAND;
+  jint actual_jint = (jint)status;
+
+  ASSERT_EQ(expected_jint, actual_jint);
 }
 
 }  // namespace bttest
