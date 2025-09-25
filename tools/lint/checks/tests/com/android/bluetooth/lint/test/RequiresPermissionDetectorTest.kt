@@ -133,6 +133,36 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .expectClean()
     }
 
+    fun testAidlMethodWithValuePermission_MissingAnnotationButHasWrongEnforcement_Fails() {
+        lint()
+            .files(
+                kotlin(
+                        """
+            package test.pkg
+            import android.content.Context
+            class FooBinder(val context: Context): IFoo.Stub() {
+                override fun connect() {
+                    // Super method requires BLUETOOTH_CONNECT, but this enforces SCAN
+                    context.enforceCallingOrSelfPermission(android.Manifest.permission.BLUETOOTH_SCAN, null)
+                }
+            }
+            """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expect(
+                """
+                    src/test/pkg/FooBinder.kt:4: Error: Method FooBinder.connect must have an equivalent @RequiresPermission annotation to the one in the super method. Expected: {allOf=[android.permission.BLUETOOTH_CONNECT]} but found: [none]. [MissingOrMismatchedRequiresPermissionAnnotation]
+                        override fun connect() {
+                                     ~~~~~~~
+                    1 errors, 0 warnings
+                """
+                    .trimIndent()
+            )
+    }
+
     fun testAidlMethodWithValuePermission_MissingAnnotationButHasEnforcementInHelper_Passes() {
         lint()
             .files(
@@ -1077,6 +1107,101 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             .expectClean()
     }
 
+    fun testOrderedAndStickyBroadcasts_PermissionMismatch_Fails() {
+        lint()
+            .files(
+                kotlin(
+                        """
+                    package test.pkg
+                    import android.content.Context
+                    import android.content.Intent
+                    import android.os.UserHandle
+                    import android.annotation.RequiresPermission
+                    class MyManager {
+                        companion object {
+                            @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+                            const val ACTION_SCAN = "test.ACTION_SCAN"
+                        }
+                        fun testOrdered(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            // Missing permission argument
+                            context.sendOrderedBroadcast(intent, null)
+                        }
+                        fun testSticky(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            // Method has no permission argument, so this is always a mismatch
+                            context.sendStickyBroadcast(intent)
+                        }
+                        fun testOrderedAsUser(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            // Missing permission argument
+                            context.sendOrderedBroadcastAsUser(intent, null as UserHandle?, null)
+                        }
+                        fun testStickyAsUser(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            // Method has no permission argument, so this is always a mismatch
+                            context.sendStickyBroadcastAsUser(intent, null as UserHandle?)
+                        }
+                    }
+                    """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expect(
+                """
+                src/test/pkg/MyManager.kt:14: Error: Broadcast action requires {allOf=[android.permission.BLUETOOTH_SCAN]} but call is protected with [none]. [MissingOrMismatchedSendBroadcastRequiresPermission]
+                        context.sendOrderedBroadcast(intent, null)
+                                ~~~~~~~~~~~~~~~~~~~~
+                src/test/pkg/MyManager.kt:19: Error: Broadcast action requires {allOf=[android.permission.BLUETOOTH_SCAN]} but call is protected with [none]. [MissingOrMismatchedSendBroadcastRequiresPermission]
+                        context.sendStickyBroadcast(intent)
+                                ~~~~~~~~~~~~~~~~~~~
+                src/test/pkg/MyManager.kt:24: Error: Broadcast action requires {allOf=[android.permission.BLUETOOTH_SCAN]} but call is protected with [none]. [MissingOrMismatchedSendBroadcastRequiresPermission]
+                        context.sendOrderedBroadcastAsUser(intent, null as UserHandle?, null)
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+                src/test/pkg/MyManager.kt:29: Error: Broadcast action requires {allOf=[android.permission.BLUETOOTH_SCAN]} but call is protected with [none]. [MissingOrMismatchedSendBroadcastRequiresPermission]
+                        context.sendStickyBroadcastAsUser(intent, null as UserHandle?)
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~
+                4 errors, 0 warnings
+                """
+                    .trimIndent()
+            )
+    }
+
+    fun testOrderedBroadcast_PermissionMatch_Passes() {
+        lint()
+            .files(
+                kotlin(
+                        """
+                    package test.pkg
+                    import android.content.Context
+                    import android.content.Intent
+                    import android.os.UserHandle
+                    import android.annotation.RequiresPermission
+                    class MyManager {
+                        companion object {
+                            @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+                            const val ACTION_SCAN = "test.ACTION_SCAN"
+                        }
+                        fun testOrdered(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            context.sendOrderedBroadcast(intent, android.Manifest.permission.BLUETOOTH_SCAN)
+                        }
+                        fun testOrderedAsUser(context: Context) {
+                            val intent = Intent(ACTION_SCAN)
+                            context.sendOrderedBroadcastAsUser(intent, null as UserHandle?, android.Manifest.permission.BLUETOOTH_SCAN)
+                        }
+                    }
+                    """
+                    )
+                    .indented(),
+                *stubs,
+            )
+            .run()
+            .expectClean()
+    }
+
     fun testBroadcastMultiplePermissions_Mismatch_Fails() {
         lint()
             .files(
@@ -1237,6 +1362,10 @@ class RequiresPermissionDetectorTest : LintDetectorTest() {
             public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions) {}
             public void sendBroadcastWithMultiplePermissions(Intent intent, String[] receiverPermissions) {}
             public void sendBroadcastAsUserMultiplePermissions(Intent intent, UserHandle user, String[] receiverPermissions) {}
+            public void sendOrderedBroadcast(Intent intent, String receiverPermission) {}
+            public void sendStickyBroadcast(Intent intent) {}
+            public void sendOrderedBroadcastAsUser(Intent intent, UserHandle user, String receiverPermission) {}
+            public void sendStickyBroadcastAsUser(Intent intent, UserHandle user) {}
         }
         """
             )
