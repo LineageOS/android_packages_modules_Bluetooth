@@ -698,10 +698,6 @@ static void msftAdvMonitorAddNative(JNIEnv* env, jobject /* object*/, jobject ms
           env->GetFieldID(msftAdvMonitorClazz, "rssi_sampling_period", "B");
   jfieldID conditionTypeFid = env->GetFieldID(msftAdvMonitorClazz, "condition_type", "B");
 
-  jclass msftAdvMonitorAddressClazz = env->GetObjectClass(msft_adv_monitor_address);
-  jfieldID addrTypeFid = env->GetFieldID(msftAdvMonitorAddressClazz, "addr_type", "B");
-  jfieldID bdAddrFid = env->GetFieldID(msftAdvMonitorAddressClazz, "bd_addr", "Ljava/lang/String;");
-
   MsftAdvMonitor native_msft_adv_monitor{};
   ScopedLocalRef<jobject> msft_adv_monitor_object(env, msft_adv_monitor);
   native_msft_adv_monitor.rssi_threshold_high =
@@ -715,16 +711,21 @@ static void msftAdvMonitorAddNative(JNIEnv* env, jobject /* object*/, jobject ms
   native_msft_adv_monitor.condition_type =
           env->GetByteField(msft_adv_monitor_object.get(), conditionTypeFid);
 
-  MsftAdvMonitorAddress native_msft_adv_monitor_address{};
-  ScopedLocalRef<jobject> msft_adv_monitor_address_object(env, msftAdvMonitorAddressClazz);
-  native_msft_adv_monitor_address.addr_type =
-          env->GetByteField(msft_adv_monitor_address_object.get(), addrTypeFid);
-  native_msft_adv_monitor_address.bd_addr = str2addr(
-          env, (jstring)env->GetObjectField(msft_adv_monitor_address_object.get(), bdAddrFid));
-  native_msft_adv_monitor.addr_info = native_msft_adv_monitor_address;
+  if (native_msft_adv_monitor.condition_type == MSFT_CONDITION_TYPE_ADDRESS) {
+    jclass msftAdvMonitorAddressClazz = env->GetObjectClass(msft_adv_monitor_address);
+    jfieldID addrTypeFid = env->GetFieldID(msftAdvMonitorAddressClazz, "addr_type", "B");
+    jfieldID bdAddrFid =
+            env->GetFieldID(msftAdvMonitorAddressClazz, "bd_addr", "Ljava/lang/String;");
 
-  int numPatterns = env->GetArrayLength(msft_adv_monitor_patterns);
-  if (numPatterns == 0) {
+    MsftAdvMonitorAddress native_msft_adv_monitor_address{};
+    ScopedLocalRef<jobject> msft_adv_monitor_address_object(env, msft_adv_monitor_address);
+    native_msft_adv_monitor_address.addr_type =
+            env->GetByteField(msft_adv_monitor_address_object.get(), addrTypeFid);
+    native_msft_adv_monitor_address.bd_addr = str2addr(
+            env, (jstring)env->GetObjectField(msft_adv_monitor_address_object.get(), bdAddrFid));
+
+    native_msft_adv_monitor.addr_info = native_msft_adv_monitor_address;
+
     sScanner->MsftAdvMonitorAdd(std::move(native_msft_adv_monitor),
                                 base::Bind(&msft_monitor_add_cb, filter_index));
     return;
@@ -736,7 +737,9 @@ static void msftAdvMonitorAddNative(JNIEnv* env, jobject /* object*/, jobject ms
   jfieldID startByteFid = env->GetFieldID(msftAdvMonitorPatternClazz, "start_byte", "B");
   jfieldID patternFid = env->GetFieldID(msftAdvMonitorPatternClazz, "pattern", "[B");
 
+  int numPatterns = env->GetArrayLength(msft_adv_monitor_patterns);
   std::vector<MsftAdvMonitorPattern> patterns;
+
   for (int i = 0; i < numPatterns; i++) {
     MsftAdvMonitorPattern native_msft_adv_monitor_pattern{};
     ScopedLocalRef<jobject> msft_adv_monitor_pattern_object(
