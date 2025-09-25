@@ -409,7 +409,6 @@ cc_test {
         "libcutils",
         "libevent",
         "liblog",
-        "libprotobuf-cpp-lite",
         "libstatssocket",
         "server_configurable_flags",
     ],
@@ -432,6 +431,7 @@ cc_test {
         "libcom.android.sysprop.bluetooth.wrapped",
         "libgmock",
         "libosi",
+        "libprotobuf-cpp-lite",
     ],
 }
 

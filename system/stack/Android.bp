@@ -1412,7 +1412,6 @@ cc_test {
     shared_libs: [
         "libcrypto",
         "libcutils",
-        "libprotobuf-cpp-lite",
         "server_configurable_flags",
     ],
     static_libs: [
@@ -1434,6 +1433,7 @@ cc_test {
         "liblog",
         "libopus",
         "libosi",
+        "libprotobuf-cpp-lite",
     ],
     whole_static_libs: [
         "libaptx_enc",
