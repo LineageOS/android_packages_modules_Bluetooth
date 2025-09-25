@@ -33,7 +33,7 @@ void gatt::SetMockBtaGattInterface(MockBtaGattInterface* mock_bta_gatt_interface
 void BTA_GATTC_AppRegister(const std::string& name, tBTA_GATTC_CBACK* p_client_cb,
                            BtaAppRegisterCallback cb, bool eatt_support) {
   log::assert_that(gatt_interface != nullptr, "Mock GATT interface not set!");
-  gatt_interface->AppRegister(name, p_client_cb, cb, eatt_support);
+  gatt_interface->AppRegister(name, p_client_cb, std::move(cb), eatt_support);
 }
 
 void BTA_GATTC_AppDeregister(tGATT_IF client_if) {

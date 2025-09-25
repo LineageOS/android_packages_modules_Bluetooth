@@ -479,7 +479,7 @@ typedef void(tBTA_GATTS_CBACK)(tBTA_GATTS_EVT event, tBTA_GATTS* p_data);
  ******************************************************************************/
 void BTA_GATTC_Disable(void);
 
-using BtaAppRegisterCallback = base::Callback<void(uint8_t /* app_id */, uint8_t /* status */)>;
+using BtaAppRegisterCallback = base::OnceCallback<void(uint8_t /* app_id */, uint8_t /* status */)>;
 
 /**
  * This function is called to register application callbacks with BTA GATTC
