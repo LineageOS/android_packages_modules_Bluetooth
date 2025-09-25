@@ -176,7 +176,7 @@ mod tests {
         GattServiceWithHandle, CHARACTERISTIC_UUID, PRIMARY_SERVICE_DECLARATION_UUID,
     };
     use crate::gatt::server::isolation_manager::IsolationManager;
-    use crate::gatt::server::services::gap::DEVICE_NAME_UUID;
+    use crate::gatt::server::services::gap::{DEVICE_NAME_PREFIX, DEVICE_NAME_UUID};
     use crate::gatt::server::services::gatt::{
         CLIENT_CHARACTERISTIC_CONFIGURATION_UUID, GATT_SERVICE_UUID, SERVICE_CHANGE_UUID,
     };
@@ -556,17 +556,20 @@ mod tests {
             );
             let (tcb_idx, resp) = transport_rx.recv().await.unwrap();
 
-            // assert: the name should not be readable
+            // assert: the name is readable and in the correct format
             assert_eq!(tcb_idx, TCB_IDX);
-            assert_eq!(
-                Ok(resp),
-                att::AttErrorResponse {
-                    opcode_in_error: att::AttOpcode::ReadByTypeRequest,
-                    handle_in_error: AttHandle(1).into(),
-                    error_code: AttErrorCode::InsufficientAuthentication,
-                }
-                .try_into()
-            );
+            let resp: att::AttReadByTypeResponse = resp.try_into().unwrap();
+            assert_eq!(resp.data.len(), 1);
+            let attr = &resp.data[0];
+
+            // The handle is defined in services/gap.rs
+            let device_name_handle = AttHandle(22);
+            assert_eq!(attr.handle, device_name_handle.into());
+            let name_str = std::str::from_utf8(&attr.value).unwrap();
+            assert!(name_str.starts_with(DEVICE_NAME_PREFIX));
+            let suffix = &name_str[DEVICE_NAME_PREFIX.len()..];
+            assert_eq!(suffix.len(), 4);
+            assert!(suffix.parse::<u16>().is_ok());
         });
     }
 
