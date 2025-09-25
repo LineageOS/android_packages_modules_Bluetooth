@@ -1418,9 +1418,6 @@ void shim::Acl::OnLeConnectSuccess(hci::AddressWithType address_with_type,
     }
   }
 
-  // Save the peer address, if any
-  hci::AddressWithType peer_address_with_type = connection->peer_address_with_type_;
-
   hci::Role connection_role = connection->GetRole();
   bool locally_initiated = connection->locally_initiated_;
 
