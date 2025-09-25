@@ -263,17 +263,30 @@ public class BluetoothManagerServiceTest {
      *
      * @param what list of message that are expected to be run by the handler
      */
-    private void syncHandler(int... what) {
-        IntStream.of(what)
-                .forEach(
-                        w -> {
-                            String log = "Expecting message " + w + ": but got ";
+    private void syncHandler(int what) {
+        Message msg = mLooper.nextMessage();
+        assertWithMessage("Expecting [" + what + "] instead of null Msg").that(msg).isNotNull();
+        if (msg.what != what) {
+            List<Message> msgList = new ArrayList<>();
 
-                            Message msg = mLooper.nextMessage();
-                            assertWithMessage(log + "null").that(msg).isNotNull();
-                            assertWithMessage(log + msg.what).that(msg.what).isEqualTo(w);
-                            msg.getTarget().dispatchMessage(msg);
-                        });
+            Message nextMsg;
+            while ((nextMsg = mLooper.nextMessage()) != null) {
+                msgList.add(nextMsg);
+            }
+
+            String customError =
+                    String.format(
+                            """
+                            Not the expected message. Expected what=[%s] but got what=[%s].
+                              -> Received Msg: %s
+                              -> List of queued messages: %s\
+                            """,
+                            what, msg.what, msg.toString(), msgList.toString());
+
+            assertWithMessage(customError).that(msg.what).isEqualTo(what);
+        }
+        Log.d("BluetoothManagerServiceTest", "Processing message: " + msg);
+        msg.getTarget().dispatchMessage(msg);
     }
 
     private void discardMessage(int... what) {

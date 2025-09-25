@@ -286,11 +286,11 @@ public class TestUtils {
         Message msg = looper.nextMessage();
         assertWithMessage("Expecting [" + what + "] instead of null Msg").that(msg).isNotNull();
         if (msg.what != what) {
-            List<Integer> whatList = new ArrayList<>();
+            List<Message> msgList = new ArrayList<>();
 
             Message nextMsg;
             while ((nextMsg = looper.nextMessage()) != null) {
-                whatList.add(nextMsg.what);
+                msgList.add(nextMsg);
             }
 
             String customError =
@@ -300,7 +300,7 @@ public class TestUtils {
                               -> Received Msg: %s
                               -> List of queued message 'what' values: %s\
                             """,
-                            what, msg.what, msg.toString(), whatList.toString());
+                            what, msg.what, msg.toString(), msgList.toString());
 
             assertWithMessage(customError).that(msg.what).isEqualTo(what);
         }
