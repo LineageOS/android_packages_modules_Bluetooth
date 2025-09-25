@@ -37,6 +37,7 @@ rust_defaults {
         "libcxx",
         "liblog_rust",
         "libpdl_runtime",
+        "librand",
         "libscopeguard",
     ],
     whole_static_libs: [

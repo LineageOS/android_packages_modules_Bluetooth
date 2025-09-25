@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use rand::Rng;
 
 use crate::core::uuid::Uuid;
 use crate::gatt::callbacks::GattDatastore;
@@ -27,6 +28,8 @@ pub const GAP_SERVICE_UUID: Uuid = Uuid::new(0x1800);
 pub const DEVICE_NAME_UUID: Uuid = Uuid::new(0x2A00);
 /// The UUID used for the Device Appearance characteristic (Assigned Numbers 3.8.1 Characteristics by Name)
 pub const DEVICE_APPEARANCE_UUID: Uuid = Uuid::new(0x2A01);
+/// Device name prefix. The full device name of the server will be 'Android-XXXX' (e.g. Android-1357).
+pub const DEVICE_NAME_PREFIX: &str = "Android-";
 
 #[async_trait(?Send)]
 impl GattDatastore for GapService {
@@ -38,10 +41,11 @@ impl GattDatastore for GapService {
     ) -> Result<Vec<u8>, AttErrorCode> {
         match handle {
             DEVICE_NAME_HANDLE => {
-                // for non-bonded peers, don't let them read the device name
-                // TODO(aryarahul): support discoverability, when we make this the main GATT server
-                Err(AttErrorCode::InsufficientAuthentication)
+                let suffix: u16 = rand::thread_rng().gen_range(0..=9999);
+                let device_name = format!("{}{:04}", DEVICE_NAME_PREFIX, suffix);
+                Ok(device_name.as_bytes().to_vec())
             }
+
             // 0x0000 from AssignedNumbers => "Unknown"
             DEVICE_APPEARANCE_HANDLE => Ok(vec![0x00, 0x00]),
             _ => unreachable!("unexpected handle read"),
@@ -135,15 +139,20 @@ mod test {
     }
 
     #[test]
-    fn test_read_device_name_not_discoverable() {
+    fn test_read_device_name() {
         // arrange
         let (_gatt_db, client) = init_dbs();
 
         // act: try to read the device name
         let name = block_on_locally(client.read_attribute(DEVICE_NAME_HANDLE));
 
-        // assert: the name is not readable
-        assert_eq!(name, Err(AttErrorCode::InsufficientAuthentication));
+        // assert: the name is in the format of "Android-XXXX"
+        let binding = name.unwrap();
+        let name_str = std::str::from_utf8(&binding).unwrap();
+        assert!(name_str.starts_with(DEVICE_NAME_PREFIX));
+        let suffix = &name_str[DEVICE_NAME_PREFIX.len()..];
+        assert_eq!(suffix.len(), 4);
+        assert!(suffix.parse::<u16>().is_ok());
     }
 
     #[test]
