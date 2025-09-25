@@ -1961,15 +1961,15 @@ class BluetoothManagerService {
     void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
         String errorMsg = null;
 
-        writer.println("Bluetooth Status:");
-        writer.println("  Enabled:       " + isEnabled());
-        writer.println("  State:         " + mState);
-        writer.println("  Address:       " + Log.address(mAddress));
-        writer.println("  Name:          " + mName);
+        writer.println("Bluetooth Status");
+        writer.println("  enabled: " + isEnabled());
+        writer.println("  state: " + mState);
+        writer.println("  address: " + Log.address(mAddress));
+        writer.println("  name: " + mName);
         if (mEnable) {
             Duration elapsed = Duration.between(mLastEnabledTime, Instant.now());
             writer.println(
-                    "  Uptime:        "
+                    "  time since enabled: "
                             + elapsed.toString()
                                     .substring(2)
                                     .replaceAll("(\\d[HMS])(?!$)", "$1 ")
