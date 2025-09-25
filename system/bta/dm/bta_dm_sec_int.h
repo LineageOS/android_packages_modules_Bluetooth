@@ -34,7 +34,7 @@ typedef struct {
 typedef struct {
   BT_HDR_RIGID hdr;
   RawAddress bd_addr;
-  tBTM_IO_CAP io_cap;
+  BtIoCap io_cap;
   tBTM_OOB_DATA oob_data;
   tBTM_AUTH_REQ auth_req;
 } tBTA_DM_CI_IO_REQ;
@@ -54,8 +54,8 @@ typedef struct {
   RawAddress pin_bd_addr;
   DEV_CLASS pin_dev_class;
   tBTA_DM_SEC_EVT pin_evt;
-  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTM_IO_CAP rmt_io_caps;    /* IO Capabilities of remote device */
+  BtIoCap loc_io_caps;        /* IO Capabilities of local device */
+  BtIoCap rmt_io_caps;        /* IO Capabilities of remote device */
   tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
   tBTM_AUTH_REQ rmt_auth_req;
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not

@@ -329,8 +329,8 @@ public:
   tSMP_PUBLIC_KEY peer_publ_key;
   tSMP_OOB_DATA_TYPE req_oob_type;
   tSMP_SC_OOB_DATA sc_oob_data;
-  tSMP_IO_CAP peer_io_caps;
-  tSMP_IO_CAP local_io_capability;
+  BtIoCap peer_io_caps;
+  BtIoCap local_io_capability;
   tSMP_OOB_FLAG peer_oob_flag;
   tSMP_OOB_FLAG loc_oob_flag;
   tSMP_AUTH_REQ peer_auth_req;

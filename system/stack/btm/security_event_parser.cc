@@ -159,7 +159,7 @@ static void parse_io_capabilities_rsp(const EventView event) {
 
   tBTM_SP_IO_RSP evt_data{
           .bd_addr = ToRawAddress(response.GetBdAddr()),
-          .io_cap = static_cast<tBTM_IO_CAP>(response.GetIoCapability()),
+          .io_cap = static_cast<BtIoCap>(response.GetIoCapability()),
           .oob_data = static_cast<tBTM_OOB_DATA>(response.GetOobDataPresent()),
           .auth_req = static_cast<tBTM_AUTH_REQ>(response.GetAuthenticationRequirements()),
   };

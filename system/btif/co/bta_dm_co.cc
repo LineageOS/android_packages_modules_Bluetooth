@@ -21,5 +21,5 @@
 #include "stack/include/btm_api_types.h"
 
 tBTE_APPL_CFG bte_appl_cfg = {BTA_LE_AUTH_REQ_SC_MITM_BOND,  // Authentication requirements
-                              BTM_IO_CAP_KBDISP, BTM_BLE_INITIATOR_KEY_SIZE,
+                              BtIoCap::KEYBOARD_DISPLAY, BTM_BLE_INITIATOR_KEY_SIZE,
                               BTM_BLE_RESPONDER_KEY_SIZE, BTM_BLE_MAX_KEY_SIZE};

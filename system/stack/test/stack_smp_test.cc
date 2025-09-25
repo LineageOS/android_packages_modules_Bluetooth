@@ -143,14 +143,14 @@ protected:
   void SetUp() override {
     p_cb_.tk = {0};
     // Set pairing request packet to 0x070710000001(01)
-    p_cb_.local_io_capability = 0x01;
+    p_cb_.local_io_capability = BtIoCap::DISPLAY_YES_NO;  // 0x01
     p_cb_.loc_oob_flag = 0x00;
     p_cb_.loc_auth_req = 0x00;
     p_cb_.loc_enc_size = 0x10;
     p_cb_.local_i_key = 0x07;
     p_cb_.local_r_key = 0x07;
     // Set pairing response packet to 0x050008000003(02)
-    p_cb_.peer_io_caps = 0x03;
+    p_cb_.peer_io_caps = BtIoCap::NO_INPUT_NO_OUTPUT;  // 0x03;
     p_cb_.peer_oob_flag = 0x00;
     p_cb_.peer_auth_req = 0x00;
     p_cb_.peer_enc_size = 0x08;

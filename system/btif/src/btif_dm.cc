@@ -165,7 +165,7 @@ struct btif_dm_pairing_cb_t {
   uint8_t pin_code_len;
   uint8_t is_ssp;
   uint8_t auth_req;
-  uint8_t io_cap;
+  BtIoCap io_cap;
   uint8_t autopair_attempts;
   uint8_t timeout_retries;
   uint8_t is_local_initiated;
@@ -3293,7 +3293,7 @@ void btif_dm_proc_io_req(tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
 
     /* copy over the MITM bit as well. In addition if the peer has DisplayYesNo,
      * force MITM */
-    if ((yes_no_bit) || (pairing_cb.io_cap & BTM_IO_CAP_IO)) {
+    if (yes_no_bit || pairing_cb.io_cap == BtIoCap::DISPLAY_YES_NO) {
       *p_auth_req |= BTA_AUTH_SP_YES;
     }
   } else if (yes_no_bit) {
@@ -3303,7 +3303,7 @@ void btif_dm_proc_io_req(tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   log::verbose("updated p_auth_req={}", *p_auth_req);
 }
 
-void btif_dm_proc_io_rsp(const RawAddress& /* bd_addr */, tBTM_IO_CAP io_cap,
+void btif_dm_proc_io_rsp(const RawAddress& /* bd_addr */, BtIoCap io_cap,
                          tBTM_OOB_DATA /* oob_data */, tBTM_AUTH_REQ auth_req) {
   if (auth_req & BTA_AUTH_BONDS) {
     log::debug("auth_req:{}", auth_req);

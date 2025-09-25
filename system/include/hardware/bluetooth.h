@@ -76,17 +76,34 @@ typedef enum {
 /** Bluetooth Adapter State */
 typedef enum { BT_STATE_OFF, BT_STATE_ON } bt_state_t;
 
-/** Bluetooth Adapter Input Output Capabilities which determine Pairing/Security
- */
-typedef enum {
-  BT_IO_CAP_OUT,    /* DisplayOnly */
-  BT_IO_CAP_IO,     /* DisplayYesNo */
-  BT_IO_CAP_IN,     /* KeyboardOnly */
-  BT_IO_CAP_NONE,   /* NoInputNoOutput */
-  BT_IO_CAP_KBDISP, /* Keyboard display */
-  BT_IO_CAP_MAX,
-  BT_IO_CAP_UNKNOWN = 0xFF /* Unknown value */
-} bt_io_cap_t;
+/** Bluetooth Adapter Input Output Capabilities which determine pairing association model */
+enum BtIoCap : uint8_t {
+  DISPLAY_ONLY = 0,
+  DISPLAY_YES_NO = 1,
+  KEYBOARD_ONLY = 2,
+  NO_INPUT_NO_OUTPUT = 3,
+  KEYBOARD_DISPLAY = 4,  // Not applicable for BR/EDR
+  IO_CAP_UNKNOWN = 0xFF,
+};
+constexpr BtIoCap kBtIoCapClassicMax = BtIoCap::NO_INPUT_NO_OUTPUT;
+constexpr BtIoCap kBtIoCapLeMax = BtIoCap::KEYBOARD_DISPLAY;
+
+inline std::string BtIoCapText(const BtIoCap& io_cap) {
+  switch (io_cap) {
+    case BtIoCap::DISPLAY_ONLY:
+      return std::string("DisplayOnly");
+    case BtIoCap::DISPLAY_YES_NO:
+      return std::string("DisplayYesNo");
+    case BtIoCap::KEYBOARD_ONLY:
+      return std::string("KeyboardOnly");
+    case BtIoCap::NO_INPUT_NO_OUTPUT:
+      return std::string("NoInputNoOutput");
+    case BtIoCap::KEYBOARD_DISPLAY:
+      return std::string("KeyboardDisplay");
+    default:
+      return std::format("Unknown IO capability[{}]", static_cast<uint8_t>(io_cap));
+  }
+}
 
 /** Bluetooth Error Status */
 /** We need to build on this */
@@ -1067,6 +1084,13 @@ template <>
 struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
 template <>
 struct formatter<bt_ssp_variant_t> : enum_formatter<bt_ssp_variant_t> {};
+template <>
+struct formatter<BtIoCap> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const BtIoCap& io_cap, Context& ctx) const {
+    return std::formatter<std::string>::format(BtIoCapText(io_cap), ctx);
+  }
+};
 }  // namespace std
 
 #endif  // __has_include(<bluetooth/log.h>)
