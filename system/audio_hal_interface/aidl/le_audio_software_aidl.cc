@@ -644,43 +644,54 @@ bluetooth::audio::le_audio::OffloadCapabilities get_offload_capabilities() {
             hal_cap.get<AudioCapabilities::leAudioCapabilities>().unicastDecodeCapability;
     BroadcastCapability hal_bcast_cap =
             hal_cap.get<AudioCapabilities::leAudioCapabilities>().broadcastCapability;
-    AudioSetConfiguration audio_set_config = {.name = "offload capability"};
+    AudioSetConfiguration audio_set_unicast_config = {.name = "offload capability"};
+    AudioSetConfiguration audio_set_broadcast_config = {.name = "broadcast offload capability"};
     str_capability_log.clear();
 
     if (hal_ucast_capability_to_stack_format(hal_encode_cap, encode_cap)) {
       auto ase_cnt = hal_encode_cap.deviceCount * hal_encode_cap.channelCountPerDevice;
-      while (ase_cnt--) {
-        audio_set_config.confs.sink.push_back(AseConfiguration(encode_cap));
+      if (ase_cnt) {
+        str_capability_log = " Encode Capability: " + hal_encode_cap.toString();
       }
-      str_capability_log = " Encode Capability: " + hal_encode_cap.toString();
+      while (ase_cnt--) {
+        audio_set_unicast_config.confs.sink.push_back(AseConfiguration(encode_cap));
+      }
     }
 
     if (hal_ucast_capability_to_stack_format(hal_decode_cap, decode_cap)) {
       auto ase_cnt = hal_decode_cap.deviceCount * hal_decode_cap.channelCountPerDevice;
-      while (ase_cnt--) {
-        audio_set_config.confs.source.push_back(AseConfiguration(decode_cap));
+      if (ase_cnt) {
+        str_capability_log += " Decode Capability: " + hal_decode_cap.toString();
       }
-      str_capability_log += " Decode Capability: " + hal_decode_cap.toString();
+      while (ase_cnt--) {
+        audio_set_unicast_config.confs.source.push_back(AseConfiguration(decode_cap));
+      }
+    }
+
+    if (!audio_set_unicast_config.confs.sink.empty() ||
+        !audio_set_unicast_config.confs.source.empty()) {
+      offload_capabilities.push_back(audio_set_unicast_config);
     }
 
     if (hal_bcast_capability_to_stack_format(hal_bcast_cap, bcast_cap)) {
-      AudioSetConfiguration audio_set_config = {.name = "broadcast offload capability"};
       // Note: The offloader config supports multiple channels per stream
       //       (subgroup), corresponding to the number of BISes, where each BIS
       //       has a single channel.
       bcast_cap.channel_count_per_iso_stream = 1;
       auto bis_cnt = hal_bcast_cap.channelCountPerStream;
-      while (bis_cnt--) {
-        audio_set_config.confs.sink.push_back(AseConfiguration(bcast_cap));
+      if (bis_cnt) {
+        str_capability_log += " Broadcast Capability: " + hal_bcast_cap.toString();
+        while (bis_cnt--) {
+          audio_set_broadcast_config.confs.sink.push_back(AseConfiguration(bcast_cap));
+        }
+        broadcast_offload_capabilities.push_back(audio_set_broadcast_config);
       }
-      broadcast_offload_capabilities.push_back(audio_set_config);
-      str_capability_log += " Broadcast Capability: " + hal_bcast_cap.toString();
     }
 
-    if (!audio_set_config.confs.sink.empty() || !audio_set_config.confs.source.empty()) {
-      offload_capabilities.push_back(audio_set_config);
+    if (!audio_set_unicast_config.confs.sink.empty() ||
+        !audio_set_unicast_config.confs.source.empty() ||
+        !audio_set_broadcast_config.confs.sink.empty()) {
       log::info("Supported codec capability ={}", str_capability_log);
-
     } else {
       log::info("Unknown codec capability ={}", hal_cap.toString());
     }
