@@ -143,13 +143,13 @@ public class GattService extends ProfileService {
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
     /** List of our registered clients. */
-    ContextMap<IBluetoothGattCallback> mClientMap = new ContextMap<>();
+    final ContextMap<IBluetoothGattCallback> mClientMap;
 
     /** List of our registered server apps. */
-    @VisibleForTesting ContextMap<IBluetoothGattServerCallback> mServerMap = new ContextMap<>();
+    private final ContextMap<IBluetoothGattServerCallback> mServerMap;
 
     /** Reliable write queue */
-    @VisibleForTesting Set<BluetoothDevice> mReliableQueue = new HashSet<>();
+    private final Set<BluetoothDevice> mReliableQueue;
 
     /**
      * Set of restricted (which require a BLUETOOTH_PRIVILEGED permission) handles per connectionId.
@@ -196,6 +196,9 @@ public class GattService extends ProfileService {
                 nativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface,
+                new ContextMap<>() /* mClientMap */,
+                new ContextMap<>() /* mServerMap */,
+                new HashSet<>() /* mReliableQueue */,
                 companionDeviceManager,
                 getSystemClock());
     }
@@ -206,11 +209,17 @@ public class GattService extends ProfileService {
             GattNativeInterface nativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+            ContextMap<IBluetoothGattCallback> clientMap,
+            ContextMap<IBluetoothGattServerCallback> serverMap,
+            Set<BluetoothDevice> reliableQueue,
             CompanionDeviceManager companionDeviceManager,
             TimeProvider timeProvider) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
+        mClientMap = requireNonNull(clientMap);
+        mServerMap = requireNonNull(serverMap);
+        mReliableQueue = requireNonNull(reliableQueue);
         mCompanionDeviceManager = companionDeviceManager;
         mTimeProvider = timeProvider;
 

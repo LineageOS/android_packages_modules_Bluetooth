@@ -235,12 +235,11 @@ public class GattServiceTest {
                         mNativeInterface,
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
+                        mClientMap,
+                        mServerMap,
+                        mReliableQueue,
                         mCompanionDeviceManager,
                         mTimeProvider);
-
-        mService.mClientMap = mClientMap;
-        mService.mReliableQueue = mReliableQueue;
-        mService.mServerMap = mServerMap;
 
         mockGetRemoteDevice(mAdapterService, mDevice);
     }
@@ -264,6 +263,9 @@ public class GattServiceTest {
                             mNativeInterface,
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,
+                            mClientMap,
+                            mServerMap,
+                            mReliableQueue,
                             mCompanionDeviceManager,
                             mTimeProvider);
         }
