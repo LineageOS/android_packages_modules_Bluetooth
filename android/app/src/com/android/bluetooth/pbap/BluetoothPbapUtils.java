@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.pbap;
 
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.Context;
@@ -179,7 +180,9 @@ class BluetoothPbapUtils {
             }
         }
 
-        if (Flags.increaseContactImageResolution()) {
+        if (Flags.increaseContactImageResolution() &&
+                !(Flags.disableHighResImagesOnLowRam() &&
+                      ctx.getSystemService(ActivityManager.class).isLowRamDevice())) {
             return new VCardComposer(
                     ctx,
                     ctx.getContentResolver(),
@@ -188,9 +191,9 @@ class BluetoothPbapUtils {
                     true,
                     new VCardComposer.PhotoOptions(
                             PHOTO_DIMENSION_LIMIT_IN_PIXELS, PHOTO_FILE_SIZE_LIMIT_IN_BYTES));
-        } else {
-            return new VCardComposer(ctx, vType, true);
         }
+
+        return new VCardComposer(ctx, vType, true);
     }
 
     public static synchronized String getProfileName(Context context) {
