@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "bluetooth-a2dp-ahal-aidl-utils"
+#define LOG_TAG "bluetooth-a2dp-aidl"
 
 #include "a2dp_encoding_aidl_utils.h"
 

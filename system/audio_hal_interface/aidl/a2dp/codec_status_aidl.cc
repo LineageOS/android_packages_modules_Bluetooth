@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "BTAudioCodecStatusAIDL"
+#define LOG_TAG "bluetooth-a2dp-aidl"
 
 #include "codec_status_aidl.h"
 
