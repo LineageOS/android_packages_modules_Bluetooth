@@ -40,7 +40,6 @@ import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.stream.Stream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,6 +57,8 @@ import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.OwnAddressType
 import pandora.HostProto.PrimaryPhy
+
+private const val TAG = "LeScanningTest"
 
 @RunWith(TestParameterInjector::class)
 class LeScanningTest {
@@ -247,17 +248,21 @@ class LeScanningTest {
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                 .build()
 
-        val scanFilter =
-            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
+        val scanFilters =
+            listOf(
+                ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
+            )
 
         val scanCallbacks =
-            Stream.generate { mock(ScanCallback::class.java) }.limit(maxNumScans.toLong()).toList()
-        for (mockScanCallback in scanCallbacks) {
-            leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
-        }
+            (1..maxNumScans).map {
+                val mockScanCallback = mock(ScanCallback::class.java)
+                leScanner?.startScan(scanFilters, scanSettings, mockScanCallback)
+                mockScanCallback
+            }
+
         // This last scan should fail
         val lastMockScanCallback = mock(ScanCallback::class.java)
-        leScanner?.startScan(listOf(scanFilter), scanSettings, lastMockScanCallback)
+        leScanner?.startScan(scanFilters, scanSettings, lastMockScanCallback)
 
         // We expect an error only for the last scan, which was over the maximum active scans limit.
         for (mockScanCallback in scanCallbacks) {
@@ -427,31 +432,8 @@ class LeScanningTest {
         scanFilter: ScanFilter,
         callbackType: Int,
         isLegacy: Boolean,
-    ): List<ScanResult>? {
-        return startScanning(
-            scanFilter,
-            callbackType,
-            isLegacy,
-            BluetoothDevice.PHY_LE_1M,
-            ScanSettings.SCAN_TYPE_ACTIVE,
-        )
-    }
-
-    private fun startScanning(
-        scanFilter: ScanFilter,
-        callbackType: Int,
-        isLegacy: Boolean,
-        phy: Int,
-    ): List<ScanResult>? {
-        return startScanning(scanFilter, callbackType, isLegacy, phy, ScanSettings.SCAN_TYPE_ACTIVE)
-    }
-
-    private fun startScanning(
-        scanFilter: ScanFilter,
-        callbackType: Int,
-        isLegacy: Boolean,
-        phy: Int,
-        scanType: Int,
+        phy: Int = BluetoothDevice.PHY_LE_1M,
+        scanType: Int = ScanSettings.SCAN_TYPE_ACTIVE,
     ): List<ScanResult>? {
         val future = CompletableFuture<List<ScanResult>?>()
         val scanResults = mutableListOf<ScanResult>()
@@ -541,7 +523,6 @@ class LeScanningTest {
     }
 
     companion object {
-        private val TAG = LeScanningTest::class.java.simpleName
         private const val TIMEOUT_SCANNING_MS = 3000
         private const val TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb"
         private const val TEST_UUID_STRING2 = "00001806-0000-1000-8000-00805f9b34fb"
