@@ -703,15 +703,15 @@ static void setInCallNative(JNIEnv* /* env */, jobject /* object */, jboolean in
   sLeAudioClientInterface->SetInCall(inCall);
 }
 
-static void setUnicastMonitorModeNative(JNIEnv* /* env */, jobject /* object */, jint direction,
-                                        jboolean enable) {
+static void setUnicastMonitorModeNative(JNIEnv* /* env */, jobject /* object */,
+                                        jint local_directions, jboolean enable) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sLeAudioClientInterface) {
     log::error("Failed to get the Bluetooth LeAudio Interface");
     return;
   }
 
-  sLeAudioClientInterface->SetUnicastMonitorMode(direction, enable);
+  sLeAudioClientInterface->SetUnicastMonitorMode(local_directions, enable);
 }
 
 static void sendAudioProfilePreferencesNative(JNIEnv* /* env */, jobject /* object */, jint groupId,
