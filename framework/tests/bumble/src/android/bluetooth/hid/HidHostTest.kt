@@ -51,17 +51,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
 import com.google.protobuf.Empty
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -89,10 +92,11 @@ import org.mockito.stubbing.Answer
 import pandora.HIDGrpc
 import pandora.HidProto
 import pandora.HidProto.ReportDataEvent
+import pandora.HostProto
 import pandora.SecurityProto
 
 /** Test cases for [BluetoothHidHost]. */
-@RunWith(AndroidJUnit4::class)
+@RunWith(TestParameterInjector::class)
 @VirtualOnly
 class HidHostTest {
 
@@ -110,6 +114,9 @@ class HidHostTest {
 
     private lateinit var device: BluetoothDevice
     private lateinit var hidService: BluetoothHidHost
+    private lateinit var a2dpService: BluetoothA2dp
+    private lateinit var hfpService: BluetoothHeadset
+
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private val adapter: BluetoothAdapter =
         context.getSystemService(BluetoothManager::class.java).adapter
@@ -232,9 +239,9 @@ class HidHostTest {
         adapter.getProfileProxy(context, profileServiceListener, BluetoothProfile.HID_HOST)
         hidService = verifyProfileServiceConnected(BluetoothProfile.HID_HOST) as BluetoothHidHost
         adapter.getProfileProxy(context, profileServiceListener, BluetoothProfile.A2DP)
-        val a2dpService = verifyProfileServiceConnected(BluetoothProfile.A2DP) as BluetoothA2dp
+        a2dpService = verifyProfileServiceConnected(BluetoothProfile.A2DP) as BluetoothA2dp
         adapter.getProfileProxy(context, profileServiceListener, BluetoothProfile.HEADSET)
-        val hfpService = verifyProfileServiceConnected(BluetoothProfile.HEADSET) as BluetoothHeadset
+        hfpService = verifyProfileServiceConnected(BluetoothProfile.HEADSET) as BluetoothHeadset
 
         hidBlockingStub = bumble.hidBlocking()
         hidBlockingStub.registerService(
@@ -671,6 +678,95 @@ class HidHostTest {
             assertThat(hidDataEvent.getReportData()).isEqualTo(Data)
             assertThat(hidDataEvent.getReportTypeValue())
                 .isEqualTo(BluetoothHidHost.REPORT_TYPE_OUTPUT)
+        }
+    }
+
+    /**
+     * Prerequisite REF supports BR/EDR HID DUT and REF are bonded but not connected REF is not
+     * connectable
+     *
+     * TEST - Repair false
+     * 1. Initiate profile connections on DUT.
+     * 2. Wait for HID profile state to change to CONNECTING.
+     * 3. Remove bond.
+     * 4. Make REF connectable
+     *
+     * Expectation: No ACL established between DUT and REF
+     *
+     * TEST - Repair true
+     * 1. Initiate profile connections on DUT.
+     * 2. Wait for HID profile state to change to CONNECTING.
+     * 3. Remove bond.
+     * 4. Make REF connectable and bondable Pair with REF
+     *
+     * Expectation: HID profile should connect successful after repairing.
+     */
+    @SuppressLint("MissingPermission")
+    @RequiresFlagsEnabled(Flags.FLAG_RESET_STATE_WHEN_REMOVING_NON_CONNECTED_HID_DEVICE)
+    @Test
+    fun hidRemoveBondWhenConnectionPendingTest(@TestParameter repair: Boolean) {
+        assertThat(device.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_DISCONNECTING))
+        verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_DISCONNECTED))
+        verifyIntentReceived(
+            hasAction(ACTION_ACL_DISCONNECTED),
+            hasExtra(EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
+        )
+
+        bumble
+            .hostBlocking()
+            .setConnectabilityMode(
+                HostProto.SetConnectabilityModeRequest.newBuilder()
+                    .setMode(HostProto.ConnectabilityMode.NOT_CONNECTABLE)
+                    .build()
+            )
+
+        assertThat(device.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
+        removeBond(device)
+        // 6seconds delay for PAGE_TIMEOUT event
+        val future1 = CompletableFuture<Integer>()
+        future1.completeOnTimeout(null, 6000, TimeUnit.MILLISECONDS).join()
+        bumble
+            .hostBlocking()
+            .setConnectabilityMode(
+                HostProto.SetConnectabilityModeRequest.newBuilder()
+                    .setMode(HostProto.ConnectabilityMode.CONNECTABLE)
+                    .build()
+            )
+        if (repair) {
+            assertThat(device.createBond(TRANSPORT_BREDR)).isTrue()
+            verifyIntentReceived(
+                hasAction(ACTION_BOND_STATE_CHANGED),
+                hasExtra(EXTRA_DEVICE, device),
+                hasExtra(EXTRA_BOND_STATE, BOND_BONDING),
+            )
+            verifyIntentReceived(
+                hasAction(ACTION_ACL_CONNECTED),
+                hasExtra(EXTRA_DEVICE, device),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
+            )
+            restartSettingsApp()
+            verifyIntentReceived(hasAction(ACTION_PAIRING_REQUEST), hasExtra(EXTRA_DEVICE, device))
+            verifyIntentReceived(
+                hasAction(ACTION_BOND_STATE_CHANGED),
+                hasExtra(EXTRA_DEVICE, device),
+                hasExtra(EXTRA_BOND_STATE, BOND_BONDED),
+            )
+            if (a2dpService.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
+                assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN))
+                    .isTrue()
+            }
+            if (hfpService.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
+                assertThat(hfpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN))
+                    .isTrue()
+            }
+            assertThat(device.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+            verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
+            verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED))
+        } else {
+            assertThat(device.isConnected()).isFalse()
         }
     }
 
