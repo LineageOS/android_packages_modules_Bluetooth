@@ -27,31 +27,9 @@ namespace storage {
 
 class MutationEntry {
 public:
-  enum EntryType { SET, REMOVE_PROPERTY, REMOVE_SECTION };
-
-  template <typename T, typename std::enable_if<std::is_integral_v<T>, int>::type = 0>
-  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
-    return MutationEntry::Set(std::move(section_param), std::move(property_param),
-                              std::to_string(value_param));
-  }
-
-  template <typename T, typename std::enable_if<std::is_enum_v<T>, int>::type = 0>
-  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
-    using EnumUnderlyingType = typename std::underlying_type_t<T>;
-    return MutationEntry::Set<EnumUnderlyingType>(std::move(section_param),
-                                                  std::move(property_param),
-                                                  static_cast<EnumUnderlyingType>(value_param));
-  }
-
-  template <typename T, typename std::enable_if<std::is_same_v<T, bool>, int>::type = 0>
-  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
-    return MutationEntry::Set(std::move(section_param), std::move(property_param),
-                              common::ToString(value_param));
-  }
-
   static MutationEntry Set(std::string section_param, std::string property_param,
                            std::string value_param) {
-    return MutationEntry(EntryType::SET, std::move(section_param), std::move(property_param),
+    return MutationEntry(std::move(section_param), std::move(property_param),
                          std::move(value_param));
   }
 
@@ -59,10 +37,9 @@ private:
   friend class ConfigCache;
   friend class Mutation;
 
-  MutationEntry(EntryType entry_type_param, std::string section_param,
-                std::string property_param = "", std::string value_param = "");
+  MutationEntry(std::string section_param, std::string property_param = "",
+                std::string value_param = "");
 
-  EntryType entry_type;
   std::string section;
   std::string property;
   std::string value;

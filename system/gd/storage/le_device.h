@@ -47,7 +47,7 @@ public:
   GENERATE_PROPERTY_GETTER(AddressType, hci::AddressType, BTIF_STORAGE_KEY_ADDR_TYPE);
 
   MutationEntry SetAddressType(const hci::AddressType& value) {
-    return MutationEntry::Set<hci::AddressType>(section_, BTIF_STORAGE_KEY_ADDR_TYPE, value);
+    return MutationEntry::Set(section_, BTIF_STORAGE_KEY_ADDR_TYPE, std::to_string(int(value)));
   }
 };
 
