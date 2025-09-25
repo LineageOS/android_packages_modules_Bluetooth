@@ -47,7 +47,7 @@ class DckScanTest(
     // TODO(315852141): Include variations for two advertisements at the same time
     // TODO(303502437): Include variations for other callback types when supported in rootcanal
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
     // Gives shell permissions during the test.
     @Rule(order = 0) @JvmField val shellPermissionRule = AdoptShellPermissionsRule()

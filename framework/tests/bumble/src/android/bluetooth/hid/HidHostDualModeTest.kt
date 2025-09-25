@@ -28,10 +28,10 @@ import android.os.ParcelUuid
 import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
@@ -82,7 +82,7 @@ class HidHostDualModeTest {
     @Mock private lateinit var receiver: BroadcastReceiver
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
-    private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter: BluetoothAdapter =
         context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub

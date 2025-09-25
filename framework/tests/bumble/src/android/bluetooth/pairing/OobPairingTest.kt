@@ -28,10 +28,10 @@ import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.content.Context
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.primitives.Bytes
 import com.google.protobuf.ByteString
@@ -58,7 +58,7 @@ class OobPairingTest {
 
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-    private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter: BluetoothAdapter =
         context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var device: BluetoothDevice
