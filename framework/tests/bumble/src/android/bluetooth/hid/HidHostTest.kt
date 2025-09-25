@@ -55,9 +55,9 @@ import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
@@ -117,7 +117,7 @@ class HidHostTest {
     private lateinit var a2dpService: BluetoothA2dp
     private lateinit var hfpService: BluetoothHeadset
 
-    private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter: BluetoothAdapter =
         context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub

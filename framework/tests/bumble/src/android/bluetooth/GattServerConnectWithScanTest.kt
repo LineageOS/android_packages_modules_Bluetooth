@@ -50,7 +50,7 @@ class GattServerConnectWithScanTest {
 
     @get:Rule(order = 0) val bumble = PandoraDevice()
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val bluetoothAdapter = bluetoothManager.adapter
     private val leScanner: BluetoothLeScanner? = bluetoothAdapter.bluetoothLeScanner
