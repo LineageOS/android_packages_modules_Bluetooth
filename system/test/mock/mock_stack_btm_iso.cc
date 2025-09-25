@@ -17,6 +17,9 @@
 
 #include "mock_stack_btm_iso.h"
 
+#include "btm_iso_api.h"
+#include "btm_iso_api_types.h"
+
 namespace {
 MockIsoManager* mock_pimpl_;
 }
@@ -37,32 +40,27 @@ public:
 
 IsoManager::IsoManager() {}
 
-void IsoManager::RegisterCigCallbacks(iso_manager::CigCallbacks* callbacks) const {
+iso_manager::IsoClientHandle IsoManager::RegisterCallbacks(
+        iso_manager::IsoManagerCallbacks callbacks) const {
   if (!pimpl_) {
-    return;
+    return iso_manager::kInvalidIsoClientHandle;
   }
-  pimpl_->RegisterCigCallbacks(callbacks);
+  return pimpl_->RegisterCallbacks(callbacks);
 }
 
-void IsoManager::RegisterBigCallbacks(iso_manager::BigCallbacks* callbacks) const {
+void IsoManager::DeregisterCallbacks(iso_manager::IsoClientHandle client_handle) const {
   if (!pimpl_) {
     return;
   }
-  pimpl_->RegisterBigCallbacks(callbacks);
+  pimpl_->DeregisterCallbacks(client_handle);
 }
 
-void IsoManager::RegisterOnIsoTrafficActiveCallback(void callback(bool)) const {
+void IsoManager::CreateCig(iso_manager::IsoClientHandle client_handle, uint8_t cig_id,
+                           struct iso_manager::cig_create_params cig_params) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->RegisterOnIsoTrafficActiveCallbacks(callback);
-}
-
-void IsoManager::CreateCig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
-  if (!pimpl_) {
-    return;
-  }
-  pimpl_->CreateCig(cig_id, std::move(cig_params));
+  pimpl_->CreateCig(client_handle, cig_id, std::move(cig_params));
 }
 
 void IsoManager::ReconfigureCig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
@@ -117,11 +115,12 @@ void IsoManager::SendIsoData(uint16_t conn_handle, const uint8_t* data, uint16_t
   pimpl_->SendIsoData(conn_handle, data, data_len);
 }
 
-void IsoManager::CreateBig(uint8_t big_id, struct iso_manager::big_create_params big_params) {
+void IsoManager::CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_id,
+                           struct iso_manager::big_create_params big_params) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->CreateBig(big_id, std::move(big_params));
+  pimpl_->CreateBig(client_handle, big_id, std::move(big_params));
 }
 
 void IsoManager::TerminateBig(uint8_t big_id, uint8_t reason) {

@@ -25,6 +25,7 @@
 
 namespace bluetooth {
 namespace hci {
+
 constexpr uint8_t kIsoCodingFormatTransparent = 0x03;
 constexpr uint8_t kIsoCodingFormatLc3 = 0x06;
 constexpr uint8_t kIsoCodingFormatVendorSpecific = 0xFF;
@@ -40,6 +41,11 @@ constexpr uint8_t kIsoCigPhy2M = 0x02;
 constexpr uint8_t kIsoCigPhyC = 0x04;
 
 namespace iso_manager {
+
+// A handle to identify a registered ISO client.
+// A value of 0 is considered invalid.
+using IsoClientHandle = uint8_t;
+constexpr IsoClientHandle kInvalidIsoClientHandle = 0;
 
 constexpr uint8_t kIsoDataPathDirectionIn = 0x00;
 constexpr uint8_t kIsoDataPathDirectionOut = 0x01;

@@ -82,7 +82,8 @@ public:
 
   virtual ~LeAudioGroupStateMachine() = default;
 
-  static void Initialize(Callbacks* state_machine_callbacks);
+  static void Initialize(Callbacks* state_machine_callbacks,
+                         bluetooth::hci::iso_manager::IsoClientHandle iso_client_handle);
   static void Cleanup(void);
   static LeAudioGroupStateMachine* Get(void);
 

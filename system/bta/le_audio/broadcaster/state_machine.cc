@@ -241,6 +241,7 @@ public:
 
   static IBroadcastStateMachineCallbacks* callbacks_;
   static ::BleAdvertiserInterface* advertiser_if_;
+  static hci::iso_manager::IsoClientHandle client_handle_;
 
 private:
   std::optional<BigConfig> active_config_;
@@ -426,7 +427,8 @@ private:
                                                   : std::array<uint8_t, 16>({0}),
     };
 
-    IsoManager::GetInstance()->CreateBig(GetAdvertisingSid(), std::move(big_params));
+    IsoManager::GetInstance()->CreateBig(client_handle_, GetAdvertisingSid(),
+                                         std::move(big_params));
   }
 
   void DisableAnnouncement(void) {
@@ -508,15 +510,14 @@ private:
     }
   }
 
-  static void PrepareDataPath(hci_data_direction_t data_path_dir,
-                              uint8_t data_path_id,
+  static void PrepareDataPath(hci_data_direction_t data_path_dir, uint8_t data_path_id,
                               const std::vector<uint8_t>& data_path_config) {
     if (!com_android_bluetooth_flags_leaudio_broadcast_config_data_path_before_set_iso_data_path()) {
       log::debug("leaudio_broadcast_config_data_path_before_set_iso_data_path is not enabled");
       return;
     }
-    bluetooth::le_audio::CodecManager::GetInstance()->ConfigureDataPath(
-            data_path_dir, data_path_id, data_path_config);
+    bluetooth::le_audio::CodecManager::GetInstance()->ConfigureDataPath(data_path_dir, data_path_id,
+                                                                        data_path_config);
   }
 
   void TriggerIsoDatapathSetup(uint16_t conn_handle) {
@@ -546,8 +547,7 @@ private:
             .codec_conf = iso_datapath_config.configuration,
     };
 
-    PrepareDataPath(static_cast<hci_data_direction_t>(param.data_path_dir),
-                    param.data_path_id,
+    PrepareDataPath(static_cast<hci_data_direction_t>(param.data_path_dir), param.data_path_id,
                     sm_config_.config.data_path.dataPathConfig);
 
     IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, std::move(param));
@@ -641,6 +641,8 @@ private:
 
 IBroadcastStateMachineCallbacks* BroadcastStateMachineImpl::callbacks_ = nullptr;
 ::BleAdvertiserInterface* BroadcastStateMachineImpl::advertiser_if_ = nullptr;
+hci::iso_manager::IsoClientHandle BroadcastStateMachineImpl::client_handle_ =
+        hci::iso_manager::kInvalidIsoClientHandle;
 } /* namespace */
 
 std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(
@@ -649,8 +651,11 @@ std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(
 }
 
 void BroadcastStateMachine::Initialize(IBroadcastStateMachineCallbacks* callbacks,
-                                       AdvertisingCallbacks* adv_callbacks) {
+                                       AdvertisingCallbacks* adv_callbacks,
+                                       hci::iso_manager::IsoClientHandle client_handle) {
   BroadcastStateMachineImpl::callbacks_ = callbacks;
+  BroadcastStateMachineImpl::client_handle_ = client_handle;
+
   /* Get gd le advertiser interface */
   BroadcastStateMachineImpl::advertiser_if_ = bluetooth::shim::get_ble_advertiser_instance();
   if (BroadcastStateMachineImpl::advertiser_if_ != nullptr) {

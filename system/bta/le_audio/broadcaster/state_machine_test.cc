@@ -27,6 +27,7 @@
 #include "../le_audio_types.h"
 #include "broadcast_configuration_provider.h"
 #include "btm_iso_api.h"
+#include "btm_iso_api_types.h"
 #include "mock_codec_manager.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "test/common/mock_functions.h"
@@ -123,7 +124,8 @@ protected:
 
     sm_callbacks_.reset(new MockBroadcastStatMachineCallbacks());
     adv_callbacks_.reset(new MockBroadcastAdvertisingCallbacks());
-    BroadcastStateMachine::Initialize(sm_callbacks_.get(), adv_callbacks_.get());
+    constexpr bluetooth::hci::iso_manager::IsoClientHandle kClientHandle = 1;
+    BroadcastStateMachine::Initialize(sm_callbacks_.get(), adv_callbacks_.get(), kClientHandle);
 
     ON_CALL(*mock_ble_advertising_manager_, StartAdvertisingSet)
             .WillByDefault([this](uint8_t /*client_id*/, int /*reg_id*/,
@@ -247,7 +249,8 @@ protected:
     ASSERT_NE(mock_iso_manager_, nullptr);
 
     ON_CALL(*mock_iso_manager_, CreateBig)
-            .WillByDefault([this](uint8_t big_id, big_create_params p) {
+            .WillByDefault([this](bluetooth::hci::iso_manager::IsoClientHandle /*client_handle*/,
+                                  uint8_t big_id, big_create_params p) {
               auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
                                       [big_id](auto const& entry) {
                                         return entry.second->GetAdvertisingSid() == big_id;
@@ -584,7 +587,9 @@ TEST_F(StateMachineTest, ProcessMessageStartWhenConfigured) {
 
   uint8_t num_bises = 0;
   EXPECT_CALL(*mock_iso_manager_, CreateBig)
-          .WillOnce([this, &num_bises](uint8_t big_id, big_create_params p) {
+          .WillOnce([this, &num_bises](
+                            bluetooth::hci::iso_manager::IsoClientHandle /*client_handle*/,
+                            uint8_t big_id, big_create_params p) {
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
                                     [big_id](auto const& entry) {
                                       return entry.second->GetAdvertisingSid() == big_id;
@@ -664,7 +669,7 @@ TEST_F(StateMachineTest, ProcessMessageSuspendWhenConfiguredLateBigCreateComplet
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
 
   /* Hold start process on BIG create */
-  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _)).WillOnce(Return());
+  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::ENABLING);
@@ -692,7 +697,7 @@ TEST_F(StateMachineTest, ProcessMessageStopWhenEnablingLateBigCreateCompleteEven
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
 
   /* Hold start process on BIG create */
-  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _)).WillOnce(Return());
+  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::ENABLING);
@@ -770,7 +775,7 @@ TEST_F(StateMachineTest, ProcessMessageDoubleResumeWhenConfiguredLateBigCreateCo
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
 
   /* Hold start process on BIG create */
-  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _)).WillOnce(Return());
+  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::ENABLING);
@@ -1176,7 +1181,9 @@ TEST_F(StateMachineTest, ConfigureDataPathBeforeSetIsoDataPath) {
 
   uint8_t num_bises = 0;
   EXPECT_CALL(*mock_iso_manager_, CreateBig)
-          .WillOnce([this, &num_bises](uint8_t big_id, big_create_params p) {
+          .WillOnce([this, &num_bises](
+                            bluetooth::hci::iso_manager::IsoClientHandle /*client_handle*/,
+                            uint8_t big_id, big_create_params p) {
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
                                     [big_id](auto const& entry) {
                                       return entry.second->GetAdvertisingSid() == big_id;

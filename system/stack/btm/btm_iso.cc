@@ -55,27 +55,24 @@ struct IsoManager::impl {
 
 IsoManager::IsoManager() : pimpl_(std::make_unique<impl>(*this)) {}
 
-void IsoManager::RegisterCigCallbacks(CigCallbacks* callbacks) const {
+iso_manager::IsoClientHandle IsoManager::RegisterCallbacks(
+        iso_manager::IsoManagerCallbacks callbacks) const {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->handle_register_cis_callbacks(callbacks);
+    return pimpl_->iso_impl_->register_callbacks(callbacks);
+  }
+  return iso_manager::kInvalidIsoClientHandle;
+}
+
+void IsoManager::DeregisterCallbacks(iso_manager::IsoClientHandle client_handle) const {
+  if (pimpl_->IsRunning()) {
+    pimpl_->iso_impl_->deregister_callbacks(client_handle);
   }
 }
 
-void IsoManager::RegisterBigCallbacks(BigCallbacks* callbacks) const {
+void IsoManager::CreateCig(iso_manager::IsoClientHandle client_handle, uint8_t cig_id,
+                           struct iso_manager::cig_create_params cig_params) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->handle_register_big_callbacks(callbacks);
-  }
-}
-
-void IsoManager::RegisterOnIsoTrafficActiveCallback(void callback(bool)) const {
-  if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->handle_register_on_iso_traffic_active_callback(callback);
-  }
-}
-
-void IsoManager::CreateCig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
-  if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->create_cig(cig_id, std::move(cig_params));
+    pimpl_->iso_impl_->create_cig(client_handle, cig_id, std::move(cig_params));
   }
 }
 
@@ -135,9 +132,10 @@ void IsoManager::SendIsoData(uint16_t conn_handle, const uint8_t* data, uint16_t
   }
 }
 
-void IsoManager::CreateBig(uint8_t big_id, struct iso_manager::big_create_params big_params) {
+void IsoManager::CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_id,
+                           struct iso_manager::big_create_params big_params) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->create_big(big_id, std::move(big_params));
+    pimpl_->iso_impl_->create_big(client_handle, big_id, std::move(big_params));
   }
 }
 

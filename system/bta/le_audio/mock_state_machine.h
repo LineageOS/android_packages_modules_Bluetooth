@@ -87,7 +87,8 @@ public:
                uint16_t conn_hdl),
               (override));
   MOCK_METHOD((void), Initialize,
-              (bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks * state_machine_callbacks));
+              (bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks * state_machine_callbacks,
+               bluetooth::hci::iso_manager::IsoClientHandle iso_client_handle));
   MOCK_METHOD((void), Cleanup, ());
   MOCK_METHOD((void), ProcessHciNotifIsoLinkQualityRead,
               (bluetooth::le_audio::LeAudioDeviceGroup * group,

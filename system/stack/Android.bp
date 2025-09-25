@@ -1554,6 +1554,7 @@ cc_test {
         "test/common/mock_hcic_layer.cc",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
@@ -1565,6 +1566,10 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+    ],
+    shared_libs: [
+        "libaconfig_storage_read_api_cc",
+        "server_configurable_flags",
     ],
     sanitize: {
         cfi: true,
