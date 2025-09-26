@@ -233,7 +233,7 @@ protected:
     AclManagerClassicWithCallbacksTest::SetUp();
 
     handle_ = 0x123;
-    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+    remote = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
     acl_manager_classic_->CreateConnection(remote);
 
@@ -325,8 +325,7 @@ protected:
             client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
             *test_round_robin_scheduler_);
 
-    hci::Address address;
-    Address::FromString("D0:05:04:03:02:01", address);
+    hci::Address address = Address::FromString("D0:05:04:03:02:01").value();
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     acl_manager_classic_->RegisterCallbacks(&mock_connection_callbacks_, client_handler_);
   }
@@ -412,8 +411,8 @@ TEST_F(AclManagerClassicWithCallbacksTest, two_remote_connection_requests_ABAB) 
 }
 
 TEST_F(AclManagerClassicWithCallbacksTest, two_remote_connection_requests_ABBA) {
-  Address::FromString(kRemotePublicDeviceStringA, remote_device[0].address);
-  Address::FromString(kRemotePublicDeviceStringB, remote_device[1].address);
+  remote_device[0].address = Address::FromString(kRemotePublicDeviceStringA).value();
+  remote_device[1].address = Address::FromString(kRemotePublicDeviceStringB).value();
 
   {
     // Device A sends connection request

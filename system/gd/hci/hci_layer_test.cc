@@ -281,8 +281,7 @@ TEST_F(HciTest, leMetaEvent) {
 
 TEST_F(HciTest, postEventsOnceOnHciHandler) {
   // Send a CreateConnection command.
-  Address addr;
-  Address::FromString("01:02:03:04:05:06", addr);
+  Address addr = Address::FromString("01:02:03:04:05:06").value();
   upper->SendHciCommandExpectingStatus(CreateConnectionBuilder::Create(
           addr, 0, PageScanRepetitionMode::R0, 0, ClockOffsetValid::INVALID,
           CreateConnectionRoleSwitch::ALLOW_ROLE_SWITCH));
@@ -499,8 +498,7 @@ TEST_F(HciTest, securityInterfacesTest) {
 
 TEST_F(HciTest, createConnectionTest) {
   // Send CreateConnection to the controller
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint16_t packet_type = 0x1234;
   PageScanRepetitionMode page_scan_repetition_mode = PageScanRepetitionMode::R0;
   uint16_t clock_offset = 0x3456;
@@ -590,8 +588,7 @@ TEST_F(HciTest, createConnectionTest) {
 }
 
 TEST_F(HciTest, receiveMultipleAclPackets) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint16_t handle = 0x0001;
   const uint16_t num_packets = 100;
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
@@ -643,8 +640,7 @@ TEST_F(HciTest, receiveMultipleIsoPackets) {
 }
 
 TEST_F(HciTest, log_link_layer_command_status_CreateConnectionCancel) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
   // Send the CreateConnectionCancel command. This populates the command queue.
   upper->SendHciCommandExpectingStatus(CreateConnectionCancelBuilder::Create(bd_addr));
@@ -790,8 +786,7 @@ TEST_F(HciTest, log_link_layer_command_status_EnhancedSetupSynchronousConnection
 }
 
 TEST_F(HciTest, log_link_layer_command_status_AcceptConnectionRequest) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   upper->SendHciCommandExpectingStatus(AcceptConnectionRequestBuilder::Create(
           bd_addr, AcceptConnectionRequestRole::BECOME_CENTRAL));
   auto sent_command = hal->GetSentCommand();
@@ -809,8 +804,7 @@ TEST_F(HciTest, log_link_layer_command_status_AcceptConnectionRequest) {
 }
 
 TEST_F(HciTest, log_link_layer_command_status_AcceptSynchronousConnection) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint32_t transmit_bandwidth = 0x1F40;
   uint32_t receive_bandwidth = 0x1F40;
   uint16_t max_latency = 0x14;
@@ -834,8 +828,7 @@ TEST_F(HciTest, log_link_layer_command_status_AcceptSynchronousConnection) {
   ASSERT_EQ(status, status_view.GetStatus());
 }
 TEST_F(HciTest, log_link_layer_command_status_EnhancedAcceptSynchronousConnection) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint32_t transmit_bandwidth = 0x1F40;
   uint32_t receive_bandwidth = 0x1F40;
 
@@ -893,8 +886,7 @@ TEST_F(HciTest, log_link_layer_command_status_EnhancedAcceptSynchronousConnectio
 }
 
 TEST_F(HciTest, log_link_layer_command_status_RejectConnectionRequest) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   RejectConnectionReason reason = RejectConnectionReason::LIMITED_RESOURCES;
   upper->SendHciCommandExpectingStatus(RejectConnectionRequestBuilder::Create(bd_addr, reason));
   auto sent_command = hal->GetSentCommand();
@@ -913,8 +905,7 @@ TEST_F(HciTest, log_link_layer_command_status_RejectConnectionRequest) {
 }
 
 TEST_F(HciTest, log_link_layer_command_status_RejectSynchronousConnection) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   RejectConnectionReason reason = RejectConnectionReason::LIMITED_RESOURCES;
   upper->SendHciCommandExpectingStatus(RejectSynchronousConnectionBuilder::Create(bd_addr, reason));
   auto sent_command = hal->GetSentCommand();
@@ -947,8 +938,7 @@ TEST_F(HciTest, log_link_layer_command_status_LeCreateConnection) {
   phy_params.push_back(le_phy_params);
 
   // 3. Send the command and expect a status response.
-  Address peer_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", peer_addr));
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   upper->SendHciCommandExpectingStatus(LeExtendedCreateConnectionBuilder::Create(
           InitiatorFilterPolicy::USE_PEER_ADDRESS, OwnAddressType::PUBLIC_DEVICE_ADDRESS,
           AddressType::PUBLIC_DEVICE_ADDRESS, peer_addr, static_cast<uint8_t>(PhyType::LE_1M),
@@ -989,8 +979,7 @@ TEST_F(HciTest, log_link_layer_command_status_LeExtendedCreateConnection) {
   );
   phy_params.push_back(le_phy_params);
 
-  Address peer_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", peer_addr));
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
   upper->SendHciCommandExpectingStatus(LeExtendedCreateConnectionBuilder::Create(
           InitiatorFilterPolicy::USE_PEER_ADDRESS, OwnAddressType::PUBLIC_DEVICE_ADDRESS,
@@ -1049,8 +1038,7 @@ TEST_F(HciTest, log_link_layer_command_status_LeClearFilterAcceptList) {
 }
 
 TEST_F(HciTest, log_link_layer_command_status_LeAddDeviceToFilterAcceptList) {
-  Address addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", addr));
+  Address addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   upper->SendHciCommandExpectingStatus(
           LeAddDeviceToFilterAcceptListBuilder::Create(FilterAcceptListAddressType::PUBLIC, addr));
   auto sent_command = hal->GetSentCommand();
@@ -1070,8 +1058,7 @@ TEST_F(HciTest, log_link_layer_command_status_LeAddDeviceToFilterAcceptList) {
 }
 
 TEST_F(HciTest, log_link_layer_command_status_LeRemoveDeviceFromFilterAcceptList) {
-  Address addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", addr));
+  Address addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   upper->SendHciCommandExpectingStatus(LeRemoveDeviceFromFilterAcceptListBuilder::Create(
           FilterAcceptListAddressType::PUBLIC, addr));
   auto sent_command = hal->GetSentCommand();
@@ -1136,8 +1123,7 @@ TEST_F(HciTest, log_pairing_command_complete_ReadEncryptionKeySize) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_LinkKeyRequestReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   std::array<uint8_t, 16> key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -1154,8 +1140,7 @@ TEST_F(HciTest, log_pairing_command_complete_LinkKeyRequestReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_LinkKeyRequestNegativeReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   upper->SendHciCommandExpectingComplete(LinkKeyRequestNegativeReplyBuilder::Create(bd_addr));
@@ -1170,8 +1155,7 @@ TEST_F(HciTest, log_pairing_command_complete_LinkKeyRequestNegativeReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_IoCapabilityRequestReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   IoCapability io_capability = IoCapability::NO_INPUT_NO_OUTPUT;
@@ -1190,8 +1174,7 @@ TEST_F(HciTest, log_pairing_command_complete_IoCapabilityRequestReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_IoCapabilityRequestNegativeReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   upper->SendHciCommandExpectingComplete(
@@ -1208,8 +1191,7 @@ TEST_F(HciTest, log_pairing_command_complete_IoCapabilityRequestNegativeReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_UserConfirmationRequestReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   upper->SendHciCommandExpectingComplete(UserConfirmationRequestReplyBuilder::Create(bd_addr));
@@ -1224,8 +1206,7 @@ TEST_F(HciTest, log_pairing_command_complete_UserConfirmationRequestReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_UserConfirmationRequestNegativeReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   upper->SendHciCommandExpectingComplete(
@@ -1243,8 +1224,7 @@ TEST_F(HciTest, log_pairing_command_complete_UserConfirmationRequestNegativeRepl
 }
 
 TEST_F(HciTest, log_pairing_command_complete_UserPasskeyRequestReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   uint32_t passkey = 123456;
@@ -1260,8 +1240,7 @@ TEST_F(HciTest, log_pairing_command_complete_UserPasskeyRequestReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_UserPasskeyRequestNegativeReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   upper->SendHciCommandExpectingComplete(UserPasskeyRequestNegativeReplyBuilder::Create(bd_addr));
@@ -1277,8 +1256,7 @@ TEST_F(HciTest, log_pairing_command_complete_UserPasskeyRequestNegativeReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_RemoteOobDataRequestReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   std::array<uint8_t, 16> c = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -1297,8 +1275,7 @@ TEST_F(HciTest, log_pairing_command_complete_RemoteOobDataRequestReply) {
 }
 
 TEST_F(HciTest, log_pairing_command_complete_RemoteOobDataRequestNegativeReply) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint8_t num_packets = 1;
   ErrorCode status = ErrorCode::SUCCESS;
   upper->SendHciCommandExpectingComplete(RemoteOobDataRequestNegativeReplyBuilder::Create(bd_addr));
@@ -1363,8 +1340,7 @@ TEST_F(HciTest, log_pairing_command_status_SetConnectionEncryption) {
 }
 
 TEST_F(HciTest, log_pairing_command_status_RemoteNameRequest) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:B2:C3:D4:E5:F6", bd_addr));
+  Address bd_addr = Address::FromString("A1:B2:C3:D4:E5:F6").value();
   PageScanRepetitionMode page_scan_mode = PageScanRepetitionMode::R2;
   uint16_t clock_offset = 0x1234;
   ClockOffsetValid clock_offset_valid = ClockOffsetValid::VALID;
@@ -1391,8 +1367,7 @@ TEST_F(HciTest, log_pairing_command_status_RemoteNameRequest) {
 }
 
 TEST_F(HciTest, log_pairing_command_status_RemoteNameRequestCancel) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:B2:C3:D4:E5:F6", bd_addr));
+  Address bd_addr = Address::FromString("A1:B2:C3:D4:E5:F6").value();
   upper->SendHciCommandExpectingStatus(RemoteNameRequestCancelBuilder::Create(bd_addr));
 
   auto sent_command = hal->GetSentCommand();
@@ -1416,8 +1391,7 @@ TEST_F(HciTest, log_pairing_command_status_RemoteNameRequestCancel) {
 }
 
 TEST_F(HciTest, log_le_connection_command_LeCreateConnection) {
-  Address peer_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", peer_addr));
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint16_t scan_interval = 0x1234;
   uint16_t scan_window = 0x1234;
   InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
@@ -1444,8 +1418,7 @@ TEST_F(HciTest, log_le_connection_command_LeCreateConnection) {
 }
 
 TEST_F(HciTest, log_le_connection_command_status_LeCreateConnection) {
-  Address peer_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", peer_addr));
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint16_t scan_interval = 0x1234;
   uint16_t scan_window = 0x1234;
   InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;

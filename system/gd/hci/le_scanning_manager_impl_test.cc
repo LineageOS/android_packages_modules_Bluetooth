@@ -108,7 +108,7 @@ hci::LeAdvertisingResponse make_advertising_report() {
   hci::LeAdvertisingResponse report{};
   report.event_type_ = hci::AdvertisingEventType::ADV_DIRECT_IND;
   report.address_type_ = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
-  hci::Address::FromString("12:34:56:78:9a:bc", report.address_);
+  report.address_ = hci::Address::FromString("12:34:56:78:9a:bc").value();
   std::vector<hci::LengthAndData> adv_data{};
   hci::LengthAndData data_item{};
   data_item.data_.push_back(static_cast<uint8_t>(hci::GapDataType::FLAGS));
@@ -721,8 +721,7 @@ TEST_F(LeScanningManagerExtendedTest, start_scan_test) {
   report.connectable_ = 1;
   report.scannable_ = 0;
   report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
-  Address addr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
-  Address::FromString("12:34:56:78:9a:bc", report.address_);
+  report.address_ = Address({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
   std::vector<LengthAndData> adv_data{};
   LengthAndData data_item{};
   data_item.data_.push_back(static_cast<uint8_t>(GapDataType::FLAGS));
@@ -851,7 +850,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   advertisement_report.connectable_ = 1;
   advertisement_report.scannable_ = 1;
   advertisement_report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
-  Address::FromString("12:34:56:78:9a:bc", advertisement_report.address_);
+  advertisement_report.address_ = Address::FromString("12:34:56:78:9a:bc").value();
   std::vector<LengthAndData> adv_data{};
   LengthAndData flags_data{};
   flags_data.data_.push_back(static_cast<uint8_t>(GapDataType::FLAGS));

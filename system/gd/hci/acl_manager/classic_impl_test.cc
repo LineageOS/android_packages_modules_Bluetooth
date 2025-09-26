@@ -56,7 +56,6 @@ using ::testing::WithArg;
 
 namespace {
 constexpr bool kCrashOnUnknownHandle = true;
-constexpr char kFixedAddress[] = "c0:aa:bb:cc:dd:ee";
 const bluetooth::hci::Address kRemoteAddress =
         bluetooth::hci::Address({0x00, 0x11, 0x22, 0x33, 0x44, 0x55});
 [[maybe_unused]] constexpr uint16_t kHciHandle = 123;
@@ -166,9 +165,6 @@ protected:
     classic_impl_ = new acl_manager::classic_impl(*hci_layer_, handler_, *round_robin_scheduler_,
                                                   kCrashOnUnknownHandle, *acl_scheduler_, *rnr_);
     classic_impl_->handle_register_callbacks(&mock_connection_callback_, handler_);
-
-    Address address;
-    Address::FromString(kFixedAddress, address);
   }
 
   void TearDown() override {
@@ -211,8 +207,6 @@ protected:
   }
 
 protected:
-  Address remote_address_;
-
   uint16_t packet_count_;
   std::unique_ptr<std::promise<void>> packet_promise_;
   std::unique_ptr<std::future<void>> packet_future_;
