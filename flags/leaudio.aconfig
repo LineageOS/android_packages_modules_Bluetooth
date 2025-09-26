@@ -32,6 +32,16 @@ flag {
 }
 
 flag {
+    name: "csis_quirk_for_single_device_with_sirk_all_zeros"
+    namespace: "bluetooth"
+    description: "Allow LeAudio device with invalid CSIS when set size is 1 and sirk is ALL zeros"
+    bug: "447588233"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_dynamic_direction_opening"
     namespace: "bluetooth"
     description: "Enable direction only when needed"
