@@ -132,7 +132,7 @@ static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANS
 static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec);
 
 /* true - authenticated link key is possible */
-static const bool btm_sec_io_map[BTM_IO_CAP_MAX][BTM_IO_CAP_MAX] = {
+static const bool btm_sec_io_map[kBtIoCapClassicMax + 1][kBtIoCapClassicMax + 1] = {
         /*   OUT,    IO,     IN,     NONE */
         /* OUT  */ {false, false, true, false},
         /* IO   */ {false, true, true, false},
@@ -1227,12 +1227,11 @@ static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool is_ori
      ** Is a link key upgrade even possible?
      */
     if ((p_dev_rec->sec_rec.security_required & mtm_check) /* needs MITM */
-        && ((p_dev_rec->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB) ||
-            (p_dev_rec->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256))
-        /* has unauthenticated
-        link key */
-        && (p_dev_rec->sec_rec.rmt_io_caps < BTM_IO_CAP_MAX) /* a valid peer IO cap */
-        && (btm_sec_io_map[p_dev_rec->sec_rec.rmt_io_caps][btm_sec_cb.devcb.loc_io_caps]))
+        && (p_dev_rec->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB ||
+            p_dev_rec->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256)
+        /* unauthenticated link key */
+        && p_dev_rec->sec_rec.rmt_io_caps <= kBtIoCapClassicMax /* a valid peer IO cap */
+        && btm_sec_io_map[p_dev_rec->sec_rec.rmt_io_caps][btm_sec_cb.devcb.loc_io_caps])
     /* authenticated
     link key is possible */
     {
@@ -1945,7 +1944,7 @@ void btm_sec_dev_reset(void) {
                    "only controllers with SSP is supported");
 
   /* set the default IO capabilities */
-  btm_sec_cb.devcb.loc_io_caps = BTM_IO_CAP_IO;
+  btm_sec_cb.devcb.loc_io_caps = BtIoCap::DISPLAY_YES_NO;
   /* add mx service to use no security */
   BTM_SetSecurityLevel(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
                        BTM_SEC_PROTO_RFCOMM, 0);
@@ -2658,8 +2657,8 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
         evt_data.cfm_req.just_works = true;
 
         /* process user confirm req in association with the auth_req param */
-        if (btm_sec_cb.devcb.loc_io_caps == BTM_IO_CAP_IO) {
-          if (p_dev_rec->sec_rec.rmt_io_caps == BTM_IO_CAP_UNKNOWN) {
+        if (btm_sec_cb.devcb.loc_io_caps == BtIoCap::DISPLAY_YES_NO) {
+          if (p_dev_rec->sec_rec.rmt_io_caps == BtIoCap::IO_CAP_UNKNOWN) {
             log::error(
                     "did not receive IO cap response prior to BTM_SP_CFM_REQ_EVT, "
                     "failing pairing request");
@@ -2668,9 +2667,9 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
             return;
           }
 
-          if ((p_dev_rec->sec_rec.rmt_io_caps == BTM_IO_CAP_IO ||
-               p_dev_rec->sec_rec.rmt_io_caps == BTM_IO_CAP_OUT) &&
-              (btm_sec_cb.devcb.loc_io_caps == BTM_IO_CAP_IO) &&
+          if ((p_dev_rec->sec_rec.rmt_io_caps == BtIoCap::DISPLAY_YES_NO ||
+               p_dev_rec->sec_rec.rmt_io_caps == BtIoCap::DISPLAY_ONLY) &&
+              (btm_sec_cb.devcb.loc_io_caps == BtIoCap::DISPLAY_YES_NO) &&
               ((p_dev_rec->sec_rec.rmt_auth_req & BTM_AUTH_SP_YES) ||
                (btm_sec_cb.devcb.loc_auth_req & BTM_AUTH_SP_YES))) {
             /* Use Numeric Comparison if
@@ -2701,7 +2700,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
         break;
 
       case BTM_SP_KEY_REQ_EVT:
-        if (btm_sec_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
+        if (btm_sec_cb.devcb.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
           /* HCI_USER_PASSKEY_REQUEST_EVT */
           btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_KEY_ENTRY);
         }
@@ -2726,7 +2725,8 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
     if (event == BTM_SP_CFM_REQ_EVT) {
       log::verbose("calling BTM_ConfirmReqReply with status: {}", status);
       BTM_ConfirmReqReply(status, p_bda);
-    } else if (btm_sec_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE && event == BTM_SP_KEY_REQ_EVT) {
+    } else if (btm_sec_cb.devcb.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT &&
+               event == BTM_SP_KEY_REQ_EVT) {
       BTM_PasskeyReqReply(status, p_bda, 0);
     }
     return;
@@ -2750,7 +2750,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
       btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
                          "stack::btm::btm_sec::btm_proc_sp_req_evt Security failure");
     }
-  } else if (btm_sec_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
+  } else if (btm_sec_cb.devcb.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
     btsnd_hcic_user_passkey_neg_reply(p_bda);
   }
 }
@@ -4291,7 +4291,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_KEY_ENTRY:
-      if (btm_sec_cb.devcb.loc_io_caps != BTM_IO_CAP_NONE) {
+      if (btm_sec_cb.devcb.loc_io_caps != BtIoCap::NO_INPUT_NO_OUTPUT) {
         btsnd_hcic_user_passkey_neg_reply(btm_sec_cb.link_spec.addrt.bda);
       } else {
         btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
@@ -4299,8 +4299,9 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS: {
-      tBTM_AUTH_REQ auth_req =
-              (btm_sec_cb.devcb.loc_io_caps == BTM_IO_CAP_NONE) ? BTM_AUTH_AP_NO : BTM_AUTH_AP_YES;
+      tBTM_AUTH_REQ auth_req = (btm_sec_cb.devcb.loc_io_caps == BtIoCap::NO_INPUT_NO_OUTPUT)
+                                       ? BTM_AUTH_AP_NO
+                                       : BTM_AUTH_AP_YES;
       // TODO(optedoblivion): Inject OOB_DATA_PRESENT Flag
       btsnd_hcic_io_cap_req_reply(btm_sec_cb.link_spec.addrt.bda, btm_sec_cb.devcb.loc_io_caps,
                                   BTM_OOB_NONE, auth_req);

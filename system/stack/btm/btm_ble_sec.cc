@@ -1210,7 +1210,7 @@ static tBTM_STATUS btm_ble_io_capabilities_req(tBTM_SEC_DEV_REC* p_dev_rec,
   log::verbose("5:p_data->io_cap={} auth_req:{}", p_data->io_cap, p_data->auth_req);
 
   /* remove MITM protection requirement if IO cap does not allow it */
-  if ((p_data->io_cap == BTM_IO_CAP_NONE) && p_data->oob_data == SMP_OOB_NONE) {
+  if (p_data->io_cap == BtIoCap::NO_INPUT_NO_OUTPUT && p_data->oob_data == SMP_OOB_NONE) {
     p_data->auth_req &= ~BTM_LE_AUTH_REQ_MITM;
   }
 
@@ -1244,7 +1244,7 @@ static tBTM_STATUS btm_ble_br_keys_req(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_R
   tBTM_STATUS callback_rc = tBTM_STATUS::BTM_SUCCESS;
   log::verbose("p_dev_rec->bd_addr:{}", p_dev_rec->bd_addr);
   *p_data = tBTM_LE_IO_REQ{
-          .io_cap = BTM_IO_CAP_UNKNOWN,
+          .io_cap = BtIoCap::IO_CAP_UNKNOWN,
           .oob_data = false,
           .auth_req = BTM_LE_AUTH_REQ_SC_MITM_BOND,
           .max_key_size = BTM_BLE_MAX_KEY_SIZE,

@@ -109,7 +109,7 @@ void btif_dm_pin_reply(const RawAddress /* bd_addr */, uint8_t /* accept */, uin
 void btif_dm_proc_io_req(tBTM_AUTH_REQ* /* p_auth_req */, bool /* is_orig */) {
   inc_func_call_count(__func__);
 }
-void btif_dm_proc_io_rsp(const RawAddress& /* bd_addr */, tBTM_IO_CAP /* io_cap */,
+void btif_dm_proc_io_rsp(const RawAddress& /* bd_addr */, BtIoCap /* io_cap */,
                          tBTM_OOB_DATA /* oob_data */, tBTM_AUTH_REQ /* auth_req */) {
   inc_func_call_count(__func__);
 }

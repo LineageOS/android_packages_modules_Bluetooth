@@ -192,7 +192,7 @@ static const tSMP_CMD_ACT smp_cmd_build_act[] = {
         smp_build_pairing_commitment_cmd             /* 0x0F: pairing commitment */
 };
 
-static const tSMP_ASSO_MODEL smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] = {
+static const tSMP_ASSO_MODEL smp_association_table[2][kBtIoCapLeMax + 1][kBtIoCapLeMax + 1] = {
         /* display only */ /* Display Yes/No */ /* keyboard only */
         /* No Input/Output */                   /* keyboard display */
 
@@ -240,7 +240,7 @@ static const tSMP_ASSO_MODEL smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP
          {SMP_MODEL_PASSKEY, SMP_MODEL_PASSKEY, SMP_MODEL_KEY_NOTIF, SMP_MODEL_ENCRYPTION_ONLY,
           SMP_MODEL_PASSKEY}}};
 
-static const tSMP_ASSO_MODEL smp_association_table_sc[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] = {
+static const tSMP_ASSO_MODEL smp_association_table_sc[2][kBtIoCapLeMax + 1][kBtIoCapLeMax + 1] = {
         /* display only */ /* Display Yes/No */ /* keyboard only */
         /* No InputOutput */                    /* keyboard display */
 
@@ -1115,22 +1115,21 @@ bool smp_command_has_valid_fixed_length(tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 bool smp_pairing_request_response_parameters_are_valid(tSMP_CB* p_cb) {
-  uint8_t io_caps = p_cb->peer_io_caps;
   uint8_t oob_flag = p_cb->peer_oob_flag;
   uint8_t bond_flag = p_cb->peer_auth_req & 0x03;  // 0x03 is gen bond with appropriate mask
   uint8_t enc_size = p_cb->peer_enc_size;
 
   log::verbose("cmd code 0x{:02x}", p_cb->rcvd_cmd_code);
 
-  if (io_caps >= BTM_IO_CAP_MAX) {
+  if (p_cb->peer_io_caps > kBtIoCapLeMax) {
     log::warn(
             "Rcvd from the peer cmd 0x{:02x} with IO Capability value (0x{:02x}) "
             "out of range).",
-            p_cb->rcvd_cmd_code, io_caps);
+            p_cb->rcvd_cmd_code, static_cast<uint8_t>(p_cb->peer_io_caps));
     return false;
   }
 
-  if (!((oob_flag == SMP_OOB_NONE) || (oob_flag == SMP_OOB_PRESENT))) {
+  if (oob_flag != SMP_OOB_NONE && oob_flag != SMP_OOB_PRESENT) {
     log::warn(
             "Rcvd from the peer cmd 0x{:02x} with OOB data flag value (0x{:02x}) "
             "out of range).",
@@ -1138,7 +1137,7 @@ bool smp_pairing_request_response_parameters_are_valid(tSMP_CB* p_cb) {
     return false;
   }
 
-  if (!((bond_flag == SMP_AUTH_NO_BOND) || (bond_flag == SMP_AUTH_BOND))) {
+  if (bond_flag != SMP_AUTH_NO_BOND && bond_flag != SMP_AUTH_BOND) {
     log::warn(
             "Rcvd from the peer cmd 0x{:02x} with Bonding_Flags value (0x{:02x}) "
             "out of range).",
@@ -1146,7 +1145,7 @@ bool smp_pairing_request_response_parameters_are_valid(tSMP_CB* p_cb) {
     return false;
   }
 
-  if ((enc_size < SMP_ENCR_KEY_SIZE_MIN) || (enc_size > SMP_ENCR_KEY_SIZE_MAX)) {
+  if (enc_size < SMP_ENCR_KEY_SIZE_MIN || enc_size > SMP_ENCR_KEY_SIZE_MAX) {
     log::warn(
             "Rcvd from the peer cmd 0x{:02x} with Maximum Encryption Key value "
             "(0x{:02x}) out of range).",
@@ -1297,7 +1296,7 @@ tSMP_ASSO_MODEL smp_select_legacy_association_model(tSMP_CB* p_cb) {
   }
 
   /* otherwise use IO capability to select association model */
-  if (p_cb->peer_io_caps < SMP_IO_CAP_MAX && p_cb->local_io_capability < SMP_IO_CAP_MAX) {
+  if (p_cb->peer_io_caps <= kBtIoCapLeMax && p_cb->local_io_capability <= kBtIoCapLeMax) {
     if (p_cb->role == HCI_ROLE_CENTRAL) {
       model = smp_association_table[p_cb->role][p_cb->peer_io_caps][p_cb->local_io_capability];
     } else {
@@ -1332,7 +1331,7 @@ tSMP_ASSO_MODEL smp_select_association_model_secure_connections(tSMP_CB* p_cb) {
   }
 
   /* otherwise use IO capability to select association model */
-  if (p_cb->peer_io_caps < SMP_IO_CAP_MAX && p_cb->local_io_capability < SMP_IO_CAP_MAX) {
+  if (p_cb->peer_io_caps <= kBtIoCapLeMax && p_cb->local_io_capability <= kBtIoCapLeMax) {
     if (p_cb->role == HCI_ROLE_CENTRAL) {
       model = smp_association_table_sc[p_cb->role][p_cb->peer_io_caps][p_cb->local_io_capability];
     } else {

@@ -613,7 +613,7 @@ static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result) {
   }
 }
 
-static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTM_OOB_DATA* p_oob_data,
+static void ble_io_req(const RawAddress& bd_addr, BtIoCap* p_io_cap, tBTM_OOB_DATA* p_oob_data,
                        tBTM_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
                        tBTM_LE_KEY_TYPE* p_init_key, tBTM_LE_KEY_TYPE* p_resp_key) {
   /* Retrieve the properties from file system if possible */
@@ -642,7 +642,7 @@ static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTM_OO
   btif_dm_set_oob_for_le_io_req(bd_addr, p_oob_data, p_auth_req);
 
   if (bte_appl_cfg.ble_io_cap <= 4) {
-    *p_io_cap = static_cast<tBTM_IO_CAP>(bte_appl_cfg.ble_io_cap);
+    *p_io_cap = static_cast<BtIoCap>(bte_appl_cfg.ble_io_cap);
   }
 
   if (bte_appl_cfg.ble_init_key <= BTM_BLE_INITIATOR_KEY_SIZE) {

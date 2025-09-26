@@ -209,7 +209,7 @@ struct tBTM_SEC_REC {
 
   bool link_key_not_sent;          /* link key notification has not been sent waiting for
                                       name */
-  tBTM_IO_CAP rmt_io_caps;         /* IO capability of the peer device */
+  BtIoCap rmt_io_caps;             /* IO capability of the peer device */
   tBTM_AUTH_REQ rmt_auth_req;      /* the auth_req flag as in the IO caps rsp evt */
   bool new_encryption_key_is_p256; /* Set to true when the newly generated LK
                                    ** is generated from P-256.

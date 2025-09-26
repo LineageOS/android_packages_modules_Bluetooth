@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <string>
 
+#include "include/hardware/bluetooth.h"
 #include "macros.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_status.h"
@@ -80,12 +81,6 @@ inline std::string smp_evt_to_text(const tSMP_EVT evt) {
       return "UNKNOWN SMP EVENT";
   }
 }
-
-/* Device IO capability */
-#define SMP_IO_CAP_IO BTM_IO_CAP_IO         /* DisplayYesNo */
-#define SMP_IO_CAP_KBDISP BTM_IO_CAP_KBDISP /* Keyboard Display */
-#define SMP_IO_CAP_MAX BTM_IO_CAP_MAX
-typedef uint8_t tSMP_IO_CAP;
 
 /* OOB data present or not */
 enum { SMP_OOB_NONE, SMP_OOB_PRESENT, SMP_OOB_UNKNOWN };
@@ -155,7 +150,7 @@ typedef uint8_t tSMP_SC_KEY_TYPE;
 
 /* data type for BTM_SP_IO_REQ_EVT */
 typedef struct {
-  tSMP_IO_CAP io_cap;     /* local IO capabilities */
+  BtIoCap io_cap;         /* local IO capabilities */
   tSMP_OOB_FLAG oob_data; /* OOB data present (locally) for the peer device */
   tSMP_AUTH_REQ auth_req; /* Authentication required (for local device) */
   uint8_t max_key_size;   /* max encryption key size */

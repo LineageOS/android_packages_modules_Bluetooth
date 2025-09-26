@@ -1369,7 +1369,7 @@ static void btu_hcif_io_cap_response_evt(const uint8_t* p) {
 
   uint8_t io_cap;
   STREAM_TO_UINT8(io_cap, p);
-  evt_data.io_cap = static_cast<tBTM_IO_CAP>(io_cap);
+  evt_data.io_cap = static_cast<BtIoCap>(io_cap);
 
   STREAM_TO_UINT8(evt_data.oob_data, p);
   STREAM_TO_UINT8(evt_data.auth_req, p);

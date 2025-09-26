@@ -385,8 +385,8 @@ pub enum BtIoCap {
     Unknown = 0xff,
 }
 
-impl From<bindings::bt_io_cap_t> for BtIoCap {
-    fn from(item: bindings::bt_io_cap_t) -> Self {
+impl From<bindings::BtIoCap> for BtIoCap {
+    fn from(item: bindings::BtIoCap) -> Self {
         BtIoCap::from_u32(item).unwrap_or(BtIoCap::Unknown)
     }
 }

@@ -140,7 +140,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
     p_dev_rec->sec_rec.sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED | BTM_SEC_LINK_KEY_AUTHED;
   }
 
-  p_dev_rec->sec_rec.rmt_io_caps = BTM_IO_CAP_OUT;
+  p_dev_rec->sec_rec.rmt_io_caps = BtIoCap::DISPLAY_ONLY;
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
 }
 
@@ -715,7 +715,7 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
   p_dev_rec->sec_rec.sec_flags = BTM_SEC_IN_USE;
   p_dev_rec->sec_rec.bond_type = BOND_TYPE_UNKNOWN;
   p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
-  p_dev_rec->sec_rec.rmt_io_caps = BTM_IO_CAP_UNKNOWN;
+  p_dev_rec->sec_rec.rmt_io_caps = BtIoCap::IO_CAP_UNKNOWN;
   p_dev_rec->suggested_tx_octets = 0;
 
   return p_dev_rec;
