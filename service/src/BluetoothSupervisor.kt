@@ -20,13 +20,14 @@ import android.content.Context
 import android.os.Looper
 import android.os.UserHandle
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.util.TimeProvider
 
 private const val TAG = "BluetoothSupervisor"
 
 class BluetoothSupervisor(
     context: Context,
     val looper: Looper,
-    bluetoothComponent: BluetoothComponent?,
+    bluetoothComponent: BluetoothComponent,
 ) {
     private val bms: BluetoothManagerService
     private var mInitialized = false
@@ -39,7 +40,14 @@ class BluetoothSupervisor(
                 "default"
             }
 
-        bms = BluetoothManagerService(context, looper, hciInstance, bluetoothComponent)
+        bms =
+            BluetoothManagerService(
+                context,
+                looper,
+                hciInstance,
+                bluetoothComponent,
+                TimeProvider.systemClock,
+            )
         Log.i(TAG, "Created BluetoothSupervisor")
     }
 

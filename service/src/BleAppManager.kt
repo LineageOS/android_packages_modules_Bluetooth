@@ -17,15 +17,13 @@
 package com.android.server.bluetooth
 
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_DIED
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.os.RemoteException
 
 private const val TAG = "BleAppManager"
 
 class BleAppManager(
-    private val looper: Looper,
+    private val post: (Runnable) -> Unit,
     private val onBleAppRemoved: (Int, String) -> Unit,
 ) {
     private val bleApps = mutableMapOf<IBinder, ClientDeathRecipient>()
@@ -34,9 +32,7 @@ class BleAppManager(
         IBinder.DeathRecipient {
         override fun binderDied() {
             Log.w(TAG, "Binder is dead - posting the unregister of $packageName")
-            Handler(looper).post {
-                removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_DIED, token, packageName)
-            }
+            post { removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_DIED, token, packageName) }
         }
 
         override fun toString() = packageName

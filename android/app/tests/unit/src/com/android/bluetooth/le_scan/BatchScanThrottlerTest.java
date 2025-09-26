@@ -28,13 +28,12 @@ import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.bluetooth.TestUtils.FakeTimeProvider;
+import com.android.tests.bluetooth.FakeTimeProvider;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,12 +51,7 @@ public class BatchScanThrottlerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private FakeTimeProvider mTimeProvider;
-
-    @Before
-    public void setUp() {
-        mTimeProvider = new FakeTimeProvider();
-    }
+    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
     private void advanceTime(long amountToAdvanceMillis) {
         mTimeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis));

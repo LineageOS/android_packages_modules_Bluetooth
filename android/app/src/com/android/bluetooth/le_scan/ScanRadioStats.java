@@ -22,8 +22,8 @@ import android.annotation.Nullable;
 import android.bluetooth.BluetoothProtoEnums;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.bluetooth.util.WorkSourceUtil;
 
 class ScanRadioStats {

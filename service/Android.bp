@@ -76,6 +76,7 @@ java_library {
         "PlatformProperties",
         "androidx.annotation_annotation",
         "androidx.appcompat_appcompat",
+        "bluetooth-common-java",
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
         "bluetooth_flags_java_lib",

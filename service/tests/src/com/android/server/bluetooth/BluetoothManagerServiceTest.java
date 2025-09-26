@@ -30,7 +30,7 @@ import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_BLUET
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTART_BLUETOOTH_SERVICE;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTORE_USER_SETTING_OFF;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_TIMEOUT_BIND;
-import static com.android.server.bluetooth.BluetoothManagerService.SERVICE_RESTART_TIME_MS;
+import static com.android.server.bluetooth.BluetoothManagerService.SERVICE_RESTART_DELAY;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -76,6 +76,7 @@ import android.sysprop.BluetoothProperties;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
@@ -95,6 +96,8 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -132,6 +135,7 @@ public class BluetoothManagerServiceTest {
     @Mock AdapterBinder mAdapterBinder;
     @Mock AppOpsManager mAppOpsManager;
     @Mock PermissionManager mPermissionManager;
+    @Mock TimeProvider mTimeProvider;
 
     private int mPersistedState = BluetoothManagerService.BLUETOOTH_OFF;
 
@@ -232,11 +236,15 @@ public class BluetoothManagerServiceTest {
 
         BluetoothServerProxy.setInstanceForTesting(mBluetoothServerProxy);
 
-        mLooper = new TestLooper();
+        mLooper = new TestLooper(() -> 0L);
 
         mManagerService =
                 new BluetoothManagerService(
-                        mContext, mLooper.getLooper(), "default", mBluetoothComponent);
+                        mContext,
+                        mLooper.getLooper(),
+                        "default",
+                        mBluetoothComponent,
+                        mTimeProvider);
         doReturn(false).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
         BluetoothRestriction.initialize(
                 mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
@@ -594,7 +602,8 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.mHandler.sendEmptyMessage(MESSAGE_RESTORE_USER_SETTING_OFF);
+        mManagerService.mHandler.sendMessageAtTime(
+                mManagerService.mHandler.obtainMessage(MESSAGE_RESTORE_USER_SETTING_OFF), 0);
         syncHandler(MESSAGE_RESTORE_USER_SETTING_OFF);
         transition_onToOff(btCallback);
 
@@ -708,7 +717,11 @@ public class BluetoothManagerServiceTest {
 
         mManagerService =
                 new BluetoothManagerService(
-                        mContext, mLooper.getLooper(), "default", mBluetoothComponent);
+                        mContext,
+                        mLooper.getLooper(),
+                        "default",
+                        mBluetoothComponent,
+                        mTimeProvider);
         mManagerService.handleOnBootPhase(mUser);
 
         mManagerService.registerAdapter(mManagerCallback);
@@ -728,7 +741,11 @@ public class BluetoothManagerServiceTest {
 
         mManagerService =
                 new BluetoothManagerService(
-                        mContext, mLooper.getLooper(), "default", mBluetoothComponent);
+                        mContext,
+                        mLooper.getLooper(),
+                        "default",
+                        mBluetoothComponent,
+                        mTimeProvider);
         mManagerService.handleOnBootPhase(mUser);
 
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
@@ -1022,19 +1039,19 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void crashLoop_recoveryTimeIncrease() throws Exception {
-        int[] recoveryDelays = {
-            SERVICE_RESTART_TIME_MS,
-            SERVICE_RESTART_TIME_MS * 2,
-            SERVICE_RESTART_TIME_MS * 3,
-            SERVICE_RESTART_TIME_MS * 40,
-            SERVICE_RESTART_TIME_MS * 50,
-            SERVICE_RESTART_TIME_MS * 60,
-            0
+        Duration[] recoveryDelays = {
+            SERVICE_RESTART_DELAY,
+            SERVICE_RESTART_DELAY.multipliedBy(2),
+            SERVICE_RESTART_DELAY.multipliedBy(3),
+            SERVICE_RESTART_DELAY.multipliedBy(40),
+            SERVICE_RESTART_DELAY.multipliedBy(50),
+            SERVICE_RESTART_DELAY.multipliedBy(60),
+            Duration.ZERO
         };
 
         mManagerService.enableBle("crashLoop_recoveryTimeIncrease", mBleBinder);
 
-        for (int delay : recoveryDelays) {
+        for (Duration delay : recoveryDelays) {
             var serviceConnection = acceptBluetoothBinding();
             serviceConnection.onServiceDisconnected(
                     new ComponentName("", "com.android.bluetooth.btservice.AdapterService"));
@@ -1042,12 +1059,14 @@ public class BluetoothManagerServiceTest {
             verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
             assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
-            if (delay == 0) {
+            if (!delay.isPositive()) {
                 // Last restart attempt
                 break;
             }
 
-            mLooper.moveTimeForward(delay);
+            mLooper.moveTimeForward(delay.toMillis() - 1);
+            assertThat(mLooper.nextMessage()).isNull();
+            mLooper.moveTimeForward(1);
             syncHandler(MESSAGE_RESTART_BLUETOOTH_SERVICE);
         }
 

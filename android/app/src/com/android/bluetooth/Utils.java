@@ -66,6 +66,7 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
 import android.os.Process;
+import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
@@ -1008,7 +1009,7 @@ public final class Utils {
      * @return A formatted string representing the given time ("MM-dd HH:mm:ss.SSS").
      */
     public static String formatElapsedRealtime(long elapsedRealtimeMillis) {
-        final long timeDeltaMillis = elapsedRealtimeMillis - sSystemClock.elapsedRealtime();
+        final long timeDeltaMillis = elapsedRealtimeMillis - SystemClock.elapsedRealtime();
         final long eventTimeEpochMillis = System.currentTimeMillis() + timeDeltaMillis;
         return formatInstant(Instant.ofEpochMilli(eventTimeEpochMillis));
     }
@@ -1248,22 +1249,6 @@ public final class Utils {
         return android.bluetooth.BluetoothUtils.formatSimple(format, args);
     }
 
-    public interface TimeProvider {
-        long elapsedRealtime();
-    }
-
-    private static final TimeProvider sSystemClock = new SystemClockTimeProvider();
-
-    public static TimeProvider getSystemClock() {
-        return sSystemClock;
-    }
-
-    private static final class SystemClockTimeProvider implements TimeProvider {
-        @Override
-        public long elapsedRealtime() {
-            return android.os.SystemClock.elapsedRealtime();
-        }
-    }
 
     /** Execute a remote callback without propagating the RemoteException of a dead app */
     public static void callbackToApp(RemoteExceptionIgnoringRunnable callback) {
