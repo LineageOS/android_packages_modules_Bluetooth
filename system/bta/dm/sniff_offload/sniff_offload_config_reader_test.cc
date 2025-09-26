@@ -273,6 +273,30 @@ TEST_F(SniffConfigReaderTest, profiles_config_for_idle_state_selected) {
   EXPECT_EQ(config.parameters_.subrate_max_latency, 1200);
 }
 
+// Verifies that a configuration with no priority is returned for the
+// SCO_CLOSE state. This is because a closed SCO link is an event and does not
+// represent a persistent state.
+TEST_F(SniffConfigReaderTest, read_config__sco_close_returns_no_priority) {
+  // Set up a test configuration for a profile. The specific actions don't
+  // matter as SCO_CLOSE should always result in no priority.
+  g_test_num_pm_entry = 1;
+
+  g_test_bta_dm_pm_cfg[1].id = static_cast<uint8_t>(ProfileId::BTA_ID_AV);
+  g_test_bta_dm_pm_cfg[1].app_id = BTA_ALL_APP_ID;
+  g_test_bta_dm_pm_cfg[1].spec_idx = 0;
+
+  SetupSmallTestConfiguration();
+
+  // Call ReadSniffConfig for SCO_CLOSE state.
+  auto config =
+          reader_->ReadSniffConfig(ProfileId::BTA_ID_AV, 0, ProfileState::BTA_SYS_SCO_CLOSE);
+
+  // Verify that the returned config has no priority.
+  ASSERT_EQ(config.priority_, Priority::kNoPriority);
+  EXPECT_FALSE(config.allow_subrating_update_);
+  EXPECT_EQ(config.parameters_.sniff_max_interval, 0);
+}
+
 }  // namespace
 }  // namespace sniff_offload
 }  // namespace bluetooth
