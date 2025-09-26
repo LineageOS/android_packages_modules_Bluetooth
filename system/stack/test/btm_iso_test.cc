@@ -269,7 +269,7 @@ protected:
 
     // Default mock SetupIsoDataPath HCI action
     ON_CALL(hcic_interface_, SetupIsoDataPath)
-            .WillByDefault([](uint16_t iso_handle, uint8_t /* data_path_dir */,
+            .WillByDefault([](uint16_t conn_handle, uint8_t /* data_path_dir */,
                               uint8_t /* data_path_id */, uint8_t /* codec_id_format */,
                               uint16_t /* codec_id_company */, uint16_t /* codec_id_vendor */,
                               uint32_t /* controller_delay */,
@@ -278,19 +278,19 @@ protected:
               std::vector<uint8_t> buf(3);
               uint8_t* p = buf.data();
               UINT8_TO_STREAM(p, HCI_SUCCESS);
-              UINT16_TO_STREAM(p, iso_handle);
+              UINT16_TO_STREAM(p, conn_handle);
 
               std::move(cb).Run(buf.data(), buf.size());
             });
 
     // Default mock RemoveIsoDataPath HCI action
     ON_CALL(hcic_interface_, RemoveIsoDataPath)
-            .WillByDefault([](uint16_t iso_handle, uint8_t /* data_path_dir */,
+            .WillByDefault([](uint16_t conn_handle, uint8_t /* data_path_dir */,
                               base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
               std::vector<uint8_t> buf(3);
               uint8_t* p = buf.data();
               UINT8_TO_STREAM(p, HCI_SUCCESS);
-              UINT16_TO_STREAM(p, iso_handle);
+              UINT16_TO_STREAM(p, conn_handle);
 
               std::move(cb).Run(buf.data(), buf.size());
             });
@@ -1758,13 +1758,13 @@ TEST_F(IsoManagerTest, SetupIsoDataPathInvalidStatus) {
   uint8_t setup_datapath_rsp_status = HCI_SUCCESS;
   ON_CALL(hcic_interface_, SetupIsoDataPath)
           .WillByDefault(
-                  [&setup_datapath_rsp_status](uint16_t iso_handle, uint8_t, uint8_t, uint8_t,
+                  [&setup_datapath_rsp_status](uint16_t conn_handle, uint8_t, uint8_t, uint8_t,
                                                uint16_t, uint16_t, uint32_t, std::vector<uint8_t>,
                                                base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
                     std::vector<uint8_t> buf(3);
                     uint8_t* p = buf.data();
                     UINT8_TO_STREAM(p, setup_datapath_rsp_status);
-                    UINT16_TO_STREAM(p, iso_handle);
+                    UINT16_TO_STREAM(p, conn_handle);
 
                     std::move(cb).Run(buf.data(), buf.size());
                   });
@@ -1826,7 +1826,7 @@ TEST_F(IsoManagerTest, SetupIsoDataPathLateArrivingCallback) {
   // Catch the callback
   base::OnceCallback<void(uint8_t*, uint16_t)> iso_cb;
   ON_CALL(hcic_interface_, SetupIsoDataPath)
-          .WillByDefault([&iso_cb](uint16_t /* iso_handle */, uint8_t /* data_path_dir */,
+          .WillByDefault([&iso_cb](uint16_t /* conn_handle */, uint8_t /* data_path_dir */,
                                    uint8_t /* data_path_id */, uint8_t /* codec_id_format */,
                                    uint16_t /* codec_id_company */, uint16_t /* codec_id_vendor */,
                                    uint32_t /* controller_delay */,
@@ -1866,7 +1866,7 @@ TEST_F(IsoManagerTest, DisconnectCisWhileSettingDataPath) {
   bluetooth::hci::iso_manager::iso_data_path_params path_params = kDefaultIsoDataPathParams;
 
   ON_CALL(hcic_interface_, SetupIsoDataPath)
-          .WillByDefault([](uint16_t /*iso_handle*/, uint8_t /* data_path_dir */,
+          .WillByDefault([](uint16_t /*conn_handle*/, uint8_t /* data_path_dir */,
                             uint8_t /* data_path_id */, uint8_t /* codec_id_format */,
                             uint16_t /* codec_id_company */, uint16_t /* codec_id_vendor */,
                             uint32_t /* controller_delay */, std::vector<uint8_t> /* codec_conf */,
@@ -1936,21 +1936,21 @@ TEST_F(IsoManagerDeathTest, RemoveIsoDataPathNoSuchPath) {
   // Check on CIS
   IsoManager::GetInstance()->CreateCig(volatile_test_cig_create_cmpl_evt_.cig_id,
                                        kDefaultCigParams);
-  uint16_t iso_handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  uint16_t conn_handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
   ASSERT_EXIT(IsoManager::GetInstance()->RemoveIsoDataPath(
-                      iso_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
+                      conn_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
               ::testing::KilledBySignal(SIGABRT), "path not set");
 
-  IsoManager::GetInstance()->EstablishCis({.conn_pairs = {{iso_handle, 1}}});
+  IsoManager::GetInstance()->EstablishCis({.conn_pairs = {{conn_handle, 1}}});
   ASSERT_EXIT(IsoManager::GetInstance()->RemoveIsoDataPath(
-                      iso_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
+                      conn_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
               ::testing::KilledBySignal(SIGABRT), "path not set");
 
   // Check on BIS
-  iso_handle = volatile_test_big_params_evt_.conn_handles[0];
+  conn_handle = volatile_test_big_params_evt_.conn_handles[0];
   IsoManager::GetInstance()->CreateBig(volatile_test_big_params_evt_.big_id, kDefaultBigParams);
   ASSERT_EXIT(IsoManager::GetInstance()->RemoveIsoDataPath(
-                      iso_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
+                      conn_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
               ::testing::KilledBySignal(SIGABRT), "path not set");
 }
 
@@ -1958,21 +1958,23 @@ TEST_F(IsoManagerDeathTest, RemoveIsoDataPathTwice) {
   // Check on CIS
   IsoManager::GetInstance()->CreateCig(volatile_test_cig_create_cmpl_evt_.cig_id,
                                        kDefaultCigParams);
-  uint16_t iso_handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
-  IsoManager::GetInstance()->EstablishCis({.conn_pairs = {{iso_handle, 1}}});
-  IsoManager::GetInstance()->SetupIsoDataPath(iso_handle, kDefaultIsoDataPathParams);
-  IsoManager::GetInstance()->RemoveIsoDataPath(iso_handle, kDefaultIsoDataPathParams.data_path_dir);
+  uint16_t conn_handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({.conn_pairs = {{conn_handle, 1}}});
+  IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, kDefaultIsoDataPathParams);
+  IsoManager::GetInstance()->RemoveIsoDataPath(conn_handle,
+                                               kDefaultIsoDataPathParams.data_path_dir);
   ASSERT_EXIT(IsoManager::GetInstance()->RemoveIsoDataPath(
-                      iso_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
+                      conn_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
               ::testing::KilledBySignal(SIGABRT), "path not set");
 
   // Check on BIS
-  iso_handle = volatile_test_big_params_evt_.conn_handles[0];
+  conn_handle = volatile_test_big_params_evt_.conn_handles[0];
   IsoManager::GetInstance()->CreateBig(volatile_test_big_params_evt_.big_id, kDefaultBigParams);
-  IsoManager::GetInstance()->SetupIsoDataPath(iso_handle, kDefaultIsoDataPathParams);
-  IsoManager::GetInstance()->RemoveIsoDataPath(iso_handle, kDefaultIsoDataPathParams.data_path_dir);
+  IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, kDefaultIsoDataPathParams);
+  IsoManager::GetInstance()->RemoveIsoDataPath(conn_handle,
+                                               kDefaultIsoDataPathParams.data_path_dir);
   ASSERT_EXIT(IsoManager::GetInstance()->RemoveIsoDataPath(
-                      iso_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
+                      conn_handle, bluetooth::hci::iso_manager::kIsoDataPathDirectionOut),
               ::testing::KilledBySignal(SIGABRT), "path not set");
 }
 
@@ -1982,12 +1984,12 @@ TEST_F(IsoManagerTest, RemoveIsoDataPathInvalidStatus) {
   uint8_t remove_datapath_rsp_status = 0x12;
   ON_CALL(hcic_interface_, RemoveIsoDataPath)
           .WillByDefault(
-                  [&remove_datapath_rsp_status](uint16_t iso_handle, uint8_t /* data_path_dir */,
+                  [&remove_datapath_rsp_status](uint16_t conn_handle, uint8_t /* data_path_dir */,
                                                 base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
                     std::vector<uint8_t> buf(3);
                     uint8_t* p = buf.data();
                     UINT8_TO_STREAM(p, remove_datapath_rsp_status);
-                    UINT16_TO_STREAM(p, iso_handle);
+                    UINT16_TO_STREAM(p, conn_handle);
 
                     std::move(cb).Run(buf.data(), buf.size());
                   });
@@ -1995,24 +1997,26 @@ TEST_F(IsoManagerTest, RemoveIsoDataPathInvalidStatus) {
   // Check on CIS
   IsoManager::GetInstance()->CreateCig(volatile_test_cig_create_cmpl_evt_.cig_id,
                                        kDefaultCigParams);
-  uint16_t iso_handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
-  IsoManager::GetInstance()->EstablishCis({.conn_pairs = {{iso_handle, 1}}});
-  IsoManager::GetInstance()->SetupIsoDataPath(iso_handle, kDefaultIsoDataPathParams);
+  uint16_t conn_handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({.conn_pairs = {{conn_handle, 1}}});
+  IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, kDefaultIsoDataPathParams);
 
-  EXPECT_CALL(*cig_callbacks_, OnRemoveIsoDataPath(remove_datapath_rsp_status, iso_handle,
+  EXPECT_CALL(*cig_callbacks_, OnRemoveIsoDataPath(remove_datapath_rsp_status, conn_handle,
                                                    volatile_test_cig_create_cmpl_evt_.cig_id))
           .Times(1);
-  IsoManager::GetInstance()->RemoveIsoDataPath(iso_handle, kDefaultIsoDataPathParams.data_path_dir);
+  IsoManager::GetInstance()->RemoveIsoDataPath(conn_handle,
+                                               kDefaultIsoDataPathParams.data_path_dir);
 
   // Check on BIS
-  iso_handle = volatile_test_big_params_evt_.conn_handles[0];
+  conn_handle = volatile_test_big_params_evt_.conn_handles[0];
   IsoManager::GetInstance()->CreateBig(volatile_test_big_params_evt_.big_id, kDefaultBigParams);
-  IsoManager::GetInstance()->SetupIsoDataPath(iso_handle, kDefaultIsoDataPathParams);
+  IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, kDefaultIsoDataPathParams);
 
-  EXPECT_CALL(*big_callbacks_, OnRemoveIsoDataPath(remove_datapath_rsp_status, iso_handle,
+  EXPECT_CALL(*big_callbacks_, OnRemoveIsoDataPath(remove_datapath_rsp_status, conn_handle,
                                                    volatile_test_big_params_evt_.big_id))
           .Times(1);
-  IsoManager::GetInstance()->RemoveIsoDataPath(iso_handle, kDefaultIsoDataPathParams.data_path_dir);
+  IsoManager::GetInstance()->RemoveIsoDataPath(conn_handle,
+                                               kDefaultIsoDataPathParams.data_path_dir);
 }
 
 TEST_F(IsoManagerTest, RemoveIsoDataPathLateArrivingCallback) {
@@ -2037,7 +2041,7 @@ TEST_F(IsoManagerTest, RemoveIsoDataPathLateArrivingCallback) {
   // Catch the callback
   base::OnceCallback<void(uint8_t*, uint16_t)> iso_cb;
   ON_CALL(hcic_interface_, RemoveIsoDataPath)
-          .WillByDefault([&iso_cb](uint16_t /* iso_handle */, uint8_t /* data_path_dir */,
+          .WillByDefault([&iso_cb](uint16_t /* conn_handle */, uint8_t /* data_path_dir */,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
             iso_cb = std::move(cb);
           });
@@ -2721,7 +2725,7 @@ TEST_F(IsoManagerTest, ReadIsoLinkQualityLateArrivingCallback) {
   // Catch the callback
   base::OnceCallback<void(uint8_t*, uint16_t)> iso_cb;
   ON_CALL(hcic_interface_, ReadIsoLinkQuality)
-          .WillByDefault([&iso_cb](uint16_t /* iso_handle */,
+          .WillByDefault([&iso_cb](uint16_t /* conn_handle */,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
             iso_cb = std::move(cb);
           });

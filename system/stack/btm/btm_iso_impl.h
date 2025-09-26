@@ -357,7 +357,7 @@ struct iso_impl {
                    std::format("handle:0x{:04x}, status:{}", conn_handle,
                                hci_status_code_text((tHCI_STATUS)(status))));
 
-    log::verbose("{}, iso_handle: {:#x}, flags: {:#x} status {}", cis_hdl_to_addr[conn_handle],
+    log::verbose("{}, conn_handle: {:#x}, flags: {:#x} status {}", cis_hdl_to_addr[conn_handle],
                  conn_handle, iso->state_flags, hci_status_code_text((tHCI_STATUS)(status)));
 
     iso->state_flags &= ~kStateFlagSettingDataPath;
@@ -418,7 +418,7 @@ struct iso_impl {
     BTM_LogHistory(kBtmLogTag, cis_hdl_to_addr[conn_handle], "Remove data path complete",
                    std::format("handle:0x{:04x}, status:{}", conn_handle,
                                hci_status_code_text((tHCI_STATUS)(status))));
-    log::verbose("{}, iso_handle: {:#x}, flags: {:#x} status {}", cis_hdl_to_addr[conn_handle],
+    log::verbose("{}, conn_handle: {:#x}, flags: {:#x} status {}", cis_hdl_to_addr[conn_handle],
                  conn_handle, iso->state_flags, hci_status_code_text((tHCI_STATUS)(status)));
 
     if (status == HCI_SUCCESS) {
@@ -434,21 +434,21 @@ struct iso_impl {
     }
   }
 
-  void remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir) {
-    iso_base* iso = GetIsoIfKnown(iso_handle);
-    log::assert_that(iso != nullptr, "No such iso connection: 0x{:x}", iso_handle);
+  void remove_iso_data_path(uint16_t conn_handle, uint8_t data_path_dir) {
+    iso_base* iso = GetIsoIfKnown(conn_handle);
+    log::assert_that(iso != nullptr, "No such iso connection: 0x{:x}", conn_handle);
     log::assert_that(
             (iso->state_flags & (kStateFlagHasDataPathSet | kStateFlagSettingDataPath)) != 0,
             "Data path not set");
 
     btsnd_hcic_remove_iso_data_path(
-            iso_handle, data_path_dir,
+            conn_handle, data_path_dir,
             base::BindOnce(&iso_impl::on_remove_iso_data_path, weak_factory_.GetWeakPtr()));
 
-    BTM_LogHistory(kBtmLogTag, cis_hdl_to_addr[iso_handle], "Remove data path",
-                   std::format("handle:0x{:04x}, dir:0x{:02x}", iso_handle, data_path_dir));
-    log::verbose("{}, iso_handle: {:#x}, flags: {:#x} dir {:#x}", cis_hdl_to_addr[iso_handle],
-                 iso_handle, iso->state_flags, data_path_dir);
+    BTM_LogHistory(kBtmLogTag, cis_hdl_to_addr[conn_handle], "Remove data path",
+                   std::format("handle:0x{:04x}, dir:0x{:02x}", conn_handle, data_path_dir));
+    log::verbose("{}, conn_handle: {:#x}, flags: {:#x} dir {:#x}", cis_hdl_to_addr[conn_handle],
+                 conn_handle, iso->state_flags, data_path_dir);
   }
 
   void on_iso_link_quality_read(uint8_t* stream, uint16_t len) {
@@ -499,18 +499,19 @@ struct iso_impl {
             retransmittedPackets, crcErrorPackets, rxUnreceivedPackets, duplicatePackets);
   }
 
-  void read_iso_link_quality(uint16_t iso_handle) {
-    iso_base* iso = GetIsoIfKnown(iso_handle);
+  void read_iso_link_quality(uint16_t conn_handle) {
+    iso_base* iso = GetIsoIfKnown(conn_handle);
     if (iso == nullptr) {
-      log::error("No such iso connection: 0x{:x}", iso_handle);
+      log::error("No such iso connection: 0x{:x}", conn_handle);
       return;
     }
 
-    btsnd_hcic_read_iso_link_quality(iso_handle, base::BindOnce(&iso_impl::on_iso_link_quality_read,
-                                                                weak_factory_.GetWeakPtr()));
+    btsnd_hcic_read_iso_link_quality(
+            conn_handle,
+            base::BindOnce(&iso_impl::on_iso_link_quality_read, weak_factory_.GetWeakPtr()));
   }
 
-  BT_HDR* prepare_hci_packet(uint16_t iso_handle, uint16_t seq_nb, uint16_t data_len) {
+  BT_HDR* prepare_hci_packet(uint16_t conn_handle, uint16_t seq_nb, uint16_t data_len) {
     /* Add 2 for packet seq., 2 for length */
     uint16_t iso_data_load_len = data_len + 4;
 
@@ -523,7 +524,7 @@ struct iso_impl {
     packet->layer_specific = 0;
 
     uint8_t* packet_data = packet->data;
-    UINT16_TO_STREAM(packet_data, iso_handle);
+    UINT16_TO_STREAM(packet_data, conn_handle);
     UINT16_TO_STREAM(packet_data, iso_data_load_len);
 
     UINT16_TO_STREAM(packet_data, seq_nb);
@@ -532,19 +533,19 @@ struct iso_impl {
     return packet;
   }
 
-  void send_iso_data(uint16_t iso_handle, const uint8_t* data, uint16_t data_len) {
-    iso_base* iso = GetIsoIfKnown(iso_handle);
-    log::assert_that(iso != nullptr, "No such iso connection handle: 0x{:x}", iso_handle);
+  void send_iso_data(uint16_t conn_handle, const uint8_t* data, uint16_t data_len) {
+    iso_base* iso = GetIsoIfKnown(conn_handle);
+    log::assert_that(iso != nullptr, "No such iso connection handle: 0x{:x}", conn_handle);
 
     if (!(iso->state_flags & kStateFlagIsBroadcast)) {
       if (!(iso->state_flags & kStateFlagIsConnected)) {
-        log::warn("Cis handle: 0x{:x} not established", iso_handle);
+        log::warn("Cis handle: 0x{:x} not established", conn_handle);
         return;
       }
     }
 
     if (!(iso->state_flags & kStateFlagHasDataPathSet)) {
-      log::warn("Data path not set for handle: 0x{:04x}", iso_handle);
+      log::warn("Data path not set for handle: 0x{:04x}", conn_handle);
       return;
     }
 
@@ -560,14 +561,14 @@ struct iso_impl {
       iso->cr_stats.credits_last_underflow_us = bluetooth::common::time_get_os_boottime_us();
 
       log::warn(", dropping ISO packet, len: {}, iso credits: {}, iso handle: 0x{:x}",
-                static_cast<int>(data_len), static_cast<int>(iso_credits_), iso_handle);
+                static_cast<int>(data_len), static_cast<int>(iso_credits_), conn_handle);
       return;
     }
 
     iso_credits_--;
     iso->used_credits++;
 
-    BT_HDR* packet = prepare_hci_packet(iso_handle, seq_nb, data_len);
+    BT_HDR* packet = prepare_hci_packet(conn_handle, seq_nb, data_len);
     memcpy(packet->data + kIsoHeaderWithoutTsLen, data, data_len);
     auto hci = bluetooth::shim::hci_layer_get_interface();
     packet->event = MSG_STACK_TO_HC_HCI_ISO | 0x0001;
@@ -884,9 +885,9 @@ struct iso_impl {
     return (bis_it != conn_hdl_to_bis_map_.end()) ? bis_it->second.get() : nullptr;
   }
 
-  iso_base* GetIsoIfKnown(uint16_t iso_handle) {
-    struct iso_base* iso = GetCisIfKnown(iso_handle);
-    return (iso != nullptr) ? iso : GetBisIfKnown(iso_handle);
+  iso_base* GetIsoIfKnown(uint16_t conn_handle) {
+    struct iso_base* iso = GetCisIfKnown(conn_handle);
+    return (iso != nullptr) ? iso : GetBisIfKnown(conn_handle);
   }
 
   bool IsCigKnown(uint8_t cig_id) const {
@@ -910,9 +911,9 @@ struct iso_impl {
     dprintf(fd, "          Credits underflow (count): %zu\n", stats.credits_underflow_count);
     dprintf(fd, "          Credits underflow (bytes): %zu\n", stats.credits_underflow_bytes);
     dprintf(fd, "          Last underflow time ago (ms): %llu\n",
-            (stats.credits_last_underflow_us > 0
-                     ? (unsigned long long)(now_us - stats.credits_last_underflow_us) / 1000
-                     : 0llu));
+            stats.credits_last_underflow_us > 0
+                    ? (unsigned long long)(now_us - stats.credits_last_underflow_us) / 1000
+                    : 0llu);
   }
 
   static void dump_event_stats(int fd, const iso_base::event_stats& stats) {
@@ -922,9 +923,9 @@ struct iso_impl {
     dprintf(fd, "          Sequence number mismatch (count): %zu\n", stats.seq_nb_mismatch_count);
     dprintf(fd, "          Event lost (count): %zu\n", stats.evt_lost_count);
     dprintf(fd, "          Last event lost time ago (ms): %llu\n",
-            (stats.evt_last_lost_us > 0
-                     ? (unsigned long long)(now_us - stats.evt_last_lost_us) / 1000
-                     : 0llu));
+            stats.evt_last_lost_us > 0
+                    ? (unsigned long long)(now_us - stats.evt_last_lost_us) / 1000
+                    : 0llu);
   }
 
   void dump(int fd) const {
