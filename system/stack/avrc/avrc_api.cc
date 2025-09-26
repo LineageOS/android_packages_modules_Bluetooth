@@ -758,7 +758,7 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr, BT_HDR* p_
           p_data += AVRC_AVC_HDR_SIZE; /* 3 bytes: ctype, subunit*, opcode */
           msg.sub.page = (*p_data++ >> AVRC_SUB_PAGE_SHIFT) & AVRC_SUB_PAGE_MASK;
           xx = 0;
-          while (*p_data != AVRC_CMD_OPRND_PAD && xx < AVRC_SUB_TYPE_LEN) {
+          while (xx < AVRC_SUB_TYPE_LEN && *p_data != AVRC_CMD_OPRND_PAD) {
             msg.sub.subunit_type[xx] = *p_data++ >> AVRC_SUBTYPE_SHIFT;
             if (msg.sub.subunit_type[xx] == AVRC_SUB_PANEL) {
               msg.sub.panel = true;
