@@ -81,7 +81,11 @@ final class A2dpStateMachine extends StateMachine {
 
     static final int MESSAGE_CONNECT = 1;
     static final int MESSAGE_DISCONNECT = 2;
-    static final int MESSAGE_STACK_EVENT = 101;
+    static final int MESSAGE_CONNECTION_STATE_CHANGED = 101;
+    static final int MESSAGE_AUDIO_STATE_CHANGED = 102;
+    static final int MESSAGE_CODEC_CONFIG_CHANGED = 103;
+    static final int MESSAGE_AUDIO_DELAY_REPORTED = 104;
+
     private static final int MESSAGE_CONNECT_TIMEOUT = 201;
 
     @VisibleForTesting static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
@@ -213,20 +217,9 @@ final class A2dpStateMachine extends StateMachine {
                 }
                 case MESSAGE_DISCONNECT ->
                         Log.w(TAG, "Disconnected: DISCONNECT ignored: " + mDevice);
-                case MESSAGE_STACK_EVENT -> {
-                    A2dpStackEvent event = (A2dpStackEvent) message.obj;
-                    log("Disconnected: stack event: " + event);
-                    if (!mDevice.equals(event.device)) {
-                        Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
-                    }
-                    switch (event.type) {
-                        case A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
-                                processConnectionEvent(event.valueInt);
-                        case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
-                                processCodecConfigEvent(event.codecStatus);
-                        default -> Log.e(TAG, "Disconnected: ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
+                case MESSAGE_CODEC_CONFIG_CHANGED ->
+                        processCodecConfigEvent((BluetoothCodecStatus) message.obj);
                 default -> {
                     return NOT_HANDLED;
                 }
@@ -335,11 +328,7 @@ final class A2dpStateMachine extends StateMachine {
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
                     mA2dpNativeInterface.disconnectA2dp(mDevice);
-                    A2dpStackEvent event =
-                            new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    event.device = mDevice;
-                    event.valueInt = STATE_DISCONNECTED;
-                    sendMessage(MESSAGE_STACK_EVENT, event);
+                    sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                     MetricsLogger.getInstance()
                             .count(BluetoothProtoEnums.A2DP_CONNECTION_TIMEOUT, 1);
                 }
@@ -349,23 +338,14 @@ final class A2dpStateMachine extends StateMachine {
                     mA2dpNativeInterface.disconnectA2dp(mDevice);
                     transitionTo(mDisconnected);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    A2dpStackEvent event = (A2dpStackEvent) message.obj;
-                    log("Connecting: stack event: " + event);
-                    if (!mDevice.equals(event.device)) {
-                        Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
-                    }
-                    switch (event.type) {
-                        case A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            mReason = reasonToBluetoothStatusCode(event.reason);
-                            processConnectionEvent(event.valueInt);
-                        }
-                        case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
-                                processCodecConfigEvent(event.codecStatus);
-                        default -> Log.e(TAG, "Connecting: ignoring stack event: " + event);
-                    }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> {
+                    mReason = reasonToBluetoothStatusCode(message.arg2);
+                    processConnectionEvent(message.arg1);
                 }
+                case MESSAGE_CODEC_CONFIG_CHANGED ->
+                        processCodecConfigEvent((BluetoothCodecStatus) message.obj);
                 default -> {
+                    Log.e(TAG, "Connecting: ignoring event: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
                 }
             }
@@ -434,27 +414,15 @@ final class A2dpStateMachine extends StateMachine {
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
                     mA2dpNativeInterface.disconnectA2dp(mDevice);
-                    A2dpStackEvent event =
-                            new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    event.device = mDevice;
-                    event.valueInt = STATE_DISCONNECTED;
-                    sendMessage(MESSAGE_STACK_EVENT, event);
+                    sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    A2dpStackEvent event = (A2dpStackEvent) message.obj;
-                    log("Disconnecting: stack event: " + event);
-                    if (!mDevice.equals(event.device)) {
-                        Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
-                    }
-                    switch (event.type) {
-                        case A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
-                                processConnectionEvent(event.valueInt);
-                        case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
-                                processCodecConfigEvent(event.codecStatus);
-                        default -> Log.e(TAG, "Disconnecting: ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
+                case MESSAGE_CODEC_CONFIG_CHANGED ->
+                        processCodecConfigEvent((BluetoothCodecStatus) message.obj);
                 default -> {
+                    Log.e(
+                            TAG,
+                            "Disconnecting: ignoring " + messageWhatToString(message.what));
                     return NOT_HANDLED;
                 }
             }
@@ -551,24 +519,13 @@ final class A2dpStateMachine extends StateMachine {
                     }
                     transitionTo(mDisconnecting);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    A2dpStackEvent event = (A2dpStackEvent) message.obj;
-                    log("Connected: stack event: " + event);
-                    if (!mDevice.equals(event.device)) {
-                        Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
-                    }
-                    switch (event.type) {
-                        case A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
-                                processConnectionEvent(event.valueInt);
-                        case A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED ->
-                                processAudioStateEvent(event.valueInt);
-                        case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
-                                processCodecConfigEvent(event.codecStatus);
-                        case A2dpStackEvent.EVENT_TYPE_AUDIO_DELAY_REPORTED -> {}
-                        default -> Log.e(TAG, "Connected: ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
+                case MESSAGE_AUDIO_STATE_CHANGED -> processAudioStateEvent(message.arg1);
+                case MESSAGE_CODEC_CONFIG_CHANGED ->
+                        processCodecConfigEvent((BluetoothCodecStatus) message.obj);
+                case MESSAGE_AUDIO_DELAY_REPORTED -> {}
                 default -> {
+                    Log.e(TAG, "Connected: ignoring event: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
                 }
             }
@@ -594,7 +551,7 @@ final class A2dpStateMachine extends StateMachine {
         // in Connected state
         private void processAudioStateEvent(int state) {
             switch (state) {
-                case A2dpStackEvent.AUDIO_STATE_STARTED -> {
+                case A2dpNativeCallback.AUDIO_STATE_STARTED -> {
                     synchronized (this) {
                         if (!mIsPlaying) {
                             Log.i(TAG, "Connected: started playing: " + mDevice);
@@ -604,8 +561,8 @@ final class A2dpStateMachine extends StateMachine {
                         }
                     }
                 }
-                case A2dpStackEvent.AUDIO_STATE_REMOTE_SUSPEND,
-                        A2dpStackEvent.AUDIO_STATE_STOPPED -> {
+                case A2dpNativeCallback.AUDIO_STATE_REMOTE_SUSPEND,
+                        A2dpNativeCallback.AUDIO_STATE_STOPPED -> {
                     synchronized (this) {
                         if (mIsPlaying) {
                             Log.i(TAG, "Connected: stopped playing: " + mDevice);
@@ -837,8 +794,11 @@ final class A2dpStateMachine extends StateMachine {
         return switch (what) {
             case MESSAGE_CONNECT -> "CONNECT";
             case MESSAGE_DISCONNECT -> "DISCONNECT";
-            case MESSAGE_STACK_EVENT -> "STACK_EVENT";
             case MESSAGE_CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
+            case MESSAGE_CONNECTION_STATE_CHANGED -> "CONNECTION_STATE_CHANGED";
+            case MESSAGE_AUDIO_STATE_CHANGED -> "AUDIO_STATE_CHANGED";
+            case MESSAGE_CODEC_CONFIG_CHANGED -> "CODEC_CONFIG_CHANGED";
+            case MESSAGE_AUDIO_DELAY_REPORTED -> "AUDIO_DELAY_REPORTED";
             default -> Integer.toString(what);
         };
     }
