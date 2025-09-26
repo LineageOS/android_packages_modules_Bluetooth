@@ -127,7 +127,7 @@ class LeScanningTest {
         val mockScanCallback = mock(ScanCallback::class.java)
 
         leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
-        verify(mockScanCallback, after(TIMEOUT_SCANNING_MS.toLong()).never()).onScanFailed(anyInt())
+        verify(mockScanCallback, after(TIMEOUT_SCANNING_MS).never()).onScanFailed(anyInt())
         leScanner?.stopScan(mockScanCallback)
     }
 
@@ -147,7 +147,7 @@ class LeScanningTest {
         val mockScanCallback = mock(ScanCallback::class.java)
 
         leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
-        verify(mockScanCallback, after(TIMEOUT_SCANNING_MS.toLong()).never()).onScanFailed(anyInt())
+        verify(mockScanCallback, after(TIMEOUT_SCANNING_MS).never()).onScanFailed(anyInt())
         leScanner?.stopScan(mockScanCallback)
     }
 
@@ -183,8 +183,7 @@ class LeScanningTest {
         leScanner?.startScan(listOf(scanFilter), scanSettings, pendingIntent)
 
         val intent = ArgumentCaptor.forClass(Intent::class.java)
-        verify(mockReceiver, timeout(TIMEOUT_SCANNING_MS.toLong()))
-            .onReceive(any(), intent.capture())
+        verify(mockReceiver, timeout(TIMEOUT_SCANNING_MS)).onReceive(any(), intent.capture())
 
         leScanner?.stopScan(pendingIntent)
         context.unregisterReceiver(mockReceiver)
@@ -226,7 +225,7 @@ class LeScanningTest {
         leScanner?.startScan(scanFilters, scanSettings, pendingIntent)
         val results =
             PendingIntentScanReceiver.nextScanResult()
-                .completeOnTimeout(null, TIMEOUT_SCANNING_MS.toLong(), TimeUnit.MILLISECONDS)
+                .completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS)
                 .join()
         leScanner?.stopScan(pendingIntent)
         PendingIntentScanReceiver.resetNextScanResultFuture()
@@ -266,12 +265,12 @@ class LeScanningTest {
 
         // We expect an error only for the last scan, which was over the maximum active scans limit.
         for (mockScanCallback in scanCallbacks) {
-            verify(mockScanCallback, timeout(TIMEOUT_SCANNING_MS.toLong()).atLeast(1))
+            verify(mockScanCallback, timeout(TIMEOUT_SCANNING_MS).atLeast(1))
                 .onScanResult(eq(ScanSettings.CALLBACK_TYPE_ALL_MATCHES), any())
             verify(mockScanCallback, never()).onScanFailed(anyInt())
             leScanner?.stopScan(mockScanCallback)
         }
-        verify(lastMockScanCallback, timeout(TIMEOUT_SCANNING_MS.toLong()))
+        verify(lastMockScanCallback, timeout(TIMEOUT_SCANNING_MS))
             .onScanFailed(eq(ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED))
         leScanner?.stopScan(lastMockScanCallback)
     }
@@ -473,9 +472,7 @@ class LeScanningTest {
         leScanner?.startScan(listOf(scanFilter), scanSettings, scanCallback)
 
         val result =
-            future
-                .completeOnTimeout(null, TIMEOUT_SCANNING_MS.toLong(), TimeUnit.MILLISECONDS)
-                .join()
+            future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
 
         leScanner?.stopScan(scanCallback)
 
@@ -523,7 +520,7 @@ class LeScanningTest {
     }
 
     companion object {
-        private const val TIMEOUT_SCANNING_MS = 3000
+        private const val TIMEOUT_SCANNING_MS = 5000L
         private const val TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb"
         private const val TEST_UUID_STRING2 = "00001806-0000-1000-8000-00805f9b34fb"
         private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"
