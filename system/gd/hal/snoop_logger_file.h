@@ -62,4 +62,8 @@ private:
   void CloseCurrentSnoopLogFile();
 };
 
+#ifdef __ANDROID__
+bool create_log_directories();
+#endif  // __ANDROID__
+
 }  // namespace bluetooth::hal
