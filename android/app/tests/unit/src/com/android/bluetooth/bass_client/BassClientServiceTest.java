@@ -116,9 +116,10 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -169,7 +170,8 @@ public class BassClientServiceTest {
     private static final int TEST_SOURCE_ID = 10;
     private static final int TEST_NUM_SOURCES = 1;
 
-    private final HashMap<BluetoothDevice, BassClientStateMachine> mStateMachines = new HashMap<>();
+    private final Map<BluetoothDevice, BassClientStateMachine> mStateMachines =
+            new LinkedHashMap<>();
 
     private final BluetoothDevice mCurrentDevice = getTestDevice(0);
     private final BluetoothDevice mCurrentDevice1 = getTestDevice(1);
@@ -7804,7 +7806,6 @@ public class BassClientServiceTest {
             throws RemoteException {
         // Preparation: A connected device and a mock LeAudioService.
         prepareConnectedDeviceGroup();
-        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
         doReturn(new ArrayList<>()).when(mLeAudioService).getConnectedDevices();
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
 
@@ -7813,7 +7814,7 @@ public class BassClientServiceTest {
 
         // 1. Simulate adding a broadcast receiver. This triggers the update logic twice.
         // The first call is from the setup, and the second from this action.
-        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
         injectRemoteSourceStateSourceAdded(mBroadcastMetadata1, true, true);
 
         // Verification: We expect a total of two invocations for this step.
