@@ -1331,7 +1331,8 @@ public final class BluetoothAdapter {
     /**
      * Return true if Bluetooth LE(Always BLE On feature) is currently enabled and ready for use
      *
-     * <p>This returns true if current state is either STATE_ON or STATE_BLE_ON
+     * <p>This returns true if current state is either STATE_ON, STATE_BLE_ON, STATE_TURNING_ON, or
+     * STATE_TURNING_OFF
      *
      * @return true if the local Bluetooth LE adapter is turned on
      * @hide
