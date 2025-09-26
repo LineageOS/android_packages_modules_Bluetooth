@@ -13,12 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth.hid
 
 import android.annotation.SuppressLint
-import android.bluetooth.*
-import android.bluetooth.BluetoothDevice.*
-import android.bluetooth.BluetoothProfile.*
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
+import android.bluetooth.BluetoothDevice.ACTION_FOUND
+import android.bluetooth.BluetoothDevice.ACTION_PAIRING_REQUEST
+import android.bluetooth.BluetoothDevice.ACTION_UUID
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_BONDING
+import android.bluetooth.BluetoothDevice.BOND_NONE
+import android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE
+import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
+import android.bluetooth.BluetoothDevice.EXTRA_NAME
+import android.bluetooth.BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE
+import android.bluetooth.BluetoothDevice.EXTRA_TRANSPORT
+import android.bluetooth.BluetoothDevice.EXTRA_UUID
+import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
+import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothHidDevice
+import android.bluetooth.BluetoothHidHost
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.EXTRA_STATE
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothProfile.getConnectionStateName
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.BluetoothUuid
+import android.bluetooth.PandoraDevice
+import android.bluetooth.VirtualOnly
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
