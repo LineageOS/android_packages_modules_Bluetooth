@@ -110,7 +110,6 @@
 #include <hardware/audio.h>
 #endif  // TARGET_FLOSS
 
-using base::Closure;
 using bluetooth::Uuid;
 using bluetooth::common::ToString;
 using bluetooth::groups::DeviceGroups;
