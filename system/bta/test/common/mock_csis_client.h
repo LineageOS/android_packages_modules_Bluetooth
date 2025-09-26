@@ -39,6 +39,7 @@ public:
   MOCK_METHOD((void), DebugDump, (int fd));
   MOCK_METHOD((bool), IsCsisClientRunning, ());
   MOCK_METHOD((CsisClient*), Get, ());
+  MOCK_METHOD((bool), ShallCsisBeUsedForTheDevice, (const RawAddress& addr), (override));
 
   static void SetMockInstanceForTesting(MockCsisClient* mock);
 };

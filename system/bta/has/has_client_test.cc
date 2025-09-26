@@ -643,6 +643,7 @@ protected:
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
     ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
+    ON_CALL(mock_csis_client_module_, ShallCsisBeUsedForTheDevice(_)).WillByDefault(Return(true));
 
     /* default action for GetCharacteristic function call */
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
