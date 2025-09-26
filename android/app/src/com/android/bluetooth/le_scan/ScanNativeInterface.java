@@ -85,6 +85,7 @@ public class ScanNativeInterface {
     private native void msftAdvMonitorAddNative(
             MsftAdvMonitor.Monitor msft_adv_monitor,
             MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
+            MsftAdvMonitor.Uuid msft_adv_monitor_uuid,
             MsftAdvMonitor.Address msft_adv_monitor_address,
             int filter_index);
 
@@ -185,11 +186,13 @@ public class ScanNativeInterface {
     void msftAdvMonitorAdd(
             MsftAdvMonitor.Monitor msft_adv_monitor,
             MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
+            MsftAdvMonitor.Uuid msft_adv_monitor_uuid,
             MsftAdvMonitor.Address msft_adv_monitor_address,
             int filter_index) {
         msftAdvMonitorAddNative(
                 msft_adv_monitor,
                 msft_adv_monitor_patterns,
+                msft_adv_monitor_uuid,
                 msft_adv_monitor_address,
                 filter_index);
     }

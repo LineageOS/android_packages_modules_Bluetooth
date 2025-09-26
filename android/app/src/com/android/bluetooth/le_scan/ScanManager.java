@@ -2085,13 +2085,16 @@ class ScanManager {
                 continue;
             }
 
-            if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_ADDRESS) {
+            if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_ADDRESS
+                    || monitor.getMonitor().condition_type
+                            == MsftAdvMonitor.MSFT_CONDITION_TYPE_UUID) {
                 int filterIndex = mFilterIndexStack.pop();
 
                 resetCountDownLatch();
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
+                        monitor.getUuid(),
                         monitor.getAddress(),
                         filterIndex);
                 waitForCallback();
@@ -2110,6 +2113,7 @@ class ScanManager {
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
+                        monitor.getUuid(),
                         monitor.getAddress(),
                         filterIndex);
                 waitForCallback();

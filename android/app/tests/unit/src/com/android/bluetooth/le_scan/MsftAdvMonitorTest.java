@@ -36,8 +36,16 @@ public final class MsftAdvMonitorTest {
     private static final byte RSSI_THRESHOLD_LOW = (byte) 0xB0; // 176
     private static final byte RSSI_THRESHOLD_LOW_TIME_INTERVAL = (byte) 0x28; // 40s
     private static final byte RSSI_SAMPLING_PERIOD = (byte) 0x05; // 500ms
-    private static final byte CONDITION_TYPE = (byte) 0x01; // MSFT condition type - patterns
+    private static final byte CONDITION_TYPE_PATTERNS = (byte) 0x01;
+    private static final byte CONDITION_TYPE_UUID = (byte) 0x02;
     private static final byte FILTER_PATTERN_START_POSITION = (byte) 0x00;
+
+    private static final ParcelUuid UUID_16 =
+            ParcelUuid.fromString("00001234-0000-1000-8000-00805F9B34FB");
+    private static final ParcelUuid UUID_32 =
+            ParcelUuid.fromString("ABCD1234-0000-1000-8000-00805F9B34FB");
+    private static final ParcelUuid UUID_128 =
+            ParcelUuid.fromString("11223344-5566-7788-9900-AABBCCDDEEFF");
 
     // Retrieved from real Fastpair filter data
     private static final String FAST_PAIR_UUID = "0000fe2c-0000-1000-8000-00805f9b34fb";
@@ -46,14 +54,14 @@ public final class MsftAdvMonitorTest {
     private static final byte[] FAST_PAIR_SERVICE_DATA =
             new byte[] {(byte) 0xfc, (byte) 0x12, (byte) 0x8e};
 
-    private static void assertMonitorConstants(MsftAdvMonitor monitor) {
+    private static void assertMonitorConstants(MsftAdvMonitor monitor, byte condition_type) {
         MsftAdvMonitor.Monitor mMonitor = monitor.getMonitor();
         assertThat(mMonitor.rssi_threshold_high).isEqualTo(RSSI_THRESHOLD_HIGH);
         assertThat(mMonitor.rssi_threshold_low).isEqualTo(RSSI_THRESHOLD_LOW);
         assertThat(mMonitor.rssi_threshold_low_time_interval)
                 .isEqualTo(RSSI_THRESHOLD_LOW_TIME_INTERVAL);
         assertThat(mMonitor.rssi_sampling_period).isEqualTo(RSSI_SAMPLING_PERIOD);
-        assertThat(mMonitor.condition_type).isEqualTo(CONDITION_TYPE);
+        assertThat(mMonitor.condition_type).isEqualTo(condition_type);
     }
 
     @Test
@@ -64,7 +72,7 @@ public final class MsftAdvMonitorTest {
                         .build();
         MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
 
-        assertMonitorConstants(monitor);
+        assertMonitorConstants(monitor, CONDITION_TYPE_PATTERNS);
         assertThat(monitor.getPatterns()).hasLength(1);
         MsftAdvMonitor.Pattern mPattern = monitor.getPatterns()[0];
         assertThat(mPattern.ad_type)
@@ -79,12 +87,47 @@ public final class MsftAdvMonitorTest {
         ScanFilter filter = new ScanFilter.Builder().setDeviceName(deviceName).build();
         MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
 
-        assertMonitorConstants(monitor);
+        assertMonitorConstants(monitor, CONDITION_TYPE_PATTERNS);
         assertThat(monitor.getPatterns()).hasLength(1);
         MsftAdvMonitor.Pattern mPattern = monitor.getPatterns()[0];
         assertThat(mPattern.ad_type)
                 .isEqualTo((byte) 0x09); // Assigned Numbers Document, Section 2.3
         assertThat(mPattern.start_byte).isEqualTo(FILTER_PATTERN_START_POSITION);
         assertThat(mPattern.pattern).isEqualTo(deviceName.getBytes());
+    }
+
+    @Test
+    public void testUuid16ScanFilter() {
+        ScanFilter filter = new ScanFilter.Builder().setServiceUuid(UUID_16).build();
+        MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
+
+        assertMonitorConstants(monitor, CONDITION_TYPE_UUID);
+        MsftAdvMonitor.Uuid mUuid = monitor.getUuid();
+        assertThat(mUuid.uuid).hasLength(2);
+        assertThat(mUuid.uuid).isEqualTo(new byte[] {(byte) 0x34, (byte) 0x12});
+    }
+
+    @Test
+    public void testUuid32ScanFilter() {
+        ScanFilter filter = new ScanFilter.Builder().setServiceUuid(UUID_32).build();
+        MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
+
+        assertMonitorConstants(monitor, CONDITION_TYPE_UUID);
+        MsftAdvMonitor.Uuid mUuid = monitor.getUuid();
+        assertThat(mUuid.uuid).hasLength(4);
+        assertThat(mUuid.uuid)
+                .isEqualTo(new byte[] {(byte) 0x34, (byte) 0x12, (byte) 0xCD, (byte) 0xAB});
+    }
+
+    @Test
+    public void testUuid128ScanFilter() {
+        ScanFilter filter = new ScanFilter.Builder().setServiceUuid(UUID_128).build();
+        MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
+
+        assertMonitorConstants(monitor, CONDITION_TYPE_UUID);
+        MsftAdvMonitor.Uuid mUuid = monitor.getUuid();
+        assertThat(mUuid.uuid).hasLength(16);
+        assertThat(mUuid.uuid[0]).isEqualTo((byte) 0xFF);
+        assertThat(mUuid.uuid[15]).isEqualTo((byte) 0x11);
     }
 }

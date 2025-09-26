@@ -16,7 +16,9 @@
 
 package com.android.bluetooth.le_scan;
 
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.le.ScanFilter;
+import android.os.ParcelUuid;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -26,10 +28,10 @@ import java.util.UUID;
 
 /** Helper class used to manage MSFT Advertisement Monitors. */
 class MsftAdvMonitor {
-    /* Only pattern and address filtering are supported currently */
+    /* IRK filtering is not yet supported */
     public static final int MSFT_CONDITION_TYPE_INVALID = 0x00;
     public static final int MSFT_CONDITION_TYPE_PATTERNS = 0x01;
-    // public static final int MSFT_CONDITION_TYPE_UUID = 0x02;
+    public static final int MSFT_CONDITION_TYPE_UUID = 0x02;
     // public static final int MSFT_CONDITION_TYPE_IRK = 0x03;
     public static final int MSFT_CONDITION_TYPE_ADDRESS = 0x04;
 
@@ -73,6 +75,10 @@ class MsftAdvMonitor {
         }
     }
 
+    static class Uuid {
+        public byte[] uuid;
+    }
+
     static class Address {
         byte addr_type;
         String bd_addr;
@@ -80,6 +86,7 @@ class MsftAdvMonitor {
 
     private final Monitor mMonitor = new Monitor();
     private final ArrayList<Pattern> mPatterns = new ArrayList<>();
+    private final Uuid mUuid = new Uuid();
     private final Address mAddress = new Address();
 
     // Constructor that converts an APCF-friendly filter to an MSFT-friendly format
@@ -97,6 +104,14 @@ class MsftAdvMonitor {
 
             mAddress.addr_type = (byte) filter.getAddressType();
             mAddress.bd_addr = filter.getDeviceAddress();
+            return;
+        }
+
+        if (filter.getServiceUuid() != null) {
+            mMonitor.condition_type = MSFT_CONDITION_TYPE_UUID;
+
+            mUuid.uuid =
+                    BluetoothUuid.uuidToBytes(new ParcelUuid(filter.getServiceUuid().getUuid()));
             return;
         }
 
@@ -140,6 +155,10 @@ class MsftAdvMonitor {
 
     Pattern[] getPatterns() {
         return mPatterns.toArray(new Pattern[mPatterns.size()]);
+    }
+
+    Uuid getUuid() {
+        return mUuid;
     }
 
     Address getAddress() {

@@ -684,7 +684,8 @@ static bool isMsftSupportedNative(JNIEnv* /* env */, jobject /* object */) {
 
 static void msftAdvMonitorAddNative(JNIEnv* env, jobject /* object*/, jobject msft_adv_monitor,
                                     jobjectArray msft_adv_monitor_patterns,
-                                    jobject msft_adv_monitor_address, jint filter_index) {
+                                    jobject msft_adv_monitor_uuid, jobject msft_adv_monitor_address,
+                                    jint filter_index) {
   if (!sScanner) {
     return;
   }
@@ -725,6 +726,41 @@ static void msftAdvMonitorAddNative(JNIEnv* env, jobject /* object*/, jobject ms
             env, (jstring)env->GetObjectField(msft_adv_monitor_address_object.get(), bdAddrFid));
 
     native_msft_adv_monitor.addr_info = native_msft_adv_monitor_address;
+
+    sScanner->MsftAdvMonitorAdd(std::move(native_msft_adv_monitor),
+                                base::Bind(&msft_monitor_add_cb, filter_index));
+    return;
+  }
+
+  if (native_msft_adv_monitor.condition_type == MSFT_CONDITION_TYPE_UUID) {
+    jclass msftAdvMonitorUuidClazz = env->GetObjectClass(msft_adv_monitor_uuid);
+    jfieldID uuidFid = env->GetFieldID(msftAdvMonitorUuidClazz, "uuid", "[B");
+
+    MsftAdvMonitorUuid native_msft_adv_monitor_uuid{};
+    ScopedLocalRef<jobject> msft_adv_monitor_uuid_object(env, msft_adv_monitor_uuid);
+
+    ScopedLocalRef<jbyteArray> uuidByteArray(
+            env, (jbyteArray)env->GetObjectField(msft_adv_monitor_uuid_object.get(), uuidFid));
+    if (uuidByteArray.get() == nullptr) {
+      log::error("Cannot obtain uuid byte array.");
+      jniThrowIOException(env, EINVAL);
+      return;
+    }
+
+    jbyte* uuidBytes = env->GetByteArrayElements(uuidByteArray.get(), NULL);
+    if (uuidBytes == NULL) {
+      log::error("Cannot obtain uuid bytes.");
+      jniThrowIOException(env, EINVAL);
+      return;
+    }
+
+    native_msft_adv_monitor_uuid.uuid.resize(env->GetArrayLength(uuidByteArray.get()));
+    std::copy(uuidBytes, uuidBytes + env->GetArrayLength(uuidByteArray.get()),
+              native_msft_adv_monitor_uuid.uuid.begin());
+
+    env->ReleaseByteArrayElements(uuidByteArray.get(), uuidBytes, 0);
+
+    native_msft_adv_monitor.uuid_info = native_msft_adv_monitor_uuid;
 
     sScanner->MsftAdvMonitorAdd(std::move(native_msft_adv_monitor),
                                 base::Bind(&msft_monitor_add_cb, filter_index));
@@ -958,7 +994,8 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
           {"isMsftSupportedNative", "()Z", (bool*)isMsftSupportedNative},
           {"msftAdvMonitorAddNative",
            "(Lcom/android/bluetooth/le_scan/MsftAdvMonitor$Monitor;[Lcom/android/bluetooth/le_scan/"
-           "MsftAdvMonitor$Pattern;Lcom/android/bluetooth/le_scan/MsftAdvMonitor$Address;I)V",
+           "MsftAdvMonitor$Pattern;Lcom/android/bluetooth/le_scan/MsftAdvMonitor$Uuid;Lcom/android/"
+           "bluetooth/le_scan/MsftAdvMonitor$Address;I)V",
            (void*)msftAdvMonitorAddNative},
           {"msftAdvMonitorRemoveNative", "(II)V", (void*)msftAdvMonitorRemoveNative},
           {"msftAdvMonitorEnableNative", "(Z)V", (void*)msftAdvMonitorEnableNative},
