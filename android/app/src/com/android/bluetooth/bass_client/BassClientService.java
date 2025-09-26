@@ -4388,62 +4388,150 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    /* Handle device Bass state ready and check if assistant should resume broadcast */
-    private void handleBassStateReady(BluetoothDevice sink) {
-        //  Check its peer device still has active source
-        Map<Integer, BluetoothLeBroadcastMetadata> entry = mBroadcastMetadataMap.get(sink);
+    /**
+     * Finds the first actionable broadcast ID for a given sink by checking for existing metadata to
+     * restore or new peer metadata to add.
+     *
+     * @param sink The Bluetooth device sink to check.
+     * @return An Optional containing the broadcast ID if an action is required, otherwise empty.
+     */
+    private Optional<Integer> findActionableBroadcastId(BluetoothDevice sink) {
+        for (BluetoothDevice groupDevice : getTargetDeviceList(sink, /* isGroupOp */ true)) {
+            if (groupDevice.equals(sink)) {
+                continue;
+            }
 
-        if (entry != null) {
-            for (Map.Entry<Integer, BluetoothLeBroadcastMetadata> idMetadataIdPair :
-                    entry.entrySet()) {
-                BluetoothLeBroadcastMetadata metadata = idMetadataIdPair.getValue();
-                if (metadata == null) {
-                    Log.d(TAG, "handleBassStateReady: no metadata available");
-                    continue;
+            for (BluetoothLeBroadcastReceiveState receiveState : getAllSources(groupDevice)) {
+                int targetBroadcastId = receiveState.getBroadcastId();
+
+                // Path 1: Found existing metadata to restore.
+                if (getMetadataFromSinkWithBroadcastId(sink, targetBroadcastId) != null) {
+                    Log.d(TAG, "findActionableBroadcastId: Found source to restore for " + sink);
+                    return Optional.of(targetBroadcastId);
                 }
 
-                for (BluetoothDevice groupDevice :
-                        getTargetDeviceList(sink, /* isGroupOp */ true)) {
-                    BassClientStateMachine sm = mStateMachines.get(groupDevice);
-                    if (groupDevice.equals(sink) || sm == null) {
+                // Path 2: Found new metadata from a peer to add.
+                BluetoothLeBroadcastMetadata sourceMetadata =
+                        getMetadataFromSinkWithBroadcastId(groupDevice, targetBroadcastId);
+                if (sourceMetadata != null) {
+                    Log.d(
+                            TAG,
+                            "findActionableBroadcastId: Found new source to add from peer for "
+                                    + sink);
+                    storeSinkMetadata(sink, targetBroadcastId, sourceMetadata);
+                    return Optional.of(targetBroadcastId);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    /* Handle device Bass state ready and check if assistant should resume broadcast */
+    private void handleBassStateReady(BluetoothDevice sink) {
+        if (!Flags.leaudioBroadcastAddSourceFromPeerDevice()) {
+            //  Check its peer device still has active source
+            Map<Integer, BluetoothLeBroadcastMetadata> entry = mBroadcastMetadataMap.get(sink);
+
+            if (entry != null) {
+                for (Map.Entry<Integer, BluetoothLeBroadcastMetadata> idMetadataIdPair :
+                        entry.entrySet()) {
+                    BluetoothLeBroadcastMetadata metadata = idMetadataIdPair.getValue();
+                    if (metadata == null) {
+                        Log.d(TAG, "handleBassStateReady: no metadata available");
                         continue;
                     }
 
-                    // Check peer device
-                    Optional<BluetoothLeBroadcastReceiveState> receiver =
-                            sm.getAllSources().stream()
-                                    .filter(e -> e.getBroadcastId() == metadata.getBroadcastId())
-                                    .findAny();
-                    if (receiver.isPresent()) {
-                        Log.d(TAG, "handleBassStateReady: restore the source for device, " + sink);
-                        mPausedBroadcastSinks.add(sink);
-                        logPausedBroadcastsAndSinks();
-                        // Not call resume if paused by host or monitored as it will be called later
-                        if (!isSuspendedByHostPauseReason(metadata.getBroadcastId())
-                                && !isBigMonitoringPauseReason(metadata.getBroadcastId())
-                                && !isOorMonitoringPauseReason(metadata.getBroadcastId())) {
-                            resumeReceiversSourceSynchronization();
+                    for (BluetoothDevice groupDevice :
+                            getTargetDeviceList(sink, /* isGroupOp */ true)) {
+                        BassClientStateMachine sm = mStateMachines.get(groupDevice);
+                        if (groupDevice.equals(sink) || sm == null) {
+                            continue;
                         }
+
+                        // Check peer device
+                        Optional<BluetoothLeBroadcastReceiveState> receiver =
+                                sm.getAllSources().stream()
+                                        .filter(
+                                                e ->
+                                                        e.getBroadcastId()
+                                                                == metadata.getBroadcastId())
+                                        .findAny();
+                        if (receiver.isPresent()) {
+                            Log.d(
+                                    TAG,
+                                    "handleBassStateReady: restore the source for device, " + sink);
+                            mPausedBroadcastSinks.add(sink);
+                            logPausedBroadcastsAndSinks();
+                            // Not call resume if paused by host or monitored as it will be called
+                            // later
+                            if (!isSuspendedByHostPauseReason(metadata.getBroadcastId())
+                                    && !isBigMonitoringPauseReason(metadata.getBroadcastId())
+                                    && !isOorMonitoringPauseReason(metadata.getBroadcastId())) {
+                                resumeReceiversSourceSynchronization();
+                            }
+                            return;
+                        }
+                    }
+                }
+            } else {
+                Log.d(TAG, "handleBassStateReady: no entry for device: " + sink + ", available");
+            }
+
+            // Continue to check if there is pending source to add due to BASS not ready
+            synchronized (mPendingSourcesToAdd) {
+                Iterator<AddSourceData> iterator = mPendingSourcesToAdd.iterator();
+                while (iterator.hasNext()) {
+                    AddSourceData pendingSourcesToAdd = iterator.next();
+                    if (pendingSourcesToAdd.sink.equals(sink)) {
+                        Log.d(
+                                TAG,
+                                "handleBassStateReady: retry adding source with device, " + sink);
+                        addSource(
+                                pendingSourcesToAdd.sink,
+                                pendingSourcesToAdd.sourceMetadata,
+                                false);
+                        iterator.remove();
                         return;
                     }
                 }
             }
-        } else {
-            Log.d(TAG, "handleBassStateReady: no entry for device: " + sink + ", available");
+            return;
+        }
+
+        // Find the first source that needs action (either restore or add from peer).
+        Optional<Integer> broadcastIdForAction = findActionableBroadcastId(sink);
+
+        if (broadcastIdForAction.isPresent()) {
+            int broadcastId = broadcastIdForAction.get();
+            mPausedBroadcastSinks.add(sink);
+            logPausedBroadcastsAndSinks();
+
+            // Not call resume if paused by host or monitored as it will be called later
+            if (!isSuspendedByHostPauseReason(broadcastId)
+                    && !isBigMonitoringPauseReason(broadcastId)
+                    && !isOorMonitoringPauseReason(broadcastId)) {
+                resumeReceiversSourceSynchronization();
+            }
+            return;
         }
 
         // Continue to check if there is pending source to add due to BASS not ready
+        AddSourceData sourceToRetry = null;
         synchronized (mPendingSourcesToAdd) {
             Iterator<AddSourceData> iterator = mPendingSourcesToAdd.iterator();
             while (iterator.hasNext()) {
-                AddSourceData pendingSourcesToAdd = iterator.next();
-                if (pendingSourcesToAdd.sink.equals(sink)) {
-                    Log.d(TAG, "handleBassStateReady: retry adding source with device, " + sink);
-                    addSource(pendingSourcesToAdd.sink, pendingSourcesToAdd.sourceMetadata, false);
+                AddSourceData pendingSource = iterator.next();
+                if (pendingSource.sink.equals(sink)) {
+                    sourceToRetry = pendingSource;
                     iterator.remove();
-                    return;
+                    break;
                 }
             }
+        }
+
+        if (sourceToRetry != null) {
+            Log.d(TAG, "handleBassStateReady: retry adding source with device, " + sink);
+            addSource(sourceToRetry.sink, sourceToRetry.sourceMetadata, false);
         }
     }
 
