@@ -71,7 +71,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 
-using base::Closure;
+using base::OnceClosure;
 using bluetooth::Uuid;
 using bluetooth::csis::ConnectionState;
 using bluetooth::csis::CsisClient;
@@ -135,7 +135,7 @@ class CsisClientImpl : public CsisClient {
                                                   sizeof(uint8_t) /* rank */ + Octet16().size();
 
 public:
-  CsisClientImpl(bluetooth::csis::CsisClientCallbacks* callbacks, Closure initCb)
+  CsisClientImpl(bluetooth::csis::CsisClientCallbacks* callbacks, OnceClosure initCb)
       : gatt_if_(0), callbacks_(callbacks) {
     BTA_GATTC_AppRegister(
             "csis",
@@ -144,8 +144,8 @@ public:
                 instance->GattcCallback(event, p_data);
               }
             },
-            base::Bind(
-                    [](Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error(
                                 "Can't start Coordinated Set Service client profile - no "
@@ -153,12 +153,12 @@ public:
                         return;
                       }
                       instance->gatt_if_ = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
 
                       DeviceGroups::Initialize(device_group_callbacks);
                       instance->dev_groups_ = DeviceGroups::Get();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
 
     BTA_DmSirkSecCbRegister([](tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
@@ -2387,7 +2387,7 @@ DeviceGroupsCallbacksImpl deviceGroupsCallbacksImpl;
 
 }  // namespace
 
-void CsisClient::Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, Closure initCb) {
+void CsisClient::Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     log::info("Already initialized!");
@@ -2395,7 +2395,7 @@ void CsisClient::Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, Clo
   }
 
   device_group_callbacks = &deviceGroupsCallbacksImpl;
-  instance = new CsisClientImpl(callbacks, initCb);
+  instance = new CsisClientImpl(callbacks, std::move(initCb));
 }
 
 bool CsisClient::IsCsisClientRunning() { return instance; }

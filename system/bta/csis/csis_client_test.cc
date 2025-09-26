@@ -50,8 +50,6 @@ namespace csis {
 namespace internal {
 namespace {
 
-using base::Bind;
-using base::Closure;
 using base::Unretained;
 
 using bluetooth::csis::ConnectionState;
@@ -440,7 +438,7 @@ protected:
     EXPECT_CALL(gatt_interface, AppRegister(_, _, _, _))
             .WillOnce(DoAll(SaveArg<1>(&gatt_callback),
                             WithArg<2>([&](auto arg) { app_register_callback = std::move(arg); })));
-    CsisClient::Initialize(callbacks.get(), Bind(&btif_storage_load_bonded_csis_devices));
+    CsisClient::Initialize(callbacks.get(), base::BindOnce(&btif_storage_load_bonded_csis_devices));
     ASSERT_TRUE(gatt_callback);
     ASSERT_TRUE(app_register_callback);
     std::move(app_register_callback).Run(gatt_if, GATT_SUCCESS);
