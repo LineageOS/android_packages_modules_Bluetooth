@@ -12,32 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// When using this library, you also need to include these two jni libs:
-// ["libdexmakerjvmtiagent", "libstaticjvmtiagent"]
 java_library {
-    name: "bluetooth-common-java-tests",
+    name: "bluetooth-common-java",
     srcs: [
-        "FakeTimeProvider.kt",
-        "MockitoRule.kt",
-        "StaticMockitoRule.kt",
+        "src/TimeProvider.kt",
     ],
 
-    static_libs: [
-        "bluetooth-common-flagwrapper-tests",
-        "bluetooth-common-java",
-        "flag-junit",
-        "mockito-kotlin2",
-        "mockito-target-extended",
-    ],
-    sdk_version: "module_current",
-    min_sdk_version: "36",
-    target_sdk_version: "current",
-}
-
-java_library {
-    name: "bluetooth-common-flagwrapper-tests",
-    srcs: ["FlagsWrapper.kt"],
-    static_libs: ["flag-junit"],
+    apex_available: ["com.android.bt"],
     sdk_version: "module_current",
     min_sdk_version: "36",
     target_sdk_version: "current",

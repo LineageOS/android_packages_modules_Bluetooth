@@ -61,9 +61,9 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -107,6 +107,7 @@ public class ScanControllerTest {
     @Mock private Resources mResources;
     @Mock private ScannerMap mScannerMap;
     @Mock private ScannerMap.ScannerApp mApp;
+    @Mock private TimeProvider mTimeProvider;
 
     private static final int TEST_SCANNER_ID = 1;
     private static final int TEST_STATUS = 0;
@@ -114,7 +115,6 @@ public class ScanControllerTest {
     private static final int TEST_CLIENT_IF = 2;
     private static final String TEST_ADDRESS = "00:11:22:33:FF:EE";
 
-    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
     private final BluetoothDevice mDevice = getTestDevice(89);
 
     private ScanController mScanController;

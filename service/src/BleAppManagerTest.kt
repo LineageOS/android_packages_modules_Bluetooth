@@ -19,7 +19,6 @@ package com.android.server.bluetooth.test
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_DIED
 import android.os.IBinder
 import android.os.IInterface
-import android.os.Looper
 import android.os.Parcel
 import com.android.server.bluetooth.BleAppManager
 import com.google.common.truth.Truth.assertThat
@@ -28,7 +27,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class BleAppManagerTest {
@@ -68,9 +66,8 @@ class BleAppManagerTest {
 
     private val token = FakeBinder()
     private val packageName = "com.test.app"
-    private val looper: Looper = Looper.getMainLooper()
     private val bleAppManager =
-        BleAppManager(looper) { reason, packageName ->
+        BleAppManager({ r -> r.run() }) { reason, packageName ->
             callbackReason = reason
             callbackPackageName = packageName
             callbackTriggered = true
@@ -185,7 +182,6 @@ class BleAppManagerTest {
         assertThat(deathRecipient).isNotNull()
 
         deathRecipient!!.binderDied()
-        shadowOf(looper).idle()
 
         assertThat(bleAppManager.isBleAppPresent()).isFalse()
         assertThat(token.deathRecipient).isNull()

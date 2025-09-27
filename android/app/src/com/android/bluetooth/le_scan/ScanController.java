@@ -20,7 +20,6 @@ import static android.bluetooth.BluetoothUtils.extractBytes;
 
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
-import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
@@ -63,10 +62,10 @@ import android.util.Log;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.NumberUtils;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
 import libcore.util.HexEncoding;
@@ -158,7 +157,7 @@ public class ScanController {
                 new ScannerMap(),
                 companionDeviceManager,
                 null,
-                getSystemClock());
+                TimeProvider.getSystemClock());
     }
 
     @VisibleForTesting

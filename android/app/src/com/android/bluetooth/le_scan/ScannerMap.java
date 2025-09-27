@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.le_scan;
 
-import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
 
 import android.annotation.Nullable;
@@ -30,6 +29,7 @@ import android.os.WorkSource;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.util.TimeProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -119,7 +119,7 @@ class ScannerMap {
                             appUid,
                             adapterService,
                             scanController,
-                            getSystemClock());
+                            TimeProvider.getSystemClock());
             mAppScanStatsMap.put(appUid, appScanStats);
         }
         ScannerApp app =

@@ -49,8 +49,6 @@ import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -286,11 +284,11 @@ public class TestUtils {
         Message msg = looper.nextMessage();
         assertWithMessage("Expecting [" + what + "] instead of null Msg").that(msg).isNotNull();
         if (msg.what != what) {
-            List<Integer> whatList = new ArrayList<>();
+            List<Message> msgList = new ArrayList<>();
 
             Message nextMsg;
             while ((nextMsg = looper.nextMessage()) != null) {
-                whatList.add(nextMsg.what);
+                msgList.add(nextMsg);
             }
 
             String customError =
@@ -300,7 +298,7 @@ public class TestUtils {
                               -> Received Msg: %s
                               -> List of queued message 'what' values: %s\
                             """,
-                            what, msg.what, msg.toString(), whatList.toString());
+                            what, msg.what, msg.toString(), msgList.toString());
 
             assertWithMessage(customError).that(msg.what).isEqualTo(what);
         }
@@ -353,18 +351,5 @@ public class TestUtils {
         final Intent intent = new Intent(getContext(), BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
-    }
-
-    public static final class FakeTimeProvider implements Utils.TimeProvider {
-        private Instant currentTime = Instant.EPOCH;
-
-        @Override
-        public long elapsedRealtime() {
-            return currentTime.toEpochMilli();
-        }
-
-        public void advanceTime(Duration amountToAdvance) {
-            currentTime = currentTime.plus(amountToAdvance);
-        }
     }
 }

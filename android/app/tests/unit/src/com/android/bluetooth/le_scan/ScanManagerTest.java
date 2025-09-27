@@ -94,11 +94,11 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FakeTimeProvider;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
 

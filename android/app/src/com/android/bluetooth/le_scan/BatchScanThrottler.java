@@ -24,7 +24,7 @@ import android.os.SystemProperties;
 import android.provider.DeviceConfig;
 import android.util.Log;
 
-import com.android.bluetooth.Utils.TimeProvider;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Set;
