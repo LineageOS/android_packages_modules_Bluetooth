@@ -39,9 +39,9 @@ import pandora.HostProto.ScanningResponse
 /** Test cases for [AdvertiseManager]. */
 @RunWith(AndroidJUnit4::class)
 class LeAdvertisingTest {
-    @get:Rule val permissionRule = AdoptShellPermissionsRule()
+    @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
 
-    @get:Rule val bumble = PandoraDevice()
+    @get:Rule(order = 1) val bumble = PandoraDevice()
 
     @Test
     @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")

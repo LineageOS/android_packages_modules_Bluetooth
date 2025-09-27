@@ -21,7 +21,6 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -62,8 +61,7 @@ import pandora.HostProto.AdvertiseResponse
 
 @RunWith(TestParameterInjector::class)
 class GattClientTest {
-    @get:Rule(order = 0)
-    val checkFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
     @get:Rule(order = 1) val bumble = PandoraDevice()
 

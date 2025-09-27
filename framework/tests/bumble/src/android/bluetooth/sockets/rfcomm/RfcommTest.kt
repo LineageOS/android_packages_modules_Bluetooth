@@ -92,12 +92,10 @@ import pandora.RfcommProto.ServerId
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
 class RfcommTest {
-    @Rule(order = 0) @JvmField val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    // Gives shell permissions during the test.
-    @Rule(order = 1)
-    @JvmField
-    val permissionsRule =
+    @get:Rule(order = 1)
+    val permissionRule =
         AdoptShellPermissionsRule(
             InstrumentationRegistry.getInstrumentation().getUiAutomation(),
             Manifest.permission.BLUETOOTH_CONNECT,
@@ -105,10 +103,9 @@ class RfcommTest {
             Manifest.permission.MODIFY_PHONE_STATE,
         )
 
-    // Set up a Bumble Pandora device for the duration of the test.
-    @Rule(order = 2) @JvmField val bumble = PandoraDevice()
+    @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    @Rule(order = 3) @JvmField val enableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
     @Mock private lateinit var serviceListener: BluetoothProfile.ServiceListener
