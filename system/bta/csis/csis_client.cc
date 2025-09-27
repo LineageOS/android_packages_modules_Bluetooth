@@ -465,7 +465,7 @@ public:
 
       if (next_dev) {
         auto next_csis_inst = next_dev->GetCsisInstanceByGroupId(group_id);
-        log::assert_that(csis_instance != nullptr, "csis_instance does not exist!");
+        log::assert_that(next_csis_inst != nullptr, "next_csis_inst does not exist!");
 #if CSIP_UPPER_TESTER_FORCE_TO_SEND_LOCK == FALSE
         if (next_csis_inst->GetLockState() == CsisLockState::CSIS_STATE_LOCKED) {
           /* Somebody else managed to lock it.
