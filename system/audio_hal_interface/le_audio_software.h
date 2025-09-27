@@ -38,10 +38,14 @@ namespace le_audio {
 using ::bluetooth::le_audio::DsaMode;
 using ::bluetooth::le_audio::DsaModes;
 
-enum class StartRequestState {
+enum class BluetoothRequest {
+  RESUME = 0x00,
+};
+
+enum class BluetoothRequestState {
   IDLE = 0x00,
-  PENDING_BEFORE_RESUME,
-  PENDING_AFTER_RESUME,
+  PENDING_BEFORE_REQUEST,
+  PENDING_AFTER_REQUEST,
   CONFIRMED,
   CANCELED,
 };
@@ -205,3 +209,12 @@ private:
 }  // namespace le_audio
 }  // namespace audio
 }  // namespace bluetooth
+
+namespace std {
+template <>
+struct formatter<bluetooth::audio::le_audio::BluetoothRequest>
+    : enum_formatter<bluetooth::audio::le_audio::BluetoothRequest> {};
+template <>
+struct formatter<bluetooth::audio::le_audio::BluetoothRequestState>
+    : enum_formatter<bluetooth::audio::le_audio::BluetoothRequestState> {};
+}  // namespace std

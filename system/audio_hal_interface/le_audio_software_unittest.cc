@@ -33,6 +33,7 @@
 
 #pragma GCC diagnostic ignored "-Wunused-private-field"
 
+using testing::_;
 using testing::Return;
 using testing::Test;
 
@@ -955,8 +956,9 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceWrite) {
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequest) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
           .Times(1);
@@ -966,30 +968,37 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestIdle) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::IDLE);
+  EXPECT_CALL(audio_client_interface_, StreamStarted(_)).Times(0);
   sink_->ConfirmStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestPendingBeforeResume) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_BEFORE_REQUEST);
+  EXPECT_CALL(audio_client_interface_, StreamStarted(_)).Times(0);
   sink_->ConfirmStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestConfirmed) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
+  EXPECT_CALL(audio_client_interface_, StreamStarted(_)).Times(0);
   sink_->ConfirmStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequest) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::FAILURE))
           .Times(1);
@@ -999,30 +1008,34 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestIdle) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::IDLE);
   sink_->CancelStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestPendingBeforeResume) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_BEFORE_REQUEST);
   sink_->CancelStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestCanceled) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   sink_->CancelStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequest) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
           .Times(1);
@@ -1032,30 +1045,34 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestIdle) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::IDLE);
   source_->ConfirmStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestPendingBeforeResume) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_BEFORE_REQUEST);
   source_->ConfirmStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestConfirmed) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
   source_->ConfirmStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequest) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::FAILURE))
           .Times(1);
@@ -1065,22 +1082,25 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestIdle) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::IDLE);
   source_->CancelStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestPendingBeforeResume) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_BEFORE_REQUEST);
   source_->CancelStreamingRequest();
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestCanceled) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   source_->CancelStreamingRequest();
 }
 
@@ -1153,10 +1173,12 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestInvalidStates)
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
   sink_->ConfirmStreamingRequest();
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   sink_->ConfirmStreamingRequest();
 }
 
@@ -1164,10 +1186,12 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestInvalidStates) 
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
   sink_->CancelStreamingRequest();
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   sink_->CancelStreamingRequest();
 }
 
@@ -1210,10 +1234,12 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestInvalidState
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
   source_->ConfirmStreamingRequest();
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   source_->ConfirmStreamingRequest();
 }
 
@@ -1221,10 +1247,12 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestInvalidStates
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
   source_->CancelStreamingRequest();
 
-  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+                                     bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   source_->CancelStreamingRequest();
 }
 
@@ -1426,8 +1454,9 @@ TEST_F(LeAudioSoftwareUnicastTestHidl, SourceWrite) {
 TEST_F(LeAudioSoftwareUnicastTestHidl, SinkConfirmStreamingRequest) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::hidl::le_audio::LeAudioSinkTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
           .Times(1);
@@ -1437,8 +1466,9 @@ TEST_F(LeAudioSoftwareUnicastTestHidl, SinkConfirmStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestHidl, SinkCancelStreamingRequest) {
   ASSERT_NE(nullptr, sink_);
   auto instance = bluetooth::audio::hidl::le_audio::LeAudioSinkTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::FAILURE))
           .Times(1);
@@ -1448,8 +1478,9 @@ TEST_F(LeAudioSoftwareUnicastTestHidl, SinkCancelStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestHidl, SourceConfirmStreamingRequest) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::hidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
           .Times(1);
@@ -1459,8 +1490,9 @@ TEST_F(LeAudioSoftwareUnicastTestHidl, SourceConfirmStreamingRequest) {
 TEST_F(LeAudioSoftwareUnicastTestHidl, SourceCancelStreamingRequest) {
   ASSERT_NE(nullptr, source_);
   auto instance = bluetooth::audio::hidl::le_audio::LeAudioSourceTransport::instance;
-  instance->SetStartRequestState(
-          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  instance->SetBluetoothRequestState(
+          bluetooth::audio::le_audio::BluetoothRequest::RESUME,
+          bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
   EXPECT_CALL(audio_client_interface_,
               StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::FAILURE))
           .Times(1);

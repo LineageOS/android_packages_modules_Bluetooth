@@ -33,30 +33,31 @@ LeAudioTransport::LeAudioTransport(std::function<void()> flush, StreamCallbacks 
       total_bytes_processed_(0),
       data_position_({}),
       pcm_config_(std::move(pcm_config)),
-      start_request_state_(StartRequestState::IDLE) {}
+      start_request_state_(BluetoothRequestState::IDLE) {}
 
 bool LeAudioTransport::StartRequest() {
-  SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
+  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::PENDING_BEFORE_REQUEST);
   if (stream_cb_.on_resume_(true)) {
-    if (start_request_state_ == StartRequestState::CONFIRMED) {
+    if (start_request_state_ == BluetoothRequestState::CONFIRMED) {
       log::info("Start completed.");
-      SetStartRequestState(StartRequestState::IDLE);
+      SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
       return true;
     }
 
-    if (start_request_state_ == StartRequestState::CANCELED) {
+    if (start_request_state_ == BluetoothRequestState::CANCELED) {
       log::info("Start request failed.");
-      SetStartRequestState(StartRequestState::IDLE);
+      SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
       return false;
     }
 
     log::info("Start pending.");
-    SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
+    SetBluetoothRequestState(BluetoothRequest::RESUME,
+                             BluetoothRequestState::PENDING_AFTER_REQUEST);
     return true;
   }
 
   log::error("Start request failed.");
-  SetStartRequestState(StartRequestState::IDLE);
+  SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
   return false;
 }
 
@@ -147,16 +148,38 @@ void LeAudioTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, u
   pcm_config_.data_interval_us = data_interval;
 }
 
-StartRequestState LeAudioTransport::GetStartRequestState(void) { return start_request_state_; }
+BluetoothRequestState LeAudioTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  log::verbose("request: {}", request);
+  switch (request) {
+    case BluetoothRequest::RESUME:
+      return start_request_state_;
+  }
 
-void LeAudioTransport::ClearStartRequestState(void) {
-  log::verbose("");
-  start_request_state_ = StartRequestState::IDLE;
-  remote_delay_report_ms_ = 0;
+  log::error("Invalid request: {}", request);
+  return BluetoothRequestState::IDLE;
 }
 
-void LeAudioTransport::SetStartRequestState(StartRequestState state) {
-  start_request_state_ = state;
+void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  log::verbose("request: {}", request);
+  switch (request) {
+    case BluetoothRequest::RESUME:
+      start_request_state_ = BluetoothRequestState::IDLE;
+      remote_delay_report_ms_ = 0;
+      return;
+  }
+
+  log::error("Invalid request: {}", request);
+}
+
+void LeAudioTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                BluetoothRequestState state) {
+  log::verbose("request: {}", request);
+  switch (request) {
+    case BluetoothRequest::RESUME:
+      start_request_state_ = state;
+      return;
+  }
+  log::error("Invalid request: {}", request);
 }
 
 static PcmParameters get_source_default_pcm_parameters() {
@@ -230,17 +253,18 @@ void LeAudioSinkTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_h
                                              data_interval);
 }
 
-StartRequestState LeAudioSinkTransport::GetStartRequestState(void) {
-  return transport_->GetStartRequestState();
+BluetoothRequestState LeAudioSinkTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  return transport_->GetBluetoothRequestState(request);
 }
 
-void LeAudioSinkTransport::ClearStartRequestState(void) {
+void LeAudioSinkTransport::ClearBluetoothRequestState(BluetoothRequest request) {
   log::verbose("");
-  transport_->ClearStartRequestState();
+  transport_->ClearBluetoothRequestState(request);
 }
 
-void LeAudioSinkTransport::SetStartRequestState(StartRequestState state) {
-  transport_->SetStartRequestState(state);
+void LeAudioSinkTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                    BluetoothRequestState state) {
+  transport_->SetBluetoothRequestState(request, state);
 }
 
 LeAudioSourceTransport::LeAudioSourceTransport(StreamCallbacks stream_cb) {
@@ -298,17 +322,18 @@ void LeAudioSourceTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate
                                              data_interval);
 }
 
-StartRequestState LeAudioSourceTransport::GetStartRequestState(void) {
-  return transport_->GetStartRequestState();
+BluetoothRequestState LeAudioSourceTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  return transport_->GetBluetoothRequestState(request);
 }
 
-void LeAudioSourceTransport::ClearStartRequestState(void) {
+void LeAudioSourceTransport::ClearBluetoothRequestState(BluetoothRequest request) {
   log::verbose("");
-  transport_->ClearStartRequestState();
+  transport_->ClearBluetoothRequestState(request);
 }
 
-void LeAudioSourceTransport::SetStartRequestState(StartRequestState state) {
-  transport_->SetStartRequestState(state);
+void LeAudioSourceTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                      BluetoothRequestState state) {
+  transport_->SetBluetoothRequestState(request, state);
 }
 }  // namespace le_audio
 }  // namespace host
