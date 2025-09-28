@@ -477,10 +477,11 @@ public class ScanControllerTest {
         mScanController.registerScanner(callback, workSource, mAttributionSource);
         verify(mScannerMap)
                 .addWithCallback(
+                        anyInt(),
+                        anyString(),
                         any(),
                         eq(mAttributionSource),
                         eq(workSource),
-                        anyInt(),
                         eq(callback),
                         any(),
                         eq(mScanController));

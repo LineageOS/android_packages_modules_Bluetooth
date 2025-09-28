@@ -1227,10 +1227,14 @@ public class ScanController {
     public void registerScannerInternal(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
         enforceScanThread();
-        final var uuid = UUID.randomUUID();
-        Log.d(TAG, "registerScanner() - UUID=" + uuid);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        mScannerMap.addWithCallback(uuid, source, workSource, uid, callback, mAdapterService, this);
+        final var appName =
+                ScanUtil.appNameOrUnknown(
+                        mAdapterService.getPackageManager().getNameForUid(uid), uid);
+        final var uuid = UUID.randomUUID();
+        Log.d(TAG, "registerScanner(): uid=" + uid + ", appName=" + appName + ", uuid=" + uuid);
+        mScannerMap.addWithCallback(
+                uid, appName, uuid, source, workSource, callback, mAdapterService, this);
         mScanManager.registerScanner(uuid);
     }
 
