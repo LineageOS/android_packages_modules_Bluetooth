@@ -648,7 +648,7 @@ public class LeAudioService extends ConnectableProfile {
             }
 
             if (mBroadcastIdDeactivatedForUnicastTransition.isPresent()) {
-                deactivateUnicasDueToActivatingBroadcast();
+                deactivateUnicastDueToActivatingBroadcast();
             }
         }
     }
@@ -3013,8 +3013,8 @@ public class LeAudioService extends ConnectableProfile {
         pauseBroadcast(broadcastId.get());
     }
 
-    private void deactivateUnicasDueToActivatingBroadcast() {
-        Log.d(TAG, "deactivateUnicasDueToActivatingBroadcast if needed");
+    private void deactivateUnicastDueToActivatingBroadcast() {
+        Log.d(TAG, "deactivateUnicastDueToActivatingBroadcast if needed");
         if (!areAllGroupsInNotActiveState() && isBroadcastReadyToBeActivated()) {
             removeActiveDevice(true);
         }
@@ -3027,7 +3027,7 @@ public class LeAudioService extends ConnectableProfile {
             case LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED ->
                     pauseBroadcastDueToStartingUnicast();
             case LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED ->
-                    deactivateUnicasDueToActivatingBroadcast();
+                    deactivateUnicastDueToActivatingBroadcast();
             default -> {}
         }
     }
@@ -4907,7 +4907,7 @@ public class LeAudioService extends ConnectableProfile {
                 }
 
                 if (mBroadcastIdDeactivatedForUnicastTransition.isPresent()) {
-                    deactivateUnicasDueToActivatingBroadcast();
+                    deactivateUnicastDueToActivatingBroadcast();
                 }
             }
             default -> Log.d(TAG, "Not handled audio mode set: " + mode);
