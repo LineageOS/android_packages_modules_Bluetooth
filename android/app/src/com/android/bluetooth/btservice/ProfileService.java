@@ -134,9 +134,7 @@ public abstract class ProfileService extends ContextWrapper {
     // Suppressed since this is called from framework
     @SuppressLint("AndroidFrameworkRequiresPermission")
     public void dump(StringBuilder sb) {
-        sb.append("\nProfile: ");
-        sb.append(mName);
-        sb.append("\n");
+        sb.append("\nProfile: ").append(mName).append("\n");
     }
 
     /**
@@ -146,8 +144,6 @@ public abstract class ProfileService extends ContextWrapper {
      * @param s String to indent and append.
      */
     public static void println(StringBuilder sb, String s) {
-        sb.append("  ");
-        sb.append(s);
-        sb.append("\n");
+        sb.append("  ").append(s).append("\n");
     }
 }
