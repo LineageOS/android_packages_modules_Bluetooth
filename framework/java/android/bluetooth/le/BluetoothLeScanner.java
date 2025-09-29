@@ -478,7 +478,7 @@ public final class BluetoothLeScanner {
         private final ScanSettings mSettings;
         private final IBluetoothScan mBluetoothScan;
 
-        // mLeHandle 0: not registered
+        // 0: not registered
         // -2: registration failed because app is scanning to frequently
         // -1: scan stopped or registration failed
         // > 0: registered and scan started
@@ -541,7 +541,7 @@ public final class BluetoothLeScanner {
         void stopLeScan() {
             synchronized (this) {
                 if (mScannerId <= 0) {
-                    Log.e(TAG, "Error state, mLeHandle: " + mScannerId);
+                    Log.e(TAG, "Error state, mScannerId=" + mScannerId);
                     return;
                 }
                 try {
@@ -558,7 +558,7 @@ public final class BluetoothLeScanner {
         void flushPendingBatchResults() {
             synchronized (this) {
                 if (mScannerId <= 0) {
-                    Log.e(TAG, "Error state, mLeHandle: " + mScannerId);
+                    Log.e(TAG, "Error state, mScannerId=" + mScannerId);
                     return;
                 }
                 try {
