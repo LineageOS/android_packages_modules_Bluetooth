@@ -244,7 +244,7 @@ namespace acl_manager {
 class ClassicAclConnectionTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    ASSERT_TRUE(hci::Address::FromString(kAddress, address_));
+    address_ = Address::FromString(kAddress).value();
     thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
     queue_ = std::make_shared<hci::acl_manager::AclConnection::Queue>(kQueueSize);

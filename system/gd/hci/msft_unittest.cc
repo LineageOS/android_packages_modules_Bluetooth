@@ -137,68 +137,66 @@ protected:
 
 TEST_F(MsftExtensionManagerTest, startup_teardown) {}
 
-TEST_F(MsftExtensionManagerTest, msft_read_supported_features_test_wrong_error_code){
+TEST_F(MsftExtensionManagerTest, msft_read_supported_features_test_wrong_error_code) {
   msft_extension_manager_ = nullptr;
   msft_extension_manager_ =
           new MsftExtensionManager(client_handler_, test_hal_.get(), test_hci_layer_.get());
   msft_extension_manager_->SetScanningCallback(&mock_scanning_callback_);
-    sync_client_handler();
+  sync_client_handler();
 
-    prefix_ = {0x54,  // VseSubeventCode::BLE_THRESHOLD
-               0xB2, 0xC3};
-    const uint64_t features = 0x0123456789ABCDEF;
-    auto msft_opcode = static_cast<OpCode>(test_hal_->getMsftOpcode());
-    auto command_view = test_hci_layer_->GetCommand(msft_opcode);
+  prefix_ = {0x54,  // VseSubeventCode::BLE_THRESHOLD
+             0xB2, 0xC3};
+  const uint64_t features = 0x0123456789ABCDEF;
+  auto msft_opcode = static_cast<OpCode>(test_hal_->getMsftOpcode());
+  auto command_view = test_hci_layer_->GetCommand(msft_opcode);
 
-    // B. Build the Command Complete event
-    auto cc_payload_builder = std::make_unique<packet::RawBuilder>();
-    cc_payload_builder->AddOctets1(static_cast<uint8_t>(ErrorCode::UNKNOWN_HCI_COMMAND));
-    cc_payload_builder->AddOctets1(
-            static_cast<uint8_t>(MsftSubcommandOpcode::MSFT_READ_SUPPORTED_FEATURES));
-    cc_payload_builder->AddOctets8(features);
-    cc_payload_builder->AddOctets1(prefix_.size());
-    cc_payload_builder->AddOctets(prefix_);
+  // B. Build the Command Complete event
+  auto cc_payload_builder = std::make_unique<packet::RawBuilder>();
+  cc_payload_builder->AddOctets1(static_cast<uint8_t>(ErrorCode::UNKNOWN_HCI_COMMAND));
+  cc_payload_builder->AddOctets1(
+          static_cast<uint8_t>(MsftSubcommandOpcode::MSFT_READ_SUPPORTED_FEATURES));
+  cc_payload_builder->AddOctets8(features);
+  cc_payload_builder->AddOctets1(prefix_.size());
+  cc_payload_builder->AddOctets(prefix_);
 
-    auto complete_builder =
-            CommandCompleteBuilder::Create(0x01, msft_opcode, std::move(cc_payload_builder));
+  auto complete_builder =
+          CommandCompleteBuilder::Create(0x01, msft_opcode, std::move(cc_payload_builder));
 
-    // C. Inject the Command Complete event and flush to process it
-    // This executes on_msft_read_supported_features_complete, setting the internal state.
-    test_hci_layer_->IncomingEvent(std::move(complete_builder));
-    sync_client_handler();
+  // C. Inject the Command Complete event and flush to process it
+  // This executes on_msft_read_supported_features_complete, setting the internal state.
+  test_hci_layer_->IncomingEvent(std::move(complete_builder));
+  sync_client_handler();
 }
 
-TEST_F(MsftExtensionManagerTest, msft_read_supported_features_test_wrong_subcommand_opcode){
+TEST_F(MsftExtensionManagerTest, msft_read_supported_features_test_wrong_subcommand_opcode) {
   msft_extension_manager_ = nullptr;
   msft_extension_manager_ =
           new MsftExtensionManager(client_handler_, test_hal_.get(), test_hci_layer_.get());
-msft_extension_manager_->SetScanningCallback(&mock_scanning_callback_);
-    sync_client_handler();
+  msft_extension_manager_->SetScanningCallback(&mock_scanning_callback_);
+  sync_client_handler();
 
-    prefix_ = {0x54,  // VseSubeventCode::BLE_THRESHOLD
-               0xB2, 0xC3};
-    const uint64_t features = 0x0123456789ABCDEF;
-    auto msft_opcode = static_cast<OpCode>(test_hal_->getMsftOpcode());
-    auto command_view = test_hci_layer_->GetCommand(msft_opcode);
+  prefix_ = {0x54,  // VseSubeventCode::BLE_THRESHOLD
+             0xB2, 0xC3};
+  const uint64_t features = 0x0123456789ABCDEF;
+  auto msft_opcode = static_cast<OpCode>(test_hal_->getMsftOpcode());
+  auto command_view = test_hci_layer_->GetCommand(msft_opcode);
 
-    // B. Build the Command Complete event
-    auto cc_payload_builder = std::make_unique<packet::RawBuilder>();
-    cc_payload_builder->AddOctets1(static_cast<uint8_t>(ErrorCode::SUCCESS));
-    cc_payload_builder->AddOctets1(
-            static_cast<uint8_t>(MsftSubcommandOpcode::MSFT_LE_MONITOR_ADV));
-    cc_payload_builder->AddOctets8(features);
-    cc_payload_builder->AddOctets1(prefix_.size());
-    cc_payload_builder->AddOctets(prefix_);
+  // B. Build the Command Complete event
+  auto cc_payload_builder = std::make_unique<packet::RawBuilder>();
+  cc_payload_builder->AddOctets1(static_cast<uint8_t>(ErrorCode::SUCCESS));
+  cc_payload_builder->AddOctets1(static_cast<uint8_t>(MsftSubcommandOpcode::MSFT_LE_MONITOR_ADV));
+  cc_payload_builder->AddOctets8(features);
+  cc_payload_builder->AddOctets1(prefix_.size());
+  cc_payload_builder->AddOctets(prefix_);
 
-    auto complete_builder =
-            CommandCompleteBuilder::Create(0x01, msft_opcode, std::move(cc_payload_builder));
+  auto complete_builder =
+          CommandCompleteBuilder::Create(0x01, msft_opcode, std::move(cc_payload_builder));
 
-    // C. Inject the Command Complete event and flush to process it
-    // This executes on_msft_read_supported_features_complete, setting the internal state.
-    test_hci_layer_->IncomingEvent(std::move(complete_builder));
-    sync_client_handler();
+  // C. Inject the Command Complete event and flush to process it
+  // This executes on_msft_read_supported_features_complete, setting the internal state.
+  test_hci_layer_->IncomingEvent(std::move(complete_builder));
+  sync_client_handler();
 }
-
 
 TEST_F(MsftExtensionManagerTest, msft_read_supported_features_test_rssi) {
   VseSubeventCode vse_code = static_cast<VseSubeventCode>(prefix_[0]);
@@ -427,14 +425,16 @@ TEST_F(MsftExtensionManagerTest, msftAdvMonitorAdd_byAddress) {
   const std::string addr_str = "01:02:03:04:05:06";
   RawAddress test_raw_address = RawAddress::FromString(addr_str).value();
 
-  MsftAdvMonitor monitor = {.rssi_threshold_high = 80,
-                            .rssi_threshold_low = 30,
-                            .rssi_threshold_low_time_interval = 5,
-                            .rssi_sampling_period = 1,
-                            .condition_type = MSFT_CONDITION_TYPE_ADDRESS,
-                            .patterns = {},
-                              .addr_info = {.addr_type = 0x00,  // Public
-                                          .bd_addr = test_raw_address},};
+  MsftAdvMonitor monitor = {
+          .rssi_threshold_high = 80,
+          .rssi_threshold_low = 30,
+          .rssi_threshold_low_time_interval = 5,
+          .rssi_sampling_period = 1,
+          .condition_type = MSFT_CONDITION_TYPE_ADDRESS,
+          .patterns = {},
+          .addr_info = {.addr_type = 0x00,  // Public
+                        .bd_addr = test_raw_address},
+  };
 
   // 2. Set up callback and promise for synchronization
   auto promise_ptr = std::make_shared<std::promise<std::pair<uint8_t, ErrorCode>>>();
@@ -454,9 +454,6 @@ TEST_F(MsftExtensionManagerTest, msftAdvMonitorAdd_byAddress) {
   ASSERT_TRUE(msft_command_view.IsValid());
   auto monitor_adv_view = MsftLeMonitorAdvConditionAddressView::Create(
           MsftLeMonitorAdvView::Create(msft_command_view));
-
-  Address expected_address_in_view;
-  Address::FromString(addr_str, expected_address_in_view);
 
   // 5. Simulate the Command Complete response
   auto payload_builder = std::make_unique<packet::RawBuilder>();
@@ -504,7 +501,6 @@ TEST_F(MsftExtensionManagerTest, msftAdvMonitorAdd_no_support) {
 }
 
 TEST_F(MsftExtensionManagerTest, msftAdvMonitorRemove_no_support) {
-
   test_hal_->SetMsftOpcode(0);
   msft_extension_manager_ = nullptr;
   msft_extension_manager_ =
@@ -526,7 +522,6 @@ TEST_F(MsftExtensionManagerTest, msftAdvMonitorRemove_no_support) {
 }
 
 TEST_F(MsftExtensionManagerTest, msftAdvMonitorEnable_no_support) {
-
   test_hal_->SetMsftOpcode(0);
   msft_extension_manager_ = nullptr;
   msft_extension_manager_ =
@@ -545,7 +540,7 @@ TEST_F(MsftExtensionManagerTest, msftAdvMonitorEnable_no_support) {
   // 3. Call the function under test
   msft_extension_manager_->MsftAdvMonitorEnable(enable, std::move(cb));
   sync_client_handler();
-  }
+}
 
 }  // namespace hci
 }  // namespace bluetooth

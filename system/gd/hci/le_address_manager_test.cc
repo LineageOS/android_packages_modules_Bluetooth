@@ -265,8 +265,7 @@ public:
 };
 
 TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_accept_list) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   le_address_manager_->AddDeviceToFilterAcceptList(FilterAcceptListAddressType::RANDOM, address);
   auto packet = hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   auto packet_view = LeAddDeviceToFilterAcceptListView::Create(
@@ -281,8 +280,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_accept_list) {
 }
 
 TEST_F(LeAddressManagerWithSingleClientTest, remove_device_from_accept_list) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   le_address_manager_->AddDeviceToFilterAcceptList(FilterAcceptListAddressType::RANDOM, address);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
@@ -302,8 +300,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, remove_device_from_accept_list) {
 }
 
 TEST_F(LeAddressManagerWithSingleClientTest, clear_filter_accept_list) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   le_address_manager_->AddDeviceToFilterAcceptList(FilterAcceptListAddressType::RANDOM, address);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
@@ -318,8 +315,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, clear_filter_accept_list) {
 
 // b/260916288
 TEST_F(LeAddressManagerWithSingleClientTest, DISABLED_add_device_to_resolving_list) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   Octet16 peer_irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05,
                       0x34, 0x10, 0x10, 0xa6, 0x0a, 0x39, 0x7d, 0x9b};
   Octet16 local_irk = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -363,8 +359,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, DISABLED_add_device_to_resolving_li
 
 // b/260916288
 TEST_F(LeAddressManagerWithSingleClientTest, DISABLED_remove_device_from_resolving_list) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   Octet16 peer_irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05,
                       0x34, 0x10, 0x10, 0xa6, 0x0a, 0x39, 0x7d, 0x9b};
   Octet16 local_irk = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -417,8 +412,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, DISABLED_remove_device_from_resolvi
 
 // b/260916288
 TEST_F(LeAddressManagerWithSingleClientTest, DISABLED_clear_resolving_list) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   Octet16 peer_irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05,
                       0x34, 0x10, 0x10, 0xa6, 0x0a, 0x39, 0x7d, 0x9b};
   Octet16 local_irk = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -466,8 +460,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, DISABLED_clear_resolving_list) {
 }
 
 TEST_F(LeAddressManagerWithSingleClientTest, register_during_command_complete) {
-  Address address;
-  Address::FromString("01:02:03:04:05:06", address);
+  Address address = Address::FromString("01:02:03:04:05:06").value();
   le_address_manager_->AddDeviceToFilterAcceptList(FilterAcceptListAddressType::RANDOM, address);
   auto packet = hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   auto packet_view = LeAddDeviceToFilterAcceptListView::Create(

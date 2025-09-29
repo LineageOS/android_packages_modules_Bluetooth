@@ -132,8 +132,7 @@ struct MsftExtensionManager::impl {
 
       if (monitor.condition_type == MSFT_CONDITION_TYPE_ADDRESS) {
         msft_adv_monitor_add_cb_ = cb;
-        Address addr;
-        Address::FromString(monitor.addr_info.bd_addr.ToString(), addr);
+        Address addr = monitor.addr_info.bd_addr;
         hci_layer_->EnqueueCommand(
                 MsftLeMonitorAdvConditionAddressBuilder::Create(
                         static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
@@ -308,9 +307,7 @@ MsftExtensionManager::MsftExtensionManager(os::Handler* handler, hal::HciHal* ha
   log::verbose("module started !!");
 }
 
-MsftExtensionManager::~MsftExtensionManager() {
-  log::verbose("module stopped !!");
-};
+MsftExtensionManager::~MsftExtensionManager() { log::verbose("module stopped !!"); }
 
 bool MsftExtensionManager::SupportsMsftExtensions() { return pimpl_->supports_msft_extensions(); }
 

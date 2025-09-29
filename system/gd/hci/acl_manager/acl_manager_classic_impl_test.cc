@@ -128,10 +128,9 @@ protected:
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, *acl_manager_classic_);
 
-    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+    remote = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
-    hci::Address address;
-    Address::FromString("D0:05:04:03:02:01", address);
+    hci::Address address = Address::FromString("D0:05:04:03:02:01").value();
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
@@ -791,7 +790,7 @@ protected:
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, *acl_manager_classic_);
 
-    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+    remote = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   }
 };
 
