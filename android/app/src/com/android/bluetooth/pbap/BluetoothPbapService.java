@@ -672,11 +672,12 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         return true;
     }
 
-    /**
-     * Disconnects pbap server profile with device
-     *
-     * @param device is the remote bluetooth device
-     */
+    @Override
+    public boolean connect(BluetoothDevice device) {
+        Log.w(TAG, "connect() was called but not implemented");
+        return false;
+    }
+
     @Override
     public boolean disconnect(BluetoothDevice device) {
         synchronized (mPbapStateMachineMap) {

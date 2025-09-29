@@ -118,21 +118,6 @@ public class AvrcpControllerServiceTest {
     }
 
     @Test
-    public void disconnect_whenDisconnected_returnsFalse() {
-        when(mStateMachine.getState()).thenReturn(STATE_DISCONNECTED);
-
-        assertThat(mService.disconnect(mDevice1)).isFalse();
-    }
-
-    @Test
-    public void disconnect_whenDisconnected_returnsTrue() {
-        when(mStateMachine.getState()).thenReturn(STATE_CONNECTED);
-
-        assertThat(mService.disconnect(mDevice1)).isTrue();
-        verify(mStateMachine).disconnect();
-    }
-
-    @Test
     public void removeStateMachine() {
         when(mStateMachine.getDevice()).thenReturn(mDevice1);
 

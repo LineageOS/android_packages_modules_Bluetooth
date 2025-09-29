@@ -148,13 +148,6 @@ public class HidDeviceServiceBinderTest {
     }
 
     @Test
-    public void setConnectionPolicy() {
-        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
-        verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
-    }
-
-    @Test
     public void reportError() {
         byte error = -1;
         mBinder.reportError(mDevice, error, mAttributionSource);

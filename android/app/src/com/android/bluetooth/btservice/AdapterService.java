@@ -3365,7 +3365,7 @@ public class AdapterService extends Service {
         disconnectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         disconnectEnabledProfile(BluetoothProfile.MAP_CLIENT, device);
         disconnectEnabledProfile(BluetoothProfile.MAP, device);
-        disconnectEnabledProfile(BluetoothProfile.HID_DEVICE, device);
+        disconnectHidDevice(device);
         disconnectEnabledProfile(BluetoothProfile.HID_HOST, device);
         disconnectEnabledProfile(BluetoothProfile.PAN, device);
         disconnectEnabledProfile(BluetoothProfile.PBAP_CLIENT, device);
@@ -3383,6 +3383,22 @@ public class AdapterService extends Service {
 
     private void disconnectEnabledProfile(int id, BluetoothDevice device) {
         getStartedConnectableProfile(id)
+                .filter(
+                        profile -> {
+                            final int state = profile.getConnectionState(device);
+                            return state == STATE_CONNECTED || state == STATE_CONNECTING;
+                        })
+                .ifPresent(
+                        profile -> {
+                            Log.i(TAG, "Disconnecting " + profile);
+                            profile.disconnect(device);
+                        });
+    }
+
+    // HidDevice as a weird situation of being 'connectable' without implementing the whole feature
+    // of other connectable profiles such as connectionPolicy.
+    private void disconnectHidDevice(BluetoothDevice device) {
+        getHidDeviceService()
                 .filter(
                         profile -> {
                             final int state = profile.getConnectionState(device);
