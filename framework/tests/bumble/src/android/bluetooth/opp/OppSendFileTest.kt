@@ -64,11 +64,10 @@ class OppSendFileTest {
     val mAdapter
         get() = mContext.getSystemService(BluetoothManager::class.java).adapter
 
-    @get:Rule(order = 1) // Cleans up shell permissions, must be run before shell permissions rule
-    val mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    @get:Rule(order = 2)
-    val mPermissionRule =
+    @get:Rule(order = 1)
+    val permissionRule =
         AdoptShellPermissionsRule(
             mInstrumentation.uiAutomation,
             Manifest.permission.BLUETOOTH_PRIVILEGED,
@@ -76,14 +75,12 @@ class OppSendFileTest {
             Manifest.permission.INTERACT_ACROSS_USERS,
         )
 
-    @get:Rule(order = 3) val mBumble = PandoraDevice()
+    @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    @get:Rule(order = 4)
-    val mEnableBluetoothRule =
-        EnableBluetoothRule(/* enableTestMode= */ false, /* toggleBluetooth= */ true)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     val mRemoteDevice
-        get() = mBumble.remoteDevice
+        get() = bumble.remoteDevice
 
     lateinit var mHost: Host
 

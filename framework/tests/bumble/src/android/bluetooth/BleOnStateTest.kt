@@ -30,7 +30,6 @@ import android.content.Context
 import android.os.ParcelUuid
 import android.platform.test.annotations.RequiresFlagsDisabled
 import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -51,11 +50,9 @@ import pandora.HostProto
 
 @RunWith(AndroidJUnit4::class)
 class BleOnStateTest {
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    @get:Rule(order = 0)
-    val checkFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
-    @get:Rule(order = 1) val permissionRule: AdoptShellPermissionsRule = AdoptShellPermissionsRule()
+    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
 
     @get:Rule(order = 2) val bumble = PandoraDevice()
 

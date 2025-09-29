@@ -47,7 +47,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -86,6 +85,18 @@ import pandora.HidProto.ServiceRequest
 /** Test cases for [BluetoothHidDevice]. */
 @RunWith(AndroidJUnit4::class)
 class HidDeviceTest {
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+
+    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
+
+    @get:Rule(order = 2) val bumble = PandoraDevice()
+
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
+
+    @Mock private lateinit var callback: BluetoothHidDevice.Callback
+    @Mock private lateinit var receiver: BroadcastReceiver
+    @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
+
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter: BluetoothAdapter =
         context.getSystemService(BluetoothManager::class.java).adapter
@@ -126,20 +137,6 @@ class HidDeviceTest {
             QOS_LATENCY,
             BluetoothHidDeviceAppQosSettings.MAX,
         )
-
-    @Mock private lateinit var callback: BluetoothHidDevice.Callback
-    @Mock private lateinit var receiver: BroadcastReceiver
-    @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
-
-    @get:Rule(order = 0)
-    val checkFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
-    @get:Rule(order = 1) val permissionRule: AdoptShellPermissionsRule = AdoptShellPermissionsRule()
-
-    @get:Rule(order = 2) val bumble: PandoraDevice = PandoraDevice()
-
-    @get:Rule(order = 3)
-    val enableBluetoothRule: EnableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Before
     fun setUp() {

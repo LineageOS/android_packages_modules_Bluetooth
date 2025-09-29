@@ -22,7 +22,6 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -89,14 +88,10 @@ public class DckL2capTest() : Closeable {
     private lateinit var connectionResponse: WaitConnectionResponse
     private lateinit var host: Host
 
-    @Rule(order = 0)
-    @JvmField
-    val mCheckFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    // Gives shell permissions during the test.
-    @Rule(order = 1)
-    @JvmField
-    val mPermissionRule =
+    @get:Rule(order = 1)
+    val permissionRule =
         AdoptShellPermissionsRule(
             InstrumentationRegistry.getInstrumentation().getUiAutomation(),
             Manifest.permission.BLUETOOTH_CONNECT,
@@ -104,11 +99,9 @@ public class DckL2capTest() : Closeable {
             Manifest.permission.BLUETOOTH_ADVERTISE,
         )
 
-    // Setup a Bumble Pandora device for the duration of the test.
-    @Rule(order = 2) @JvmField val mBumble = PandoraDevice()
+    @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    // Toggles Bluetooth.
-    @Rule(order = 3) @JvmField val EnableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     /** Wrapper for [BluetoothGatt] along with its [state] and [status] */
     data class GattState(val gatt: BluetoothGatt, val status: Int, val state: Int)
@@ -128,13 +121,13 @@ public class DckL2capTest() : Closeable {
 
         host = Host(context)
 
-        mBumble
+        bumble
             .dckBlocking()
             .withDeadline(Deadline.after(GRPC_TIMEOUT.inWholeMilliseconds, TimeUnit.MILLISECONDS))
             .register(Empty.getDefaultInstance())
 
         // Advertise the Bumble
-        advertiseContext = mBumble.advertise()
+        advertiseContext = bumble.advertise()
 
         // Connect to GATT (Generic Attribute Profile) on Bumble.
         val remoteDevice =
@@ -811,14 +804,14 @@ public class DckL2capTest() : Closeable {
             bluetoothSocket.close()
         } else {
             val disconnectRequest = DisconnectRequest.newBuilder().setChannel(channel).build()
-            val disconnectResponse = mBumble.l2capBlocking().disconnect(disconnectRequest)
+            val disconnectResponse = bumble.l2capBlocking().disconnect(disconnectRequest)
             assertThat(disconnectResponse.hasSuccess()).isTrue()
         }
         Log.d(TAG, "disconnectSocketAndWaitForDisconnectUtil: waitDisconnection")
         val waitDisconnectionRequest =
             WaitDisconnectionRequest.newBuilder().setChannel(channel).build()
         val disconnectionResponse =
-            mBumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
+            bumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
         assertThat(disconnectionResponse.hasSuccess()).isTrue()
     }
 
@@ -831,7 +824,7 @@ public class DckL2capTest() : Closeable {
         val waitDisconnectionRequest =
             WaitDisconnectionRequest.newBuilder().setChannel(channel).build()
         val disconnectionResponse =
-            mBumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
+            bumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
         assertThat(disconnectionResponse.hasSuccess()).isTrue()
     }
 
@@ -875,7 +868,7 @@ public class DckL2capTest() : Closeable {
         val sampleData = "cafe-baguette".toByteArray()
 
         val receiveObserver = StreamObserverSpliterator<ReceiveRequest, ReceiveResponse>()
-        mBumble
+        bumble
             .l2cap()
             .receive(ReceiveRequest.newBuilder().setChannel(channel).build(), receiveObserver)
 
@@ -898,7 +891,7 @@ public class DckL2capTest() : Closeable {
     ) {
         val sendRequest = SendRequest.newBuilder().setChannel(channel).setData(data).build()
         Log.d(TAG, "sendDataFromBumbleToPhoneUtil: Send data from Bumble to Android")
-        mBumble.l2capBlocking().send(sendRequest)
+        bumble.l2capBlocking().send(sendRequest)
 
         // delay ensures data is arrived at the server side
         Thread.sleep(waitTime)
@@ -915,7 +908,7 @@ public class DckL2capTest() : Closeable {
 
         val sendRequest = SendRequest.newBuilder().setChannel(channel).setData(sampleData).build()
         Log.d(TAG, "sendDataFromBumbleToPhoneAndVerifyUtil: Send data from Bumble to Android")
-        mBumble.l2capBlocking().send(sendRequest)
+        bumble.l2capBlocking().send(sendRequest)
 
         // delay ensures data is arrived at the server side
         Thread.sleep(waitTime)
@@ -948,7 +941,7 @@ public class DckL2capTest() : Closeable {
                 .setConnection(connection)
                 .setLeCreditBased(leCreditBased)
                 .build()
-        return mBumble.l2capBlocking().connect(connectRequest)
+        return bumble.l2capBlocking().connect(connectRequest)
     }
 
     private fun readDckSpsm(gatt: BluetoothGatt) = runBlocking {
@@ -991,7 +984,7 @@ public class DckL2capTest() : Closeable {
                 .setLeCreditBased(leCreditBased)
                 .build()
         Log.i(TAG, "Sending request to Bumble to create server and wait for connection")
-        return mBumble.l2capBlocking().waitConnection(waitConnectionRequest)
+        return bumble.l2capBlocking().waitConnection(waitConnectionRequest)
     }
 
     private fun createListeningChannelUsingSocketSettings(

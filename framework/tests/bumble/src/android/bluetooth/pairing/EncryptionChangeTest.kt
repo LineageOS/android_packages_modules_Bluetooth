@@ -26,7 +26,6 @@ import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.os.ParcelUuid
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -53,16 +52,13 @@ import pandora.SecurityProto.PairingEventAnswer
 
 @RunWith(AndroidJUnit4::class)
 class EncryptionChangeTest {
-    @get:Rule(order = 0)
-    val checkFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
 
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    @get:Rule(order = 3)
-    val enableBluetoothRule =
-        EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
