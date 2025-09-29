@@ -44,7 +44,6 @@ import com.android.obex.HeaderSet;
 import java.util.regex.Pattern;
 
 /** Bluetooth OPP internal constant definitions */
-// Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class Constants {
     /** Tag used for debugging/logging */
     public static final String BT_PREFIX_OPP = "BluetoothOpp";

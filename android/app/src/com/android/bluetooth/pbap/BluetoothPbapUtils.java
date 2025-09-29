@@ -17,8 +17,6 @@
 package com.android.bluetooth.pbap;
 
 import android.app.ActivityManager;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -37,8 +35,6 @@ import android.provider.ContactsContract.RawContactsEntity;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.vcard.VCardComposer;
@@ -53,7 +49,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 4
 class BluetoothPbapUtils {
     private static final String TAG = BluetoothPbapUtils.class.getSimpleName();
 
@@ -234,18 +229,8 @@ class BluetoothPbapUtils {
                         TAG,
                         "Unable to create profile vcard. Error initializing composer: "
                                 + composer.getErrorReason());
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_UTILS,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        0);
             }
         } catch (Throwable t) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_UTILS,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    1);
             Log.e(TAG, "Unable to create profile vcard.", t);
         }
         if (composer != null) {
@@ -447,12 +432,6 @@ class BluetoothPbapUtils {
                 ContactData currentContactData = sContactDataset.get(contact);
                 if (currentContactData == null) {
                     Log.e(TAG, "Null contact in the updateList: " + contact);
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_UTILS,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                            2);
                     continue;
                 }
 
@@ -560,12 +539,6 @@ class BluetoothPbapUtils {
             while (c.moveToNext()) {
                 if (c.isNull(indexCId)) {
                     Log.w(TAG, "_id column is null. Row was deleted during iteration, skipping");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_UTILS,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                            3);
                     continue;
                 }
                 String contactId = c.getString(indexCId);

@@ -15,8 +15,6 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -28,8 +26,6 @@ import android.provider.Telephony.MmsSms;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
@@ -40,7 +36,6 @@ import java.util.regex.Pattern;
  * Use these functions when extracting data for listings. It caches frequently used data to speed up
  * building large listings - e.g. before applying filtering.
  */
-// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class SmsMmsContacts {
     private static final String TAG = SmsMmsContacts.class.getSimpleName();
 
@@ -100,11 +95,6 @@ public class SmsMmsContacts {
                 }
             }
             Log.e(TAG, "query failed");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_SMS_MMS_CONTACTS,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    0);
         } finally {
             if (c != null) {
                 c.close();
@@ -156,11 +146,6 @@ public class SmsMmsContacts {
                 }
             } else {
                 Log.e(TAG, "query failed");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_SMS_MMS_CONTACTS,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        1);
             }
         } finally {
             if (c != null) {

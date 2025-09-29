@@ -16,18 +16,13 @@
 
 package com.android.bluetooth.pbap;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothPbapConfig {
     private static boolean sUseProfileForOwnerVcard = true;
     private static boolean sIncludePhotosInVcard = false;
@@ -38,22 +33,11 @@ public class BluetoothPbapConfig {
             try {
                 sUseProfileForOwnerVcard = r.getBoolean(R.bool.pbap_use_profile_for_owner_vcard);
             } catch (Exception e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_CONFIG,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        0);
-
                 Log.e("BluetoothPbapConfig", "", e);
             }
             try {
                 sIncludePhotosInVcard = r.getBoolean(R.bool.pbap_include_photos_in_vcard);
             } catch (Exception e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_CONFIG,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        1);
                 Log.e("BluetoothPbapConfig", "", e);
             }
         }
