@@ -89,10 +89,11 @@ class ScannerMapTest {
         val appUid = Binder.getCallingUid()
         val app =
             scannerMap.addWithCallback(
+                appUid,
+                APP_NAME,
                 uuid,
                 attributionSource,
                 null,
-                appUid,
                 scannerCallback,
                 adapterService,
                 scanController,
@@ -115,10 +116,11 @@ class ScannerMapTest {
         val appUid = 1234
         val app =
             scannerMap.addWithCallback(
+                appUid,
+                APP_NAME,
                 uuid,
                 attributionSource,
                 null,
-                appUid,
                 scannerCallback,
                 adapterService,
                 scanController,
@@ -137,10 +139,11 @@ class ScannerMapTest {
         val scannerMap = ScannerMap()
         val appUid = 1234
         scannerMap.addWithCallback(
+            appUid,
+            APP_NAME,
             UUID.randomUUID(),
             attributionSource,
             null,
-            appUid,
             scannerCallback,
             adapterService,
             scanController,

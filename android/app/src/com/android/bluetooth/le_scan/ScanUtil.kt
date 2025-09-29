@@ -59,6 +59,9 @@ object ScanUtil {
     const val WEIGHT_LOW_LATENCY = 100
 
     @JvmStatic
+    fun appNameOrUnknown(appName: String?, uid: Int) = appName ?: "Unknown App (UID: $uid)"
+
+    @JvmStatic
     fun minScanMode(oldScanMode: Int, newScanMode: Int) =
         if (priorityForScanMode(oldScanMode) <= priorityForScanMode(newScanMode)) {
             oldScanMode

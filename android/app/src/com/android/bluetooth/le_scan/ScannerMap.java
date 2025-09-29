@@ -49,19 +49,21 @@ class ScannerMap {
     private final ConcurrentLinkedQueue<ScannerApp> mApps = new ConcurrentLinkedQueue<>();
 
     ScannerApp addWithCallback(
+            int appUid,
+            String appName,
             UUID uuid,
             AttributionSource source,
             WorkSource workSource,
-            int uid,
             IScannerCallback callback,
             AdapterService adapterService,
             ScanController scanController) {
         return add(
+                appUid,
+                appName,
                 uuid,
                 null,
                 source,
                 workSource,
-                uid,
                 callback,
                 null,
                 adapterService,
@@ -76,11 +78,13 @@ class ScannerMap {
             AdapterService adapterService,
             ScanController scanController) {
         return add(
+                pendingIntentInfo.callingUid(),
+                ScanUtil.appNameOrUnknown(
+                        pendingIntentInfo.callingPackage(), pendingIntentInfo.callingUid()),
                 uuid,
                 userHandle,
                 source,
                 null,
-                0, // uid is not considered from here as the pendingIntentInfo is set
                 null,
                 pendingIntentInfo,
                 adapterService,
@@ -88,28 +92,16 @@ class ScannerMap {
     }
 
     private ScannerApp add(
+            int appUid,
+            String appName,
             UUID uuid,
             @Nullable UserHandle userHandle,
             AttributionSource source,
             @Nullable WorkSource workSource,
-            int uid,
             @Nullable IScannerCallback callback,
             @Nullable ScanController.PendingIntentInfo piInfo,
             AdapterService adapterService,
             ScanController scanController) {
-        int appUid;
-        String appName;
-        if (piInfo != null) {
-            appUid = piInfo.callingUid();
-            appName = piInfo.callingPackage();
-        } else {
-            appUid = uid;
-            appName = adapterService.getPackageManager().getNameForUid(appUid);
-        }
-        if (appName == null) {
-            // Assign an app name if one isn't found
-            appName = "Unknown App (UID: " + appUid + ")";
-        }
         AppScanStats appScanStats = mAppScanStatsMap.get(appUid);
         if (appScanStats == null) {
             appScanStats =
