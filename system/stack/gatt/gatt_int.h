@@ -516,8 +516,8 @@ void gatt_profile_db_init(void);
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state);
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb);
 void gatt_init_srv_chg(void);
-void gatt_proc_srv_chg(void);
-void gatt_send_srv_chg_ind(const RawAddress& peer_bda);
+void gatt_proc_srv_chg(uint16_t start_handle);
+void gatt_send_srv_chg_ind(const RawAddress& peer_bda, uint16_t start_handle);
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt);
 void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda);
 
@@ -574,7 +574,7 @@ tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const RawAddress& bda);
 
 bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda, uint8_t* p_found_idx,
                                  tBT_TRANSPORT* p_transport);
-void gatt_set_srv_chg(void);
+void gatt_set_srv_chg(uint16_t start_handle);
 void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
 void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
 void gatt_free_srvc_db_buffer_app_id(const bluetooth::Uuid& app_id);
