@@ -1296,4 +1296,21 @@ public class TbsGattTest {
 
         verify(mService, never()).onDeviceUnauthorized(eq(mFirstDevice));
     }
+
+    @Test
+    public void testRestoreCccValuesForStoredDevices_handleNullService() {
+        prepareDefaultService();
+        reset(mGattServer); // Reset mock counts for the main part of the test
+
+        doReturn(null).when(mGattServer).getService(TbsGatt.UUID_GTBS);
+
+        BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mFirstDevice};
+        doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
+
+        mTbsGatt.mGattServerCallback.onServiceAdded(BluetoothGatt.GATT_SUCCESS, null);
+
+        verify(mGattServer).getService(TbsGatt.UUID_GTBS);
+        verify(mAdapterService, never()).getBondedDevices();
+        verify(mAdapterService, never()).getMetadata(any(), eq(BluetoothDevice.METADATA_GTBS_CCCD));
+    }
 }
