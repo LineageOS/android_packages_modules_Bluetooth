@@ -436,8 +436,7 @@ static void initNative(JNIEnv* env, jobject object) {
 
   if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
       nullptr) {
-    log::error("Failed to allocate Global Ref for Volume control Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for Volume control Callbacks");
   }
 
   sVolumeControlInterface =

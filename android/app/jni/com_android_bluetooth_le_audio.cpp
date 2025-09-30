@@ -445,8 +445,7 @@ static void initNative(JNIEnv* env, jobject object, jobjectArray codecOffloading
   }
 
   if ((mCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
-    log::error("Failed to allocate Global Ref for LeAudio Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for LeAudio Callbacks");
   }
 
   android_bluetooth_BluetoothLeAudioCodecConfig.clazz = (jclass)env->NewGlobalRef(
@@ -1257,8 +1256,7 @@ static void BroadcasterInitNative(JNIEnv* env, jobject object) {
   }
 
   if ((sBroadcasterCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
-    log::error("Failed to allocate Global Ref for LeAudio Broadcaster Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for LeAudio Broadcaster Callbacks");
   }
 
   sLeAudioBroadcasterInterface = (LeAudioBroadcasterInterface*)btInf->get_profile_interface(

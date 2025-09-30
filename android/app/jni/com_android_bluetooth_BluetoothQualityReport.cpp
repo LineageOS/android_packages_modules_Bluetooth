@@ -110,8 +110,7 @@ static void initNative(JNIEnv* env, jobject object) {
   }
 
   if ((mCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
-    log::error("Failed to allocate Global Ref for BluetoothQualityReport Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for BluetoothQualityReport Callbacks");
   }
 
   sBluetoothQualityReportInterface =
