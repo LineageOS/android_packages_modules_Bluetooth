@@ -143,6 +143,52 @@ struct MsftExtensionManager::impl {
       }
     }
 
+    if (monitor.condition_type == MSFT_CONDITION_TYPE_UUID) {
+      msft_adv_monitor_add_cb_ = cb;
+
+      if (monitor.uuid_info.uuid.size() == 2) {
+        std::array<uint8_t, 2> uuid;
+        std::copy(monitor.uuid_info.uuid.begin(), monitor.uuid_info.uuid.begin() + uuid.size(),
+                  uuid.begin());
+        hci_layer_->EnqueueCommand(
+                MsftLeMonitorAdvConditionUuid2Builder::Create(
+                        static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
+                        monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
+                        monitor.rssi_sampling_period, uuid),
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+        return;
+      }
+
+      if (monitor.uuid_info.uuid.size() == 4) {
+        std::array<uint8_t, 4> uuid;
+        std::copy(monitor.uuid_info.uuid.begin(), monitor.uuid_info.uuid.begin() + uuid.size(),
+                  uuid.begin());
+        hci_layer_->EnqueueCommand(
+                MsftLeMonitorAdvConditionUuid4Builder::Create(
+                        static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
+                        monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
+                        monitor.rssi_sampling_period, uuid),
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+        return;
+      }
+
+      if (monitor.uuid_info.uuid.size() == 16) {
+        std::array<uint8_t, 16> uuid;
+        std::copy(monitor.uuid_info.uuid.begin(), monitor.uuid_info.uuid.begin() + uuid.size(),
+                  uuid.begin());
+        hci_layer_->EnqueueCommand(
+                MsftLeMonitorAdvConditionUuid16Builder::Create(
+                        static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
+                        monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
+                        monitor.rssi_sampling_period, uuid),
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+        return;
+      }
+
+      log::error("Invalid uuid size {}", monitor.uuid_info.uuid.size());
+      return;
+    }
+
     std::vector<MsftLeMonitorAdvConditionPattern> patterns;
     MsftLeMonitorAdvConditionPattern pattern;
     // The Microsoft Extension specifies 1 octet for the number of patterns.

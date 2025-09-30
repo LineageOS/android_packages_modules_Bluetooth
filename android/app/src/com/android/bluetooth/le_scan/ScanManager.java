@@ -2077,24 +2077,26 @@ class ScanManager {
         for (ScanFilter filter : client.getFilters()) {
             MsftAdvMonitor monitor = new MsftAdvMonitor(filter);
 
-            if (monitor.getAddress().bd_addr != null) {
+            if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_INVALID) {
+                Log.d(TAG, "No MSFT monitor was translated from client filter: " + filter);
+                continue;
+            }
+
+            if (monitor.getMonitor().condition_type == MsftAdvMonitor.MSFT_CONDITION_TYPE_ADDRESS
+                    || monitor.getMonitor().condition_type
+                            == MsftAdvMonitor.MSFT_CONDITION_TYPE_UUID) {
                 int filterIndex = mFilterIndexStack.pop();
 
                 resetCountDownLatch();
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
+                        monitor.getUuid(),
                         monitor.getAddress(),
                         filterIndex);
                 waitForCallback();
 
                 clientFilterIndices.add(filterIndex);
-            }
-
-            if (monitor.getPatterns().length == 0) {
-                Log.d(
-                        TAG,
-                        "No MSFT pattern or address was translated from client filter: " + filter);
                 continue;
             }
 
@@ -2108,6 +2110,7 @@ class ScanManager {
                 mNativeInterface.msftAdvMonitorAdd(
                         monitor.getMonitor(),
                         monitor.getPatterns(),
+                        monitor.getUuid(),
                         monitor.getAddress(),
                         filterIndex);
                 waitForCallback();

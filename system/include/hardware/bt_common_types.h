@@ -132,6 +132,10 @@ struct MsftAdvMonitorPattern {
   std::vector<uint8_t> pattern;
 };
 
+struct MsftAdvMonitorUuid {
+  std::vector<uint8_t> uuid;
+};
+
 struct MsftAdvMonitorAddress {
   uint8_t addr_type;
   RawAddress bd_addr;
@@ -145,6 +149,7 @@ struct MsftAdvMonitor {
   uint8_t rssi_sampling_period;
   uint8_t condition_type;
   std::vector<MsftAdvMonitorPattern> patterns;
+  MsftAdvMonitorUuid uuid_info;
   MsftAdvMonitorAddress addr_info;
 };
 

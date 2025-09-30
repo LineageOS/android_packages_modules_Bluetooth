@@ -2160,6 +2160,7 @@ public class ScanManagerTest {
                 .msftAdvMonitorAdd(
                         any(MsftAdvMonitor.Monitor.class),
                         any(MsftAdvMonitor.Pattern[].class),
+                        any(MsftAdvMonitor.Uuid.class),
                         any(MsftAdvMonitor.Address.class),
                         anyInt());
         verify(mScanNativeInterface).msftAdvMonitorEnable(eq(true));
@@ -2212,6 +2213,7 @@ public class ScanManagerTest {
                 .msftAdvMonitorAdd(
                         any(MsftAdvMonitor.Monitor.class),
                         any(MsftAdvMonitor.Pattern[].class),
+                        any(MsftAdvMonitor.Uuid.class),
                         any(MsftAdvMonitor.Address.class),
                         anyInt());
         verify(mScanNativeInterface, never()).msftAdvMonitorEnable(anyBoolean());
