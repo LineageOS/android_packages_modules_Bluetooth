@@ -20,7 +20,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.google.protobuf.ByteString;
 
-record AdvtFilterOnFoundOnLostInfo(
+public record AdvtFilterOnFoundOnLostInfo(
         int clientIf,
         int advPacketLen,
         ByteString advPacket,

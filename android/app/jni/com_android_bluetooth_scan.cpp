@@ -136,6 +136,7 @@ static jmethodID method_onBigInfoReport;
 /** Pointer to the LE scanner interface methods.*/
 static BleScannerInterface* sScanner = NULL;
 static jobject mScanCallbacksObj = NULL;
+static jfieldID sScanCallbacksField;
 static jobject mPeriodicScanCallbacksObj = NULL;
 static std::shared_mutex callbacks_mutex;
 
@@ -872,7 +873,10 @@ static void scanInitializeNative(JNIEnv* env, jobject object) {
     mScanCallbacksObj = NULL;
   }
 
-  mScanCallbacksObj = env->NewGlobalRef(object);
+  if ((mScanCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sScanCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for Scan Callbacks");
+  }
 }
 
 static void scanCleanupNative(JNIEnv* env, jobject /* object */) {
@@ -924,11 +928,7 @@ static void transferSetInfoNative(JNIEnv* env, jobject /* object */, jint pa_sou
   sScanner->TransferSetInfo(str2addr(env, addr), service_data, adv_handle, pa_source);
 }
 
-/**
- * JNI function definitions
- */
-
-// JNI functions defined in ScanNativeInterface class.
+// JNI functions defined in ScanNativeInterface
 static int register_com_android_bluetooth_scan_(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)scanInitializeNative},
@@ -966,8 +966,14 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
     return result;
   }
 
+  jclass jniNativeInterfaceClass =
+          env->FindClass("com/android/bluetooth/le_scan/ScanNativeInterface");
+  sScanCallbacksField = env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
+                                        "Lcom/android/bluetooth/le_scan/ScanNativeCallback;");
+  env->DeleteLocalRef(jniNativeInterfaceClass);
+
+  // Client callback functions defined in ScanNativeCallback
   const JNIJavaMethod javaMethods[] = {
-          // Client callbacks
           {"onScannerRegistered", "(IIJJ)V", &method_onScannerRegistered},
           {"onScanResult", "(IILjava/lang/String;IIIIII[BLjava/lang/String;)V",
            &method_onScanResult},
@@ -989,7 +995,7 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
           {"onMsftAdvMonitorRemove", "(II)V", &method_onMsftAdvMonitorRemove},
           {"onMsftAdvMonitorEnable", "(ZI)V", &method_onMsftAdvMonitorEnable},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/le_scan/ScanNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/le_scan/ScanNativeCallback", javaMethods);
   return 0;
 }
 
