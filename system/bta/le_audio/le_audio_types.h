@@ -86,11 +86,9 @@ static const bluetooth::Uuid kSinkAudioLocationCharacteristicUuid =
         bluetooth::Uuid::From16Bit(0x2BCA);
 static const bluetooth::Uuid kSourceAudioLocationCharacteristicUuid =
         bluetooth::Uuid::From16Bit(0x2BCC);
-
-/* Audio Stream Control Service Characteristics */
-static const bluetooth::Uuid kAudioContextAvailabilityCharacteristicUuid =
+static const bluetooth::Uuid kAvailableAudioContextsCharacteristicUuid =
         bluetooth::Uuid::From16Bit(0x2BCD);
-static const bluetooth::Uuid kAudioSupportedContextCharacteristicUuid =
+static const bluetooth::Uuid kSupportedAudioContextsCharacteristicUuid =
         bluetooth::Uuid::From16Bit(0x2BCE);
 
 /* Audio Stream Control Service Characteristics */

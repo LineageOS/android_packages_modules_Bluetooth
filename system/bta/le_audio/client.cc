@@ -3022,7 +3022,7 @@ public:
   }
 
   void OnEncryptionComplete(const RawAddress& address, tBTM_STATUS status) {
-    log::info("{} status 0x{:02x}", address, status);
+    log::info("{} status {}", address, btm_status_text(status));
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (leAudioDevice == NULL || (leAudioDevice->conn_id_ == GATT_INVALID_CONN_ID)) {
       log::warn("Skipping device which is {}",
@@ -3518,8 +3518,6 @@ public:
       return;
     }
 
-    log::info("test csis_member {}", leAudioDevice->csis_member_);
-
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("Service discovery failed");
@@ -3545,21 +3543,23 @@ public:
 
     for (const gatt::Service& tmp : *services) {
       if (tmp.uuid == bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid) {
-        log::info("Found Audio Capability service, handle: 0x{:04x}, device: {}", tmp.handle,
-                  leAudioDevice->address_);
+        log::info("Found Published Audio Capability service, handle: 0x{:04x}, device: {}",
+                  tmp.handle, leAudioDevice->address_);
         pac_svc = &tmp;
       } else if (tmp.uuid == bluetooth::le_audio::uuid::kAudioStreamControlServiceUuid) {
-        log::info("Found Audio Stream Endpoint service, handle: 0x{:04x}, device: {}", tmp.handle,
+        log::info("Found Audio Stream Control service, handle: 0x{:04x}, device: {}", tmp.handle,
                   leAudioDevice->address_);
         ase_svc = &tmp;
       } else if (tmp.uuid == bluetooth::csis::kCsisServiceUuid) {
-        log::info("Found CSIS service, handle: 0x{:04x}, is primary: {}, device: {}", tmp.handle,
-                  tmp.is_primary, leAudioDevice->address_);
+        log::info(
+                "Found Coordinated Set Identification service, handle: 0x{:04x}, is primary: {}, "
+                "device: {}",
+                tmp.handle, tmp.is_primary, leAudioDevice->address_);
         if (tmp.is_primary) {
           csis_primary_handles.push_back(tmp.handle);
         }
       } else if (tmp.uuid == bluetooth::le_audio::uuid::kCapServiceUuid) {
-        log::info("Found CAP service, handle: 0x{:04x}, device: {}", tmp.handle,
+        log::info("Found Common Audio service, handle: 0x{:04x}, device: {}", tmp.handle,
                   leAudioDevice->address_);
 
         /* Try to find context for CSIS instances */
@@ -3592,6 +3592,8 @@ public:
         leAudioDevice->csis_member_ = true;
       }
     }
+
+    log::info("Is csis_member: {}", leAudioDevice->csis_member_);
 
     if (!pac_svc || !ase_svc) {
       disconnectInvalidDevice(leAudioDevice, "No mandatory le audio services found (pacs or ascs)",
@@ -3705,7 +3707,7 @@ public:
                 "0x{:04x}, addr: {}",
                 charac.value_handle, ccc_hdl, leAudioDevice->address_);
       } else if (charac.uuid ==
-                 bluetooth::le_audio::uuid::kAudioContextAvailabilityCharacteristicUuid) {
+                 bluetooth::le_audio::uuid::kAvailableAudioContextsCharacteristicUuid) {
         leAudioDevice->audio_avail_hdls_.val_hdl = charac.value_handle;
         leAudioDevice->audio_avail_hdls_.ccc_hdl = find_ccc_handle(charac);
 
@@ -3727,12 +3729,12 @@ public:
                                          OnGattReadRspStatic, NULL);
 
         log::info(
-                "Found Audio Availability Context characteristic, handle: "
+                "Found Available Audio Contexts characteristic, handle: "
                 "0x{:04x}, ccc handle: 0x{:04x}, addr: {}",
                 charac.value_handle, leAudioDevice->audio_avail_hdls_.ccc_hdl,
                 leAudioDevice->address_);
       } else if (charac.uuid ==
-                 bluetooth::le_audio::uuid::kAudioSupportedContextCharacteristicUuid) {
+                 bluetooth::le_audio::uuid::kSupportedAudioContextsCharacteristicUuid) {
         leAudioDevice->audio_supp_cont_hdls_.val_hdl = charac.value_handle;
         leAudioDevice->audio_supp_cont_hdls_.ccc_hdl = find_ccc_handle(charac);
 
@@ -3754,7 +3756,7 @@ public:
                                          OnGattReadRspStatic, NULL);
 
         log::info(
-                "Found Audio Supported Context characteristic, handle: 0x{:04x}, "
+                "Found Supported Audio Contexts characteristic, handle: 0x{:04x}, "
                 "ccc handle: 0x{:04x}, addr: {}",
                 charac.value_handle, leAudioDevice->audio_supp_cont_hdls_.ccc_hdl,
                 leAudioDevice->address_);
@@ -3827,7 +3829,8 @@ public:
                                            OnGattReadRspStatic, NULL);
 
           log::info(
-                  "Found Telephony and Media Profile characteristic, handle: 0x{:04x}, device: {}",
+                  "Found Telephony and Media Profile Role characteristic, handle: 0x{:04x}, "
+                  "device: {}",
                   leAudioDevice->tmap_role_hdl_, leAudioDevice->address_);
         }
       }
@@ -7581,7 +7584,7 @@ void le_audio_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     return;
   }
 
-  log::info("event = {}", static_cast<int>(event));
+  log::info("event = {}", gatt_client_event_text(event));
 
   switch (event) {
     case BTA_GATTC_DEREG_EVT:

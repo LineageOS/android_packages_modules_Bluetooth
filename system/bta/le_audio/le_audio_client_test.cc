@@ -2439,10 +2439,9 @@ protected:
       }
 
       if (pacs->avail_contexts_char) {
-        bob.AddCharacteristic(
-                pacs->avail_contexts_char, pacs->avail_contexts_char + 1,
-                bluetooth::le_audio::uuid::kAudioContextAvailabilityCharacteristicUuid,
-                GATT_CHAR_PROP_BIT_READ);
+        bob.AddCharacteristic(pacs->avail_contexts_char, pacs->avail_contexts_char + 1,
+                              bluetooth::le_audio::uuid::kAvailableAudioContextsCharacteristicUuid,
+                              GATT_CHAR_PROP_BIT_READ);
         if (pacs->avail_contexts_ccc) {
           bob.AddDescriptor(pacs->avail_contexts_ccc,
                             Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
@@ -2451,7 +2450,7 @@ protected:
 
       if (pacs->supp_contexts_char) {
         bob.AddCharacteristic(pacs->supp_contexts_char, pacs->supp_contexts_char + 1,
-                              bluetooth::le_audio::uuid::kAudioSupportedContextCharacteristicUuid,
+                              bluetooth::le_audio::uuid::kSupportedAudioContextsCharacteristicUuid,
                               GATT_CHAR_PROP_BIT_READ);
         if (pacs->supp_contexts_ccc) {
           bob.AddDescriptor(pacs->supp_contexts_ccc, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
