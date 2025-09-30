@@ -158,12 +158,13 @@ pub enum BtPropertyType {
     RemoteRssi,
     RemoteVersionInfo,
     LocalLeFeatures,
-    LocalIoCaps,
-    LocalIoCapsBle,
+    Reserved0E,
+    Reserved0F,
     DynamicAudioBuffer,
     RemoteIsCoordinatedSetMember,
     Appearance,
     VendorProductInfo,
+    Reserved14,
     // Unimplemented:
     //  BT_PROPERTY_REMOTE_ASHA_CAPABILITY,
     //  BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
@@ -370,24 +371,6 @@ pub enum BtThreadEvent {
 impl From<bindings::bt_cb_thread_evt> for BtThreadEvent {
     fn from(item: bindings::bt_cb_thread_evt) -> Self {
         BtThreadEvent::from_u32(item).unwrap_or(BtThreadEvent::Associate)
-    }
-}
-
-#[derive(Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd)]
-#[repr(u32)]
-pub enum BtIoCap {
-    Out,
-    InOut,
-    In,
-    None_,
-    KbDisp,
-    Max,
-    Unknown = 0xff,
-}
-
-impl From<bindings::BtIoCap> for BtIoCap {
-    fn from(item: bindings::BtIoCap) -> Self {
-        BtIoCap::from_u32(item).unwrap_or(BtIoCap::Unknown)
     }
 }
 
@@ -607,8 +590,6 @@ pub enum BluetoothProperty {
     RemoteRssi(i8),
     RemoteVersionInfo(BtRemoteVersion),
     LocalLeFeatures(BtLocalLeFeatures),
-    LocalIoCaps(BtIoCap),
-    LocalIoCapsBle(BtIoCap),
     DynamicAudioBuffer(),
     RemoteIsCoordinatedSetMember(bool),
     Appearance(u16),
@@ -652,8 +633,6 @@ impl BluetoothProperty {
             BluetoothProperty::RemoteRssi(_) => BtPropertyType::RemoteRssi,
             BluetoothProperty::RemoteVersionInfo(_) => BtPropertyType::RemoteVersionInfo,
             BluetoothProperty::LocalLeFeatures(_) => BtPropertyType::LocalLeFeatures,
-            BluetoothProperty::LocalIoCaps(_) => BtPropertyType::LocalIoCaps,
-            BluetoothProperty::LocalIoCapsBle(_) => BtPropertyType::LocalIoCapsBle,
             BluetoothProperty::DynamicAudioBuffer() => BtPropertyType::DynamicAudioBuffer,
             BluetoothProperty::RemoteIsCoordinatedSetMember(_) => {
                 BtPropertyType::RemoteIsCoordinatedSetMember
@@ -685,8 +664,6 @@ impl BluetoothProperty {
             BluetoothProperty::RemoteRssi(_) => mem::size_of::<i8>(),
             BluetoothProperty::RemoteVersionInfo(_) => mem::size_of::<BtRemoteVersion>(),
             BluetoothProperty::LocalLeFeatures(_) => mem::size_of::<BtLocalLeFeatures>(),
-            BluetoothProperty::LocalIoCaps(_) => mem::size_of::<BtIoCap>(),
-            BluetoothProperty::LocalIoCapsBle(_) => mem::size_of::<BtIoCap>(),
             BluetoothProperty::RemoteIsCoordinatedSetMember(_) => mem::size_of::<bool>(),
             BluetoothProperty::Appearance(_) => mem::size_of::<u16>(),
             BluetoothProperty::VendorProductInfo(_) => mem::size_of::<BtVendorProductInfo>(),
@@ -779,12 +756,6 @@ impl BluetoothProperty {
                     std::slice::from_raw_parts(ptr as *mut u8, mem::size_of::<BtLocalLeFeatures>())
                 };
                 data.copy_from_slice(&slice);
-            }
-            BluetoothProperty::LocalIoCaps(iocap) => {
-                data.copy_from_slice(&BtIoCap::to_u32(iocap).unwrap_or_default().to_ne_bytes());
-            }
-            BluetoothProperty::LocalIoCapsBle(iocap) => {
-                data.copy_from_slice(&BtIoCap::to_u32(iocap).unwrap_or_default().to_ne_bytes());
             }
             BluetoothProperty::RemoteIsCoordinatedSetMember(icsm) => {
                 data[0] = *icsm as u8;
@@ -883,12 +854,6 @@ impl From<bindings::bt_property_t> for BluetoothProperty {
                 let v = unsafe { (prop.val as *const BtLocalLeFeatures).read_unaligned() };
                 BluetoothProperty::LocalLeFeatures(v)
             }
-            BtPropertyType::LocalIoCaps => BluetoothProperty::LocalIoCaps(
-                BtIoCap::from_u32(u32_from_bytes(slice)).unwrap_or(BtIoCap::Unknown),
-            ),
-            BtPropertyType::LocalIoCapsBle => BluetoothProperty::LocalIoCapsBle(
-                BtIoCap::from_u32(u32_from_bytes(slice)).unwrap_or(BtIoCap::Unknown),
-            ),
             BtPropertyType::RemoteIsCoordinatedSetMember => {
                 BluetoothProperty::RemoteIsCoordinatedSetMember(slice[0] != 0)
             }
@@ -1065,9 +1030,9 @@ pub type OobData = bindings::bt_oob_data_s;
 #[derive(Clone, Debug)]
 pub enum BaseCallbacks {
     AdapterState(BtState),
-    AdapterProperties(BtStatus, i32, Vec<BluetoothProperty>),
-    RemoteDeviceProperties(BtStatus, RawAddress, u8, i32, Vec<BluetoothProperty>),
-    DeviceFound(i32, Vec<BluetoothProperty>),
+    AdapterProperties(BtStatus, Vec<BluetoothProperty>),
+    RemoteDeviceProperties(BtStatus, RawAddress, u8, Vec<BluetoothProperty>),
+    DeviceFound(Vec<BluetoothProperty>),
     DiscoveryState(BtDiscoveryState),
     PinRequest(RawAddress, String, u32, bool),
     SspRequest(RawAddress, BtSspVariant, u32),
@@ -1097,16 +1062,16 @@ type BaseCb = Arc<Mutex<BaseCallbacksDispatcher>>;
 
 cb_variant!(BaseCb, adapter_state_cb -> BaseCallbacks::AdapterState, u32 -> BtState);
 cb_variant!(BaseCb, adapter_properties_cb -> BaseCallbacks::AdapterProperties,
-u32 -> BtStatus, i32, *mut bindings::bt_property_t, {
+u32 -> BtStatus, i32 -> _, *mut bindings::bt_property_t, {
     let _2 = ptr_to_vec(_2, _1 as usize);
 });
 cb_variant!(BaseCb, remote_device_properties_cb -> BaseCallbacks::RemoteDeviceProperties,
-u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32, *mut bindings::bt_property_t, {
+u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32 -> _, *mut bindings::bt_property_t, {
     let _1 = unsafe { *(_1 as *const RawAddress) };
     let _4 = ptr_to_vec(_4, _3 as usize);
 });
 cb_variant!(BaseCb, device_found_cb -> BaseCallbacks::DeviceFound,
-i32, *mut bindings::bt_property_t, {
+i32 -> _, *mut bindings::bt_property_t, {
     let _1 = ptr_to_vec(_1, _0 as usize);
 });
 cb_variant!(BaseCb, discovery_state_cb -> BaseCallbacks::DiscoveryState,

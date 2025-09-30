@@ -586,7 +586,7 @@ pub enum GattClientCallbacks {
     ReadRemoteRssi(i32, RawAddress, i32, GattStatus),
     ConfigureMtu(i32, GattStatus, i32),
     Congestion(i32, bool),
-    GetGattDb(i32, Vec<BtGattDbElement>, i32),
+    GetGattDb(i32, Vec<BtGattDbElement>),
     PhyUpdated(i32, u8, u8, GattStatus),
     ConnUpdated(i32, u16, u16, u16, GattStatus),
     ServiceChanged(i32),
@@ -597,13 +597,13 @@ pub enum GattClientCallbacks {
 pub enum GattServerCallbacks {
     RegisterServer(GattStatus, i32, Uuid),
     Connection(i32, i32, i32, i32, RawAddress),
-    ServiceAdded(GattStatus, i32, Vec<BtGattDbElement>, usize),
+    ServiceAdded(GattStatus, i32, Vec<BtGattDbElement>),
     ServiceStopped(GattStatus, i32, i32),
     ServiceDeleted(GattStatus, i32, i32),
     RequestReadCharacteristic(i32, i32, RawAddress, i32, i32, bool),
     RequestReadDescriptor(i32, i32, RawAddress, i32, i32, bool),
-    RequestWriteCharacteristic(i32, i32, RawAddress, i32, i32, bool, bool, Vec<u8>, usize),
-    RequestWriteDescriptor(i32, i32, RawAddress, i32, i32, bool, bool, Vec<u8>, usize),
+    RequestWriteCharacteristic(i32, i32, RawAddress, i32, i32, bool, bool, Vec<u8>),
+    RequestWriteDescriptor(i32, i32, RawAddress, i32, i32, bool, bool, Vec<u8>),
     RequestExecWrite(i32, i32, RawAddress, i32),
     ResponseConfirmation(i32, i32),
     IndicationSent(i32, GattStatus),
@@ -733,7 +733,7 @@ cb_variant!(
 cb_variant!(
     GattClientCb,
     gc_get_gatt_db_cb -> GattClientCallbacks::GetGattDb,
-    i32, *const BtGattDbElement, i32, {
+    i32, *const BtGattDbElement, i32 -> _, {
         let _1 = ptr_to_vec(_1, _2 as usize);
     }
 );
@@ -780,7 +780,7 @@ cb_variant!(
 cb_variant!(
     GattServerCb,
     gs_service_added_cb -> GattServerCallbacks::ServiceAdded,
-    i32 -> GattStatus, i32, *const BtGattDbElement, usize, {
+    i32 -> GattStatus, i32, *const BtGattDbElement, usize -> _, {
         let _2 = ptr_to_vec(_2, _3);
     }
 );
@@ -816,7 +816,7 @@ cb_variant!(
 cb_variant!(
     GattServerCb,
     gs_request_write_characteristic_cb -> GattServerCallbacks::RequestWriteCharacteristic,
-    i32, i32, *const RawAddress, i32, i32, bool, bool, *const u8, usize, {
+    i32, i32, *const RawAddress, i32, i32, bool, bool, *const u8, usize -> _, {
         let _2 = unsafe { *_2 };
         let _7 = ptr_to_vec(_7, _8);
     }
@@ -825,7 +825,7 @@ cb_variant!(
 cb_variant!(
     GattServerCb,
     gs_request_write_descriptor_cb -> GattServerCallbacks::RequestWriteDescriptor,
-    i32, i32, *const RawAddress, i32, i32, bool, bool, *const u8, usize, {
+    i32, i32, *const RawAddress, i32, i32, bool, bool, *const u8, usize -> _, {
         let _2 = unsafe { *_2 };
         let _7 = ptr_to_vec(_7, _8);
     }

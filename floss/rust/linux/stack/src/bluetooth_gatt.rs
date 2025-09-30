@@ -2812,7 +2812,7 @@ pub(crate) trait BtifGattClientCallbacks {
     fn congestion_cb(&mut self, conn_id: i32, congested: bool);
 
     #[btif_callback(GetGattDb)]
-    fn get_gatt_db_cb(&mut self, conn_id: i32, elements: Vec<BtGattDbElement>, count: i32);
+    fn get_gatt_db_cb(&mut self, conn_id: i32, elements: Vec<BtGattDbElement>);
 
     #[btif_callback(PhyUpdated)]
     fn phy_updated_cb(&mut self, conn_id: i32, tx_phy: u8, rx_phy: u8, status: GattStatus);
@@ -3056,7 +3056,7 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         }
     }
 
-    fn get_gatt_db_cb(&mut self, conn_id: i32, elements: Vec<BtGattDbElement>, _count: i32) {
+    fn get_gatt_db_cb(&mut self, conn_id: i32, elements: Vec<BtGattDbElement>) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
         if let Some(cb) = self.context_map.get_callback_from_callback_id(client.cbid) {
@@ -3149,7 +3149,6 @@ pub(crate) trait BtifGattServerCallbacks {
         status: GattStatus,
         server_id: i32,
         elements: Vec<BtGattDbElement>,
-        _count: usize,
     );
 
     #[btif_callback(ServiceDeleted)]
@@ -3188,7 +3187,6 @@ pub(crate) trait BtifGattServerCallbacks {
         need_rsp: bool,
         is_prep: bool,
         data: Vec<u8>,
-        len: usize,
     );
 
     #[btif_callback(RequestWriteDescriptor)]
@@ -3202,7 +3200,6 @@ pub(crate) trait BtifGattServerCallbacks {
         need_rsp: bool,
         is_prep: bool,
         data: Vec<u8>,
-        len: usize,
     );
 
     #[btif_callback(RequestExecWrite)]
@@ -3314,7 +3311,6 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         status: GattStatus,
         server_id: i32,
         elements: Vec<BtGattDbElement>,
-        _count: usize,
     ) {
         for service in BluetoothGattService::from_db(elements, false) {
             if status == GattStatus::Success {
@@ -3406,7 +3402,6 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         need_rsp: bool,
         is_prep: bool,
         data: Vec<u8>,
-        len: usize,
     ) {
         self.server_context_map.add_request(trans_id, handle);
 
@@ -3415,7 +3410,14 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         {
             if let Some(cb) = self.server_context_map.get_callback_from_callback_id(cbid).as_mut() {
                 cb.on_characteristic_write_request(
-                    addr, trans_id, offset, len as i32, is_prep, need_rsp, handle, data,
+                    addr,
+                    trans_id,
+                    offset,
+                    data.len() as i32,
+                    is_prep,
+                    need_rsp,
+                    handle,
+                    data,
                 );
             }
         }
@@ -3432,7 +3434,6 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         need_rsp: bool,
         is_prep: bool,
         data: Vec<u8>,
-        len: usize,
     ) {
         self.server_context_map.add_request(trans_id, handle);
 
@@ -3441,7 +3442,14 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         {
             if let Some(cb) = self.server_context_map.get_callback_from_callback_id(cbid).as_mut() {
                 cb.on_descriptor_write_request(
-                    addr, trans_id, offset, len as i32, is_prep, need_rsp, handle, data,
+                    addr,
+                    trans_id,
+                    offset,
+                    data.len() as i32,
+                    is_prep,
+                    need_rsp,
+                    handle,
+                    data,
                 );
             }
         }
