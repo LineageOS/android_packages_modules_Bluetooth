@@ -2225,7 +2225,7 @@ public class ScanManagerTest {
         verify(mScanNativeInterface).scanFilterParamDelete(anyInt(), anyInt());
 
         // Verify MSFT APIs are never called
-        verify(mScanNativeInterface, never()).msftAdvMonitorRemove(anyInt());
+        verify(mScanNativeInterface, never()).msftAdvMonitorRemove(anyInt(), anyInt());
         verify(mScanNativeInterface, never()).msftAdvMonitorEnable(anyBoolean());
     }
 }

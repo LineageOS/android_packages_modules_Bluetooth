@@ -260,7 +260,8 @@ class ScanManager {
         mScanController = scanController;
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new ScanNativeInterface(mScanController));
+                        nativeInterface,
+                        () -> new ScanNativeInterface(new ScanNativeCallback(mScanController)));
         mNativeInterface.init();
         mTimeProvider = timeProvider;
         mAlarmManager = mAdapterService.getSystemService(AlarmManager.class);
@@ -2130,9 +2131,13 @@ class ScanManager {
         if (clientFilterIndices != null) {
             for (int filterIndex : clientFilterIndices) {
                 if (mMsftAdvMonitorMergedPatternList.remove(filterIndex)) {
-                    resetCountDownLatch();
-                    mNativeInterface.msftAdvMonitorRemove(filterIndex);
-                    waitForCallback();
+                    final int monitorHandle =
+                            mScanController.msftMonitorHandleFromFilterIndex(filterIndex);
+                    if (monitorHandle >= 0) {
+                        resetCountDownLatch();
+                        mNativeInterface.msftAdvMonitorRemove(filterIndex, monitorHandle);
+                        waitForCallback();
+                    }
                     mFilterIndexStack.add(filterIndex);
                 }
             }
