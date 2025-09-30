@@ -97,6 +97,17 @@ prop {
     prop_name: "bluetooth.core.le.inquiry_scan_window"
 }
 
+# IO Capabilities supported during pairing
+# Set by vendors overlay, read during pairing
+prop {
+    api_name: "gap_io_capabilities"
+    type: Enum
+    scope: Internal
+    access: Readonly
+    enum_values: "display_only|display_yesno|keyboard_only|keyboard_display|none"
+    prop_name: "bluetooth.core.gap.io_capabilities"
+}
+
 # Whether LE Connection with initiating with only LE 1M PHY.
 # Set by vendors overlay, read at Bluetooth initialization
 prop {
