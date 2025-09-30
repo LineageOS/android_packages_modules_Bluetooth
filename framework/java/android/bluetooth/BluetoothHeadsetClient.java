@@ -1249,36 +1249,6 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     }
 
     /**
-     * Get a number corresponding to last voice tag recorded on AG.
-     *
-     * @param device remote device
-     * @return <code>true</code> if command has been issued successfully; <code>false</code>
-     *     otherwise; upon completion HFP sends {@link #ACTION_LAST_VTAG} or {@link #ACTION_RESULT}
-     *     intent;
-     *     <p>Feature required for successful execution is being reported by: {@link
-     *     #EXTRA_AG_FEATURE_ATTACH_NUMBER_TO_VT}. This method invocation will fail silently when
-     *     feature is not supported.
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public boolean getLastVoiceTagNumber(BluetoothDevice device) {
-        log("getLastVoiceTagNumber()");
-        final IBluetoothHeadsetClient service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled() && isValidDevice(device)) {
-            try {
-                return service.getLastVoiceTagNumber(device, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return false;
-    }
-
-    /**
      * Returns current audio state of Audio Gateway.
      *
      * <p>Note: This is an internal function and shouldn't be exposed

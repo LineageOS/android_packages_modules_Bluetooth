@@ -724,10 +724,6 @@ public class HeadsetClientService extends ConnectableProfile {
         return true;
     }
 
-    boolean getLastVoiceTagNumber(BluetoothDevice device) {
-        return false;
-    }
-
     List<HfpClientCall> getCurrentCalls(BluetoothDevice device) {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm == null) {

@@ -305,15 +305,6 @@ class HeadsetClientServiceBinder extends IBluetoothHeadsetClient.Stub
     }
 
     @Override
-    public boolean getLastVoiceTagNumber(BluetoothDevice device, AttributionSource source) {
-        HeadsetClientService service = getService(source);
-        if (service == null) {
-            return false;
-        }
-        return service.getLastVoiceTagNumber(device);
-    }
-
-    @Override
     public Bundle getCurrentAgEvents(BluetoothDevice device, AttributionSource source) {
         HeadsetClientService service = getService(source);
         if (service == null) {

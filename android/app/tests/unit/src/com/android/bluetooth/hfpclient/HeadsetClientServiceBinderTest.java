@@ -217,13 +217,6 @@ public class HeadsetClientServiceBinderTest {
     }
 
     @Test
-    public void getLastVoiceTagNumber_callsServiceMethod() {
-        mBinder.getLastVoiceTagNumber(mDevice, mAttributionSource);
-
-        verify(mService).getLastVoiceTagNumber(mDevice);
-    }
-
-    @Test
     public void getCurrentAgEvents_callsServiceMethod() {
         mBinder.getCurrentAgEvents(mDevice, mAttributionSource);
 
