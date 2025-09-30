@@ -17,3 +17,13 @@ flag {
 	purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bqr_lea_choppy_deliver"
+    namespace: "bluetooth"
+    description: "Prevent the LE_AUDIO_CHOPPY event from passing to the framework"
+    bug: "448295413"
+    metadata {
+    purpose: PURPOSE_BUGFIX
+    }
+}
