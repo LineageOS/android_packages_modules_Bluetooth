@@ -132,8 +132,7 @@
    }
 
    if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(obj, sCallbacksField))) == nullptr) {
-     log::error("Failed to allocate Global Ref for VAPS Server Callbacks");
-     return;
+     log::fatal("Failed to allocate Global Ref for VAPS Server Callbacks");
    }
 
    sVapsServerInterface =

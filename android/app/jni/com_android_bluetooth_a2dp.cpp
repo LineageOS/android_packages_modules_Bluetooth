@@ -330,8 +330,7 @@ static void initNative(JNIEnv* env, jobject object, jint maxConnectedAudioDevice
 
   if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(
                object, android_bluetooth_A2dpNativeInterface.mNativeCallback))) == nullptr) {
-    log::error("Failed to allocate Global Ref for A2DP Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for A2DP Callbacks");
   }
 
   android_bluetooth_BluetoothCodecConfig.clazz =

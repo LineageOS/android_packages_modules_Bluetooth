@@ -319,8 +319,7 @@ static void initNative(JNIEnv* env, jobject obj) {
   }
 
   if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(obj, sCallbacksField))) == nullptr) {
-    log::error("Failed to allocate Global Ref for Hearing Access Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for Hearing Access Callbacks");
   }
 
   android_bluetooth_BluetoothHapPresetInfo.clazz =
