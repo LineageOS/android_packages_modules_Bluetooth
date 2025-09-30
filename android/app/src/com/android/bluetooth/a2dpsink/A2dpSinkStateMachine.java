@@ -57,7 +57,6 @@ class A2dpSinkStateMachine extends StateMachine {
     static final int CONNECT_TIMEOUT_MS = 10000;
 
     protected final BluetoothDevice mDevice;
-    protected final byte[] mDeviceAddress;
     protected final A2dpSinkService mService;
     protected final A2dpSinkNativeInterface mNativeInterface;
     protected final Disconnected mDisconnected;
@@ -75,7 +74,6 @@ class A2dpSinkStateMachine extends StateMachine {
             A2dpSinkNativeInterface nativeInterface) {
         super(TAG, looper);
         mDevice = device;
-        mDeviceAddress = Utils.getByteAddress(mDevice);
         mService = service;
         mNativeInterface = nativeInterface;
 
