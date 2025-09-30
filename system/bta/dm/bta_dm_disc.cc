@@ -57,7 +57,7 @@ using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
-static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr);
+static void bta_dm_start_gatt_discovery(const RawAddress& bd_addr);
 
 namespace {
 constexpr char kBtmLogTag[] = "SDP";
@@ -66,7 +66,7 @@ tBTA_DM_SERVICE_DISCOVERY_CB bta_dm_discovery_cb;
 base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> default_sdp_performer =
         base::Bind(bta_dm_sdp_find_services);
 base::RepeatingCallback<void(const RawAddress&)> default_gatt_performer =
-        base::Bind(btm_dm_start_gatt_discovery);
+        base::Bind(bta_dm_start_gatt_discovery);
 base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> sdp_performer = default_sdp_performer;
 base::RepeatingCallback<void(const RawAddress&)> gatt_performer = default_gatt_performer;
 
@@ -588,7 +588,7 @@ static void bta_dm_close_gatt_conn(uint16_t conn_id) {
 }
 /*******************************************************************************
  *
- * Function         btm_dm_start_gatt_discovery
+ * Function         bta_dm_start_gatt_discovery
  *
  * Description      This is GATT initiate the service search by open a GATT
  *                  connection first.
@@ -596,7 +596,7 @@ static void bta_dm_close_gatt_conn(uint16_t conn_id) {
  * Parameters:
  *
  ******************************************************************************/
-static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
+static void bta_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   /* connection is already open */
   if (bta_dm_discovery_cb.pending_close_bda == bd_addr &&
       bta_dm_discovery_cb.conn_id != GATT_INVALID_CONN_ID) {
