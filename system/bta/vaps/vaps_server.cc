@@ -98,7 +98,7 @@
                  instance->GattsCallback(event, p_data);
                }
              },
-             false);
+             true);
    }
 
    void Cleanup() override {
