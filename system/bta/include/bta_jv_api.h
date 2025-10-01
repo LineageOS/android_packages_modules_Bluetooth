@@ -102,6 +102,9 @@ typedef uint8_t tBTA_JV_L2CAP_REASON;
 #define BTA_JV_LAST_SERVICE_ID BTA_LAST_JV_SERVICE_ID
 #define BTA_JV_NUM_SERVICE_ID (BTA_LAST_JV_SERVICE_ID - BTA_FIRST_JV_SERVICE_ID + 1)
 
+/* Timeout to delay the transition to the idle state */
+#define BTA_JV_PM_IDLE_TIMEOUT_MS 1000
+
 /* Discoverable modes */
 enum { BTA_JV_DISC_NONE, BTA_JV_DISC_LIMITED, BTA_JV_DISC_GENERAL };
 typedef uint16_t tBTA_JV_DISC;

@@ -435,6 +435,10 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
   p_pm_cb->app_id = BTA_JV_PM_ALL;
   p_pm_cb->handle = BTA_JV_PM_HANDLE_CLEAR;
   p_pm_cb->peer_bd_addr = RawAddress::kEmpty;
+  if (com::android::bluetooth::flags::delay_jv_pm_idle()) {
+    alarm_free(p_pm_cb->idle_timer);
+    p_pm_cb->idle_timer = nullptr;
+  }
 }
 
 /*******************************************************************************
@@ -567,6 +571,9 @@ static tBTA_JV_PM_CB* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle, tBTA_JV
     bta_jv_cb.pm_cb[i].app_id = app_id;
     bta_jv_cb.pm_cb[i].peer_bd_addr = peer_bd_addr;
     bta_jv_cb.pm_cb[i].state = BTA_JV_PM_IDLE_ST;
+    if (com::android::bluetooth::flags::delay_jv_pm_idle()) {
+      bta_jv_cb.pm_cb[i].idle_timer = alarm_new("bta.jv_idle_timer");
+    }
     return &bta_jv_cb.pm_cb[i];
   }
   log::warn("jv_handle=0x{:x}, app_id={}, return NULL", jv_handle, app_id);
@@ -1035,6 +1042,10 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event, tGAP_
     case GAP_EVT_CONN_CONGESTED:
     case GAP_EVT_CONN_UNCONGESTED:
       p_cb->cong = (event == GAP_EVT_CONN_CONGESTED) ? true : false;
+      if (com::android::bluetooth::flags::delay_jv_pm_idle() && p_cb->cong &&
+          p_cb->p_pm_cb != nullptr) {
+        bta_jv_pm_conn_busy(p_cb->p_pm_cb);
+      }
       evt_data.l2c_cong.cong = p_cb->cong;
       p_cb->p_cback(BTA_JV_L2CAP_CONG_EVT, &evt_data, p_cb->l2cap_socket_id);
       break;
@@ -1217,6 +1228,10 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event, tGAP_
     case GAP_EVT_CONN_CONGESTED:
     case GAP_EVT_CONN_UNCONGESTED:
       p_cb->cong = (event == GAP_EVT_CONN_CONGESTED) ? true : false;
+      if (com::android::bluetooth::flags::delay_jv_pm_idle() && p_cb->cong &&
+          p_cb->p_pm_cb != nullptr) {
+        bta_jv_pm_conn_busy(p_cb->p_pm_cb);
+      }
       evt_data.l2c_cong.cong = p_cb->cong;
       p_cb->p_cback(BTA_JV_L2CAP_CONG_EVT, &evt_data, p_cb->l2cap_socket_id);
       break;
@@ -1497,6 +1512,10 @@ static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
 
   if (code & PORT_EV_FC) {
     p_pcb->cong = (code & PORT_EV_FCS) ? false : true;
+    if (com::android::bluetooth::flags::delay_jv_pm_idle() && p_pcb->cong &&
+        p_pcb->p_pm_cb != nullptr) {
+      bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
+    }
     evt_data.rfc_cong.cong = p_pcb->cong;
     evt_data.rfc_cong.handle = p_cb->handle;
     evt_data.rfc_cong.status = tBTA_JV_STATUS::SUCCESS;
@@ -1745,6 +1764,10 @@ static void bta_jv_port_event_sr_cback(uint32_t code, uint16_t port_handle) {
 
   if (code & PORT_EV_FC) {
     p_pcb->cong = (code & PORT_EV_FCS) ? false : true;
+    if (com::android::bluetooth::flags::delay_jv_pm_idle() && p_pcb->cong &&
+        p_pcb->p_pm_cb != nullptr) {
+      bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
+    }
     evt_data.rfc_cong.cong = p_pcb->cong;
     evt_data.rfc_cong.handle = p_cb->handle;
     evt_data.rfc_cong.status = tBTA_JV_STATUS::SUCCESS;
@@ -2032,8 +2055,22 @@ void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_S
  *
  ******************************************************************************/
 static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb) {
-  if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST == p_cb->state)) {
+  if (p_cb == nullptr) {
+    return;
+  }
+  if (com::android::bluetooth::flags::delay_jv_pm_idle()) {
+    if (BTA_JV_PM_BUSY_ST == p_cb->state) {
+      return;
+    }
+    if (BTA_JV_PM_BUSY_TO_IDLE_ST == p_cb->state) {
+      p_cb->state = BTA_JV_PM_BUSY_ST;
+      return;
+    }
     bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
+  } else {
+    if (BTA_JV_PM_IDLE_ST == p_cb->state) {
+      bta_jv_pm_state_change(p_cb, BTA_JV_CONN_BUSY);
+    }
   }
 }
 
@@ -2049,8 +2086,23 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb) {
-  if ((NULL != p_cb) && (BTA_JV_PM_IDLE_ST != p_cb->state)) {
-    bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
+  if (p_cb == nullptr) {
+    return;
+  }
+
+  if (com::android::bluetooth::flags::delay_jv_pm_idle()) {
+    if (p_cb->state != BTA_JV_PM_IDLE_ST && p_cb->state != BTA_JV_PM_BUSY_TO_IDLE_ST) {
+      p_cb->state = BTA_JV_PM_BUSY_TO_IDLE_ST;
+      // When busy -> idle -> busy -> idle, the alarm can be already scheduled.
+      if (!alarm_is_scheduled(p_cb->idle_timer)) {
+        alarm_set_on_mloop(p_cb->idle_timer, BTA_JV_PM_IDLE_TIMEOUT_MS, bta_jv_idle_timeout_handler,
+                           p_cb);
+      }
+    }
+  } else {
+    if (BTA_JV_PM_IDLE_ST != p_cb->state) {
+      bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
+    }
   }
 }
 
@@ -2128,6 +2180,31 @@ static void bta_jv_reset_sniff_timer(tBTA_JV_PM_CB* p_cb) {
     bta_sys_reset_sniff(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
   }
 }
+
+/*******************************************************************************
+**
+** Function         bta_jv_idle_timeout_handler
+**
+** Description      Bta JV specific idle timeout handler
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_jv_idle_timeout_handler(void* data) {
+  if (data == nullptr) {
+    return;
+  }
+
+  tBTA_JV_PM_CB* p_cb = (tBTA_JV_PM_CB*)data;
+
+  // The state has been changed
+  if (p_cb->state != BTA_JV_PM_BUSY_TO_IDLE_ST) {
+    return;
+  }
+  bta_jv_pm_state_change(p_cb, BTA_JV_CONN_IDLE);
+}
+
 /******************************************************************************/
 
 namespace bluetooth::legacy::testing {
