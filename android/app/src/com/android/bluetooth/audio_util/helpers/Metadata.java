@@ -23,7 +23,7 @@ import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
 import android.os.Bundle;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.util.Text;
 
 import java.util.Objects;
 
@@ -317,6 +317,6 @@ public class Metadata implements Cloneable {
         if (val == null) {
             return "";
         }
-        return Utils.truncateStringForUtf8Storage(val, MAX_ELEMENT_LEN);
+        return Text.truncateUtf8String(val, MAX_ELEMENT_LEN);
     }
 }
