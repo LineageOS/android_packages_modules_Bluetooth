@@ -345,15 +345,6 @@ public class CompanionManager {
     }
 
     /**
-     * Method to get the stored companion device
-     *
-     * @return the companion Bluetooth device
-     */
-    public BluetoothDevice getCompanionDevice() {
-        return mCompanionDevice;
-    }
-
-    /**
      * Method to check whether it is a companion device
      *
      * @param device the Bluetooth device
