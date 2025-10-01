@@ -153,6 +153,7 @@ android_library {
         "src/**/*.java",
         "src/**/*.kt",
     ],
+
     proto: {
         type: "lite",
     },
@@ -183,6 +184,8 @@ android_library {
         "android.os.flags-aconfig-java-export",
         "androidx.annotation_annotation",
         "androidx.core_core",
+        "androidx.datastore_datastore",
+        "androidx.datastore_datastore-core",
         "androidx.lifecycle_lifecycle-livedata",
         "androidx.media_media",
         "androidx.room_room-runtime",

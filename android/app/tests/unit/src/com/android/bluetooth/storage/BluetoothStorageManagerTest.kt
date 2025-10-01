@@ -1,0 +1,195 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.bluetooth.storage
+
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.TestUtils.mockGetRemoteDevice
+import com.android.bluetooth.btservice.AdapterService
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.io.File
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.anyInt
+import org.mockito.Mockito.anyString
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
+
+@RunWith(AndroidJUnit4::class)
+class BluetoothStorageManagerTest {
+
+    @get:Rule val mockitoRule = MockitoRule()
+
+    @get:Rule val tempFolder = TemporaryFolder()
+
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var context: Context
+    @Mock private lateinit var packageManager: PackageManager
+
+    private lateinit var storageManager: BluetoothStorageManager
+    private val device1: BluetoothDevice = getTestDevice(0)
+    private val device2: BluetoothDevice = getTestDevice(1)
+
+    @Before
+    fun setUp() {
+        doReturn(context).whenever(adapterService).createDeviceProtectedStorageContext()
+        doReturn(tempFolder.root).whenever(context).filesDir
+        whenever(adapterService.getDatabasePath(anyString())).thenAnswer {
+            File(tempFolder.root, it.getArgument(0) as String)
+        }
+        doReturn(packageManager).whenever(adapterService).packageManager
+        doReturn("test.app").whenever(packageManager).getNameForUid(anyInt())
+        mockGetRemoteDevice(adapterService, device1, device2)
+
+        storageManager = BluetoothStorageManager(adapterService)
+
+        storageManager.initialize()
+        // Allow initialize to finish its background disk read
+        Thread.sleep(200)
+    }
+
+    @Test
+    fun testSetAndGetProfileConnectionPolicy() {
+        val profile = BluetoothProfile.A2DP
+        val policy = CONNECTION_POLICY_ALLOWED
+
+        assertThat(storageManager.getProfileConnectionPolicy(device1, profile))
+            .isEqualTo(CONNECTION_POLICY_UNKNOWN)
+
+        storageManager.setProfileConnectionPolicy(device1, profile, policy)
+        Thread.sleep(200)
+
+        assertThat(storageManager.getProfileConnectionPolicy(device1, profile)).isEqualTo(policy)
+    }
+
+    @Test
+    fun testSetAndGetCustomMetadata() {
+        val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+        val value = "Test Manufacturer".toByteArray()
+
+        assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
+
+        storageManager.setCustomMetadata(device1, key, value)
+        Thread.sleep(200)
+
+        assertThat(storageManager.getCustomMetadata(device1, key)).isEqualTo(value)
+    }
+
+    @Test
+    fun testDeviceConnectionHistory() {
+        assertThat(storageManager.getMostRecentlyConnectedDevices()).isEmpty()
+
+        storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
+        Thread.sleep(200)
+
+        var connectedDevices = storageManager.getMostRecentlyConnectedDevices()
+        assertThat(connectedDevices).hasSize(1)
+        assertThat(connectedDevices[0]).isEqualTo(device1)
+
+        storageManager.onDeviceConnected(device2, BluetoothProfile.HEADSET)
+        Thread.sleep(200)
+
+        connectedDevices = storageManager.getMostRecentlyConnectedDevices()
+        assertThat(connectedDevices).hasSize(2)
+        assertThat(connectedDevices[0]).isEqualTo(device2)
+        assertThat(connectedDevices[1]).isEqualTo(device1)
+    }
+
+    @Test
+    fun testRemoveDevice() {
+        storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
+        storageManager.onDeviceConnected(device2, BluetoothProfile.A2DP)
+        Thread.sleep(200)
+
+        assertThat(storageManager.getMostRecentlyConnectedDevices()).hasSize(2)
+
+        storageManager.removeDevice(device1)
+        Thread.sleep(200)
+
+        val connectedDevices = storageManager.getMostRecentlyConnectedDevices()
+        assertThat(connectedDevices).hasSize(1)
+        assertThat(connectedDevices[0]).isEqualTo(device2)
+    }
+
+    @Test
+    fun testActiveA2dpDevice() {
+        assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isNull()
+
+        storageManager.onDeviceConnected(device1, BluetoothProfile.A2DP)
+        Thread.sleep(200)
+        assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isEqualTo(device1)
+
+        storageManager.onDeviceConnected(device2, BluetoothProfile.A2DP)
+        Thread.sleep(200)
+        assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isEqualTo(device2)
+
+        storageManager.onDeviceDisconnected(device2, BluetoothProfile.A2DP)
+        Thread.sleep(200)
+        assertThat(storageManager.getMostRecentlyActiveA2dpDevice()).isEqualTo(device1)
+    }
+
+    @Test
+    fun testCleanup_removesUnbondedDevices() {
+        // device1 is bonded, device2 is not
+        doReturn(arrayOf(device1)).whenever(adapterService).bondedDevices
+
+        storageManager.setProfileConnectionPolicy(
+            device1,
+            BluetoothProfile.A2DP,
+            CONNECTION_POLICY_ALLOWED,
+        )
+        storageManager.setProfileConnectionPolicy(
+            device2,
+            BluetoothProfile.A2DP,
+            CONNECTION_POLICY_ALLOWED,
+        )
+        // Wait for the setters to complete
+        Thread.sleep(200)
+
+        // Both devices should be in storage before cleanup
+        assertThat(storageManager.getProfileConnectionPolicy(device1, BluetoothProfile.A2DP))
+            .isEqualTo(CONNECTION_POLICY_ALLOWED)
+        assertThat(storageManager.getProfileConnectionPolicy(device2, BluetoothProfile.A2DP))
+            .isEqualTo(CONNECTION_POLICY_ALLOWED)
+
+        // cleanup is synchronous and will wait for the underlying job to finish
+        storageManager.cleanup()
+
+        // Re-create storage manager to simulate restart and read from disk
+        val newStorageManager = BluetoothStorageManager(adapterService)
+        newStorageManager.initialize()
+        Thread.sleep(200)
+
+        // device1 should still be there
+        assertThat(newStorageManager.getProfileConnectionPolicy(device1, BluetoothProfile.A2DP))
+            .isEqualTo(CONNECTION_POLICY_ALLOWED)
+        // device2 should be gone
+        assertThat(newStorageManager.getProfileConnectionPolicy(device2, BluetoothProfile.A2DP))
+            .isEqualTo(CONNECTION_POLICY_UNKNOWN)
+    }
+}

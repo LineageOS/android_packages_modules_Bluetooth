@@ -48,6 +48,7 @@ android_test {
         "framework-bluetooth-pre-jarjar",
         "gson",
         "guava-android-testlib",
+        "kotlinx_coroutines_test",
         "mmslib",
         "mockito-kotlin2",
         "mockito-target-extended",
