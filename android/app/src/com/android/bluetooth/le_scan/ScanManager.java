@@ -161,10 +161,6 @@ class ScanManager {
     private static final int LIST_LOGIC_TYPE = 0x1111111;
     private static final int FILTER_LOGIC_TYPE = 1;
 
-    // MSFT-based hardware scan offload sysprop
-    @VisibleForTesting
-    static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
-
     // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
     private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
 
@@ -293,10 +289,7 @@ class ScanManager {
                     }
                 });
         mAdapterService.registerReceiver(mBatchAlarmReceiver.get(), filter);
-        mIsMsftSupported =
-                Flags.leScanMsftSupport()
-                        && SystemProperties.getBoolean(MSFT_HCI_EXT_ENABLED, false)
-                        && mNativeInterface.isMsftSupported();
+        mIsMsftSupported = mNativeInterface.isMsftSupported();
         // Prefer APCF filtering over MSFT if both are available
         mUseMsftFiltering = !isFilteringSupported() && mIsMsftSupported;
         mDisplayManager = requireNonNull(mAdapterService.getSystemService(DisplayManager.class));
@@ -324,7 +317,8 @@ class ScanManager {
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
-        Log.d(TAG, "IsMsftSupported? " + mIsMsftSupported);
+        Log.d(TAG, "MSFT - IsSupported? " + mIsMsftSupported);
+        Log.d(TAG, "MSFT - UseFiltering? " + mUseMsftFiltering);
     }
 
     void cleanup() {
