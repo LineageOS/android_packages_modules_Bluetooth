@@ -131,6 +131,8 @@ static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANS
 
 static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec);
 
+static BtIoCap btm_sec_bredr_iocap_from_sysprop();
+
 /* true - authenticated link key is possible */
 static const bool btm_sec_io_map[kBtIoCapClassicMax + 1][kBtIoCapClassicMax + 1] = {
         /*   OUT,    IO,     IN,     NONE */
@@ -1944,13 +1946,46 @@ void btm_sec_dev_reset(void) {
                    "only controllers with SSP is supported");
 
   /* set the default IO capabilities */
-  btm_sec_cb.devcb.loc_io_caps = BtIoCap::DISPLAY_YES_NO;
+  if (com_android_bluetooth_flags_btm_iocaps_sysprop_override()) {
+    btm_sec_cb.devcb.loc_io_caps = btm_sec_bredr_iocap_from_sysprop();
+  } else {
+    btm_sec_cb.devcb.loc_io_caps = BtIoCap::DISPLAY_YES_NO;
+  }
+
   /* add mx service to use no security */
   BTM_SetSecurityLevel(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
                        BTM_SEC_PROTO_RFCOMM, 0);
   BTM_SetSecurityLevel(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE, BT_PSM_RFCOMM,
                        BTM_SEC_PROTO_RFCOMM, 0);
   log::verbose("btm_sec_dev_reset sec mode: {}", btm_sec_cb.security_mode);
+}
+
+/**
+ * Returns GAP IO capabilities if defined from system property, to be used for BREDR Pairing.
+ *
+ * For backwards compatibility, defaults to BtIoCap::DISPLAY_YES_NO if the system property value
+ * is invalid or undefined.
+ */
+static BtIoCap btm_sec_bredr_iocap_from_sysprop() {
+  std::optional<android::sysprop::bluetooth::Core::gap_io_capabilities_values> sysprop_value =
+          android::sysprop::bluetooth::Core::gap_io_capabilities();
+  if (!sysprop_value.has_value()) {
+    return BtIoCap::DISPLAY_YES_NO;
+  }
+  switch (sysprop_value.value()) {
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::NONE:
+      return BtIoCap::NO_INPUT_NO_OUTPUT;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_ONLY:
+      return BtIoCap::DISPLAY_ONLY;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_YESNO:
+      return BtIoCap::DISPLAY_YES_NO;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_ONLY:
+      return BtIoCap::KEYBOARD_ONLY;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_DISPLAY:
+      // BT Classic does not support KEYBOARD_DISPLAY, fall back to default.
+    default:
+      return BtIoCap::DISPLAY_YES_NO;
+  }
 }
 
 /*******************************************************************************
