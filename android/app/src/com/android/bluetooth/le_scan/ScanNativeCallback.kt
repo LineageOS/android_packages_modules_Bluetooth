@@ -25,21 +25,34 @@ private const val TAG = "ScanNativeCallback"
 
 class ScanNativeCallback(private val scanController: ScanController) {
 
+    // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
     private var latch = CountDownLatch(1)
 
-    fun callbackDone() = latch.countDown()
+    fun callbackDone() {
+        if (Flags.scanControllerThread()) {
+            return
+        }
+        latch.countDown()
+    }
 
     fun resetCountDownLatch() {
+        if (Flags.scanControllerThread()) {
+            return
+        }
         latch = CountDownLatch(1)
     }
 
     // Returns true if [latch] reaches 0, false if timeout or interrupted
-    fun waitForCallback(timeoutMs: Long): Boolean =
-        try {
-            latch.await(timeoutMs, TimeUnit.MILLISECONDS)
-        } catch (_: InterruptedException) {
-            false
+    fun waitForCallback(timeoutMs: Long): Boolean {
+        if (Flags.scanControllerThread()) {
+            return true
         }
+        try {
+            return latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        } catch (_: InterruptedException) {
+            return false
+        }
+    }
 
     fun onScanResult(
         eventType: Int,

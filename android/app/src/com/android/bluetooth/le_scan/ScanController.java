@@ -808,9 +808,7 @@ public class ScanController {
                 permittedResults.removeIf(mLocationDenylistPredicate);
             }
             if (permittedResults.isEmpty()) {
-                if (!Flags.scanControllerThread()) {
-                    mScanManager.callbackDone(scannerId, status);
-                }
+                mScanManager.callbackDone(scannerId, status);
                 return;
             }
 
@@ -833,9 +831,7 @@ public class ScanController {
                 deliverBatchScan(client, results);
             }
         }
-        if (!Flags.scanControllerThread()) {
-            mScanManager.callbackDone(scannerId, status);
-        }
+        mScanManager.callbackDone(scannerId, status);
     }
 
     private Set<ScanResult> parseBatchScanResults(
