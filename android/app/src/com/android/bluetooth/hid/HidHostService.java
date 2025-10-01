@@ -140,7 +140,7 @@ public class HidHostService extends ConnectableProfile {
     }
 
     @Override
-    public IProfileServiceBinder initBinder() {
+    protected IProfileServiceBinder initBinder() {
         return new HidHostServiceBinder(this);
     }
 
