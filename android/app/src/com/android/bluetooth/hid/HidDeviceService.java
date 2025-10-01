@@ -68,8 +68,6 @@ public class HidDeviceService extends ProfileService {
     private static final int FOREGROUND_IMPORTANCE_CUTOFF =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
 
-    private static HidDeviceService sHidDeviceService;
-
     private final HidDeviceServiceHandler mHandler;
     private final HidDeviceNativeInterface mNativeInterface;
     private final ActivityManager mActivityManager;
@@ -461,11 +459,6 @@ public class HidDeviceService extends ProfileService {
     @Override
     public void cleanup() {
         Log.i(TAG, "cleanup()");
-
-        if (sHidDeviceService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
 
         mNativeInterface.cleanup();
         mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
