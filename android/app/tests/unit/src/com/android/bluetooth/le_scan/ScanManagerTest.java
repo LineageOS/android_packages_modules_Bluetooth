@@ -137,6 +137,7 @@ public class ScanManagerTest {
     @Mock private BluetoothAdapter mAdapter;
     @Mock private LocationManager mLocationManager;
     @Mock private MetricsLogger mMetricsLogger;
+    @Mock private ScanNativeCallback mScanNativeCallback;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private ScanController mScanController;
 
@@ -226,8 +227,8 @@ public class ScanManagerTest {
         // Needed to mock Native call/callback when hw offload scan filter is enabled
         doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
-        // Mock JNI callback in ScanNativeInterface
-        doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
+        // Mock JNI callback in ScanNativeCallback
+        doReturn(true).when(mScanNativeCallback).waitForCallback(anyInt());
 
         mScanRadioStats = new ScanRadioStats(mTimeProvider);
         doReturn(mScanRadioStats).when(mScanController).getScanRadioStats();
@@ -243,6 +244,7 @@ public class ScanManagerTest {
                 new ScanManager(
                         mAdapterService,
                         mScanController,
+                        mScanNativeCallback,
                         mScanNativeInterface,
                         mLooper.getLooper(),
                         mTimeProvider);
@@ -2118,6 +2120,7 @@ public class ScanManagerTest {
                 new ScanManager(
                         mAdapterService,
                         mScanController,
+                        mScanNativeCallback,
                         mScanNativeInterface,
                         mLooper.getLooper(),
                         mTimeProvider);
@@ -2179,6 +2182,7 @@ public class ScanManagerTest {
                 new ScanManager(
                         mAdapterService,
                         mScanController,
+                        mScanNativeCallback,
                         mScanNativeInterface,
                         mLooper.getLooper(),
                         mTimeProvider);

@@ -111,8 +111,6 @@ public class ScanControllerTest {
 
     private static final int TEST_SCANNER_ID = 1;
     private static final int TEST_STATUS = 0;
-    private static final int TEST_ACTION = 1;
-    private static final int TEST_CLIENT_IF = 2;
     private static final String TEST_ADDRESS = "00:11:22:33:FF:EE";
 
     private final BluetoothDevice mDevice = getTestDevice(89);
@@ -241,45 +239,6 @@ public class ScanControllerTest {
     }
 
     @Test
-    public void onScanFilterEnableDisabled_callbackDone_scanManager() {
-        mScanController.onScanFilterEnableDisabled(TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF);
-        verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
-    }
-
-    @Test
-    public void onScanFilterParamsConfigured_callbackDone_scanManager() {
-        int availableSpace = 3;
-
-        mScanController.onScanFilterParamsConfigured(
-                TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF, availableSpace);
-        verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
-    }
-
-    @Test
-    public void onScanFilterConfig_callbackDone_scanManager() {
-        int filterType = 3;
-        int availableSpace = 4;
-
-        mScanController.onScanFilterConfig(
-                TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF, filterType, availableSpace);
-        verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
-    }
-
-    @Test
-    public void onBatchScanStorageConfigured_callbackDone_scanManager() {
-        mScanController.onBatchScanStorageConfigured(TEST_STATUS, TEST_CLIENT_IF);
-        verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
-    }
-
-    @Test
-    public void onBatchScanStartStopped_callbackDone_scanManager() {
-        int startStopAction = 0;
-
-        mScanController.onBatchScanStartStopped(startStopAction, TEST_STATUS, TEST_CLIENT_IF);
-        verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
-    }
-
-    @Test
     public void onBatchScanReportsInternal_deliverTruncatedBatchScan_expectResults()
             throws RemoteException {
         verifyOnBatchScanReportsInternal(/* expectResults= */ true, /* isTruncated= */ true);
@@ -348,7 +307,9 @@ public class ScanControllerTest {
 
         mScanController.onBatchScanReportsInternal(
                 TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
-        verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
+        if (!Flags.scanControllerThread()) {
+            verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
+        }
         if (expectResults) {
             verify(callback).onBatchScanResults(any());
         } else {

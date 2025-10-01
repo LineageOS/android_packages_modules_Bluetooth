@@ -19,14 +19,10 @@ package com.android.bluetooth.le_scan;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.annotation.Native;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class ScanNativeInterface {
 
     @Native private final ScanNativeCallback mNativeCallback;
-
-    private CountDownLatch mLatch = new CountDownLatch(1);
 
     ScanNativeInterface(ScanNativeCallback nativeCallback) {
         mNativeCallback = requireNonNull(nativeCallback);
@@ -236,22 +232,5 @@ public class ScanNativeInterface {
     /** Read BLE batch scan reports */
     void readScanReports(int clientIf, int scanType) {
         readScanReportsNative(clientIf, scanType);
-    }
-
-    void callbackDone() {
-        mLatch.countDown();
-    }
-
-    void resetCountDownLatch() {
-        mLatch = new CountDownLatch(1);
-    }
-
-    // Returns true if mLatch reaches 0, false if timeout or interrupted.
-    boolean waitForCallback(int timeoutMs) {
-        try {
-            return mLatch.await(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            return false;
-        }
     }
 }
