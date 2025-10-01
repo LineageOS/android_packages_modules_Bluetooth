@@ -288,10 +288,6 @@ class MceStateMachine extends StateMachine {
         }
     }
 
-    synchronized BluetoothDevice getDevice() {
-        return mDevice;
-    }
-
     private void onConnectionStateChanged(int prevState, int state) {
         if (mMostRecentState == state) {
             return;
