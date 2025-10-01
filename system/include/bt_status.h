@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <jni.h>
 #include <string>
 
 #include "bt_status_origin.h"
@@ -57,6 +58,11 @@ public:
     return static_cast<uint16_t>(origin_) << 16 | static_cast<uint16_t>(code_);
   }
   operator uint32_t() const { return toUint32(); }
+
+  // For now, BtStatus objects are for native stack use only. As a result, when
+  // they are being converted to jints to be passed to the upper Java layer, only
+  // pass the internal code to preserve functionality.
+  operator jint() const { return (jint)static_cast<uint32_t>(code_); }
 
   // To compare against other statuses
   bool operator==(const BtStatus& other) const {
