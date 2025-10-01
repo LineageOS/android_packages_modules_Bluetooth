@@ -692,7 +692,7 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, tBTA_HH_ATTR_MASK att
             "Found an existing device with the same handle dev_status={}, "
             "device={}, attr_mask=0x{:04x}, sub_class=0x{:02x}, app_id={}, "
             "dev_handle={}",
-            p_dev->dev_status, p_dev->link_spec, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id,
+            p_dev->state, p_dev->link_spec, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id,
             dev_handle);
   } else {  // Use an empty slot
     p_dev = btif_hh_find_empty_dev();
@@ -722,8 +722,8 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, tBTA_HH_ATTR_MASK att
     btif_hh_cb.device_num++;
   }
 
-  p_dev->dev_status = BTHH_CONN_STATE_CONNECTED;
-  log::debug("Return device status {}", p_dev->dev_status);
+  p_dev->state = BTHH_CONN_STATE_CONNECTED;
+  log::debug("Return device status {}", p_dev->state);
   return true;
 }
 
@@ -739,7 +739,7 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, tBTA_HH_ATTR_MASK att
  * Returns       void.
  ******************************************************************************/
 void bta_hh_co_close(btif_hh_device_t* p_dev) {
-  log::info("Closing device handle={}, status={}, address={}", p_dev->dev_handle, p_dev->dev_status,
+  log::info("Closing device handle={}, status={}, address={}", p_dev->dev_handle, p_dev->state,
             p_dev->link_spec);
 
   if (p_dev->internal_send_fd >= 0) {

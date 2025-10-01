@@ -264,7 +264,12 @@ __END_DECLS
 
 namespace std {
 template <>
-struct formatter<bthh_connection_state_t> : enum_formatter<bthh_connection_state_t> {};
+struct formatter<bthh_connection_state_t> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const bthh_connection_state_t& state, Context& ctx) const {
+    return std::formatter<std::string>::format(bthh_connection_state_text(state), ctx);
+  }
+};
 template <>
 struct formatter<bthh_protocol_mode_t> : enum_formatter<bthh_protocol_mode_t> {};
 template <>

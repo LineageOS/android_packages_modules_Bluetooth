@@ -188,7 +188,7 @@ protected:
     btif_hh_cb.devices[0].link_spec.addrt.bda = kDeviceAddress;
     btif_hh_cb.devices[0].link_spec.addrt.type = kDeviceAddrType;
     btif_hh_cb.devices[0].link_spec.transport = kDeviceTransport;
-    btif_hh_cb.devices[0].dev_status = BTHH_CONN_STATE_CONNECTED;
+    btif_hh_cb.devices[0].state = BTHH_CONN_STATE_CONNECTED;
     btif_hh_cb.devices[0].dev_handle = kHhHandle;
   }
 
