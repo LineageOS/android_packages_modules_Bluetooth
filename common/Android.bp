@@ -7,10 +7,8 @@ aidl_interface {
     host_supported: true,
     unstable: true,
     srcs: [
-        "bluetooth/constants/AudioInputType.aidl",
-        "bluetooth/constants/aics/AudioInputStatus.aidl",
-        "bluetooth/constants/aics/GainMode.aidl",
-        "bluetooth/constants/aics/Mute.aidl",
+        "bluetooth/constants/*.aidl",
+        "bluetooth/constants/aics/*.aidl",
     ],
     backend: {
         java: {
