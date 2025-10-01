@@ -436,3 +436,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_add_source_from_peer_device"
+    namespace: "bluetooth"
+    description: "After connected adding broadcast source from the peer device"
+    bug: "447646642"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
