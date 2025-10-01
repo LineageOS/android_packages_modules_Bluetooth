@@ -28,7 +28,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -460,9 +459,6 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
 
         requireNonNull(device);
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("Invalid device address: " + device.getAddress());
-        }
 
         return service.subrateModeRequest(callback, device, subrateMode);
     }
