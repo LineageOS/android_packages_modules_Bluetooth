@@ -26,6 +26,7 @@
 
 #include <cstdint>
 
+#include "bt_status.h"
 #include "stack/include/avdtc_api.h"
 #include "test/common/mock_functions.h"
 
@@ -102,9 +103,9 @@ bool btif_av_peer_is_source::return_value = false;
 bool btif_av_peer_prefers_mandatory_codec::return_value = false;
 bool btif_av_peer_supports_3mbps::return_value = false;
 RawAddress btif_av_sink_active_peer::return_value;
-bt_status_t btif_av_sink_execute_service::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_av_sink_execute_service::return_value = BtifStatus();
 RawAddress btif_av_source_active_peer::return_value;
-bt_status_t btif_av_source_execute_service::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_av_source_execute_service::return_value = BtifStatus();
 bool btif_av_src_sink_coexist_enabled::return_value = false;
 bool btif_av_stream_ready::return_value = false;
 bool btif_av_stream_started_ready::return_value = false;
@@ -216,7 +217,7 @@ RawAddress btif_av_sink_active_peer(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_sink_active_peer();
 }
-bt_status_t btif_av_sink_execute_service(bool enable) {
+BtStatus btif_av_sink_execute_service(bool enable) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_sink_execute_service(enable);
 }
@@ -224,7 +225,7 @@ RawAddress btif_av_source_active_peer(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_source_active_peer();
 }
-bt_status_t btif_av_source_execute_service(bool enable) {
+BtStatus btif_av_source_execute_service(bool enable) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_source_execute_service(enable);
 }
