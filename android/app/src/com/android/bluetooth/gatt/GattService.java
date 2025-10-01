@@ -1027,7 +1027,10 @@ public class GattService extends ProfileService {
                             BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__END,
                             source.getUid());
         }
-        mClientMap.remove(clientIf, reason);
+        if (mClientMap.remove(clientIf, reason) == null) {
+            Log.w(TAG, "failed to remove client - clientIf=" + clientIf);
+            return;
+        }
         mNativeInterface.gattClientUnregisterApp(clientIf);
     }
 
