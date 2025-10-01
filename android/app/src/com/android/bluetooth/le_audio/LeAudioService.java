@@ -55,7 +55,6 @@ import android.bluetooth.IBluetoothLeAudio;
 import android.bluetooth.IBluetoothLeAudioCallback;
 import android.bluetooth.IBluetoothLeBroadcastCallback;
 import android.bluetooth.IBluetoothVolumeControl;
-import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -214,8 +213,6 @@ public class LeAudioService extends ConnectableProfile {
     @GuardedBy("mLeAudioCallbacks")
     final RemoteCallbackList<IBluetoothLeAudioCallback> mLeAudioCallbacks =
             new RemoteCallbackList<>();
-
-    BluetoothLeScanner mAudioServersScanner;
 
     public LeAudioService(AdapterService adapterService) {
         this(adapterService, null, null, null);
@@ -700,7 +697,6 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         mScanCallback.stopBackgroundScan();
-        mAudioServersScanner = null;
 
         // Don't wait for async call with INACTIVE group status, clean active
         // device for active group.
@@ -3677,16 +3673,18 @@ public class LeAudioService extends ConnectableProfile {
                             notifyUnicastCodecConfigChanged(
                                     groupId, prepareCodecStatusForTheApi(status)));
 
-            /* For LC3 codec, the sample frequency change does not have to be notified to Audio Framework, as this is
-             * internal change done in Bluetooth which is internally synced with Audio HAL over Bluetooth Audio HAL.
-             * For other codecs we might want to to still notify Audio Manager e.g. for high res codecs.
+            /* For LC3 codec, the sample frequency change does not have to be notified to Audio
+             * Framework, as this is internal change done in Bluetooth which is internally synced
+             * with Audio HAL over Bluetooth Audio HAL. For other codecs we might want to to still
+             * notify Audio Manager e.g. for high res codecs.
              */
             if (descriptor.isActive()
                     && (codecTypeHasChanged
                             || (!isUsingLc3(descriptor.mCodecStatus)
                                     && (outputCodecOrFreqChanged || inputCodecOrFreqChanged)))) {
                 /* Audio framework needs to be notified so it get new codec config.
-                 * Note: this mostlikely will trigger device TearDown and Setup which will impact Bluetooth Audio Session
+                 * Note: this most likely will trigger device TearDown and Setup which will impact
+                 * Bluetooth Audio Session.
                  */
                 notifyAudioFrameworkForCodecConfigUpdate(
                         groupId, descriptor, outputCodecOrFreqChanged, inputCodecOrFreqChanged);
