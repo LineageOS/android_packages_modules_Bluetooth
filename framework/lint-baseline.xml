@@ -46,13 +46,90 @@
     </issue>
 
     <issue
+        id="ShiftFlags"
+        message="Consider declaring this constant using 1 &lt;&lt; 1 instead"
+        errorLine1="    public static final int PROPERTY_READ = 0x02;"
+        errorLine2="                                            ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGattCharacteristic.java"
+            line="46"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="ShiftFlags"
+        message="Consider declaring this constant using 1 &lt;&lt; 2 instead"
+        errorLine1="    public static final int PROPERTY_WRITE_NO_RESPONSE = 0x04;"
+        errorLine2="                                                         ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGattCharacteristic.java"
+            line="49"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="ShiftFlags"
+        message="Consider declaring this constant using 1 &lt;&lt; 3 instead"
+        errorLine1="    public static final int PROPERTY_WRITE = 0x08;"
+        errorLine2="                                             ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGattCharacteristic.java"
+            line="52"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="ShiftFlags"
+        message="Consider declaring this constant using 1 &lt;&lt; 4 instead"
+        errorLine1="    public static final int PROPERTY_NOTIFY = 0x10;"
+        errorLine2="                                              ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGattCharacteristic.java"
+            line="55"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="ShiftFlags"
+        message="Consider declaring this constant using 1 &lt;&lt; 5 instead"
+        errorLine1="    public static final int PROPERTY_INDICATE = 0x20;"
+        errorLine2="                                                ~~~~">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGattCharacteristic.java"
+            line="58"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="SwitchIntDef"
+        message="Switch statement on an `int` with known associated constant missing case `SOURCE_CODEC_TYPE_LC3`"
+        errorLine1="        return switch (codecType) {"
+        errorLine2="               ^">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothCodecConfig.java"
+            line="523"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="SwitchIntDef"
+        message="Switch statement on an `int` with known associated constant missing case `SOURCE_CODEC_TYPE_OPUS_HI_RES`"
+        errorLine1="        return switch (mCodecType) {"
+        errorLine2="               ^">
+        <location
+            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothLeAudioCodecConfig.java"
+            line="399"
+            column="16"/>
+    </issue>
+
+    <issue
         id="IncorrectRequiresPermissionPropagation"
         message="Method `BluetoothAdapter.disable` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with {allOf=[android.permission.BLUETOOTH_CONNECT]}."
         errorLine1="    public boolean disable() {"
         errorLine2="                   ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="1650"
+            line="1651"
             column="20"/>
     </issue>
 
@@ -63,7 +140,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="2739"
+            line="2740"
             column="33"/>
     </issue>
 
@@ -74,7 +151,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="3286"
+            line="3287"
             column="17"/>
     </issue>
 
@@ -85,7 +162,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="3412"
+            line="3413"
             column="29"/>
     </issue>
 

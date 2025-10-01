@@ -96,7 +96,7 @@
         errorLine2="         ~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
-            line="326"
+            line="337"
             column="10"/>
     </issue>
 
