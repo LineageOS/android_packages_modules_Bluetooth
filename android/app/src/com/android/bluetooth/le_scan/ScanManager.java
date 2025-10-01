@@ -204,6 +204,7 @@ class ScanManager {
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
+    private final ScanNativeCallback mNativeCallback;
     private final ScanNativeInterface mNativeInterface;
     private final TimeProvider mTimeProvider;
     private final AlarmManager mAlarmManager;
@@ -255,13 +256,30 @@ class ScanManager {
             ScanNativeInterface nativeInterface,
             Looper looper,
             TimeProvider timeProvider) {
+        this(
+                service,
+                scanController,
+                new ScanNativeCallback(scanController),
+                nativeInterface,
+                looper,
+                timeProvider);
+    }
+
+    @VisibleForTesting
+    ScanManager(
+            AdapterService service,
+            ScanController scanController,
+            ScanNativeCallback nativeCallback,
+            ScanNativeInterface nativeInterface,
+            Looper looper,
+            TimeProvider timeProvider) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
+        mNativeCallback = requireNonNull(nativeCallback);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface,
-                        () -> new ScanNativeInterface(new ScanNativeCallback(mScanController)));
+                        nativeInterface, () -> new ScanNativeInterface(mNativeCallback));
         mNativeInterface.init();
         mTimeProvider = timeProvider;
         mAlarmManager = mAdapterService.getSystemService(AlarmManager.class);
@@ -432,9 +450,9 @@ class ScanManager {
     }
 
     void callbackDone(int scannerId, int status) {
-        Log.d(TAG, "callback done for scannerId - " + scannerId + " status - " + status);
+        Log.d(TAG, "callbackDone for scannerId=" + scannerId + ", status=" + status);
         if (status == 0) {
-            mNativeInterface.callbackDone();
+            mNativeCallback.callbackDone();
         }
         // TODO: add a callback for scan failure.
     }
@@ -1182,14 +1200,6 @@ class ScanManager {
                 handleClearConnectingState();
             }
         }
-    }
-
-    private void resetCountDownLatch() {
-        mNativeInterface.resetCountDownLatch();
-    }
-
-    private boolean waitForCallback() {
-        return mNativeInterface.waitForCallback(OPERATION_TIME_OUT_MILLIS);
     }
 
     private void configureRegularScanParams() {
@@ -2322,5 +2332,13 @@ class ScanManager {
             mClientHandler.post(
                     () -> handleProfileConnectionStateChanged(profile, fromState, toState));
         }
+    }
+
+    private void resetCountDownLatch() {
+        mNativeCallback.resetCountDownLatch();
+    }
+
+    private boolean waitForCallback() {
+        return mNativeCallback.waitForCallback(OPERATION_TIME_OUT_MILLIS);
     }
 }

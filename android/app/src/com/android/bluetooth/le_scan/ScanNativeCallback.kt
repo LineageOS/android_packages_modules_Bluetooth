@@ -16,7 +16,26 @@
 
 package com.android.bluetooth.le_scan
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
 class ScanNativeCallback(private val scanController: ScanController) {
+
+    private var latch = CountDownLatch(1)
+
+    fun callbackDone() = latch.countDown()
+
+    fun resetCountDownLatch() {
+        latch = CountDownLatch(1)
+    }
+
+    // Returns true if [latch] reaches 0, false if timeout or interrupted
+    fun waitForCallback(timeoutMs: Long): Boolean =
+        try {
+            latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        } catch (_: InterruptedException) {
+            false
+        }
 
     fun onScanResult(
         eventType: Int,
