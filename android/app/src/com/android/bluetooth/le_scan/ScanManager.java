@@ -449,6 +449,7 @@ class ScanManager {
         }
     }
 
+    // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
     void callbackDone(int scannerId, int status) {
         Log.d(TAG, "callbackDone for scannerId=" + scannerId + ", status=" + status);
         if (status == 0) {
@@ -1362,8 +1363,7 @@ class ScanManager {
         }
         configureScanFilters(client);
         if (!isOpportunisticScanClient(client)) {
-            // Reset batch scan. May need to stop the existing batch scan and update scan
-            // params.
+            // Reset batch scan. May need to stop the existing batch scan and update scan params
             resetBatchScan(client);
         }
     }

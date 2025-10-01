@@ -744,66 +744,6 @@ public class ScanController {
         stopScan(client.getScannerId());
     }
 
-    /** Callback method for scan filter enablement/disablement. */
-    void onScanFilterEnableDisabled(int action, int status, int clientIf) {
-        enforceScanThread();
-        Log.d(
-                TAG,
-                "onScanFilterEnableDisabled() -"
-                        + (" clientIf=" + clientIf)
-                        + (", status=" + status)
-                        + (", action=" + action));
-        mScanManager.callbackDone(clientIf, status);
-    }
-
-    /** Callback method for configuration of scan filter params. */
-    void onScanFilterParamsConfigured(int action, int status, int clientIf, int availableSpace) {
-        enforceScanThread();
-        Log.d(
-                TAG,
-                "onScanFilterParamsConfigured() -"
-                        + (" clientIf=" + clientIf)
-                        + (", status=" + status)
-                        + (", action=" + action)
-                        + (", availableSpace=" + availableSpace));
-        mScanManager.callbackDone(clientIf, status);
-    }
-
-    /** Callback method for configuration of scan filter. */
-    void onScanFilterConfig(
-            int action, int status, int clientIf, int filterType, int availableSpace) {
-        enforceScanThread();
-        Log.d(
-                TAG,
-                "onScanFilterConfig() -"
-                        + (" clientIf=" + clientIf)
-                        + (", action= " + action)
-                        + (" status= " + status)
-                        + (", filterType=" + filterType)
-                        + (", availableSpace=" + availableSpace));
-        mScanManager.callbackDone(clientIf, status);
-    }
-
-    /** Callback method for configuration of batch scan storage. */
-    void onBatchScanStorageConfigured(int status, int clientIf) {
-        enforceScanThread();
-        Log.d(TAG, "onBatchScanStorageConfigured() - clientIf=" + clientIf + ", status=" + status);
-        mScanManager.callbackDone(clientIf, status);
-    }
-
-    /** Callback method for start/stop of batch scan. */
-    // TODO: split into two different callbacks : onBatchScanStarted and onBatchScanStopped.
-    void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
-        enforceScanThread();
-        Log.d(
-                TAG,
-                "onBatchScanStartStopped() -"
-                        + (" clientIf=" + clientIf)
-                        + (", status=" + status)
-                        + (", startStopAction=" + startStopAction));
-        mScanManager.callbackDone(clientIf, status);
-    }
-
     private ScanClient findScanClientById(int clientIf) {
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
             if (client.getScannerId() == clientIf) {
@@ -868,7 +808,9 @@ public class ScanController {
                 permittedResults.removeIf(mLocationDenylistPredicate);
             }
             if (permittedResults.isEmpty()) {
-                mScanManager.callbackDone(scannerId, status);
+                if (!Flags.scanControllerThread()) {
+                    mScanManager.callbackDone(scannerId, status);
+                }
                 return;
             }
 
@@ -891,7 +833,9 @@ public class ScanController {
                 deliverBatchScan(client, results);
             }
         }
-        mScanManager.callbackDone(scannerId, status);
+        if (!Flags.scanControllerThread()) {
+            mScanManager.callbackDone(scannerId, status);
+        }
     }
 
     private Set<ScanResult> parseBatchScanResults(
