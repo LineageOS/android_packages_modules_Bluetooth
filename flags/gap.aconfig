@@ -321,3 +321,13 @@ flag {
     description: "Delay the transition to the idle state for JV PM connection"
     bug: "440618134"
 }
+
+flag {
+    name: "ignore_service_change_indication"
+    namespace: "bluetooth"
+    description: "Do not handle service change indication for specific devices"
+    bug: "448557918"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
