@@ -99,7 +99,7 @@ void GattTest::SetUp() {
   ASSERT_NE(nullptr, gatt_interface_);
   instance = this;
   auto status = gatt_interface_->init(&callbacks);
-  ASSERT_EQ(status, BT_STATUS_SUCCESS);
+  ASSERT_EQ(static_cast<bt_status_t>(status.code()), BT_STATUS_SUCCESS);
 }
 
 void GattTest::TearDown() {

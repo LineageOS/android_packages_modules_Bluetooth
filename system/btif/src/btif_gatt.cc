@@ -36,6 +36,7 @@
 
 #include "bta/include/bta_gatt_api.h"
 #include "btif/include/btif_common.h"
+#include "btif_status.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/le_advertising_manager.h"
 
@@ -47,13 +48,13 @@ const btgatt_callbacks_t* bt_gatt_callbacks = NULL;
  *
  * Description      Initializes the GATT interface
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t btif_gatt_init(const btgatt_callbacks_t* callbacks) {
+static BtStatus btif_gatt_init(const btgatt_callbacks_t* callbacks) {
   bt_gatt_callbacks = callbacks;
   BTA_GATTS_InitBonded();
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
