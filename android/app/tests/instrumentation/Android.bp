@@ -38,7 +38,6 @@ java_defaults {
         "androidx.test.ext.truth",
         "androidx.test.rules",
         "androidx.test.uiautomator_uiautomator",
-        "bluetooth_flags_java_lib",
         "com.android.sysprop.bluetooth",
         "flag-junit",
         "framework-bluetooth-pre-jarjar",
