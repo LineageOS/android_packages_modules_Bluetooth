@@ -159,3 +159,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_source_metadata_changed"
+    namespace: "bluetooth"
+    description: "Optionally reconfigure the codec if the stream changes to gaming mode"
+    bug: "448710897"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
