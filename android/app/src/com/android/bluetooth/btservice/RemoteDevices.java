@@ -32,6 +32,7 @@ import android.annotation.NonNull;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.BroadcastOptions;
 import android.app.admin.SecurityLog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAssignedNumbers;
@@ -112,6 +113,9 @@ public class RemoteDevices {
     private static final int HFP_BATTERY_CHARGE_INDICATOR_3 = 63;
     private static final int HFP_BATTERY_CHARGE_INDICATOR_4 = 88;
     private static final int HFP_BATTERY_CHARGE_INDICATOR_5 = 100;
+
+    @VisibleForTesting
+    static final String ACL_CONNECTION_DELIVERY_GROUP_POLICY = "bluetooth.ACL_CONNECTION";
 
     private final Handler mHandler;
     private final Handler mMainHandler;
@@ -1750,7 +1754,20 @@ public class RemoteDevices {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT)
                 .addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        final BroadcastOptions options = Utils.getTempBroadcastOptions();
+        if (Flags.coalesceAclConnectionBroadcasts()
+                && (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction())
+                        || BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction()))) {
+            // This allows the broadcasting system to discard any older broadcasts
+            // waiting to be delivered to a process.
+            options.setDeliveryGroupPolicy(BroadcastOptions.DELIVERY_GROUP_POLICY_MOST_RECENT);
+            // Set namespace and key to identify which older broadcasts can be discarded.
+            // We use transport and device address as the key so that only older broadcasts
+            // for the same device and transport are discarded.
+            options.setDeliveryGroupMatchingKey(
+                    ACL_CONNECTION_DELIVERY_GROUP_POLICY, transport + "/" + device.getAddress());
+        }
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, options.toBundle());
 
         RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
