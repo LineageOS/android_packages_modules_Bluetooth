@@ -3471,7 +3471,7 @@ void btif_av_sink_set_audio_track_gain(float gain) {
 }
 
 // Establishes the AV signalling channel with the remote headset
-static bt_status_t connect_int(RawAddress peer_address, uint16_t uuid) {
+static BtStatus connect_int(RawAddress peer_address, uint16_t uuid) {
   log::info("peer={} uuid=0x{:x}", peer_address, uuid);
 
   if (btif_av_both_enable()) {
@@ -3480,7 +3480,7 @@ static bt_status_t connect_int(RawAddress peer_address, uint16_t uuid) {
     } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
       btif_av_sink_dispatch_sm_event(peer_address, BTIF_AV_CONNECT_REQ_EVT);
     }
-    return BT_STATUS_SUCCESS;
+    return BtifStatus();
   }
 
   auto connection_task = [](RawAddress peer_address, uint16_t uuid) {
@@ -3496,8 +3496,9 @@ static bt_status_t connect_int(RawAddress peer_address, uint16_t uuid) {
     }
     peer->StateMachine().ProcessEvent(BTIF_AV_CONNECT_REQ_EVT, nullptr);
   };
-  bt_status_t status = do_in_main_thread(base::BindOnce(connection_task, peer_address, uuid));
-  if (status != BT_STATUS_SUCCESS) {
+  BtStatus status = BtifStatus(static_cast<BtifStatusCode>(
+          do_in_main_thread(base::BindOnce(connection_task, peer_address, uuid))));
+  if (!status) {
     log::error("can't post connection task to main_thread");
   }
   return status;
@@ -3552,8 +3553,7 @@ BtStatus btif_av_source_connect(const RawAddress& peer_address) {
     return BtifStatus(NOT_READY);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(btif_queue_connect(
-      UUID_SERVCLASS_AUDIO_SOURCE, peer_address, connect_int)));
+  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, peer_address, connect_int);
 }
 
 BtStatus btif_av_sink_connect(const RawAddress& peer_address) {
@@ -3564,10 +3564,7 @@ BtStatus btif_av_sink_connect(const RawAddress& peer_address) {
     return BtifStatus(NOT_READY);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(btif_queue_connect(
-				  UUID_SERVCLASS_AUDIO_SINK,
-				  peer_address,
-				  connect_int)));
+  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SINK, peer_address, connect_int);
 }
 
 BtStatus btif_av_source_disconnect(const RawAddress& peer_address) {
@@ -3579,10 +3576,10 @@ BtStatus btif_av_source_disconnect(const RawAddress& peer_address) {
   }
 
   BtifAvEvent btif_av_event(BTIF_AV_DISCONNECT_REQ_EVT, &peer_address, sizeof(peer_address));
-  return BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(base::BindOnce(
-					  &btif_av_handle_event,
-                                          AVDT_TSEP_SNK,  // peer_sep
-                                          peer_address, kBtaHandleUnknown, btif_av_event))));
+  return BtifStatus(static_cast<BtifStatusCode>(
+          do_in_main_thread(base::BindOnce(&btif_av_handle_event,
+                                           AVDT_TSEP_SNK,  // peer_sep
+                                           peer_address, kBtaHandleUnknown, btif_av_event))));
 }
 
 BtStatus btif_av_sink_disconnect(const RawAddress& peer_address) {
@@ -3594,10 +3591,10 @@ BtStatus btif_av_sink_disconnect(const RawAddress& peer_address) {
   }
 
   BtifAvEvent btif_av_event(BTIF_AV_DISCONNECT_REQ_EVT, &peer_address, sizeof(peer_address));
-  return BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(base::BindOnce(
-					  &btif_av_handle_event,
-                                          AVDT_TSEP_SRC,  // peer_sep
-                                          peer_address, kBtaHandleUnknown, btif_av_event))));
+  return BtifStatus(static_cast<BtifStatusCode>(
+          do_in_main_thread(base::BindOnce(&btif_av_handle_event,
+                                           AVDT_TSEP_SRC,  // peer_sep
+                                           peer_address, kBtaHandleUnknown, btif_av_event))));
 }
 
 BtStatus btif_av_sink_set_active_device(const RawAddress& peer_address) {

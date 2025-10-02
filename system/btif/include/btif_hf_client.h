@@ -18,8 +18,9 @@
 
 #pragma once
 
-#include <hardware/bluetooth.h>
 #include <hardware/bt_hf_client.h>
 
+#include "bt_status.h"
+
 const bthf_client_interface_t* btif_hf_client_get_interface();
-bt_status_t btif_hf_client_execute_service(bool b_enable);
+BtStatus btif_hf_client_execute_service(bool b_enable);

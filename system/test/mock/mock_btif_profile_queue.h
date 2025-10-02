@@ -28,6 +28,7 @@
 // Original included files, if any
 #include <bluetooth/types/address.h>
 
+#include "bt_status.h"
 #include "btif/include/btif_profile_queue.h"
 
 // Original usings
@@ -59,13 +60,14 @@ extern struct btif_queue_cleanup btif_queue_cleanup;
 
 // Name: btif_queue_connect
 // Params: uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb
-// Return: bt_status_t
+// Return: BtStatus
 struct btif_queue_connect {
-  static bt_status_t return_value;
-  std::function<bt_status_t(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb)>
-          body{[](uint16_t /* uuid */, const RawAddress /* bda */,
-                  btif_connect_cb_t /* connect_cb */) { return return_value; }};
-  bt_status_t operator()(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
+  static BtStatus return_value;
+  std::function<BtStatus(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb)> body{
+          [](uint16_t /* uuid */, const RawAddress /* bda */, btif_connect_cb_t /* connect_cb */) {
+            return return_value;
+          }};
+  BtStatus operator()(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
     return body(uuid, bda, connect_cb);
   }
 };
@@ -73,11 +75,11 @@ extern struct btif_queue_connect btif_queue_connect;
 
 // Name: btif_queue_connect_next
 // Params: void
-// Return: bt_status_t
+// Return: BtStatus
 struct btif_queue_connect_next {
-  static bt_status_t return_value;
-  std::function<bt_status_t(void)> body{[](void) { return return_value; }};
-  bt_status_t operator()(void) { return body(); }
+  static BtStatus return_value;
+  std::function<BtStatus(void)> body{[](void) { return return_value; }};
+  BtStatus operator()(void) { return body(); }
 };
 extern struct btif_queue_connect_next btif_queue_connect_next;
 

@@ -40,6 +40,7 @@
 
 #include "btif/include/stack_manager_t.h"
 #include "btif_common.h"
+#include "btif_status.h"
 #include "hardware/bluetooth.h"
 
 using namespace bluetooth;
@@ -64,13 +65,13 @@ public:
   /**
    * Initiate the connection.
    *
-   * @return BT_STATUS_SUCCESS on success, otherwise the corresponding error
+   * @return BtifStatus() on success, otherwise the corresponding error
    * code. Note: if a previous connect request hasn't been completed, the
-   * return value is BT_STATUS_SUCCESS.
+   * return value is BtifStatus().
    */
-  bt_status_t connect() {
+  BtStatus connect() {
     if (busy_) {
-      return BT_STATUS_SUCCESS;
+      return BtifStatus();
     }
     busy_ = true;
     return connect_cb_(address_, uuid_);
@@ -148,11 +149,12 @@ static void queue_int_release() { connect_queue.clear(); }
  * Description      Add a new connection to the queue and trigger the next
  *                  scheduled connection.
  *
- * Returns          BT_STATUS_SUCCESS if successful
+ * Returns          BtifStatus() if successful
  *
  ******************************************************************************/
-bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
-  return do_in_jni_thread(base::BindOnce(&queue_int_add, uuid, bda, connect_cb));
+BtStatus btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
+  return BtifStatus(static_cast<BtifStatusCode>(
+          do_in_jni_thread(base::BindOnce(&queue_int_add, uuid, bda, connect_cb))));
 }
 
 /*******************************************************************************
@@ -180,23 +182,23 @@ void btif_queue_cleanup(uint16_t uuid) {
  ******************************************************************************/
 void btif_queue_advance() { do_in_jni_thread(base::BindOnce(&queue_int_advance)); }
 
-bt_status_t btif_queue_connect_next(void) {
+BtStatus btif_queue_connect_next(void) {
   // The call must be on the JNI thread, otherwise the access to connect_queue
   // is not thread-safe.
   log::assert_that(is_on_jni_thread(), "assert failed: is_on_jni_thread()");
 
   if (connect_queue.empty()) {
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   if (!stack_manager_get_interface()->get_stack_is_running()) {
-    return BT_STATUS_UNEXPECTED_STATE;
+    return BtifStatus(UNEXPECTED_STATE);
   }
 
   ConnectNode& head = connect_queue.front();
 
   log::info("Executing profile connection request:{}", head.ToString());
-  bt_status_t b_status = head.connect();
-  if (b_status != BT_STATUS_SUCCESS) {
+  BtStatus b_status = head.connect();
+  if (!b_status) {
     log::info("connect {} failed, advance to next scheduled connection.", head.ToString());
     btif_queue_advance();
   }
