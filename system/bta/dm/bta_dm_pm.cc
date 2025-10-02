@@ -918,7 +918,7 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, const int ssr) {
       link_spec.addrt.type = BLE_ADDR_PUBLIC;
       link_spec.transport = BT_TRANSPORT_BR_EDR;
       if (GetInterfaceToProfiles()->profileSpecific_HACK->bta_hh_read_ssr_param(
-                  link_spec, &p_spec_cur->max_lat, &p_spec_cur->min_rmt_to) == BTA_HH_ERR) {
+                  link_spec, &p_spec_cur->max_lat, &p_spec_cur->min_rmt_to) == BTHH_ERR) {
         continue;
       }
     }

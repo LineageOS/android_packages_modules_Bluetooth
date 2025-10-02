@@ -27,5 +27,5 @@ using namespace testing;
 TEST(CommonStackTest, any_to_text_unknown_default) {
   ASSERT_STREQ("UNKNOWN[255]", gatt_client_event_text(static_cast<tBTA_GATTC_EVT>(255)).c_str());
   ASSERT_STREQ("UNKNOWN[255]", preferred_role_text(static_cast<tBTA_PREF_ROLES>(255)).c_str());
-  ASSERT_TRUE(bta_hh_status_text(static_cast<tBTA_HH_STATUS>(255)).starts_with("Unknown"));
+  ASSERT_TRUE(bthh_status_text(static_cast<bthh_status_t>(255)).starts_with("UNKNOWN"));
 }

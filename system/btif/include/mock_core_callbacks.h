@@ -94,7 +94,7 @@ HACK_ProfileInterface mock_HACK_profile_interface = {
         },
         .bta_hh_read_ssr_param =
                 [](const tAclLinkSpec& /* link_spec */, uint16_t* /* p_max_ssr_lat */,
-                   uint16_t* /* p_min_ssr_tout */) -> tBTA_HH_STATUS { return BTA_HH_OK; },
+                   uint16_t* /* p_min_ssr_tout */) -> bthh_status_t { return BTHH_OK; },
 
         .btif_av_set_dynamic_audio_buffer_size = [](uint8_t /* dynamic_audio_buffer_size */) {},
         .GetHearingAidDeviceCount = []() -> int { return 0; },
