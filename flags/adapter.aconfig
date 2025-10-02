@@ -125,3 +125,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "wakeup_allow_list_for_tablet"
+    namespace: "bluetooth"
+    description: "Allow devices which match vid/pid to wake up tablet from screen off sleep."
+    bug: "449020271"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
