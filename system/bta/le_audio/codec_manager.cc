@@ -601,7 +601,7 @@ public:
     log::info("UpdateSupportedBroadcastConfig");
 
     for (const auto& adsp_audio_set_conf : adsp_capabilities) {
-      if (adsp_audio_set_conf.confs.sink.empty() || !adsp_audio_set_conf.confs.source.empty()) {
+      if (adsp_audio_set_conf.confs.sink.empty()) {
         continue;
       }
 
