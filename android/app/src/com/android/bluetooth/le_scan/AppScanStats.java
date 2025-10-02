@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** ScanStats class helps keep track of information about scans on a per application basis. */
-class AppScanStats {
+public class AppScanStats {
     private static final String TAG = AppScanStats.class.getSimpleName();
 
     private static final int LARGE_SCAN_TIME_GAP_MS = 24000;
@@ -599,7 +599,7 @@ class AppScanStats {
         return scan == null ? "" : scan.getAttributionTag();
     }
 
-    synchronized void dump(StringBuilder sb, List<ScannerMap.ScannerApp> scannerApps) {
+    synchronized void dump(StringBuilder sb, List<ScannerApp> scannerApps) {
         final long currentTimeMillis = System.currentTimeMillis();
         final long elapsedRealtimeMillis = mTimeProvider.elapsedRealtime();
         final int oppScan = mOppScan;
@@ -651,7 +651,7 @@ class AppScanStats {
         else sb.append(":");
 
         if (mIsRegistered) {
-            for (ScannerMap.ScannerApp scannerApp : scannerApps) {
+            for (ScannerApp scannerApp : scannerApps) {
                 sb.append("\n    Application ID: ").append(scannerApp.mId);
                 sb.append(", UUID: ").append(scannerApp.mUuid);
                 if (scannerApp.mAttributionTag != null) {

@@ -106,7 +106,7 @@ public class ScanControllerTest {
     @Mock private CompanionDeviceManager mCompanionDeviceManager;
     @Mock private Resources mResources;
     @Mock private ScannerMap mScannerMap;
-    @Mock private ScannerMap.ScannerApp mApp;
+    @Mock private ScannerApp mApp;
     @Mock private TimeProvider mTimeProvider;
 
     private static final int TEST_SCANNER_ID = 1;
@@ -397,7 +397,7 @@ public class ScanControllerTest {
                         .build());
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
 
-        ScannerMap.ScannerApp app = mock(ScannerMap.ScannerApp.class);
+        ScannerApp app = mock(ScannerApp.class);
         IScannerCallback callback = mock(IScannerCallback.class);
         app.mCallback = callback;
 

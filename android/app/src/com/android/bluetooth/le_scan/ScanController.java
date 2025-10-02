@@ -337,7 +337,7 @@ public class ScanController {
         }
     }
 
-    record PendingIntentInfo(
+    public record PendingIntentInfo(
             PendingIntent intent,
             ScanSettings settings,
             List<ScanFilter> filters,
@@ -491,7 +491,7 @@ public class ScanController {
         BluetoothDevice device = mAdapter.getRemoteLeDevice(address, addressType);
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            ScannerMap.ScannerApp app = mScannerMap.getById(client.getScannerId());
+            ScannerApp app = mScannerMap.getById(client.getScannerId());
             if (app == null) {
                 Log.v(TAG, "App is null for " + client + "; Skip");
                 continue;
@@ -640,7 +640,7 @@ public class ScanController {
                         + (", status=" + status));
 
         // First check the callback map
-        ScannerMap.ScannerApp scannerApp = mScannerMap.getByUuid(uuid);
+        ScannerApp scannerApp = mScannerMap.getByUuid(uuid);
         if (scannerApp == null) {
             return;
         }
@@ -792,7 +792,7 @@ public class ScanController {
         Set<ScanResult> results = parseBatchScanResults(numRecords, reportType, recordData);
         if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             // We only support single client for truncated mode.
-            ScannerMap.ScannerApp app = mScannerMap.getById(scannerId);
+            ScannerApp app = mScannerMap.getById(scannerId);
             if (app == null) {
                 return;
             }
@@ -919,7 +919,7 @@ public class ScanController {
 
     // Check and deliver scan results for different scan clients.
     private void deliverBatchScan(ScanClient client, Set<ScanResult> allResults) {
-        ScannerMap.ScannerApp app = mScannerMap.getById(client.getScannerId());
+        ScannerApp app = mScannerMap.getById(client.getScannerId());
         if (app == null) {
             return;
         }
@@ -940,8 +940,7 @@ public class ScanController {
         sendBatchScanResults(app, client, results);
     }
 
-    private void sendBatchScanResults(
-            ScannerMap.ScannerApp app, ScanClient client, List<ScanResult> results) {
+    private void sendBatchScanResults(ScannerApp app, ScanClient client, List<ScanResult> results) {
         if (results.isEmpty()) {
             return;
         }
@@ -1014,7 +1013,7 @@ public class ScanController {
                         + (", addressType=" + trackingInfo.addressType())
                         + (", adv_state=" + trackingInfo.advState()));
 
-        final ScannerMap.ScannerApp app = mScannerMap.getById(trackingInfo.clientIf());
+        final ScannerApp app = mScannerMap.getById(trackingInfo.clientIf());
         if (app == null) {
             Log.e(TAG, "app is null");
             return;
@@ -1067,7 +1066,7 @@ public class ScanController {
     void onScanParamSetupCompleted(int status, int scannerId) {
         enforceScanThread();
         Log.d(TAG, "onScanParamSetupCompleted() - scannerId=" + scannerId + ", status=" + status);
-        final ScannerMap.ScannerApp app = mScannerMap.getById(scannerId);
+        final ScannerApp app = mScannerMap.getById(scannerId);
         if (app == null || app.mCallback == null) {
             Log.e(TAG, "Advertise app or callback is null");
             return;
@@ -1077,7 +1076,7 @@ public class ScanController {
     // callback from ScanManager for dispatch of errors apps.
     void onScanManagerErrorCallback(int scannerId, int errorCode) {
         enforceScanThread();
-        final ScannerMap.ScannerApp app = mScannerMap.getById(scannerId);
+        final ScannerApp app = mScannerMap.getById(scannerId);
         if (app == null) {
             Log.e(TAG, "App null");
             return;
@@ -1288,7 +1287,7 @@ public class ScanController {
             boolean isFilteredScan = (filters != null) && !filters.isEmpty();
             boolean isCallbackScan = false;
 
-            ScannerMap.ScannerApp cbApp = mScannerMap.getById(scannerId);
+            ScannerApp cbApp = mScannerMap.getById(scannerId);
             if (cbApp != null) {
                 isCallbackScan = cbApp.mCallback != null;
             }
@@ -1330,7 +1329,7 @@ public class ScanController {
         }
 
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        ScannerMap.ScannerApp app =
+        ScannerApp app =
                 mScannerMap.addWithPendingIntent(
                         uuid,
                         UserHandle.getUserHandleForUid(uid),
@@ -1377,7 +1376,7 @@ public class ScanController {
 
     /** Start a scan with pending intent. */
     @VisibleForTesting
-    void continuePiStartScan(int scannerId, ScannerMap.ScannerApp app) {
+    void continuePiStartScan(int scannerId, ScannerApp app) {
         final PendingIntentInfo piInfo = app.mInfo;
         final ScanClient scanClient =
                 new ScanClient(
@@ -1438,7 +1437,7 @@ public class ScanController {
 
     void stopScan(PendingIntent intent) {
         enforceScanThread();
-        ScannerMap.ScannerApp app = mScannerMap.getByPendingIntentInfo(intent);
+        ScannerApp app = mScannerMap.getByPendingIntentInfo(intent);
         Log.v(TAG, "stopScan(PendingIntent): app found = " + app);
         if (app != null) {
             intent.removeCancelListener(mScanIntentCancelListener);
@@ -1498,7 +1497,7 @@ public class ScanController {
      * DeathRecipient handler used to unregister applications that disconnect ungracefully (ie.
      * crash or forced close).
      */
-    class ScannerDeathRecipient implements IBinder.DeathRecipient {
+    public class ScannerDeathRecipient implements IBinder.DeathRecipient {
         private final int mScannerId;
         private final String mPackageName;
 

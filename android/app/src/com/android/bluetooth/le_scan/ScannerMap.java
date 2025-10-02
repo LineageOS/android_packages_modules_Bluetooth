@@ -23,7 +23,6 @@ import android.app.PendingIntent;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
-import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.WorkSource;
 import android.util.Log;
@@ -34,7 +33,6 @@ import com.android.bluetooth.util.TimeProvider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
@@ -242,72 +240,6 @@ class ScannerMap {
         for (AppScanStats appScanStats : mAppScanStatsMap.values()) {
             var scannerApps = getByName(appScanStats.mAppName);
             appScanStats.dump(sb, scannerApps);
-        }
-    }
-
-    static class ScannerApp {
-        final UUID mUuid;
-        @Nullable final UserHandle mUserHandle; // The user handle of the app that started the scan
-
-        /** The last attribution tag in the attribution source chain */
-        @Nullable final String mAttributionTag;
-
-        @Nullable IScannerCallback mCallback;
-        final String mName; // The package name of the application
-
-        @Nullable ScanController.PendingIntentInfo mInfo; // Context information
-        AppScanStats mAppScanStats;
-        int mId;
-        boolean mHasLocationPermission;
-        boolean mHasNetworkSettingsPermission;
-        boolean mHasNetworkSetupWizardPermission;
-        boolean mHasScanWithoutLocationPermission;
-        boolean mHasDisavowedLocation;
-        boolean mEligibleForSanitizedExposureNotification;
-        @Nullable List<String> mAssociatedDevices;
-        @Nullable private ScanController.ScannerDeathRecipient mDeathRecipient;
-
-        ScannerApp(
-                UUID uuid,
-                @Nullable UserHandle userHandle,
-                @Nullable String attributionTag,
-                @Nullable IScannerCallback callback,
-                @Nullable ScanController.PendingIntentInfo info,
-                String name,
-                AppScanStats appScanStats) {
-            mUuid = uuid;
-            mUserHandle = userHandle;
-            mAttributionTag = attributionTag;
-            mCallback = callback;
-            mName = name;
-            mInfo = info;
-            mAppScanStats = appScanStats;
-        }
-
-        void linkToDeath(ScanController.ScannerDeathRecipient deathRecipient) {
-            // It might not be a binder object
-            if (mCallback == null) {
-                return;
-            }
-            try {
-                mCallback.asBinder().linkToDeath(deathRecipient, 0);
-                mDeathRecipient = deathRecipient;
-            } catch (RemoteException e) {
-                Log.e(TAG, "Unable to link deathRecipient for app id " + mId);
-                cleanup();
-            }
-        }
-
-        /** Unlink death recipient */
-        void cleanup() {
-            if (mDeathRecipient != null && mCallback != null) {
-                try {
-                    mCallback.asBinder().unlinkToDeath(mDeathRecipient, 0);
-                } catch (NoSuchElementException e) {
-                    Log.e(TAG, "Unable to unlink deathRecipient for app id " + mId);
-                }
-            }
-            mAppScanStats.mIsRegistered = false;
         }
     }
 }
