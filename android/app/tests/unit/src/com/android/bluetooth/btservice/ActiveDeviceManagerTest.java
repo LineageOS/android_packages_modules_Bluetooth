@@ -66,6 +66,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -97,6 +98,7 @@ public class ActiveDeviceManagerTest {
     @Mock private HearingAidService mHearingAidService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private AudioManager mAudioManager;
+    @Mock private BluetoothStorageManager mStorage;
 
     @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
     private static final int A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS =
@@ -140,7 +142,7 @@ public class ActiveDeviceManagerTest {
         doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
-        mActiveDeviceManager = new ActiveDeviceManager(mAdapterService);
+        mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mStorage);
         mActiveDeviceManager.start();
 
         // Get devices for testing

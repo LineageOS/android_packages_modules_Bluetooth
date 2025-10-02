@@ -66,6 +66,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -162,25 +163,27 @@ public class HeadsetService extends ConnectableProfile {
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
     @VisibleForTesting boolean mIsAptXSwbPmEnabled = false;
 
-    public HeadsetService(AdapterService adapterService) {
-        this(adapterService, null, null);
+    public HeadsetService(AdapterService adapterService, BluetoothStorageManager storage) {
+        this(adapterService, storage, null, null);
     }
 
     @VisibleForTesting
     HeadsetService(
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface) {
-        this(adapterService, nativeInterface, systemInterface, null);
+        this(adapterService, storage, nativeInterface, systemInterface, null);
     }
 
     @VisibleForTesting
     HeadsetService(
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface,
             Looper looper) {
-        super(BluetoothProfile.HEADSET, requireNonNull(adapterService));
+        super(BluetoothProfile.HEADSET, adapterService, storage);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new HeadsetNativeInterface(mAdapterService, this));
@@ -440,6 +443,7 @@ public class HeadsetService extends ConnectableProfile {
                                                     mStateMachinesLooper,
                                                     this,
                                                     mAdapterService,
+                                                    getStorage(),
                                                     mNativeInterface,
                                                     mSystemInterface);
                             mStateMachines.put(stackEvent.device, stateMachine);
@@ -600,6 +604,7 @@ public class HeadsetService extends ConnectableProfile {
                                         mStateMachinesLooper,
                                         this,
                                         mAdapterService,
+                                        getStorage(),
                                         mNativeInterface,
                                         mSystemInterface);
                 mStateMachines.put(device, stateMachine);
@@ -1869,9 +1874,8 @@ public class HeadsetService extends ConnectableProfile {
                 Log.d(TAG, "phoneStateChanged: CALL_STATE_IDLE, mActiveDevice is Null");
             } else {
                 BluetoothSinkAudioPolicy currentPolicy = stateMachine.getHfpCallAudioPolicy();
-                if (currentPolicy != null
-                        && currentPolicy.getActiveDevicePolicyAfterConnection()
-                                == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
+                if (currentPolicy.getActiveDevicePolicyAfterConnection()
+                        == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
                     /*
                      * If the active device was set because of the pick up audio policy and the
                      * connecting policy is NOT_ALLOWED, then after the call is terminated, we must
@@ -1964,9 +1968,8 @@ public class HeadsetService extends ConnectableProfile {
         if (audioConnectableDevices.size() == 1) {
             BluetoothDevice connectedDevice = audioConnectableDevices.get(0);
             BluetoothSinkAudioPolicy callAudioPolicy = getHfpCallAudioPolicy(connectedDevice);
-            if (callAudioPolicy != null
-                    && callAudioPolicy.getInBandRingtonePolicy()
-                            == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
+            if (callAudioPolicy.getInBandRingtonePolicy()
+                    == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
                 inbandRingtoneAllowedByPolicy = false;
             }
         }

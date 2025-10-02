@@ -57,6 +57,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -152,7 +153,8 @@ class HeadsetStateMachine extends StateMachine {
     private final AdapterService mAdapterService;
     private final HeadsetNativeInterface mNativeInterface;
     private final HeadsetSystemInterface mSystemInterface;
-    private final DatabaseManager mDatabaseManager;
+    private final DatabaseManager mDatabaseManager; // Migrating
+    private final BluetoothStorageManager mStorage;
 
     // Runtime states
     @VisibleForTesting int mSpeakerVolume;
@@ -218,6 +220,7 @@ class HeadsetStateMachine extends StateMachine {
             Looper looper,
             HeadsetService headsetService,
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface) {
         super(TAG, requireNonNull(looper));
@@ -231,7 +234,13 @@ class HeadsetStateMachine extends StateMachine {
         mNativeInterface = requireNonNull(nativeInterface);
         mSystemInterface = requireNonNull(systemInterface);
         mAdapterService = requireNonNull(adapterService);
-        mDatabaseManager = requireNonNull(adapterService.getDatabaseManager());
+        if (Flags.mainlineBetaStorage()) {
+            mDatabaseManager = null;
+            mStorage = requireNonNull(storage);
+        } else {
+            mDatabaseManager = requireNonNull(adapterService.getDatabaseManager()); // Migrating
+            mStorage = null;
+        }
 
         mDeviceSilenced = false;
 
@@ -2416,12 +2425,7 @@ class HeadsetStateMachine extends StateMachine {
         return true;
     }
 
-    /**
-     * sets the audio policy of the client device and stores in the database
-     *
-     * @param policies policies to be set and stored
-     */
-    public void setHfpCallAudioPolicy(BluetoothSinkAudioPolicy policies) {
+    private void setHfpCallAudioPolicy(BluetoothSinkAudioPolicy policies) {
         mHsClientAudioPolicy = policies;
         mDatabaseManager.setAudioPolicyMetadata(mDevice, policies);
     }

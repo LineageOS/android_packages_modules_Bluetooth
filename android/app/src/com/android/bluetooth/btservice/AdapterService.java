@@ -167,6 +167,7 @@ import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.sdp.SdpManager;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.bluetooth.util.DeviceConfigUtils;
@@ -292,7 +293,8 @@ public class AdapterService extends Service {
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
     private final SdpManagerNativeInterface mSdpManagerNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
-    private final DatabaseManager mDatabaseManager;
+    private final BluetoothStorageManager mStorage;
+    private final DatabaseManager mDatabaseManager; // Migrating
 
     /**
      * Predicate that tests if the given {@link BluetoothDevice} is well-known to be used for
@@ -475,7 +477,13 @@ public class AdapterService extends Service {
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
         mSdpManagerNativeInterface = sdpManagerNativeInterface;
         mSilenceDeviceManager = new SilenceDeviceManager(this, mLooper);
-        mDatabaseManager = new DatabaseManager(this);
+        if (Flags.mainlineBetaStorage()) {
+            mStorage = new BluetoothStorageManager(this);
+            mDatabaseManager = null;
+        } else {
+            mStorage = null;
+            mDatabaseManager = new DatabaseManager(this);
+        }
         mLocationDenylistPredicate =
                 (device) -> {
                     final MacAddress parsedAddress = MacAddress.fromString(device.getAddress());
@@ -508,8 +516,9 @@ public class AdapterService extends Service {
             return defaultValue;
         }
         try {
-            // Any method calling syncPost should most likely be done in under 1 seconds.
-            return task.get(1, TimeUnit.SECONDS);
+            // Timeout is longer than ANR, to help debugging in case of unusal slowlyness.
+            // Most likely, any method calling syncPost should be done in under 1 seconds
+            return task.get(10, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException e) {
             SneakyThrow.sneakyThrow(e);
         } catch (ExecutionException e) {
@@ -735,6 +744,7 @@ public class AdapterService extends Service {
     }
 
     public DatabaseManager getDatabaseManager() {
+        if (Flags.mainlineBetaStorage()) throw new IllegalStateException("mainlineBetaStorage");
         return mDatabaseManager;
     }
 
@@ -1021,12 +1031,12 @@ public class AdapterService extends Service {
          */
         if (!isAutomotiveDevice && getResources().getBoolean(R.bool.enable_phone_policy)) {
             Log.i(TAG, "Phone policy enabled");
-            mPhonePolicy = Optional.of(new PhonePolicy(this, mLooper));
+            mPhonePolicy = Optional.of(new PhonePolicy(this, mLooper, mStorage));
         } else {
             Log.i(TAG, "Phone policy disabled");
         }
 
-        mActiveDeviceManager = new ActiveDeviceManager(this);
+        mActiveDeviceManager = new ActiveDeviceManager(this, mStorage);
         mActiveDeviceManager.start();
 
         mBtCompanionManager = new CompanionManager(this);
@@ -1245,7 +1255,7 @@ public class AdapterService extends Service {
                                 mCompanionDeviceManager);
                 yield mGattService;
             }
-            case BluetoothProfile.A2DP -> new A2dpService(this, mCompanionDeviceManager);
+            case BluetoothProfile.A2DP -> new A2dpService(this, mStorage, mCompanionDeviceManager);
             case BluetoothProfile.A2DP_SINK -> new A2dpSinkService(this);
             case BluetoothProfile.AVRCP_CONTROLLER -> new AvrcpControllerService(this);
             case BluetoothProfile.AVRCP -> new AvrcpTargetService(this, mUserManager);
@@ -1253,13 +1263,13 @@ public class AdapterService extends Service {
             case BluetoothProfile.CSIP_SET_COORDINATOR -> new CsipSetCoordinatorService(this);
             case BluetoothProfile.HAP_CLIENT -> new HapClientService(this);
             case BluetoothProfile.HEADSET_CLIENT -> new HeadsetClientService(this);
-            case BluetoothProfile.HEADSET -> new HeadsetService(this);
+            case BluetoothProfile.HEADSET -> new HeadsetService(this, mStorage);
             case BluetoothProfile.HEARING_AID -> new HearingAidService(this);
             case BluetoothProfile.HID_DEVICE -> new HidDeviceService(this);
             case BluetoothProfile.HID_HOST -> new HidHostService(this);
             case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> new BassClientService(this);
             case BluetoothProfile.LE_AUDIO_BROADCAST -> new LeAudioBroadcast(this);
-            case BluetoothProfile.LE_AUDIO -> new LeAudioService(this);
+            case BluetoothProfile.LE_AUDIO -> new LeAudioService(this, mStorage);
             case BluetoothProfile.LE_CALL_CONTROL -> new TbsService(this, mGattService);
             case BluetoothProfile.MAP_CLIENT -> new MapClientService(this);
             case BluetoothProfile.MAP -> new BluetoothMapService(this);
@@ -2153,18 +2163,12 @@ public class AdapterService extends Service {
         return mDatabaseManager.getProfileConnectionPolicy(device, profile);
     }
 
-    /**
-     * Wrapper to facilitate DatabaseManager migration see {@link
-     * DatabaseManager#getKeyMissingCount}
-     */
+    /** see {@link DatabaseManager#getKeyMissingCount} */
     public int getKeyMissingCount(BluetoothDevice device) {
         return mDatabaseManager.getKeyMissingCount(device);
     }
 
-    /**
-     * Wrapper to facilitate DatabaseManager migration see {@link
-     * DatabaseManager#updateKeyMissingCount}
-     */
+    /** see {@link DatabaseManager#updateKeyMissingCount} */
     public void updateKeyMissingCount(BluetoothDevice device, boolean isKeyMissingDetected) {
         mDatabaseManager.updateKeyMissingCount(device, isKeyMissingDetected);
     }
@@ -3719,7 +3723,7 @@ public class AdapterService extends Service {
         return getDeviceAccessFromPrefs(device, SIM_ACCESS_PERMISSION_PREFERENCE_FILE);
     }
 
-    int getDeviceAccessFromPrefs(BluetoothDevice device, String prefFile) {
+    private int getDeviceAccessFromPrefs(BluetoothDevice device, String prefFile) {
         SharedPreferences prefs = getSharedPreferences(prefFile, Context.MODE_PRIVATE);
         if (!prefs.contains(device.getAddress())) {
             return BluetoothDevice.ACCESS_UNKNOWN;
@@ -3729,7 +3733,7 @@ public class AdapterService extends Service {
                 : BluetoothDevice.ACCESS_REJECTED;
     }
 
-    void setDeviceAccessFromPrefs(BluetoothDevice device, int value, String prefFile) {
+    private void setDeviceAccessFromPrefs(BluetoothDevice device, int value, String prefFile) {
         SharedPreferences pref = getSharedPreferences(prefFile, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
         if (value == BluetoothDevice.ACCESS_UNKNOWN) {
@@ -4447,7 +4451,13 @@ public class AdapterService extends Service {
         final var stringBuilder = new StringBuilder();
 
         mSilenceDeviceManager.dump(stringBuilder);
-        mDatabaseManager.dump(stringBuilder);
+        if (Flags.mainlineBetaStorage()) {
+            stringBuilder.append("\n");
+            mStorage.dump(stringBuilder);
+            stringBuilder.append("\n");
+        } else {
+            mDatabaseManager.dump(stringBuilder); // Migrating
+        }
 
         for (ProfileService profile : mRegisteredProfiles) {
             profile.dump(stringBuilder);
@@ -5079,7 +5089,7 @@ public class AdapterService extends Service {
             Log.e(
                     TAG,
                     "discoveryResultHandler: deviceFoundCallback was triggered, but no discovering"
-                        + " packages found!");
+                            + " packages found!");
             return;
         }
 

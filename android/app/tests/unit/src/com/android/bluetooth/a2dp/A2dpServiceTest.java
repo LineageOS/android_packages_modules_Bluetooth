@@ -65,6 +65,7 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -104,6 +105,7 @@ public class A2dpServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
 
     private final CompanionDeviceManager mCompanionDeviceManager =
@@ -149,6 +151,7 @@ public class A2dpServiceTest {
         mA2dpService =
                 new A2dpService(
                         mAdapterService,
+                        mStorage,
                         mMockNativeInterface,
                         mCompanionDeviceManager,
                         mLooper.getLooper());

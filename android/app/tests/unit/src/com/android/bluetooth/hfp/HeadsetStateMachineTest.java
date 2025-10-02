@@ -93,6 +93,7 @@ import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
@@ -131,6 +132,7 @@ public class HeadsetStateMachineTest {
     @Mock private AdapterService mAdapterService;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private HeadsetNativeInterface mNativeInterface;
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private HeadsetService mHeadsetService;
@@ -202,6 +204,7 @@ public class HeadsetStateMachineTest {
                         mLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
     }

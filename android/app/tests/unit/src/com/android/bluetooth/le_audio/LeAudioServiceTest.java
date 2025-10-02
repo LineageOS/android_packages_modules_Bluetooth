@@ -49,7 +49,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -97,6 +96,7 @@ import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.mcp.McpService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
@@ -125,7 +125,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 /** Test cases for {@link LeAudioService}. */
 @MediumTest
@@ -139,6 +138,7 @@ public class LeAudioServiceTest {
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private LeAudioNativeInterface mNativeInterface;
     @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioTmapGattServer mTmapGattServer;
@@ -334,6 +334,7 @@ public class LeAudioServiceTest {
         mService =
                 new LeAudioService(
                         mAdapterService,
+                        mStorage,
                         mLooper.getLooper(),
                         mNativeInterface,
                         mLeAudioBroadcasterNativeInterface);
@@ -413,6 +414,7 @@ public class LeAudioServiceTest {
         int mask =
                 new LeAudioService(
                                 mAdapterService,
+                                mStorage,
                                 mLooper.getLooper(),
                                 mNativeInterface,
                                 mLeAudioBroadcasterNativeInterface)

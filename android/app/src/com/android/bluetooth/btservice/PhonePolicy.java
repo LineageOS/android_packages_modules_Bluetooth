@@ -48,6 +48,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.time.Duration;
@@ -82,7 +83,8 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     @VisibleForTesting static final Duration CONNECT_OTHER_PROFILES_TIMEOUT = Duration.ofSeconds(6);
 
-    private final DatabaseManager mDatabaseManager;
+    private final DatabaseManager mDatabaseManager; // Migrating
+    private final BluetoothStorageManager mStorage;
     private final AdapterService mAdapterService;
     private final Handler mHandler;
     private final Set<BluetoothDevice> mHeadsetRetrySet = new HashSet<>();
@@ -92,9 +94,15 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     @VisibleForTesting boolean mAutoConnectProfilesSupported;
     @VisibleForTesting boolean mLeAudioEnabledByDefault;
 
-    PhonePolicy(AdapterService adapterService, Looper looper) {
+    PhonePolicy(AdapterService adapterService, Looper looper, BluetoothStorageManager storage) {
         mAdapterService = adapterService;
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabaseManager());
+        if (Flags.mainlineBetaStorage()) {
+            mStorage = requireNonNull(storage);
+            mDatabaseManager = null;
+        } else {
+            mDatabaseManager = requireNonNull(mAdapterService.getDatabaseManager()); // Migrating
+            mStorage = null;
+        }
         mHandler = new Handler(looper);
         mAutoConnectProfilesSupported =
                 SystemProperties.getBoolean(AUTO_CONNECT_PROFILES_PROPERTY, false);

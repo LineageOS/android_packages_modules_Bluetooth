@@ -89,6 +89,7 @@ import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsGatt;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -213,17 +214,18 @@ public class LeAudioService extends ConnectableProfile {
     final RemoteCallbackList<IBluetoothLeAudioCallback> mLeAudioCallbacks =
             new RemoteCallbackList<>();
 
-    public LeAudioService(AdapterService adapterService) {
-        this(adapterService, null, null, null);
+    public LeAudioService(AdapterService adapterService, BluetoothStorageManager storage) {
+        this(adapterService, storage, null, null, null);
     }
 
     @VisibleForTesting
     LeAudioService(
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             Looper looper,
             LeAudioNativeInterface nativeInterface,
             LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface) {
-        super(BluetoothProfile.LE_AUDIO, requireNonNull(adapterService));
+        super(BluetoothProfile.LE_AUDIO, adapterService, storage);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
@@ -840,6 +842,11 @@ public class LeAudioService extends ConnectableProfile {
         mNativeInterface.setEnableState(device, enabled);
     }
 
+    // During a personal audio sharing session, the owner's device is assumed to be the first
+    // one that connected. Guests' devices connect later just to listen to the broadcast.
+    //
+    // When the session ends, we must fall back to a unicast group. For privacy reasons (calls..),
+    // we select the owner's group, which corresponds to the least recently connected device.
     private void setDefaultBroadcastToUnicastFallbackGroup() {
         List<BluetoothDevice> mostRecentDevices =
                 getDatabaseManager().getMostRecentlyConnectedDevices();
@@ -5328,8 +5335,8 @@ public class LeAudioService extends ConnectableProfile {
                 "storeActiveGroupCodecConfigPreference("
                         + groupId
                         + "): "
-                        + Objects.toString(inputCodecConfig)
-                        + Objects.toString(outputCodecConfig));
+                        + inputCodecConfig
+                        + outputCodecConfig);
 
         // Update the active group codec preference map
         mActiveGroupCodecPreferences.put(

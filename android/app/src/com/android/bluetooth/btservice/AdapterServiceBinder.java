@@ -64,7 +64,6 @@ import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
@@ -1858,7 +1857,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int setActiveAudioDevicePolicy(
-            BluetoothDevice device, int activeAudioDevicePolicy, AttributionSource source) {
+            BluetoothDevice device, int policy, AttributionSource source) {
         requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
@@ -1873,8 +1872,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager()
-                .setActiveAudioDevicePolicy(device, activeAudioDevicePolicy);
+        return service.getDatabaseManager().setActiveAudioDevicePolicy(device, policy);
     }
 
     @Override
