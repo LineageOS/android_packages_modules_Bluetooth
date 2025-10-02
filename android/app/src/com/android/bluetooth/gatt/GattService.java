@@ -262,9 +262,7 @@ public class GattService extends ProfileService {
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_low_max_subrate.config",
                             SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT),
-                    SystemProperties.getInt(
-                            "bluetooth.ble.client.subrate_mode_low_latency.config",
-                            SUBRATE_LOW_MODE_LATENCY_DEFAULT),
+                    SUBRATE_LOW_MODE_LATENCY_DEFAULT,
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_low_cont_number.config",
                             SUBRATE_LOW_MODE_CONT_NUM_DEFAULT),
@@ -277,9 +275,7 @@ public class GattService extends ProfileService {
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_balanced_max_subrate.config",
                             SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT),
-                    SystemProperties.getInt(
-                            "bluetooth.ble.client.subrate_mode_balanced_latency.config",
-                            SUBRATE_BALANCED_MODE_LATENCY_DEFAULT),
+                    SUBRATE_BALANCED_MODE_LATENCY_DEFAULT,
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_balanced_cont_number.config",
                             SUBRATE_BALANCED_MODE_CONT_NUM_DEFAULT),
@@ -292,9 +288,7 @@ public class GattService extends ProfileService {
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_high_max_subrate.config",
                             SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT),
-                    SystemProperties.getInt(
-                            "bluetooth.ble.client.subrate_mode_high_latency.config",
-                            SUBRATE_HIGH_MODE_LATENCY_DEFAULT),
+                    SUBRATE_HIGH_MODE_LATENCY_DEFAULT,
                     SystemProperties.getInt(
                             "bluetooth.ble.client.subrate_mode_high_cont_number.config",
                             SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT),
