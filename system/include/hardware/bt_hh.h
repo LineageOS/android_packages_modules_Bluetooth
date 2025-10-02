@@ -139,7 +139,8 @@ typedef struct {
  */
 typedef void (*bthh_connection_state_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
                                                tBT_TRANSPORT transport,
-                                               bthh_connection_state_t state);
+                                               bthh_connection_state_t state,
+                                               bthh_status_t hh_status);
 
 /** Callback for vitual unplug api.
  *  the status of the vitual unplug

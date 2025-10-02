@@ -107,10 +107,11 @@ public class HidHostNativeInterface {
     /*********************************** callbacks from native ************************************/
     /**********************************************************************************************/
 
-    private void onConnectStateChanged(byte[] address, int addressType, int transport, int state) {
+    private void onConnectStateChanged(
+            byte[] address, int addressType, int transport, int state, int status) {
         Log.d(TAG, "onConnectStateChanged: state=" + state);
         mHidHostService.onConnectStateChanged(
-                address, addressType, transport, convertHalState(state));
+                address, addressType, transport, convertHalState(state), status);
     }
 
     private void onGetProtocolMode(byte[] address, int addressType, int transport, int mode) {

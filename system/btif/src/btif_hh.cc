@@ -146,11 +146,12 @@ static tHID_KB_LIST hid_kb_numlock_on_list[] = {
 #define BTHH_LOG_UNKNOWN_LINK(_link_spec) log::error("Unknown link: {}", (_link_spec))
 #define BTHH_LOG_LINK(_link_spec) log::verbose("link spec: {}", (_link_spec))
 
-#define BTHH_STATE_UPDATE(_link_spec, _state)                                                  \
-  do {                                                                                         \
-    log::verbose("link spec: {} state: {}", (_link_spec), bthh_connection_state_text(_state)); \
-    HAL_CBACK(bt_hh_callbacks, connection_state_cb, &(_link_spec).addrt.bda,                   \
-              (_link_spec).addrt.type, (_link_spec).transport, (_state));                      \
+#define BTHH_STATE_UPDATE(_link_spec, _state, _reason)                               \
+  do {                                                                               \
+    log::verbose("link spec: {} state: {} reason: {}", (_link_spec),                 \
+                 bthh_connection_state_text(_state), (_reason));                     \
+    HAL_CBACK(bt_hh_callbacks, connection_state_cb, &(_link_spec).addrt.bda,         \
+              (_link_spec).addrt.type, (_link_spec).transport, (_state), (_reason)); \
   } while (0)
 
 /*******************************************************************************
@@ -510,7 +511,7 @@ static void hh_connect_complete(tBTA_HH_CONN& conn, bthh_connection_state_t stat
       p_dev->dev_status = state;
     }
   }
-  BTHH_STATE_UPDATE(conn.link_spec, state);
+  BTHH_STATE_UPDATE(conn.link_spec, state, conn.status);
 }
 
 /*******************************************************************************
@@ -809,7 +810,7 @@ static void hh_close_handler(tBTA_HH_CBDATA& dev_status) {
   }
 
   log::verbose("device {} status {}", p_dev->link_spec, dev_status.status);
-  BTHH_STATE_UPDATE(p_dev->link_spec, BTHH_CONN_STATE_DISCONNECTING);
+  BTHH_STATE_UPDATE(p_dev->link_spec, BTHH_CONN_STATE_DISCONNECTING, dev_status.status);
   btif_hh_stop_vup_timer(p_dev->link_spec);
 
   /* Remove device if locally initiated VUP */
@@ -830,7 +831,7 @@ static void hh_close_handler(tBTA_HH_CBDATA& dev_status) {
     p_dev->dev_status = hh_get_state_on_disconnect(p_dev->link_spec);
   }
   bta_hh_co_close(p_dev);
-  BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status);
+  BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status, dev_status.status);
 }
 
 static void hh_get_rpt_handler(tBTA_HH_HSDATA& hs_data) {
@@ -1008,7 +1009,7 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
   if (!com_android_bluetooth_flags_simpler_hid_connection_policy()) {
     p_dev->dev_status = hh_get_state_on_disconnect(p_dev->link_spec);
   }
-  BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status);
+  BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status, dev_status.status);
 
   if (!p_dev->local_vup) {
     bluetooth::metrics::Counter(
@@ -1045,7 +1046,7 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MAS
 
   if (hh_add_device(link_spec, attr_mask, reconnect_allowed)) {
     if (reconnect_allowed) {
-      BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_ACCEPTING);
+      BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_ACCEPTING, BTHH_OK);
     }
     BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
   }
@@ -1130,9 +1131,9 @@ void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
   while ((p_dev = btif_hh_find_dev_by_link_spec(link_spec)) != nullptr) {
     announce_vup = true;
     // Notify service of disconnection to avoid state mismatch
-    do_in_jni_thread(
-            base::Bind([](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED); },
-                       p_dev->link_spec));
+    do_in_jni_thread(base::Bind(
+            [](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK); },
+            p_dev->link_spec));
 
     if (btif_hh_cb.device_num > 0) {
       btif_hh_cb.device_num--;
@@ -1179,10 +1180,13 @@ static void btif_hh_remove_pending_connection(const tAclLinkSpec& link_spec) {
     if (ls.addrt.bda == link_spec.addrt.bda) {
       // Notify service of disconnection to avoid state mismatch
       if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
-        BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED);
+        BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
       } else {
         do_in_jni_thread(base::Bind(
-                [](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED); }, ls));
+                [](tAclLinkSpec ls) {
+                  BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
+                },
+                ls));
       }
 
       return true;
@@ -1314,11 +1318,11 @@ BtStatus btif_hh_connect(const tAclLinkSpec& link_spec) {
 
   if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
     tAclLinkSpec ls = link_spec;
-    BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_CONNECTING);
+    BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
   } else {
     do_in_jni_thread(base::Bind(
             [](tAclLinkSpec link_spec) {
-              BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING);
+              BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
             },
             link_spec));
   }
@@ -1623,17 +1627,17 @@ static void btif_hh_handle_evt(uint16_t event, char* p_param) {
       if (btif_hh_connect(link_spec)) {
         if (!com_android_bluetooth_flags_hh_state_update_race_fix()) {
           // No need to update state after flag, it has been updated in btif_hh_connect.
-          BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING);
+          BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
         }
       } else {
-        BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTED);
+        BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTED, BTHH_ERR);
       }
     } break;
 
     case BTIF_HH_DISCONNECT_REQ_EVT: {
       log::debug("BTIF_HH_DISCONNECT_REQ_EVT: link spec:{}", link_spec);
       if (btif_hh_disconnect(link_spec)) {
-        BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTING);
+        BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTING, BTHH_OK);
       }
     } break;
 

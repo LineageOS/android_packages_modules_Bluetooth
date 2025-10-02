@@ -63,7 +63,8 @@ static jbyteArray marshall_bda(RawAddress* bd_addr) {
 }
 
 static void connection_state_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                                      tBT_TRANSPORT transport, bthh_connection_state_t state) {
+                                      tBT_TRANSPORT transport, bthh_connection_state_t state,
+                                      bthh_status_t hh_status) {
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) {
@@ -80,7 +81,7 @@ static void connection_state_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_t
   }
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, addr.get(),
-                               (jint)addr_type, (jint)transport, (jint)state);
+                               (jint)addr_type, (jint)transport, (jint)state, (jint)hh_status);
 }
 
 static void get_protocol_mode_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
@@ -561,7 +562,7 @@ int register_com_android_bluetooth_hid_host(JNIEnv* env) {
   }
 
   const JNIJavaMethod javaMethods[] = {
-          {"onConnectStateChanged", "([BIII)V", &method_onConnectStateChanged},
+          {"onConnectStateChanged", "([BIIII)V", &method_onConnectStateChanged},
           {"onGetProtocolMode", "([BIII)V", &method_onGetProtocolMode},
           {"onGetReport", "([BII[BI)V", &method_onGetReport},
           {"onHandshake", "([BIII)V", &method_onHandshake},

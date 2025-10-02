@@ -251,7 +251,8 @@ protected:
     BtifHhAdapterReady::SetUp();
     bthh_callbacks.connection_state_cb = [](RawAddress* bd_addr, tBLE_ADDR_TYPE /* addr_type */,
                                             tBT_TRANSPORT /* transport */,
-                                            bthh_connection_state_t state) {
+                                            bthh_connection_state_t state,
+                                            bthh_status_t /* hh_status */) {
       connection_state_cb_t connection_state = {
               .raw_address = *bd_addr,
               .state = state,
@@ -263,7 +264,8 @@ protected:
   void TearDown() override {
     bthh_callbacks.connection_state_cb =
             [](RawAddress* /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
-               tBT_TRANSPORT /* transport */, bthh_connection_state_t /* state */) {};
+               tBT_TRANSPORT /* transport */, bthh_connection_state_t /* state */,
+               bthh_status_t /* hh_status */) {};
     BtifHhAdapterReady::TearDown();
   }
 };
