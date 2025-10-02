@@ -1543,7 +1543,10 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
     // TODO (b/430166215) inline method
     private BluetoothDevice getMostRecentlyConnectedDeviceInList(List<BluetoothDevice> list) {
-        return mDatabaseManager.getMostRecentlyConnectedDevicesInList(list);
+        if (Flags.mainlineBetaStorage()) {
+            return mStorage.getMostRecentlyConnectedDeviceInList(list);
+        }
+        return mDatabaseManager.getMostRecentlyConnectedDevicesInList(list); // Migrating
     }
 
     protected void dump(PrintWriter writer) {

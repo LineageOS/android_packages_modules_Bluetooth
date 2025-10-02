@@ -2535,7 +2535,11 @@ public class HeadsetService extends ConnectableProfile {
 
     /** Retrieves the most recently connected device in the A2DP connected devices list. */
     public BluetoothDevice getFallbackDevice() {
-        return getDatabaseManager().getMostRecentlyConnectedDevicesInList(getFallbackCandidates());
+        if (Flags.mainlineBetaStorage()) {
+            return getStorage().getMostRecentlyConnectedDeviceInList(getFallbackCandidates());
+        }
+        return getDatabaseManager() // Migrating
+                .getMostRecentlyConnectedDevicesInList(getFallbackCandidates());
     }
 
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)

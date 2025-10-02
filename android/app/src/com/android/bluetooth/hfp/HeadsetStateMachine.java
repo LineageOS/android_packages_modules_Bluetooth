@@ -244,15 +244,19 @@ class HeadsetStateMachine extends StateMachine {
 
         mDeviceSilenced = false;
 
-        BluetoothSinkAudioPolicy storedAudioPolicy =
-                mDatabaseManager.getAudioPolicyMetadata(device);
-        if (storedAudioPolicy == null) {
-            Log.w(TAG, "Audio Policy not created in database! Creating...");
-            mHsClientAudioPolicy = new BluetoothSinkAudioPolicy.Builder().build();
-            mDatabaseManager.setAudioPolicyMetadata(device, mHsClientAudioPolicy);
+        if (Flags.mainlineBetaStorage()) {
+            mHsClientAudioPolicy = mStorage.getAudioPolicyMetadata(device);
         } else {
-            Log.i(TAG, "Audio Policy found in database!");
-            mHsClientAudioPolicy = storedAudioPolicy;
+            BluetoothSinkAudioPolicy storedAudioPolicy =
+                    mDatabaseManager.getAudioPolicyMetadata(device); // Migrating
+            if (storedAudioPolicy == null) {
+                Log.w(TAG, "Audio Policy not created in database! Creating...");
+                mHsClientAudioPolicy = new BluetoothSinkAudioPolicy.Builder().build();
+                mDatabaseManager.setAudioPolicyMetadata(device, mHsClientAudioPolicy); // Migrating
+            } else {
+                Log.i(TAG, "Audio Policy found in database!");
+                mHsClientAudioPolicy = storedAudioPolicy;
+            }
         }
 
         // Create phonebook helper
@@ -2427,7 +2431,11 @@ class HeadsetStateMachine extends StateMachine {
 
     private void setHfpCallAudioPolicy(BluetoothSinkAudioPolicy policies) {
         mHsClientAudioPolicy = policies;
-        mDatabaseManager.setAudioPolicyMetadata(mDevice, policies);
+        if (Flags.mainlineBetaStorage()) {
+            mStorage.setAudioPolicyMetadata(mDevice, policies);
+        } else {
+            mDatabaseManager.setAudioPolicyMetadata(mDevice, policies); // Migrating
+        }
     }
 
     /** get the audio policy of the client device */

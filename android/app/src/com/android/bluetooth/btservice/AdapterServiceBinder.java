@@ -332,7 +332,10 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        return service.getDatabaseManager().getMostRecentlyConnectedDevices();
+        if (Flags.mainlineBetaStorage()) {
+            return service.getMostRecentlyConnectedDevices();
+        }
+        return service.getDatabaseManager().getMostRecentlyConnectedDevices(); // Migrating
     }
 
     @Override
@@ -466,7 +469,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
+        Log.i(TAG, "removeBond: device=" + device + ", from " + getUidPidString());
         service.logUserBondResponse(device, false, source);
+        if (Flags.mainlineBetaStorage()) {
+            return service.syncPost(() -> service.removeBond(device), false);
+        }
         return service.removeBond(device);
     }
 
@@ -1872,7 +1879,15 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().setActiveAudioDevicePolicy(device, policy);
+
+        if (Flags.mainlineBetaStorage()) {
+            if (!Utils.arrayContains(service.getBondedDevices(), device)) {
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+            service.setActiveAudioPolicy(device, policy);
+            return BluetoothStatusCodes.SUCCESS;
+        }
+        return service.getDatabaseManager().setActiveAudioDevicePolicy(device, policy); // Migrating
     }
 
     @Override
@@ -1892,7 +1907,10 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().getActiveAudioDevicePolicy(device);
+        if (Flags.mainlineBetaStorage()) {
+            return service.getActiveAudioPolicy(device);
+        }
+        return service.getDatabaseManager().getActiveAudioDevicePolicy(device); // Migrating
     }
 
     @Override
@@ -1912,7 +1930,39 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().setMicrophonePreferredForCalls(device, enabled);
+
+        if (Flags.mainlineBetaStorage()) {
+            if (!Utils.arrayContains(service.getBondedDevices(), device)) {
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+            service.setMicrophonePreferredForCalls(device, enabled);
+            return BluetoothStatusCodes.SUCCESS;
+        }
+        return service.getDatabaseManager() // Migrating
+                .setMicrophonePreferredForCalls(device, enabled);
+    }
+
+    @Override
+    public boolean isMicrophonePreferredForCalls(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
+        AdapterService service = getService();
+        if (service == null) {
+            return true;
+        }
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "isMicrophonePreferredForCalls")) {
+            throw new IllegalStateException(
+                    "Caller is not the system or part of the active/managed user");
+        }
+        if (!checkConnectPermissionForDataDelivery(
+                service, source, TAG, "isMicrophonePreferredForCalls")) {
+            return true;
+        }
+
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        if (Flags.mainlineBetaStorage()) {
+            return service.isMicrophonePreferredForCalls(device);
+        }
+        return service.getDatabaseManager().isMicrophonePreferredForCalls(device); // Migrating
     }
 
     @Override
@@ -1973,26 +2023,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                         + " with value: "
                         + state);
         return BluetoothStatusCodes.SUCCESS;
-    }
-
-    @Override
-    public boolean isMicrophonePreferredForCalls(BluetoothDevice device, AttributionSource source) {
-        requireNonNull(device);
-        AdapterService service = getService();
-        if (service == null) {
-            return true;
-        }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "isMicrophonePreferredForCalls")) {
-            throw new IllegalStateException(
-                    "Caller is not the system or part of the active/managed user");
-        }
-        if (!checkConnectPermissionForDataDelivery(
-                service, source, TAG, "isMicrophonePreferredForCalls")) {
-            return true;
-        }
-
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().isMicrophonePreferredForCalls(device);
     }
 
     @Override
