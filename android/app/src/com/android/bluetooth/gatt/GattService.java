@@ -3031,28 +3031,4 @@ public class GattService extends ProfileService {
         Log.d(TAG, builder.toString());
         return db;
     }
-
-    /**************************************************************************
-     * GATT Test functions
-     *************************************************************************/
-    void gattTestCommand(
-            int command, UUID uuid1, String bda1, int p1, int p2, int p3, int p4, int p5) {
-        if (bda1 == null) {
-            bda1 = "00:00:00:00:00:00";
-        }
-        if (uuid1 != null) {
-            mNativeInterface.gattTest(
-                    command,
-                    uuid1.getLeastSignificantBits(),
-                    uuid1.getMostSignificantBits(),
-                    bda1,
-                    p1,
-                    p2,
-                    p3,
-                    p4,
-                    p5);
-        } else {
-            mNativeInterface.gattTest(command, 0, 0, bda1, p1, p2, p3, p4, p5);
-        }
-    }
 }

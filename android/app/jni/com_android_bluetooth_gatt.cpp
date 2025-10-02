@@ -1969,28 +1969,6 @@ static void gattServerUnoffloadCharacteristicsNative(JNIEnv* /* env */, jobject 
   sGattIf->server->unoffload_characteristics(conn_id, session_id);
 }
 
-static void gattTestNative(JNIEnv* env, jobject /* object */, jint command, jlong uuid1_lsb,
-                           jlong uuid1_msb, jstring bda1, jint p1, jint p2, jint p3, jint p4,
-                           jint p5) {
-  if (!sGattIf) {
-    return;
-  }
-
-  RawAddress bt_bda1 = str2addr(env, bda1);
-
-  Uuid uuid1 = from_java_uuid(uuid1_msb, uuid1_lsb);
-
-  btgatt_test_params_t params;
-  params.bda1 = &bt_bda1;
-  params.uuid1 = &uuid1;
-  params.u1 = p1;
-  params.u2 = p2;
-  params.u3 = p3;
-  params.u4 = p4;
-  params.u5 = p5;
-  sGattIf->client->test_command(command, params);
-}
-
 static void distanceMeasurementInitializeNative(JNIEnv* env, jobject object) {
   std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
   if (mDistanceMeasurementCallbacksObj != NULL) {
@@ -2169,7 +2147,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
            (void*)gattClientUnoffloadCharacteristicsNative},
           {"gattServerUnoffloadCharacteristicsNative", "(II)V",
            (void*)gattServerUnoffloadCharacteristicsNative},
-          {"gattTestNative", "(IJJLjava/lang/String;IIIII)V", (void*)gattTestNative},
   };
   const int result =
           REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/gatt/GattNativeInterface", methods);

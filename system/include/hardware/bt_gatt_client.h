@@ -282,9 +282,6 @@ typedef struct {
   bt_status_t (*read_phy)(const RawAddress& bd_addr,
                           base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
 
-  /** Test mode interface */
-  bt_status_t (*test_command)(int command, const btgatt_test_params_t& params);
-
   /** Request a BLE subrate request procedure */
   bt_status_t (*subrate_request)(const RawAddress& bd_addr, int subrate_min, int subrate_max,
                                  int max_latency, int cont_num, int timeout);
