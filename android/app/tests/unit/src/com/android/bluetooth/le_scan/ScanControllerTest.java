@@ -192,10 +192,10 @@ public class ScanControllerTest {
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClient.setHasNetworkSettingsPermission(true);
         AppScanStats appScanStats = mock(AppScanStats.class);
-        mApp.mAppScanStats = appScanStats;
+        doReturn(appScanStats).when(mApp).getAppScanStats();
         scanClient.setAppScanStats(Optional.of(appScanStats));
-        IScannerCallback callback = mock(IScannerCallback.class);
-        mApp.mCallback = callback;
+        var callback = mock(IScannerCallback.class);
+        doReturn(callback).when(mApp).getCallback();
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
         doReturn(TEST_ADDRESS).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
@@ -227,15 +227,15 @@ public class ScanControllerTest {
         long uuidLsb = 12345L;
         long uuidMsb = 67890L;
         UUID uuid = new UUID(uuidMsb, uuidLsb);
-        IScannerCallback callback = mock(IScannerCallback.class);
-        mApp.mCallback = callback;
+        var callback = mock(IScannerCallback.class);
+        doReturn(callback).when(mApp).getCallback();
         doReturn(mApp).when(mScannerMap).getByUuid(uuid);
 
         mScanController.onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID, uuidLsb, uuidMsb);
 
         verify(mApp).linkToDeath(any());
         verify(callback).onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID);
-        assertThat(mApp.mId).isEqualTo(TEST_SCANNER_ID);
+        verify(mApp).setId(TEST_SCANNER_ID);
     }
 
     @Test
@@ -301,9 +301,9 @@ public class ScanControllerTest {
             doReturn(scanClientSet).when(mScanManager).getFullBatchScanQueue();
         }
         doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
-        mApp.mAppScanStats = mock(AppScanStats.class);
-        IScannerCallback callback = mock(IScannerCallback.class);
-        mApp.mCallback = callback;
+        doReturn(mock(AppScanStats.class)).when(mApp).getAppScanStats();
+        var callback = mock(IScannerCallback.class);
+        doReturn(callback).when(mApp).getCallback();
 
         mScanController.onBatchScanReportsInternal(
                 TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
@@ -398,9 +398,8 @@ public class ScanControllerTest {
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
 
         ScannerApp app = mock(ScannerApp.class);
-        IScannerCallback callback = mock(IScannerCallback.class);
-        app.mCallback = callback;
-
+        var callback = mock(IScannerCallback.class);
+        doReturn(callback).when(app).getCallback();
         doReturn(app).when(mScannerMap).getById(TEST_SCANNER_ID);
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
 
@@ -430,7 +429,7 @@ public class ScanControllerTest {
 
     @Test
     public void registerScanner() {
-        IScannerCallback callback = mock(IScannerCallback.class);
+        var callback = mock(IScannerCallback.class);
         WorkSource workSource = mock(WorkSource.class);
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsByUid(Binder.getCallingUid());
@@ -462,8 +461,7 @@ public class ScanControllerTest {
         ScanController.PendingIntentInfo pii =
                 new ScanController.PendingIntentInfo(
                         null, new ScanSettings.Builder().build(), null, null, 0);
-        mApp.mInfo = pii;
-
+        doReturn(pii).when(mApp).getInfo();
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
 
@@ -479,8 +477,7 @@ public class ScanControllerTest {
         ScanController.PendingIntentInfo pii =
                 new ScanController.PendingIntentInfo(
                         null, new ScanSettings.Builder().build(), null, null, 123);
-        mApp.mInfo = pii;
-
+        doReturn(pii).when(mApp).getInfo();
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
 

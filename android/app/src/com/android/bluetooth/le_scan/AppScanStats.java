@@ -599,7 +599,7 @@ public class AppScanStats {
         return scan == null ? "" : scan.getAttributionTag();
     }
 
-    synchronized void dump(StringBuilder sb, List<ScannerApp> scannerApps) {
+    synchronized void dump(StringBuilder sb, List<ScannerApp> apps) {
         final long currentTimeMillis = System.currentTimeMillis();
         final long elapsedRealtimeMillis = mTimeProvider.elapsedRealtime();
         final int oppScan = mOppScan;
@@ -651,11 +651,11 @@ public class AppScanStats {
         else sb.append(":");
 
         if (mIsRegistered) {
-            for (ScannerApp scannerApp : scannerApps) {
-                sb.append("\n    Application ID: ").append(scannerApp.mId);
-                sb.append(", UUID: ").append(scannerApp.mUuid);
-                if (scannerApp.mAttributionTag != null) {
-                    sb.append(", Tag: ").append(scannerApp.mAttributionTag);
+            for (ScannerApp app : apps) {
+                sb.append("\n    Application ID: ").append(app.getId());
+                sb.append(", UUID: ").append(app.getUuid());
+                if (app.getAttributionTag() != null) {
+                    sb.append(", Tag: ").append(app.getAttributionTag());
                 }
             }
         }

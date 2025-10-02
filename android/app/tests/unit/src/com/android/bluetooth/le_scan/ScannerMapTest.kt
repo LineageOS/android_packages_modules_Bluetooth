@@ -72,12 +72,12 @@ class ScannerMapTest {
                 adapterService,
                 scanController,
             )
-        app.mId = SCANNER_ID
+        app.id = SCANNER_ID
 
-        assertThat(scannerMap.getById(SCANNER_ID).mName).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByUuid(uuid).mName).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByName(APP_NAME).first().mName).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByPendingIntentInfo(intent).mName).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getById(SCANNER_ID).name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getByUuid(uuid).name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getByName(APP_NAME).first().name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getByPendingIntentInfo(intent).name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull()
         assertThat(scannerMap.getAppScanStatsByUid(UID)).isNotNull()
     }
@@ -98,13 +98,13 @@ class ScannerMapTest {
                 adapterService,
                 scanController,
             )
-        app.mId = SCANNER_ID
+        app.id = SCANNER_ID
 
         val scannerMapById = scannerMap.getById(SCANNER_ID)
-        assertThat(scannerMapById.mName).isEqualTo(APP_NAME)
-        assertThat(scannerMapById.mCallback).isEqualTo(scannerCallback)
-        assertThat(scannerMap.getByUuid(uuid).mName).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByName(APP_NAME).first().mName).isEqualTo(APP_NAME)
+        assertThat(scannerMapById.name).isEqualTo(APP_NAME)
+        assertThat(scannerMapById.callback).isEqualTo(scannerCallback)
+        assertThat(scannerMap.getByUuid(uuid).name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getByName(APP_NAME).first().name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull()
         assertThat(scannerMap.getAppScanStatsByUid(appUid)).isNotNull()
     }
@@ -125,9 +125,9 @@ class ScannerMapTest {
                 adapterService,
                 scanController,
             )
-        app.mId = SCANNER_ID
+        app.id = SCANNER_ID
 
-        assertThat(scannerMap.getById(SCANNER_ID).mName).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getById(SCANNER_ID).name).isEqualTo(APP_NAME)
 
         scannerMap.remove(SCANNER_ID)
         assertThat(scannerMap.getById(SCANNER_ID)).isNull()

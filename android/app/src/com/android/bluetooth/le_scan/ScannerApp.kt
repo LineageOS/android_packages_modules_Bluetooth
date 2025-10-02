@@ -25,31 +25,31 @@ import java.util.UUID
 private const val TAG = "ScannerApp"
 
 class ScannerApp(
-    @JvmField val mUuid: UUID,
-    @JvmField val mUserHandle: UserHandle?, // User handle of the scanning app
-    @JvmField val mAttributionTag: String?, // Final attribution tag in chain
-    @JvmField var mCallback: IScannerCallback?,
-    @JvmField var mInfo: ScanController.PendingIntentInfo?, // Context information
-    @JvmField val mName: String, // App package name
-    @JvmField var mAppScanStats: AppScanStats,
+    val uuid: UUID,
+    val userHandle: UserHandle?, // User handle of the scanning app
+    val attributionTag: String?, // Final attribution tag in chain
+    val callback: IScannerCallback?,
+    val info: ScanController.PendingIntentInfo?, // Context information
+    val name: String, // App package name
+    val appScanStats: AppScanStats,
 ) {
-    @JvmField var mId: Int = 0
-    @JvmField var mHasLocationPermission = false
-    @JvmField var mHasNetworkSettingsPermission = false
-    @JvmField var mHasNetworkSetupWizardPermission = false
-    @JvmField var mHasScanWithoutLocationPermission = false
-    @JvmField var mHasDisavowedLocation = false
-    @JvmField var mEligibleForSanitizedExposureNotification = false
-    @JvmField var mAssociatedDevices: MutableList<String>? = null
-    private var mDeathRecipient: ScanController.ScannerDeathRecipient? = null
+    var id = 0
+    var hasLocationPermission = false
+    var hasNetworkSettingsPermission = false
+    var hasNetworkSetupWizardPermission = false
+    var hasScanWithoutLocationPermission = false
+    var hasDisavowedLocation = false
+    var eligibleForSanitizedExposureNotification = false
+    var associatedDevices: MutableList<String>? = null
+    private var deathRecipient: ScanController.ScannerDeathRecipient? = null
 
-    fun linkToDeath(deathRecipient: ScanController.ScannerDeathRecipient) {
-        mCallback?.let { callback ->
+    fun linkToDeath(recipient: ScanController.ScannerDeathRecipient) {
+        callback?.let { cb ->
             try {
-                callback.asBinder().linkToDeath(deathRecipient, 0)
-                mDeathRecipient = deathRecipient
+                cb.asBinder().linkToDeath(recipient, 0)
+                deathRecipient = recipient
             } catch (_: RemoteException) {
-                Log.e(TAG, "Unable to link deathRecipient for app id=$mId")
+                Log.e(TAG, "Unable to link deathRecipient for app id=$id")
                 cleanup()
             }
         }
@@ -57,15 +57,15 @@ class ScannerApp(
 
     /** Unlink death recipient */
     fun cleanup() {
-        mDeathRecipient?.let { deathRecipient ->
-            mCallback?.let { callback ->
+        deathRecipient?.let { recipient ->
+            callback?.let { cb ->
                 try {
-                    callback.asBinder().unlinkToDeath(deathRecipient, 0)
+                    cb.asBinder().unlinkToDeath(recipient, 0)
                 } catch (_: NoSuchElementException) {
-                    Log.e(TAG, "Unable to unlink deathRecipient for app id=$mId")
+                    Log.e(TAG, "Unable to unlink deathRecipient for app id=$id")
                 }
             }
         }
-        mAppScanStats.mIsRegistered = false
+        appScanStats.mIsRegistered = false
     }
 }

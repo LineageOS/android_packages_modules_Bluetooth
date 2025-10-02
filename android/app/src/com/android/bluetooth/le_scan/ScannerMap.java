@@ -128,20 +128,20 @@ class ScannerMap {
 
     /** Remove the context for a given application ID. */
     void remove(int id) {
-        removeByPredicate(app -> app.mId == id);
+        removeByPredicate(app -> app.getId() == id);
     }
 
     /** Remove the context for a given UUID */
     void remove(UUID uuid) {
         Log.d(TAG, "remove() - uuid: " + uuid);
-        removeByPredicate(app -> app.mUuid.equals(uuid));
+        removeByPredicate(app -> app.getUuid().equals(uuid));
     }
 
     private void removeByPredicate(Predicate<ScannerApp> predicate) {
         for (var iterator = mApps.iterator(); iterator.hasNext(); ) {
-            var scannerApp = iterator.next();
-            if (predicate.test(scannerApp)) {
-                scannerApp.cleanup();
+            var app = iterator.next();
+            if (predicate.test(app)) {
+                app.cleanup();
                 iterator.remove();
                 break;
             }
@@ -163,16 +163,16 @@ class ScannerMap {
 
     /** Get Logging info by ID */
     AppScanStats getAppScanStatsById(int id) {
-        ScannerApp temp = (ScannerApp) getById(id);
+        ScannerApp temp = getById(id);
         if (temp != null) {
-            return temp.mAppScanStats;
+            return temp.getAppScanStats();
         }
         return null;
     }
 
     /** Get an application context by ID. */
     ScannerApp getById(int id) {
-        ScannerApp app = getAppByPredicate(entry -> entry.mId == id);
+        ScannerApp app = getAppByPredicate(entry -> entry.getId() == id);
         if (app == null) {
             Log.e(TAG, "Context not found for ID " + id);
         }
@@ -181,7 +181,7 @@ class ScannerMap {
 
     /** Get an application context by UUID. */
     ScannerApp getByUuid(UUID uuid) {
-        ScannerApp app = getAppByPredicate(entry -> entry.mUuid.equals(uuid));
+        ScannerApp app = getAppByPredicate(entry -> entry.getUuid().equals(uuid));
         if (app == null) {
             Log.e(TAG, "Context not found for UUID " + uuid);
         }
@@ -190,14 +190,13 @@ class ScannerMap {
 
     /** Get application contexts by the calling app's name. */
     List<ScannerApp> getByName(String name) {
-        return mApps.stream().filter(app -> app.mName.equals(name)).toList();
+        return mApps.stream().filter(app -> app.getName().equals(name)).toList();
     }
 
     /** Get an application context by the pending intent info object's intent. */
     ScannerApp getByPendingIntentInfo(PendingIntent intent) {
         ScannerApp app =
-                getAppByPredicate(
-                        entry -> entry.mInfo != null && entry.mInfo.intent().equals(intent));
+                getAppByPredicate(e -> e.getInfo() != null && e.getInfo().intent().equals(intent));
         if (app == null) {
             Log.e(TAG, "Context not found for intent " + intent);
         }
@@ -219,13 +218,16 @@ class ScannerMap {
         sb.append("LE Scanner:\n");
         for (ScannerApp entry : mApps) {
             StringBuilder line = new StringBuilder();
-            line.append("  app_if: ").append(entry.mId).append(", appName: ").append(entry.mName);
+            line.append("  app_if: ")
+                    .append(entry.getId())
+                    .append(", appName: ")
+                    .append(entry.getName());
 
-            if (entry.mAttributionTag != null) {
-                line.append(", tag: ").append(entry.mAttributionTag);
+            if (entry.getAttributionTag() != null) {
+                line.append(", tag: ").append(entry.getAttributionTag());
             }
 
-            final var settings = settingsMap.get(entry.mId);
+            final var settings = settingsMap.get(entry.getId());
             if (settings != null) {
                 long reportDelayMillis = settings.getReportDelayMillis();
                 if (reportDelayMillis > 0) {
@@ -238,8 +240,7 @@ class ScannerMap {
         sb.append("\nLE Scanner Map:\n");
         sb.append("  Entries: ").append(mAppScanStatsMap.size()).append("\n\n");
         for (AppScanStats appScanStats : mAppScanStatsMap.values()) {
-            var scannerApps = getByName(appScanStats.mAppName);
-            appScanStats.dump(sb, scannerApps);
+            appScanStats.dump(sb, getByName(appScanStats.mAppName));
         }
     }
 }
