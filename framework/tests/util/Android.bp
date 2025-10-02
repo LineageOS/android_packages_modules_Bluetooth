@@ -22,7 +22,6 @@ java_library {
     static_libs: [
         "PlatformProperties",
         "androidx.test.ext.truth",
-        "bluetooth_flags_java_lib",
         "compatibility-device-util-axt-minus-dexmaker",
         "junit",
         "libprotobuf-java-lite",
@@ -38,7 +37,6 @@ java_library {
         "//cts/tests/tests/car",
         "//packages/modules/Bluetooth/framework/tests/bumble",
 
-        // TODO: b/339938196 -- remove export for other modules and test
         "//cts/hostsidetests/statsdatom/apps/statsdapp",
         "//cts/tests/tests/appop",
         "//packages/modules/Connectivity/nearby/tests/cts/fastpair",

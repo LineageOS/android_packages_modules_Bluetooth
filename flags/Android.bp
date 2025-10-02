@@ -61,7 +61,13 @@ aconfig_declarations {
 java_aconfig_library {
     name: "bluetooth_flags_java_lib",
     aconfig_declarations: "bluetooth_aconfig_flags",
-    visibility: ["//packages/modules/Bluetooth:__subpackages__"],
+    visibility: [
+        "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/android/app/tests/unit",
+        "//packages/modules/Bluetooth/framework",
+        "//packages/modules/Bluetooth/framework/tests/bumble",
+        "//packages/modules/Bluetooth/service",
+    ],
     apex_available: ["com.android.bt"],
     libs: ["framework-configinfrastructure.stubs.module_lib"],
     sdk_version: "module_current",
@@ -78,6 +84,7 @@ java_aconfig_library {
         "//cts/tests/tests/bluetooth:__subpackages__",
         "//frameworks/base",
         "//frameworks/base/packages/SettingsLib",
+        "//packages/modules/Bluetooth:__subpackages__",
     ],
 }
 
