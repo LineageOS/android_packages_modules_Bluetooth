@@ -76,7 +76,6 @@ import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseBooleanArray;
@@ -449,6 +448,9 @@ class ScanManager {
 
     // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
     void callbackDone(int scannerId, int status) {
+        if (Flags.scanControllerThread()) {
+            return;
+        }
         Log.d(TAG, "callbackDone for scannerId=" + scannerId + ", status=" + status);
         if (status == 0) {
             mNativeCallback.callbackDone();

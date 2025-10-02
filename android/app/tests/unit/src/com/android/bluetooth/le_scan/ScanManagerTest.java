@@ -34,7 +34,6 @@ import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
 
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
@@ -227,6 +226,7 @@ public class ScanManagerTest {
         // Needed to mock Native call/callback when hw offload scan filter is enabled
         doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
+        // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
         // Mock JNI callback in ScanNativeCallback
         doReturn(true).when(mScanNativeCallback).waitForCallback(anyInt());
 
