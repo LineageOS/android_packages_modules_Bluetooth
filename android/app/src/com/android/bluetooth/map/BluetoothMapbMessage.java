@@ -15,13 +15,9 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -34,7 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 10
 public abstract class BluetoothMapbMessage {
     static final String TAG = BluetoothMapbMessage.class.getSimpleName();
 
@@ -379,11 +374,6 @@ public abstract class BluetoothMapbMessage {
                     output.write(readByte);
                 }
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        0);
                 Log.w(TAG, e);
                 return null;
             }
@@ -473,11 +463,6 @@ public abstract class BluetoothMapbMessage {
                     offset += bytesRead;
                 }
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        2);
                 Log.w(TAG, e);
                 return null;
             }
@@ -612,11 +597,6 @@ public abstract class BluetoothMapbMessage {
         try {
             bMsgStream.close();
         } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    7);
             /* Ignore if we cannot close the stream. */
         }
 
@@ -657,12 +637,6 @@ public abstract class BluetoothMapbMessage {
                     try {
                         Long unusedId = Long.parseLong(arg[1].trim());
                     } catch (NumberFormatException e) {
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.MAP,
-                                BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                                8);
                         throw new IllegalArgumentException("Wrong value in 'PARTID': " + arg[1]);
                     }
                 } else {
@@ -1001,11 +975,6 @@ public abstract class BluetoothMapbMessage {
             Log.v(TAG, stream.toString(StandardCharsets.UTF_8));
             return stream.toByteArray();
         } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    9);
             Log.w(TAG, e);
             return null;
         }

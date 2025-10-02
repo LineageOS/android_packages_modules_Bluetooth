@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
@@ -28,9 +26,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.vcard.VCardBuilder;
 import com.android.vcard.VCardConfig;
@@ -43,7 +39,6 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /** VCard composer especially for Call Log used in Bluetooth. */
-// Next tag value for ContentProfileErrorReportUtils.report(): 3
 public class BluetoothPbapCallLogComposer implements AutoCloseable {
     private static final String TAG = BluetoothPbapCallLogComposer.class.getSimpleName();
 
@@ -132,11 +127,6 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        0);
                 Log.e(TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
             } finally {
                 mErrorReason = FAILURE_REASON_NO_ENTRY;
@@ -249,12 +239,6 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
                     case Calls.MISSED_TYPE -> VCARD_PROPERTY_CALLTYPE_MISSED;
                     default -> {
                         Log.w(TAG, "Call log type not correct.");
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
-                                BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                                1);
                         yield null;
                     }
                 };
@@ -276,12 +260,6 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        2);
-
                 Log.e(TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
             }
             mCursor = null;

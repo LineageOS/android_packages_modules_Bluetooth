@@ -18,8 +18,6 @@ package com.android.bluetooth.map;
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
@@ -29,11 +27,9 @@ import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothObexTransport;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapContentObserver.Msg;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.obex.ServerSession;
@@ -44,7 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 4
 public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private static final String TAG = BluetoothMapMasInstance.class.getSimpleName();
 
@@ -265,11 +260,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
             if (mServerSockets == null) {
                 // TODO: Handle - was not handled before
                 error("Failed to start the listeners");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_MAS_INSTANCE,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        0);
                 return;
             }
             removeSdpRecord();
@@ -474,11 +464,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
             try {
                 mConnSocket.close();
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_MAS_INSTANCE,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        1);
                 error("Close Connection Socket error: ", e);
             } finally {
                 mConnSocket = null;
@@ -531,18 +516,8 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
         mServerSockets = null; // Will cause a new to be created when calling start.
         if (mShutdown) {
             error("Failed to accept incoming connection - shutdown");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_MAS_INSTANCE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    2);
         } else {
             error("Failed to accept incoming connection - restarting");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_MAS_INSTANCE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    3);
             startSocketListeners();
         }
     }

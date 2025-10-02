@@ -19,8 +19,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.SdpMnsRecord;
 import android.os.Handler;
@@ -32,9 +30,7 @@ import android.util.Log;
 import android.util.SparseBooleanArray;
 
 import com.android.bluetooth.BluetoothObexTransport;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.obex.ClientOperation;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
@@ -49,7 +45,6 @@ import java.io.OutputStream;
  * long operations on the MAP service Thread. This handler context is passed to the content
  * observers, hence all call-backs (and thereby transmission of data) is executed from this thread.
  */
-// Next tag value for ContentProfileErrorReportUtils.report(): 16
 public class BluetoothMnsObexClient {
     private static final String TAG = BluetoothMnsObexClient.class.getSimpleName();
 
@@ -174,11 +169,6 @@ public class BluetoothMnsObexClient {
                 Log.d(TAG, "OBEX session disconnected");
             }
         } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    0);
             Log.w(TAG, "OBEX session disconnect error " + e.getMessage());
         }
         try {
@@ -189,11 +179,6 @@ public class BluetoothMnsObexClient {
                 Log.d(TAG, "OBEX session closed");
             }
         } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    1);
             Log.w(TAG, "OBEX session close error:" + e.getMessage());
         }
         if (mTransport != null) {
@@ -204,11 +189,6 @@ public class BluetoothMnsObexClient {
                 mConnected = false;
                 Log.d(TAG, "Obex Transport Closed");
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        2);
                 Log.e(TAG, "mTransport.close error: " + e.getMessage());
             }
         }
@@ -284,11 +264,6 @@ public class BluetoothMnsObexClient {
         Log.v(TAG, "setMNSRecord");
         if (isValidMnsRecord()) {
             Log.w(TAG, "MNS Record already available. Still update.");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    3);
         }
         mMnsRecord = mnsRecord;
         if (mMnsLstRegRqst != null) {
@@ -334,11 +309,6 @@ public class BluetoothMnsObexClient {
             } else {
                 // This should not happen...
                 Log.e(TAG, "Invalid SDP content - attempt a connect to UUID...");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        4);
                 // TODO: Why insecure? - is it because the link is already encrypted?
                 btSocket =
                         mDevice.createInsecureRfcommSocketToServiceRecord(
@@ -346,11 +316,6 @@ public class BluetoothMnsObexClient {
             }
             btSocket.connect();
         } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    5);
             Log.e(TAG, "BtSocket Connect error " + e.getMessage(), e);
             // TODO: do we need to report error somewhere?
             mConnected = false;
@@ -362,11 +327,6 @@ public class BluetoothMnsObexClient {
         try {
             mClientSession = new ClientSession(mTransport);
         } catch (IOException e1) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    6);
             Log.e(TAG, "OBEX session create error " + e1.getMessage());
             mConnected = false;
         }
@@ -399,11 +359,6 @@ public class BluetoothMnsObexClient {
                 Log.d(TAG, "OBEX session created");
                 connected = true;
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        7);
                 Log.e(TAG, "OBEX session connect error " + e.getMessage());
             }
             mConnected = connected;
@@ -445,11 +400,6 @@ public class BluetoothMnsObexClient {
 
         if ((!mConnected) || (clientSession == null)) {
             Log.w(TAG, "sendEvent after disconnect:" + mConnected);
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    8);
             return responseCode;
         }
 
@@ -469,11 +419,6 @@ public class BluetoothMnsObexClient {
                 System.arraycopy(mHsConnect.mConnectionID, 0, request.mConnectionID, 0, 4);
             } else {
                 Log.w(TAG, "sendEvent: no connection ID");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                        9);
             }
 
             // Send the header first and then the body
@@ -483,11 +428,6 @@ public class BluetoothMnsObexClient {
                 // TODO - Should this be kept or Removed
 
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        10);
                 Log.e(TAG, "Error when put HeaderSet " + e.getMessage());
                 error = true;
             }
@@ -496,12 +436,6 @@ public class BluetoothMnsObexClient {
                     Log.v(TAG, "Send headerset Event ");
                     outputStream = putOperation.openOutputStream();
                 } catch (IOException e) {
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.MAP,
-                            BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                            11);
                     Log.e(TAG, "Error when opening OutputStream " + e.getMessage());
                     error = true;
                 }
@@ -526,19 +460,9 @@ public class BluetoothMnsObexClient {
                 }
             }
         } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    12);
             Log.e(TAG, "Error when sending event", e);
             error = true;
         } catch (IndexOutOfBoundsException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    13);
             Log.e(TAG, "Error when sending event", e);
             error = true;
         } finally {
@@ -547,11 +471,6 @@ public class BluetoothMnsObexClient {
                     outputStream.close();
                 }
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        14);
                 Log.e(TAG, "Error when closing stream after send " + e.getMessage());
             }
             try {
@@ -568,11 +487,6 @@ public class BluetoothMnsObexClient {
                     putOperation.close();
                 }
             } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MNS_OBEX_CLIENT,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        15);
                 Log.e(TAG, "Error when closing stream after send " + e.getMessage());
             }
         }

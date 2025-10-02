@@ -15,14 +15,10 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -38,7 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothMapConvoListingElement
         implements Comparable<BluetoothMapConvoListingElement> {
     private static final String TAG = BluetoothMapConvoListingElement.class.getSimpleName();
@@ -92,11 +87,6 @@ public class BluetoothMapConvoListingElement
         try {
             this.mVersionCounter = Long.parseLong(vcount);
         } catch (NumberFormatException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_CONVO_LISTING_ELEMENT,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    0);
             Log.w(TAG, "unable to parse XML versionCounter:" + vcount);
             mVersionCounter = -1;
         }
