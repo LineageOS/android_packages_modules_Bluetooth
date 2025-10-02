@@ -56,6 +56,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.util.Text;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -243,8 +244,7 @@ class AdapterProperties {
             return mService.getNative()
                     .setAdapterProperty(
                             AbstractionLayer.BT_PROPERTY_BDNAME,
-                            Utils.truncateStringForUtf8Storage(
-                                            name, BLUETOOTH_NAME_MAX_LENGTH_BYTES)
+                            Text.truncateUtf8String(name, BLUETOOTH_NAME_MAX_LENGTH_BYTES)
                                     .getBytes());
         }
     }
