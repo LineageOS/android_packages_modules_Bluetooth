@@ -356,17 +356,6 @@ public class GattNativeInterface {
             int contNumber,
             int supervisionTimeout);
 
-    private native void gattTestNative(
-            int command,
-            long uuid1Lsb,
-            long uuid1Msb,
-            String bda1,
-            int p1,
-            int p2,
-            int p3,
-            int p4,
-            int p5);
-
     private native GattOffloadSession.InnerParcel gattClientOffloadCharacteristicsNative(
             int connId, List<GattDbElement> characteristics, long endpointId, long hubId);
 
@@ -627,20 +616,6 @@ public class GattNativeInterface {
             int authReq) {
         gattServerSendResponseNative(
                 serverIf, connId, transId, status, handle, offset, val, authReq);
-    }
-
-    /** Send a test command */
-    void gattTest(
-            int command,
-            long uuid1Lsb,
-            long uuid1Msb,
-            String bda1,
-            int p1,
-            int p2,
-            int p3,
-            int p4,
-            int p5) {
-        gattTestNative(command, uuid1Lsb, uuid1Msb, bda1, p1, p2, p3, p4, p5);
     }
 
     /** Offload client characteristics */
