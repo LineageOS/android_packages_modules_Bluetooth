@@ -1434,6 +1434,29 @@ static void getBroadcastMetadataNative(JNIEnv* /* env */, jobject /* object */, 
   sLeAudioBroadcasterInterface->GetBroadcastMetadata(broadcast_id);
 }
 
+static void setBigChannelMapClassificationNative(JNIEnv* env, jobject /* object */, jint action,
+                                                 jbyteArray sink_addr, jint broadcast_id) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(sBroadcasterInterfaceMutex);
+  if (!sLeAudioBroadcasterInterface) {
+    log::error("sLeAudioBroadcasterInterface is null");
+    return;
+  }
+
+  jbyte* sink_addr_bytes = env->GetByteArrayElements(sink_addr, nullptr);
+  if (!sink_addr_bytes) {
+    log::error("Failed to get byte array elements for sink address");
+    jniThrowIOException(env, EINVAL);
+    return;
+  }
+
+  RawAddress* sink_addr_raw = (RawAddress*)sink_addr_bytes;
+  sLeAudioBroadcasterInterface->SetBigChannelMapClassification(action, *sink_addr_raw,
+                                                               broadcast_id);
+
+  env->ReleaseByteArrayElements(sink_addr, sink_addr_bytes, 0);
+}
+
 static int register_com_android_bluetooth_le_audio_broadcaster(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "()V", (void*)BroadcasterInitNative},
@@ -1447,6 +1470,8 @@ static int register_com_android_bluetooth_le_audio_broadcaster(JNIEnv* env) {
           {"pauseBroadcastNative", "(I)V", (void*)PauseBroadcastNative},
           {"destroyBroadcastNative", "(I)V", (void*)DestroyBroadcastNative},
           {"getBroadcastMetadataNative", "(I)V", (void*)getBroadcastMetadataNative},
+          {"setBigChannelMapClassificationNative", "(I[BI)V",
+           (void*)setBigChannelMapClassificationNative},
   };
 
   const int result = REGISTER_NATIVE_METHODS(
