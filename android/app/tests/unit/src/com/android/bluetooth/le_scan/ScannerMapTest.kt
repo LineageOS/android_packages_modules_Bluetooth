@@ -22,6 +22,7 @@ import android.content.AttributionSource
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
+import android.os.UserHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -34,6 +35,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.whenever
@@ -66,7 +68,7 @@ class ScannerMapTest {
         val app =
             scannerMap.addWithPendingIntent(
                 uuid,
-                null,
+                mock(UserHandle::class.java),
                 attributionSource,
                 info,
                 adapterService,
@@ -74,10 +76,10 @@ class ScannerMapTest {
             )
         app.id = SCANNER_ID
 
-        assertThat(scannerMap.getById(SCANNER_ID).name).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByUuid(uuid).name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getById(SCANNER_ID)?.name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getByUuid(uuid)?.name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getByName(APP_NAME).first().name).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByPendingIntentInfo(intent).name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getByPendingIntentInfo(intent)?.name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull()
         assertThat(scannerMap.getAppScanStatsByUid(UID)).isNotNull()
     }
@@ -101,9 +103,9 @@ class ScannerMapTest {
         app.id = SCANNER_ID
 
         val scannerMapById = scannerMap.getById(SCANNER_ID)
-        assertThat(scannerMapById.name).isEqualTo(APP_NAME)
-        assertThat(scannerMapById.callback).isEqualTo(scannerCallback)
-        assertThat(scannerMap.getByUuid(uuid).name).isEqualTo(APP_NAME)
+        assertThat(scannerMapById?.name).isEqualTo(APP_NAME)
+        assertThat(scannerMapById?.callback).isEqualTo(scannerCallback)
+        assertThat(scannerMap.getByUuid(uuid)?.name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getByName(APP_NAME).first().name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull()
         assertThat(scannerMap.getAppScanStatsByUid(appUid)).isNotNull()
@@ -127,7 +129,7 @@ class ScannerMapTest {
             )
         app.id = SCANNER_ID
 
-        assertThat(scannerMap.getById(SCANNER_ID).name).isEqualTo(APP_NAME)
+        assertThat(scannerMap.getById(SCANNER_ID)?.name).isEqualTo(APP_NAME)
 
         scannerMap.remove(SCANNER_ID)
         assertThat(scannerMap.getById(SCANNER_ID)).isNull()

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,233 +14,195 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
+import android.app.PendingIntent
+import android.bluetooth.le.IScannerCallback
+import android.bluetooth.le.ScanSettings
+import android.content.AttributionSource
+import android.os.UserHandle
+import android.os.WorkSource
+import android.util.Log
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.le_scan.ScanUtil.appNameOrUnknown
+import com.android.bluetooth.util.TimeProvider
+import com.android.bluetooth.util.getLastAttributionTag
+import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
 
-import android.annotation.Nullable;
-import android.app.PendingIntent;
-import android.bluetooth.le.IScannerCallback;
-import android.bluetooth.le.ScanSettings;
-import android.content.AttributionSource;
-import android.os.UserHandle;
-import android.os.WorkSource;
-import android.util.Log;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.util.TimeProvider;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Predicate;
+private const val TAG = "ScannerMap"
 
 /** List of our registered scanners. */
 class ScannerMap {
-    private static final String TAG = ScannerMap.class.getSimpleName();
 
     /** Internal map to keep track of logging information by app name */
-    private final HashMap<Integer, AppScanStats> mAppScanStatsMap = new HashMap<>();
+    private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
+    private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
-    private final ConcurrentLinkedQueue<ScannerApp> mApps = new ConcurrentLinkedQueue<>();
+    fun addWithCallback(
+        appUid: Int,
+        appName: String,
+        uuid: UUID,
+        source: AttributionSource,
+        workSource: WorkSource?,
+        callback: IScannerCallback,
+        adapterService: AdapterService,
+        scanController: ScanController,
+    ): ScannerApp =
+        add(
+            appUid = appUid,
+            appName = appName,
+            uuid = uuid,
+            userHandle = null,
+            source = source,
+            workSource = workSource,
+            callback = callback,
+            piInfo = null,
+            adapterService = adapterService,
+            scanController = scanController,
+        )
 
-    ScannerApp addWithCallback(
-            int appUid,
-            String appName,
-            UUID uuid,
-            AttributionSource source,
-            WorkSource workSource,
-            IScannerCallback callback,
-            AdapterService adapterService,
-            ScanController scanController) {
-        return add(
-                appUid,
-                appName,
-                uuid,
-                null,
-                source,
-                workSource,
-                callback,
-                null,
-                adapterService,
-                scanController);
-    }
+    fun addWithPendingIntent(
+        uuid: UUID,
+        userHandle: UserHandle,
+        source: AttributionSource,
+        piInfo: ScanController.PendingIntentInfo,
+        adapterService: AdapterService,
+        scanController: ScanController,
+    ): ScannerApp =
+        add(
+            appUid = piInfo.callingUid(),
+            appName = appNameOrUnknown(piInfo.callingPackage(), piInfo.callingUid()),
+            uuid = uuid,
+            userHandle = userHandle,
+            source = source,
+            workSource = null,
+            callback = null,
+            piInfo = piInfo,
+            adapterService = adapterService,
+            scanController = scanController,
+        )
 
-    ScannerApp addWithPendingIntent(
-            UUID uuid,
-            UserHandle userHandle,
-            AttributionSource source,
-            ScanController.PendingIntentInfo pendingIntentInfo,
-            AdapterService adapterService,
-            ScanController scanController) {
-        return add(
-                pendingIntentInfo.callingUid(),
-                ScanUtil.appNameOrUnknown(
-                        pendingIntentInfo.callingPackage(), pendingIntentInfo.callingUid()),
+    private fun add(
+        appUid: Int,
+        appName: String,
+        uuid: UUID,
+        userHandle: UserHandle?,
+        source: AttributionSource,
+        workSource: WorkSource?,
+        callback: IScannerCallback?,
+        piInfo: ScanController.PendingIntentInfo?,
+        adapterService: AdapterService,
+        scanController: ScanController,
+    ): ScannerApp {
+        val appScanStats =
+            appScanStatsMap.getOrPut(appUid) {
+                AppScanStats(
+                    appName,
+                    workSource,
+                    appUid,
+                    adapterService,
+                    scanController,
+                    TimeProvider.systemClock,
+                )
+            }
+        val app =
+            ScannerApp(
                 uuid,
                 userHandle,
-                source,
-                null,
-                null,
-                pendingIntentInfo,
-                adapterService,
-                scanController);
-    }
-
-    private ScannerApp add(
-            int appUid,
-            String appName,
-            UUID uuid,
-            @Nullable UserHandle userHandle,
-            AttributionSource source,
-            @Nullable WorkSource workSource,
-            @Nullable IScannerCallback callback,
-            @Nullable ScanController.PendingIntentInfo piInfo,
-            AdapterService adapterService,
-            ScanController scanController) {
-        AppScanStats appScanStats = mAppScanStatsMap.get(appUid);
-        if (appScanStats == null) {
-            appScanStats =
-                    new AppScanStats(
-                            appName,
-                            workSource,
-                            appUid,
-                            adapterService,
-                            scanController,
-                            TimeProvider.getSystemClock());
-            mAppScanStatsMap.put(appUid, appScanStats);
-        }
-        ScannerApp app =
-                new ScannerApp(
-                        uuid,
-                        userHandle,
-                        getLastAttributionTag(source),
-                        callback,
-                        piInfo,
-                        appName,
-                        appScanStats);
-        mApps.add(app);
-        appScanStats.mIsRegistered = true;
-        return app;
+                source.getLastAttributionTag(),
+                callback,
+                piInfo,
+                appName,
+                appScanStats,
+            )
+        apps.add(app)
+        appScanStats.mIsRegistered = true
+        return app
     }
 
     /** Remove the context for a given application ID. */
-    void remove(int id) {
-        removeByPredicate(app -> app.getId() == id);
-    }
+    fun remove(id: Int) = removeByPredicate("id=$id") { it.id == id }
 
     /** Remove the context for a given UUID */
-    void remove(UUID uuid) {
-        Log.d(TAG, "remove() - uuid: " + uuid);
-        removeByPredicate(app -> app.getUuid().equals(uuid));
-    }
+    fun remove(uuid: UUID) = removeByPredicate("UUID=$uuid") { it.uuid == uuid }
 
-    private void removeByPredicate(Predicate<ScannerApp> predicate) {
-        for (var iterator = mApps.iterator(); iterator.hasNext(); ) {
-            var app = iterator.next();
-            if (predicate.test(app)) {
-                app.cleanup();
-                iterator.remove();
-                break;
+    private fun removeByPredicate(removalContext: String, predicate: (ScannerApp) -> Boolean) {
+        Log.d(TAG, "remove(): By $removalContext")
+        val iterator = apps.iterator()
+        while (iterator.hasNext()) {
+            val app = iterator.next()
+            if (predicate(app)) {
+                app.cleanup()
+                iterator.remove()
+                break
             }
         }
     }
 
     /** Erases all application context entries. */
-    void clear() {
-        for (ScannerApp entry : mApps) {
-            entry.cleanup();
-        }
-        mApps.clear();
+    fun clear() {
+        apps.forEach { it.cleanup() }
+        apps.clear()
     }
 
     /** Get Logging info by application UID */
-    AppScanStats getAppScanStatsByUid(int uid) {
-        return mAppScanStatsMap.get(uid);
-    }
+    fun getAppScanStatsByUid(uid: Int): AppScanStats? = appScanStatsMap[uid]
 
     /** Get Logging info by ID */
-    AppScanStats getAppScanStatsById(int id) {
-        ScannerApp temp = getById(id);
-        if (temp != null) {
-            return temp.getAppScanStats();
-        }
-        return null;
-    }
+    fun getAppScanStatsById(id: Int): AppScanStats? = getById(id)?.appScanStats
 
     /** Get an application context by ID. */
-    ScannerApp getById(int id) {
-        ScannerApp app = getAppByPredicate(entry -> entry.getId() == id);
+    fun getById(id: Int): ScannerApp? {
+        val app = apps.find { it.id == id }
         if (app == null) {
-            Log.e(TAG, "Context not found for ID " + id);
+            Log.e(TAG, "Context not found for ID=$id")
         }
-        return app;
+        return app
     }
 
     /** Get an application context by UUID. */
-    ScannerApp getByUuid(UUID uuid) {
-        ScannerApp app = getAppByPredicate(entry -> entry.getUuid().equals(uuid));
+    fun getByUuid(uuid: UUID): ScannerApp? {
+        val app = apps.find { it.uuid == uuid }
         if (app == null) {
-            Log.e(TAG, "Context not found for UUID " + uuid);
+            Log.e(TAG, "Context not found for UUID=$uuid")
         }
-        return app;
+        return app
     }
 
     /** Get application contexts by the calling app's name. */
-    List<ScannerApp> getByName(String name) {
-        return mApps.stream().filter(app -> app.getName().equals(name)).toList();
-    }
+    fun getByName(name: String): List<ScannerApp> = apps.filter { it.name == name }
 
     /** Get an application context by the pending intent info object's intent. */
-    ScannerApp getByPendingIntentInfo(PendingIntent intent) {
-        ScannerApp app =
-                getAppByPredicate(e -> e.getInfo() != null && e.getInfo().intent().equals(intent));
+    fun getByPendingIntentInfo(intent: PendingIntent): ScannerApp? {
+        val app = apps.find { it.info?.intent() == intent }
         if (app == null) {
-            Log.e(TAG, "Context not found for intent " + intent);
+            Log.e(TAG, "Context not found for intent=$intent")
         }
-        return app;
-    }
-
-    private ScannerApp getAppByPredicate(Predicate<ScannerApp> predicate) {
-        // Intentionally using a for-loop over a stream for performance.
-        for (ScannerApp app : mApps) {
-            if (predicate.test(app)) {
-                return app;
-            }
-        }
-        return null;
+        return app
     }
 
     /** Logs debug information for registered apps and their scan statistics. */
-    void dump(StringBuilder sb, Map<Integer, ScanSettings> settingsMap) {
-        sb.append("LE Scanner:\n");
-        for (ScannerApp entry : mApps) {
-            StringBuilder line = new StringBuilder();
-            line.append("  app_if: ")
-                    .append(entry.getId())
-                    .append(", appName: ")
-                    .append(entry.getName());
+    fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
+        sb.append("LE Scanner:\n")
+        for (entry in apps) {
+            val line = StringBuilder()
+            line.append("  app_if: ${entry.id}, appName: ${entry.name}")
 
-            if (entry.getAttributionTag() != null) {
-                line.append(", tag: ").append(entry.getAttributionTag());
-            }
+            entry.attributionTag?.let { tag -> line.append(", tag: $tag") }
 
-            final var settings = settingsMap.get(entry.getId());
-            if (settings != null) {
-                long reportDelayMillis = settings.getReportDelayMillis();
-                if (reportDelayMillis > 0) {
-                    line.append(", reportDelayMillis: ").append(reportDelayMillis);
+            settingsMap[entry.id]?.let { settings ->
+                if (settings.reportDelayMillis > 0) {
+                    line.append(", reportDelayMillis: ${settings.reportDelayMillis}")
                 }
             }
-            sb.append(line).append("\n");
+            sb.append(line).append("\n")
         }
 
-        sb.append("\nLE Scanner Map:\n");
-        sb.append("  Entries: ").append(mAppScanStatsMap.size()).append("\n\n");
-        for (AppScanStats appScanStats : mAppScanStatsMap.values()) {
-            appScanStats.dump(sb, getByName(appScanStats.mAppName));
+        sb.append("\nLE Scanner Map:\n")
+        sb.append("  Entries: ${appScanStatsMap.size}\n\n")
+        for (appScanStats in appScanStatsMap.values) {
+            appScanStats.dump(sb, getByName(appScanStats.mAppName))
         }
     }
 }
