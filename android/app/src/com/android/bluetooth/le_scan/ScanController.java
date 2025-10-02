@@ -1615,7 +1615,7 @@ public class ScanController {
     }
 
     public void forceRunSyncOnScanThread(Runnable r) {
-        if (!Flags.scanControllerThread()) {
+        if (!Flags.scanControllerThread() || Utils.isInstrumentationTestMode()) {
             r.run();
             return;
         }
