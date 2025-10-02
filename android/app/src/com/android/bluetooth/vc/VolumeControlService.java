@@ -1489,12 +1489,7 @@ public class VolumeControlService extends ConnectableProfile {
         }
 
         for (BluetoothDevice dev : devices) {
-            int broadcastVolume = VOLUME_CONTROL_UNKNOWN_VOLUME;
-            if (volume.isPresent()) {
-                broadcastVolume = volume.get();
-            } else {
-                broadcastVolume = getDeviceVolume(dev);
-            }
+            int broadcastVolume = volume.orElseGet(() -> getDeviceVolume(dev));
             int n = callbacks.beginBroadcast();
             for (int i = 0; i < n; i++) {
                 try {

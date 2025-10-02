@@ -218,7 +218,7 @@ public class MasClient {
 
     public enum CharsetType {
         NATIVE,
-        UTF_8;
+        UTF_8
     }
 
     SdpMasRecord getSdpMasRecord() {

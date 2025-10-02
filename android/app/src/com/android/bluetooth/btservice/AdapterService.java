@@ -387,7 +387,7 @@ public class AdapterService extends Service {
         public int getValue() {
             return mValue;
         }
-    };
+    }
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
