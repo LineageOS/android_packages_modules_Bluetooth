@@ -96,7 +96,7 @@
         errorLine2="                           ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/service/src/com/android/server/bluetooth/BtPermissionUtils.java"
-            line="176"
+            line="174"
             column="28"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="                ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/service/src/PermissionChecker.kt"
-            line="207"
+            line="197"
             column="17"/>
     </issue>
 
