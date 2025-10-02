@@ -123,6 +123,8 @@ public class HidHostService extends ConnectableProfile {
 
     public static final int STATE_ACCEPTING = STATE_DISCONNECTING + 1;
 
+    private static final int BTHH_ERR_TOD_UNSPT = 10; // Remote device not supported
+
     public HidHostService(AdapterService adapterService) {
         this(adapterService, null);
     }
@@ -541,6 +543,17 @@ public class HidHostService extends ConnectableProfile {
                 nativeDisconnect(device, transport, false);
                 return;
             }
+        }
+
+        if (Flags.hidDontReconnectOnUhidTimeout()
+                && state == STATE_DISCONNECTED
+                && status == BTHH_ERR_TOD_UNSPT) {
+            Log.w(
+                    TAG,
+                    "handleMessageConnectStateChanged: Disabling HID connection for unsupported"
+                            + " device "
+                            + device);
+            setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN);
         }
 
         if (transport != getTransport(device)) {
