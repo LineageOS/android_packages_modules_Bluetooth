@@ -98,7 +98,7 @@ typedef struct {
 
 /* Control block to maintain properties of devices */
 typedef struct {
-  bthh_connection_state_t dev_status;
+  bthh_connection_state_t state;
   uint8_t dev_handle;
   tAclLinkSpec link_spec;
   tBTA_HH_ATTR_MASK attr_mask;
