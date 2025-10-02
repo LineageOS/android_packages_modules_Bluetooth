@@ -846,6 +846,10 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
   handler_->BindOnceOn(this, &LeAddressManager::check_cached_commands)();
 }
 
+void LeAddressManager::PrepareToRotateAddress() {
+  handler_->BindOnceOn(this, &LeAddressManager::prepare_to_rotate)();
+}
+
 void LeAddressManager::check_cached_commands() {
   for (auto client : registered_clients_) {
     if (client.second != ClientState::PAUSED && !cached_commands_.empty()) {
