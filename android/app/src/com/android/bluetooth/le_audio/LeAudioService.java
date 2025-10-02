@@ -83,6 +83,7 @@ import android.util.Pair;
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.ConnectableProfile;
@@ -4011,9 +4012,7 @@ public class LeAudioService extends ConnectableProfile {
                         if (!leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()) {
                             // Stop Broadcast Monitoring in case that was some actions on external
                             // broadcast
-                            if (bassClient.isPresent()) {
-                                bassClient.get().stopBroadcastMonitoring();
-                            }
+                            bassClient.ifPresent(BassClientService::stopBroadcastMonitoring);
                         }
                         return;
                     }
@@ -4025,9 +4024,7 @@ public class LeAudioService extends ConnectableProfile {
                                             broadcastId,
                                             BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST));
 
-                    if (bassClient.isPresent()) {
-                        bassClient.get().cacheSuspendingSources(broadcastId);
-                    }
+                    bassClient.ifPresent(bass -> bass.cacheSuspendingSources(broadcastId));
 
                     if (mIsBroadcastPausedFromOutside) {
                         mIsBroadcastPausedFromOutside = false;
@@ -4057,18 +4054,16 @@ public class LeAudioService extends ConnectableProfile {
                     }
 
                     if (previousState == LeAudioStackEvent.BROADCAST_STATE_PAUSED) {
-                        if (bassClient.isPresent()) {
-                            bassClient.get().resumeReceiversSourceSynchronization();
-                        }
+                        bassClient.ifPresent(
+                                BassClientService::resumeReceiversSourceSynchronization);
                     }
                 }
                 default -> Log.e(TAG, "Invalid state of broadcast: " + descriptor.mState);
             }
 
             // Notify broadcast assistant
-            if (bassClient.isPresent()) {
-                bassClient.get().notifyBroadcastStateChanged(descriptor.mState, broadcastId);
-            }
+            bassClient.ifPresent(
+                    bass -> bass.notifyBroadcastStateChanged(descriptor.mState, broadcastId));
         } else if (stackEvent.type == LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED) {
             int broadcastId = stackEvent.valueInt1;
             if (stackEvent.broadcastMetadata == null) {

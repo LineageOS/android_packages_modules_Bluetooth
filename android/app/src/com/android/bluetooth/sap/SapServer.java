@@ -56,7 +56,7 @@ public class SapServer extends Thread implements Handler.Callback {
         CONNECTING_CALL_ONGOING,
         CONNECTED,
         CONNECTED_BUSY,
-        DISCONNECTING;
+        DISCONNECTING
     }
 
     @VisibleForTesting SAP_STATE mState = SAP_STATE.DISCONNECTED;

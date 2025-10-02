@@ -162,7 +162,6 @@ public class TbsGeneric {
             }
         }
     }
-    ;
 
     TbsGeneric(AdapterService adapterService, TbsGatt tbsGatt) {
         mAdapterService = requireNonNull(adapterService);
