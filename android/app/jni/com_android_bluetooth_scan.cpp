@@ -43,7 +43,6 @@
 #include "hardware/ble_scanner.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_common_types.h"
-#include "hardware/bt_gatt.h"
 #include "main/shim/le_scanning_manager.h"
 
 using bluetooth::Uuid;
@@ -333,7 +332,7 @@ public:
  * Native Client functions
  */
 
-static void btgattc_register_scanner_cb(const Uuid& app_uuid, uint8_t scannerId, uint8_t status) {
+static void on_scanner_registered_cb(const Uuid& app_uuid, uint8_t scannerId, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mScanCallbacksObj) {
@@ -350,7 +349,7 @@ static void registerScannerNative(JNIEnv* /* env */, jobject /* object */, jlong
   }
 
   Uuid uuid = from_java_uuid(app_uuid_msb, app_uuid_lsb);
-  sScanner->RegisterScanner(uuid, base::Bind(&btgattc_register_scanner_cb, uuid));
+  sScanner->RegisterScanner(uuid, base::Bind(&on_scanner_registered_cb, uuid));
 }
 
 static void unregisterScannerNative(JNIEnv* /* env */, jobject /* object */, jint scanner_id) {
