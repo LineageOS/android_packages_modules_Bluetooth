@@ -265,7 +265,7 @@ public class MapClientService extends ConnectableProfile {
     }
 
     @Override
-    public IProfileServiceBinder initBinder() {
+    protected IProfileServiceBinder initBinder() {
         return new MapClientServiceBinder(this);
     }
 

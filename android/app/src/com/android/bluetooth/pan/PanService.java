@@ -140,7 +140,7 @@ public class PanService extends ConnectableProfile {
     }
 
     @Override
-    public IProfileServiceBinder initBinder() {
+    protected IProfileServiceBinder initBinder() {
         return new PanServiceBinder(this);
     }
 

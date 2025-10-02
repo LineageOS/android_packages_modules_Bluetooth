@@ -24,7 +24,7 @@ import com.android.bluetooth.btservice.ProfileService
 class LeAudioBroadcast(private val adapterService: AdapterService) :
     ProfileService(BluetoothProfile.LE_AUDIO_BROADCAST, adapterService) {
 
-    override fun initBinder() = null
+    override protected fun initBinder() = null
 
     override fun cleanup() {}
 
