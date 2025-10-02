@@ -29,7 +29,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothCsipSetCoordinator;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHapClient;
@@ -81,14 +80,6 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
         return service;
     }
 
-    private static void validateBluetoothDevice(BluetoothDevice device) {
-        requireNonNull(device);
-        String address = device.getAddress();
-        if (!BluetoothAdapter.checkBluetoothAddress(address)) {
-            throw new IllegalArgumentException("Invalid device address: " + address);
-        }
-    }
-
     // Post and do not wait for the action to be completed
     private static void post(HapClientService service, Consumer<HapClientService> consumer) {
         if (service == null) { // No need to re-check for available here
@@ -135,7 +126,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -154,7 +145,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     public boolean setConnectionPolicy(
             BluetoothDevice device, int connectionPolicy, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
             if (connectionPolicy != CONNECTION_POLICY_ALLOWED
                     && connectionPolicy != CONNECTION_POLICY_FORBIDDEN) {
                 throw new IllegalArgumentException(
@@ -182,7 +173,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -200,7 +191,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public int getActivePresetIndex(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -219,7 +210,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     public BluetoothHapPresetInfo getActivePresetInfo(
             BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -237,7 +228,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public int getHapGroup(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -255,7 +246,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void selectPreset(BluetoothDevice device, int presetIndex, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -287,7 +278,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void switchToNextPreset(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -319,7 +310,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void switchToPreviousPreset(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -352,7 +343,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     public BluetoothHapPresetInfo getPresetInfo(
             BluetoothDevice device, int presetIndex, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -371,7 +362,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     public List<BluetoothHapPresetInfo> getAllPresetInfo(
             BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -389,7 +380,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public int getFeatures(BluetoothDevice device, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
         }
 
         HapClientService service = getService(source);
@@ -408,7 +399,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     public void setPresetName(
             BluetoothDevice device, int presetIndex, String name, AttributionSource source) {
         if (Flags.hapOnMainLooper()) {
-            validateBluetoothDevice(device);
+            requireNonNull(device);
             requireNonNull(name);
         }
 

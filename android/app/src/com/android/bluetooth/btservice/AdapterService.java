@@ -1491,7 +1491,7 @@ public class AdapterService extends Service {
      * @param timeoutMillis timeout set by the app
      */
     public void logL2capcocServerConnection(
-            BluetoothDevice device,
+            @Nullable BluetoothDevice device,
             int port,
             boolean isSecured,
             int result,
