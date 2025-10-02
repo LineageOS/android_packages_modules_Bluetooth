@@ -170,7 +170,10 @@ class BtPermissionUtils {
         return callingAppId == mSystemUiUid;
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Permission is not enforced, only checked
+    @SuppressWarnings({
+        "AndroidFrameworkRequiresPermission",
+        "IncorrectRequiresPermissionPropagation"
+    }) // No permission enforcement
     private static boolean isPrivileged(Context ctx, int pid, int uid) {
         return (ctx.checkPermission(BLUETOOTH_PRIVILEGED, pid, uid) == PERMISSION_GRANTED)
                 || (ctx.getPackageManager().checkSignatures(uid, SYSTEM_UID) == SIGNATURE_MATCH);

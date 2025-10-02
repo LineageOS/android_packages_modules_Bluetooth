@@ -194,6 +194,7 @@ class PermissionChecker(
             isProfileOwner(source)
     }
 
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // No permission enforcement
     private fun isPrivileged(uid: Int): Boolean {
         return (context.checkPermission(BLUETOOTH_PRIVILEGED, -1, uid) ==
             PackageManager.PERMISSION_GRANTED) ||
