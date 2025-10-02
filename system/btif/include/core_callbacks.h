@@ -100,8 +100,8 @@ struct CodecInterface {
 struct HACK_ProfileInterface {
   // HID hacks
   BtStatus (*btif_hh_virtual_unplug)(const tAclLinkSpec& link_spec);
-  tBTA_HH_STATUS (*bta_hh_read_ssr_param)(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
-                                          uint16_t* p_min_ssr_tout);
+  bthh_status_t (*bta_hh_read_ssr_param)(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
+                                         uint16_t* p_min_ssr_tout);
 
   // AVDTP hacks
   void (*btif_av_set_dynamic_audio_buffer_size)(uint8_t dynamic_audio_buffer_size);

@@ -203,7 +203,7 @@ TEST_F(BtifHhWithDevice, BTA_HH_GET_RPT_EVT) {
   tBTA_HH data = {
           .hs_data =
                   {
-                          .status = BTA_HH_OK,
+                          .status = BTHH_OK,
                           .handle = kHhHandle,
                           .rsp_data =
                                   {

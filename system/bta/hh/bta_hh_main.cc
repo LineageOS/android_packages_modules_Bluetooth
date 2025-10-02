@@ -356,7 +356,7 @@ static void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data
       cback_event = BTA_HH_OPEN_EVT;
       /* build cback data */
       cback_data.conn.link_spec = ((tBTA_HH_API_CONN*)p_data)->link_spec;
-      cback_data.conn.status = BTA_HH_ERR_DB_FULL;
+      cback_data.conn.status = BTHH_ERR_DB_FULL;
       cback_data.conn.handle = BTA_HH_INVALID_HANDLE;
       break;
     /* DB full, BTA_HhAddDev */
@@ -365,10 +365,10 @@ static void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data
 
       if (p_data->api_maintdev.sub_event == BTA_HH_ADD_DEV_EVT) {
         cback_data.dev_info.link_spec = p_data->api_maintdev.link_spec;
-        cback_data.dev_info.status = BTA_HH_ERR_DB_FULL;
+        cback_data.dev_info.status = BTHH_ERR_DB_FULL;
         cback_data.dev_info.handle = BTA_HH_INVALID_HANDLE;
       } else {
-        cback_data.dev_info.status = BTA_HH_ERR_HDL;
+        cback_data.dev_info.status = BTHH_ERR_HDL;
         cback_data.dev_info.handle = (uint8_t)p_data->api_maintdev.hdr.layer_specific;
       }
       break;
@@ -378,16 +378,16 @@ static void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data
       if (p_data->api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL ||
           p_data->api_sndcmd.t_type == HID_TRANS_SET_REPORT ||
           p_data->api_sndcmd.t_type == HID_TRANS_SET_IDLE) {
-        cback_data.dev_status.status = BTA_HH_ERR_HDL;
+        cback_data.dev_status.status = BTHH_ERR_HDL;
         cback_data.dev_status.handle = (uint8_t)p_data->api_sndcmd.hdr.layer_specific;
       } else if (p_data->api_sndcmd.t_type != HID_TRANS_DATA &&
                  p_data->api_sndcmd.t_type != HID_TRANS_CONTROL) {
         cback_data.hs_data.handle = (uint8_t)p_data->api_sndcmd.hdr.layer_specific;
-        cback_data.hs_data.status = BTA_HH_ERR_HDL;
+        cback_data.hs_data.status = BTHH_ERR_HDL;
         /* hs_data.rsp_data will be all zero, which is not valid value */
       } else if (p_data->api_sndcmd.t_type == HID_TRANS_CONTROL &&
                  p_data->api_sndcmd.param == BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG) {
-        cback_data.status = BTA_HH_ERR_HDL;
+        cback_data.status = BTHH_ERR_HDL;
         cback_event = BTA_HH_VC_UNPLUG_EVT;
       } else {
         cback_event = 0;
@@ -396,7 +396,7 @@ static void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data
 
     case BTA_HH_API_CLOSE_EVT:
       cback_event = BTA_HH_CLOSE_EVT;
-      cback_data.dev_status.status = BTA_HH_ERR_HDL;
+      cback_data.dev_status.status = BTHH_ERR_HDL;
       cback_data.dev_status.handle = (uint8_t)p_data->api_sndcmd.hdr.layer_specific;
       break;
 
