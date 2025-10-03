@@ -39,7 +39,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
 import com.android.bluetooth.flags.Flags;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +49,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         implements IProfileServiceBinder {
     private static final String TAG = VolumeControlServiceBinder.class.getSimpleName();
 
-    @VisibleForTesting boolean mIsTesting = false;
     private VolumeControlService mService;
 
     VolumeControlServiceBinder(VolumeControlService svc) {

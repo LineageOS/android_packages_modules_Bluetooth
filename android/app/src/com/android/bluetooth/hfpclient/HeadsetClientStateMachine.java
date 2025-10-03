@@ -50,7 +50,6 @@ import android.bluetooth.BluetoothHeadsetClient.NetworkServiceState;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.BluetoothUuid;
 import android.bluetooth.hfp.BluetoothHfpProtoEnums;
 import android.content.Intent;
 import android.media.AudioAttributes;
@@ -59,7 +58,6 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Message;
-import android.os.ParcelUuid;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.util.Log;
@@ -204,11 +202,6 @@ public class HeadsetClientStateMachine extends StateMachine {
     private final AudioManager mAudioManager;
     private final HeadsetClientNativeInterface mNativeInterface;
     private final VendorCommandResponseProcessor mVendorProcessor;
-
-    // Accessor for the states, useful for reusing the state machines
-    public IState getDisconnectedState() {
-        return mDisconnected;
-    }
 
     // Get if in band ring is currently enabled on device.
     public boolean getInBandRing() {
@@ -2223,30 +2216,6 @@ public class HeadsetClientStateMachine extends StateMachine {
         return (mCurrentState == mConnected || mCurrentState == mAudioOn);
     }
 
-    List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> deviceList = new ArrayList<>();
-        final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
-        if (bondedDevices == null) {
-            return deviceList;
-        }
-        int connectionState;
-        synchronized (this) {
-            for (BluetoothDevice device : bondedDevices) {
-                final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
-                if (!Utils.arrayContains(featureUuids, BluetoothUuid.HFP_AG)) {
-                    continue;
-                }
-                connectionState = getConnectionState(device);
-                for (int state : states) {
-                    if (connectionState == state) {
-                        deviceList.add(device);
-                    }
-                }
-            }
-        }
-        return deviceList;
-    }
-
     boolean okToConnect(BluetoothDevice device) {
         int connectionPolicy = mService.getConnectionPolicy(device);
         boolean ret = false;
@@ -2272,21 +2241,6 @@ public class HeadsetClientStateMachine extends StateMachine {
             return BluetoothHeadsetClient.STATE_AUDIO_DISCONNECTED;
         }
         return mAudioState;
-    }
-
-    List<BluetoothDevice> getConnectedDevices() {
-        List<BluetoothDevice> devices = new ArrayList<>();
-        synchronized (this) {
-            if (isConnected()) {
-                devices.add(mCurrentDevice);
-            }
-        }
-        return devices;
-    }
-
-    @VisibleForTesting
-    byte[] getByteAddress(BluetoothDevice device) {
-        return Utils.getBytesFromAddress(device.getAddress());
     }
 
     public List<HfpClientCall> getCurrentCalls() {
