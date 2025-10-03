@@ -50,7 +50,6 @@ import static java.util.Objects.requireNonNullElseGet;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -924,7 +923,6 @@ public class AdapterService extends Service {
         mAdapterStateMachine.sendMessage(AdapterState.USER_TURN_OFF);
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private void init(String hciInstanceName) {
         Log.d(TAG, "init() instance = " + hciInstanceName);
 
