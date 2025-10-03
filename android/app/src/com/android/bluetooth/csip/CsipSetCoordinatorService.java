@@ -26,7 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.annotation.CallbackExecutor;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothCsipSetCoordinator;
@@ -262,48 +261,6 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
                         break;
                     }
                 }
-            }
-            return devices;
-        }
-    }
-
-    /** Register for CSIS */
-    public void registerCsisMemberObserver(
-            @CallbackExecutor Executor executor,
-            ParcelUuid uuid,
-            IBluetoothCsipSetCoordinatorCallback callback) {
-        Map<Executor, IBluetoothCsipSetCoordinatorCallback> entries =
-                mCallbacks.getOrDefault(uuid, null);
-        if (entries == null) {
-            entries = new HashMap<>();
-            entries.put(executor, callback);
-            Log.d(TAG, " Csis adding new callback for " + uuid);
-            mCallbacks.put(uuid, entries);
-            return;
-        }
-
-        if (entries.containsKey(executor)) {
-            if (entries.get(executor) == callback) {
-                Log.d(TAG, " Execute and callback already added " + uuid);
-                return;
-            }
-        }
-
-        Log.d(TAG, " Csis adding callback " + uuid);
-        entries.put(executor, callback);
-    }
-
-    /**
-     * Get the list of devices that have state machines.
-     *
-     * @return the list of devices that have state machines
-     */
-    @VisibleForTesting
-    List<BluetoothDevice> getDevices() {
-        List<BluetoothDevice> devices = new ArrayList<>();
-        synchronized (mStateMachines) {
-            for (CsipSetCoordinatorStateMachine sm : mStateMachines.values()) {
-                devices.add(sm.getDevice());
             }
             return devices;
         }
