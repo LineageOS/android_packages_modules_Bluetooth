@@ -29,7 +29,6 @@ import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
-import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.BroadcastOptions;
@@ -192,7 +191,6 @@ public class RemoteDevices {
      * Reset should be called when the state of this object needs to be cleared RemoteDevices is
      * still usable after reset
      */
-    @RequiresPermission(BLUETOOTH_CONNECT)
     void reset() {
         mSdpTracker.clear();
 
@@ -205,14 +203,15 @@ public class RemoteDevices {
             mDevices.forEach(
                     (address, deviceProperties) -> {
                         BluetoothDevice bluetoothDevice = deviceProperties.getDevice();
-
+                        var connected =
+                                mAdapterService.getConnectionState(bluetoothDevice)
+                                        != BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
                         debugLog(
                                 "reset(): address="
                                         + BluetoothUtils.toAnonymizedAddress(address)
                                         + ", connected="
-                                        + bluetoothDevice.isConnected());
-
-                        if (bluetoothDevice.isConnected()) {
+                                        + connected);
+                        if (connected) {
                             Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
                             intent.addFlags(

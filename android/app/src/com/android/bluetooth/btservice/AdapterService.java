@@ -1082,7 +1082,6 @@ public class AdapterService extends Service {
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
     }
 
-    @RequiresPermission(BLUETOOTH_CONNECT)
     void bringUpBle() {
         Log.d(TAG, "bleOnProcessStart()");
 
@@ -1380,7 +1379,6 @@ public class AdapterService extends Service {
         mIsMediaProfileConnected = false;
     }
 
-    @RequiresPermission(BLUETOOTH_CONNECT)
     void cleanup() {
         Log.i(TAG, "cleanup()");
         if (mCleaningUp) {
