@@ -53,7 +53,7 @@ fn iterate_adv_data(data: &[u8], data_type: u8) -> AdvDataIterator {
 
 // Helper function to extract flags from advertising data
 pub fn extract_flags(bytes: &[u8]) -> u8 {
-    iterate_adv_data(bytes, FLAGS).next().map_or(0, |v| v[0])
+    iterate_adv_data(bytes, FLAGS).next().map_or(0, |v| *v.first().unwrap_or(&0))
 }
 
 // Helper function to extract service uuids (128bit) from advertising data
