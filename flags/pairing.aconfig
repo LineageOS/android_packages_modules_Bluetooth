@@ -335,3 +335,10 @@ flag {
     description: "Override IO capabilities using system properties"
     bug: "446939944"
 }
+
+flag {
+    name: "apairing_26q2_permission_improvements"
+    namespace: "bluetooth"
+    description: "Permission improvements for pairing in 26Q2"
+    bug: "449010608"
+}
