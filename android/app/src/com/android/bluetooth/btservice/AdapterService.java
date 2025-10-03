@@ -3901,12 +3901,6 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getDistanceMeasurement();
     }
 
-    void unregAllGattClient() {
-        if (mGattService != null) {
-            mGattService.unregAll();
-        }
-    }
-
     IBinder getProfile(int id) {
         if (getState() == BluetoothAdapter.STATE_TURNING_ON) {
             return null;
