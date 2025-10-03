@@ -415,11 +415,7 @@ class BassClientStateMachine extends StateMachine {
         return recvState != null
                 && (recvState.getPaSyncState()
                                 == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED
-                        || recvState.getBisSyncState().stream()
-                                .anyMatch(
-                                        bitmap -> {
-                                            return bitmap != 0;
-                                        }));
+                        || recvState.getBisSyncState().stream().anyMatch(bitmap -> bitmap != 0));
     }
 
     private void resetBluetoothGatt() {
@@ -474,10 +470,9 @@ class BassClientStateMachine extends StateMachine {
                     }
                     final int sd = serviceData;
                     scanController.doOnScanThread(
-                            () -> {
-                                scanController.transferSetInfo(
-                                        mDevice, sd, advHandle, mLocalPeriodicAdvCallback);
-                            });
+                            () ->
+                                    scanController.transferSetInfo(
+                                            mDevice, sd, advHandle, mLocalPeriodicAdvCallback));
                 } else {
                     mPeriodicAdvertisingManager.transferSetInfo(
                             mDevice, serviceData, advHandle, mLocalPeriodicAdvCallbackObsolete);
@@ -527,9 +522,7 @@ class BassClientStateMachine extends StateMachine {
                 }
                 final int sd = serviceData;
                 scanController.doOnScanThread(
-                        () -> {
-                            scanController.transferSync(mDevice, sd, syncHandle);
-                        });
+                        () -> scanController.transferSync(mDevice, sd, syncHandle));
             } else {
                 mPeriodicAdvertisingManager.transferSync(mDevice, serviceData, syncHandle);
             }

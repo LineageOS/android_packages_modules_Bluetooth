@@ -1099,12 +1099,8 @@ public class TbsGeneric {
         mAdapterService
                 .getLeAudioService()
                 .ifPresentOrElse(
-                        leAudio -> {
-                            leAudio.setActiveDevice(device);
-                        },
-                        () -> {
-                            Log.w(TAG, "mLeAudioService not available");
-                        });
+                        leAudio -> leAudio.setActiveDevice(device),
+                        () -> Log.w(TAG, "mLeAudioService not available"));
     }
 
     private static boolean isCallStateTransitionValid(int callState, int requestedOpcode) {
