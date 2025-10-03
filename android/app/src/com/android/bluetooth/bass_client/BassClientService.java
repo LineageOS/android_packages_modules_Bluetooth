@@ -3139,10 +3139,9 @@ public class BassClientService extends ConnectableProfile {
                         return false;
                     }
                     scanController.doOnScanThread(
-                            () -> {
-                                scanController.unregisterSync(
-                                        mPeriodicAdvCallbacksMap.get(syncHandle));
-                            });
+                            () ->
+                                    scanController.unregisterSync(
+                                            mPeriodicAdvCallbacksMap.get(syncHandle)));
                 } else {
                     Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
                 }
@@ -3456,14 +3455,13 @@ public class BassClientService extends ConnectableProfile {
                     return;
                 }
                 scanController.doOnScanThread(
-                        () -> {
-                            scanController.registerSync(
-                                    paResult.getDevice(),
-                                    paResult.getAdvSid(),
-                                    0,
-                                    BassConstants.PSYNC_TIMEOUT,
-                                    paCb);
-                        });
+                        () ->
+                                scanController.registerSync(
+                                        paResult.getDevice(),
+                                        paResult.getAdvSid(),
+                                        0,
+                                        BassConstants.PSYNC_TIMEOUT,
+                                        paCb));
             } else {
                 try {
                     mPeriodicAdvertisingManager.registerSync(

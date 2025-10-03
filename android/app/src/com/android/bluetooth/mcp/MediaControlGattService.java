@@ -1258,10 +1258,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             + Request.Opcodes.toString(opcode)
                             + " not supported");
             mHandler.post(
-                    () -> {
-                        setMediaControlRequestResult(
-                                new Request(opcode, 0), Request.Results.OPCODE_NOT_SUPPORTED);
-                    });
+                    () ->
+                            setMediaControlRequestResult(
+                                    new Request(opcode, 0), Request.Results.OPCODE_NOT_SUPPORTED));
             return BluetoothGatt.GATT_SUCCESS;
         }
 

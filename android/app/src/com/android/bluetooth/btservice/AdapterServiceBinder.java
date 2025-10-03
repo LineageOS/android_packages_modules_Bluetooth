@@ -693,9 +693,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         if (Flags.vcpOnMainLooper() || Flags.hapOnMainLooper()) {
             return service.syncPost(
-                    () -> {
-                        return service.connectAllEnabledProfiles(device);
-                    },
+                    () -> service.connectAllEnabledProfiles(device),
                     BluetoothStatusCodes.ERROR_TIMEOUT);
         }
 
@@ -731,9 +729,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         if (Flags.vcpOnMainLooper() || Flags.hapOnMainLooper()) {
             return service.syncPost(
-                    () -> {
-                        return service.disconnectAllEnabledProfiles(device);
-                    },
+                    () -> service.disconnectAllEnabledProfiles(device),
                     BluetoothStatusCodes.ERROR_TIMEOUT);
         }
         try {

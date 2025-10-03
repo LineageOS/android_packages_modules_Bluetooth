@@ -3038,9 +3038,9 @@ public class AdapterService extends Service {
     public void notifyGattClientConnectFailed(int clientIf, BluetoothDevice device) {
         getLeAudioService()
                 .ifPresent(
-                        leAudio -> {
-                            removeGattClientFromControlAutoActiveMode(leAudio, clientIf, device);
-                        });
+                        leAudio ->
+                                removeGattClientFromControlAutoActiveMode(
+                                        leAudio, clientIf, device));
     }
 
     /**
@@ -3052,9 +3052,9 @@ public class AdapterService extends Service {
     public void notifyGattClientDisconnect(int clientIf, BluetoothDevice device) {
         getLeAudioService()
                 .ifPresent(
-                        leAudio -> {
-                            removeGattClientFromControlAutoActiveMode(leAudio, clientIf, device);
-                        });
+                        leAudio ->
+                                removeGattClientFromControlAutoActiveMode(
+                                        leAudio, clientIf, device));
     }
 
     public int getConnectionState(BluetoothDevice device) {
@@ -4004,9 +4004,9 @@ public class AdapterService extends Service {
         final var scanController = getBluetoothScanController();
         if (scanController == null) return;
         scanController.doOnScanThread(
-                () -> {
-                    scanController.notifyProfileConnectionStateChange(profile, fromState, toState);
-                });
+                () ->
+                        scanController.notifyProfileConnectionStateChange(
+                                profile, fromState, toState));
     }
 
     /**
