@@ -1086,7 +1086,11 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
                                  btm_cb.ble_ctr_cb.inq_var.scan_window_coded,
                                  btm_cb.ble_ctr_cb.inq_var.scan_phy | scan_phy,
                                  btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, SP_ADV_ALL);
-    btm_ble_start_scan();
+    if (use_msft_filtering()) {
+      btm_ble_msft_adv_mon_enable(false);
+    } else {
+      btm_ble_start_scan();
+    }
   }
 
   btm_cb.btm_inq_vars.inq_active |= BTM_BLE_GENERAL_INQUIRY;
