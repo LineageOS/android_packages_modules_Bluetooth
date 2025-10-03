@@ -67,11 +67,6 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
-    fun unregAllGattClient() {
-        adapterBinder.unregAllGattClient()
-    }
-
-    @Throws(RemoteException::class)
     fun killBluetoothProcess() {
         adapterBinder.killBluetoothProcess()
     }

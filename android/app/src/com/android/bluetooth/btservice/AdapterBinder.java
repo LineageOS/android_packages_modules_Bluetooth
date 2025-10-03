@@ -150,16 +150,6 @@ class AdapterBinder extends IAdapter.Stub {
     }
 
     @Override
-    public void unregAllGattClient() {
-        Log.v(TAG, "unregAllGattClient()");
-        AdapterService service = getServiceAndEnforcePrivileged();
-        if (service == null) {
-            return;
-        }
-        service.unregAllGattClient();
-    }
-
-    @Override
     public void dump(FileDescriptor fd, String[] args) {
         Log.v(TAG, "dump()");
         PrintWriter writer = new PrintWriter(new FileOutputStream(fd));

@@ -38,8 +38,5 @@ oneway interface IAdapter
     void unregisterCallback(in IBluetoothCallback callback);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    void unregAllGattClient();
-
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     void killBluetoothProcess();
 }
