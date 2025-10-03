@@ -16,9 +16,7 @@
 
 package com.android.bluetooth.bass_client;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.os.Looper;
 import android.util.Log;
@@ -91,20 +89,5 @@ public class BassObjectsFactory {
      */
     public void destroyStateMachine(BassClientStateMachine stateMachine) {
         BassClientStateMachine.destroy(stateMachine);
-    }
-
-    /**
-     * Get a {@link BluetoothLeScannerWrapper} object
-     *
-     * @param adapter bluetooth adapter
-     * @return a bluetooth LE scanner
-     */
-    public BluetoothLeScannerWrapper getBluetoothLeScannerWrapper(BluetoothAdapter adapter) {
-        BluetoothLeScanner bluetoothLeScanner = adapter.getBluetoothLeScanner();
-        if (bluetoothLeScanner == null) {
-            return null;
-        } else {
-            return new BluetoothLeScannerWrapper(bluetoothLeScanner);
-        }
     }
 }

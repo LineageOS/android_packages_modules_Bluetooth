@@ -586,28 +586,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `BluetoothLeScannerWrapper.startScan` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN]} but is only annotated with [none]."
-        errorLine1="    public void startScan("
-        errorLine2="                ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BluetoothLeScannerWrapper.java"
-            line="38"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `BluetoothLeScannerWrapper.stopScan` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN]} but is only annotated with [none]."
-        errorLine1="    public void stopScan(ScanCallback callback) {"
-        errorLine2="                ~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BluetoothLeScannerWrapper.java"
-            line="45"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `BluetoothMnsObexClient.connect` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
         errorLine1="    public void connect() {"
         errorLine2="                ~~~~~~~">

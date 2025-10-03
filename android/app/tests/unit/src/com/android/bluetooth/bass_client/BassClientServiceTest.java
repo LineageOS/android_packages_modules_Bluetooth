@@ -137,7 +137,6 @@ public class BassClientServiceTest {
     @Mock private BluetoothAdapter mAdapter;
     @Mock private PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     @Mock private AdapterService mAdapterService;
-    @Mock private BluetoothLeScannerWrapper mBluetoothLeScannerWrapper;
     @Mock private ScanController mScanController;
     @Mock private CsipSetCoordinatorService mCsipService;
     @Mock private LeAudioService mLeAudioService;
@@ -424,9 +423,6 @@ public class BassClientServiceTest {
                         })
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any());
-        doReturn(mBluetoothLeScannerWrapper)
-                .when(mObjectsFactory)
-                .getBluetoothLeScannerWrapper(any());
 
         mLooper = new TestLooper();
 
@@ -572,9 +568,7 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
     }
 
-    /**
-     * Test whether service.startSearchingForSources() calls BluetoothLeScannerWrapper.startScan().
-     */
+    /** Test service.startSearchingForSources() calls mScanController.registerScannerInternal() */
     @Test
     public void testStartSearchingForSources() {
         prepareConnectedDeviceGroup();
@@ -655,7 +649,6 @@ public class BassClientServiceTest {
             Mockito.clearInvocations(sm);
         }
 
-        clearInvocations(mBluetoothLeScannerWrapper);
         clearInvocations(mScanController);
 
         mBassClientService.startSearchingForSources(scanFilters);
@@ -1638,7 +1631,7 @@ public class BassClientServiceTest {
         mLooper.dispatchAll();
     }
 
-    private void incjectDeviceDisconnection(BluetoothDevice device) {
+    private void injectDeviceDisconnection(BluetoothDevice device) {
         BassClientStateMachine sm = mStateMachines.get(device);
         doReturn(STATE_DISCONNECTED).when(sm).getConnectionState();
         doReturn(false).when(sm).isConnected();
@@ -5283,11 +5276,11 @@ public class BassClientServiceTest {
         bigMonitoringWithoutScanning();
 
         // Disconnect not all sinks not cause stop monitoring
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
 
         // Disconnect all sinks cause stop monitoring
-        incjectDeviceDisconnection(mCurrentDevice1);
+        injectDeviceDisconnection(mCurrentDevice1);
         verifyStopBroadcastMonitoringWithUnsync();
         checkNoResumeSynchronizationByBig();
     }
@@ -5297,11 +5290,11 @@ public class BassClientServiceTest {
         bigMonitoringDuringScanning();
 
         // Disconnect not all sinks not cause stop monitoring
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
 
         // Disconnect all sinks cause stop monitoring
-        incjectDeviceDisconnection(mCurrentDevice1);
+        injectDeviceDisconnection(mCurrentDevice1);
         verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
     }
@@ -6828,7 +6821,7 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Disconnect first sink not cause removing metadata
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -6845,10 +6838,10 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Disconnect second sink cause remove metadata for both devices
-        incjectDeviceDisconnection(mCurrentDevice1);
+        injectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -6887,7 +6880,7 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -6912,10 +6905,10 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Disconnect second sink cause remove metadata for both devices
-        incjectDeviceDisconnection(mCurrentDevice1);
+        injectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
         doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -6947,7 +6940,7 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
         // Disconnect first sink not cause removing metadata
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Remove second source should remove metadata for both
         // Do not clear receive state
@@ -6992,7 +6985,7 @@ public class BassClientServiceTest {
         }
 
         // Disconnect first sink not cause removing metadata
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Remove second source should remove metadata for both
         // Do not clear receive state
@@ -7029,7 +7022,7 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice1, mBroadcastMetadata1, /* isGroupOp */ false);
 
         // Disconnect first sink should remove pendingSourceToAdd for it
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Sync established should add source on only one sink
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -7066,7 +7059,7 @@ public class BassClientServiceTest {
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
 
         // Disconnect first sink should remove pendingSourceToAdd for it
-        incjectDeviceDisconnection(mCurrentDevice);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Sync established should add source on only one sink
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
