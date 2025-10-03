@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
+import static android.bluetooth.BluetoothUtils.toAnonymizedAddress;
 
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -44,7 +45,6 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.bluetooth.BluetoothUtils;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.Intent;
@@ -202,18 +202,16 @@ public class RemoteDevices {
 
             mDevices.forEach(
                     (address, deviceProperties) -> {
-                        BluetoothDevice bluetoothDevice = deviceProperties.getDevice();
+                        BluetoothDevice device = deviceProperties.getDevice();
                         var connected =
-                                mAdapterService.getConnectionState(bluetoothDevice)
+                                mAdapterService.getConnectionState(device)
                                         != BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
                         debugLog(
-                                "reset(): address="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + ", connected="
-                                        + connected);
+                                ("reset(): address=" + toAnonymizedAddress(address))
+                                        + (", connected=" + connected));
                         if (connected) {
                             Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-                            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
+                            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
                             intent.addFlags(
                                     Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                                             | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
@@ -223,8 +221,7 @@ public class RemoteDevices {
                                 if (Flags.linkStatusApi()) {
                                     deviceProperties.setDisconnected(TRANSPORT_BREDR);
                                 }
-                                mAdapterService.notifyAclDisconnected(
-                                        bluetoothDevice, TRANSPORT_BREDR);
+                                mAdapterService.notifyAclDisconnected(device, TRANSPORT_BREDR);
                                 if (Flags.broadcastTransportTypeOnReset()) {
                                     intent.putExtra(
                                             BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
@@ -236,8 +233,7 @@ public class RemoteDevices {
                                 if (Flags.linkStatusApi()) {
                                     deviceProperties.setDisconnected(TRANSPORT_LE);
                                 }
-                                mAdapterService.notifyAclDisconnected(
-                                        bluetoothDevice, TRANSPORT_LE);
+                                mAdapterService.notifyAclDisconnected(device, TRANSPORT_LE);
                                 if (Flags.broadcastTransportTypeOnReset()) {
                                     intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
                                     mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
@@ -341,11 +337,10 @@ public class RemoteDevices {
             String key = Utils.getAddressStringFromByte(address);
             if (mDevices.containsKey(key)) {
                 debugLog(
-                        "Properties for device "
-                                + BluetoothUtils.toAnonymizedAddress(key)
-                                + "["
-                                + Utils.addressTypeToString(addressType)
-                                + "] are already added");
+                        ("Properties for device=" + toAnonymizedAddress(key))
+                                + ("["
+                                        + Utils.addressTypeToString(addressType)
+                                        + "] are already added"));
                 return mDevices.get(key);
             }
 
@@ -374,8 +369,7 @@ public class RemoteDevices {
                     mDevices.remove(eldestAddress);
                     debugLog(
                             "Ejected "
-                                    + BluetoothUtils.toAnonymizedAddress(eldestAddress)
-                                    + " from property map");
+                                    + (toAnonymizedAddress(eldestAddress) + " from property map"));
                 } else {
                     warnLog("No non-bonded device to eject");
                 }
@@ -1831,7 +1825,7 @@ public class RemoteDevices {
             }
         }
 
-        Log.i(TAG, "removeDeviceProperties: " + BluetoothUtils.toAnonymizedAddress(address));
+        Log.i(TAG, "removeDeviceProperties: " + toAnonymizedAddress(address));
 
         synchronized (mDevices) {
             mDevices.remove(address);
@@ -2440,10 +2434,10 @@ public class RemoteDevices {
 
             boolean bonded = deviceProperties.getBondState() == BluetoothDevice.BOND_BONDED;
             String identityAddress = deviceProperties.getIdentityAddress().getAddress();
-            String anonAddress = BluetoothUtils.toAnonymizedAddress(address);
+            String anonAddress = toAnonymizedAddress(address);
             String anonIdentityAddress =
                     identityAddress != null
-                            ? BluetoothUtils.toAnonymizedAddress(identityAddress)
+                            ? toAnonymizedAddress(identityAddress)
                             : "XX:XX:XX:XX:XX:XX";
             int identityAddressType = deviceProperties.getIdentityAddress().getAddressType();
 
