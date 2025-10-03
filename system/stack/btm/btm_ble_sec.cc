@@ -1388,7 +1388,7 @@ static void btm_ble_user_confirmation_req(const RawAddress& bd_addr, tBTM_SEC_DE
 static void btm_ble_sec_req(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_dev_rec,
                             tBTM_LE_EVT_DATA* p_data) {
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
-    log::warn("Ignoring SMP Security request");
+    log::warn("Already in pairing state, ignoring pairing request from {}", bd_addr);
     return;
   }
   btm_sec_cb.link_spec.addrt.bda = bd_addr;
