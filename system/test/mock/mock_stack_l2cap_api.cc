@@ -101,9 +101,9 @@ void L2CA_Deregister(uint16_t psm) {
   inc_func_call_count(__func__);
   test::mock::stack_l2cap_api::L2CA_Deregister(psm);
 }
-uint16_t L2CA_AllocateLePSM(void) {
+uint16_t L2CA_AllocateLePSM(int fixed_psm_slots) {
   inc_func_call_count(__func__);
-  return test::mock::stack_l2cap_api::L2CA_AllocateLePSM();
+  return test::mock::stack_l2cap_api::L2CA_AllocateLePSM(fixed_psm_slots);
 }
 void L2CA_FreeLePSM(uint16_t psm) {
   inc_func_call_count(__func__);

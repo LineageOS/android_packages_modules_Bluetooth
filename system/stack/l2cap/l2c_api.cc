@@ -218,21 +218,29 @@ void L2CA_Deregister(uint16_t psm) {
  * Returns          LE_PSM to use if success. Otherwise returns 0.
  *
  ******************************************************************************/
-uint16_t L2CA_AllocateLePSM(void) {
+uint16_t L2CA_AllocateLePSM(int lecoc_fixed_psm_slots) {
   bool done = false;
   uint16_t psm = l2cb.le_dyn_psm;
   uint16_t count = 0;
 
+  uint8_t le_dynamic_psm_end = LE_DYNAMIC_PSM_END;
+  uint8_t le_dynamic_psm_slots = LE_DYNAMIC_PSM_RANGE;
+
+  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+    le_dynamic_psm_end = le_dynamic_psm_end - lecoc_fixed_psm_slots;
+    le_dynamic_psm_slots = le_dynamic_psm_slots - lecoc_fixed_psm_slots;
+  }
+
   log::verbose("last psm={}", psm);
   while (!done) {
     count++;
-    if (count > LE_DYNAMIC_PSM_RANGE) {
+    if (count > le_dynamic_psm_slots) {
       log::error("Out of free BLE PSM");
       return 0;
     }
 
     psm++;
-    if (psm > LE_DYNAMIC_PSM_END) {
+    if (psm > le_dynamic_psm_end) {
       psm = LE_DYNAMIC_PSM_START;
     }
 
@@ -400,16 +408,39 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, uin
 
   tL2C_RCB* p_rcb;
   uint16_t vpsm = psm;
+  log::verbose("psm: 0x{:04x}", psm);
+  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+    log::verbose("fixed_psm_slots: 0x{:04x}, lecoc_assigned_psm: 0x{:04x}",
+                 cfg.lecoc_fixed_psm_slots, cfg.lecoc_assigned_psm);
+    /*
+     * If the input PSM is not internally assigned one, Then Ensure same Fixed PSM
+     * is already not allocated
+     */
+    if (!cfg.lecoc_assigned_psm && psm >= (LE_DYNAMIC_PSM_END - cfg.lecoc_fixed_psm_slots) &&
+        psm < LE_DYNAMIC_PSM_END) {
+      if (!l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START]) {
+        // make sure the newly allocated psm is not used right now
+        if (l2cu_find_ble_rcb_by_psm(psm)) {
+          log::warn("supposedly-free PSM={} have allocated rcb!", psm);
+          return 0;
+        }
+        l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START] = true;
+        log::verbose("assigned PSM={}", psm);
+      } else {
+        log::error("PSM is already allocated: 0x{:04x}", psm);
+        return 0;
+      }
+    }
+  }
 
   /* Check if this is a registration for an outgoing-only connection to */
   /* a dynamic PSM. If so, allocate a "virtual" PSM for the app to use. */
   if ((psm >= LE_DYNAMIC_PSM_START) && (p_cb_info.pL2CA_ConnectInd_Cb == NULL)) {
-    vpsm = L2CA_AllocateLePSM();
+    vpsm = L2CA_AllocateLePSM(cfg.lecoc_fixed_psm_slots);
     if (vpsm == 0) {
       log::error("Out of free BLE PSM");
       return 0;
     }
-
     log::debug("Real PSM: 0x{:04x}  Virtual PSM: 0x{:04x}", psm, vpsm);
   }
 

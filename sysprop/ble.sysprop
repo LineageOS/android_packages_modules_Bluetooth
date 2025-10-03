@@ -206,3 +206,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.client.subrate_le_audio_mode_cont_number.config"
 }
+
+prop {
+    api_name: "lecoc_fixed_psm_slots"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.lecoc.fixed_psm_slots.config"
+}

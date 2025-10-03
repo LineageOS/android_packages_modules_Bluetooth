@@ -90,8 +90,8 @@ extern struct L2CA_Deregister L2CA_Deregister;
 // Params: void
 // Returns: uint16_t
 struct L2CA_AllocateLePSM {
-  std::function<uint16_t(void)> body{[](void) { return 0; }};
-  uint16_t operator()(void) { return body(); }
+  std::function<uint16_t(int /*fixed_psm_slots*/)> body{[](int /*fixed_psm_slots*/) { return 0; }};
+  uint16_t operator()(int fixed_psm_slots) { return body(fixed_psm_slots); }
 };
 extern struct L2CA_AllocateLePSM L2CA_AllocateLePSM;
 // Name: L2CA_FreeLePSM

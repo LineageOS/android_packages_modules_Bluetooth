@@ -304,7 +304,7 @@ public:
    ** Returns          LE_PSM to use if success. Otherwise returns 0.
    **
    ******************************************************************************/
-  virtual uint16_t L2CA_AllocateLePSM(void) = 0;
+  virtual uint16_t L2CA_AllocateLePSM(int fixed_psm_slots) = 0;
 
   /*******************************************************************************
    **

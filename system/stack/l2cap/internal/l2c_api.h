@@ -268,7 +268,7 @@ void L2CA_Deregister(uint16_t psm);
  * Returns          LE_PSM to use if success. Otherwise returns 0.
  *
  ******************************************************************************/
-[[nodiscard]] uint16_t L2CA_AllocateLePSM(void);
+[[nodiscard]] uint16_t L2CA_AllocateLePSM(int fixed_psm_slots);
 
 /*******************************************************************************
  *

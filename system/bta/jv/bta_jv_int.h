@@ -149,7 +149,7 @@ extern std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
 void bta_jv_disable();
 void bta_jv_get_channel_id(tBTA_JV_CONN_TYPE type, int32_t channel, uint32_t l2cap_socket_id,
-                           uint32_t rfcomm_slot_id);
+                           uint32_t rfcomm_slot_id, uint32_t lecoc_fixed_psm_slots);
 void bta_jv_free_scn(tBTA_JV_CONN_TYPE type, uint16_t scn);
 void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
                             bluetooth::Uuid* uuid_list, uint32_t rfcomm_slot_id);

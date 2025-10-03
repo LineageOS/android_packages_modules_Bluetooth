@@ -132,6 +132,8 @@ typedef struct {
   bool init_credit_present;
   uint16_t init_credit;
   uint16_t flags; /* bit 0: 0-no continuation, 1-continuation */
+  int lecoc_fixed_psm_slots;
+  bool lecoc_assigned_psm;
 } tL2CAP_CFG_INFO;
 
 /* Define a structure to hold the configuration parameter for LE L2CAP
@@ -157,6 +159,8 @@ struct tL2CAP_LE_CFG_INFO {
   uint16_t mps{kDefaultL2capMps};
   uint16_t credits{L2CA_LeCreditDefault()};
   uint8_t number_of_channels{L2CAP_CREDIT_BASED_MAX_CIDS};
+  uint8_t lecoc_fixed_psm_slots{0};
+  bool lecoc_assigned_psm{false};
 };
 
 /* LE credit based L2CAP connection parameters */

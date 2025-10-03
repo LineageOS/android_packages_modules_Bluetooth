@@ -42,7 +42,7 @@ public:
                uint16_t sec_level));
   MOCK_METHOD(void, L2CA_Deregister, (uint16_t psm));
 
-  MOCK_METHOD(uint16_t, L2CA_AllocateLePSM, ());
+  MOCK_METHOD(uint16_t, L2CA_AllocateLePSM, (int fixed_psm_slots));
   MOCK_METHOD(void, L2CA_FreeLePSM, (uint16_t psm));
 
   MOCK_METHOD(uint16_t, L2CA_RegisterLECoc,

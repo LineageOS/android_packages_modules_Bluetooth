@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <android_bluetooth_sysprop.h>
 #include <cstdint>
 #include <cstring>
 #include <mutex>
@@ -42,11 +43,13 @@
 #include "internal_include/bt_target.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
+#include "os/system_properties.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cdefs.h"
+#include "stack/l2cap/l2c_int.h"
 
 using namespace bluetooth;
 
@@ -95,9 +98,10 @@ typedef struct l2cap_socket {
   uint64_t endpoint_id;          // ID of the hub end point
   bool is_accepting;             // is app accepting on server socket?
   uint64_t connection_start_time_ms;  // Timestamp when the connection state started
+  uint8_t lecoc_fixed_psm_slots;      // Range of LE PSM channels at the end of valid PSM range
 } l2cap_socket;
 
-static void btsock_l2cap_server_listen(l2cap_socket* sock);
+static void btsock_l2cap_server_listen(l2cap_socket* sock, bool is_assigned_psm);
 static uint64_t btif_l2cap_sock_generate_socket_id();
 static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock);
 static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock);
@@ -610,7 +614,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket*
   accept_rs->app_fd = -1;  // The fd is closed after sent to app in send_app_connect_signal()
   // But for some reason we still leak a FD - either the server socket
   // one or the accept socket one.
-  btsock_l2cap_server_listen(sock);
+  btsock_l2cap_server_listen(sock, true);
   // start monitoring the socketpair to get call back when app is accepting on server socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
 }
@@ -864,21 +868,51 @@ void on_l2cap_psm_assigned(int id, int psm) {
   }
 
   sock->channel = psm;
-
-  btsock_l2cap_server_listen(sock);
+  btsock_l2cap_server_listen(sock, true);
 }
 
-static void btsock_l2cap_server_listen(l2cap_socket* sock) {
+static bool is_psm_in_fixed_range(int psm, int lecoc_fixed_psm_slots) {
+  if (psm >= (LE_DYNAMIC_PSM_END - lecoc_fixed_psm_slots) && psm < LE_DYNAMIC_PSM_END) {
+    return true;
+  }
+  return false;
+}
+
+static void btsock_l2cap_server_listen(l2cap_socket* sock, bool is_assigned_psm) {
   tBTA_JV_CONN_TYPE connection_type =
           sock->is_le_coc ? tBTA_JV_CONN_TYPE::L2CAP_LE : tBTA_JV_CONN_TYPE::L2CAP;
-
-  /* If we have a channel specified in the request, just start the server,
-   * else we request a PSM and start the server after we receive a PSM. */
-  if (sock->channel <= 0) {
-    BTA_JvGetChannelId(connection_type, sock->id, 0);
-    return;
+  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+    log::info("fixed psm range : {}", sock->lecoc_fixed_psm_slots);
+    if (sock->is_le_coc) {
+      if (sock->channel <= 0) {
+        BTA_JvGetChannelId(connection_type, sock->id, 0, sock->lecoc_fixed_psm_slots);
+        log::info("channel is less than ZERO");
+        return;
+      }
+      uint8_t psm = sock->channel & 0xFF;
+      if (!is_psm_in_fixed_range(psm, sock->lecoc_fixed_psm_slots) && !is_assigned_psm) {
+        log::info("Getting psm allocated for LECoC:{}", psm);
+        BTA_JvGetChannelId(connection_type, sock->id, 0, sock->lecoc_fixed_psm_slots);
+        return;
+      } else {
+        log::info("request to host server with fixed psm: {}", psm);
+      }
+    } else {
+      /* If we have a channel specified in the request, just start the server,
+       * else we request a PSM and start the server after we receive a PSM. */
+      if (sock->channel <= 0) {
+        BTA_JvGetChannelId(connection_type, sock->id, 0, sock->lecoc_fixed_psm_slots);
+        return;
+      }
+    }
+  } else {
+    /* If we have a channel specified in the request, just start the server,
+     * else we request a PSM and start the server after we receive a PSM. */
+    if (sock->channel <= 0) {
+      BTA_JvGetChannelId(connection_type, sock->id, 0, 0);
+      return;
+    }
   }
-
   /* Setup ETM settings: mtu will be set below */
   std::unique_ptr<tL2CAP_CFG_INFO> cfg = std::make_unique<tL2CAP_CFG_INFO>(
           tL2CAP_CFG_INFO{.fcr_present = true, .fcr = kDefaultErtmOptions});
@@ -888,6 +922,11 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock) {
   if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     cfg->init_credit_present = true;
     cfg->init_credit = 0;
+  }
+
+  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+    cfg->lecoc_fixed_psm_slots = sock->lecoc_fixed_psm_slots;
+    cfg->lecoc_assigned_psm = is_assigned_psm;
   }
 
   std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info;
@@ -940,8 +979,10 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
   if (is_le_coc) {
     if (listen) {
       if (flags & BTSOCK_FLAG_NO_SDP) {
-        /* For LE COC server; set channel to zero so that it will be assigned */
-        channel = 0;
+        if (!com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+          /* For LE COC server; set channel to zero so that it will be assigned */
+          channel = 0;
+        }
       } else if (channel <= 0) {
         log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
         return BT_STATUS_SOCKET_ERROR;
@@ -968,6 +1009,17 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
   sock->channel = channel;
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
+  if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+    sock->lecoc_fixed_psm_slots =
+            android::sysprop::bluetooth::Ble::lecoc_fixed_psm_slots().value();
+    log::info("fixed psm range : {}", sock->lecoc_fixed_psm_slots);
+    if (sock->lecoc_fixed_psm_slots < LECOC_FIXED_PSM_RANGE_MIN ||
+        sock->lecoc_fixed_psm_slots > LECOC_FIXED_PSM_RANGE_MAX) {
+      // limit this to FIXED_PSM_SLOTS_DEFAULT
+      sock->lecoc_fixed_psm_slots = LECOC_FIXED_PSM_SLOTS_DEFAULT;
+      log::warn("corrected fixed psm slots : {}", sock->lecoc_fixed_psm_slots);
+    }
+  }
   if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     if (!btsock_l2cap_get_offload_mtu(&sock->rx_mtu, static_cast<uint16_t>(max_rx_packet_size))) {
       return BT_STATUS_UNSUPPORTED;
@@ -985,7 +1037,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
 
   /* "role" is never initialized in rfcomm code */
   if (listen) {
-    btsock_l2cap_server_listen(sock);
+    btsock_l2cap_server_listen(sock, false);
     // start monitoring the socketpair to get call back when app is accepting on server socket
     btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
   } else {
@@ -1129,6 +1181,7 @@ static bool btsock_l2cap_read_signaled_on_listen_socket(int fd, int /* flags */,
                                                         uint32_t /* user_id */,
                                                         l2cap_socket* sock) {
   int size = 0;
+
   bool ioctl_success = ioctl(sock->our_fd, FIONREAD, &size) == 0;
   if (ioctl_success && size) {
     sock_accept_signal_t accept_signal = {};
@@ -1419,7 +1472,7 @@ static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap
   }
   // start monitor the socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_EXCEPTION, sock->id);
-  btsock_l2cap_server_listen(sock);
+  btsock_l2cap_server_listen(sock, true);
   // start monitoring the socketpair to get call back when app is accepting on server socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
 }
