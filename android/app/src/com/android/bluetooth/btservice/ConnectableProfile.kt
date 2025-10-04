@@ -14,179 +14,99 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import static android.bluetooth.BluetoothDevice.BOND_BONDED;
-import static android.bluetooth.BluetoothProfile.A2DP;
-import static android.bluetooth.BluetoothProfile.A2DP_SINK;
-import static android.bluetooth.BluetoothProfile.BATTERY;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.CSIP_SET_COORDINATOR;
-import static android.bluetooth.BluetoothProfile.HAP_CLIENT;
-import static android.bluetooth.BluetoothProfile.HEADSET;
-import static android.bluetooth.BluetoothProfile.HEADSET_CLIENT;
-import static android.bluetooth.BluetoothProfile.HEARING_AID;
-import static android.bluetooth.BluetoothProfile.HID_DEVICE;
-import static android.bluetooth.BluetoothProfile.HID_HOST;
-import static android.bluetooth.BluetoothProfile.LE_AUDIO;
-import static android.bluetooth.BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT;
-import static android.bluetooth.BluetoothProfile.MAP;
-import static android.bluetooth.BluetoothProfile.MAP_CLIENT;
-import static android.bluetooth.BluetoothProfile.PAN;
-import static android.bluetooth.BluetoothProfile.PBAP;
-import static android.bluetooth.BluetoothProfile.PBAP_CLIENT;
-import static android.bluetooth.BluetoothProfile.SAP;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothProfile.VOLUME_CONTROL;
-import static android.bluetooth.BluetoothProfile.getProfileName;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.A2DP
+import android.bluetooth.BluetoothProfile.A2DP_SINK
+import android.bluetooth.BluetoothProfile.BATTERY
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothProfile.CSIP_SET_COORDINATOR
+import android.bluetooth.BluetoothProfile.HAP_CLIENT
+import android.bluetooth.BluetoothProfile.HEADSET
+import android.bluetooth.BluetoothProfile.HEADSET_CLIENT
+import android.bluetooth.BluetoothProfile.HEARING_AID
+import android.bluetooth.BluetoothProfile.HID_DEVICE
+import android.bluetooth.BluetoothProfile.HID_HOST
+import android.bluetooth.BluetoothProfile.LE_AUDIO
+import android.bluetooth.BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT
+import android.bluetooth.BluetoothProfile.MAP
+import android.bluetooth.BluetoothProfile.MAP_CLIENT
+import android.bluetooth.BluetoothProfile.PAN
+import android.bluetooth.BluetoothProfile.PBAP
+import android.bluetooth.BluetoothProfile.PBAP_CLIENT
+import android.bluetooth.BluetoothProfile.SAP
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothProfile.VOLUME_CONTROL
+import android.bluetooth.BluetoothProfile.getProfileName
+import android.bluetooth.BluetoothUuid
+import android.util.Log
+import com.android.bluetooth.Utils
+import com.android.bluetooth.Utils.arrayContains
+import com.android.bluetooth.hid.HidHostService
 
-import static com.android.bluetooth.Utils.arrayContains;
+private const val TAG = Utils.BT_PREFIX + "ConnectableProfile"
 
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothUuid;
-import android.os.ParcelUuid;
-import android.util.Log;
+// Base class for a Bluetooth profile that supports connection semantics
+abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
+    ProfileService(id, adapterService) {
 
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.hid.HidHostService;
-
-import java.util.Arrays;
-
-/** Base class for a Bluetooth profile that supports connection semantics. */
-public abstract class ConnectableProfile extends ProfileService {
-    private static final String TAG = Utils.BT_PREFIX + ConnectableProfile.class.getSimpleName();
-
-    protected final DatabaseManager mDatabaseManager;
-
-    protected ConnectableProfile(int id, AdapterService adapterService) {
-        super(id, adapterService);
-        mDatabaseManager = mAdapterService.getDatabaseManager();
-    }
-
-    static boolean isSupported(AdapterService adapterService, BluetoothDevice device, int id) {
-        final ParcelUuid[] remoteDeviceUuids = adapterService.getRemoteUuids(device);
-        if (remoteDeviceUuids == null || remoteDeviceUuids.length == 0) {
-            Log.e(TAG, "isSupported(): remoteUuids is null for device: " + device);
-        }
-
-        final ParcelUuid[] localDeviceUuids = adapterService.getAdapterProperties().getUuids();
-        Log.v(
-                TAG,
-                "isSupported("
-                        + ("device=" + device)
-                        + (", profile=" + getProfileName(id) + "):")
-                        + (" local_uuids=" + Arrays.toString(localDeviceUuids))
-                        + (", remote_uuids=" + Arrays.toString(remoteDeviceUuids)));
-
-        return switch (id) {
-            case A2DP ->
-                    arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST)
-                            || arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SINK);
-            case A2DP_SINK ->
-                    arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST)
-                            || arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SOURCE);
-            case BATTERY -> arrayContains(remoteDeviceUuids, BluetoothUuid.BATTERY);
-            case CSIP_SET_COORDINATOR ->
-                    arrayContains(remoteDeviceUuids, BluetoothUuid.COORDINATED_SET);
-            case HAP_CLIENT -> arrayContains(remoteDeviceUuids, BluetoothUuid.HAS);
-            case HEADSET ->
-                    (arrayContains(localDeviceUuids, BluetoothUuid.HSP_AG)
-                                    && arrayContains(remoteDeviceUuids, BluetoothUuid.HSP))
-                            || (arrayContains(localDeviceUuids, BluetoothUuid.HFP_AG)
-                                    && arrayContains(remoteDeviceUuids, BluetoothUuid.HFP));
-            case HEADSET_CLIENT ->
-                    arrayContains(remoteDeviceUuids, BluetoothUuid.HFP_AG)
-                            && arrayContains(localDeviceUuids, BluetoothUuid.HFP);
-            case HEARING_AID -> arrayContains(remoteDeviceUuids, BluetoothUuid.HEARING_AID);
-            case HID_HOST ->
-                    arrayContains(remoteDeviceUuids, BluetoothUuid.HID)
-                            || arrayContains(remoteDeviceUuids, BluetoothUuid.HOGP)
-                            || arrayContains(
-                                    remoteDeviceUuids, HidHostService.ANDROID_HEADTRACKER_UUID);
-            case LE_AUDIO -> arrayContains(remoteDeviceUuids, BluetoothUuid.LE_AUDIO);
-            case LE_AUDIO_BROADCAST_ASSISTANT ->
-                    arrayContains(remoteDeviceUuids, BluetoothUuid.BASS);
-            case MAP_CLIENT ->
-                    arrayContains(localDeviceUuids, BluetoothUuid.MNS)
-                            && arrayContains(remoteDeviceUuids, BluetoothUuid.MAS);
-            case PAN -> arrayContains(remoteDeviceUuids, BluetoothUuid.NAP);
-            case PBAP_CLIENT ->
-                    arrayContains(localDeviceUuids, BluetoothUuid.PBAP_PCE)
-                            && arrayContains(remoteDeviceUuids, BluetoothUuid.PBAP_PSE);
-            case SAP -> arrayContains(remoteDeviceUuids, BluetoothUuid.SAP);
-            case VOLUME_CONTROL -> arrayContains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL);
-            case HID_DEVICE ->
-                    adapterService
-                            .getStartedConnectableProfile(id)
-                            .filter(p -> p.getConnectionState(device) == STATE_DISCONNECTED)
-                            .isPresent();
-            case MAP, PBAP ->
-                    adapterService
-                            .getStartedConnectableProfile(id)
-                            .filter(p -> p.getConnectionState(device) == STATE_CONNECTED)
-                            .isPresent();
-            default -> {
-                Log.w(TAG, "isSupported() was called but not implemented");
-                yield false;
-            }
-        };
-    }
+    protected val databaseManager = mAdapterService.databaseManager
 
     /**
      * Connects the given Bluetooth device to the profile.
      *
-     * @return {@code true} if the connection was successful, {@code false} otherwise.
+     * @return `true` if the connection was successful, `false` otherwise
      */
-    public abstract boolean connect(BluetoothDevice device);
+    abstract fun connect(device: BluetoothDevice?): Boolean
 
     /** Disconnects the given device from the profile. */
-    public abstract boolean disconnect(BluetoothDevice device);
+    abstract fun disconnect(device: BluetoothDevice?): Boolean
 
-    /**
-     * @return true if connection to remote device is allowed, otherwise false
-     */
-    public boolean okToConnect(BluetoothDevice device) {
-        String log = "okToConnect(" + device + "): Connect rejected: ";
+    /** @return `true` if connection to remote device is allowed, otherwise `false` */
+    open fun okToConnect(device: BluetoothDevice?): Boolean {
+        val log = "okToConnect($device): Connect rejected: "
         // Check if this is an incoming connection in Quiet mode.
-        if (mAdapterService.isQuietModeEnabled()) {
-            Log.e(mName, log + "quiet mode enabled");
-            return false;
+        if (mAdapterService.isQuietModeEnabled) {
+            Log.e(mName, "${log}quiet mode enabled")
+            return false
         }
         // Allow this connection only if the device is bonded.
         // Any attempt to connect while bonding would lead to an unauthorized connection.
-        int bondState = mAdapterService.getBondState(device);
+        val bondState = mAdapterService.getBondState(device)
         if (bondState != BOND_BONDED) {
-            Log.e(mName, log + "invalid bond state: " + bondState);
-            return false;
+            Log.e(mName, "${log}invalid bond state: $bondState")
+            return false
         }
         // Check connectionPolicy and reject the connection if it is not valid.
-        int connectionPolicy = getConnectionPolicy(device);
-        if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
-                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            Log.e(mName, log + "invalid connection policy: " + connectionPolicy);
-            return false;
+        val connectionPolicy = getConnectionPolicy(device)
+        if (
+            connectionPolicy != CONNECTION_POLICY_UNKNOWN &&
+                connectionPolicy != CONNECTION_POLICY_ALLOWED
+        ) {
+            Log.e(mName, "${log}invalid connection policy: $connectionPolicy")
+            return false
         }
-        return true;
+        return true
     }
 
     /**
      * Gets the connection state of the profile for the given Bluetooth device.
      *
-     * <p>Implementations should typically return one of the connection state constants defined in
-     * {@link BluetoothProfile}, such as {@link BluetoothProfile#STATE_DISCONNECTED}, {@link
-     * BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, or {@link
-     * BluetoothProfile#STATE_DISCONNECTING}.
+     * Implementations should typically return one of the connection state constants defined in
+     * [BluetoothProfile], such as [BluetoothProfile.STATE_DISCONNECTED],
+     * [BluetoothProfile.STATE_CONNECTING], [BluetoothProfile.STATE_CONNECTED], or
+     * [BluetoothProfile.STATE_DISCONNECTING].
      *
-     * @param device The Bluetooth device for which to get the connection state. May be {@code
-     *     null}, in which case implementations should typically return {@link
-     *     BluetoothProfile#STATE_DISCONNECTED}.
+     * @param device The Bluetooth device for which to get the connection state. May be `null`, in
+     *   which case implementations should typically return [BluetoothProfile.STATE_DISCONNECTED].
      * @return The current connection state for the device with this profile.
      */
-    public abstract int getConnectionState(BluetoothDevice device);
+    abstract fun getConnectionState(device: BluetoothDevice?): Int
 
     /**
      * Get the connection policy of the profile.
@@ -194,27 +114,103 @@ public abstract class ConnectableProfile extends ProfileService {
      * @param device Bluetooth device
      * @return connection policy of the device
      */
-    public final @BluetoothProfile.ConnectionPolicy int getConnectionPolicy(
-            BluetoothDevice device) {
-        return mAdapterService.getProfileConnectionPolicy(device, mProfileId);
+    @BluetoothProfile.ConnectionPolicy
+    fun getConnectionPolicy(device: BluetoothDevice?): Int {
+        return mAdapterService.getProfileConnectionPolicy(device, mProfileId)
     }
 
     /**
-     * Set connection policy of the profile and connects it if connectionPolicy is {@link
-     * BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is {@link
-     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}
+     * Set connection policy of the profile and connects it if connectionPolicy is
+     * [BluetoothProfile.CONNECTION_POLICY_ALLOWED] or disconnects if connectionPolicy is
+     * [BluetoothProfile.CONNECTION_POLICY_FORBIDDEN]
      *
-     * <p>The device should already be paired.
+     * The device should already be paired.
      *
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
-    public abstract boolean setConnectionPolicy(
-            BluetoothDevice device, @BluetoothProfile.ConnectionPolicy int connectionPolicy);
+    abstract fun setConnectionPolicy(
+        device: BluetoothDevice?,
+        @BluetoothProfile.ConnectionPolicy connectionPolicy: Int,
+    ): Boolean
 
     /** Process a change in the bonding state for a device */
-    public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
-        Log.w(mName, "handleBondStateChanged() was called but not implemented");
+    open fun handleBondStateChanged(device: BluetoothDevice?, fromState: Int, toState: Int) {
+        Log.w(mName, "handleBondStateChanged() was called but not implemented")
+    }
+
+    companion object {
+        @JvmStatic
+        fun isSupported(
+            adapterService: AdapterService,
+            device: BluetoothDevice?,
+            id: Int,
+        ): Boolean {
+            val remoteDeviceUuids = adapterService.getRemoteUuids(device)
+            if (remoteDeviceUuids.isNullOrEmpty()) {
+                Log.e(TAG, "isSupported(): remoteUuids is null for device: $device")
+            }
+
+            val localDeviceUuids = adapterService.adapterProperties.uuids
+            Log.v(
+                TAG,
+                "isSupported(device=$device, profile=${getProfileName(id)}): " +
+                    "local_uuids=${localDeviceUuids.contentToString()}, " +
+                    "remote_uuids=${remoteDeviceUuids.contentToString()}",
+            )
+
+            return when (id) {
+                A2DP ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST) ||
+                        arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SINK)
+                A2DP_SINK ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST) ||
+                        arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SOURCE)
+                BATTERY -> arrayContains(remoteDeviceUuids, BluetoothUuid.BATTERY)
+                CSIP_SET_COORDINATOR ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.COORDINATED_SET)
+                HAP_CLIENT -> arrayContains(remoteDeviceUuids, BluetoothUuid.HAS)
+                HEADSET ->
+                    arrayContains(localDeviceUuids, BluetoothUuid.HSP_AG) &&
+                        arrayContains(remoteDeviceUuids, BluetoothUuid.HSP) ||
+                        (arrayContains(localDeviceUuids, BluetoothUuid.HFP_AG) &&
+                            arrayContains(remoteDeviceUuids, BluetoothUuid.HFP))
+                HEADSET_CLIENT ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.HFP_AG) &&
+                        arrayContains(localDeviceUuids, BluetoothUuid.HFP)
+                HEARING_AID -> arrayContains(remoteDeviceUuids, BluetoothUuid.HEARING_AID)
+                HID_HOST ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.HID) ||
+                        arrayContains(remoteDeviceUuids, BluetoothUuid.HOGP) ||
+                        arrayContains(remoteDeviceUuids, HidHostService.ANDROID_HEADTRACKER_UUID)
+                LE_AUDIO -> arrayContains(remoteDeviceUuids, BluetoothUuid.LE_AUDIO)
+                LE_AUDIO_BROADCAST_ASSISTANT -> arrayContains(remoteDeviceUuids, BluetoothUuid.BASS)
+                MAP_CLIENT ->
+                    arrayContains(localDeviceUuids, BluetoothUuid.MNS) &&
+                        arrayContains(remoteDeviceUuids, BluetoothUuid.MAS)
+                PAN -> arrayContains(remoteDeviceUuids, BluetoothUuid.NAP)
+                PBAP_CLIENT ->
+                    arrayContains(localDeviceUuids, BluetoothUuid.PBAP_PCE) &&
+                        arrayContains(remoteDeviceUuids, BluetoothUuid.PBAP_PSE)
+                SAP -> arrayContains(remoteDeviceUuids, BluetoothUuid.SAP)
+                VOLUME_CONTROL -> arrayContains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL)
+                HID_DEVICE ->
+                    adapterService
+                        .getStartedConnectableProfile(id)
+                        .filter { p -> p.getConnectionState(device) == STATE_DISCONNECTED }
+                        .isPresent
+                MAP,
+                PBAP ->
+                    adapterService
+                        .getStartedConnectableProfile(id)
+                        .filter { p -> p.getConnectionState(device) == STATE_CONNECTED }
+                        .isPresent
+                else -> {
+                    Log.w(TAG, "isSupported() was called but not implemented")
+                    false
+                }
+            }
+        }
     }
 }
