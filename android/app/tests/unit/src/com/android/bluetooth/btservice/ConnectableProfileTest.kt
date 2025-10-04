@@ -14,145 +14,138 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothProfile
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link ConnectableProfile}. */
+/** Test cases for [ConnectableProfile]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class ConnectableProfileTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class ConnectableProfileTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    private static final int TEST_PROFILE_ID = 99;
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var mockBinder: IProfileServiceBinder
+    @Mock private lateinit var device: BluetoothDevice
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private ProfileService.IProfileServiceBinder mBinder;
-    @Mock private BluetoothDevice mDevice;
+    private lateinit var connectableProfile: TestConnectableProfile
 
-    private TestConnectableProfile mConnectableProfile;
+    private inner class TestConnectableProfile(id: Int, adapterService: AdapterService) :
+        ConnectableProfile(id, adapterService) {
 
-    private class TestConnectableProfile extends ConnectableProfile {
-        TestConnectableProfile(int id, AdapterService adapterService) {
-            super(id, adapterService);
+        override fun initBinder(): IProfileServiceBinder {
+            return mockBinder
         }
 
-        @Override
-        protected IProfileServiceBinder initBinder() {
-            return mBinder;
-        }
-
-        @Override
-        public void cleanup() {
+        override fun cleanup() {
             // Nothing to do for test
         }
 
-        @Override
-        public boolean connect(BluetoothDevice device) {
-            return false;
+        override fun connect(device: BluetoothDevice?): Boolean {
+            return false
         }
 
-        @Override
-        public boolean disconnect(BluetoothDevice device) {
-            return true;
+        override fun disconnect(device: BluetoothDevice?): Boolean {
+            return true
         }
 
-        @Override
-        public int getConnectionState(BluetoothDevice device) {
-            return STATE_DISCONNECTED;
+        override fun getConnectionState(device: BluetoothDevice?): Int {
+            return BluetoothProfile.STATE_DISCONNECTED
         }
 
-        @Override
-        public boolean setConnectionPolicy(BluetoothDevice device, int policy) {
-            return false;
+        override fun setConnectionPolicy(device: BluetoothDevice?, connectionPolicy: Int): Boolean {
+            return false
         }
     }
 
     @Before
-    public void setUp() {
-        mConnectableProfile = new TestConnectableProfile(TEST_PROFILE_ID, mAdapterService);
+    fun setUp() {
+        connectableProfile = TestConnectableProfile(TEST_PROFILE_ID, adapterService)
     }
 
     @Test
-    public void toString_returnsClassName() {
-        assertThat(mConnectableProfile.toString()).isEqualTo("TestConnectableProfile");
+    fun toString_returnsClassName() {
+        assertThat(connectableProfile.toString()).isEqualTo("TestConnectableProfile")
     }
 
     @Test
-    public void getProfileId_returnsCorrectId() {
-        assertThat(mConnectableProfile.getProfileId()).isEqualTo(TEST_PROFILE_ID);
+    fun profileId_returnsCorrectId() {
+        assertThat(connectableProfile.profileId).isEqualTo(TEST_PROFILE_ID)
     }
 
     @Test
-    public void getBinder_returnsBinderFromInitBinder() {
-        assertThat(mConnectableProfile.getBinder()).hasValue(mBinder);
+    fun binder_returnsBinderFromInitBinder() {
+        assertThat(connectableProfile.binder).hasValue(mockBinder)
     }
 
     @Test
-    public void connect_returnsFalse() {
-        assertThat(mConnectableProfile.connect(mDevice)).isFalse();
+    fun connect_returnsFalse() {
+        assertThat(connectableProfile.connect(device)).isFalse()
     }
 
     @Test
-    public void disconnect_returnsTrue() {
-        assertThat(mConnectableProfile.disconnect(mDevice)).isTrue();
+    fun disconnect_returnsTrue() {
+        assertThat(connectableProfile.disconnect(device)).isTrue()
     }
 
     @Test
-    public void getConnectionState_returnsStateDisconnect() {
-        assertThat(mConnectableProfile.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
+    fun getConnectionState_returnsStateDisconnect() {
+        assertThat(connectableProfile.getConnectionState(device))
+            .isEqualTo(BluetoothProfile.STATE_DISCONNECTED)
     }
 
     @Test
-    public void getConnectionPolicy_callsDatabaseManager_returnsExpectedPolicy() {
-        final int expectedPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+    fun getConnectionPolicy_callsDatabaseManager_returnsExpectedPolicy() {
+        val expectedPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED
         doReturn(expectedPolicy)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(mDevice, TEST_PROFILE_ID);
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(device, TEST_PROFILE_ID)
 
-        assertThat(mConnectableProfile.getConnectionPolicy(mDevice)).isEqualTo(expectedPolicy);
-        verify(mAdapterService).getProfileConnectionPolicy(mDevice, TEST_PROFILE_ID);
+        assertThat(connectableProfile.getConnectionPolicy(device)).isEqualTo(expectedPolicy)
+        verify(adapterService).getProfileConnectionPolicy(device, TEST_PROFILE_ID)
     }
 
     @Test
-    public void getConnectionPolicy_callsDatabaseManager_onNullDevice_returnsPolicyUnknown() {
-        final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+    fun getConnectionPolicy_callsDatabaseManager_onNullDevice_returnsPolicyUnknown() {
+        val policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN
         doReturn(policyUnknown)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(null, TEST_PROFILE_ID);
+            .whenever(adapterService)
+            .getProfileConnectionPolicy(null, TEST_PROFILE_ID)
 
-        assertThat(mConnectableProfile.getConnectionPolicy(null)).isEqualTo(policyUnknown);
-        verify(mAdapterService).getProfileConnectionPolicy(null, TEST_PROFILE_ID);
+        assertThat(connectableProfile.getConnectionPolicy(null)).isEqualTo(policyUnknown)
+        verify(adapterService).getProfileConnectionPolicy(null, TEST_PROFILE_ID)
     }
 
     @Test
-    public void setConnectionPolicy_returnsFalse() {
-        final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        assertThat(mConnectableProfile.setConnectionPolicy(mDevice, policyUnknown)).isFalse();
+    fun setConnectionPolicy_returnsFalse() {
+        val policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+        assertThat(connectableProfile.setConnectionPolicy(device, policyUnknown)).isFalse()
     }
 
     @Test
-    public void handleBondStateChanged_doesNotCrash() {
-        mConnectableProfile.handleBondStateChanged(
-                mDevice, BluetoothDevice.BOND_NONE, BluetoothDevice.BOND_NONE);
+    fun handleBondStateChanged_doesNotCrash() {
+        connectableProfile.handleBondStateChanged(
+            device,
+            BluetoothDevice.BOND_NONE,
+            BluetoothDevice.BOND_NONE,
+        )
+    }
+
+    companion object {
+        private const val TEST_PROFILE_ID = 99
     }
 }
