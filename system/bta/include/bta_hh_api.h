@@ -355,7 +355,7 @@ void BTA_HhOpen(const tAclLinkSpec& link_spec, bool direct);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhClose(uint8_t dev_handle);
+void BTA_HhClose(uint8_t dev_handle, bthh_status_t status = BTHH_OK);
 
 /*******************************************************************************
  *
