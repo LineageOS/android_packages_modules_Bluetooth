@@ -108,11 +108,12 @@ void BTA_HhDisable(void) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhClose(uint8_t dev_handle) {
-  BT_HDR* p_buf = (BT_HDR*)osi_calloc(sizeof(BT_HDR));
+void BTA_HhClose(uint8_t dev_handle, bthh_status_t status) {
+  tBTA_HH_API_CLOSE* p_buf = (tBTA_HH_API_CLOSE*)osi_calloc(sizeof(tBTA_HH_API_CLOSE));
 
-  p_buf->event = BTA_HH_API_CLOSE_EVT;
-  p_buf->layer_specific = (uint16_t)dev_handle;
+  p_buf->hdr.event = BTA_HH_API_CLOSE_EVT;
+  p_buf->hdr.layer_specific = (uint16_t)dev_handle;
+  p_buf->status = status;
 
   bta_sys_sendmsg(p_buf);
 }

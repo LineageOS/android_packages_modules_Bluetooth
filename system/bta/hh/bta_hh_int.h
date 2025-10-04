@@ -86,6 +86,11 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
+  bthh_status_t status;
+} tBTA_HH_API_CLOSE;
+
+typedef struct {
+  BT_HDR_RIGID hdr;
   tAclLinkSpec link_spec;
   tBTA_HH_PROTO_MODE mode;
   bool direct;
@@ -125,6 +130,7 @@ typedef struct {
 typedef union {
   BT_HDR_RIGID hdr;
   tBTA_HH_API_CONN api_conn;
+  tBTA_HH_API_CLOSE api_close;
   tBTA_HH_CMD_DATA api_sndcmd;
   tBTA_HH_CBACK_DATA hid_cback;
   bthh_status_t status;

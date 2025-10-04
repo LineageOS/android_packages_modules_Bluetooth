@@ -396,7 +396,8 @@ static void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data
 
     case BTA_HH_API_CLOSE_EVT:
       cback_event = BTA_HH_CLOSE_EVT;
-      cback_data.dev_status.status = BTHH_ERR_HDL;
+      // Send generic status code when there is no specific status available
+      cback_data.dev_status.status = p_data->status == BTHH_OK ? BTHH_ERR_HDL : p_data->status;
       cback_data.dev_status.handle = (uint8_t)p_data->api_sndcmd.hdr.layer_specific;
       break;
 

@@ -44,7 +44,9 @@ void BTA_HhAddDev(const tAclLinkSpec& /* link_spec */, tBTA_HH_ATTR_MASK /* attr
                   tBTA_HH_DEV_DSCP_INFO /* dscp_info */) {
   inc_func_call_count(__func__);
 }
-void BTA_HhClose(uint8_t /* dev_handle */) { inc_func_call_count(__func__); }
+void BTA_HhClose(uint8_t /* dev_handle */, bthh_status_t /* status */) {
+  inc_func_call_count(__func__);
+}
 void BTA_HhDisable(void) { inc_func_call_count(__func__); }
 void BTA_HhGetDscpInfo(uint8_t /* dev_handle */) { inc_func_call_count(__func__); }
 void BTA_HhGetIdle(uint8_t /* dev_handle */) { inc_func_call_count(__func__); }

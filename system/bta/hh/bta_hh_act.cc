@@ -542,26 +542,34 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
   if (p_cb->link_spec.transport == BT_TRANSPORT_LE) {
     log::debug("Host initiating close to le device:{}", p_cb->link_spec);
-
-    bta_hh_le_api_disc_act(p_cb);
-
-  } else {
-    const uint8_t hid_handle = (p_data != nullptr)
-                                       ? static_cast<uint8_t>(p_data->hdr.layer_specific)
-                                       : p_cb->hid_handle;
-    tHID_STATUS status = HID_HostCloseDev(hid_handle);
-    if (status != HID_SUCCESS) {
-      log::warn("Failed closing classic device:{} status:{}", p_cb->link_spec,
-                hid_status_text(status));
-    } else {
-      log::debug("Host initiated close to classic device:{}", p_cb->link_spec);
+    if (p_data != nullptr) {
+      p_cb->status = p_data->api_close.status;
     }
-    tBTA_HH bta_hh = {
-            .dev_status = {.status = (status == HID_SUCCESS) ? BTHH_OK : BTHH_ERR,
-                           .handle = hid_handle},
-    };
-    (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
+    bta_hh_le_api_disc_act(p_cb);
+    return;
   }
+
+  bthh_status_t status = p_data != nullptr ? p_data->api_close.status : BTHH_OK;
+  uint8_t hid_handle = (p_data != nullptr)
+                               ? static_cast<uint8_t>(p_data->api_close.hdr.layer_specific)
+                               : p_cb->hid_handle;
+  tHID_STATUS result = HID_HostCloseDev(hid_handle);
+
+  if (result != HID_SUCCESS) {
+    log::warn("Failed closing classic device:{} status:{}", p_cb->link_spec,
+              hid_status_text(result));
+    if (status == BTHH_OK) {
+      status = BTHH_ERR;
+    }
+  } else {
+    log::debug("Host initiated close to classic device:{}", p_cb->link_spec);
+  }
+
+  tBTA_HH bta_hh = {
+          .dev_status = {.status = status, .handle = hid_handle},
+  };
+
+  (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
 }
 
 /*******************************************************************************
@@ -575,21 +583,19 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  tBTA_HH_CONN conn;
   uint8_t dev_handle = p_data ? (uint8_t)p_data->hid_cback.hdr.layer_specific : p_cb->hid_handle;
+  tBTA_HH_CONN conn = {
+          .link_spec = p_cb->link_spec,
+          .status = p_cb->status,
+          .handle = dev_handle,
+          .scps_supported = p_cb->scps_supported,
+          .sub_class = p_cb->sub_class,
+          .attr_mask = p_cb->attr_mask,
+          .app_id = p_cb->app_id,
+  };
 
-  memset((void*)&conn, 0, sizeof(tBTA_HH_CONN));
-  conn.handle = dev_handle;
-  conn.link_spec = p_cb->link_spec;
-
-  /* increase connection number */
-  bta_hh_cb.cnt_num++;
-
-  conn.status = p_cb->status;
-  conn.scps_supported = p_cb->scps_supported;
-  conn.sub_class = p_cb->sub_class;
-  conn.attr_mask = p_cb->attr_mask;
-  conn.app_id = p_cb->app_id;
+  p_cb->status = BTHH_OK;  // Reset status since it has been used now
+  bta_hh_cb.cnt_num++;     // Increment connection count
 
   BTM_LogHistory(kBtmLogTag, p_cb->link_spec.addrt.bda, "Opened",
                  std::format("{} initiator:{}", bt_transport_text(p_cb->link_spec.transport),
@@ -842,8 +848,6 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  tBTA_HH_CBDATA disc_dat = {BTHH_OK, 0};
-
   uint32_t reason = p_data->hid_cback.data; /* Reason for closing (32-bit) */
   const bool l2cap_conn_fail = reason & HID_L2CAP_CONN_FAIL;
   const bool l2cap_req_fail = reason & HID_L2CAP_REQ_FAIL;
@@ -852,9 +856,6 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
   /* if HID_HDEV_EVT_VC_UNPLUG was received, report BTA_HH_VC_UNPLUG_EVT */
   uint16_t event = p_cb->vp ? BTA_HH_VC_UNPLUG_EVT : BTA_HH_CLOSE_EVT;
-
-  disc_dat.handle = p_cb->hid_handle;
-  disc_dat.status = static_cast<bthh_status_t>(p_data->hid_cback.data);
 
   BTM_LogHistory(kBtmLogTag, p_cb->link_spec.addrt.bda, "Closed",
                  std::format("{} reason {} {} {} {}",
@@ -868,9 +869,11 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   /* update total conn number */
   bta_hh_cb.cnt_num--;
 
-  if (disc_dat.status) {
+  tBTA_HH_CBDATA disc_dat = {.status = p_cb->status, .handle = p_cb->hid_handle};
+  if (disc_dat.status == BTHH_OK && reason != 0) {
     disc_dat.status = BTHH_ERR;
   }
+  p_cb->status = BTHH_OK;  // Reset status since it has been used now
 
   (*bta_hh_cb.p_cback)(event, (tBTA_HH*)&disc_dat);
 

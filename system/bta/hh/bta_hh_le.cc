@@ -1802,6 +1802,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
           .status = p_cb->status,
           .handle = p_cb->hid_handle,
   };
+  p_cb->status = BTHH_OK;  // Reset status since it has been used now
   (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, (tBTA_HH*)&disc_dat);
 
   /* if no connection is active and HH disable is signaled, disable service */
