@@ -267,7 +267,7 @@ static size_t btif_events_end_index = 0;
 /******************************************************************************
  *  Static functions
  *****************************************************************************/
-static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_consent);
+static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent);
 static void btif_dm_remove_ble_bonding_keys(void);
 static void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr);
 static btif_dm_pairing_cb_t pairing_cb;
@@ -3944,17 +3944,15 @@ static void btif_dm_remove_ble_bonding_keys(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_consent) {
-  int dev_type;
-
-  log::verbose("addr:{}", p_ble_req->bd_addr);
-
-  if (!is_consent && pairing_cb.state == BT_BOND_STATE_BONDING) {
-    log::warn("Discard security request");
+static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent) {
+  if (!consent && pairing_cb.state == BT_BOND_STATE_BONDING) {
+    log::warn("Discard security request from {}", p_ble_req->bd_addr);
     return;
   }
+  log::verbose("addr:{} consent={}", p_ble_req->bd_addr, consent);
 
   /* Remote name update */
+  int dev_type;
   if (!btif_get_device_type(p_ble_req->bd_addr, &dev_type)) {
     dev_type = BT_DEVICE_TYPE_BLE;
   }
@@ -3973,9 +3971,11 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_cons
     btm_set_bond_type_dev(p_ble_req->bd_addr, pairing_cb.bond_type);
   }
 
-  BTM_LogHistory(kBtmLogTagCallback, bd_addr, "SSP ble request", "BT_SSP_VARIANT_CONSENT");
+  BTM_LogHistory(kBtmLogTagCallback, bd_addr, "SSP ble request",
+                 consent ? "BT_SSP_VARIANT_CONSENT" : "BT_SSP_VARIANT_PARTICIPATION");
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, BT_SSP_VARIANT_CONSENT, 0);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
+          bd_addr, consent ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PARTICIPATION, 0);
 }
 
 /*******************************************************************************

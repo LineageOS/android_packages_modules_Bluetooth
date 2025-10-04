@@ -67,6 +67,7 @@ public final class AbstractionLayer {
     static final int BT_SSP_VARIANT_PASSKEY_ENTRY = 0x01;
     static final int BT_SSP_VARIANT_CONSENT = 0x02;
     static final int BT_SSP_VARIANT_PASSKEY_NOTIFICATION = 0x03;
+    static final int BT_SSP_VARIANT_PARTICIPATION = 0x04; // Incoming LE pairing request
 
     static final int BT_DISCOVERY_STOPPED = 0x00;
     static final int BT_DISCOVERY_STARTED = 0x01;
