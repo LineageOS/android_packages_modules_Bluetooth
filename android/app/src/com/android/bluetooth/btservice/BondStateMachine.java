@@ -69,7 +69,7 @@ final class BondStateMachine extends StateMachine {
     static final int CANCEL_BOND = 2;
     static final int REMOVE_BOND = 3;
     static final int BONDING_STATE_CHANGE = 4;
-    static final int SSP_REQUEST = 5;
+    static final int PAIRING_REQUEST = 5; // Pairing authorization request from native
     static final int PIN_REQUEST = 6;
     static final int UUID_UPDATE = 10;
     static final int BONDED_INTENT_DELAY = 11;
@@ -248,7 +248,7 @@ final class BondStateMachine extends StateMachine {
             if ((mDevices.contains(dev) || mPendingBondedDevices.contains(dev))
                     && msg.what != CANCEL_BOND
                     && msg.what != BONDING_STATE_CHANGE
-                    && msg.what != SSP_REQUEST
+                    && msg.what != PAIRING_REQUEST
                     && msg.what != PIN_REQUEST) {
                 deferMessage(msg);
                 return true;
@@ -299,9 +299,13 @@ final class BondStateMachine extends StateMachine {
                         result = true;
                     }
                 }
-                case SSP_REQUEST -> {
+                case PAIRING_REQUEST -> {
                     if (devProp == null) {
-                        errorLog("devProp is null, maybe the device is disconnected");
+                        errorLog(
+                                "PAIRING_REQUEST: devProp is null, maybe the "
+                                        + dev
+                                        + " is"
+                                        + " disconnected");
                         break;
                     }
 
@@ -311,17 +315,20 @@ final class BondStateMachine extends StateMachine {
                             (msg.getData() != null)
                                     ? msg.getData().getByte(DISPLAY_PASSKEY) == 1 /* 1 == true */
                                     : false;
-                    sendDisplayPinIntent(
+                    sendPairingRequestIntent(
                             devProp.getDevice(),
                             displayPasskey ? Optional.of(passkey) : Optional.empty(),
                             variant);
                 }
                 case PIN_REQUEST -> {
                     if (devProp == null) {
-                        errorLog("devProp is null, maybe the device is disconnected");
+                        errorLog(
+                                "PIN_REQUEST: devProp is null, maybe the "
+                                        + dev
+                                        + " is"
+                                        + " disconnected");
                         break;
                     }
-
                     int btDeviceClass =
                             new BluetoothClass(mRemoteDevices.getBluetoothClass(dev))
                                     .getDeviceClass();
@@ -336,7 +343,7 @@ final class BondStateMachine extends StateMachine {
                         // Generate a variable 6-digit PIN in range of 100000-999999
                         // This is not truly random but good enough.
                         int pin = 100000 + (int) Math.floor((Math.random() * (999999 - 100000)));
-                        sendDisplayPinIntent(
+                        sendPairingRequestIntent(
                                 devProp.getDevice(),
                                 Optional.of(pin),
                                 BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN);
@@ -344,14 +351,14 @@ final class BondStateMachine extends StateMachine {
                     }
 
                     if (msg.arg2 == 1) { // Minimum 16 digit pin required here
-                        sendDisplayPinIntent(
+                        sendPairingRequestIntent(
                                 devProp.getDevice(),
                                 Optional.empty(),
                                 BluetoothDevice.PAIRING_VARIANT_PIN_16_DIGITS);
                     } else {
                         // In PIN_REQUEST, there is no passkey to display.So do not send the
                         // EXTRA_PAIRING_KEY type in the intent
-                        sendDisplayPinIntent(
+                        sendPairingRequestIntent(
                                 devProp.getDevice(),
                                 Optional.empty(),
                                 BluetoothDevice.PAIRING_VARIANT_PIN);
@@ -483,7 +490,7 @@ final class BondStateMachine extends StateMachine {
         return false;
     }
 
-    private void sendDisplayPinIntent(
+    private void sendPairingRequestIntent(
             BluetoothDevice device, Optional<Integer> maybePin, int variant) {
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
@@ -492,7 +499,12 @@ final class BondStateMachine extends StateMachine {
         intent.setFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         // Workaround for Android Auto until pre-accepting pairing requests is added.
         intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        Log.i(TAG, "sendDisplayPinIntent: device=" + device + ", variant=" + variant);
+        Log.i(
+                TAG,
+                "sendPairingRequestIntent: ACTION_PAIRING_REQUEST device="
+                        + device
+                        + ", variant="
+                        + variant);
         mAdapterService.sendOrderedBroadcast(
                 intent,
                 BLUETOOTH_CONNECT,
@@ -647,13 +659,6 @@ final class BondStateMachine extends StateMachine {
     }
 
     void sspRequestCallback(byte[] address, int pairingVariant, int passkey) {
-        infoLog(
-                "sspRequestCallback: "
-                        + Utils.getRedactedAddressStringFromByte(address)
-                        + " pairingVariant "
-                        + pairingVariant
-                        + " passkey: "
-                        + (Build.isDebuggable() ? passkey : "******"));
         int variant;
         boolean displayPasskey = false;
         switch (pairingVariant) {
@@ -675,10 +680,21 @@ final class BondStateMachine extends StateMachine {
             }
 
             default -> {
-                errorLog("SSP Pairing variant not present");
+                errorLog(
+                        "sspRequestCallback: Unknown pairing variant("
+                                + pairingVariant
+                                + ") for "
+                                + Utils.getRedactedAddressStringFromByte(address));
                 return;
             }
         }
+        debugLog(
+                "sspRequestCallback: "
+                        + Utils.getRedactedAddressStringFromByte(address)
+                        + " pairingVariant "
+                        + pairingVariant
+                        + " passkey: "
+                        + (Build.isDebuggable() ? passkey : "******"));
         BluetoothDevice device = mRemoteDevices.getDevice(address);
         if (device == null) {
             warnLog("Device is not known for:" + Utils.getRedactedAddressStringFromByte(address));
@@ -695,7 +711,7 @@ final class BondStateMachine extends StateMachine {
                 BluetoothProtoEnums.BOND_SUB_STATE_LOCAL_SSP_REQUESTED,
                 0);
 
-        Message msg = obtainMessage(SSP_REQUEST);
+        Message msg = obtainMessage(PAIRING_REQUEST);
         msg.obj = device;
         if (displayPasskey) {
             msg.arg1 = passkey;
@@ -797,6 +813,10 @@ final class BondStateMachine extends StateMachine {
         } else if (state == BluetoothDevice.BOND_BONDED) {
             return "BOND_BONDED";
         } else return "UNKNOWN(" + state + ")";
+    }
+
+    private static void debugLog(String msg) {
+        Log.d(TAG, msg);
     }
 
     private static void infoLog(String msg) {
