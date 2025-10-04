@@ -188,7 +188,7 @@ class BluetoothManagerService {
     private boolean mShutdownInProgress = false;
 
     private int mCrashes = 0;
-    private Instant mLastEnabledTime;
+    private Instant mLastBindingTime;
 
     // configuration from external IBinder call which is used to
     // synchronize with broadcast receiver.
@@ -1655,6 +1655,7 @@ class BluetoothManagerService {
         intent.setComponent(mBluetoothComponent.getComponentName());
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        mLastBindingTime = Instant.now();
         if (!mContext.bindServiceAsUser(intent, mConnection, flags, mUser)) {
             Log.e(TAG, "Fail to bind to intent=" + intent);
             mContext.unbindService(mConnection);
@@ -1898,7 +1899,6 @@ class BluetoothManagerService {
 
     private void sendEnableMsg(boolean quietMode, int reason, String packageName, boolean isBle) {
         mActiveLogs.add(reason, true, packageName, isBle);
-        mLastEnabledTime = Instant.now();
         handleEnableMessage(quietMode, isBle);
     }
 
@@ -1966,7 +1966,7 @@ class BluetoothManagerService {
         writer.println("  Address:       " + Log.address(mAddress));
         writer.println("  Name:          " + mName);
         if (mEnable) {
-            Duration elapsed = Duration.between(mLastEnabledTime, Instant.now());
+            Duration elapsed = Duration.between(mLastBindingTime, Instant.now());
             writer.println(
                     "  Uptime:        "
                             + elapsed.toString()
