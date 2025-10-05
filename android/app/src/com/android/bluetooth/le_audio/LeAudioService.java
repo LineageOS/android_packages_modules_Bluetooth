@@ -37,7 +37,6 @@ import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMac
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
@@ -3513,8 +3512,6 @@ public class LeAudioService extends ConnectableProfile {
         return false;
     }
 
-    // Suppressed since this is part of a local process
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     void messageFromNative(LeAudioStackEvent stackEvent) {
         Log.d(TAG, "Message from native: " + stackEvent);
         BluetoothDevice device = stackEvent.device;
