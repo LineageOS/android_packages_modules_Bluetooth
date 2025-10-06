@@ -20,8 +20,12 @@
 
 #include <cassert>
 #include <iostream>
-#include <jni.h>
 #include <string>
+
+#ifndef TARGET_FLOSS
+// Exclude from the Floss build to avoid introducing unnecessary JNI code.
+#include <jni.h>
+#endif
 
 #include "bt_status_origin.h"
 
@@ -59,10 +63,13 @@ public:
   }
   operator uint32_t() const { return toUint32(); }
 
+// Exclude from the Floss build to avoid introducing unnecessary JNI code.
+#ifndef TARGET_FLOSS
   // For now, BtStatus objects are for native stack use only. As a result, when
   // they are being converted to jints to be passed to the upper Java layer, only
   // pass the internal code to preserve functionality.
   operator jint() const { return (jint)static_cast<uint32_t>(code_); }
+#endif
 
   // To compare against other statuses
   bool operator==(const BtStatus& other) const {
