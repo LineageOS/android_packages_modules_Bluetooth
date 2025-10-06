@@ -87,3 +87,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_thread"
+    namespace: "bluetooth"
+    description: "Run all gatt functions on a single thread"
+    bug: "449681465"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
