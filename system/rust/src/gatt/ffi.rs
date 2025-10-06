@@ -33,6 +33,7 @@ pub use inner::*;
 #[allow(clippy::too_many_arguments)]
 #[allow(missing_docs)]
 #[allow(unsafe_op_in_unsafe_fn)]
+#[allow(unused_attributes)]
 mod inner {
     impl UniquePtr<GattServerCallbacks> {}
 
