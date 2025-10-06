@@ -217,6 +217,7 @@ static bluetooth::gatt::PrivateGattServerManager* sPrivateGattServerManager = NU
 /** Pointer to the LE scanner interface methods.*/
 static jobject mCallbacksObj = NULL;
 static jobject mAdvertiseCallbacksObj = NULL;
+static jfieldID sAdvertiseCallbacksField;
 static jobject mDistanceMeasurementCallbacksObj = NULL;
 static std::shared_mutex callbacks_mutex;
 
@@ -1585,7 +1586,10 @@ static void advertiseInitializeNative(JNIEnv* env, jobject object) {
     mAdvertiseCallbacksObj = NULL;
   }
 
-  mAdvertiseCallbacksObj = env->NewGlobalRef(object);
+  if ((mAdvertiseCallbacksObj = env->NewGlobalRef(
+               env->GetObjectField(object, sAdvertiseCallbacksField))) == nullptr) {
+    log::fatal("Failed to allocate Global Ref for Gatt Advertise Callbacks");
+  }
 }
 
 static void advertiseCleanupNative(JNIEnv* env, jobject /* object */) {
@@ -2006,11 +2010,7 @@ static void stopDistanceMeasurementNative(JNIEnv* env, jobject /* object */, jst
   sGattIf->distance_measurement_manager->StopDistanceMeasurement(str2addr(env, address), method);
 }
 
-/**
- * JNI function definitions
- */
-
-// JNI functions defined in AdvertiseManagerNativeInterface class.
+// JNI functions defined in AdvertiseManagerNativeInterface
 static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)advertiseInitializeNative},
@@ -2039,6 +2039,14 @@ static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
     return result;
   }
 
+  jclass jniNativeInterfaceClass =
+          env->FindClass("com/android/bluetooth/gatt/AdvertiseManagerNativeInterface");
+  sAdvertiseCallbacksField =
+          env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
+                          "Lcom/android/bluetooth/gatt/AdvertiseManagerNativeCallback;");
+  env->DeleteLocalRef(jniNativeInterfaceClass);
+
+  // Client callback functions defined in AdvertiseManagerNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onAdvertisingSetStarted", "(IIII)V", &method_onAdvertisingSetStarted},
           {"onOwnAddressRead", "(IILjava/lang/String;)V", &method_onOwnAddressRead},
@@ -2051,7 +2059,7 @@ static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
           {"onPeriodicAdvertisingDataSet", "(II)V", &method_onPeriodicAdvertisingDataSet},
           {"onPeriodicAdvertisingEnabled", "(IZI)V", &method_onPeriodicAdvertisingEnabled},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/gatt/AdvertiseManagerNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/gatt/AdvertiseManagerNativeCallback", javaMethods);
   return 0;
 }
 
