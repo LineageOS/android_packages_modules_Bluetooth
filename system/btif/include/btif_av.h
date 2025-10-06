@@ -43,7 +43,7 @@ typedef void (*btav_connection_state_callback)(const RawAddress& bd_addr,
  *  state will have one of the values from btav_audio_state_t
  */
 typedef void (*btav_audio_state_callback)(const RawAddress& bd_addr, btav_audio_state_t state);
-typedef void (*btav_audio_state_sink_callback)(btav_audio_state_t state);
+typedef void (*btav_audio_state_sink_callback)(const RawAddress& bd_addr, btav_audio_state_t state);
 
 /** Callback for audio configuration change.
  *  Used only for the A2DP Source interface.

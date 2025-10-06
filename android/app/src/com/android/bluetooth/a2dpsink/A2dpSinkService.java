@@ -334,7 +334,7 @@ public class A2dpSinkService extends ConnectableProfile {
                 });
     }
 
-    void onAudioStateChangedFromNative(int state) {
+    void onAudioStateChangedFromNative(BluetoothDevice device, int state) {
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.onAudioStateChanged(state);
         }

@@ -29,7 +29,8 @@ class A2dpSinkNativeCallback(
         service.onConnectionStateChangedFromNative(getDevice(address), state)
 
     /** For the JNI to send messages about audio stream state changes */
-    fun onAudioStateChanged(state: Int) = service.onAudioStateChangedFromNative(state)
+    fun onAudioStateChanged(address: ByteArray, state: Int) =
+        service.onAudioStateChangedFromNative(getDevice(address), state)
 
     /** For the JNI to send messages about audio configuration changes */
     fun onAudioConfigChanged(address: ByteArray, sampleRate: Int, channelCount: Int) =
