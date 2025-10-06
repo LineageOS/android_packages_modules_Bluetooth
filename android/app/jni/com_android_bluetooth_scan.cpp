@@ -451,15 +451,6 @@ static void scanFilterParamDeleteNative(JNIEnv* /* env */, jobject /* object */,
                                  base::Bind(&scan_filter_param_cb, client_if));
 }
 
-static void scanFilterParamClearAllNative(JNIEnv* /* env */, jobject /* object */, jint client_if) {
-  if (!sScanner) {
-    return;
-  }
-  const int clear_scan_filter_params_action = 2;
-  sScanner->ScanFilterParamSetup(client_if, clear_scan_filter_params_action, 0 /* index, unused */,
-                                 nullptr, base::Bind(&scan_filter_param_cb, client_if));
-}
-
 static void scan_filter_cfg_cb(uint8_t client_if, uint8_t filt_type, uint8_t avbl_space,
                                uint8_t action, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
@@ -983,7 +974,6 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
           {"scanFilterParamAddNative", "(Lcom/android/bluetooth/le_scan/FilterParams;)V",
            (void*)scanFilterParamAddNative},
           {"scanFilterParamDeleteNative", "(II)V", (void*)scanFilterParamDeleteNative},
-          {"scanFilterParamClearAllNative", "(I)V", (void*)scanFilterParamClearAllNative},
           {"scanFilterAddNative", "(I[Lcom/android/bluetooth/le_scan/ScanFilterQueue$Entry;I)V",
            (void*)scanFilterAddNative},
           {"scanFilterClearNative", "(II)V", (void*)scanFilterClearNative},
