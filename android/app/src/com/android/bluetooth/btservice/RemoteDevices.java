@@ -1649,7 +1649,9 @@ public class RemoteDevices {
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
             deviceProperties.setConnected(transport, handle);
-            if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_ON) {
+            if (Flags.fixIntentSelectionForAcl()
+                    || state == BluetoothAdapter.STATE_ON
+                    || state == BluetoothAdapter.STATE_TURNING_ON) {
                 intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
             } else if (state == BluetoothAdapter.STATE_BLE_ON
@@ -1679,7 +1681,9 @@ public class RemoteDevices {
                     removeDeviceProperties(Utils.getAddressStringFromByte(address));
                 }
             }
-            if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
+            if (Flags.fixIntentSelectionForAcl()
+                    || state == BluetoothAdapter.STATE_ON
+                    || state == BluetoothAdapter.STATE_TURNING_OFF) {
                 mAdapterService.notifyAclDisconnected(device, transport);
                 intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
