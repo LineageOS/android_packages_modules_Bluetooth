@@ -48,7 +48,8 @@ class PeriodicScanManagerTest {
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
-    @Mock private lateinit var periodicScanNativeInterface: PeriodicScanNativeInterface
+    @Mock private lateinit var nativeCallback: PeriodicScanNativeCallback
+    @Mock private lateinit var nativeInterface: PeriodicScanNativeInterface
     @Mock private lateinit var callback: IPeriodicAdvertisingCallback
     @Mock private lateinit var binder: IBinder
 
@@ -65,7 +66,7 @@ class PeriodicScanManagerTest {
         mockGetBluetoothManager(adapterService)
 
         periodicScanManager =
-            PeriodicScanManager(adapterService, scanController, periodicScanNativeInterface)
+            PeriodicScanManager(adapterService, scanController, nativeCallback, nativeInterface)
         scanResult = ScanResult(device, 0, 0, 0, sid, 0, 0, 0, null, 0)
 
         doReturn(binder).whenever(callback).asBinder()
@@ -82,9 +83,7 @@ class PeriodicScanManagerTest {
     @Test
     fun startSync_invokesNative() {
         periodicScanManager.startSync(device, sid, 0, 0, callback)
-
-        verify(periodicScanNativeInterface)
-            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+        verify(nativeInterface).startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
     }
 
     @Test
@@ -92,7 +91,7 @@ class PeriodicScanManagerTest {
         periodicScanManager.startSync(device, sid, 0, 0, callback)
 
         val regIdCaptor = argumentCaptor<Int>()
-        verify(periodicScanNativeInterface)
+        verify(nativeInterface)
             .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
 
         periodicScanManager.onSyncStarted(
@@ -112,9 +111,7 @@ class PeriodicScanManagerTest {
     @Test
     fun startSyncScanResult_invokesNative() {
         periodicScanManager.startSync(scanResult, 0, 0, callback)
-
-        verify(periodicScanNativeInterface)
-            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+        verify(nativeInterface).startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
     }
 
     @Test
@@ -122,7 +119,7 @@ class PeriodicScanManagerTest {
         periodicScanManager.startSync(scanResult, 0, 0, callback)
 
         val regIdCaptor = argumentCaptor<Int>()
-        verify(periodicScanNativeInterface)
+        verify(nativeInterface)
             .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
 
         periodicScanManager.onSyncStarted(
