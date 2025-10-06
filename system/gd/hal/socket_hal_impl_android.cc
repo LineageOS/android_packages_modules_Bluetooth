@@ -19,6 +19,7 @@
 #include <aidl/android/hardware/bluetooth/socket/IBluetoothSocketCallback.h>
 #include <android/binder_manager.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <thread>
 
@@ -83,11 +84,22 @@ private:
 };
 
 SocketHalImpl::SocketHalImpl() {
-  std::string instance = std::string() + IBluetoothSocket::descriptor + "/default";
-  if (!AServiceManager_isDeclared(instance.c_str())) {
-    log::error("The service {} is not declared", instance);
+  const std::string base_descriptor(IBluetoothSocket::descriptor);
+  const std::string lpp_instance = base_descriptor + "/lpp";
+  const std::string default_instance = base_descriptor + "/default";
+
+  std::string instance;
+
+  if (AServiceManager_isDeclared(lpp_instance.c_str())) {
+    instance = lpp_instance;
+  } else if (AServiceManager_isDeclared(default_instance.c_str())) {
+    instance = default_instance;
+  } else {
+    log::error("Socket service is not declared (checked for {} and {})", lpp_instance,
+               default_instance);
     return;
   }
+  log::info("Discovered the socket hal instance {}", instance);
 
   ::ndk::SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
   socket_hal_instance_ = IBluetoothSocket::fromBinder(binder);
