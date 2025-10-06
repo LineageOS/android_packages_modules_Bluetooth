@@ -34,6 +34,7 @@ static jmethodID method_onControlStateChanged;
 
 static const btpan_interface_t* sPanIf = NULL;
 static jobject mCallbacksObj = NULL;
+static jfieldID sCallbacksField;
 
 static jbyteArray marshall_bda(const RawAddress* bd_addr) {
   CallbackEnv sCallbackEnv(__func__);
@@ -122,7 +123,10 @@ static void initializeNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for Pan Callbacks");
+  }
 
   bt_status_t status = sPanIf->init(&sBluetoothPanCallbacks);
   if (status != BT_STATUS_SUCCESS) {
@@ -204,6 +208,7 @@ static jboolean disconnectPanNative(JNIEnv* env, jobject /* object */, jbyteArra
   return ret;
 }
 
+// JNI functions defined in PanNativeInterface
 int register_com_android_bluetooth_pan(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)initializeNative},
@@ -217,11 +222,17 @@ int register_com_android_bluetooth_pan(JNIEnv* env) {
     return result;
   }
 
+  jclass jniNativeInterfaceClass = env->FindClass("com/android/bluetooth/pan/PanNativeInterface");
+  sCallbacksField = env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
+                                    "Lcom/android/bluetooth/pan/PanNativeCallback;");
+  env->DeleteLocalRef(jniNativeInterfaceClass);
+
+  // Client callback functions defined in PanNativeCallback
   const JNIJavaMethod javaMethods[]{
           {"onConnectStateChanged", "([BIIII)V", &method_onConnectStateChanged},
           {"onControlStateChanged", "(IIILjava/lang/String;)V", &method_onControlStateChanged},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/pan/PanNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/pan/PanNativeCallback", javaMethods);
 
   return 0;
 }
