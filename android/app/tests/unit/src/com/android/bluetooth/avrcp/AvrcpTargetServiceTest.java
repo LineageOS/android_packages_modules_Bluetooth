@@ -29,22 +29,29 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.media.AudioAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioManager;
+import android.media.AudioPlaybackConfiguration;
 import android.media.session.MediaSessionManager;
 import android.net.Uri;
 import android.os.SystemProperties;
 import android.os.UserManager;
+import android.view.KeyEvent;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.audio_util.Metadata;
 import com.android.bluetooth.btservice.AdapterService;
@@ -58,9 +65,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link AvrcpTargetService}. */
 @SmallTest
@@ -70,14 +80,17 @@ public class AvrcpTargetServiceTest {
     public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
 
     @Mock private AdapterService mMockAdapterService;
+    @Mock private A2dpService mMockA2dpService;
     @Mock private AudioManager mMockAudioManager;
     @Mock private AvrcpNativeInterface mMockNativeInterface;
+    @Mock private BluetoothDevice mMockDevice;
     @Mock private Resources mMockResources;
     @Mock private SharedPreferences mMockSharedPreferences;
     @Mock private SharedPreferences.Editor mMockSharedPreferencesEditor;
     @Mock private UserManager mUserManager;
 
     @Captor private ArgumentCaptor<AudioDeviceCallback> mAudioDeviceCb;
+    @Captor private ArgumentCaptor<KeyEvent> mKeyEventCaptor;
 
     private static final String TEST_DATA = "-1";
 
@@ -87,6 +100,12 @@ public class AvrcpTargetServiceTest {
                     .getSystemService(MediaSessionManager.class);
 
     private TestLooper mLooper;
+    private AvrcpTargetService mService;
+
+    // Passthrough commands - must match AvrcpPassthrough defines
+    private static final int PASSTHROUGH_ID_PLAY = 0x44;
+    private static final int PASSTHROUGH_ID_STOP = 0x45;
+    private static final int PASSTHROUGH_ID_PAUSE = 0x46;
 
     @Before
     public void setUp() throws Exception {
@@ -109,10 +128,36 @@ public class AvrcpTargetServiceTest {
         doReturn(mMockSharedPreferences)
                 .when(mMockAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
+
+        doReturn(Optional.of(mMockA2dpService)).when(mMockAdapterService).getA2dpService();
+        doReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+                .when(mMockA2dpService)
+                .getConnectionPolicy(any());
+        doReturn(true).when(mUserManager).isUserUnlocked();
+
+        AvrcpVolumeManager volumeManager =
+                new AvrcpVolumeManager(mMockAdapterService, mMockNativeInterface);
+        mService =
+                new AvrcpTargetService(
+                        mMockAdapterService,
+                        mMockAudioManager,
+                        mMockNativeInterface,
+                        volumeManager,
+                        mUserManager,
+                        mLooper.getLooper());
+
+        // Verify that the service registers an audio device callback upon creation.
+        verify(mMockAudioManager).registerAudioDeviceCallback(mAudioDeviceCb.capture(), any());
     }
 
     @After
     public void tearDown() throws Exception {
+        if (mService != null) {
+            mService.cleanup();
+            // Verify that the service unregisters the audio device callback upon cleanup.
+            assertThat(mAudioDeviceCb.getValue()).isNotNull();
+            verify(mMockAudioManager).unregisterAudioDeviceCallback(mAudioDeviceCb.getValue());
+        }
         mLooper.stopAutoDispatchAndIgnoreExceptions();
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
@@ -155,23 +200,82 @@ public class AvrcpTargetServiceTest {
         return builder.useDefaults().build();
     }
 
+    private void setupVoiceCommunication(boolean isActive) {
+        if (!isActive) {
+            doReturn(Collections.emptyList())
+                    .when(mMockAudioManager)
+                    .getActivePlaybackConfigurations();
+            return;
+        }
+
+        AudioAttributes attributes =
+                new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                        .build();
+        AudioPlaybackConfiguration activeVoiceConfig =
+                Mockito.mock(AudioPlaybackConfiguration.class);
+        doReturn(attributes).when(activeVoiceConfig).getAudioAttributes();
+        doReturn(true).when(activeVoiceConfig).isActive();
+        doReturn(List.of(activeVoiceConfig))
+                .when(mMockAudioManager)
+                .getActivePlaybackConfigurations();
+    }
+
     @Test
-    public void testServiceInstance() {
-        AvrcpVolumeManager volumeManager =
-                new AvrcpVolumeManager(mMockAdapterService, mMockNativeInterface);
-        AvrcpTargetService service =
-                new AvrcpTargetService(
-                        mMockAdapterService,
-                        mMockAudioManager,
-                        mMockNativeInterface,
-                        volumeManager,
-                        mUserManager,
-                        mLooper.getLooper());
+    public void sendMediaKeyEvent_whenVoiceActive_ignoresPlay() {
+        setupVoiceCommunication(true);
 
-        verify(mMockAudioManager).registerAudioDeviceCallback(mAudioDeviceCb.capture(), any());
+        // Act: Send a PLAY key event.
+        mService.sendMediaKeyEvent(mMockDevice, PASSTHROUGH_ID_PLAY, true);
 
-        service.cleanup();
-        assertThat(mAudioDeviceCb.getValue()).isNotNull();
-        verify(mMockAudioManager).unregisterAudioDeviceCallback(mAudioDeviceCb.getValue());
+        // Assert: The event is not dispatched to AudioManager.
+        verify(mMockAudioManager, never()).dispatchMediaKeyEvent(any());
+    }
+
+    @Test
+    public void sendMediaKeyEvent_whenVoiceActive_ignoresStop() {
+        setupVoiceCommunication(true);
+
+        // Act: Send a STOP key event.
+        mService.sendMediaKeyEvent(mMockDevice, PASSTHROUGH_ID_STOP, true);
+
+        // Assert: The event is not dispatched to AudioManager.
+        verify(mMockAudioManager, never()).dispatchMediaKeyEvent(any());
+    }
+
+    @Test
+    public void sendMediaKeyEvent_whenVoiceActive_dispatchesPause() {
+        setupVoiceCommunication(true);
+
+        // Act: Send a PAUSE key event.
+        mService.sendMediaKeyEvent(mMockDevice, PASSTHROUGH_ID_PAUSE, true);
+
+        // Assert: The event is dispatched to AudioManager with the correct key code.
+        verify(mMockAudioManager).dispatchMediaKeyEvent(mKeyEventCaptor.capture());
+        assertThat(mKeyEventCaptor.getValue().getKeyCode()).isEqualTo(KeyEvent.KEYCODE_MEDIA_PAUSE);
+    }
+
+    @Test
+    public void sendMediaKeyEvent_whenVoiceInactive_dispatchesPlay() {
+        setupVoiceCommunication(false);
+
+        // Act: Send a PLAY key event.
+        mService.sendMediaKeyEvent(mMockDevice, PASSTHROUGH_ID_PLAY, true);
+
+        // Assert: The event is dispatched to AudioManager with the correct key code.
+        verify(mMockAudioManager).dispatchMediaKeyEvent(mKeyEventCaptor.capture());
+        assertThat(mKeyEventCaptor.getValue().getKeyCode()).isEqualTo(KeyEvent.KEYCODE_MEDIA_PLAY);
+    }
+
+    @Test
+    public void sendMediaKeyEvent_whenVoiceInactive_dispatchesStop() {
+        setupVoiceCommunication(false);
+
+        // Act: Send a STOP key event.
+        mService.sendMediaKeyEvent(mMockDevice, PASSTHROUGH_ID_STOP, true);
+
+        // Assert: The event is dispatched to AudioManager with the correct key code.
+        verify(mMockAudioManager).dispatchMediaKeyEvent(mKeyEventCaptor.capture());
+        assertThat(mKeyEventCaptor.getValue().getKeyCode()).isEqualTo(KeyEvent.KEYCODE_MEDIA_STOP);
     }
 }
