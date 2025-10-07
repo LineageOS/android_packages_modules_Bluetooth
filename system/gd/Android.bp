@@ -515,6 +515,7 @@ cc_test {
         "libflatbuffers-cpp",
         "libgmock",
         "libosi",
+        "libutils",
         "server_configurable_flags",
     ],
     shared_libs: [
