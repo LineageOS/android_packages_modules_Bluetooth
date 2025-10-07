@@ -16,20 +16,20 @@
 
 package com.android.bluetooth.le_scan;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
-/** NativeInterface for PeriodicScanManager */
+import java.lang.annotation.Native;
+
 public class PeriodicScanNativeInterface {
-    private static final String TAG = PeriodicScanNativeInterface.class.getSimpleName();
-
     private static final int PA_SOURCE_LOCAL = 1;
     private static final int PA_SOURCE_REMOTE = 2;
 
-    private final PeriodicScanManager mManager;
+    @Native private final PeriodicScanNativeCallback mNativeCallback;
 
-    PeriodicScanNativeInterface(PeriodicScanManager manager) {
-        mManager = manager;
+    PeriodicScanNativeInterface(PeriodicScanNativeCallback nativeCallback) {
+        mNativeCallback = requireNonNull(nativeCallback);
     }
 
     void init() {
@@ -59,65 +59,6 @@ public class PeriodicScanNativeInterface {
     void transferSetInfo(BluetoothDevice bda, int serviceData, int advHandle) {
         transferSetInfoNative(PA_SOURCE_LOCAL, bda.getAddress(), serviceData, advHandle);
     }
-
-    /**********************************************************************************************/
-    /*********************************** callbacks from native ************************************/
-    /**********************************************************************************************/
-
-    void onSyncStarted(
-            int regId,
-            int syncHandle,
-            int sid,
-            int addressType,
-            String address,
-            int phy,
-            int interval,
-            int status) {
-        Log.d(
-                TAG,
-                "onSyncStarted(): "
-                        + (" regId=" + regId)
-                        + (" syncHandle=" + syncHandle)
-                        + (" status=" + status));
-        mManager.doOnScanThread(
-                () ->
-                        mManager.onSyncStarted(
-                                regId,
-                                syncHandle,
-                                sid,
-                                addressType,
-                                address,
-                                phy,
-                                interval,
-                                status));
-    }
-
-    void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data) {
-        Log.d(TAG, "onSyncReport(): syncHandle=" + syncHandle);
-        mManager.doOnScanThread(
-                () -> mManager.onSyncReport(syncHandle, txPower, rssi, dataStatus, data));
-    }
-
-    void onSyncLost(int syncHandle) {
-        Log.d(TAG, "onSyncLost(): syncHandle=" + syncHandle);
-        mManager.doOnScanThread(() -> mManager.onSyncLost(syncHandle));
-    }
-
-    void onSyncTransferredCallback(int paSource, int status, String bda) {
-        Log.d(TAG, "onSyncTransferredCallback()");
-        mManager.doOnScanThread(() -> mManager.onSyncTransferredCallback(paSource, status, bda));
-    }
-
-    void onBigInfoReport(int syncHandle, boolean encrypted) {
-        Log.d(
-                TAG,
-                "onBigInfoReport():" + (" syncHandle=" + syncHandle) + (" encrypted=" + encrypted));
-        mManager.doOnScanThread(() -> mManager.onBigInfoReport(syncHandle, encrypted));
-    }
-
-    /**********************************************************************************************/
-    /******************************************* native *******************************************/
-    /**********************************************************************************************/
 
     private native void initializeNative();
 
