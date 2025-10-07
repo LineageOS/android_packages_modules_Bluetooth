@@ -30,3 +30,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_intent_selection_for_acl"
+    namespace: "bluetooth"
+    description: "Fix the intent selection for ACL connection and disconnection"
+    bug: "448289959"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
