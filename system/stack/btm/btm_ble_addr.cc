@@ -104,6 +104,13 @@ bool btm_ble_addr_resolvable(const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec)
 
   if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
       (p_dev_rec->sec_rec.ble_keys.key_type & BTM_LE_KEY_PID)) {
+    if (is_zero_irk(p_dev_rec->sec_rec.ble_keys.irk)) {
+      // An all zero Identity Resolving Key data field indicates that a device
+      // does not have a valid resolvable private address
+      log::debug("IRK data is Zero for remote device: {}", p_dev_rec->bd_addr);
+      return false;
+    }
+
     if (rpa_matches_irk(rpa, p_dev_rec->sec_rec.ble_keys.irk)) {
       btm_ble_init_pseudo_addr(p_dev_rec, rpa);
       return true;
@@ -122,6 +129,13 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
   if (!(p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) ||
       !(p_dev_rec->sec_rec.ble_keys.key_type & BTM_LE_KEY_PID)) {
     // Match fails preconditions
+    return true;
+  }
+
+  if (is_zero_irk(p_dev_rec->sec_rec.ble_keys.irk)) {
+    // An all zero Identity Resolving Key data field indicates that a device
+    // does not have a valid resolvable private address
+    log::debug("IRK data is Zero for remote device: {}", p_dev_rec->bd_addr);
     return true;
   }
 

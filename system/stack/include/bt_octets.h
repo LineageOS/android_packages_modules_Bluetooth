@@ -24,6 +24,10 @@ using Octet16 = bluetooth::hci::Octet16;
 using LinkKey = bluetooth::hci::Octet16; /* Link Key */
 static constexpr int OCTET16_LEN = bluetooth::hci::kOctet16Length;
 
+constexpr Octet16 ZERO_IRK = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+inline bool is_zero_irk(const Octet16& irk) { return irk == ZERO_IRK; }
+
 /* Sample LTK from BT Spec 5.1 | Vol 6, Part C 1
  * 0x4C68384139F574D836BCF34E9DFB01BF */
 constexpr Octet16 SAMPLE_LTK = {0xbf, 0x01, 0xfb, 0x9d, 0x4e, 0xf3, 0xbc, 0x36,
