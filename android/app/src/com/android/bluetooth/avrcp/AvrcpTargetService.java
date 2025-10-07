@@ -410,7 +410,7 @@ public class AvrcpTargetService extends ProfileService {
             }
 
             // Always store the current item from the queue last so we know the image is in storage
-            if (currentTrack != null) {
+            if (currentTrack != null && currentTrack.image != null) {
                 currentTrack.image.setImageHandle(
                         mAvrcpCoverArtService.storeImage(currentTrack.image));
             }
