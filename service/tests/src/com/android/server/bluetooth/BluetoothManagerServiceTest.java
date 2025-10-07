@@ -775,6 +775,19 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
+    public void userSwitch_onSameUserWhenBtOff_canStillStart() throws Exception {
+        // This scenario sometimes happen on Boot, when Bluetooth start for secondary user and
+        // received a user switch to secondary user simultaneously
+        mManagerService.onUserSwitching(mUser);
+
+        mManagerService.enable(0, "userSwitch_onSameUserWhenBtOff_canStillStart");
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
     public void userSwitch_fastSwitchOnInitialUser_restartsForInitialUser() throws Exception {
         mManagerService.enable(0, "userSwitch_fastSwitch_restartsForLatestUser");
         IBluetoothCallback btCallback = transition_offToOn();
