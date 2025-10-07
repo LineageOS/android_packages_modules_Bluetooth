@@ -19,227 +19,16 @@ package com.android.bluetooth.gatt;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.GattOffloadSession;
 
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.AdapterService;
-
+import java.lang.annotation.Native;
 import java.util.List;
-import java.util.UUID;
 
-/** GATT Profile Native Interface to/from JNI. */
 public class GattNativeInterface {
-    private static final String TAG = GattNativeInterface.class.getSimpleName();
 
-    private final AdapterService mAdapterService;
-    private final GattService mGattService;
+    @Native private final GattNativeCallback mNativeCallback;
 
-    GattNativeInterface(AdapterService adapterService, GattService gattService) {
-        mAdapterService = adapterService;
-        mGattService = gattService;
+    GattNativeInterface(GattNativeCallback nativeCallback) {
+        mNativeCallback = nativeCallback;
     }
-
-    private BluetoothDevice getDevice(String address) {
-        byte[] addressBytes = Utils.getBytesFromAddress(address);
-        return mAdapterService.getDeviceFromByte(addressBytes);
-    }
-
-    /* Callbacks */
-
-    void onClientRegistered(int status, int clientIf, long uuidLsb, long uuidMsb) {
-        mGattService.onClientRegisteredFromNative(status, clientIf, new UUID(uuidMsb, uuidLsb));
-    }
-
-    void onConnected(int clientIf, int connId, int transport, int status, String address) {
-        mGattService.onConnectedFromNative(clientIf, connId, transport, status, getDevice(address));
-    }
-
-    void onDisconnected(int clientIf, int connId, int transport, int status, String address) {
-        mGattService.onDisconnectedFromNative(
-                clientIf, connId, transport, status, getDevice(address));
-    }
-
-    void onClientPhyUpdate(int connId, int txPhy, int rxPhy, int status) {
-        mGattService.onClientPhyUpdateFromNative(connId, txPhy, rxPhy, status);
-    }
-
-    void onClientPhyRead(int clientIf, String address, int txPhy, int rxPhy, int status) {
-        mGattService.onClientPhyReadFromNative(clientIf, getDevice(address), txPhy, rxPhy, status);
-    }
-
-    void onClientConnUpdate(int connId, int interval, int latency, int timeout, int status) {
-        mGattService.onClientConnUpdateFromNative(connId, interval, latency, timeout, status);
-    }
-
-    void onServiceChanged(int connId) {
-        mGattService.onServiceChangedFromNative(connId);
-    }
-
-    void onClientSubrateChange(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        mGattService.onClientSubrateChangeFromNative(
-                connId, subrateFactor, latency, contNum, timeout, status);
-    }
-
-    void onServerPhyUpdate(int connId, int txPhy, int rxPhy, int status) {
-        mGattService.onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status);
-    }
-
-    void onServerPhyRead(int serverIf, String address, int txPhy, int rxPhy, int status) {
-        mGattService.onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status);
-    }
-
-    void onServerConnUpdate(int connId, int interval, int latency, int timeout, int status) {
-        mGattService.onServerConnUpdateFromNative(connId, interval, latency, timeout, status);
-    }
-
-    void onServerSubrateChange(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        mGattService.onServerSubrateChangeFromNative(
-                connId, subrateFactor, latency, contNum, timeout, status);
-    }
-
-    GattDbElement getSampleGattDbElement() {
-        return mGattService.getSampleGattDbElement();
-    }
-
-    void onGetGattDb(int connId, List<GattDbElement> db) {
-        mGattService.onGetGattDbFromNative(connId, db);
-    }
-
-    void onRegisterForNotifications(int connId, int status, int registered, int handle) {
-        mGattService.onRegisterForNotificationsFromNative(connId, status, registered, handle);
-    }
-
-    void onNotify(int connId, String address, int handle, boolean isNotify, byte[] data) {
-        mGattService.onNotifyFromNative(connId, getDevice(address), handle, isNotify, data);
-    }
-
-    void onReadCharacteristic(int connId, int status, int handle, byte[] data) {
-        mGattService.onReadCharacteristicFromNative(connId, status, handle, data);
-    }
-
-    void onWriteCharacteristic(int connId, int status, int handle, byte[] data) {
-        mGattService.onWriteCharacteristicFromNative(connId, status, handle, data);
-    }
-
-    void onExecuteCompleted(int connId, int status) {
-        mGattService.onExecuteCompletedFromNative(connId, status);
-    }
-
-    void onReadDescriptor(int connId, int status, int handle, byte[] data) {
-        mGattService.onReadDescriptorFromNative(connId, status, handle, data);
-    }
-
-    void onWriteDescriptor(int connId, int status, int handle, byte[] data) {
-        mGattService.onWriteDescriptorFromNative(connId, status, handle, data);
-    }
-
-    void onReadRemoteRssi(int clientIf, String address, int rssi, int status) {
-        mGattService.onReadRemoteRssiFromNative(clientIf, getDevice(address), rssi, status);
-    }
-
-    void onConfigureMTU(int connId, int status, int mtu) {
-        mGattService.onConfigureMTUFromNative(connId, status, mtu);
-    }
-
-    void onClientCongestion(int connId, boolean congested) {
-        mGattService.onClientCongestionFromNative(connId, congested);
-    }
-
-    void onClientCharacteristicsUnoffloaded(int connId, int sessionId, int status) {
-        mGattService.onClientCharacteristicsUnoffloadedFromNative(connId, sessionId, status);
-    }
-
-    /* Server callbacks */
-
-    void onServerRegistered(int status, int serverIf, long uuidLsb, long uuidMsb) {
-        mGattService.onServerRegisteredFromNative(status, serverIf, new UUID(uuidMsb, uuidLsb));
-    }
-
-    void onServiceAdded(int status, int serverIf, List<GattDbElement> service) {
-        mGattService.onServiceAddedFromNative(status, serverIf, service);
-    }
-
-    void onServiceStopped(int status, int serverIf, int srvcHandle) {
-        mGattService.onServiceStoppedFromNative(status, serverIf, srvcHandle);
-    }
-
-    void onServiceDeleted(int status, int serverIf, int srvcHandle) {
-        mGattService.onServiceDeletedFromNative(status, serverIf, srvcHandle);
-    }
-
-    void onClientConnected(
-            String address, int transport, boolean connected, int connId, int serverIf) {
-        mGattService.onClientConnectedFromNative(
-                getDevice(address), transport, connected, connId, serverIf);
-    }
-
-    void onServerReadCharacteristic(
-            String address, int connId, int transId, int handle, int offset, boolean isLong) {
-        mGattService.onServerReadCharacteristicFromNative(
-                getDevice(address), connId, transId, handle, offset, isLong);
-    }
-
-    void onServerReadDescriptor(
-            String address, int connId, int transId, int handle, int offset, boolean isLong) {
-        mGattService.onServerReadDescriptorFromNative(
-                getDevice(address), connId, transId, handle, offset, isLong);
-    }
-
-    void onServerWriteCharacteristic(
-            String address,
-            int connId,
-            int transId,
-            int handle,
-            int offset,
-            int length,
-            boolean needRsp,
-            boolean isPrep,
-            byte[] data) {
-        mGattService.onServerWriteCharacteristicFromNative(
-                getDevice(address), connId, transId, handle, offset, length, needRsp, isPrep, data);
-    }
-
-    void onServerWriteDescriptor(
-            String address,
-            int connId,
-            int transId,
-            int handle,
-            int offset,
-            int length,
-            boolean needRsp,
-            boolean isPrep,
-            byte[] data) {
-        mGattService.onServerWriteDescriptorFromNative(
-                getDevice(address), connId, transId, handle, offset, length, needRsp, isPrep, data);
-    }
-
-    void onExecuteWrite(String address, int connId, int transId, int execWrite) {
-        mGattService.onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite);
-    }
-
-    void onResponseSendCompleted(int status, int attrHandle) {
-        mGattService.onResponseSendCompletedFromNative(status, attrHandle);
-    }
-
-    void onNotificationSent(int connId, int status) {
-        mGattService.onNotificationSentFromNative(connId, status);
-    }
-
-    void onServerCongestion(int connId, boolean congested) {
-        mGattService.onServerCongestionFromNative(connId, congested);
-    }
-
-    void onMtuChanged(int connId, int mtu) {
-        mGattService.onMtuChangedFromNative(connId, mtu);
-    }
-
-    void onServerCharacteristicsUnoffloaded(int connId, int sessionId, int status) {
-        mGattService.onServerCharacteristicsUnoffloadedFromNative(connId, sessionId, status);
-    }
-
-    /**********************************************************************************************/
-    /******************************************* native *******************************************/
-    /**********************************************************************************************/
 
     private native void initializeNative();
 
@@ -384,7 +173,8 @@ public class GattNativeInterface {
     }
 
     /**
-     * Register the given client It will invoke {@link #onClientRegistered(int, int, long, long)}.
+     * Register the given client It will invoke {@link GattNativeCallback#onClientRegistered(int,
+     * int, long, long)}.
      */
     void gattClientRegisterApp(long appUuidLsb, long appUuidMsb, String name, boolean eattSupport) {
         gattClientRegisterAppNative(appUuidLsb, appUuidMsb, name, eattSupport);
