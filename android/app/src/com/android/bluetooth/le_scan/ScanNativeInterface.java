@@ -62,9 +62,6 @@ public class ScanNativeInterface {
 
     private native void scanFilterParamAddNative(FilterParams filtValue);
 
-    // Note this effectively remove scan filters for ALL clients.
-    private native void scanFilterParamClearAllNative(int clientIf);
-
     private native void scanFilterParamDeleteNative(int clientIf, int filtIndex);
 
     private native void scanFilterClearNative(int clientIf, int filterIndex);
@@ -146,12 +143,6 @@ public class ScanNativeInterface {
     /** Add BLE scan filter parameters */
     void scanFilterParamAdd(FilterParams filtValue) {
         scanFilterParamAddNative(filtValue);
-    }
-
-    /** Clear all BLE scan filter parameters */
-    // Note this effectively remove scan filters for ALL clients.
-    void scanFilterParamClearAll(int clientIf) {
-        scanFilterParamClearAllNative(clientIf);
     }
 
     /** Delete BLE scan filter parameters */
