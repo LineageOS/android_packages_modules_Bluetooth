@@ -202,10 +202,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
         HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
                   p_data->open.status, p_data->open.mtu);
       }
-
-      if (p_data->open.status == GATT_SUCCESS) {
-        btif_gatt_check_encrypted_link(p_data->open.remote_bda, p_data->open.transport);
-      }
       break;
     }
 

@@ -18,6 +18,7 @@
 #define ANDROID_INCLUDE_BT_GATT_SERVER_H
 
 #include <bluetooth/types/address.h>
+#include <hardware/bt_common_types.h>
 #include <stdint.h>
 
 #include "bt_gatt_types.h"

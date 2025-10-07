@@ -172,14 +172,11 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
     case BTA_GATTS_DEREG_EVT:
       break;
 
-    case BTA_GATTS_CONNECT_EVT: {
-      btif_gatt_check_encrypted_link(p_data->conn.remote_bda, p_data->conn.transport);
-
+    case BTA_GATTS_CONNECT_EVT:
       HAL_CBACK(callbacks, server->connection_cb, static_cast<int>(p_data->conn.conn_id),
                 p_data->conn.server_if, to_java_transport(p_data->conn.transport), true,
                 p_data->conn.remote_bda);
       break;
-    }
 
     case BTA_GATTS_DISCONNECT_EVT: {
       HAL_CBACK(callbacks, server->connection_cb, static_cast<int>(p_data->conn.conn_id),
