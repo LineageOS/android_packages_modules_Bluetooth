@@ -59,6 +59,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         latency: Int,
         contNum: Int,
         timeout: Int,
+        subrateMode: Int,
         status: Int,
     ) {
         service.onClientSubrateChangeFromNative(
@@ -67,6 +68,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
             latency,
             contNum,
             timeout,
+            subrateMode,
             status,
         )
     }
@@ -89,6 +91,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         latency: Int,
         contNum: Int,
         timeout: Int,
+        subrateMode: Int,
         status: Int,
     ) {
         service.onServerSubrateChangeFromNative(
@@ -97,6 +100,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
             latency,
             contNum,
             timeout,
+            subrateMode,
             status,
         )
     }

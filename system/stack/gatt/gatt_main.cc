@@ -156,6 +156,10 @@ void gatt_init(void) {
   gatt_cb.srv_list_info = std::make_shared<std::list<tGATT_SRV_LIST_ELEM>>();
   gatt_profile_db_init();
 
+  if (com::android::bluetooth::flags::le_subrate_manager()) {
+    gatt_init_subrate_mode_config();
+  }
+
   EattExtension::GetInstance()->Start();
 
   if (com::android::bluetooth::flags::gatt_offload_api() && !gatt_offload_init()) {
@@ -549,6 +553,12 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     }
     connection_manager::on_connection_complete(bd_addr);
     gatt_cleanup_upon_disc(bd_addr, static_cast<tGATT_DISCONN_REASON>(reason), transport);
+
+    if (com::android::bluetooth::flags::le_subrate_manager()) {
+      // release when acl disconnected
+      gatt_release_subrate_cb(bd_addr);
+    }
+
     return;
   }
 
@@ -721,6 +731,13 @@ void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval, uint16
     return;
   }
 
+  if (com::android::bluetooth::flags::le_subrate_manager()) {
+    if (status == HCI_SUCCESS) {
+      // call subrate function to adjust subrate parameter
+      gatt_handle_conn_parameter_cback_status(remote, interval);
+    }
+  }
+
   for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
     if (p_reg->in_use && p_reg->app_cb.p_conn_update_cb) {
       tCONN_ID conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
@@ -743,11 +760,29 @@ void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16
     return;
   }
 
-  for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
-    if (p_reg->in_use && p_reg->app_cb.p_subrate_chg_cb) {
-      tCONN_ID conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
-      (*p_reg->app_cb.p_subrate_chg_cb)(p_reg->gatt_if, conn_id, subrate_factor, latency, cont_num,
-                                        timeout, static_cast<tGATT_STATUS>(status));
+  if (com::android::bluetooth::flags::le_subrate_manager()) {
+    if (gatt_handle_subrate_cback_status(p_device->ble.pseudo_addr, subrate_factor, latency,
+                                    cont_num, timeout, status)) {
+      tGATT_SUBRATE_MODE mode
+              = gatt_cb.subrate_info[p_device->ble.pseudo_addr].current_config.mode;
+      log::verbose("Subrate event callback mode: {} status: {}", mode, status);
+      for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
+        if (p_reg->in_use && p_reg->app_cb.p_subrate_chg_cb) {
+          tCONN_ID conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
+          (*p_reg->app_cb.p_subrate_chg_cb)(p_reg->gatt_if, conn_id, subrate_factor,
+                                            latency, cont_num, timeout,
+                                            mode, static_cast<tGATT_STATUS>(status));
+        }
+      }
+    }
+  } else {
+    for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
+      if (p_reg->in_use && p_reg->app_cb.p_subrate_chg_cb) {
+        tCONN_ID conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
+        (*p_reg->app_cb.p_subrate_chg_cb)(p_reg->gatt_if, conn_id, subrate_factor,
+                                          latency, cont_num, timeout,
+                                          GATT_SUBRATE_MODE_OFF, static_cast<tGATT_STATUS>(status));
+      }
     }
   }
 }

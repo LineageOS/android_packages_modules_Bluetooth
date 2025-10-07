@@ -169,6 +169,7 @@ cc_library_static {
         "gatt/gatt_offload.cc",
         "gatt/gatt_sr.cc",
         "gatt/gatt_sr_hash.cc",
+        "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
         "hcic/hciblecmds.cc",
         "hcic/hcicmds.cc",
@@ -491,6 +492,7 @@ cc_defaults {
         "libbluetooth_metrics_mock",
         "libbluetooth_smp_pdl",
         "libbluetooth_types",
+        "libcom.android.sysprop.bluetooth.wrapped",
     ],
 }
 
@@ -2044,6 +2046,7 @@ cc_test {
         "gatt/gatt_main.cc",
         "gatt/gatt_sr.cc",
         "gatt/gatt_sr_hash.cc",
+        "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
         "test/gatt/stack_gatt_test.cc",
     ],
@@ -2144,6 +2147,7 @@ cc_test {
         "gatt/gatt_offload.cc",
         "gatt/gatt_sr.cc",
         "gatt/gatt_sr_hash.cc",
+        "gatt/gatt_subrate_manager.cc",
         "gatt/gatt_utils.cc",
         "test/common/mock_eatt.cc",
         "test/gatt/gatt_offload_test.cc",
