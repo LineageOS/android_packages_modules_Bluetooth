@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use bt_topshim::bindings::root::bluetooth::Uuid;
+use bt_topshim::btif::{ascii_to_string, Uuid};
 
 // Advertising data types.
 const FLAGS: u8 = 0x01;
@@ -53,7 +53,7 @@ fn iterate_adv_data(data: &[u8], data_type: u8) -> AdvDataIterator {
 
 // Helper function to extract flags from advertising data
 pub fn extract_flags(bytes: &[u8]) -> u8 {
-    iterate_adv_data(bytes, FLAGS).next().map_or(0, |v| v[0])
+    iterate_adv_data(bytes, FLAGS).next().map_or(0, |v| *v.first().unwrap_or(&0))
 }
 
 // Helper function to extract service uuids (128bit) from advertising data
@@ -96,7 +96,7 @@ pub fn extract_name(bytes: &[u8]) -> String {
     iterate_adv_data(bytes, COMPLETE_LOCAL_NAME)
         .next()
         .or(iterate_adv_data(bytes, SHORTENED_LOCAL_NAME).next())
-        .map_or("".to_string(), |v| String::from_utf8_lossy(v).to_string())
+        .map_or("".to_string(), |v| ascii_to_string(v, v.len()))
 }
 
 // Helper function to extract service data from advertising data
@@ -280,6 +280,10 @@ mod tests {
         assert_eq!(name, "test");
 
         let payload: Vec<u8> = vec![2, FLAGS, 3, 5, SHORTENED_LOCAL_NAME, 116, 101, 115, 116];
+        let name = extract_name(payload.as_slice());
+        assert_eq!(name, "test");
+
+        let payload: Vec<u8> = vec![2, FLAGS, 3, 6, SHORTENED_LOCAL_NAME, 116, 101, 115, 116, 0];
         let name = extract_name(payload.as_slice());
         assert_eq!(name, "test");
     }
