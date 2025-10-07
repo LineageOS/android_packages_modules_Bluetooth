@@ -55,7 +55,6 @@
 #include "stack/include/btm_status.h"
 #include "vc/types.h"
 
-using base::Closure;
 using bluetooth::csis::CsisClient;
 using bluetooth::groups::DeviceGroups;
 using bluetooth::groups::DeviceGroupsCallbacks;
@@ -116,12 +115,12 @@ class VolumeControlImpl : public VolumeControl {
 public:
   ~VolumeControlImpl() override = default;
 
-  VolumeControlImpl(bluetooth::vc::VolumeControlCallbacks* callbacks, const base::Closure& initCb)
+  VolumeControlImpl(bluetooth::vc::VolumeControlCallbacks* callbacks, base::OnceClosure initCb)
       : gatt_if_(0), callbacks_(callbacks), latest_operation_id_(0) {
     BTA_GATTC_AppRegister(
             "volume_control", gattc_callback_static,
-            base::Bind(
-                    [](const base::Closure& initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         bluetooth::log::error(
                                 "Can't start Volume Control profile - no gatt clients "
@@ -129,9 +128,9 @@ public:
                         return;
                       }
                       instance->gatt_if_ = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
 
     DeviceGroups::Initialize(device_group_callbacks);
@@ -1866,7 +1865,7 @@ DeviceGroupsCallbacksImpl deviceGroupsCallbacksImpl;
 }  // namespace
 
 void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
-                               const base::Closure& initCb) {
+                               base::OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     bluetooth::log::error("Already initialized!");
@@ -1874,7 +1873,7 @@ void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
   }
 
   device_group_callbacks = &deviceGroupsCallbacksImpl;
-  instance = new VolumeControlImpl(callbacks, initCb);
+  instance = new VolumeControlImpl(callbacks, std::move(initCb));
 }
 
 bool VolumeControl::IsVolumeControlRunning() { return instance; }

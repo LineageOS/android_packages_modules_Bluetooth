@@ -19,6 +19,7 @@
  *   Functions generated:7
  */
 
+#include <base/functional/callback.h>
 #include <bluetooth/types/address.h>
 
 #include "bta/include/bta_vc_api.h"
@@ -38,6 +39,6 @@ bool VolumeControl::IsVolumeControlRunning() {
   return false;
 }
 void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* /* callbacks */,
-                               const base::Closure& /* initCb */) {
+                               base::OnceClosure /* initCb */) {
   inc_func_call_count(__func__);
 }
