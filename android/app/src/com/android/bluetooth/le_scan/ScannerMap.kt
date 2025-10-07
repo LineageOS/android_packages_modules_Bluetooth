@@ -122,12 +122,12 @@ class ScannerMap {
     }
 
     /** Remove the context for a given application ID. */
-    fun remove(id: Int) = removeByPredicate("id=$id") { it.id == id }
+    fun remove(id: Int) = removeBy("id=$id") { it.id == id }
 
     /** Remove the context for a given UUID */
-    fun remove(uuid: UUID) = removeByPredicate("UUID=$uuid") { it.uuid == uuid }
+    fun remove(uuid: UUID) = removeBy("UUID=$uuid") { it.uuid == uuid }
 
-    private fun removeByPredicate(removalContext: String, predicate: (ScannerApp) -> Boolean) {
+    private fun removeBy(removalContext: String, predicate: (ScannerApp) -> Boolean) {
         Log.d(TAG, "remove(): By $removalContext")
         val iterator = apps.iterator()
         while (iterator.hasNext()) {
@@ -142,7 +142,7 @@ class ScannerMap {
 
     /** Erases all application context entries. */
     fun clear() {
-        apps.forEach { it.cleanup() }
+        apps.forEach(ScannerApp::cleanup)
         apps.clear()
     }
 
@@ -153,31 +153,19 @@ class ScannerMap {
     fun getAppScanStatsById(id: Int): AppScanStats? = getById(id)?.appScanStats
 
     /** Get an application context by ID. */
-    fun getById(id: Int): ScannerApp? {
-        val app = apps.find { it.id == id }
-        if (app == null) {
-            Log.e(TAG, "Context not found for ID=$id")
-        }
-        return app
-    }
+    fun getById(id: Int) = findBy("ID=$id") { it.id == id }
 
     /** Get an application context by UUID. */
-    fun getByUuid(uuid: UUID): ScannerApp? {
-        val app = apps.find { it.uuid == uuid }
-        if (app == null) {
-            Log.e(TAG, "Context not found for UUID=$uuid")
-        }
-        return app
-    }
-
-    /** Get application contexts by the calling app's name. */
-    fun getByName(name: String): List<ScannerApp> = apps.filter { it.name == name }
+    fun getByUuid(uuid: UUID) = findBy("UUID=$uuid") { it.uuid == uuid }
 
     /** Get an application context by the pending intent info object's intent. */
-    fun getByPendingIntentInfo(intent: PendingIntent): ScannerApp? {
-        val app = apps.find { it.info?.intent() == intent }
+    fun getByPendingIntentInfo(intent: PendingIntent) =
+        findBy("intent=$intent") { it.info?.intent() == intent }
+
+    private fun findBy(searchContext: String, predicate: (ScannerApp) -> Boolean): ScannerApp? {
+        val app = apps.find(predicate)
         if (app == null) {
-            Log.e(TAG, "Context not found for intent=$intent")
+            Log.e(TAG, "Context not found for $searchContext")
         }
         return app
     }
@@ -186,23 +174,23 @@ class ScannerMap {
     fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
         sb.append("LE Scanner:\n")
         for (entry in apps) {
-            val line = StringBuilder()
-            line.append("  app_if: ${entry.id}, appName: ${entry.name}")
+            sb.append("  app_if: ${entry.id}, appName: ${entry.name}")
 
-            entry.attributionTag?.let { tag -> line.append(", tag: $tag") }
+            entry.attributionTag?.let { tag -> sb.append(", tag: $tag") }
 
             settingsMap[entry.id]?.let { settings ->
                 if (settings.reportDelayMillis > 0) {
-                    line.append(", reportDelayMillis: ${settings.reportDelayMillis}")
+                    sb.append(", reportDelayMillis: ${settings.reportDelayMillis}")
                 }
             }
-            sb.append(line).append("\n")
+            sb.append("\n")
         }
 
         sb.append("\nLE Scanner Map:\n")
         sb.append("  Entries: ${appScanStatsMap.size}\n\n")
         for (appScanStats in appScanStatsMap.values) {
-            appScanStats.dump(sb, getByName(appScanStats.mAppName))
+            val scannerApps = apps.filter { it.name == appScanStats.mAppName }
+            appScanStats.dump(sb, scannerApps)
         }
     }
 }

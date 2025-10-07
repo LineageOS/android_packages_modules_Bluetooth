@@ -78,7 +78,6 @@ class ScannerMapTest {
 
         assertThat(scannerMap.getById(SCANNER_ID)?.name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getByUuid(uuid)?.name).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByName(APP_NAME).first().name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getByPendingIntentInfo(intent)?.name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull()
         assertThat(scannerMap.getAppScanStatsByUid(UID)).isNotNull()
@@ -106,7 +105,6 @@ class ScannerMapTest {
         assertThat(scannerMapById?.name).isEqualTo(APP_NAME)
         assertThat(scannerMapById?.callback).isEqualTo(scannerCallback)
         assertThat(scannerMap.getByUuid(uuid)?.name).isEqualTo(APP_NAME)
-        assertThat(scannerMap.getByName(APP_NAME).first().name).isEqualTo(APP_NAME)
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull()
         assertThat(scannerMap.getAppScanStatsByUid(appUid)).isNotNull()
     }
