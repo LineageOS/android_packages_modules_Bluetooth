@@ -411,8 +411,7 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common
   log::assert_that(hci_instance_name != nullptr, "assert failed: hci_instance_name != nullptr");
 
   log::info(
-          "start restricted = {} ; common criteria mode = {}, config compare "
-          "result = {} instance_name = {}",
+          "start_restricted={} common_criteria_mode={}, config_compare_result={} instance_name={}",
           start_restricted, is_common_criteria_mode, config_compare_result, hci_instance_name);
 
   if (interface_ready()) {
@@ -459,13 +458,13 @@ static void stop_profiles() {
   btif_pan_cleanup();
 }
 
-static int enable() {
+static int enable(const std::string local_name) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
 
   stack_manager_get_interface()->start_up_stack_async(CreateInterfaceToProfiles(), &start_profiles,
-                                                      &stop_profiles);
+                                                      &stop_profiles, local_name);
   return BT_STATUS_SUCCESS;
 }
 

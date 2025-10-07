@@ -28,8 +28,6 @@
 #include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 
-#include <cstdint>
-
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"
@@ -107,8 +105,8 @@ extern struct BTA_dm_on_hw_off BTA_dm_on_hw_off;
 // Params:
 // Return: void
 struct BTA_dm_on_hw_on {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
+  std::function<void(const std::string)> body{[](const std::string) {}};
+  void operator()(const std::string local_name) { body(local_name); }
 };
 extern struct BTA_dm_on_hw_on BTA_dm_on_hw_on;
 

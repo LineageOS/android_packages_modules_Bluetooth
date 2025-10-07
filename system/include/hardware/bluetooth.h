@@ -777,7 +777,7 @@ typedef struct {
               int config_compare_result, bool is_atv, const char* hci_instance_name);
 
   /** Enable Bluetooth. */
-  int (*enable)();
+  int (*enable)(const std::string local_name);
 
   /** Disable Bluetooth. */
   int (*disable)(void);

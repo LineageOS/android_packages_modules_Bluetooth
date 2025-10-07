@@ -42,6 +42,16 @@ flag {
 }
 
 flag {
+    name: "set_name_in_system_server"
+    namespace: "bluetooth"
+    description: "We should offer a consistent API to set the Bluetooth friendly name, whatever if Bluetooth is ON or OFF"
+    bug: "448709503"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "user_visible_on_user_starting"
     namespace: "bluetooth"
     description: "Check userVisible API to determine if user should startup bluetooth instance"

@@ -200,7 +200,8 @@ static void init_stack(bluetooth::core::CoreInterface* interface) {
 
 // Synchronous function to start up the stack
 static void start_stack(bluetooth::core::CoreInterface* interface,
-                        ProfileStartCallback startProfiles, ProfileStopCallback stopProfiles) {
+                        ProfileStartCallback startProfiles, ProfileStopCallback stopProfiles,
+                        const std::string local_name) {
   if (stack_is_running) {
     info("stack already brought up");
     return;
@@ -241,7 +242,7 @@ static void start_stack(bluetooth::core::CoreInterface* interface,
   btm_acl_device_down();
   get_btm_client_interface().lifecycle.BTM_reset_complete();
 
-  BTA_dm_on_hw_on();
+  BTA_dm_on_hw_on(local_name);
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     error("failed to start up the stack");

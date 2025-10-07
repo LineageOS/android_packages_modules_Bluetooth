@@ -228,8 +228,7 @@ typedef struct {
 
 typedef struct {
   uint16_t page_timeout; /* timeout for page in slots */
-  bool avoid_scatter;    /* true to avoid scatternet when av is streaming (be the
-                            central) */
+  bool avoid_scatter;    /* true to avoid scatternet when av is streaming(be the central) */
 } tBTA_DM_CFG;
 
 extern const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[];
@@ -302,7 +301,7 @@ extern tBTA_DM_ACL_CB bta_dm_acl_cb;
 /* DI control block */
 extern tBTA_DM_DI_CB bta_dm_di_cb;
 
-void BTA_dm_on_hw_on();
+void BTA_dm_on_hw_on(const std::string local_name);
 void BTA_dm_on_hw_off();
 
 void bta_dm_enable(tBTA_DM_SEC_CBACK*, tBTA_DM_ACL_CBACK*);

@@ -1094,13 +1094,21 @@ static bool cleanupNative(JNIEnv* env, jobject /* obj */) {
   return JNI_TRUE;
 }
 
-static jboolean enableNative(JNIEnv* /* env */, jobject /* obj */) {
+static jboolean enableNative(JNIEnv* env, jobject /* obj */, jstring jLocalName) {
   log::verbose("");
 
   if (!sBluetoothInterface) {
     return JNI_FALSE;
   }
-  int ret = sBluetoothInterface->enable();
+  const char* nativeLocalName = env->GetStringUTFChars(jLocalName, nullptr);
+  if (!nativeLocalName) {
+    return JNI_FALSE;
+  }
+  std::string nativeName = std::string(nativeLocalName);
+  env->ReleaseStringUTFChars(jLocalName, nativeLocalName);
+
+  int ret = sBluetoothInterface->enable(std::move(nativeName));
+
   return (ret == BT_STATUS_SUCCESS || ret == BT_STATUS_DONE) ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -2128,7 +2136,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
   const JNINativeMethod methods[] = {
           {"initNative", "(ZZIZLjava/lang/String;)Z", reinterpret_cast<void*>(initNative)},
           {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
-          {"enableNative", "()Z", reinterpret_cast<void*>(enableNative)},
+          {"enableNative", "(Ljava/lang/String;)Z", reinterpret_cast<void*>(enableNative)},
           {"disableNative", "()Z", reinterpret_cast<void*>(disableNative)},
           {"setScanModeNative", "(I)Z", reinterpret_cast<void*>(setScanModeNative)},
           {"setAdapterPropertyNative", "(I[B)Z", reinterpret_cast<void*>(setAdapterPropertyNative)},

@@ -60,8 +60,8 @@ public class AdapterNativeInterface {
         cleanupNative();
     }
 
-    boolean enable() {
-        return enableNative();
+    boolean enable(String localName) {
+        return enableNative(localName);
     }
 
     boolean disable() {
@@ -289,7 +289,7 @@ public class AdapterNativeInterface {
 
     private native void cleanupNative();
 
-    private native boolean enableNative();
+    private native boolean enableNative(String localName);
 
     private native boolean disableNative();
 

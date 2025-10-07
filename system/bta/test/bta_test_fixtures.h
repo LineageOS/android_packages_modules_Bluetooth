@@ -116,7 +116,7 @@ class BtaWithHwOnTest : public BtaWithContextTest {
 protected:
   void SetUp() override {
     BtaWithContextTest::SetUp();
-    BTA_dm_on_hw_on();
+    BTA_dm_on_hw_on("test_name");
   }
 
   void TearDown() override {

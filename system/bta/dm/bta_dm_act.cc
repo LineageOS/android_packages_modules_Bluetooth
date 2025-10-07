@@ -235,7 +235,7 @@ void BTA_dm_on_hw_off() {
   bta_dm_search_stop();
 }
 
-void BTA_dm_on_hw_on() {
+void BTA_dm_on_hw_on(const std::string local_name) {
   uint8_t key_mask = 0;
   tBTA_BLE_LOCAL_ID_KEYS id_key;
 
@@ -292,7 +292,11 @@ void BTA_dm_on_hw_on() {
   btm_ble_scanner_init();
 
   // Synchronize with the controller before continuing
-  bta_dm_le_rand(get_main_thread()->BindOnce([](uint64_t /*value*/) { BTIF_dm_enable(); }));
+  bta_dm_le_rand(get_main_thread()->BindOnce(
+          [](const std::string local_name, uint64_t /*value*/) {
+            BTIF_dm_enable(std::move(local_name));
+          },
+          std::move(local_name)));
 
   bta_sys_rm_register(bta_dm_rm_cback);
 
