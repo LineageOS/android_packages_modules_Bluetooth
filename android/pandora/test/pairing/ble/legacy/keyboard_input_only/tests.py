@@ -65,10 +65,12 @@ class BLELegKbdOnlyTestClass(BLEPairTestBaseWithGeneralAndDedicatedPairingTests)
             notif_ev = responder_ev
             req_ev = init_ev
             req_stream = self.initiator_pairing_event_stream
+            accept_stream = self.responder_pairing_event_stream
         else:
             notif_ev = init_ev
             req_ev = responder_ev
             req_stream = self.responder_pairing_event_stream
+            accept_stream = self.initiator_pairing_event_stream
 
         assert_equal(notif_ev.method_variant(), notif_expected_pairing_method)
         assert_equal(req_ev.method_variant(), req_expected_pairing_method)
@@ -77,3 +79,6 @@ class BLELegKbdOnlyTestClass(BLEPairTestBaseWithGeneralAndDedicatedPairingTests)
 
         ans = PairingEventAnswer(event=req_ev, passkey=notified_passkey)
         req_stream.send_nowait(ans)
+
+        ans_accept = PairingEventAnswer(event=notif_ev, confirm=True)
+        accept_stream.send_nowait(ans_accept)

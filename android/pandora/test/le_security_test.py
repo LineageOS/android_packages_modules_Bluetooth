@@ -306,6 +306,10 @@ class LeSecurityTest(base_test.BaseTestClass):  # type: ignore[misc]
                         passkey=None
                         if variant == 'rejected' else dut_ev.passkey_entry_notification,
                     )
+                    dut_ev_answer = PairingEventAnswer(
+                        event=dut_ev,
+                        confirm=False if variant == 'rejected' else True,
+                    )
 
                 elif dut_ev.method_variant() == 'passkey_entry_request':
                     assert_equal(ref_ev.method_variant(), 'passkey_entry_notification')
