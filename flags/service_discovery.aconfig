@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ignore_redundant_discovery_if_same_state"
+    namespace: "bluetooth"
+    description: "Ignore redundant service discovery enable or disable call if the state is the same"
+    bug: "447313374"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
