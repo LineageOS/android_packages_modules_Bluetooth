@@ -544,32 +544,30 @@ class AdapterProperties {
         synchronized (mObject) {
             updateProfileConnectionState(profile, newState, prevState);
 
-            if (updateCountersAndCheckForConnectionStateChange(newState, prevState)) {
-                int newAdapterState = convertToAdapterState(newState);
-                int prevAdapterState = convertToAdapterState(prevState);
-                setConnectionState(newAdapterState);
+            if (!updateCountersAndCheckForConnectionStateChange(profile, newState, prevState)) {
+                // No need for ACTION_CONNECTION_STATE_CHANGED. Device connection is the same.
+                return;
+            }
+            int newAdapterState = convertToAdapterState(newState);
+            int prevAdapterState = convertToAdapterState(prevState);
+            setConnectionState(newAdapterState);
 
-                Intent intent =
-                        new Intent(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
-                                .putExtra(BluetoothDevice.EXTRA_DEVICE, device)
-                                .putExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, newAdapterState)
-                                .putExtra(
-                                        BluetoothAdapter.EXTRA_PREVIOUS_CONNECTION_STATE,
-                                        prevAdapterState)
-                                .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-                MetricsLogger.getInstance()
-                        .logProfileConnectionStateChange(device, profile, newState, prevState);
-                debugLog("updateOnProfileConnectionChanged: " + logInfo);
-                if (Flags.onlyBroadcastToLocalUser()) {
-                    mService.sendBroadcast(
-                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
-                } else {
-                    mService.sendBroadcastAsUser(
-                            intent,
-                            UserHandle.ALL,
-                            BLUETOOTH_CONNECT,
-                            Utils.getTempBroadcastBundle());
-                }
+            Intent intent =
+                    new Intent(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
+                            .putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+                            .putExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, newAdapterState)
+                            .putExtra(
+                                    BluetoothAdapter.EXTRA_PREVIOUS_CONNECTION_STATE,
+                                    prevAdapterState)
+                            .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
+            MetricsLogger.getInstance()
+                    .logProfileConnectionStateChange(device, profile, newState, prevState);
+            debugLog("updateOnProfileConnectionChanged: " + logInfo);
+            if (Flags.onlyBroadcastToLocalUser()) {
+                mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            } else {
+                mService.sendBroadcastAsUser(
+                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
             }
         }
     }
@@ -604,33 +602,44 @@ class AdapterProperties {
         };
     }
 
-    private boolean updateCountersAndCheckForConnectionStateChange(int state, int prevState) {
+    private void throwIllegalStateTransition(int profile, int state, int prevState) {
+        throw new IllegalStateException(
+                "Received invalid sate transition for profile="
+                        + BluetoothProfile.getProfileName(profile)
+                        + ": "
+                        + BluetoothProfile.getConnectionStateName(prevState)
+                        + " -> "
+                        + state
+                        + ". connecting:"
+                        + mProfilesConnecting
+                        + " connected:"
+                        + mProfilesConnected
+                        + " disconnecting:"
+                        + mProfilesDisconnecting);
+    }
+
+    private boolean updateCountersAndCheckForConnectionStateChange(
+            int profile, int state, int prevState) {
         switch (prevState) {
             case STATE_CONNECTING -> {
                 if (mProfilesConnecting > 0) {
                     mProfilesConnecting--;
                 } else {
-                    Log.e(TAG, "mProfilesConnecting " + mProfilesConnecting);
-                    throw new IllegalStateException(
-                            "Invalid state transition, " + prevState + " -> " + state);
+                    throwIllegalStateTransition(profile, state, prevState);
                 }
             }
             case STATE_CONNECTED -> {
                 if (mProfilesConnected > 0) {
                     mProfilesConnected--;
                 } else {
-                    Log.e(TAG, "mProfilesConnected " + mProfilesConnected);
-                    throw new IllegalStateException(
-                            "Invalid state transition, " + prevState + " -> " + state);
+                    throwIllegalStateTransition(profile, state, prevState);
                 }
             }
             case STATE_DISCONNECTING -> {
                 if (mProfilesDisconnecting > 0) {
                     mProfilesDisconnecting--;
                 } else {
-                    Log.e(TAG, "mProfilesDisconnecting " + mProfilesDisconnecting);
-                    throw new IllegalStateException(
-                            "Invalid state transition, " + prevState + " -> " + state);
+                    throwIllegalStateTransition(profile, state, prevState);
                 }
             }
             default -> {} // Nothing to do
