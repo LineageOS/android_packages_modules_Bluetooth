@@ -25,6 +25,7 @@
 
 #include <cstdint>
 
+#include "btif_status.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -51,8 +52,8 @@ namespace test {
 namespace mock {
 namespace btif_profile_queue {
 
-bt_status_t btif_queue_connect::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_queue_connect_next::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_queue_connect::return_value = BtifStatus();
+BtStatus btif_queue_connect_next::return_value = BtifStatus();
 
 }  // namespace btif_profile_queue
 }  // namespace mock
@@ -67,11 +68,11 @@ void btif_queue_cleanup(uint16_t uuid) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_queue::btif_queue_cleanup(uuid);
 }
-bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
+BtStatus btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_queue::btif_queue_connect(uuid, bda, connect_cb);
 }
-bt_status_t btif_queue_connect_next(void) {
+BtStatus btif_queue_connect_next(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_queue::btif_queue_connect_next();
 }

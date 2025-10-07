@@ -26,8 +26,10 @@
 
 #include "aidl/android/hardware/bluetooth/audio/AudioConfiguration.h"
 #include "aidl/transport_instance.h"
+#include "bt_status.h"
 #include "bta/ag/bta_ag_int.h"
 #include "btif/include/btif_hf.h"
+#include "btif_status.h"
 #include "btm_api_types.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bluetooth_headset_interface.h"
@@ -40,13 +42,13 @@ namespace hfp {
 
 using namespace metrics;
 
-static std::map<bt_status_t, BluetoothAudioCtrlAck> status_to_ack_map = {
-        {BT_STATUS_SUCCESS, BluetoothAudioCtrlAck::SUCCESS_FINISHED},
-        {BT_STATUS_DONE, BluetoothAudioCtrlAck::SUCCESS_FINISHED},
-        {BT_STATUS_FAIL, BluetoothAudioCtrlAck::FAILURE},
-        {BT_STATUS_NOT_READY, BluetoothAudioCtrlAck::FAILURE_BUSY},
-        {BT_STATUS_BUSY, BluetoothAudioCtrlAck::FAILURE_BUSY},
-        {BT_STATUS_UNSUPPORTED, BluetoothAudioCtrlAck::FAILURE_UNSUPPORTED},
+static std::map<BtStatus, BluetoothAudioCtrlAck> status_to_ack_map = {
+        {BtifStatus(), BluetoothAudioCtrlAck::SUCCESS_FINISHED},
+        {BtifStatus(DONE), BluetoothAudioCtrlAck::SUCCESS_FINISHED},
+        {BtifStatus(FAIL), BluetoothAudioCtrlAck::FAILURE},
+        {BtifStatus(NOT_READY), BluetoothAudioCtrlAck::FAILURE_BUSY},
+        {BtifStatus(BUSY), BluetoothAudioCtrlAck::FAILURE_BUSY},
+        {BtifStatus(UNSUPPORTED), BluetoothAudioCtrlAck::FAILURE_UNSUPPORTED},
 };
 
 static std::string command_to_text(tHFP_CTRL_CMD cmd) {
@@ -136,7 +138,7 @@ BluetoothAudioCtrlAck HfpTransport::StartRequest() {
   // as ConnectAudio only queues the command into main thread, keep PENDING
   // status
   auto status = bluetooth::headset::GetInterface()->ConnectAudio(cb->peer_addr, 0);
-  log::info("ConnectAudio status = {} - {}", status, bt_status_text(status));
+  log::info("ConnectAudio status = {}", status);
   auto ctrl_ack = status_to_ack_map.find(status);
   if (ctrl_ack == status_to_ack_map.end()) {
     log::warn("Unmapped status={}", status);
@@ -164,7 +166,7 @@ void HfpTransport::StopRequest() {
   }
   hfp_pending_cmd_ = HFP_CTRL_CMD_STOP;
   auto status = bluetooth::headset::GetInterface()->DisconnectAudio(addr);
-  log::info("DisconnectAudio status = {} - {}", status, bt_status_text(status));
+  log::info("DisconnectAudio status = {}", status);
   hfp_pending_cmd_ = HFP_CTRL_CMD_NONE;
   return;
 }
@@ -196,11 +198,11 @@ BluetoothAudioCtrlAck HfpTransport::SuspendRequest() {
     return BluetoothAudioCtrlAck::FAILURE;
   }
   auto status = instance->DisconnectAudio(addr);
-  log::info("DisconnectAudio status = {} - {}", status, bt_status_text(status));
+  log::info("DisconnectAudio status = {}", status);
   // once disconnect audio is queued, not waiting on that
   // because disconnect audio request can come when audio is disconnected
   hfp_pending_cmd_ = HFP_CTRL_CMD_NONE;
-  if (status == BT_STATUS_SUCCESS) {
+  if (status) {
     LogMetricHfpSuspendStream(addr);
     return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
   } else {

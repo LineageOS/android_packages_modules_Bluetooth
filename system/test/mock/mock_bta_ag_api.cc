@@ -29,6 +29,7 @@
 
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_ag_swb_aptx.h"
+#include "btif_status.h"
 #include "test/common/mock_functions.h"
 
 tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* /* p_cback */) {
@@ -66,7 +67,7 @@ bool is_hfp_aptx_voice_enabled() {
   inc_func_call_count(__func__);
   return false;
 }
-bt_status_t enable_aptx_swb_codec(bool /* enable */, RawAddress /* bd_addr */) {
+BtStatus enable_aptx_swb_codec(bool /* enable */, RawAddress /* bd_addr */) {
   inc_func_call_count(__func__);
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }

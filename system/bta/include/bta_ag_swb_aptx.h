@@ -19,6 +19,7 @@
 
 #include "bta/ag/bta_ag_int.h"
 #include "device/include/esco_parameters.h"
+#include "include/bt_status.h"
 #include "include/hardware/bt_hf.h"
 
 /* Events originated from HF side */
@@ -39,6 +40,6 @@ tBTA_AG_PEER_CODEC bta_ag_parse_qac(char* p_s);
 
 bool get_swb_codec_status(bluetooth::headset::bthf_swb_codec_t swb_codec, RawAddress bd_addr);
 
-bt_status_t enable_aptx_swb_codec(bool enable, RawAddress bd_addr);
+BtStatus enable_aptx_swb_codec(bool enable, RawAddress bd_addr);
 
 #endif  // _BTA_AG_SWB_H_
