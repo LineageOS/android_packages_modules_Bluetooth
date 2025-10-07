@@ -29,6 +29,7 @@ cxxbridge_header("btif_bridge_header") {
     "src/profiles/csis.rs",
     "src/profiles/gatt.rs",
     "src/profiles/hfp.rs",
+    "src/profiles/hid_host.rs",
     "src/profiles/le_audio.rs",
     "src/profiles/vc.rs",
   ]
@@ -45,6 +46,7 @@ cxxbridge_cc("btif_bridge_code") {
     "src/profiles/csis.rs",
     "src/profiles/gatt.rs",
     "src/profiles/hfp.rs",
+    "src/profiles/hid_host.rs",
     "src/profiles/le_audio.rs",
     "src/profiles/vc.rs",
   ]
@@ -70,6 +72,7 @@ source_set("btif_cxx_bridge_code") {
     "gatt/gatt_ble_scanner_shim.cc",
     "gatt/gatt_shim.cc",
     "hfp/hfp_shim.cc",
+    "hh/hh_shim.cc",
     "le_audio/le_audio_shim.cc",
     "metrics/metrics_shim.cc",
     "vc/vc_shim.cc",
