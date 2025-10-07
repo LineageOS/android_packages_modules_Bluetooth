@@ -16,15 +16,19 @@
 
 package com.android.bluetooth.gatt;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 
-/** Native interface for AdvertiseManager */
-public class AdvertiseManagerNativeInterface {
-    private final AdvertiseManager mManager;
+import java.lang.annotation.Native;
 
-    AdvertiseManagerNativeInterface(AdvertiseManager manager) {
-        mManager = manager;
+public class AdvertiseManagerNativeInterface {
+
+    @Native private final AdvertiseManagerNativeCallback mNativeCallback;
+
+    AdvertiseManagerNativeInterface(AdvertiseManagerNativeCallback nativeCallback) {
+        mNativeCallback = requireNonNull(nativeCallback);
     }
 
     void init() {
@@ -92,49 +96,6 @@ public class AdvertiseManagerNativeInterface {
 
     void setPeriodicAdvertisingEnable(int advertiserId, boolean enable) {
         setPeriodicAdvertisingEnableNative(advertiserId, enable);
-    }
-
-    void onAdvertisingSetStarted(int regId, int advertiserId, int txPower, int status) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onAdvertisingSetStarted(regId, advertiserId, txPower, status));
-    }
-
-    void onOwnAddressRead(int advertiserId, int addressType, String address) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onOwnAddressRead(advertiserId, addressType, address));
-    }
-
-    void onAdvertisingEnabled(int advertiserId, boolean enable, int status) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onAdvertisingEnabled(advertiserId, enable, status));
-    }
-
-    void onAdvertisingDataSet(int advertiserId, int status) {
-        mManager.doOnAdvertiseThread(() -> mManager.onAdvertisingDataSet(advertiserId, status));
-    }
-
-    void onScanResponseDataSet(int advertiserId, int status) {
-        mManager.doOnAdvertiseThread(() -> mManager.onScanResponseDataSet(advertiserId, status));
-    }
-
-    void onAdvertisingParametersUpdated(int advertiserId, int txPower, int status) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onAdvertisingParametersUpdated(advertiserId, txPower, status));
-    }
-
-    void onPeriodicAdvertisingParametersUpdated(int advertiserId, int status) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onPeriodicAdvertisingParametersUpdated(advertiserId, status));
-    }
-
-    void onPeriodicAdvertisingDataSet(int advertiserId, int status) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onPeriodicAdvertisingDataSet(advertiserId, status));
-    }
-
-    void onPeriodicAdvertisingEnabled(int advertiserId, boolean enable, int status) {
-        mManager.doOnAdvertiseThread(
-                () -> mManager.onPeriodicAdvertisingEnabled(advertiserId, enable, status));
     }
 
     private native void initializeNative();
