@@ -236,7 +236,7 @@ public class AdapterService extends Service {
     private final List<ProfileService> mRegisteredProfiles = new ArrayList<>();
     private final List<ProfileService> mRunningProfiles = new ArrayList<>();
 
-    private final List<DiscoveringPackage> mDiscoveringPackages = new ArrayList<>();
+    private final Map<String, DiscoveringPackageInfo> mDiscoveringPackages = new HashMap<>();
 
     private final Map<BluetoothDevice, RemoteCallbackList<IBluetoothMetadataListener>>
             mMetadataListeners = new HashMap<>();
@@ -2638,8 +2638,8 @@ public class AdapterService extends Service {
         }
 
         synchronized (mDiscoveringPackages) {
-            mDiscoveringPackages.add(
-                    new DiscoveringPackage(callingPackage, permission, hasDisavowedLocation));
+            mDiscoveringPackages.put(
+                    callingPackage, new DiscoveringPackageInfo(permission, hasDisavowedLocation));
         }
         return mNativeInterface.startDiscovery();
     }
@@ -5012,18 +5012,21 @@ public class AdapterService extends Service {
 
         // Populate the intent with the discovering packages and send the broadcast.
         synchronized (mDiscoveringPackages) {
-            for (DiscoveringPackage pkg : mDiscoveringPackages) {
-                if (pkg.hasDisavowedLocation()) {
+            for (Map.Entry<String, DiscoveringPackageInfo> pkgEntry :
+                    mDiscoveringPackages.entrySet()) {
+                String pkgName = pkgEntry.getKey();
+                DiscoveringPackageInfo pkgInfo = pkgEntry.getValue();
+                if (pkgInfo.hasDisavowedLocation()) {
                     if (mLocationDenylistPredicate.test(device)) {
                         continue;
                     }
                 }
 
-                intent.setPackage(pkg.packageName());
-                if (pkg.permission() != null) {
+                intent.setPackage(pkgName);
+                if (pkgInfo.permission() != null) {
                     sendBroadcastMultiplePermissions(
                             intent,
-                            new String[] {BLUETOOTH_SCAN, pkg.permission()},
+                            new String[] {BLUETOOTH_SCAN, pkgInfo.permission()},
                             Utils.getTempBroadcastOptions());
                 } else {
                     sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
