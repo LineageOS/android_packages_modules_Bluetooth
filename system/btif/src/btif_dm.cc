@@ -2323,25 +2323,27 @@ void btif_remove_local_irk_from_resolving_list() {
 void BTIF_dm_enable(const std::string local_name) {
   btif_storage_prune_devices();
 
-  if (false) {
+  if (com_android_bluetooth_flags_set_name_in_system_server()) {
     log::debug("Adapter local name is {}", local_name);
-  }
-  BD_NAME bdname;
-  bt_property_t prop{
-          .type = BT_PROPERTY_BDNAME,
-          .len = BD_NAME_LEN,
-          .val = (void*)bdname,
-  };
-
-  bt_status_t status = btif_storage_get_adapter_property(&prop);
-  if (status == BT_STATUS_SUCCESS) {
-    /* A name exists in the storage. Make this the device name */
-    BTA_DmSetDeviceName((const char*)prop.val);
+    BTA_DmSetDeviceName(local_name.c_str());
   } else {
-    /* Storage does not have a name yet.
-     * Use the default name and write it to the chip
-     */
-    BTA_DmSetDeviceName(btif_get_default_local_name());
+    BD_NAME bdname;
+    bt_property_t prop{
+            .type = BT_PROPERTY_BDNAME,
+            .len = BD_NAME_LEN,
+            .val = (void*)bdname,
+    };
+
+    bt_status_t status = btif_storage_get_adapter_property(&prop);
+    if (status == BT_STATUS_SUCCESS) {
+      /* A name exists in the storage. Make this the device name */
+      BTA_DmSetDeviceName((const char*)prop.val);
+    } else {
+      /* Storage does not have a name yet.
+       * Use the default name and write it to the chip
+       */
+      BTA_DmSetDeviceName(btif_get_default_local_name());
+    }
   }
 
   /* Enable or disable local privacy */

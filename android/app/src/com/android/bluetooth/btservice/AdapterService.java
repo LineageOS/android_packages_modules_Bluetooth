@@ -376,6 +376,7 @@ public class AdapterService extends Service {
 
     private boolean mSuspend = false;
     private boolean mScanModeChangedDuringSuspend;
+    private String mLocalName; // Set when SystemServer bind to the AdapterService
     private String mScanModeChangedDuringSuspendFrom;
     private int mScanModeAfterSuspend;
 
@@ -712,6 +713,11 @@ public class AdapterService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind()");
+        if (Flags.setNameInSystemServer()) {
+            mLocalName = intent.getStringExtra(BluetoothAdapter.EXTRA_LOCAL_NAME);
+        } else {
+            mLocalName = "Name is not set"; // Safe fallback
+        }
         return mAdapterBinder;
     }
 
@@ -1219,7 +1225,7 @@ public class AdapterService extends Service {
                         mScanNativeInterface,
                         mPeriodicScanNativeInterface,
                         mCompanionDeviceManager);
-        mNativeInterface.enable("Name is not set");
+        mNativeInterface.enable(mLocalName);
     }
 
     private void startGattProfileService() {
@@ -2741,10 +2747,16 @@ public class AdapterService extends Service {
     }
 
     public String getName() {
+        if (Flags.setNameInSystemServer()) {
+            return mLocalName;
+        }
         return mAdapterProperties.getName();
     }
 
     public int getNameLengthForAdvertise() {
+        if (Flags.setNameInSystemServer()) {
+            return mLocalName.length();
+        }
         return mAdapterProperties.getName().length();
     }
 

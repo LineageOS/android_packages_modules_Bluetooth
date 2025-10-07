@@ -39,6 +39,7 @@ import static android.bluetooth.IBluetoothManager.EXTRA_LOCAL_NAME;
 import static android.bluetooth.IBluetoothManager.EXTRA_PREVIOUS_STATE;
 import static android.bluetooth.IBluetoothManager.EXTRA_STATE;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
+import static android.provider.Settings.Global.DEVICE_NAME;
 
 import static java.util.Objects.requireNonNull;
 
@@ -72,6 +73,7 @@ import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.util.Text;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
@@ -260,6 +262,21 @@ class BluetoothManagerService {
                             });
                 }
             };
+
+    private String computeInitialName() {
+        String name = SystemProperties.get("bluetooth.device.default_name");
+        if (name == null || name.isEmpty()) {
+            name = Settings.Global.getString(mContentResolver, DEVICE_NAME);
+        }
+        if (name == null || name.isEmpty()) {
+            name = SystemProperties.get("ro.product.model");
+        }
+        if (name == null || name.isEmpty()) {
+            name = "Android";
+        }
+        // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section 4.3.5).
+        return Text.truncateUtf8String(name, 248);
+    }
 
     private void storeName(String name) {
         if (!Settings.Secure.putString(mContentResolver, Settings.Secure.BLUETOOTH_NAME, name)) {
@@ -588,9 +605,24 @@ class BluetoothManagerService {
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mContext.registerReceiver(mReceiver, filter, null, mHandler);
 
-        mName =
-                BluetoothServerProxy.getInstance()
-                        .settingsSecureGetString(mContentResolver, Settings.Secure.BLUETOOTH_NAME);
+        if (Flags.setNameInSystemServer()) {
+            // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section 4.3.5).
+            mName =
+                    Text.truncateUtf8String(
+                            BluetoothServerProxy.getInstance()
+                                    .settingsSecureGetString(
+                                            mContentResolver, Settings.Secure.BLUETOOTH_NAME),
+                            248);
+            if (mName == null || mName.isEmpty()) {
+                mName = computeInitialName();
+                storeName(mName);
+            }
+        } else {
+            mName =
+                    BluetoothServerProxy.getInstance()
+                            .settingsSecureGetString(
+                                    mContentResolver, Settings.Secure.BLUETOOTH_NAME);
+        }
         mAddress =
                 BluetoothServerProxy.getInstance()
                         .settingsSecureGetString(
@@ -1440,6 +1472,9 @@ class BluetoothManagerService {
         requireNonNull(mUser, "There is no user to start for.");
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
+        if (Flags.setNameInSystemServer()) {
+            intent.putExtra(EXTRA_LOCAL_NAME, mName);
+        }
         intent.setComponent(mBluetoothComponent.getComponentName());
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
