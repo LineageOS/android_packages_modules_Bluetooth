@@ -234,6 +234,7 @@ class GAPProxy(ProfileProxy):
             if event.address == pts_addr and event.passkey_entry_notification:
                 self.log(f"Got passkey entry {event.passkey_entry_notification}")
                 self.cached_passkey = event.passkey_entry_notification
+                self.pairing_events.send(PairingEventAnswer(event=event, confirm=True))
                 return str(event.passkey_entry_notification)
 
         assert False
