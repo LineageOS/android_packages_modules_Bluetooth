@@ -67,6 +67,7 @@ public class PanServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private PanNativeCallback panNativeCallback;
     @Mock private PanNativeInterface mNativeInterface;
     @Mock private UserManager mUserManager;
 
@@ -87,7 +88,11 @@ public class PanServiceTest {
         mTestLooper = new TestLooper();
         mService =
                 new PanService(
-                        mAdapterService, mNativeInterface, mUserManager, mTestLooper.getLooper());
+                        mAdapterService,
+                        panNativeCallback,
+                        mNativeInterface,
+                        mUserManager,
+                        mTestLooper.getLooper());
         mService.setAvailable(true);
     }
 
@@ -133,15 +138,15 @@ public class PanServiceTest {
 
     @Test
     public void convertHalState() {
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_CONNECTED))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_CONNECTED))
                 .isEqualTo(STATE_CONNECTED);
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_CONNECTING))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_CONNECTING))
                 .isEqualTo(STATE_CONNECTING);
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_DISCONNECTED))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_DISCONNECTED))
                 .isEqualTo(STATE_DISCONNECTED);
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_DISCONNECTING))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_DISCONNECTING))
                 .isEqualTo(STATE_DISCONNECTING);
-        assertThat(PanNativeInterface.convertHalState(-24664)) // illegal value
+        assertThat(PanNativeCallback.convertHalState(-24664)) // illegal value
                 .isEqualTo(STATE_DISCONNECTED);
     }
 

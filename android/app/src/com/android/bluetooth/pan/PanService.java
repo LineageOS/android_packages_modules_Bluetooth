@@ -73,6 +73,7 @@ public class PanService extends ConnectableProfile {
             new ConcurrentHashMap<>();
 
     private final Map<String, IBluetoothPanCallback> mBluetoothTetheringCallbacks = new HashMap<>();
+    private final PanNativeCallback mNativeCallback;
     private final PanNativeInterface mNativeInterface;
     private final TetheringManager mTetheringManager;
     private final UserManager mUserManager;
@@ -102,18 +103,21 @@ public class PanService extends ConnectableProfile {
             };
 
     public PanService(AdapterService adapterService, UserManager userManager) {
-        this(adapterService, null, userManager, Looper.getMainLooper());
+        this(adapterService, null, null, userManager, Looper.getMainLooper());
     }
 
     @VisibleForTesting
     PanService(
             AdapterService adapterService,
+            PanNativeCallback nativeCallback,
             PanNativeInterface nativeInterface,
             UserManager userManager,
             Looper looper) {
         super(BluetoothProfile.PAN, requireNonNull(adapterService));
+        mNativeCallback = requireNonNullElseGet(nativeCallback, () -> new PanNativeCallback(this));
         mNativeInterface =
-                requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
+                requireNonNullElseGet(
+                        nativeInterface, () -> new PanNativeInterface(mNativeCallback));
         mUserManager = userManager;
         mTetheringManager = requireNonNull(obtainSystemService(TetheringManager.class));
         mHandler = new PanServiceHandler(looper);
