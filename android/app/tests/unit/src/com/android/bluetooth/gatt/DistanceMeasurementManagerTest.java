@@ -70,6 +70,7 @@ public class DistanceMeasurementManagerTest {
     @Rule public SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private DistanceMeasurementNativeCallback mNativeCallback;
     @Mock private DistanceMeasurementNativeInterface mNativeInterface;
     @Mock private AdapterService mAdapterService;
     @Mock private PackageManager mPackageManager;
@@ -106,7 +107,10 @@ public class DistanceMeasurementManagerTest {
 
         mDistanceMeasurementManager =
                 new DistanceMeasurementManager(
-                        mAdapterService, mNativeInterface, mHandlerThread.getLooper());
+                        mAdapterService,
+                        mNativeCallback,
+                        mNativeInterface,
+                        mHandlerThread.getLooper());
         Message msg = mTestLooperManager.next();
         mTestLooperManager.execute(msg);
         mUuid = UUID.randomUUID();

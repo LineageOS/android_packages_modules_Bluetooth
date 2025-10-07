@@ -56,7 +56,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /** Manages distance measurement operations and interacts with Gabeldorsche stack. */
-@VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
     private static final String TAG =
             GattUtil.TAG_PREFIX + DistanceMeasurementManager.class.getSimpleName();
@@ -78,6 +77,7 @@ public class DistanceMeasurementManager {
     private final AdapterService mAdapterService;
     private final HandlerThread mHandlerThread;
     private final Handler mHandler;
+    private final DistanceMeasurementNativeCallback mNativeCallback;
     private final DistanceMeasurementNativeInterface mNativeInterface;
     private final DistanceMeasurementBinder mDistanceMeasurementBinder;
     private final ConcurrentHashMap<String, CopyOnWriteArraySet<DistanceMeasurementTracker>>
@@ -90,6 +90,15 @@ public class DistanceMeasurementManager {
 
     DistanceMeasurementManager(
             AdapterService adapterService,
+            DistanceMeasurementNativeInterface nativeInterface,
+            Looper looper) {
+        this(adapterService, null, nativeInterface, looper);
+    }
+
+    @VisibleForTesting
+    DistanceMeasurementManager(
+            AdapterService adapterService,
+            DistanceMeasurementNativeCallback nativeCallback,
             DistanceMeasurementNativeInterface nativeInterface,
             Looper looper) {
         mAdapterService = adapterService;
@@ -109,9 +118,13 @@ public class DistanceMeasurementManager {
             mHandler = new Handler(mHandlerThread.getLooper());
         }
 
+        mNativeCallback =
+                requireNonNullElseGet(
+                        nativeCallback, () -> new DistanceMeasurementNativeCallback(this));
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new DistanceMeasurementNativeInterface(this));
+                        nativeInterface,
+                        () -> new DistanceMeasurementNativeInterface(mNativeCallback));
         mNativeInterface.init();
         mDistanceMeasurementBinder = new DistanceMeasurementBinder(adapterService, this);
         mHasChannelSoundingFeature =

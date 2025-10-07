@@ -218,6 +218,7 @@ static bluetooth::gatt::PrivateGattServerManager* sPrivateGattServerManager = NU
 static jobject mCallbacksObj = NULL;
 static jobject mAdvertiseCallbacksObj = NULL;
 static jobject mDistanceMeasurementCallbacksObj = NULL;
+static jfieldID sDistanceMeasurementCallbacksField;
 static std::shared_mutex callbacks_mutex;
 
 /**
@@ -1977,7 +1978,10 @@ static void distanceMeasurementInitializeNative(JNIEnv* env, jobject object) {
     mDistanceMeasurementCallbacksObj = NULL;
   }
 
-  mDistanceMeasurementCallbacksObj = env->NewGlobalRef(object);
+  if ((mDistanceMeasurementCallbacksObj = env->NewGlobalRef(
+               env->GetObjectField(object, sDistanceMeasurementCallbacksField))) == nullptr) {
+    log::fatal("Failed to allocate Global Ref for Gatt Distance Measurement Callbacks");
+  }
 }
 
 static void distanceMeasurementCleanupNative(JNIEnv* env, jobject /* object */) {
@@ -2055,7 +2059,7 @@ static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
   return 0;
 }
 
-// JNI functions defined in DistanceMeasurementNativeInterface class.
+// JNI functions defined in DistanceMeasurementNativeInterface
 static int register_com_android_bluetooth_gatt_distance_measurement(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)distanceMeasurementInitializeNative},
@@ -2071,6 +2075,14 @@ static int register_com_android_bluetooth_gatt_distance_measurement(JNIEnv* env)
     return result;
   }
 
+  jclass jniNativeInterfaceClass =
+          env->FindClass("com/android/bluetooth/gatt/DistanceMeasurementNativeInterface");
+  sDistanceMeasurementCallbacksField =
+          env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
+                          "Lcom/android/bluetooth/gatt/DistanceMeasurementNativeCallback;");
+  env->DeleteLocalRef(jniNativeInterfaceClass);
+
+  // Client callback functions defined in DistanceMeasurementNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onDistanceMeasurementStarted", "(Ljava/lang/String;I)V",
            &method_onDistanceMeasurementStarted},
@@ -2079,7 +2091,7 @@ static int register_com_android_bluetooth_gatt_distance_measurement(JNIEnv* env)
           {"onDistanceMeasurementResult", "(Ljava/lang/String;IIIIIIJIDIDI)V",
            &method_onDistanceMeasurementResult},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/gatt/DistanceMeasurementNativeInterface",
+  GET_JAVA_METHODS(env, "com/android/bluetooth/gatt/DistanceMeasurementNativeCallback",
                    javaMethods);
   return 0;
 }
