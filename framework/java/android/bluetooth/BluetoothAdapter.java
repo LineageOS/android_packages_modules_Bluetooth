@@ -4179,6 +4179,9 @@ public final class BluetoothAdapter {
      *     value is released when the server socket is closed, Bluetooth is turned off, or the
      *     application exits unexpectedly. The mechanism for disclosing the PSM value to the client
      *     is application-defined.
+     * <li>For `BluetoothSocket.TYPE_LE`: It is possible for a privileged application to host the
+     *     L2cap server on a designated PSM channel. This is intended for peripheral devices that
+     *     reserve a range of PSM values to be used to host dedicated L2cap socket servers.
      *
      * @param settings Bluetooth socket settings {@link BluetoothSocketSettings}.
      * @return a {@link BluetoothServerSocket}
@@ -4225,13 +4228,17 @@ public final class BluetoothAdapter {
             }
             socket.setServiceName(settings.getRfcommServiceName());
         } else if (type == BluetoothSocket.TYPE_LE) {
+            int psm = SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
             if (settings.getDataPath() == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
+                if (Flags.lecocWithFixedPsm()) {
+                    psm = settings.getL2capPsm();
+                }
                 socket =
                         new BluetoothServerSocket(
                                 settings.getSocketType(),
                                 settings.isAuthenticationRequired(),
                                 settings.isEncryptionRequired(),
-                                SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
+                                psm,
                                 false,
                                 false);
             } else {
@@ -4240,7 +4247,7 @@ public final class BluetoothAdapter {
                                 settings.getSocketType(),
                                 settings.isAuthenticationRequired(),
                                 settings.isEncryptionRequired(),
-                                SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
+                                psm,
                                 null,
                                 false,
                                 false,

@@ -188,6 +188,9 @@ typedef enum : uint16_t {
 #define LE_DYNAMIC_PSM_START 0x0080
 #define LE_DYNAMIC_PSM_END 0x00FF
 #define LE_DYNAMIC_PSM_RANGE (LE_DYNAMIC_PSM_END - LE_DYNAMIC_PSM_START + 1)
+#define LECOC_FIXED_PSM_SLOTS_DEFAULT 0x00
+#define LECOC_FIXED_PSM_RANGE_MIN 0x00
+#define LECOC_FIXED_PSM_RANGE_MAX 0x08
 
 /* Return values for l2cu_process_peer_cfg_req() */
 #define L2CAP_PEER_CFG_UNACCEPTABLE 0

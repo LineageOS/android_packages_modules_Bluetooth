@@ -507,11 +507,15 @@ void BTA_JvDisable(void);
  *                  SCN/PSM returned in the EVT will be 0 - no attempt to
  *                  request a new channel will be made. set channel to <= 0 to
  *                  automatically assign an channel ID.
+ *                  lecoc_fixed_psm_slots - Fixed psm range value in the last
+ *                  slots of valid LE CoC PSM range which can be reserved by
+ *                  privileged applications
  *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id, int32_t channel);
+void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id, int32_t channel,
+                        int32_t lecoc_fixed_psm_slots);
 
 /*******************************************************************************
  *

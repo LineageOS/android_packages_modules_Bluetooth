@@ -267,6 +267,14 @@ uint16_t GAP_ConnOpen(const char* /* p_serv_name */, uint8_t service_id, bool is
   }
 
   if (transport == BT_TRANSPORT_LE) {
+    if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
+      p_ccb->local_coc_cfg.lecoc_fixed_psm_slots = p_cfg->lecoc_fixed_psm_slots;
+      p_ccb->local_coc_cfg.lecoc_assigned_psm = p_cfg->lecoc_assigned_psm;
+    } else {
+      // forcing to initial values
+      p_ccb->local_coc_cfg.lecoc_fixed_psm_slots = 0;
+      p_ccb->local_coc_cfg.lecoc_assigned_psm = false;
+    }
     p_ccb->psm = stack::l2cap::get_interface().L2CA_RegisterLECoc(psm, conn.reg_info, security,
                                                                   p_ccb->local_coc_cfg);
     if (p_ccb->psm == 0) {

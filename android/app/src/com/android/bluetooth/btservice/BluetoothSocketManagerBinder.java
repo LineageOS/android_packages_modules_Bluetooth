@@ -18,6 +18,7 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothSocketSettings;
@@ -29,6 +30,7 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     private static final String TAG = BluetoothSocketManagerBinder.class.getSimpleName();
@@ -168,6 +170,13 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         if (!Utils.checkConnectPermissionForPreflight(mService, source)) {
             return null;
+        }
+
+        if ((Flags.lecocWithFixedPsm()
+                && type == BluetoothSocket.TYPE_LE
+                && !Utils.checkCallerHasPrivilegedPermission(mService))) {
+            // for non privileged app, ignore the input LE CoC Psm
+            port = BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
         }
 
         Log.i(

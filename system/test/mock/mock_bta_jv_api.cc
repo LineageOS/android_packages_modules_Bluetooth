@@ -114,8 +114,8 @@ uint16_t BTA_JvRfcommGetPortHdl(uint32_t /* handle */) {
   return 0;
 }
 void BTA_JvDisable(void) { inc_func_call_count(__func__); }
-void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE /* conn_type */, uint32_t /* id */,
-                        int32_t /* channel */) {
+void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE /* conn_type */, uint32_t /* id */, int32_t /* channel */,
+                        int32_t /*lecoc_fixed_psm_slots*/) {
   inc_func_call_count(__func__);
 }
 void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE /* conn_type */, tBTA_SEC /* sec_mask */,

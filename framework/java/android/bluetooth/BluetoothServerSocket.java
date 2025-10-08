@@ -22,6 +22,8 @@ import android.compat.annotation.UnsupportedAppUsage;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -97,7 +99,8 @@ public final class BluetoothServerSocket implements Closeable {
         mType = type;
         mChannel = port;
         mSocket = new BluetoothSocket(type, auth, encrypt, port, null);
-        if (port == BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP) {
+        if (port == BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
+                || (Flags.lecocWithFixedPsm() && type == BluetoothSocket.TYPE_LE)) {
             mSocket.setExcludeSdp(true);
         }
         mSocketCreationLatencyMillis = System.currentTimeMillis() - mSocketCreationTimeMillis;
@@ -124,7 +127,8 @@ public final class BluetoothServerSocket implements Closeable {
         mType = type;
         mChannel = port;
         mSocket = new BluetoothSocket(type, auth, encrypt, port, null, pitm, min16DigitPin);
-        if (port == BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP) {
+        if (port == BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
+                || (Flags.lecocWithFixedPsm() && type == BluetoothSocket.TYPE_LE)) {
             mSocket.setExcludeSdp(true);
         }
         mSocketCreationLatencyMillis = System.currentTimeMillis() - mSocketCreationTimeMillis;
@@ -193,7 +197,8 @@ public final class BluetoothServerSocket implements Closeable {
                         hubId,
                         endpointId,
                         maximumPacketSize);
-        if (port == BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP) {
+        if (port == BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP
+                || (Flags.lecocWithFixedPsm() && type == BluetoothSocket.TYPE_LE)) {
             mSocket.setExcludeSdp(true);
         }
         mSocketCreationLatencyMillis = System.currentTimeMillis() - mSocketCreationTimeMillis;
