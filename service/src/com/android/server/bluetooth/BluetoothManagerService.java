@@ -188,7 +188,7 @@ class BluetoothManagerService {
     private boolean mShutdownInProgress = false;
 
     private int mCrashes = 0;
-    private Instant mLastEnabledTime;
+    private Instant mLastBindingTime;
 
     // configuration from external IBinder call which is used to
     // synchronize with broadcast receiver.
@@ -1464,74 +1464,6 @@ class BluetoothManagerService {
         return mHandler.hasMessages(MESSAGE_TIMEOUT_BIND);
     }
 
-    private void handleEnableMessage(boolean quietEnable, boolean isBle) {
-        String logHeader = "handleEnableMessage(" + quietEnable + ", " + isBle + "): ";
-        if (mShutdownInProgress) {
-            Log.d(TAG, logHeader + "Skip Bluetooth Enable in device shutdown process");
-            return;
-        }
-
-        mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
-        mEnable = true;
-
-        if (!isBle) {
-            setBluetoothPersistedState(BLUETOOTH_ON_BLUETOOTH);
-        }
-
-        if (mState.oneOf(State.BLE_TURNING_ON, State.TURNING_ON, State.ON)) {
-            Log.i(TAG, logHeader + "Already enabled. Current state=" + mState);
-            return;
-        }
-
-        if (mState.oneOf(State.BLE_ON) && isBle) {
-            Log.i(TAG, logHeader + "Already in BLE_ON while being requested to go to BLE_ON");
-            return;
-        }
-
-        if (mState.oneOf(State.BLE_ON)) {
-            Log.i(TAG, logHeader + "Bluetooth transition from State.BLE_ON to State.ON");
-            bleOnToOn();
-            return;
-        }
-
-        mQuietEnable = quietEnable;
-        handleEnable();
-    }
-
-    private void handleDisableMessage() {
-        mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
-
-        if (mState.oneOf(State.OFF)) {
-            Log.d(TAG, "Disable while already OFF. Nothing to do");
-        } else if (isBinding()) {
-            Log.d(TAG, "Disable while binding");
-            mEnable = false;
-            mContext.unbindService(mConnection);
-            mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
-            bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-            mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
-        } else if (mState.oneOf(State.BLE_TURNING_ON)) {
-            Log.d(TAG, "Disable while BLE_TURNING_ON");
-            mEnable = false;
-            bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-        } else {
-            if (mState.oneOf(State.ON)) {
-                Log.d(TAG, "Disable while ON");
-                onToBleOn();
-            } else if (mState.oneOf(State.TURNING_ON)) {
-                Log.d(TAG, "Disable while TURNING_ON, set mEnable for later");
-            } else if (mState.oneOf(State.BLE_ON)) {
-                Log.d(TAG, "Disable while BLE_ON");
-            } else if (mEnable) {
-                Log.w(TAG, "Disable during unexpected state " + mState + ". mEnable is true !");
-            } else {
-                Log.d(TAG, "Disable during state " + mState + ". mEnable is false. Nothing to do");
-            }
-        }
-
-        mEnable = false;
-    }
-
     private void prepareRestartMessage() {
         mEnable = false;
 
@@ -1656,6 +1588,7 @@ class BluetoothManagerService {
         intent.setComponent(mBluetoothComponent.getComponentName());
 
         Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        mLastBindingTime = Instant.now();
         if (!mContext.bindServiceAsUser(intent, mConnection, flags, mUser)) {
             Log.e(TAG, "Fail to bind to intent=" + intent);
             mContext.unbindService(mConnection);
@@ -1886,7 +1819,37 @@ class BluetoothManagerService {
 
     private void sendDisableMsg(int reason, String packageName) {
         mActiveLogs.add(reason, false, packageName, false);
-        handleDisableMessage();
+        mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
+
+        if (mState.oneOf(State.OFF)) {
+            Log.d(TAG, "Disable while already OFF. Nothing to do");
+        } else if (isBinding()) {
+            Log.d(TAG, "Disable while binding");
+            mEnable = false;
+            mContext.unbindService(mConnection);
+            mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
+            bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+            mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
+        } else if (mState.oneOf(State.BLE_TURNING_ON)) {
+            Log.d(TAG, "Disable while BLE_TURNING_ON");
+            mEnable = false;
+            bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+        } else {
+            if (mState.oneOf(State.ON)) {
+                Log.d(TAG, "Disable while ON");
+                onToBleOn();
+            } else if (mState.oneOf(State.TURNING_ON)) {
+                Log.d(TAG, "Disable while TURNING_ON, set mEnable for later");
+            } else if (mState.oneOf(State.BLE_ON)) {
+                Log.d(TAG, "Disable while BLE_ON");
+            } else if (mEnable) {
+                Log.w(TAG, "Disable during unexpected state " + mState + ". mEnable is true !");
+            } else {
+                Log.d(TAG, "Disable during state " + mState + ". mEnable is false. Nothing to do");
+            }
+        }
+
+        mEnable = false;
     }
 
     private void sendEnableMsg(boolean quietMode, int reason) {
@@ -1897,10 +1860,39 @@ class BluetoothManagerService {
         sendEnableMsg(quietMode, reason, packageName, false);
     }
 
-    private void sendEnableMsg(boolean quietMode, int reason, String packageName, boolean isBle) {
+    private void sendEnableMsg(boolean quietEnable, int reason, String packageName, boolean isBle) {
         mActiveLogs.add(reason, true, packageName, isBle);
-        mLastEnabledTime = Instant.now();
-        handleEnableMessage(quietMode, isBle);
+        String logHeader = "sendEnableMsg(" + quietEnable + ", " + isBle + "): ";
+        if (mShutdownInProgress) {
+            Log.d(TAG, logHeader + "Skip Bluetooth Enable in device shutdown process");
+            return;
+        }
+
+        mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
+        mEnable = true;
+
+        if (!isBle) {
+            setBluetoothPersistedState(BLUETOOTH_ON_BLUETOOTH);
+        }
+
+        if (mState.oneOf(State.BLE_TURNING_ON, State.TURNING_ON, State.ON)) {
+            Log.i(TAG, logHeader + "Already enabled. Current state=" + mState);
+            return;
+        }
+
+        if (mState.oneOf(State.BLE_ON) && isBle) {
+            Log.i(TAG, logHeader + "Already in BLE_ON while being requested to go to BLE_ON");
+            return;
+        }
+
+        if (mState.oneOf(State.BLE_ON)) {
+            Log.i(TAG, logHeader + "Bluetooth transition from State.BLE_ON to State.ON");
+            bleOnToOn();
+            return;
+        }
+
+        mQuietEnable = quietEnable;
+        handleEnable();
     }
 
     private void addCrashLog() {
@@ -1967,7 +1959,7 @@ class BluetoothManagerService {
         writer.println("  Address:       " + Log.address(mAddress));
         writer.println("  Name:          " + mName);
         if (mEnable) {
-            Duration elapsed = Duration.between(mLastEnabledTime, Instant.now());
+            Duration elapsed = Duration.between(mLastBindingTime, Instant.now());
             writer.println(
                     "  Uptime:        "
                             + elapsed.toString()
