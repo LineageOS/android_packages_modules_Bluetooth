@@ -33,6 +33,7 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/le_audio/mock_codec_manager.h"
 #include "btif/include/btif_common.h"
+#include "gd/common/utils.h"
 #include "hci/controller_mock.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/main_thread.h"
@@ -127,6 +128,12 @@ static void init_message_loop_thread() {
 static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
 
 bool LeAudioClient::IsLeAudioClientRunning(void) { return false; }
+
+namespace bluetooth::common {
+// Test-only mock for IsPtsTestMode
+bool g_is_pts_test_mode = false;
+bool IsPtsTestMode() { return g_is_pts_test_mode; }
+}  // namespace bluetooth::common
 
 namespace bluetooth::le_audio {
 namespace broadcaster {
@@ -336,6 +343,7 @@ protected:
                               bluetooth::le_audio::broadcaster::GetBroadcastConfig(
                                       requirements.subgroup_quality));
                     }));
+    bluetooth::common::g_is_pts_test_mode = false;
   }
 
   void ConfigAudioHalClientMock() {
@@ -359,6 +367,7 @@ protected:
   }
 
   void TearDown() override {
+    bluetooth::common::g_is_pts_test_mode = false;
     // Message loop cleanup should wait for all the 'till now' scheduled calls
     // so it should be called right at the very begginning of teardown.
     cleanup_message_loop_thread();
@@ -508,6 +517,21 @@ TEST_F(BroadcasterTest, CreateAudioBroadcastInvalidBroadcastCode) {
                                                   default_subgroup_qualities, metadata_array);
 
   Mock::VerifyAndClearExpectations(&mock_broadcaster_callbacks_);
+}
+
+TEST_F(BroadcasterTest, CreateAudioBroadcastPtsMode) {
+  bluetooth::common::g_is_pts_test_mode = true;
+
+  auto broadcast_id = InstantiateBroadcast();
+  ASSERT_NE(broadcast_id, LeAudioBroadcaster::kInstanceIdUndefined);
+  ASSERT_EQ(broadcast_id, MockBroadcastStateMachine::GetLastInstance()->GetBroadcastId());
+
+  auto& instance_config = MockBroadcastStateMachine::GetLastInstance()->cfg;
+
+  // Default features are defined in `test_public_broadcast_features`.
+  // In PTS mode, reserved bits are set to `test_public_broadcast_features | 0xF8`.
+  uint8_t expected_features = test_public_broadcast_features | 0xF8;
+  ASSERT_EQ(instance_config.public_announcement.features, expected_features);
 }
 
 TEST_F(BroadcasterTest, CreateAudioBroadcastMultiGroups) {
