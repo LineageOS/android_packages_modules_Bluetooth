@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "rnr_multiple_name_request"
+    namespace: "bluetooth"
+    description: "Support mulitple remote name requests simultaneously"
+    bug: "445714747"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
