@@ -156,7 +156,7 @@ public class BluetoothKeystoreService {
     public void cleanup() {
         debugLog("cleanup");
 
-        if (!Flags.useDataStoreStorage()) {
+        if (!Flags.mainlineBetaStorage()) {
             debugLog("cleanup() called before start()");
             return;
         }
