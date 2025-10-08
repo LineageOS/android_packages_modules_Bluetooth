@@ -21,21 +21,21 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
 
-public class AdvertiseManagerNativeInterface {
-
-    @Native private final AdvertiseManagerNativeCallback mNativeCallback;
+public class AdvertiseManagerNativeInterface
+        extends NativeInterface<AdvertiseManagerNativeCallback> {
 
     AdvertiseManagerNativeInterface(AdvertiseManagerNativeCallback nativeCallback) {
-        mNativeCallback = requireNonNull(nativeCallback);
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

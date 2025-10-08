@@ -914,6 +914,7 @@ static jboolean setExtAudioInMuteNative(JNIEnv* env, jobject /* object */, jbyte
   return ret ? JNI_TRUE : JNI_FALSE;
 }
 
+// JNI functions defined in VolumeControlNativeInterface
 int register_com_android_bluetooth_vc(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "()V", reinterpret_cast<void*>(initNative)},
@@ -962,12 +963,10 @@ int register_com_android_bluetooth_vc(JNIEnv* env) {
     return result;
   }
 
-  jclass jniVolumeControlNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/vc/VolumeControlNativeInterface");
-  sCallbacksField = env->GetFieldID(jniVolumeControlNativeInterfaceClass, "mNativeCallback",
-                                    "Lcom/android/bluetooth/vc/VolumeControlNativeCallback;");
-  env->DeleteLocalRef(jniVolumeControlNativeInterfaceClass);
+  sCallbacksField =
+          getNativeCallbackField(env, "com/android/bluetooth/vc/VolumeControlNativeInterface");
 
+  // Client callback functions defined in VolumeControlNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
           {"onVolumeStateChanged", "(IZI[BZ)V", &method_onVolumeStateChanged},

@@ -16,18 +16,19 @@
 
 package com.android.bluetooth.gatt;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.GattOffloadSession;
 
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
+
 import java.util.List;
 
-public class GattNativeInterface {
-
-    @Native private final GattNativeCallback mNativeCallback;
+public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
 
     GattNativeInterface(GattNativeCallback nativeCallback) {
-        mNativeCallback = nativeCallback;
+        super(requireNonNull(nativeCallback));
     }
 
     private native void initializeNative();
@@ -160,8 +161,8 @@ public class GattNativeInterface {
         initializeNative();
     }
 
-    /** Clean up the native interface and native components */
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

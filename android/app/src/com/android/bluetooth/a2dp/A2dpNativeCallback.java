@@ -26,11 +26,12 @@ import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.profile.NativeCallback;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 
-class A2dpNativeCallback {
+class A2dpNativeCallback implements NativeCallback {
     private static final String TAG = A2dpNativeCallback.class.getSimpleName();
 
     private final AdapterService mAdapterService;

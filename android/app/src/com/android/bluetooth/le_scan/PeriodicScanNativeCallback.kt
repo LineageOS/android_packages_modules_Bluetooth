@@ -17,10 +17,11 @@
 package com.android.bluetooth.le_scan
 
 import android.util.Log
+import com.android.bluetooth.profile.NativeCallback
 
 private const val TAG = "PeriodicScanNativeCallback"
 
-class PeriodicScanNativeCallback(private val manager: PeriodicScanManager) {
+class PeriodicScanNativeCallback(private val manager: PeriodicScanManager) : NativeCallback {
 
     fun onSyncStarted(
         regId: Int,

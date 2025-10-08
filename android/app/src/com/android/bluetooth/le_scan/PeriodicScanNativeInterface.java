@@ -20,23 +20,23 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
 
-public class PeriodicScanNativeInterface {
+public class PeriodicScanNativeInterface extends NativeInterface<PeriodicScanNativeCallback> {
+
     private static final int PA_SOURCE_LOCAL = 1;
     private static final int PA_SOURCE_REMOTE = 2;
 
-    @Native private final PeriodicScanNativeCallback mNativeCallback;
-
     PeriodicScanNativeInterface(PeriodicScanNativeCallback nativeCallback) {
-        mNativeCallback = requireNonNull(nativeCallback);
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

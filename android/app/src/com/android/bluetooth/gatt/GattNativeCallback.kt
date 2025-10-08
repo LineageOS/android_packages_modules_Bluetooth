@@ -19,9 +19,11 @@ package com.android.bluetooth.gatt
 import android.bluetooth.BluetoothDevice
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.profile.NativeCallback
 import java.util.UUID
 
-class GattNativeCallback(val adapterService: AdapterService, val service: GattService) {
+class GattNativeCallback(val adapterService: AdapterService, val service: GattService) :
+    NativeCallback {
 
     fun onClientRegistered(status: Int, clientIf: Int, uuidLsb: Long, uuidMsb: Long) {
         service.onClientRegisteredFromNative(status, clientIf, UUID(uuidMsb, uuidLsb))

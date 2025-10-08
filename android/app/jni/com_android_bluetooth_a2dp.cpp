@@ -546,8 +546,8 @@ int register_com_android_bluetooth_a2dp(JNIEnv* env) {
   jclass jniA2dpNativeInterfaceClass =
           env->FindClass("com/android/bluetooth/a2dp/A2dpNativeInterface");
   android_bluetooth_A2dpNativeInterface.mNativeCallback =
-          env->GetFieldID(jniA2dpNativeInterfaceClass, "mNativeCallback",
-                          "Lcom/android/bluetooth/a2dp/A2dpNativeCallback;");
+          env->GetFieldID(jniA2dpNativeInterfaceClass, "nativeCallback",
+                          "Lcom/android/bluetooth/profile/NativeCallback;");
   env->DeleteLocalRef(jniA2dpNativeInterfaceClass);
 
   const JNIJavaMethod codecConfigCallbacksMethods[] = {

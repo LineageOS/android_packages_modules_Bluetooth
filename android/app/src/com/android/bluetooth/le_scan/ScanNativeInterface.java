@@ -18,21 +18,20 @@ package com.android.bluetooth.le_scan;
 
 import static java.util.Objects.requireNonNull;
 
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
 
-public class ScanNativeInterface {
-
-    @Native private final ScanNativeCallback mNativeCallback;
+public class ScanNativeInterface extends NativeInterface<ScanNativeCallback> {
 
     ScanNativeInterface(ScanNativeCallback nativeCallback) {
-        mNativeCallback = requireNonNull(nativeCallback);
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

@@ -21,17 +21,14 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
-
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
 
 /** Voice Assistant Profile Server Native Interface to/from JNI. */
-public class VapsServerNativeInterface {
+public class VapsServerNativeInterface extends NativeInterface<VapsServerNativeCallback> {
     private static final String TAG = VapsServerNativeInterface.class.getSimpleName();
 
-    @Native private final VapsServerNativeCallback mVapsServerNativeCallback;
-
-    public VapsServerNativeInterface(VapsServerNativeCallback vapsServerNativeCallback) {
-        mVapsServerNativeCallback = requireNonNull(vapsServerNativeCallback);
+    public VapsServerNativeInterface(VapsServerNativeCallback nativeCallback) {
+        super(requireNonNull(nativeCallback));
     }
 
     private static byte[] getByteAddress(BluetoothDevice device) {
@@ -49,7 +46,8 @@ public class VapsServerNativeInterface {
         setCcidNative(ccid);
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

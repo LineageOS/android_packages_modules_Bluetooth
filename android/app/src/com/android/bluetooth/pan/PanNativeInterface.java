@@ -20,22 +20,21 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothPan;
 
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
 
 /** Provides Bluetooth Pan native interface for the Pan service */
-public class PanNativeInterface {
-
-    @Native private final PanNativeCallback mNativeCallback;
+public class PanNativeInterface extends NativeInterface<PanNativeCallback> {
 
     PanNativeInterface(PanNativeCallback nativeCallback) {
-        mNativeCallback = requireNonNull(nativeCallback);
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

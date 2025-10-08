@@ -18,12 +18,13 @@ package com.android.bluetooth.le_scan
 
 import android.util.Log
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.profile.NativeCallback
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "ScanNativeCallback"
 
-class ScanNativeCallback(private val scanController: ScanController) {
+class ScanNativeCallback(private val scanController: ScanController) : NativeCallback {
 
     // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
     private var latch = CountDownLatch(1)
