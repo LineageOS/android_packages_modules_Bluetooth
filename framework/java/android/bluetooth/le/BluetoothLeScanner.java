@@ -504,14 +504,18 @@ public final class BluetoothLeScanner {
         // methods that provide a WorkSource, such as `startScanFromSource()`, are already annotated
         // with this permission. This suppression avoids propagating the conditional requirement to
         // Public API methods that do not use a WorkSource.
-        @SuppressLint("AndroidFrameworkRequiresPermission")
+        @SuppressLint({
+            "AndroidFrameworkRequiresPermission",
+            "IncorrectRequiresPermissionPropagation"
+        })
         @SuppressWarnings("WaitNotInLoop") // TODO(b/314811467)
         void startRegistration() {
             synchronized (this) {
                 // Scan stopped.
                 if (mScannerId == -1 || mScannerId == -2) return;
                 try {
-                    mBluetoothScan.registerScanner(this, mWorkSource, mAttributionSource);
+                    mBluetoothScan.registerScanner(
+                            this, mSettings, mFilters, mWorkSource, mAttributionSource);
                     wait(REGISTRATION_CALLBACK_TIMEOUT_MILLIS);
                 } catch (InterruptedException | RemoteException e) {
                     Log.e(TAG, "application registration exception", e);

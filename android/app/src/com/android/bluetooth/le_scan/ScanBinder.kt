@@ -72,9 +72,13 @@ class ScanBinder(
 
     override fun registerScanner(
         callback: IScannerCallback,
+        settings: ScanSettings?,
+        filters: List<ScanFilter>?,
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
+        enforcePrivilegedPermissionIfNeeded(settings)
+        enforcePrivilegedPermissionIfNeeded(filters)
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
