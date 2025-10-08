@@ -441,3 +441,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_sw_config_quality_logic"
+    namespace: "bluetooth"
+    description: "Improve broadcast config selection by using quality-based logic instead of context type"
+    bug: "450213446"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
