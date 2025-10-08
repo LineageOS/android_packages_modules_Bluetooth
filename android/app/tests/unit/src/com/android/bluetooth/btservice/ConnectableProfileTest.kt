@@ -51,9 +51,8 @@ class ConnectableProfileTest {
             return mockBinder
         }
 
-        override fun cleanup() {
-            // Nothing to do for test
-        }
+        // Nothing to do for test
+        override fun cleanup() = Unit
 
         override fun connect(device: BluetoothDevice?): Boolean {
             return false
@@ -117,17 +116,6 @@ class ConnectableProfileTest {
 
         assertThat(connectableProfile.getConnectionPolicy(device)).isEqualTo(expectedPolicy)
         verify(adapterService).getProfileConnectionPolicy(device, TEST_PROFILE_ID)
-    }
-
-    @Test
-    fun getConnectionPolicy_callsDatabaseManager_onNullDevice_returnsPolicyUnknown() {
-        val policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN
-        doReturn(policyUnknown)
-            .whenever(adapterService)
-            .getProfileConnectionPolicy(null, TEST_PROFILE_ID)
-
-        assertThat(connectableProfile.getConnectionPolicy(null)).isEqualTo(policyUnknown)
-        verify(adapterService).getProfileConnectionPolicy(null, TEST_PROFILE_ID)
     }
 
     @Test

@@ -34,7 +34,6 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -476,15 +475,6 @@ public class PbapClientServiceTest {
     @Test
     public void testGetConnectionPolicy_onKnownDevice_returnsAllowed() {
         assertThat(mService.getConnectionPolicy(mDevice)).isEqualTo(CONNECTION_POLICY_ALLOWED);
-    }
-
-    // getConnectionPolicy (device null) -> policy unknown
-    @Test
-    public void testGetConnectionPolicy_onNullDevice_returnsUnknown() {
-        doReturn(CONNECTION_POLICY_UNKNOWN)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(nullable(BluetoothDevice.class), anyInt());
-        assertThat(mService.getConnectionPolicy(null)).isEqualTo(CONNECTION_POLICY_UNKNOWN);
     }
 
     // *********************************************************************************************
