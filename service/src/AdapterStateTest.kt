@@ -17,7 +17,6 @@
 package com.android.server.bluetooth.test
 
 import android.bluetooth.State
-import android.os.IpcDataCache
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.google.common.truth.Truth.assertThat
@@ -44,14 +43,14 @@ class BluetoothAdapterStateTest {
 
     @Before
     fun setUp() {
-        IpcDataCache.setCacheTestMode(true)
+        BluetoothAdapterState.disableCacheForTesting = true
         Log.i("BluetoothAdapterStateTest", "\t--> setup of ${testName.methodName}")
         mState = BluetoothAdapterState()
     }
 
     @After
     fun tearDown() {
-        IpcDataCache.setCacheTestMode(false)
+        BluetoothAdapterState.disableCacheForTesting = false
     }
 
     @Test
