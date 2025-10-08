@@ -49,7 +49,6 @@ class ScannerMapTest {
     @Mock private lateinit var attributionSource: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var packageManager: PackageManager
-    @Mock private lateinit var scanController: ScanController
     @Mock private lateinit var scannerCallback: IScannerCallback
 
     @Before
@@ -72,7 +71,6 @@ class ScannerMapTest {
                 attributionSource,
                 info,
                 adapterService,
-                scanController,
             )
         app.id = SCANNER_ID
 
@@ -97,7 +95,6 @@ class ScannerMapTest {
                 null,
                 scannerCallback,
                 adapterService,
-                scanController,
             )
         app.id = SCANNER_ID
 
@@ -123,7 +120,6 @@ class ScannerMapTest {
                 null,
                 scannerCallback,
                 adapterService,
-                scanController,
             )
         app.id = SCANNER_ID
 
@@ -146,7 +142,6 @@ class ScannerMapTest {
             null,
             scannerCallback,
             adapterService,
-            scanController,
         )
         scannerMap.dump(sb, emptyMap())
     }

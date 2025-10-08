@@ -42,7 +42,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.bluetooth.util.WorkSourceUtil;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -126,8 +125,6 @@ public class AppScanStats {
     private final AdapterService mAdapterService;
     // Used to keep track of scans and result stats
     private final BatteryStatsManager mBatteryStatsManager;
-    // Used to add scan event protos to be dumped later
-    @VisibleForTesting final ScanController mScanController;
     private final TimeProvider mTimeProvider;
 
     boolean mIsAppDead = false;
@@ -157,7 +154,6 @@ public class AppScanStats {
             WorkSource source,
             int uid,
             AdapterService adapterService,
-            ScanController scanController,
             TimeProvider timeProvider) {
         mAppName = name;
         // Bill the caller uid if the work source isn't passed through
@@ -165,7 +161,6 @@ public class AppScanStats {
         mWorkSourceUtil = new WorkSourceUtil(mWorkSource);
         mAdapterService = requireNonNull(adapterService);
         mBatteryStatsManager = adapterService.getSystemService(BatteryStatsManager.class);
-        mScanController = scanController;
         mTimeProvider = requireNonNull(timeProvider);
     }
 

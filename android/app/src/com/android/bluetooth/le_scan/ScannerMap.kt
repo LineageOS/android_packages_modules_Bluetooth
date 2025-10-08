@@ -47,7 +47,6 @@ class ScannerMap {
         workSource: WorkSource?,
         callback: IScannerCallback,
         adapterService: AdapterService,
-        scanController: ScanController,
     ): ScannerApp =
         add(
             appUid = appUid,
@@ -59,7 +58,6 @@ class ScannerMap {
             callback = callback,
             piInfo = null,
             adapterService = adapterService,
-            scanController = scanController,
         )
 
     fun addWithPendingIntent(
@@ -68,7 +66,6 @@ class ScannerMap {
         source: AttributionSource,
         piInfo: ScanController.PendingIntentInfo,
         adapterService: AdapterService,
-        scanController: ScanController,
     ): ScannerApp =
         add(
             appUid = piInfo.callingUid(),
@@ -80,7 +77,6 @@ class ScannerMap {
             callback = null,
             piInfo = piInfo,
             adapterService = adapterService,
-            scanController = scanController,
         )
 
     private fun add(
@@ -93,18 +89,10 @@ class ScannerMap {
         callback: IScannerCallback?,
         piInfo: ScanController.PendingIntentInfo?,
         adapterService: AdapterService,
-        scanController: ScanController,
     ): ScannerApp {
         val appScanStats =
             appScanStatsMap.getOrPut(appUid) {
-                AppScanStats(
-                    appName,
-                    workSource,
-                    appUid,
-                    adapterService,
-                    scanController,
-                    TimeProvider.systemClock,
-                )
+                AppScanStats(appName, workSource, appUid, adapterService, TimeProvider.systemClock)
             }
         val app =
             ScannerApp(
