@@ -2,10 +2,13 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "use_data_store_storage"
+    name: "mainline_beta_storage"
     namespace: "bluetooth"
     description: "Implement a robust storage to handle rollback"
     bug: "430166215"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
 
 flag {
