@@ -143,6 +143,7 @@ using bluetooth::le_audio::LeAudioHealthStatus;
 using bluetooth::le_audio::LeAudioRecommendationActionCb;
 using bluetooth::le_audio::LeAudioSinkAudioHalClient;
 using bluetooth::le_audio::LeAudioSourceAudioHalClient;
+using bluetooth::le_audio::StateMachineInvalidStatus;
 using bluetooth::le_audio::SubrateState;
 using bluetooth::le_audio::UnicastMonitorModeStatus;
 using bluetooth::le_audio::types::ase;
@@ -6986,6 +6987,63 @@ public:
     return enabled_remote_directions;
   }
 
+  void handleAutonomouseStreamRelease(LeAudioDeviceGroup* group) {
+    /* Remote device releases all the ASEs autonomusly. This should not happen and not sure what
+     * is the remote device intention. If remote wants stop the stream then MCS shall be used to
+     * stop the stream in a proper way. For a phone call, GTBS shall be used. For now we assume
+     * this device has does not want to be used for streaming and mark it as Inactive.
+     */
+
+    group->PrintDebugState();
+    if (group->GetAvailableContexts().none()) {
+      log::info("group_id: {} autonomous release due to unavailable contexts.", group->group_id_);
+      /* This update will also make device inactive, but when available context will be back,
+       * it will bring device active again.
+       */
+      UpdateLocationsAndContextsAvailability(group, true);
+    } else {
+      groupSetAndNotifyInactive(/* autonomous_inactive */ true);
+    }
+  }
+
+  void OnStateMachineInvalidStatusCb(int group_id, StateMachineInvalidStatus invalid_state) {
+    auto group = aseGroups_.FindById(group_id);
+    if (!group) {
+      log::error("Group_id: {} not found, invalid_state received: {}", group_id, invalid_state);
+      return;
+    }
+
+    auto current_sm_state = group->GetState();
+    auto target_sm_state = group->GetTargetState();
+
+    log::error("group_id: {}: state: {}, target_state: {}, invalid_state: {}", group_id,
+               ToString(current_sm_state), ToString(target_sm_state), invalid_state);
+    group->PrintDebugState();
+
+    if (group->IsInTransition()) {
+      log::info("Group is in transition just stop it and let state machine to handle it");
+      groupStateMachine_->StopStream(group);
+      return;
+    }
+
+    if (current_sm_state == AseState::BTA_LE_AUDIO_ASE_STATE_IDLE ||
+        current_sm_state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED) {
+      log::assert_that(
+              false,
+              "Group_id {} in {} state and not in transition, invalid_state {} should not happen",
+              group_id, ToString(current_sm_state), invalid_state);
+      return;
+    }
+
+    log::info(" Invalid state during the streaming, make sure Audio HAL is aware of it");
+    if (invalid_state == StateMachineInvalidStatus::AUTONOMOUS_DISABLE) {
+      handleAutonomouseStreamRelease(group);
+    } else {
+      groupSetAndNotifyInactive(group);
+    }
+    groupStateMachine_->StopStream(group);
+  }
+
   void OnStateMachineStatusReportCb(int group_id, GroupStreamStatus status) {
     /* When switching stream between two group, it is important to keep track if given status is for
      * active group or not in order to proper Audio HAL notifications.
@@ -7271,27 +7329,12 @@ public:
         break;
       }
       case GroupStreamStatus::RELEASING_AUTONOMOUS:
-        /* Remote device releases all the ASEs autonomusly. This should not happen and not sure what
-         * is the remote device intention. If remote wants stop the stream then MCS shall be used to
-         * stop the stream in a proper way. For a phone call, GTBS shall be used. For now we assume
-         * this device has does not want to be used for streaming and mark it as Inactive.
-         */
         log::warn("Group {} is doing autonomous release, make it inactive", group_id);
         if (group) {
-          group->PrintDebugState();
-          if (group->GetAvailableContexts().none()) {
-            log::info("group_id: {} autonomous release due to unavailable contexts.",
-                      group->group_id_);
-            /* This update will also make device inactive, but when available context will be back,
-             * it will bring device active again.
-             */
-            UpdateLocationsAndContextsAvailability(group, true);
-          } else {
-            groupSetAndNotifyInactive(/* autonomous_inactive */ true);
-          }
+          handleAutonomouseStreamRelease(group);
+          audio_sender_state_ = AudioState::IDLE;
+          audio_receiver_state_ = AudioState::IDLE;
         }
-        audio_sender_state_ = AudioState::IDLE;
-        audio_receiver_state_ = AudioState::IDLE;
         break;
       case GroupStreamStatus::RELEASING:
       case GroupStreamStatus::SUSPENDING:
@@ -7697,6 +7740,23 @@ public:
       return instance->getEnabledDirections(group_id);
     }
     return 0;
+  }
+  void OnStateMachineInvalidStatusCb(int group_id, StateMachineInvalidStatus invalid_state) {
+    if (com_android_bluetooth_flags_leaudio_improve_state_machine_invalid_status()) {
+      do_in_main_thread(base::BindOnce(
+              [](int group_id, StateMachineInvalidStatus invalid_state) {
+                if (instance) {
+                  instance->OnStateMachineInvalidStatusCb(group_id, invalid_state);
+                }
+              },
+              group_id, invalid_state));
+      return;
+    }
+
+    log::error("group_id: {}, invalid_state: {}", group_id, invalid_state);
+    if (instance) {
+      instance->GroupStop(group_id);
+    }
   }
 
   void StatusReportCb(int group_id, GroupStreamStatus status) override {

@@ -43,6 +43,7 @@
 #include "test/mock/mock_stack_btm_iso.h"
 
 using ::bluetooth::le_audio::DeviceConnectState;
+using ::bluetooth::le_audio::StateMachineInvalidStatus;
 using ::bluetooth::le_audio::codec_spec_caps::kLeAudioCodecChannelCountSingleChannel;
 using ::bluetooth::le_audio::codec_spec_caps::kLeAudioCodecChannelCountTwoChannel;
 using ::bluetooth::le_audio::types::LeAudioContextType;
@@ -183,6 +184,8 @@ public:
               (override));
   MOCK_METHOD((void), OnStateTransitionTimeout, (int group_id), (override));
   MOCK_METHOD((void), OnUpdatedCisConfiguration, (int group_id, uint8_t direction), (override));
+  MOCK_METHOD((void), OnStateMachineInvalidStatusCb,
+              (int group_id, StateMachineInvalidStatus invalid_status), (override));
 };
 
 class MockAseRemoteStateMachine {
@@ -297,6 +300,15 @@ protected:
 
     ContentControlIdKeeper::GetInstance()->Start();
 
+    ON_CALL(mock_callbacks_, OnStateMachineInvalidStatusCb(_, _))
+            .WillByDefault(Invoke([this](int group_id,
+                                         bluetooth::le_audio::StateMachineInvalidStatus
+                                                 invalid_status) {
+              log::debug("[Testing] OnStateMachineInvalidStatusCb: group id: {}, invalid_status: {}",
+                         group_id, invalid_status);
+              auto& group = le_audio_device_groups_[group_id];
+              LeAudioGroupStateMachine::Get()->StopStream(group.get());
+            }));
     ON_CALL(mock_callbacks_, StatusReportCb(_, _))
             .WillByDefault(Invoke([](int group_id, bluetooth::le_audio::GroupStreamStatus status) {
               log::debug("[Testing] StatusReportCb: group id: {}, status: {}", group_id,
