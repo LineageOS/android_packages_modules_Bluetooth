@@ -19,7 +19,6 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabled;
@@ -645,16 +644,14 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         boolean defaultValue = false;
-        if (!isValidDevice(device)
-                || (connectionPolicy != CONNECTION_POLICY_FORBIDDEN
-                        && connectionPolicy != CONNECTION_POLICY_ALLOWED)) {
-            return defaultValue;
+        if (isValidDevice(device) && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
+            return callServiceIfEnabled(
+                    mAdapter,
+                    this::getService,
+                    s -> s.setConnectionPolicy(device, connectionPolicy, mAttributionSource),
+                    defaultValue);
         }
-        return callServiceIfEnabled(
-                mAdapter,
-                this::getService,
-                s -> s.setConnectionPolicy(device, connectionPolicy, mAttributionSource),
-                defaultValue);
+        return defaultValue;
     }
 
     /**

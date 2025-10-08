@@ -19,7 +19,6 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
@@ -1278,8 +1277,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (mAdapter.isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {

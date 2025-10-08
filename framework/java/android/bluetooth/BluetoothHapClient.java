@@ -19,7 +19,6 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabled;
@@ -580,9 +579,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
         requireNonNull(device);
         boolean defaultValue = false;
-        if (!isValidDevice(device)
-                || (connectionPolicy != CONNECTION_POLICY_FORBIDDEN
-                        && connectionPolicy != CONNECTION_POLICY_ALLOWED)) {
+        if (!isValidDevice(device) || !BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             return defaultValue;
         }
         return callServiceIfEnabled(
