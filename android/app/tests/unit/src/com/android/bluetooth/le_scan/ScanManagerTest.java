@@ -34,9 +34,9 @@ import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
 
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
-import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
-import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_TIMEOUT;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_SCAN_UPGRADE_DURATION;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_INTERVAL_MS;

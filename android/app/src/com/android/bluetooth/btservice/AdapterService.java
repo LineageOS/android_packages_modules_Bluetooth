@@ -4371,20 +4371,20 @@ public class AdapterService extends Service {
     private Predicate<byte[]> mLocationDenylistAdvertisingData = (v) -> false;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScanQuotaCount = DeviceConfigListener.DEFAULT_SCAN_QUOTA_COUNT;
+    private int mScanQuotaCount = ScanUtil.DEFAULT_SCAN_QUOTA_COUNT;
 
     @GuardedBy("mDeviceConfigLock")
-    private Duration mScanQuotaWindow = DeviceConfigListener.DEFAULT_SCAN_QUOTA_WINDOW;
+    private Duration mScanQuotaWindow = ScanUtil.DEFAULT_SCAN_QUOTA_WINDOW;
 
     @GuardedBy("mDeviceConfigLock")
-    private Duration mScanTimeout = DeviceConfigListener.DEFAULT_SCAN_TIMEOUT;
+    private Duration mScanTimeout = ScanUtil.DEFAULT_SCAN_TIMEOUT;
 
     @GuardedBy("mDeviceConfigLock")
-    private Duration mScanUpgradeDuration = DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION;
+    private Duration mScanUpgradeDuration = ScanUtil.DEFAULT_SCAN_UPGRADE_DURATION;
 
     @GuardedBy("mDeviceConfigLock")
     private Duration mScanDowngradeDuration =
-            DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
+            ScanUtil.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING;
 
     @GuardedBy("mDeviceConfigLock")
     private Duration mScreenOffLowPowerWindow = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW;
@@ -4511,19 +4511,6 @@ public class AdapterService extends Service {
         private static final String DEFAULT_LOCATION_DENYLIST_ADVERTISING_DATA =
                 "⊈0016AAFE40/00FFFFFFF0,⊆0016AAFE/00FFFFFF,⊆00FF4C0002/00FFFFFFFF";
 
-        private static final int DEFAULT_SCAN_QUOTA_COUNT = 5;
-        private static final Duration DEFAULT_SCAN_QUOTA_WINDOW = Duration.ofSeconds(30);
-
-        @VisibleForTesting
-        public static final Duration DEFAULT_SCAN_TIMEOUT = Duration.ofMinutes(10);
-
-        @VisibleForTesting
-        public static final Duration DEFAULT_SCAN_UPGRADE_DURATION = Duration.ofSeconds(6);
-
-        @VisibleForTesting
-        public static final Duration DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING =
-                Duration.ofSeconds(6);
-
         public void start() {
             DeviceConfig.addOnPropertiesChangedListener(
                     DeviceConfig.NAMESPACE_BLUETOOTH, BackgroundThread.getExecutor(), this);
@@ -4545,23 +4532,26 @@ public class AdapterService extends Service {
                                 properties.getString(
                                         LOCATION_DENYLIST_ADVERTISING_DATA,
                                         DEFAULT_LOCATION_DENYLIST_ADVERTISING_DATA));
-                mScanQuotaCount = properties.getInt(SCAN_QUOTA_COUNT, DEFAULT_SCAN_QUOTA_COUNT);
+                mScanQuotaCount =
+                        properties.getInt(SCAN_QUOTA_COUNT, ScanUtil.DEFAULT_SCAN_QUOTA_COUNT);
                 mScanQuotaWindow =
                         DeviceConfigUtils.getDuration(
-                                properties, SCAN_QUOTA_WINDOW_MILLIS, DEFAULT_SCAN_QUOTA_WINDOW);
+                                properties,
+                                SCAN_QUOTA_WINDOW_MILLIS,
+                                ScanUtil.DEFAULT_SCAN_QUOTA_WINDOW);
                 mScanTimeout =
                         DeviceConfigUtils.getDuration(
-                                properties, SCAN_TIMEOUT_MILLIS, DEFAULT_SCAN_TIMEOUT);
+                                properties, SCAN_TIMEOUT_MILLIS, ScanUtil.DEFAULT_SCAN_TIMEOUT);
                 mScanUpgradeDuration =
                         DeviceConfigUtils.getDuration(
                                 properties,
                                 SCAN_UPGRADE_DURATION_MILLIS,
-                                DEFAULT_SCAN_UPGRADE_DURATION);
+                                ScanUtil.DEFAULT_SCAN_UPGRADE_DURATION);
                 mScanDowngradeDuration =
                         DeviceConfigUtils.getDuration(
                                 properties,
                                 SCAN_DOWNGRADE_DURATION_MILLIS,
-                                DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING);
+                                ScanUtil.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING);
                 mScreenOffLowPowerWindow =
                         DeviceConfigUtils.getDuration(
                                 properties,

@@ -21,11 +21,19 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.util.Log
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
 private const val TAG = "ScanUtil"
 
 object ScanUtil {
+
+    const val DEFAULT_SCAN_QUOTA_COUNT = 5
+    @JvmField val DEFAULT_SCAN_QUOTA_WINDOW = 30.seconds.toJavaDuration()
+    @JvmField val DEFAULT_SCAN_TIMEOUT = 10.minutes.toJavaDuration()
+    @JvmField val DEFAULT_SCAN_UPGRADE_DURATION = 6.seconds.toJavaDuration()
+    @JvmField val DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING = 6.seconds.toJavaDuration()
 
     // Scan params corresponding to regular scan setting
     const val SCAN_MODE_LOW_POWER_WINDOW_MS = 140
