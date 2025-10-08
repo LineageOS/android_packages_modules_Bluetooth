@@ -41,3 +41,10 @@ flag {
     description: "Allow concurent stack instances given multiple published hci instances"
     bug: "444519431"
 }
+
+flag {
+    name: "br_settings"
+    namespace: "bluetooth"
+    description: "Backup and restore airplane mode and auto on bluetooth settings"
+    bug: "450288332"
+}
