@@ -67,6 +67,7 @@ import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothMap;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothQualityReport;
 import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothServerSocket;
@@ -2145,7 +2146,45 @@ public class AdapterService extends Service {
         if (value == null || value.length > BluetoothDevice.METADATA_MAX_LENGTH) {
             return false;
         }
+        logManufacturerInfo(device, key, value);
         return mDatabaseManager.setCustomMeta(device, key, value);
+    }
+
+    private void logManufacturerInfo(BluetoothDevice device, int key, byte[] bytesValue) {
+        String callingApp = getPackageManager().getNameForUid(Binder.getCallingUid());
+        String manufacturerName = "";
+        String modelName = "";
+        String hardwareVersion = "";
+        String softwareVersion = "";
+        switch (key) {
+            case BluetoothDevice.METADATA_MANUFACTURER_NAME ->
+                    manufacturerName = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_MODEL_NAME ->
+                    modelName = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_HARDWARE_VERSION ->
+                    hardwareVersion = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_SOFTWARE_VERSION ->
+                    softwareVersion = Utils.byteArrayToUtf8String(bytesValue);
+            default -> {
+                // Do not log anything if metadata doesn't fall into above categories
+                return;
+            }
+        }
+        String[] macAddress = device.getAddress().split(":");
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLUETOOTH_DEVICE_INFO_REPORTED,
+                obfuscateAddress(device),
+                BluetoothProtoEnums.DEVICE_INFO_EXTERNAL,
+                callingApp,
+                manufacturerName,
+                modelName,
+                hardwareVersion,
+                softwareVersion,
+                getMetricId(device),
+                device.getAddressType(),
+                Integer.parseInt(macAddress[0], 16),
+                Integer.parseInt(macAddress[1], 16),
+                Integer.parseInt(macAddress[2], 16));
     }
 
     /**
