@@ -595,23 +595,4 @@ public final class ScanSettings implements Parcelable {
                     mScanType);
         }
     }
-
-    /**
-     * Converts scan mode integer into string. For internal use only when logging.
-     *
-     * @hide
-     */
-    @RequiresNoPermission
-    public static String getScanModeString(int scanMode) {
-        return switch (scanMode) {
-            case SCAN_MODE_OPPORTUNISTIC -> "SCAN_MODE_OPPORTUNISTIC";
-            case SCAN_MODE_LOW_POWER -> "SCAN_MODE_LOW_POWER";
-            case SCAN_MODE_BALANCED -> "SCAN_MODE_BALANCED";
-            case SCAN_MODE_LOW_LATENCY -> "SCAN_MODE_LOW_LATENCY";
-            case SCAN_MODE_AMBIENT_DISCOVERY -> "SCAN_MODE_AMBIENT_DISCOVERY";
-            case SCAN_MODE_SCREEN_OFF -> "SCAN_MODE_SCREEN_OFF";
-            case SCAN_MODE_SCREEN_OFF_BALANCED -> "SCAN_MODE_SCREEN_OFF_BALANCED";
-            default -> "UNKNOWN value=" + scanMode;
-        };
-    }
 }
