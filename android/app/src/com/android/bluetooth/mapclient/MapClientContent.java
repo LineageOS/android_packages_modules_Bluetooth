@@ -463,7 +463,7 @@ class MapClientContent {
         debug(
                 "cleanUp(device="
                         + Utils.getLoggableAddress(mDevice)
-                        + "subscriptionId="
+                        + ", subscriptionId="
                         + mSubscriptionId);
         mResolver.unregisterContentObserver(mContentObserver);
         clearMessages(mContext, mSubscriptionId);
@@ -478,7 +478,7 @@ class MapClientContent {
 
     /** clearMessages clean up the content provider on startup */
     private static void clearMessages(Context context, int subscriptionId) {
-        Log.d(TAG, "[AllDevices] clearMessages(subscriptionId=" + subscriptionId);
+        Log.d(TAG, "[AllDevices] clearMessages(subscriptionId=" + subscriptionId + ")");
 
         ContentResolver resolver = context.getContentResolver();
         StringBuilder threadsBuilder = new StringBuilder();
