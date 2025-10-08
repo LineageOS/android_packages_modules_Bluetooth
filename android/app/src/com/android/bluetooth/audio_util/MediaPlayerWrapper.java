@@ -484,7 +484,7 @@ public class MediaPlayerWrapper {
                 Log.e(TAG, "The callback metadata doesn't match controller metadata");
             }
 
-            final Metadata mData = Util.toMetadata(mContext, mediaMetadata);
+            final Metadata mData = Util.toMetadata(mContext, metadata);
             Log.v(TAG, "onMetadataChanged(): " + mPackageName + " : " + mData);
 
             // TODO: Certain players update different metadata fields as they load, such as Album

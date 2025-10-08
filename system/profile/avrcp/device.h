@@ -384,6 +384,8 @@ private:
 
   int8_t volume_ = -1;
   std::optional<int8_t> pending_volume_ = {};
+
+  bool pending_track_changed_ = false;
 };
 
 }  // namespace avrcp

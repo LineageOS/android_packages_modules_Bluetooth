@@ -714,6 +714,12 @@ void Device::TrackChangedNotificationResponse(uint8_t label, bool interim, std::
 
   auto response = RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(interim, uid);
   send_message_cb_.Run(label, false, std::move(response));
+
+  // Send pending track changed Changed notification
+  if (interim && pending_track_changed_) {
+    log::warn("{}: Sending pending TrackChange notification", address_);
+    HandleTrackUpdate();
+  }
 }
 
 void Device::PlaybackStatusNotificationResponse(uint8_t label, bool interim, PlayStatus status) {
@@ -1722,9 +1728,11 @@ void Device::HandleTrackUpdate() {
   log::verbose("");
   if (!track_changed_.first) {
     log::warn("Device is not registered for track changed updates");
+    pending_track_changed_ = true;
     return;
   }
 
+  pending_track_changed_ = false;
   media_interface_->GetNowPlayingList(base::Bind(&Device::TrackChangedNotificationResponse,
                                                  weak_ptr_factory_.GetWeakPtr(),
                                                  track_changed_.second, false));
@@ -1892,6 +1900,8 @@ void Device::DeviceDisconnected() {
   // to reset the local volume var to be sure we send the correct value
   // to the remote device on the next connection.
   volume_ = VOL_NOT_SUPPORTED;
+
+  pending_track_changed_ = false;
 }
 
 static std::string volumeToStr(int8_t volume) {
