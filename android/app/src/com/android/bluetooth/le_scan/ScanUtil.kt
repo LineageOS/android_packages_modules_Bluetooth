@@ -223,7 +223,7 @@ object ScanUtil {
             return
         }
         client.updateScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF)
-        val scanModeString = ScanSettings.getScanModeString(client.scanModeApp)
+        val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during setAutoBatchScanClient() to $scanModeString")
         client.appScanStats.ifPresent { appScanStats ->
             appScanStats.setAutoBatchScan(client.scannerId, true)
@@ -236,7 +236,7 @@ object ScanUtil {
             return
         }
         client.updateScanMode(client.scanModeApp)
-        val scanModeString = ScanSettings.getScanModeString(client.scanModeApp)
+        val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
         client.appScanStats.ifPresent { appScanStats ->
             appScanStats.setAutoBatchScan(client.scannerId, false)
