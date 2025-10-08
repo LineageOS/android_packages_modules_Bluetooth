@@ -499,12 +499,6 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_GT(controller_->GetLocalSupportedBrEdrCodecIds().size(), 0u);
 }
 
-TEST_F(ControllerTest, read_write_local_name) {
-  ASSERT_EQ(controller_->GetLocalName(), "DUT");
-  controller_->WriteLocalName("New name");
-  ASSERT_EQ(controller_->GetLocalName(), "New name");
-}
-
 TEST_F(ControllerTest, send_set_event_mask_command) {
   uint64_t new_event_mask = test_hci_layer_->event_mask - 1;
   controller_->SetEventMask(new_event_mask);

@@ -48,8 +48,6 @@ public:
   virtual void RegisterCompletedMonitorAclPacketsCallback(CompletedAclPacketsCallback cb) override;
   virtual void UnregisterCompletedMonitorAclPacketsCallback() override;
 
-  virtual std::string GetLocalName() const override;
-
   virtual LocalVersionInformation GetLocalVersionInformation() const override;
 
   virtual bool SupportsSimplePairing() const override;
