@@ -50,6 +50,7 @@ import libcore.util.SneakyThrow;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -169,6 +170,31 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         return postFromBinder(() -> mApi.getAddress());
+    }
+
+    @Override
+    public void setName(String name, AttributionSource source) {
+        if (Flags.bluetoothSystemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
+        requireNonNull(source);
+
+        if (!checkConnectPermissionForDataDelivery(
+                mContext, mPermissionManager, source, "setName")) {
+            return;
+        }
+
+        if (!isCallerSystem(getCallingAppId())
+                && !mPermissionUtils.checkIfCallerIsForegroundUser(mUserManager)) {
+            Log.w(TAG, "setName(): not allowed for non-active and non system user");
+            return;
+        }
+
+        if (name != null && name.getBytes(StandardCharsets.UTF_8).length > 248) {
+            throw new IllegalArgumentException("Name is too long: " + name);
+        }
+
+        postFromBinder(() -> mApi.setName(name));
     }
 
     @Override

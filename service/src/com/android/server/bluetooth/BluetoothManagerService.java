@@ -93,6 +93,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -215,6 +216,9 @@ class BluetoothManagerService {
 
                 @Override
                 public void onAdapterNameChange(String name) {
+                    if (Flags.setNameInSystemServer()) {
+                        throw new IllegalStateException("setNameInSystemServer is enabled");
+                    }
                     requireNonNull(name);
                     if (name.isEmpty()) {
                         throw new IllegalArgumentException("Invalid Empty name");
@@ -1136,12 +1140,27 @@ class BluetoothManagerService {
                 IBluetoothManagerCallback::onBluetoothServiceDown);
     }
 
-    // Called from unsafe binder thread
     String getAddress() {
         return mAddress;
     }
 
-    // Called from unsafe binder thread
+    void setName(String name) {
+        if (name == null || name.isEmpty()) {
+            name = computeInitialName();
+        }
+        if (Objects.equals(name, mName)) {
+            return;
+        }
+        if (mAdapter != null) {
+            try {
+                mAdapter.setName(name);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Unable to change the local name", e);
+            }
+        }
+        storeName(name);
+    }
+
     String getName() {
         return mName;
     }

@@ -175,6 +175,7 @@ import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.bluetooth.util.DeviceConfigUtils;
+import com.android.bluetooth.util.Text;
 import com.android.bluetooth.vaps.VapsServerService;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
@@ -233,6 +234,9 @@ public class AdapterService extends Service {
     static final String PHONEBOOK_ACCESS_PERMISSION_PREFERENCE_FILE = "phonebook_access_permission";
     static final String MESSAGE_ACCESS_PERMISSION_PREFERENCE_FILE = "message_access_permission";
     static final String SIM_ACCESS_PERMISSION_PREFERENCE_FILE = "sim_access_permission";
+
+    // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section 4.3.5).
+    static final int BLUETOOTH_NAME_MAX_LENGTH_BYTES = 248;
 
     private static AdapterService sAdapterService;
 
@@ -1741,6 +1745,9 @@ public class AdapterService extends Service {
     }
 
     void updateAdapterName(String name) {
+        if (Flags.setNameInSystemServer()) {
+            throw new IllegalStateException("setNameInSystemServer is enabled");
+        }
         broadcastToSystemServerCallbacks(
                 "updateAdapterName(" + name + ")", (c) -> c.onAdapterNameChange(name));
     }
@@ -2749,6 +2756,15 @@ public class AdapterService extends Service {
     void disconnectAllAcls() {
         Log.d(TAG, "disconnectAllAcls()");
         mNativeInterface.disconnectAllAcls();
+    }
+
+    void setName(String name) {
+        String newName = Text.truncateUtf8String(name, BLUETOOTH_NAME_MAX_LENGTH_BYTES);
+        if (newName.equals(mLocalName)) {
+            return;
+        }
+        mLocalName = newName;
+        mNativeInterface.setLocalName(newName);
     }
 
     public String getName() {

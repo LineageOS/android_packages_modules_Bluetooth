@@ -38,6 +38,7 @@
 #include <utility>
 #include <vector>
 
+#include "bta/include/bta_api.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_sock.h"
@@ -1415,6 +1416,22 @@ static jboolean setScanModeNative(JNIEnv* /* env */, jobject /* obj */, jint mod
   return JNI_TRUE;
 }
 
+static void setLocalNameNative(JNIEnv* env, jobject /* obj */, jstring jLocalName) {
+  log::verbose("");
+
+  if (!sBluetoothInterface) {
+    return;
+  }
+  const char* nativeLocalName = env->GetStringUTFChars(jLocalName, nullptr);
+  if (!nativeLocalName) {
+    return;
+  }
+  std::string nativeName = std::string(nativeLocalName);
+  env->ReleaseStringUTFChars(jLocalName, nativeLocalName);
+
+  BTA_DmSetDeviceName(nativeName.c_str());
+}
+
 static jboolean setAdapterPropertyNative(JNIEnv* env, jobject /* obj */, jint type,
                                          jbyteArray value) {
   log::verbose("");
@@ -1958,6 +1975,8 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"enableNative", "(Ljava/lang/String;)Z", reinterpret_cast<void*>(enableNative)},
           {"disableNative", "()Z", reinterpret_cast<void*>(disableNative)},
           {"setScanModeNative", "(I)Z", reinterpret_cast<void*>(setScanModeNative)},
+          {"setLocalNameNative", "(Ljava/lang/String;)V",
+           reinterpret_cast<void*>(setLocalNameNative)},
           {"setAdapterPropertyNative", "(I[B)Z", reinterpret_cast<void*>(setAdapterPropertyNative)},
           {"getAdapterPropertiesNative", "()Z",
            reinterpret_cast<void*>(getAdapterPropertiesNative)},

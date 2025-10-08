@@ -150,6 +150,16 @@ class AdapterBinder extends IAdapter.Stub {
     }
 
     @Override
+    public void setName(String name) {
+        Log.v(TAG, "setName(" + name + ")");
+        AdapterService service = getServiceAndEnforcePrivileged();
+        if (service == null) {
+            return;
+        }
+        service.setName(name);
+    }
+
+    @Override
     public void dump(FileDescriptor fd, String[] args) {
         Log.v(TAG, "dump()");
         PrintWriter writer = new PrintWriter(new FileOutputStream(fd));

@@ -189,6 +189,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean setName(String name, AttributionSource source) {
+        if (Flags.setNameInSystemServer()) {
+            throw new IllegalStateException("setNameInSystemServer is active");
+        }
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setName")
