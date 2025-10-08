@@ -59,16 +59,6 @@ flag {
 }
 
 flag {
-    name: "qc_prioritize_lc3_codec"
-    namespace: "bluetooth"
-    description: "QC patch to prioritize lc3 codec over aptx"
-    bug: "409604300"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_hfp_rfcomm_collision_state_machine_error"
     namespace: "bluetooth"
     description: "fix hfp state machine error when both side initiate rfcomm connection"

@@ -1386,8 +1386,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
         bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
         break;
       }
-      if (com_android_bluetooth_flags_qc_prioritize_lc3_codec() && bta_ag_get_swb_supported() &&
-          (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
+      if (bta_ag_get_swb_supported() && (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
           !(p_scb->disabled_codecs & BTM_SCO_CODEC_LC3)) {
         log::warn("Phone and BT device support LC3, return error for QAC");
         bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
