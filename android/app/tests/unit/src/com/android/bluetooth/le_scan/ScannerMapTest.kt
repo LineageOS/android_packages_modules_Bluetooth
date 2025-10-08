@@ -21,11 +21,13 @@ import android.bluetooth.le.IScannerCallback
 import android.content.AttributionSource
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.BatteryStatsManager
 import android.os.Binder
 import android.os.UserHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
@@ -53,6 +55,7 @@ class ScannerMapTest {
 
     @Before
     fun setUp() {
+        mockGetSystemService(adapterService, BatteryStatsManager::class.java)
         doReturn(packageManager).whenever(adapterService).packageManager
         doReturn(APP_NAME).whenever(packageManager).getNameForUid(any())
     }

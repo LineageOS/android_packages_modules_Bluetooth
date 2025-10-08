@@ -69,7 +69,7 @@ class ScanRadioStats {
         }
         mRadioStartTime = mTimeProvider.elapsedRealtime();
         mRadioScanWorkSourceUtil = stats.mWorkSourceUtil;
-        mRadioScanType = AppScanStats.convertScanType(stats.getScanFromScannerId(scannerId));
+        mRadioScanType = ScanMetricsReporter.convertScanType(stats.getScanFromScannerId(scannerId));
         mRadioScanMode = scanMode;
         mRadioScanWindowMs = scanWindowMs;
         mRadioScanIntervalMs = scanIntervalMs;
@@ -145,7 +145,7 @@ class ScanRadioStats {
                 getRadioScanUids(),
                 getRadioScanTags(),
                 mRadioScanType,
-                AppScanStats.convertScanMode(mRadioScanMode),
+                ScanMetricsReporter.convertScanMode(mRadioScanMode),
                 mRadioScanIntervalMs,
                 mRadioScanWindowMs,
                 mIsScreenOn,
