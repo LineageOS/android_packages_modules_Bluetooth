@@ -68,7 +68,7 @@ abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
     abstract fun disconnect(device: BluetoothDevice?): Boolean
 
     /** @return `true` if connection to remote device is allowed, otherwise `false` */
-    open fun okToConnect(device: BluetoothDevice?): Boolean {
+    open fun okToConnect(device: BluetoothDevice): Boolean {
         val log = "okToConnect($device): Connect rejected: "
         // Check if this is an incoming connection in Quiet mode.
         if (mAdapterService.isQuietModeEnabled) {
@@ -115,9 +115,8 @@ abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
      * @return connection policy of the device
      */
     @BluetoothProfile.ConnectionPolicy
-    fun getConnectionPolicy(device: BluetoothDevice?): Int {
-        return mAdapterService.getProfileConnectionPolicy(device, mProfileId)
-    }
+    fun getConnectionPolicy(device: BluetoothDevice): Int =
+        mAdapterService.getProfileConnectionPolicy(device, mProfileId)
 
     /**
      * Set connection policy of the profile and connects it if connectionPolicy is
@@ -137,7 +136,7 @@ abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
 
     /** Process a change in the bonding state for a device */
     open fun handleBondStateChanged(device: BluetoothDevice?, fromState: Int, toState: Int) {
-        Log.w(mName, "handleBondStateChanged() was called but not implemented")
+        Log.w(mName, "handleBondStateChanged(): Called but not implemented")
     }
 
     companion object {
@@ -152,10 +151,11 @@ abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
                 Log.e(TAG, "isSupported(): remoteUuids is null for device: $device")
             }
 
+            val profile = getProfileName(id)
             val localDeviceUuids = adapterService.adapterProperties.uuids
             Log.v(
                 TAG,
-                "isSupported(device=$device, profile=${getProfileName(id)}): " +
+                "isSupported(device=$device, profile=$profile): " +
                     "local_uuids=${localDeviceUuids.contentToString()}, " +
                     "remote_uuids=${remoteDeviceUuids.contentToString()}",
             )
@@ -207,7 +207,7 @@ abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
                         .filter { p -> p.getConnectionState(device) == STATE_CONNECTED }
                         .isPresent
                 else -> {
-                    Log.w(TAG, "isSupported() was called but not implemented")
+                    Log.wtf(TAG, "isSupported(): Called by $profile but not implemented")
                     false
                 }
             }
