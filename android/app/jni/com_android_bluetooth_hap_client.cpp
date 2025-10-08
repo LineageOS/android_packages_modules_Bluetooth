@@ -596,11 +596,8 @@ int register_com_android_bluetooth_hap_client(JNIEnv* env) {
     return result;
   }
 
-  jclass jniHapClientNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/hap/HapClientNativeInterface");
-  sCallbacksField = env->GetFieldID(jniHapClientNativeInterfaceClass, "mHapClientNativeCallback",
-                                    "Lcom/android/bluetooth/hap/HapClientNativeCallback;");
-  env->DeleteLocalRef(jniHapClientNativeInterfaceClass);
+  sCallbacksField =
+          getNativeCallbackField(env, "com/android/bluetooth/hap/HapClientNativeInterface");
 
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},

@@ -212,11 +212,8 @@
      return result;
    }
 
-   jclass jniVapsServerNativeInterfaceClass =
-           env->FindClass("com/android/bluetooth/vaps/VapsServerNativeInterface");
-   sCallbacksField = env->GetFieldID(jniVapsServerNativeInterfaceClass, "mVapsServerNativeCallback",
-                                     "Lcom/android/bluetooth/vaps/VapsServerNativeCallback;");
-   env->DeleteLocalRef(jniVapsServerNativeInterfaceClass);
+   sCallbacksField =
+           getNativeCallbackField(env, "com/android/bluetooth/vaps/VapsServerNativeInterface");
 
    const JNIJavaMethod javaMethods[] = {
            {"onInitialized", "()V", &method_onInitialized},

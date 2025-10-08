@@ -17,8 +17,9 @@
 package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothStatusCodes
+import com.android.bluetooth.profile.NativeCallback
 
-class DistanceMeasurementNativeCallback(val manager: DistanceMeasurementManager) {
+class DistanceMeasurementNativeCallback(val manager: DistanceMeasurementManager) : NativeCallback {
 
     fun onDistanceMeasurementStarted(address: String, method: Int) {
         postOnDistanceMeasurementThread { onDistanceMeasurementStarted(address, method) }

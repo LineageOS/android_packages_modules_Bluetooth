@@ -2047,12 +2047,8 @@ static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
     return result;
   }
 
-  jclass jniNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/gatt/AdvertiseManagerNativeInterface");
   sAdvertiseCallbacksField =
-          env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
-                          "Lcom/android/bluetooth/gatt/AdvertiseManagerNativeCallback;");
-  env->DeleteLocalRef(jniNativeInterfaceClass);
+          getNativeCallbackField(env, "com/android/bluetooth/gatt/AdvertiseManagerNativeInterface");
 
   // Client callback functions defined in AdvertiseManagerNativeCallback
   const JNIJavaMethod javaMethods[] = {
@@ -2087,12 +2083,8 @@ static int register_com_android_bluetooth_gatt_distance_measurement(JNIEnv* env)
     return result;
   }
 
-  jclass jniNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/gatt/DistanceMeasurementNativeInterface");
-  sDistanceMeasurementCallbacksField =
-          env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
-                          "Lcom/android/bluetooth/gatt/DistanceMeasurementNativeCallback;");
-  env->DeleteLocalRef(jniNativeInterfaceClass);
+  sDistanceMeasurementCallbacksField = getNativeCallbackField(
+          env, "com/android/bluetooth/gatt/DistanceMeasurementNativeInterface");
 
   // Client callback functions defined in DistanceMeasurementNativeCallback
   const JNIJavaMethod javaMethods[] = {
@@ -2178,10 +2170,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
     return result;
   }
 
-  jclass jniNativeInterfaceClass = env->FindClass("com/android/bluetooth/gatt/GattNativeInterface");
-  sCallbacksField = env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
-                                    "Lcom/android/bluetooth/gatt/GattNativeCallback;");
-  env->DeleteLocalRef(jniNativeInterfaceClass);
+  sCallbacksField = getNativeCallbackField(env, "com/android/bluetooth/gatt/GattNativeInterface");
 
   // Client callback functions defined in GattNativeCallback
   const JNIJavaMethod javaMethods[] = {

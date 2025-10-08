@@ -184,4 +184,6 @@ void jniGetMethodsOrDie(JNIEnv* env, const char* className, const JNIJavaMethod*
 #define GET_JAVA_METHODS(env, classname, methodsArray) \
   jniGetMethodsOrDie(env, classname, methodsArray, NELEM(methodsArray))
 
+jfieldID getNativeCallbackField(JNIEnv* env, const char* className);
+
 }  // namespace android

@@ -18,21 +18,21 @@ package com.android.bluetooth.gatt;
 
 import static java.util.Objects.requireNonNull;
 
-import java.lang.annotation.Native;
+import com.android.bluetooth.profile.NativeInterface;
 
-public class DistanceMeasurementNativeInterface {
-
-    @Native private final DistanceMeasurementNativeCallback mNativeCallback;
+public class DistanceMeasurementNativeInterface
+        extends NativeInterface<DistanceMeasurementNativeCallback> {
 
     DistanceMeasurementNativeInterface(DistanceMeasurementNativeCallback nativeCallback) {
-        mNativeCallback = requireNonNull(nativeCallback);
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

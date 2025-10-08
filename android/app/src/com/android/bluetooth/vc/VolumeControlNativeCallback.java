@@ -36,11 +36,12 @@ import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.NativeCallback;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.function.Consumer;
 
-class VolumeControlNativeCallback {
+class VolumeControlNativeCallback implements NativeCallback {
     private static final String TAG = VolumeControlNativeCallback.class.getSimpleName();
 
     private final AdapterService mAdapterService;

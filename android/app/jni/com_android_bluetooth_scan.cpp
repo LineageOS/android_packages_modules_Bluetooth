@@ -999,11 +999,8 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
     return result;
   }
 
-  jclass jniNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/le_scan/ScanNativeInterface");
-  sScanCallbacksField = env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
-                                        "Lcom/android/bluetooth/le_scan/ScanNativeCallback;");
-  env->DeleteLocalRef(jniNativeInterfaceClass);
+  sScanCallbacksField =
+          getNativeCallbackField(env, "com/android/bluetooth/le_scan/ScanNativeInterface");
 
   // Client callback functions defined in ScanNativeCallback
   const JNIJavaMethod javaMethods[] = {
@@ -1049,12 +1046,8 @@ static int register_com_android_bluetooth_periodic_scan(JNIEnv* env) {
     return result;
   }
 
-  jclass jniNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/le_scan/PeriodicScanNativeInterface");
   sPeriodicScanCallbacksField =
-          env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
-                          "Lcom/android/bluetooth/le_scan/PeriodicScanNativeCallback;");
-  env->DeleteLocalRef(jniNativeInterfaceClass);
+          getNativeCallbackField(env, "com/android/bluetooth/le_scan/PeriodicScanNativeInterface");
 
   // Client callback functions defined in PeriodicScanNativeCallback
   const JNIJavaMethod javaMethods[] = {

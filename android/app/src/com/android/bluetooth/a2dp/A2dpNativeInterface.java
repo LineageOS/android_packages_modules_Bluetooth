@@ -31,26 +31,25 @@ import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.profile.NativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.lang.annotation.Native;
 import java.util.Arrays;
 import java.util.List;
 
 /** A2DP Native Interface to/from JNI. */
-public class A2dpNativeInterface {
+public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
     private static final String TAG = A2dpNativeInterface.class.getSimpleName();
 
     private final AdapterService mAdapterService;
-    @Native private final A2dpNativeCallback mNativeCallback;
 
     private BluetoothCodecType[] mSupportedCodecTypes;
 
     @VisibleForTesting
     A2dpNativeInterface(
             @NonNull AdapterService adapterService, @NonNull A2dpNativeCallback nativeCallback) {
+        super(requireNonNull(nativeCallback));
         mAdapterService = requireNonNull(adapterService);
-        mNativeCallback = requireNonNull(nativeCallback);
     }
 
     /**
@@ -67,7 +66,7 @@ public class A2dpNativeInterface {
         initNative(maxConnectedAudioDevices, codecConfigPriorities, codecConfigOffloading);
     }
 
-    /** Cleanup the native interface. */
+    @Override
     public void cleanup() {
         cleanupNative();
     }

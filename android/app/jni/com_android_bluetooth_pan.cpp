@@ -222,10 +222,7 @@ int register_com_android_bluetooth_pan(JNIEnv* env) {
     return result;
   }
 
-  jclass jniNativeInterfaceClass = env->FindClass("com/android/bluetooth/pan/PanNativeInterface");
-  sCallbacksField = env->GetFieldID(jniNativeInterfaceClass, "mNativeCallback",
-                                    "Lcom/android/bluetooth/pan/PanNativeCallback;");
-  env->DeleteLocalRef(jniNativeInterfaceClass);
+  sCallbacksField = getNativeCallbackField(env, "com/android/bluetooth/pan/PanNativeInterface");
 
   // Client callback functions defined in PanNativeCallback
   const JNIJavaMethod javaMethods[]{
