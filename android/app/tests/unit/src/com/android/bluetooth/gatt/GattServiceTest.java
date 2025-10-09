@@ -107,7 +107,6 @@ public class GattServiceTest {
     @Mock private IBluetoothGattServerCallback mGattServerCallback2;
     @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
     @Mock private Set<BluetoothDevice> mReliableQueue;
-    @Mock private GattNativeCallback mNativeCallback;
     @Mock private GattNativeInterface mNativeInterface;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -237,7 +236,6 @@ public class GattServiceTest {
         mService =
                 new GattService(
                         mAdapterService,
-                        mNativeCallback,
                         mNativeInterface,
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
@@ -266,7 +264,6 @@ public class GattServiceTest {
             mService =
                     new GattService(
                             mAdapterService,
-                            mNativeCallback,
                             mNativeInterface,
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,

@@ -52,7 +52,6 @@ public class AdvertiseManagerTest {
     @Mock private AdapterService mAdapterService;
     @Mock private GattService mGattService;
     @Mock private AdvertiserMap mAdvertiserMap;
-    @Mock private AdvertiseManagerNativeCallback mNativeCallback;
     @Mock private AdvertiseManagerNativeInterface mNativeInterface;
     @Mock private IAdvertisingSetCallback mCallback;
     @Mock private IBinder mBinder;
@@ -66,7 +65,6 @@ public class AdvertiseManagerTest {
                 new AdvertiseManager(
                         mAdapterService,
                         mGattService,
-                        mNativeCallback,
                         mNativeInterface,
                         new TestLooper().getLooper(),
                         mAdvertiserMap);

@@ -177,7 +177,6 @@ public class GattService extends ProfileService {
     private final ActivityManager mActivityManager;
     private final PackageManager mPackageManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
-    private final GattNativeCallback mNativeCallback;
     private final GattNativeInterface mNativeInterface;
     private final HandlerThread mHandlerThread;
     private final AdvertiseManager mAdvertiseManager;
@@ -193,7 +192,6 @@ public class GattService extends ProfileService {
             CompanionDeviceManager companionDeviceManager) {
         this(
                 adapterService,
-                null,
                 nativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface,
@@ -207,7 +205,6 @@ public class GattService extends ProfileService {
     @VisibleForTesting
     GattService(
             AdapterService adapterService,
-            GattNativeCallback nativeCallback,
             GattNativeInterface nativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
@@ -228,12 +225,10 @@ public class GattService extends ProfileService {
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
 
-        mNativeCallback =
-                requireNonNullElseGet(
-                        nativeCallback, () -> new GattNativeCallback(mAdapterService, this));
+        var nativeCallback = new GattNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new GattNativeInterface(mNativeCallback));
+                        nativeInterface, () -> new GattNativeInterface(nativeCallback));
         mNativeInterface.init();
 
         // Create a thread to handle LE operations
