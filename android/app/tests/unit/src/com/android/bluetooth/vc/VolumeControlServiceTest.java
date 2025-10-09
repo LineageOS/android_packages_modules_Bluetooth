@@ -127,7 +127,7 @@ public class VolumeControlServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+        return FlagsWrapper.progressionOf();
     }
 
     public VolumeControlServiceTest(FlagsWrapper flags) {

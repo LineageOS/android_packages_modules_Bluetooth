@@ -19,7 +19,6 @@ package com.android.bluetooth.btservice;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.HAP_CLIENT;
-import static android.bluetooth.BluetoothProfile.VOLUME_CONTROL;
 
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__BOND_RETRY;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL;
@@ -46,7 +45,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
-import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -791,15 +789,7 @@ final class BondStateMachine extends StateMachine {
                 .flatMap(Optional::stream)
                 .forEach(
                         profile -> {
-                            if (profile.getProfileId() == VOLUME_CONTROL
-                                    && Flags.vcpOnMainLooper()
-                                    && !Flags.bondStateMachineLooper()) {
-                                ((VolumeControlService) profile)
-                                        .syncPost(
-                                                vcs ->
-                                                        vcs.setConnectionPolicy(
-                                                                device, CONNECTION_POLICY_UNKNOWN));
-                            } else if (profile.getProfileId() == HAP_CLIENT
+                            if (profile.getProfileId() == HAP_CLIENT
                                     && Flags.hapOnMainLooper()
                                     && !Flags.bondStateMachineLooper()) {
                                 ((HapClientService) profile)
