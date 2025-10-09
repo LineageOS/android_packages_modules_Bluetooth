@@ -186,6 +186,7 @@ public class AdvertiseManager {
             Log.i(TAG, "onAdvertisingSetStarted() - no callback found for regId " + regId);
             // Advertising set was stopped before it was properly registered.
             mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
+            mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
             mNativeInterface.stopAdvertisingSet(advertiserId);
             return;
         }

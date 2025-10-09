@@ -73,13 +73,13 @@ class AdvertiseSuspendManager(
 
     data class StartAdvertisingSetCommand(
         val parameters: AdvertisingSetParameters,
-        val advertiseData: AdvertiseData,
-        val scanResponse: AdvertiseData,
-        val periodicParameters: PeriodicAdvertisingParameters,
-        val periodicData: AdvertiseData,
+        val advertiseData: AdvertiseData?,
+        val scanResponse: AdvertiseData?,
+        val periodicParameters: PeriodicAdvertisingParameters?,
+        val periodicData: AdvertiseData?,
         val duration: Int,
         val maxExtAdvEvents: Int,
-        val gattServerCallback: IBluetoothGattServerCallback,
+        val gattServerCallback: IBluetoothGattServerCallback?,
         val callback: IAdvertisingSetCallback,
         val source: AttributionSource,
     ) : PendingAdvertiseCommand
@@ -96,10 +96,10 @@ class AdvertiseSuspendManager(
         val maxExtAdvEvents: Int,
     ) : PendingAdvertiseCommand
 
-    data class SetAdvertisingDataCommand(val advertiserId: Int, val data: AdvertiseData) :
+    data class SetAdvertisingDataCommand(val advertiserId: Int, val data: AdvertiseData?) :
         PendingAdvertiseCommand
 
-    data class SetScanResponseDataCommand(val advertiserId: Int, val data: AdvertiseData) :
+    data class SetScanResponseDataCommand(val advertiserId: Int, val data: AdvertiseData?) :
         PendingAdvertiseCommand
 
     data class SetAdvertisingParametersCommand(
@@ -109,10 +109,10 @@ class AdvertiseSuspendManager(
 
     data class SetPeriodicAdvertisingParametersCommand(
         val advertiserId: Int,
-        val parameters: PeriodicAdvertisingParameters,
+        val parameters: PeriodicAdvertisingParameters?,
     ) : PendingAdvertiseCommand
 
-    data class SetPeriodicAdvertisingDataCommand(val advertiserId: Int, val data: AdvertiseData) :
+    data class SetPeriodicAdvertisingDataCommand(val advertiserId: Int, val data: AdvertiseData?) :
         PendingAdvertiseCommand
 
     data class SetPeriodicAdvertisingEnableCommand(val advertiserId: Int, val enable: Boolean) :
@@ -168,13 +168,13 @@ class AdvertiseSuspendManager(
     /** Queue a Start Advertising Set command (during suspend). */
     fun queueStartAdvertisingSet(
         parameters: AdvertisingSetParameters,
-        advertiseData: AdvertiseData,
-        scanResponse: AdvertiseData,
-        periodicParameters: PeriodicAdvertisingParameters,
-        periodicData: AdvertiseData,
+        advertiseData: AdvertiseData?,
+        scanResponse: AdvertiseData?,
+        periodicParameters: PeriodicAdvertisingParameters?,
+        periodicData: AdvertiseData?,
         duration: Int,
         maxExtAdvEvents: Int,
-        gattServerCallback: IBluetoothGattServerCallback,
+        gattServerCallback: IBluetoothGattServerCallback?,
         callback: IAdvertisingSetCallback,
         source: AttributionSource,
     ) {
@@ -217,12 +217,12 @@ class AdvertiseSuspendManager(
     }
 
     /** Queue a Set Scan Advertising Data command (during suspend). */
-    fun queueSetAdvertisingData(advertiserId: Int, data: AdvertiseData) {
+    fun queueSetAdvertisingData(advertiserId: Int, data: AdvertiseData?) {
         pendingCommands.add(SetAdvertisingDataCommand(advertiserId, data))
     }
 
     /** Queue a Set Scan Response Data command (during suspend). */
-    fun queueSetScanResponseData(advertiserId: Int, data: AdvertiseData) {
+    fun queueSetScanResponseData(advertiserId: Int, data: AdvertiseData?) {
         pendingCommands.add(SetScanResponseDataCommand(advertiserId, data))
     }
 
@@ -234,13 +234,13 @@ class AdvertiseSuspendManager(
     /** Queue a Set Periodic Advertising Parameters command (during suspend). */
     fun queueSetPeriodicAdvertisingParameters(
         advertiserId: Int,
-        parameters: PeriodicAdvertisingParameters,
+        parameters: PeriodicAdvertisingParameters?,
     ) {
         pendingCommands.add(SetPeriodicAdvertisingParametersCommand(advertiserId, parameters))
     }
 
     /** Queue a Set Periodic Advertising Data command (during suspend). */
-    fun queueSetPeriodicAdvertisingData(advertiserId: Int, data: AdvertiseData) {
+    fun queueSetPeriodicAdvertisingData(advertiserId: Int, data: AdvertiseData?) {
         pendingCommands.add(SetPeriodicAdvertisingDataCommand(advertiserId, data))
     }
 
