@@ -63,6 +63,14 @@ uint16_t L2CA_GetBleConnInterval(const RawAddress& bd_addr) {
   return l2cap_interface->GetBleConnInterval(bd_addr);
 }
 
+uint16_t L2CA_GetBlePeriphLatency(const RawAddress& bd_addr) {
+  return l2cap_interface->GetBlePeriphLatency(bd_addr);
+}
+
+uint16_t L2CA_GetBleSupervisionTimeout(const RawAddress& bd_addr) {
+  return l2cap_interface->GetBleSupervisionTimeout(bd_addr);
+}
+
 std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm, const RawAddress& bd_addr,
                                                  tL2CAP_LE_CFG_INFO* p_cfg) {
   return l2cap_interface->ConnectCreditBasedReq(psm, bd_addr, p_cfg);

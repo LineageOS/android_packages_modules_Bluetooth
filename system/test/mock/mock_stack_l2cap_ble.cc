@@ -46,6 +46,8 @@ struct L2CA_LockBleConnParamsForLeAudioSubrate L2CA_LockBleConnParamsForLeAudioS
 struct L2CA_ConsolidateParams L2CA_ConsolidateParams;
 struct L2CA_GetBleConnRole L2CA_GetBleConnRole;
 struct L2CA_GetBleConnInterval L2CA_GetBleConnInterval;
+struct L2CA_GetBlePeriphLatency L2CA_GetBlePeriphLatency;
+struct L2CA_GetBleSupervisionTimeout L2CA_GetBleSupervisionTimeout;
 struct l2cble_notify_le_connection l2cble_notify_le_connection;
 struct l2cble_conn_comp l2cble_conn_comp;
 struct l2cble_process_conn_update_evt l2cble_process_conn_update_evt;
@@ -102,6 +104,14 @@ hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
 uint16_t L2CA_GetBleConnInterval(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_l2cap_ble::L2CA_GetBleConnInterval(bd_addr);
+}
+uint16_t L2CA_GetBlePeriphLatency(const RawAddress& bd_addr) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_l2cap_ble::L2CA_GetBlePeriphLatency(bd_addr);
+}
+uint16_t L2CA_GetBleSupervisionTimeout(const RawAddress& bd_addr) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_l2cap_ble::L2CA_GetBleSupervisionTimeout(bd_addr);
 }
 void l2cble_notify_le_connection(const RawAddress& bda) {
   inc_func_call_count(__func__);

@@ -395,7 +395,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status, uint16_t interval,
-                                    uint16_t /* latency */, uint16_t /* timeout */) {
+                                    uint16_t latency, uint16_t timeout) {
   log::verbose("");
 
   /* See if we have a link control block for the remote device */
@@ -405,6 +405,8 @@ void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status, uint16_t in
     return;
   }
   p_lcb->SetConnInterval(interval);
+  p_lcb->SetPeriphLatency(latency);
+  p_lcb->SetSupervisionTimeout(timeout);
   p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
 
   if (status != HCI_SUCCESS) {

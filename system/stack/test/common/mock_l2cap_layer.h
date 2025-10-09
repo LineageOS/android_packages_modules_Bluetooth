@@ -72,6 +72,8 @@ public:
   MOCK_METHOD1(DeregisterLECoc, void(uint16_t psm));
   MOCK_METHOD1(GetBleConnRole, uint8_t(const RawAddress& bd_addr));
   MOCK_METHOD1(GetBleConnInterval, uint16_t(const RawAddress& bd_addr));
+  MOCK_METHOD1(GetBlePeriphLatency, uint16_t(const RawAddress& bd_addr));
+  MOCK_METHOD1(GetBleSupervisionTimeout, uint16_t(const RawAddress& bd_addr));
   MOCK_METHOD5(ConnectCreditBasedRsp,
                bool(const RawAddress& p_bd_addr, uint8_t id, std::vector<uint16_t>& lcids,
                     tL2CAP_LE_RESULT_CODE result, tL2CAP_LE_CFG_INFO* p_cfg));
