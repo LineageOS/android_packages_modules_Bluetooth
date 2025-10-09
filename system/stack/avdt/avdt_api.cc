@@ -172,30 +172,27 @@ void AVDT_AbortReq(uint8_t handle) {
  * Returns          AVDT_SUCCESS if successful, otherwise error.
  *
  ******************************************************************************/
-uint16_t AVDT_CreateStream(uint8_t peer_id, uint8_t* p_handle,
-                           const AvdtpStreamConfig& avdtp_stream_config) {
-  tAVDT_RESULT result = AVDT_SUCCESS;
-  AvdtpScb* p_scb;
-
-  /* Verify parameters; if invalid, return failure */
-  if (((avdtp_stream_config.cfg.psc_mask & (~AVDT_PSC)) != 0) ||
-      (avdtp_stream_config.p_avdt_ctrl_cback == NULL)) {
-    result = AVDT_BAD_PARAMS;
+tAVDT_RESULT AVDT_CreateStream(uint8_t peer_id, uint8_t* p_handle,
+                               const AvdtpStreamConfig& avdtp_stream_config) {
+  // Verify parameters; if invalid, return failure.
+  if ((avdtp_stream_config.cfg.psc_mask & (~AVDT_PSC)) != 0 ||
+      avdtp_stream_config.p_avdt_ctrl_cback == NULL) {
     log::error("Invalid AVDT stream endpoint parameters peer_id={} scb_index={}", peer_id,
                avdtp_stream_config.scb_index);
-  } else {
-    /* Allocate scb; if no scbs, return failure */
-    p_scb = avdt_scb_alloc(peer_id, avdtp_stream_config);
-    if (p_scb == NULL) {
-      log::error("Unable to create AVDT stream endpoint peer_id={} scb_index={}", peer_id,
-                 avdtp_stream_config.scb_index);
-      result = AVDT_NO_RESOURCES;
-    } else {
-      *p_handle = avdt_scb_to_hdl(p_scb);
-      log::debug("Created stream endpoint peer_id={} handle={}", peer_id, *p_handle);
-    }
+    return tAVDT_RESULT::AVDT_BAD_PARAMS;
   }
-  return static_cast<uint16_t>(result);
+
+  // Allocate scb; if no scbs, return failure.
+  AvdtpScb* p_scb = avdt_scb_alloc(peer_id, avdtp_stream_config);
+  if (p_scb == NULL) {
+    log::error("Unable to create AVDT stream endpoint peer_id={} scb_index={}", peer_id,
+               avdtp_stream_config.scb_index);
+    return tAVDT_RESULT::AVDT_NO_RESOURCES;
+  }
+
+  *p_handle = avdt_scb_to_hdl(p_scb);
+  log::debug("Created stream endpoint peer_id={} handle={}", peer_id, *p_handle);
+  return tAVDT_RESULT::AVDT_SUCCESS;
 }
 
 /*******************************************************************************
