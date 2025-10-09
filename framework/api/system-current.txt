@@ -223,6 +223,7 @@ package android.bluetooth {
 
   public final class BluetoothCodecType implements android.os.Parcelable {
     ctor public BluetoothCodecType(int, long, @NonNull String);
+    method @FlaggedApi("com.android.bluetooth.flags.a2dp_create_codec_type_from_id_api") @Nullable public static android.bluetooth.BluetoothCodecType createFromId(long);
     method @Nullable public static android.bluetooth.BluetoothCodecType createFromType(int);
   }
 
