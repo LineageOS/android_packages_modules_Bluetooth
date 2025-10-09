@@ -1181,7 +1181,7 @@ public class ScanController {
         final var uuid = UUID.randomUUID();
         Log.d(TAG, "registerScanner(): uid=" + uid + ", appName=" + appName + ", uuid=" + uuid);
         mScannerMap.addWithCallback(
-                uid, appName, uuid, source, workSource, callback, mAdapterService, this);
+                uid, appName, uuid, source, workSource, callback, mAdapterService);
         mScanManager.registerScanner(uuid);
     }
 
@@ -1335,12 +1335,7 @@ public class ScanController {
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         ScannerApp app =
                 mScannerMap.addWithPendingIntent(
-                        uuid,
-                        UserHandle.getUserHandleForUid(uid),
-                        source,
-                        piInfo,
-                        mAdapterService,
-                        this);
+                        uuid, UserHandle.getUserHandleForUid(uid), source, piInfo, mAdapterService);
         mAppOps.checkPackage(uid, callingPackage);
         app.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));

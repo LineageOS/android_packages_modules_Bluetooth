@@ -41,7 +41,6 @@ class AppScanStatsTest {
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var batteryStatsManager: BatteryStatsManager
-    @Mock private lateinit var scanController: ScanController
     @Mock private lateinit var timeProvider: TimeProvider
 
     @Before
@@ -54,10 +53,8 @@ class AppScanStatsTest {
         val name = "appName"
         val source: WorkSource? = null
         val uid = 1234
-        val appScanStats =
-            AppScanStats(name, source, uid, adapterService, scanController, timeProvider)
+        val appScanStats = AppScanStats(name, source, uid, adapterService, timeProvider)
 
-        assertThat(appScanStats.mScanController).isEqualTo(scanController)
         assertThat(appScanStats.isScanning).isFalse()
     }
 
@@ -66,8 +63,7 @@ class AppScanStatsTest {
         val name = "appName"
         val source: WorkSource? = null
         val uid = 1234
-        val appScanStats =
-            AppScanStats(name, source, uid, adapterService, scanController, timeProvider)
+        val appScanStats = AppScanStats(name, source, uid, adapterService, timeProvider)
 
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().setDeviceName("TestName").build())

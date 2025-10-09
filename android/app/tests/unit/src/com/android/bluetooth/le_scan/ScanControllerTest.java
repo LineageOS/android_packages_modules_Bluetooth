@@ -443,8 +443,7 @@ public class ScanControllerTest {
                         eq(mAttributionSource),
                         eq(workSource),
                         eq(callback),
-                        any(),
-                        eq(mScanController));
+                        any());
         verify(mScanManager).registerScanner(any());
     }
 
