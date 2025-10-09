@@ -20,6 +20,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -48,7 +49,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,8 +75,10 @@ public class A2dpSinkServiceTest {
     private TestLooper mLooper;
     private A2dpSinkService mService;
 
-    @Before
-    public void setUp() throws Exception {
+    // Don't use @Before because the initTest and the test would be running on different thread.
+    // This creates issues with the TestLooper, as it overrides Looper.myLooper for the current
+    // thread only.
+    public void initTest() {
         BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mDevice1, mDevice2};
 
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
@@ -107,9 +109,10 @@ public class A2dpSinkServiceTest {
         assertThat(mLooper.nextMessage()).isNull();
 
         assertThat(mService.connect(device)).isTrue();
-        syncHandler(-2 /* SM_INIT_CMD */, A2dpSinkStateMachine.MESSAGE_CONNECT);
+        syncHandler(0);
+        assertThat(mService.getConnectionState(device)).isEqualTo(STATE_CONNECTING);
         mService.onConnectionStateChangedFromNative(device, STATE_CONNECTED);
-        syncHandler(A2dpSinkStateMachine.MESSAGE_CONNECTION_STATE_CHANGED);
+        syncHandler(0);
         assertThat(mService.getConnectionState(device)).isEqualTo(STATE_CONNECTED);
     }
 
@@ -128,19 +131,22 @@ public class A2dpSinkServiceTest {
     /** Test that initialization of the service completes and that we can get a instance */
     @Test
     public void testInitialize() {
+        initTest();
         assertThat(mLooper.nextMessage()).isNull();
     }
 
     /** Test that asking to connect with a null device fails */
     @Test
     public void testConnectNullDevice() {
-        assertThrows(IllegalArgumentException.class, () -> mService.connect(null));
+        initTest();
+        assertThrows(NullPointerException.class, () -> mService.connect(null));
         assertThat(mLooper.nextMessage()).isNull();
     }
 
     /** Test that a CONNECTION_POLICY_ALLOWED device can connected */
     @Test
     public void testConnectPolicyAllowedDevice() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
         assertThat(mLooper.nextMessage()).isNull();
@@ -149,6 +155,7 @@ public class A2dpSinkServiceTest {
     /** Test that a CONNECTION_POLICY_FORBIDDEN device is not allowed to connect */
     @Test
     public void testConnectPolicyForbiddenDevice() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_FORBIDDEN);
         assertThat(mService.connect(mDevice1)).isFalse();
         assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
@@ -158,6 +165,7 @@ public class A2dpSinkServiceTest {
     /** Test that a CONNECTION_POLICY_UNKNOWN device is allowed to connect */
     @Test
     public void testConnectPolicyUnknownDevice() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_UNKNOWN);
         setupDeviceConnection(mDevice1);
         assertThat(mLooper.nextMessage()).isNull();
@@ -166,6 +174,7 @@ public class A2dpSinkServiceTest {
     /** Test that we can connect multiple devices */
     @Test
     public void testConnectMultipleDevices() {
+        initTest();
         doReturn(5).when(mAdapterService).getMaxConnectedAudioDevices();
 
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
@@ -179,6 +188,7 @@ public class A2dpSinkServiceTest {
     /** Test to make sure we can disconnect a connected device */
     @Test
     public void testDisconnect() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
 
@@ -193,6 +203,7 @@ public class A2dpSinkServiceTest {
     /** Assure disconnect() fails with a device that's not connected */
     @Test
     public void testDisconnectDeviceDoesNotExist() {
+        initTest();
         assertThat(mService.disconnect(mDevice1)).isFalse();
         assertThat(mLooper.nextMessage()).isNull();
     }
@@ -200,6 +211,7 @@ public class A2dpSinkServiceTest {
     /** Assure disconnect() fails with an invalid device */
     @Test
     public void testDisconnectNullDevice() {
+        initTest();
         assertThrows(IllegalArgumentException.class, () -> mService.disconnect(null));
         assertThat(mLooper.nextMessage()).isNull();
     }
@@ -207,6 +219,7 @@ public class A2dpSinkServiceTest {
     /** Assure dump() returns something and does not crash */
     @Test
     public void testDump() {
+        initTest();
         StringBuilder sb = new StringBuilder();
         mService.dump(sb);
         assertThat(sb.toString()).isNotNull();
@@ -219,6 +232,7 @@ public class A2dpSinkServiceTest {
      */
     @Test
     public void testSetActiveDevice() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         assertThat(mService.getActiveDevice()).isNotEqualTo(mDevice1);
         assertThat(mService.setActiveDevice(mDevice1)).isTrue();
@@ -229,6 +243,7 @@ public class A2dpSinkServiceTest {
     /** Test that calls to set a null active device succeed in unsetting the active device */
     @Test
     public void testSetActiveDeviceNullDevice() {
+        initTest();
         assertThat(mService.setActiveDevice(null)).isTrue();
         assertThat(mService.getActiveDevice()).isNull();
         assertThat(mLooper.nextMessage()).isNull();
@@ -237,6 +252,7 @@ public class A2dpSinkServiceTest {
     /** Make sure we can receive the set audio configuration */
     @Test
     public void testGetAudioConfiguration() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
 
@@ -254,6 +270,7 @@ public class A2dpSinkServiceTest {
     /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
     @Test
     public void testOnAudioConfigChanged_withNullDevice_eventDropped() {
+        initTest();
         mService.onAudioConfigChangedFromNative(null, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
         assertThat(mService.getAudioConfig(null)).isNull();
         assertThat(mLooper.nextMessage()).isNull();
@@ -262,6 +279,7 @@ public class A2dpSinkServiceTest {
     /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
     @Test
     public void testOnAudioConfigChanged_withUnknownDevice_eventDropped() {
+        initTest();
         assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
         mService.onAudioConfigChangedFromNative(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
         assertThat(mService.getAudioConfig(mDevice1)).isNull();
@@ -271,6 +289,7 @@ public class A2dpSinkServiceTest {
     /** Getting an audio config for a device that hasn't received one yet should return null */
     @Test
     public void testGetAudioConfigWithConfigUnset() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
         assertThat(mService.getAudioConfig(mDevice1)).isNull();
@@ -280,6 +299,7 @@ public class A2dpSinkServiceTest {
     /** Getting an audio config for a null device should return null */
     @Test
     public void testGetAudioConfigNullDevice() {
+        initTest();
         assertThat(mService.getAudioConfig(null)).isNull();
         assertThat(mLooper.nextMessage()).isNull();
     }
@@ -287,6 +307,7 @@ public class A2dpSinkServiceTest {
     /** Test that a newly connected device ends up in the set returned by getConnectedDevices */
     @Test
     public void testGetConnectedDevices() {
+        initTest();
         ArrayList<BluetoothDevice> expected = new ArrayList<BluetoothDevice>();
         expected.add(mDevice1);
 
@@ -304,6 +325,7 @@ public class A2dpSinkServiceTest {
      */
     @Test
     public void testGetDevicesMatchingConnectionStatesConnected() {
+        initTest();
         ArrayList<BluetoothDevice> expected = new ArrayList<BluetoothDevice>();
         expected.add(mDevice1);
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
@@ -321,6 +343,7 @@ public class A2dpSinkServiceTest {
      */
     @Test
     public void testGetDevicesMatchingConnectionStatesDisconnected() {
+        initTest();
         ArrayList<BluetoothDevice> expected = new ArrayList<BluetoothDevice>();
         expected.add(mDevice1);
         expected.add(mDevice2);
@@ -334,6 +357,7 @@ public class A2dpSinkServiceTest {
     /** Test that GetConnectionPolicy() can get a device with policy "Allowed" */
     @Test
     public void testGetConnectionPolicyDeviceAllowed() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(CONNECTION_POLICY_ALLOWED);
         assertThat(mLooper.nextMessage()).isNull();
@@ -342,6 +366,7 @@ public class A2dpSinkServiceTest {
     /** Test that GetConnectionPolicy() can get a device with policy "Forbidden" */
     @Test
     public void testGetConnectionPolicyDeviceForbidden() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_FORBIDDEN);
         assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(CONNECTION_POLICY_FORBIDDEN);
         assertThat(mLooper.nextMessage()).isNull();
@@ -350,6 +375,7 @@ public class A2dpSinkServiceTest {
     /** Test that GetConnectionPolicy() can get a device with policy "Unknown" */
     @Test
     public void testGetConnectionPolicyDeviceUnknown() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_UNKNOWN);
         assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(CONNECTION_POLICY_UNKNOWN);
         assertThat(mLooper.nextMessage()).isNull();
@@ -358,6 +384,7 @@ public class A2dpSinkServiceTest {
     /** Test that SetConnectionPolicy() can change a device's policy to "Allowed" */
     @Test
     public void testSetConnectionPolicyDeviceAllowed() {
+        initTest();
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED)).isTrue();
         verify(mAdapterService)
                 .setProfileConnectionPolicy(
@@ -368,6 +395,7 @@ public class A2dpSinkServiceTest {
     /** Test that SetConnectionPolicy() can change a device's policy to "Forbidden" */
     @Test
     public void testSetConnectionPolicyDeviceForbiddenWhileNotConnected() {
+        initTest();
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_FORBIDDEN)).isTrue();
         verify(mAdapterService)
                 .setProfileConnectionPolicy(
@@ -381,6 +409,7 @@ public class A2dpSinkServiceTest {
      */
     @Test
     public void testSetConnectionPolicyDeviceForbiddenWhileConnected() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
 
@@ -400,6 +429,7 @@ public class A2dpSinkServiceTest {
     /** Test that SetConnectionPolicy() can change a device's policy to "Unknown" */
     @Test
     public void testSetConnectionPolicyDeviceUnknown() {
+        initTest();
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_UNKNOWN)).isTrue();
         verify(mAdapterService)
                 .setProfileConnectionPolicy(
@@ -410,6 +440,7 @@ public class A2dpSinkServiceTest {
     /** Test that SetConnectionPolicy is robust to DatabaseManager failures */
     @Test
     public void testSetConnectionPolicyDatabaseWriteFails() {
+        initTest();
         doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED)).isFalse();
         assertThat(mLooper.nextMessage()).isNull();
@@ -417,10 +448,41 @@ public class A2dpSinkServiceTest {
 
     @Test
     public void testDumpDoesNotCrash() {
+        initTest();
         mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
         setupDeviceConnection(mDevice1);
 
         mService.dump(new StringBuilder());
+        assertThat(mLooper.nextMessage()).isNull();
+    }
+
+    /**
+     * b/436924551 Test that the service can be reconnected immediately after a disconnection event
+     * is handled and that the state machine is not spuriously cleaned up.
+     */
+    @Test
+    public void testReconnection() {
+        initTest();
+        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+
+        // Report and process connection event.
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_CONNECTED);
+        syncHandler(0);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_CONNECTED);
+
+        // Report disconnection and simultaneously a re-connection event.
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_DISCONNECTED);
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_CONNECTED);
+
+        // Process the disconnection event.
+        // This generates a CLEANUP message, scheduled after the re-connection event.
+        syncHandler(0);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
+
+        // Process the re-connection event.
+        // The CLEANUP message is discarded.
+        syncHandler(0);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_CONNECTED);
         assertThat(mLooper.nextMessage()).isNull();
     }
 }

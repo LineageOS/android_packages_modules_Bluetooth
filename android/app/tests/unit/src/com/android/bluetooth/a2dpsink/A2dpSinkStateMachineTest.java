@@ -68,7 +68,6 @@ public class A2dpSinkStateMachineTest {
 
         mStateMachine =
                 new A2dpSinkStateMachine(mService, mDevice, mLooper.getLooper(), mNativeInterface);
-        syncHandler(-2 /* SM_INIT_CMD */);
 
         assertThat(mStateMachine.getDevice()).isEqualTo(mDevice);
         assertThat(mStateMachine.getAudioConfig()).isNull();
@@ -105,7 +104,7 @@ public class A2dpSinkStateMachineTest {
 
     @Test
     public void testConnectInDisconnected() {
-        mStateMachine.connect();
+        mStateMachine.sendMessage(A2dpSinkStateMachine.MESSAGE_CONNECT);
         syncHandler(A2dpSinkStateMachine.MESSAGE_CONNECT);
         verify(mNativeInterface).connectA2dpSink(mDevice);
         assertThat(mStateMachine.getState()).isEqualTo(STATE_CONNECTING);
@@ -252,7 +251,7 @@ public class A2dpSinkStateMachineTest {
     public void testConnectInConnecting() {
         testConnectInDisconnected();
 
-        mStateMachine.connect();
+        mStateMachine.sendMessage(A2dpSinkStateMachine.MESSAGE_CONNECT);
         syncHandler(A2dpSinkStateMachine.MESSAGE_CONNECT);
         assertThat(mStateMachine.getState()).isEqualTo(STATE_CONNECTING);
     }
@@ -285,7 +284,7 @@ public class A2dpSinkStateMachineTest {
     public void testConnectInConnected() {
         testConnectedInConnecting();
 
-        mStateMachine.connect();
+        mStateMachine.sendMessage(A2dpSinkStateMachine.MESSAGE_CONNECT);
         syncHandler(A2dpSinkStateMachine.MESSAGE_CONNECT);
         assertThat(mStateMachine.getState()).isEqualTo(STATE_CONNECTED);
     }
