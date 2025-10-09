@@ -48,7 +48,6 @@ import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.Intent;
-import android.net.MacAddress;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -154,12 +153,6 @@ public class RemoteDevices {
         }
     }
 
-    /**
-     * Predicate that tests if the given {@link BluetoothDevice} is well-known to be used for
-     * physical location.
-     */
-    private final Predicate<BluetoothDevice> mLocationDenylistPredicate;
-
     RemoteDevices(AdapterService service, Looper looper) {
         mAdapterService = service;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
@@ -169,22 +162,6 @@ public class RemoteDevices {
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
         mWatchConnectionStateListener = new WatchConnectionStateListener(mAdapterService, looper);
-        mLocationDenylistPredicate =
-                (device) -> {
-                    final MacAddress parsedAddress = MacAddress.fromString(device.getAddress());
-                    if (mAdapterService
-                            .getLocationDenylistMac()
-                            .test(parsedAddress.toByteArray())) {
-                        Log.v(TAG, "Skipping device matching denylist: " + device);
-                        return true;
-                    }
-                    final String name = getName(device);
-                    if (mAdapterService.getLocationDenylistName().test(name)) {
-                        Log.v(TAG, "Skipping name matching denylist: " + name);
-                        return true;
-                    }
-                    return false;
-                };
     }
 
     /**
@@ -1472,54 +1449,7 @@ public class RemoteDevices {
         }
 
         infoLog("deviceFoundCallback: Remote Address is:" + device);
-        Intent intent = new Intent(BluetoothDevice.ACTION_FOUND);
-        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-        intent.putExtra(
-                BluetoothDevice.EXTRA_CLASS, new BluetoothClass(deviceProp.getBluetoothClass()));
-        intent.putExtra(BluetoothDevice.EXTRA_RSSI, deviceProp.getRssi());
-        intent.putExtra(BluetoothDevice.EXTRA_NAME, deviceProp.getName());
-        intent.putExtra(
-                BluetoothDevice.EXTRA_IS_COORDINATED_SET_MEMBER,
-                deviceProp.isCoordinatedSetMember());
-
-        int discoveryResultType = deviceProp.getDiscoveryResultType();
-        if (Flags.getSvcUuidsFromBleAdvData()
-                && discoveryResultType != BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
-            intent.putExtra(BluetoothDevice.EXTRA_DISCOVERY_RESULT_TYPE, discoveryResultType);
-
-            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_CLASSIC) != 0) {
-                ParcelUuid[] uuids = deviceProp.getUuidsFromExtendedInquiryResponse();
-                intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
-            }
-
-            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_LE) != 0) {
-                ParcelUuid[] uuids = deviceProp.getUuidsFromLeAdvertisingData();
-                intent.putExtra(BluetoothDevice.EXTRA_UUID_LE, uuids);
-            }
-        }
-
-        final List<DiscoveringPackage> packages = mAdapterService.getDiscoveringPackages();
-        synchronized (packages) {
-            for (DiscoveringPackage pkg : packages) {
-                if (pkg.hasDisavowedLocation()) {
-                    if (mLocationDenylistPredicate.test(device)) {
-                        continue;
-                    }
-                }
-
-                intent.setPackage(pkg.packageName());
-
-                if (pkg.permission() != null) {
-                    mAdapterService.sendBroadcastMultiplePermissions(
-                            intent,
-                            new String[] {BLUETOOTH_SCAN, pkg.permission()},
-                            Utils.getTempBroadcastOptions());
-                } else {
-                    mAdapterService.sendBroadcast(
-                            intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
-                }
-            }
-        }
+        mAdapterService.discoveryResultHandler(deviceProp);
     }
 
     void addressConsolidateCallback(byte[] mainAddress, byte[] secondaryAddress) {
