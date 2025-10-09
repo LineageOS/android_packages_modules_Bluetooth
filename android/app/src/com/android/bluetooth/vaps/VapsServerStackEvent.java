@@ -17,7 +17,6 @@
 package com.android.bluetooth.vaps;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 
 public class VapsServerStackEvent {
     // Event types for STACK_EVENT message (coming from native)

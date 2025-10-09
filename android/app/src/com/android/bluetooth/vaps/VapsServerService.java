@@ -16,55 +16,29 @@
 
 package com.android.bluetooth.vaps;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.bluetooth.BluetoothCsipSetCoordinator;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
-import com.android.bluetooth.le_audio.ContentControlIdKeeper;
-import android.content.Intent;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
-import android.os.ParcelUuid;
-import android.os.RemoteCallbackList;
-import android.text.TextUtils;
-import android.util.Log;
 import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
-import android.provider.Settings;
+import android.content.Intent;
 import android.database.ContentObserver;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.text.TextUtils;
+import android.util.Log;
 
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
-import com.android.internal.annotations.GuardedBy;
+import com.android.bluetooth.le_audio.ContentControlIdKeeper;
 import com.android.internal.annotations.VisibleForTesting;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
 /** Provides Bluetooth Voice Assistant profile, as a service. */
 public class VapsServerService extends ProfileService {
@@ -134,8 +108,9 @@ public class VapsServerService extends ProfileService {
         setVapsServer(this);
 
         mAssistantSettingObserver = new AssistantSettingObserver();
-        getContentResolver().registerContentObserver(
-            Settings.Secure.getUriFor("assistant"), false, mAssistantSettingObserver);
+        getContentResolver()
+                .registerContentObserver(
+                        Settings.Secure.getUriFor("assistant"), false, mAssistantSettingObserver);
     }
 
     @Override
@@ -217,9 +192,10 @@ public class VapsServerService extends ProfileService {
     }
 
     public String getCurrentVaeName() {
-        //Get Default Digital Assistant from Settings
+        // Get Default Digital Assistant from Settings
         String assistantName =
-            Settings.Secure.getString(getApplicationContext().getContentResolver(), "assistant");
+                Settings.Secure.getString(
+                        getApplicationContext().getContentResolver(), "assistant");
 
         if (TextUtils.isEmpty(assistantName)) {
             return null;
@@ -231,7 +207,7 @@ public class VapsServerService extends ProfileService {
         if (parts.length == 2) {
             vaeName = parts[0];
         }
-        Log.d(TAG, " vae Name:"+ vaeName);
+        Log.d(TAG, " vae Name:" + vaeName);
         return vaeName;
     }
 
@@ -282,7 +258,7 @@ public class VapsServerService extends ProfileService {
                 }
             }
             case VapsServerStackEvent.EVENT_TYPE_ON_STOP_VA_SESSION -> {
-                Log.d(TAG, "stop VA session by remote Headset:"+ device);
+                Log.d(TAG, "stop VA session by remote Headset:" + device);
                 if (!deactivateVoiceRecognition(device)) {
                     Log.w(TAG, "stop VA session by remote Headset: failed request from " + device);
                 }
@@ -291,4 +267,3 @@ public class VapsServerService extends ProfileService {
         }
     }
 }
-
