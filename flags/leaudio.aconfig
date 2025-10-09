@@ -12,22 +12,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_monitor_source_sync_status"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "New APIs to improve broadcast source sync"
-    bug: "307406671"
-}
-
-flag {
-    name: "leaudio_broadcast_volume_control_for_connected_devices"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Allow volume control for connected devices"
-    bug: "307408418"
-}
-
-flag {
     name: "leaudio_support_confirm_suspend"
     namespace: "bluetooth"
     description: "Add support for confirm suspend"
@@ -35,22 +19,6 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "metadata_api_inactive_audio_device_upon_connection"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "API to set device as inactive audio device upon connection"
-    bug: "322387487"
-}
-
-flag {
-    name: "leaudio_multiple_vocs_instances_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Support multiple audio outputs for volume offset"
-    bug: "323156655"
 }
 
 flag {

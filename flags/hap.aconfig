@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "settings_can_control_hap_preset"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Allow user to control the preset of hearing aid devices"
-    bug: "306236481"
-}
-
-flag {
     name: "hap_safely_erase_pending_operation_timeout"
     namespace: "bluetooth"
     description: "Fixes erasing pending operation timeout"

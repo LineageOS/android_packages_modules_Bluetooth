@@ -32,6 +32,14 @@ flag {
 }
 
 flag {
+    name: "hci_vendor_specific_extension"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Vendor-specific Commands/Events extension"
+    bug: "360925496"
+}
+
+flag {
     name: "encryption_change_broadcast"
     is_exported: true
     namespace: "bluetooth"
@@ -93,6 +101,14 @@ flag {
     namespace: "bluetooth"
     description: "API to get and set microphone for call enable status"
     bug: "372395197"
+}
+
+flag {
+    name: "socket_settings_api"
+    namespace: "bluetooth"
+    description: "Adds new socket settings interface which allows creation of encryption only socket"
+    bug: "374358112"
+    is_exported: true
 }
 
 flag {
