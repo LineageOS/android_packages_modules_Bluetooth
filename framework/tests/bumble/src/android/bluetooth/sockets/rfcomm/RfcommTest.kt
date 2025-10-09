@@ -796,7 +796,6 @@ class RfcommTest {
      * - Verify remote devices disconnected based on successful data transmission
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_DISCONNECT_ACLS_BY_BREDR_DISABLED)
     fun clientRfcommDeviceDisconnectedOnBleOnMode() {
         // Enable BLE_ON mode if disable Bluetooth
         Settings.Global.putInt(context.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 1)

@@ -392,11 +392,9 @@ final class AdapterState extends StateMachine {
         @Override
         public void exit() {
             removeMessages(BREDR_STOP_TIMEOUT);
-            if (Flags.disconnectAclsByBredrDisabled()) {
-                if (mAdapterService != null) {
-                    Log.i(TAG, "Disconnecting all ACLs with BREDR Stopped");
-                    mAdapterService.disconnectAllAcls();
-                }
+            if (mAdapterService != null) {
+                Log.i(TAG, "Disconnecting all ACLs with BREDR Stopped");
+                mAdapterService.disconnectAllAcls();
             }
 
             super.exit();
