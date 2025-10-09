@@ -291,7 +291,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         Log.i(TAG, "cancelDiscovery: from " + getUidPidString());
-        return service.getNative().cancelDiscovery();
+        return service.cancelDiscovery(source);
     }
 
     @Override

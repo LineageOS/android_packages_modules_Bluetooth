@@ -1093,6 +1093,16 @@ public class AdapterService extends Service {
         }
     }
 
+    boolean isDiscovering() {
+        if (!Flags.ignoreRedundantDiscoveryIfSameState()) {
+            return mAdapterProperties.isDiscovering();
+        }
+
+        synchronized (mDiscoveringPackages) {
+            return !mDiscoveringPackages.isEmpty();
+        }
+    }
+
     private static void invalidateBluetoothCaches() {
         BluetoothAdapter.invalidateGetProfileConnectionStateCache();
         BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
@@ -2619,6 +2629,9 @@ public class AdapterService extends Service {
         boolean hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(this, source, mTestModeEnabled);
         String permission = null;
+        if (getState() != BluetoothAdapter.STATE_ON) {
+            return false;
+        }
         if (Utils.checkCallerHasNetworkSettingsPermission(this)) {
             permission = android.Manifest.permission.NETWORK_SETTINGS;
         } else if (Utils.checkCallerHasNetworkSetupWizardPermission(this)) {
@@ -2638,10 +2651,44 @@ public class AdapterService extends Service {
         }
 
         synchronized (mDiscoveringPackages) {
+            boolean discovering = !mDiscoveringPackages.isEmpty();
             mDiscoveringPackages.put(
                     callingPackage, new DiscoveringPackageInfo(permission, hasDisavowedLocation));
+
+            if (Flags.ignoreRedundantDiscoveryIfSameState() && discovering) {
+                return true;
+            }
         }
+
         return mNativeInterface.startDiscovery();
+    }
+
+    public boolean cancelDiscovery(AttributionSource source) {
+        String callingPackage = source.getPackageName();
+        if (getState() != BluetoothAdapter.STATE_ON) {
+            return false;
+        }
+
+        if (Flags.ignoreRedundantDiscoveryIfSameState()) {
+            synchronized (mDiscoveringPackages) {
+                // If there are no discovering packages, we can't cancel discovery.
+                if (mDiscoveringPackages.isEmpty()) {
+                    return false;
+                }
+
+                // Remove the package from the list of discovering packages, if it was there.
+                if (mDiscoveringPackages.remove(callingPackage) == null) {
+                    return false;
+                }
+
+                // If there are still discovering packages, we can't cancel discovery.
+                if (!mDiscoveringPackages.isEmpty()) {
+                    return true;
+                }
+            }
+        }
+
+        return mNativeInterface.cancelDiscovery();
     }
 
     /**
