@@ -20,6 +20,8 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -53,7 +55,7 @@ public class SystemServiceMessenger {
     private final Messenger mMessenger;
 
     public SystemServiceMessenger(Messenger messenger) {
-        mMessenger = messenger;
+        mMessenger = requireNonNull(messenger);
     }
 
     @RequiresNoPermission
