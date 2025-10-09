@@ -67,9 +67,9 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;

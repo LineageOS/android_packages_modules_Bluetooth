@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.vc;
 
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.profile.ProfileService;
 
 import java.util.HashMap;
 import java.util.Map;

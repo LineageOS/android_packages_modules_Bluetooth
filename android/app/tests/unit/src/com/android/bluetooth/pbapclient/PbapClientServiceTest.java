@@ -125,6 +125,7 @@ public class PbapClientServiceTest {
                         })
                 .when(mMockStorage)
                 .getStorageAccountForDevice(any(BluetoothDevice.class));
+        doReturn("").when(mMockStorage).dump();
 
         mTestLooper = new TestLooper();
         final var looper = mTestLooper.getLooper();

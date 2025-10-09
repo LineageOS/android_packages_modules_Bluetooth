@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.vaps;
 
-
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -35,9 +34,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.ContentControlIdKeeper;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** Provides Bluetooth Voice Assistant profile, as a service. */

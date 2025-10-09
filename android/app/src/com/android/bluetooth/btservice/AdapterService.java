@@ -164,6 +164,7 @@ import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.pbap.BluetoothPbapService;
 import com.android.bluetooth.pbapclient.PbapClientService;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.sdp.SdpManager;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -629,7 +630,7 @@ public class AdapterService extends Service {
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
                     // initialization. Configuring a device without GATT causes start up failures.
-                    if (!(profile.getProfileId() == BluetoothProfile.GATT
+                    if (!(profile.mProfileId == BluetoothProfile.GATT
                                     && !Flags.onlyStartScanDuringBleOn())
                             && mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
@@ -661,8 +662,7 @@ public class AdapterService extends Service {
                         // only profile available in the "BLE ON" state. If only GATT is left, send
                         // BREDR_STOPPED. If GATT is stopped, deinitialize the hardware.
                         if (mRunningProfiles.size() == 1
-                                && mRunningProfiles.get(0).getProfileId()
-                                        == BluetoothProfile.GATT) {
+                                && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
                             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
                         }
                     }
@@ -1447,7 +1447,7 @@ public class AdapterService extends Service {
             // move on to BREDR_STOPPED
             if (supportedProfiles.length == 1
                     && mRunningProfiles.size() == 1
-                    && mRunningProfiles.get(0).getProfileId() == BluetoothProfile.GATT) {
+                    && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
                 Log.d(
                         TAG,
                         "stopProfileServices() - No profiles services to stop or already stopped.");
@@ -1952,7 +1952,7 @@ public class AdapterService extends Service {
         return !mStartedProfiles.values().stream()
                 .anyMatch(
                         profile ->
-                                getProfileConnectionPolicy(device, profile.getProfileId())
+                                getProfileConnectionPolicy(device, profile.mProfileId)
                                         != CONNECTION_POLICY_UNKNOWN);
     }
 

@@ -54,6 +54,7 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 

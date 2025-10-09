@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,80 +14,53 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.profile
 
-import static java.util.Objects.requireNonNull;
-
-import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothProfile;
-import android.content.ComponentName;
-import android.content.ContextWrapper;
-import android.content.pm.PackageManager;
-import android.os.IBinder;
-import android.util.Log;
-
-import com.android.bluetooth.Utils;
-
-import java.util.Optional;
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothProfile
+import android.content.ComponentName
+import android.content.ContextWrapper
+import android.content.pm.PackageManager
+import android.os.IBinder
+import android.util.Log
+import com.android.bluetooth.Utils
+import com.android.bluetooth.btservice.AdapterService
+import java.util.Optional
 
 /** Base class for a Bluetooth profile. */
-public abstract class ProfileService extends ContextWrapper {
+abstract class ProfileService(
+    /** The id of this Profile. see [BluetoothProfile] */
+    @JvmField val mProfileId: Int,
+    @JvmField protected val mAdapterService: AdapterService,
+) : ContextWrapper(mAdapterService) {
 
-    public interface IProfileServiceBinder extends IBinder {
-        void cleanup();
+    interface IProfileServiceBinder : IBinder {
+        fun cleanup()
     }
 
-    protected final int mProfileId;
-    protected final AdapterService mAdapterService;
-    protected final String mName;
-    private final Optional<IProfileServiceBinder> mBinder;
+    @JvmField protected val mName = javaClass.simpleName
+    val binder: Optional<IProfileServiceBinder>
+    @get:JvmName("isAvailable") @set:JvmName("setAvailable") var available = false
 
-    private boolean mAvailable = false;
-
-    protected ProfileService(int id, AdapterService adapterService) {
-        super(requireNonNull(adapterService));
-        mProfileId = id;
-        mAdapterService = adapterService;
-        mName = getClass().getSimpleName();
-        Log.d(mName, "Service created");
-        mBinder = Optional.ofNullable(initBinder());
+    init {
+        Log.d(mName, "Service created")
+        binder = Optional.ofNullable(initBinder())
     }
 
-    @Override
-    public String toString() {
-        return mName;
-    }
-
-    /** The id of this Profile. see {@link BluetoothProfile} */
-    public final int getProfileId() {
-        return mProfileId;
-    }
-
-    /** Return the binder of the profile */
-    public Optional<IProfileServiceBinder> getBinder() {
-        return mBinder;
-    }
-
-    public boolean isAvailable() {
-        return mAvailable;
-    }
-
-    public void setAvailable(boolean available) {
-        mAvailable = available;
-    }
+    override fun toString() = mName
 
     /**
      * Called in ProfileService constructor to init binder interface for this profile service.
      *
      * @return initialized binder interface for this profile service.
      */
-    protected abstract IProfileServiceBinder initBinder();
+    protected abstract fun initBinder(): IProfileServiceBinder?
 
     /** Called when this object is no longer needed and is being discarded. */
-    public abstract void cleanup();
+    abstract fun cleanup()
 
-    protected <T> T obtainSystemService(Class<T> serviceClass) {
-        return mAdapterService.getSystemService(serviceClass);
+    protected fun <T> obtainSystemService(serviceClass: Class<T>): T {
+        return mAdapterService.getSystemService(serviceClass)
     }
 
     /**
@@ -101,31 +74,25 @@ public abstract class ProfileService extends ContextWrapper {
      * @param className The class name of the owned component residing in the Bluetooth package
      * @param enable True to enable the component, False to disable it
      */
-    protected void setComponentAvailable(String className, boolean enable) {
-        Log.d(mName, "setComponentAvailable(className=" + className + ", enable=" + enable + ")");
-        if (className == null) {
-            return;
-        }
+    protected fun setComponentAvailable(className: String?, enable: Boolean) {
+        Log.d(mName, "setComponentAvailable(className=$className, enable=$enable)")
+        className ?: return
 
-        final var component = new ComponentName(getPackageName(), className);
+        val component = ComponentName(packageName, className)
         // Test should not set components available for the device
         if (Utils.isInstrumentationTestMode()) {
-            Log.w(mName, "Skip call to setComponentAvailable(" + component + ", " + enable + ")");
-            return;
+            Log.w(mName, "Skip call to setComponentAvailable($component, $enable)")
+            return
         }
 
-        Log.d(mName, "setComponentAvailable(" + component + ", " + enable + ")");
-        if (component == null) {
-            return;
-        }
+        Log.d(mName, "setComponentAvailable($component, $enable)")
 
-        getPackageManager()
-                .setComponentEnabledSetting(
-                        component,
-                        enable
-                                ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                                : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                        PackageManager.DONT_KILL_APP | PackageManager.SYNCHRONOUS);
+        packageManager.setComponentEnabledSetting(
+            component,
+            if (enable) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP or PackageManager.SYNCHRONOUS,
+        )
     }
 
     /**
@@ -135,17 +102,20 @@ public abstract class ProfileService extends ContextWrapper {
      */
     // Suppressed since this is called from framework
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    public void dump(StringBuilder sb) {
-        sb.append("\nProfile: ").append(mName).append("\n");
+    open fun dump(sb: StringBuilder) {
+        sb.append("\nProfile: ").append(mName).append("\n")
     }
 
-    /**
-     * Append an indented String for adding dumpsys support to subclasses.
-     *
-     * @param sb StringBuilder from the profile.
-     * @param s String to indent and append.
-     */
-    public static void println(StringBuilder sb, String s) {
-        sb.append("  ").append(s).append("\n");
+    companion object {
+        /**
+         * Append an indented String for adding dumpsys support to subclasses.
+         *
+         * @param sb StringBuilder from the profile.
+         * @param s String to indent and append.
+         */
+        @JvmStatic
+        fun println(sb: StringBuilder, s: String) {
+            sb.append("  ").append(s).append("\n")
+        }
     }
 }
