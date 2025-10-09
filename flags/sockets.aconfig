@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "unix_file_socket_creation_failure"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "New socket exception code for better logging and error handling"
-    bug: "318886332"
-}
-
-flag {
     name: "bt_socket_api_l2cap_cid"
     namespace: "bluetooth"
     description: "New socket API to get L2CAP channel ID"
@@ -33,14 +25,6 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "socket_settings_api"
-    namespace: "bluetooth"
-    description: "Adds new socket settings interface which allows creation of encryption only socket"
-    bug: "374358112"
-    is_exported: true
 }
 
 flag {

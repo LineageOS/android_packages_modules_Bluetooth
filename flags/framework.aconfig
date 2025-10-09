@@ -13,7 +13,6 @@ flag {
 
 flag {
     name: "fix_started_module_race"
-    is_exported: true
     namespace: "bluetooth"
     description: "Fix race in modifying and accessing started modules"
     bug: "394488590"

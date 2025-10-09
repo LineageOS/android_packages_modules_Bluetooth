@@ -44,7 +44,6 @@ aconfig("bluetooth_flags_c_lib") {
     "tbs.aconfig",
     "threading.aconfig",
     "vcp.aconfig",
-    "vsc.aconfig",
   ]
 
   # LINT.ThenChange(/flags/Android.bp)
