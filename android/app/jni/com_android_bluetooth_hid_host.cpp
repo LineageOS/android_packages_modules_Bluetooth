@@ -45,6 +45,7 @@ static jmethodID method_onGetIdleTime;
 
 static const bthh_interface_t* sBluetoothHidInterface = NULL;
 static jobject mCallbacksObj = NULL;
+static jfieldID sCallbacksField;
 static std::shared_timed_mutex mCallbacks_mutex;
 
 static jbyteArray marshall_bda(RawAddress* bd_addr) {
@@ -243,7 +244,10 @@ static void initializeNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for HID Host Callbacks");
+  }
 }
 
 static void cleanupNative(JNIEnv* env, jobject /* object */) {
@@ -540,6 +544,7 @@ static jboolean setIdleTimeNative(JNIEnv* env, jobject /* object */, jbyteArray 
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
+// JNI functions defined in HidHostNativeInterface
 int register_com_android_bluetooth_hid_host(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)initializeNative},
@@ -561,6 +566,10 @@ int register_com_android_bluetooth_hid_host(JNIEnv* env) {
     return result;
   }
 
+  sCallbacksField =
+          getNativeCallbackField(env, "com/android/bluetooth/hid/HidHostNativeInterface");
+
+  // Client callback functions defined in HidHostNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectStateChanged", "([BIIII)V", &method_onConnectStateChanged},
           {"onGetProtocolMode", "([BIII)V", &method_onGetProtocolMode},
@@ -569,7 +578,7 @@ int register_com_android_bluetooth_hid_host(JNIEnv* env) {
           {"onVirtualUnplug", "([BIII)V", &method_onVirtualUnplug},
           {"onGetIdleTime", "([BIII)V", &method_onGetIdleTime},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/hid/HidHostNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/hid/HidHostNativeCallback", javaMethods);
 
   return 0;
 }

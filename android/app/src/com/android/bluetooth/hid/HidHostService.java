@@ -132,8 +132,10 @@ public class HidHostService extends ConnectableProfile {
     @VisibleForTesting
     HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
         super(BluetoothProfile.HID_HOST, requireNonNull(adapterService));
+        var nativeCallback = new HidHostNativeCallback(this);
         mNativeInterface =
-                requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
+                requireNonNullElseGet(
+                        nativeInterface, () -> new HidHostNativeInterface(nativeCallback));
         mNativeInterface.init();
     }
 

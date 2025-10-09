@@ -16,28 +16,23 @@
 
 package com.android.bluetooth.hid;
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
+import static java.util.Objects.requireNonNull;
 
-import android.util.Log;
+import com.android.bluetooth.profile.NativeInterface;
 
 /** Provides Bluetooth Hid Host profile, as a service in the Bluetooth application. */
-public class HidHostNativeInterface {
-    private static final String TAG = HidHostNativeInterface.class.getSimpleName();
+public class HidHostNativeInterface extends NativeInterface<HidHostNativeCallback> {
 
-    private final HidHostService mHidHostService;
-
-    HidHostNativeInterface(HidHostService service) {
-        mHidHostService = service;
+    HidHostNativeInterface(HidHostNativeCallback nativeCallback) {
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 
@@ -88,70 +83,6 @@ public class HidHostNativeInterface {
     boolean getIdleTime(byte[] address, int addressType, int transport) {
         return getIdleTimeNative(address, addressType, transport);
     }
-
-    private static int convertHalState(int halState) {
-        return switch (halState) {
-            case CONN_STATE_CONNECTED -> STATE_CONNECTED;
-            case CONN_STATE_CONNECTING -> STATE_CONNECTING;
-            case CONN_STATE_DISCONNECTED -> STATE_DISCONNECTED;
-            case CONN_STATE_DISCONNECTING -> STATE_DISCONNECTING;
-            case CONN_STATE_ACCEPTING -> HidHostService.STATE_ACCEPTING;
-            default -> {
-                Log.e(TAG, "bad hid connection state: " + halState);
-                yield STATE_DISCONNECTED;
-            }
-        };
-    }
-
-    /**********************************************************************************************/
-    /*********************************** callbacks from native ************************************/
-    /**********************************************************************************************/
-
-    private void onConnectStateChanged(
-            byte[] address, int addressType, int transport, int state, int status) {
-        Log.d(TAG, "onConnectStateChanged: state=" + state);
-        mHidHostService.onConnectStateChanged(
-                address, addressType, transport, convertHalState(state), status);
-    }
-
-    private void onGetProtocolMode(byte[] address, int addressType, int transport, int mode) {
-        Log.d(TAG, "onGetProtocolMode()");
-        mHidHostService.onGetProtocolMode(address, addressType, transport, mode);
-    }
-
-    private void onGetReport(
-            byte[] address, int addressType, int transport, byte[] report, int rptSize) {
-        Log.d(TAG, "onGetReport()");
-        mHidHostService.onGetReport(address, addressType, transport, report, rptSize);
-    }
-
-    private void onHandshake(byte[] address, int addressType, int transport, int status) {
-        Log.d(TAG, "onHandshake: status=" + status);
-        mHidHostService.onHandshake(address, addressType, transport, status);
-    }
-
-    private void onVirtualUnplug(byte[] address, int addressType, int transport, int status) {
-        Log.d(TAG, "onVirtualUnplug: status=" + status);
-        mHidHostService.onVirtualUnplug(address, addressType, transport, status);
-    }
-
-    private void onGetIdleTime(byte[] address, int addressType, int transport, int idleTime) {
-        Log.d(TAG, "onGetIdleTime()");
-        mHidHostService.onGetIdleTime(address, addressType, transport, idleTime);
-    }
-
-    /**********************************************************************************************/
-    /******************************************* native *******************************************/
-    /**********************************************************************************************/
-
-    // Constants matching Hal header file bt_hh.h
-    // bthh_connection_state_t
-    private static final int CONN_STATE_CONNECTED = 0;
-
-    private static final int CONN_STATE_CONNECTING = 1;
-    private static final int CONN_STATE_DISCONNECTED = 2;
-    private static final int CONN_STATE_DISCONNECTING = 3;
-    private static final int CONN_STATE_ACCEPTING = 4;
 
     private native void initializeNative();
 
