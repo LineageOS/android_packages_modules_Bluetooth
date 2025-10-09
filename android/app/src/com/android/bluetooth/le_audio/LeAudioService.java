@@ -192,6 +192,7 @@ public class LeAudioService extends ConnectableProfile {
     BluetoothDevice mLeAudioDeviceInactivatedForHfpHandover = null;
 
     LeAudioTmapGattServer mTmapGattServer;
+    int mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
     int mBroadcastToUnicastFallbackGroup = LE_AUDIO_GROUP_ID_INVALID;
     int mCurrentAudioMode = AudioManager.MODE_NORMAL;
     boolean mCurrentRecordingMode = false;
@@ -1661,10 +1662,32 @@ public class LeAudioService extends ConnectableProfile {
                 || device.equals(mActiveAudioOutDevice);
     }
 
-    /** Return true if group is primary - is active or was active before switch to broadcast */
+    /**
+     * If leaudioFallbackGroupSelection flag is active, checks if the given group ID is considered
+     * the primary audio group. A group is considered primary if: 1. It is currently {@code active}.
+     * 2. It is currently in the process of becoming {@code active} (getting active). 3. It is
+     * designated as the fallback group for the Broadcast to Unicast transition.
+     *
+     * <p>if is not active then return true if group is primary - is active or was active before
+     * switch to broadcast.
+     *
+     * @param groupId The ID of the LE Audio group.
+     * @return {@code true} if the group is primary, {@code false} otherwise.
+     */
     public boolean isPrimaryGroup(int groupId) {
-        return groupId != IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID
-                && groupId == mBroadcastToUnicastFallbackGroup;
+        if (Flags.leaudioFallbackGroupSelection()) {
+            LeAudioGroupDescriptor descriptor = getGroupDescriptor(groupId);
+            if (descriptor == null) {
+                return false;
+            }
+
+            return descriptor.isActive()
+                    || descriptor.isGettingActive()
+                    || (groupId == mBroadcastToUnicastFallbackGroup);
+        } else {
+            return groupId != IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID
+                    && groupId == mBroadcastToUnicastFallbackGroup;
+        }
     }
 
     /** Get local broadcast receiving devices */
@@ -3035,8 +3058,8 @@ public class LeAudioService extends ConnectableProfile {
                     updateBroadcastActiveDevice(broadcastDevice, mActiveBroadcastAudioDevice, true);
                 }
 
-                /* After group de-activation a fallback broadcast to unicast device would be
-                 * potential ringtone streaming device.
+                /* After group de-activation a deactivated unicast device would be potential
+                 * ringtone streaming device.
                  */
                 updateInbandRingtoneForTheGroup(mBroadcastToUnicastFallbackGroup);
             }
@@ -3217,9 +3240,16 @@ public class LeAudioService extends ConnectableProfile {
      * active or ready to be activated.
      */
     boolean isFallbackUnicastGroupDuringBroadcast(int groupId) {
-        return (groupId != IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID)
-                && (groupId == mBroadcastToUnicastFallbackGroup)
-                && isBroadcastStarted();
+        if (Flags.leaudioFallbackGroupSelection()) {
+            return (groupId != IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID)
+                    && (groupId == mBroadcastToUnicastFallbackGroup
+                            || groupId == mUnicastGroupIdDeactivatedForBroadcastTransition)
+                    && isBroadcastStarted();
+        } else {
+            return (groupId != IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID)
+                    && (groupId == mBroadcastToUnicastFallbackGroup)
+                    && isBroadcastStarted();
+        }
     }
 
     void updateInbandRingtoneForTheGroup(int groupId) {
@@ -3323,7 +3353,20 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     void transitionFromBroadcastToUnicast() {
-        if (mBroadcastToUnicastFallbackGroup == LE_AUDIO_GROUP_ID_INVALID) {
+        int groupIdToActivate = mBroadcastToUnicastFallbackGroup;
+
+        if (Flags.leaudioFallbackGroupSelection()) {
+            /* If there were no set fallback group aprior, pick deactivated group as backup.
+             * This may happen if broadcast is not started properly e.g. create broadcast failed
+             */
+            if (groupIdToActivate == LE_AUDIO_GROUP_ID_INVALID) {
+                groupIdToActivate = mUnicastGroupIdDeactivatedForBroadcastTransition;
+            }
+
+            mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
+        }
+
+        if (groupIdToActivate == LE_AUDIO_GROUP_ID_INVALID) {
             Log.d(TAG, "No deactivated group due for broadcast transmission");
             // Notify audio manager
             if (!isAnyBroadcastInStreamingState()) {
@@ -3332,13 +3375,13 @@ public class LeAudioService extends ConnectableProfile {
             return;
         }
 
-        BluetoothDevice unicastDevice = getLeadDeviceForTheGroup(mBroadcastToUnicastFallbackGroup);
+        BluetoothDevice unicastDevice = getLeadDeviceForTheGroup(groupIdToActivate);
         if (unicastDevice == null) {
             /* All devices from group were disconnected in meantime */
             Log.w(
                     TAG,
                     "transitionFromBroadcastToUnicast: No valid unicast device for group ID: "
-                            + mBroadcastToUnicastFallbackGroup);
+                            + groupIdToActivate);
             updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
             return;
         }
@@ -3346,14 +3389,14 @@ public class LeAudioService extends ConnectableProfile {
         Log.d(
                 TAG,
                 "Transitioning to Unicast stream for group: "
-                        + mBroadcastToUnicastFallbackGroup
+                        + groupIdToActivate
                         + ", with device: "
                         + unicastDevice);
 
         /* After group activation a fallback broadcast to unicast device should be no longer
          * potential ringtone streaming device.
          */
-        updateInbandRingtoneForTheGroup(mBroadcastToUnicastFallbackGroup);
+        updateInbandRingtoneForTheGroup(groupIdToActivate);
         setActiveDevice(unicastDevice);
     }
 
@@ -3991,9 +4034,11 @@ public class LeAudioService extends ConnectableProfile {
                 /* Disconnect Broadcast device which was connected to avoid non LE Audio sound
                  * leak in handover scenario.
                  */
-                if ((mBroadcastToUnicastFallbackGroup != LE_AUDIO_GROUP_ID_INVALID)
-                        && mCreateBroadcastQueue.isEmpty()
-                        && (!Objects.equals(null, mActiveBroadcastAudioDevice))) {
+                if (mCreateBroadcastQueue.isEmpty()
+                        && mActiveBroadcastAudioDevice != null
+                        && (Flags.leaudioFallbackGroupSelection()
+                                || (mBroadcastToUnicastFallbackGroup
+                                        != LE_AUDIO_GROUP_ID_INVALID))) {
                     transitionFromBroadcastToUnicast();
                 }
 
@@ -4006,6 +4051,16 @@ public class LeAudioService extends ConnectableProfile {
 
             clearCreateBroadcastTimeoutCallback();
             mAwaitingBroadcastCreateResponse = false;
+
+            if (Flags.leaudioFallbackGroupSelection()) {
+                /* Tracking of the deactivated group is no longer needed once the broadcast
+                 * creation process has finished (regardless of success or failure),
+                 * as the tracking was a temporary fallback mechanism.
+                 */
+                int deactivatedGroupId = mUnicastGroupIdDeactivatedForBroadcastTransition;
+                mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
+                updateInbandRingtoneForTheGroup(deactivatedGroupId);
+            }
 
             // In case if there were additional calls to create broadcast
             if (!mCreateBroadcastQueue.isEmpty()) {
@@ -4181,7 +4236,15 @@ public class LeAudioService extends ConnectableProfile {
              */
             if (mAwaitingBroadcastCreateResponse && !areAllGroupsInNotActiveState()) {
                 /* Broadcast would be created once unicast group became inactive */
-                Log.i(TAG, "Unicast group is active, deactivate due to pending broadcast");
+                Log.i(
+                        TAG,
+                        "Unicast group is active, deactivate group: "
+                                + getActiveGroupId()
+                                + " due to pending broadcast");
+
+                if (Flags.leaudioFallbackGroupSelection()) {
+                    mUnicastGroupIdDeactivatedForBroadcastTransition = getActiveGroupId();
+                }
 
                 removeActiveDevice(true);
             }
@@ -5292,7 +5355,7 @@ public class LeAudioService extends ConnectableProfile {
      */
     private void updateFallbackUnicastGroupIdForBroadcast(int groupId) {
         if (mBroadcastToUnicastFallbackGroup == groupId) {
-            Log.d(TAG, "Skip updateFallbackUnicastGroupIdForBroadcast, already is primary");
+            Log.d(TAG, "Skip mBroadcastToUnicastFallbackGroup, already is primary");
             return;
         }
         Log.i(
@@ -5784,10 +5847,11 @@ public class LeAudioService extends ConnectableProfile {
                 /* Disconnect Broadcast device which was connected to avoid non LE Audio sound
                  * leak in handover scenario.
                  */
-                if ((mBroadcastToUnicastFallbackGroup != LE_AUDIO_GROUP_ID_INVALID)
-                        && mCreateBroadcastQueue.isEmpty()
-                        && (!Objects.equals(null, mActiveBroadcastAudioDevice))) {
-                    transitionFromBroadcastToUnicast();
+                if (Flags.leaudioFallbackGroupSelection()
+                        || (mBroadcastToUnicastFallbackGroup != LE_AUDIO_GROUP_ID_INVALID)) {
+                    if (mCreateBroadcastQueue.isEmpty() && (mActiveBroadcastAudioDevice != null)) {
+                        transitionFromBroadcastToUnicast();
+                    }
                 }
 
                 mHandler.post(() -> notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT));
@@ -5822,6 +5886,10 @@ public class LeAudioService extends ConnectableProfile {
         ProfileService.println(sb, "  mActiveAudioInDevice: " + mActiveAudioInDevice);
         ProfileService.println(
                 sb, "  mBroadcastToUnicastFallbackGroup: " + mBroadcastToUnicastFallbackGroup);
+        ProfileService.println(
+                sb,
+                "  mUnicastGroupIdDeactivatedForBroadcastTransition: "
+                        + mUnicastGroupIdDeactivatedForBroadcastTransition);
         ProfileService.println(
                 sb,
                 "  mBroadcastIdDeactivatedForUnicastTransition: "
