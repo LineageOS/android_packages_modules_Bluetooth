@@ -145,3 +145,13 @@ flag {
     description: "Support LE CoC with fixed PSM"
     bug: "443347109"
 }
+
+flag {
+    name: "pseudo_addr_in_socket_connect_signal"
+    namespace: "bluetooth"
+    description: "use pseudo address instead of identity address when sending socket signal"
+    bug: "450667775"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
