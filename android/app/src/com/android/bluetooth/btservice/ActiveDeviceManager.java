@@ -226,20 +226,13 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
         if (leAudioSupported) {
             if (Flags.admCentralizeActiveDeviceHandling()) {
-                if ((mAdapterService.isDualModeAudioSinkDevice(device) && (setHeadset || setA2dp))
-                        || device == null) {
-                    Log.i(
-                            TAG,
-                            "setActiveDevice: Removing active Le Audio device: "
-                                    + (device == null
-                                            ? "remove requested"
-                                            : "classic profile requested for dual mode device"));
+                Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
+                if (device == null) {
                     /* If called by BluetoothAdapter it means Audio should not be stopped.
                      * For this reason let's say that fallback device exists
                      */
                     leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
                 } else {
-                    Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
                     if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
                         // TODO:  b/312396770
                         a2dp.get().removeActiveDevice(false);
