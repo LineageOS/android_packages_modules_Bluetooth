@@ -170,15 +170,12 @@ public final class BluetoothSinkAudioPolicy implements Parcelable {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("BluetoothSinkAudioPolicy{");
-        builder.append("mCallEstablishPolicy: ");
-        builder.append(mCallEstablishPolicy);
-        builder.append(", mConnectingTimePolicy: ");
-        builder.append(mConnectingTimePolicy);
-        builder.append(", mInBandRingtonePolicy: ");
-        builder.append(mInBandRingtonePolicy);
-        builder.append("}");
-        return builder.toString();
+        return (getClass().getSimpleName()
+                        + "@"
+                        + Integer.toHexString(System.identityHashCode(this)))
+                + (" {mCallEstablishPolicy= " + mCallEstablishPolicy)
+                + (", mConnectingTimePolicy=" + mConnectingTimePolicy)
+                + (", mInBandRingtonePolicy=" + mInBandRingtonePolicy + "}");
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
