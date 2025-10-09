@@ -60,6 +60,7 @@ import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceProfile;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceUse;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothFrameworkInitializer;
@@ -96,6 +97,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
+import android.net.MacAddress;
 import android.os.AsyncTask;
 import android.os.BatteryStatsManager;
 import android.os.Binder;
@@ -235,7 +237,7 @@ public class AdapterService extends Service {
     private final List<ProfileService> mRegisteredProfiles = new ArrayList<>();
     private final List<ProfileService> mRunningProfiles = new ArrayList<>();
 
-    private final List<DiscoveringPackage> mDiscoveringPackages = new ArrayList<>();
+    private final Map<String, DiscoveringPackageInfo> mDiscoveringPackages = new HashMap<>();
 
     private final Map<BluetoothDevice, RemoteCallbackList<IBluetoothMetadataListener>>
             mMetadataListeners = new HashMap<>();
@@ -291,6 +293,12 @@ public class AdapterService extends Service {
     private final SdpManagerNativeInterface mSdpManagerNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
+
+    /**
+     * Predicate that tests if the given {@link BluetoothDevice} is well-known to be used for
+     * physical location.
+     */
+    private final Predicate<BluetoothDevice> mLocationDenylistPredicate;
 
     private boolean mIsMediaProfileConnected;
 
@@ -468,6 +476,20 @@ public class AdapterService extends Service {
         mSdpManagerNativeInterface = sdpManagerNativeInterface;
         mSilenceDeviceManager = new SilenceDeviceManager(this, mLooper);
         mDatabaseManager = new DatabaseManager(this);
+        mLocationDenylistPredicate =
+                (device) -> {
+                    final MacAddress parsedAddress = MacAddress.fromString(device.getAddress());
+                    if (getLocationDenylistMac().test(parsedAddress.toByteArray())) {
+                        Log.v(TAG, "Skipping device matching denylist: " + device);
+                        return true;
+                    }
+                    final String name = getRemoteName(device);
+                    if (getLocationDenylistName().test(name)) {
+                        Log.v(TAG, "Skipping name matching denylist: " + name);
+                        return true;
+                    }
+                    return false;
+                };
     }
 
     <T> T syncPost(Supplier<T> supplier, T defaultValue) {
@@ -1069,6 +1091,16 @@ public class AdapterService extends Service {
     void clearDiscoveringPackages() {
         synchronized (mDiscoveringPackages) {
             mDiscoveringPackages.clear();
+        }
+    }
+
+    boolean isDiscovering() {
+        if (!Flags.ignoreRedundantDiscoveryIfSameState()) {
+            return mAdapterProperties.isDiscovering();
+        }
+
+        synchronized (mDiscoveringPackages) {
+            return !mDiscoveringPackages.isEmpty();
         }
     }
 
@@ -2627,10 +2659,6 @@ public class AdapterService extends Service {
         return mAdapterProperties.getName().length();
     }
 
-    List<DiscoveringPackage> getDiscoveringPackages() {
-        return mDiscoveringPackages;
-    }
-
     boolean startDiscovery(AttributionSource source) {
         UserHandle callingUser = Binder.getCallingUserHandle();
         Log.d(TAG, "startDiscovery");
@@ -2640,6 +2668,9 @@ public class AdapterService extends Service {
         boolean hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(this, source, mTestModeEnabled);
         String permission = null;
+        if (getState() != BluetoothAdapter.STATE_ON) {
+            return false;
+        }
         if (Utils.checkCallerHasNetworkSettingsPermission(this)) {
             permission = android.Manifest.permission.NETWORK_SETTINGS;
         } else if (Utils.checkCallerHasNetworkSetupWizardPermission(this)) {
@@ -2659,10 +2690,44 @@ public class AdapterService extends Service {
         }
 
         synchronized (mDiscoveringPackages) {
-            mDiscoveringPackages.add(
-                    new DiscoveringPackage(callingPackage, permission, hasDisavowedLocation));
+            boolean discovering = !mDiscoveringPackages.isEmpty();
+            mDiscoveringPackages.put(
+                    callingPackage, new DiscoveringPackageInfo(permission, hasDisavowedLocation));
+
+            if (Flags.ignoreRedundantDiscoveryIfSameState() && discovering) {
+                return true;
+            }
         }
+
         return mNativeInterface.startDiscovery();
+    }
+
+    public boolean cancelDiscovery(AttributionSource source) {
+        String callingPackage = source.getPackageName();
+        if (getState() != BluetoothAdapter.STATE_ON) {
+            return false;
+        }
+
+        if (Flags.ignoreRedundantDiscoveryIfSameState()) {
+            synchronized (mDiscoveringPackages) {
+                // If there are no discovering packages, we can't cancel discovery.
+                if (mDiscoveringPackages.isEmpty()) {
+                    return false;
+                }
+
+                // Remove the package from the list of discovering packages, if it was there.
+                if (mDiscoveringPackages.remove(callingPackage) == null) {
+                    return false;
+                }
+
+                // If there are still discovering packages, we can't cancel discovery.
+                if (!mDiscoveringPackages.isEmpty()) {
+                    return true;
+                }
+            }
+        }
+
+        return mNativeInterface.cancelDiscovery();
     }
 
     /**
@@ -4973,5 +5038,76 @@ public class AdapterService extends Service {
         return new GattOffloadCapabilities.InnerParcel(
                 mAdapterProperties.getSupportedOffloadedGattClientProperties(),
                 mAdapterProperties.getSupportedOffloadedGattServerProperties());
+    }
+
+    /**
+     * Populate the (ACTION_FOUND) intent with the discovering packages and send the broadcast.
+     *
+     * @param deviceProp the device properties
+     */
+    public void discoveryResultHandler(DeviceProperties deviceProp) {
+        if (deviceProp == null) {
+            Log.e(TAG, "discoveryResultHandler: Invalid arguments");
+            return;
+        }
+
+        if (mDiscoveringPackages == null || mDiscoveringPackages.isEmpty()) {
+            Log.e(
+                    TAG,
+                    "discoveryResultHandler: deviceFoundCallback was triggered, but no discovering"
+                        + " packages found!");
+            return;
+        }
+
+        BluetoothDevice device = deviceProp.getDevice();
+        Intent intent = new Intent(BluetoothDevice.ACTION_FOUND);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.putExtra(
+                BluetoothDevice.EXTRA_CLASS, new BluetoothClass(deviceProp.getBluetoothClass()));
+        intent.putExtra(BluetoothDevice.EXTRA_RSSI, deviceProp.getRssi());
+        intent.putExtra(BluetoothDevice.EXTRA_NAME, deviceProp.getName());
+        intent.putExtra(
+                BluetoothDevice.EXTRA_IS_COORDINATED_SET_MEMBER,
+                deviceProp.isCoordinatedSetMember());
+
+        int discoveryResultType = deviceProp.getDiscoveryResultType();
+        if (Flags.getSvcUuidsFromBleAdvData()
+                && discoveryResultType != BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+            intent.putExtra(BluetoothDevice.EXTRA_DISCOVERY_RESULT_TYPE, discoveryResultType);
+
+            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_CLASSIC) != 0) {
+                ParcelUuid[] uuids = deviceProp.getUuidsFromExtendedInquiryResponse();
+                intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
+            }
+
+            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_LE) != 0) {
+                ParcelUuid[] uuids = deviceProp.getUuidsFromLeAdvertisingData();
+                intent.putExtra(BluetoothDevice.EXTRA_UUID_LE, uuids);
+            }
+        }
+
+        // Populate the intent with the discovering packages and send the broadcast.
+        synchronized (mDiscoveringPackages) {
+            for (Map.Entry<String, DiscoveringPackageInfo> pkgEntry :
+                    mDiscoveringPackages.entrySet()) {
+                String pkgName = pkgEntry.getKey();
+                DiscoveringPackageInfo pkgInfo = pkgEntry.getValue();
+                if (pkgInfo.hasDisavowedLocation()) {
+                    if (mLocationDenylistPredicate.test(device)) {
+                        continue;
+                    }
+                }
+
+                intent.setPackage(pkgName);
+                if (pkgInfo.permission() != null) {
+                    sendBroadcastMultiplePermissions(
+                            intent,
+                            new String[] {BLUETOOTH_SCAN, pkgInfo.permission()},
+                            Utils.getTempBroadcastOptions());
+                } else {
+                    sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+                }
+            }
+        }
     }
 }

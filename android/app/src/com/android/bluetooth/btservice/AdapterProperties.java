@@ -110,6 +110,7 @@ class AdapterProperties {
     private final RemoteDevices mRemoteDevices;
     private final Handler mHandler;
 
+    // TODO(b/447313374): Remove when ignore_redundant_disovery_if_same_state is shipped.
     private boolean mDiscovering;
     private long mDiscoveryEndMs; // < Time (ms since epoch) that discovery ended or will end.
     // TODO - all hw capabilities to be exposed as a class
@@ -508,6 +509,7 @@ class AdapterProperties {
         return mDiscoveryEndMs;
     }
 
+    // TODO(b/447313374): Remove when ignore_redundant_disovery_if_same_state is shipped.
     boolean isDiscovering() {
         return mDiscovering;
     }
@@ -954,14 +956,18 @@ class AdapterProperties {
         synchronized (mObject) {
             Intent intent;
             if (state == AbstractionLayer.BT_DISCOVERY_STOPPED) {
-                mDiscovering = false;
+                if (!Flags.ignoreRedundantDiscoveryIfSameState()) {
+                    mDiscovering = false;
+                }
                 mService.clearDiscoveringPackages();
                 mDiscoveryEndMs = System.currentTimeMillis();
                 intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
                 mService.sendBroadcast(
                         intent, BLUETOOTH_SCAN, getBroadcastOptionsForDiscoveryFinished());
             } else if (state == AbstractionLayer.BT_DISCOVERY_STARTED) {
-                mDiscovering = true;
+                if (!Flags.ignoreRedundantDiscoveryIfSameState()) {
+                    mDiscovering = true;
+                }
                 mDiscoveryEndMs = System.currentTimeMillis() + DEFAULT_DISCOVERY_TIMEOUT_MS;
                 intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 mService.sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
@@ -987,7 +993,7 @@ class AdapterProperties {
         writer.println("  " + "State: " + BluetoothAdapter.nameForState(getState()));
         writer.println("  " + "MaxConnectedAudioDevices: " + getMaxConnectedAudioDevices());
         writer.println("  " + "A2dpOffloadEnabled: " + mA2dpOffloadEnabled);
-        writer.println("  " + "Discovering: " + mDiscovering);
+        writer.println("  " + "Discovering: " + mService.isDiscovering());
         writer.println("  " + "DiscoveryEndMs: " + mDiscoveryEndMs);
 
         if (Flags.doNotDumpDevicesFromAdapterProperties()) {
