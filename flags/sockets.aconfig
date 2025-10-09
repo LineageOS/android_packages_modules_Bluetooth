@@ -58,16 +58,6 @@ flag {
 }
 
 flag {
-    name: "disconnect_acls_by_bredr_disabled"
-    namespace: "bluetooth"
-    description: "Fix ACL Link still connected even BREDR is disabled"
-    bug: "391263869"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_lecoc_socket_available"
     namespace: "bluetooth"
     description: "Fix Bluetooth Socket available API for LECOC socket"
