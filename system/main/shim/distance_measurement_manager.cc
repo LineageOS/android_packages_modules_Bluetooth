@@ -33,6 +33,7 @@ using bluetooth::hci::DistanceMeasurementSightType;
 using namespace bluetooth;
 
 extern tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
+extern bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 class DistanceMeasurementInterfaceImpl : public DistanceMeasurementInterface,
                                          public bluetooth::hci::DistanceMeasurementCallbacks,
@@ -75,16 +76,34 @@ public:
                                 uint8_t method, uint8_t sight_type, uint8_t location_type) {
     do_in_main_thread(base::BindOnce(&DistanceMeasurementInterfaceImpl::DoStartDistanceMeasurement,
                                      base::Unretained(this), app_uid, identity_addr, interval,
-                                     method, sight_type, location_type));
+                                     method, sight_type, location_type, 0));
   }
 
   void DoStartDistanceMeasurement(int32_t app_uid, RawAddress identity_addr, uint16_t interval,
-                                  uint8_t method, uint8_t sight_type, uint8_t location_type) {
+                                  uint8_t method, uint8_t sight_type, uint8_t location_type,
+                                  int retries = 0) {
     auto distance_measurement_method = static_cast<DistanceMeasurementMethod>(method);
     auto distance_measurement_sight_type = static_cast<DistanceMeasurementSightType>(sight_type);
     auto distance_measurement_location_type =
             static_cast<DistanceMeasurementLocationType>(location_type);
     hci::Role local_hci_role;
+    if (!BTM_IsEncrypted(identity_addr, BT_TRANSPORT_LE) &&
+        distance_measurement_method == DistanceMeasurementMethod::METHOD_CS) {
+      if (retries < kMaxRetryCount) {
+        log::info("Connection is not encrypted, retrying in {} ms", kRetryIntervalMs);
+        do_in_main_thread_delayed(
+                base::BindOnce(&DistanceMeasurementInterfaceImpl::DoStartDistanceMeasurement,
+                               base::Unretained(this), app_uid, identity_addr, interval, method,
+                               sight_type, location_type, retries + 1),
+                std::chrono::milliseconds(kRetryIntervalMs));
+        return;
+      }
+      log::error("Connection not encrypted after retries, failing distance measurement");
+      OnDistanceMeasurementStopped(identity_addr,
+                                   DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                   static_cast<DistanceMeasurementMethod>(method));
+      return;
+    }
     uint16_t connection_handle = GetConnectionHandleAndRole(identity_addr, &local_hci_role);
     bluetooth::shim::GetDistanceMeasurementManager()->StartDistanceMeasurement(
             app_uid, identity_addr, connection_handle, local_hci_role, interval,
@@ -291,6 +310,8 @@ public:
 private:
   ::DistanceMeasurementCallbacks* distance_measurement_callbacks_;
   static constexpr uint16_t kIllegalConnectionHandle = 0xffff;
+  static constexpr uint16_t kRetryIntervalMs = 200;
+  static constexpr uint16_t kMaxRetryCount = 10;
 };
 
 void bluetooth::shim::init_distance_measurement_manager() {
