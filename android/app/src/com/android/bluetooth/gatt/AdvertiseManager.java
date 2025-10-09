@@ -57,7 +57,6 @@ public class AdvertiseManager {
 
     private final AdapterService mAdapterService;
     private final GattService mGattService;
-    private final AdvertiseManagerNativeCallback mNativeCallback;
     private final AdvertiseManagerNativeInterface mNativeInterface;
     private final AdvertiseBinder mAdvertiseBinder;
     private final AdvertiserMap mAdvertiserMap;
@@ -73,33 +72,23 @@ public class AdvertiseManager {
             GattService gattService,
             AdvertiseManagerNativeInterface nativeInterface,
             Looper advertiseLooper) {
-        this(
-                adapterService,
-                gattService,
-                null,
-                nativeInterface,
-                advertiseLooper,
-                new AdvertiserMap());
+        this(adapterService, gattService, nativeInterface, advertiseLooper, new AdvertiserMap());
     }
 
     @VisibleForTesting
     AdvertiseManager(
             AdapterService adapterService,
             GattService gattService,
-            AdvertiseManagerNativeCallback nativeCallback,
             AdvertiseManagerNativeInterface nativeInterface,
             Looper advertiseLooper,
             AdvertiserMap advertiserMap) {
         Log.d(TAG, "advertise manager created");
         mAdapterService = adapterService;
         mGattService = gattService;
-        mNativeCallback =
-                requireNonNullElseGet(
-                        nativeCallback, () -> new AdvertiseManagerNativeCallback(this));
+        var nativeCallback = new AdvertiseManagerNativeCallback(this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface,
-                        () -> new AdvertiseManagerNativeInterface(mNativeCallback));
+                        nativeInterface, () -> new AdvertiseManagerNativeInterface(nativeCallback));
         mAdvertiserMap = advertiserMap;
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mNativeInterface.init();
