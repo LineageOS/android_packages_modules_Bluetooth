@@ -30,10 +30,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudioCodecConfig;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -42,7 +40,6 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -197,7 +194,6 @@ public class DatabaseManager {
                 Log.d(TAG, "setCustomMeta: metadata not changed.");
                 return true;
             }
-            logManufacturerInfo(device, key, newValue);
             logMetadataChange(data, "setCustomMeta key=" + key);
             data.setCustomizedMeta(key, newValue);
 
@@ -1190,43 +1186,6 @@ public class DatabaseManager {
         mHandler.obtainMessage(MSG_DELETE_DATABASE, data.getAddress()).sendToTarget();
     }
 
-    private void logManufacturerInfo(BluetoothDevice device, int key, byte[] bytesValue) {
-        String callingApp =
-                mAdapterService.getPackageManager().getNameForUid(Binder.getCallingUid());
-        String manufacturerName = "";
-        String modelName = "";
-        String hardwareVersion = "";
-        String softwareVersion = "";
-        switch (key) {
-            case BluetoothDevice.METADATA_MANUFACTURER_NAME ->
-                    manufacturerName = Utils.byteArrayToUtf8String(bytesValue);
-            case BluetoothDevice.METADATA_MODEL_NAME ->
-                    modelName = Utils.byteArrayToUtf8String(bytesValue);
-            case BluetoothDevice.METADATA_HARDWARE_VERSION ->
-                    hardwareVersion = Utils.byteArrayToUtf8String(bytesValue);
-            case BluetoothDevice.METADATA_SOFTWARE_VERSION ->
-                    softwareVersion = Utils.byteArrayToUtf8String(bytesValue);
-            default -> {
-                // Do not log anything if metadata doesn't fall into above categories
-                return;
-            }
-        }
-        String[] macAddress = device.getAddress().split(":");
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.BLUETOOTH_DEVICE_INFO_REPORTED,
-                mAdapterService.obfuscateAddress(device),
-                BluetoothProtoEnums.DEVICE_INFO_EXTERNAL,
-                callingApp,
-                manufacturerName,
-                modelName,
-                hardwareVersion,
-                softwareVersion,
-                mAdapterService.getMetricId(device),
-                device.getAddressType(),
-                Integer.parseInt(macAddress[0], 16),
-                Integer.parseInt(macAddress[1], 16),
-                Integer.parseInt(macAddress[2], 16));
-    }
 
     private void logMetadataChange(Metadata data, String log) {
         String uidPid = Utils.getUidPidString();
