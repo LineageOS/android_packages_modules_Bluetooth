@@ -93,7 +93,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
         doReturn(returnValue).whenever(mockApi).enableNoAutoConnect(any())
         doReturn(returnValue).whenever(mockApi).disable(any(), any())
         doReturn(returnValue).whenever(mockApi).disableBle(any(), any())
-        doReturn(returnValue).whenever(mockApi).factoryReset(any())
+        doReturn(returnValue).whenever(mockApi).factoryReset()
         doReturn(returnValue).whenever(mockBinder).enable(any())
         doReturn(returnValue).whenever(mockBinder).disable(any(), any())
         doReturn(returnValue).whenever(mockBinder).enableBle(any(), any())
@@ -178,7 +178,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
 
         assertThat(shellCommand.onCommand("factoryReset")).isEqualTo(if (returnValue) 0 else -1)
         if (Flags.systemServerMessenger()) {
-            verify(mockApi).factoryReset(any())
+            verify(mockApi).factoryReset()
         } else {
             verify(mockBinder).factoryReset(any())
         }

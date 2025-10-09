@@ -82,13 +82,13 @@ internal class ServiceMessenger(
                         try {
                             checker.enableAllowed(source, foregroundRequired)
                             if (bleToken != null) {
-                                api.enableBle(source.packageName, bleToken)
+                                api.enableBle(source.packageName!!, bleToken)
                             } else if (isQuiet) {
-                                api.enableNoAutoConnect(source.packageName)
+                                api.enableNoAutoConnect(source.packageName!!)
                             } else {
                                 api.enable(
                                     ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                                    source.packageName,
+                                    source.packageName!!,
                                 )
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
@@ -107,9 +107,9 @@ internal class ServiceMessenger(
                         try {
                             checker.disableAllowed(source, foregroundRequired)
                             if (bleToken != null) {
-                                api.disableBle(source.packageName, bleToken)
+                                api.disableBle(source.packageName!!, bleToken)
                             } else {
-                                api.disable(source.packageName, persist)
+                                api.disable(source.packageName!!, persist)
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
@@ -125,7 +125,7 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.factoryResetAllowed(source)
-                            api.factoryReset(0)
+                            api.factoryReset()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
                             false
