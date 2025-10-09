@@ -1546,7 +1546,10 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         if (stateFields.containsKey(PlayerStateField.PLAYER_NAME)) {
             String name = (String) stateFields.get(PlayerStateField.PLAYER_NAME);
-            if ((getPlayerNameChar() != null) && (name.compareTo(getPlayerNameChar()) != 0)) {
+            String playerNameChar = getPlayerNameChar();
+            if ((name != null)
+                    && (playerNameChar != null)
+                    && (name.compareTo(playerNameChar) != 0)) {
                 updatePlayerNameChar(name, doNotifyValueChange);
 
                 // Most likely the player has changed - request critical info fields
@@ -1590,11 +1593,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         boolean notifyTrackChange = false;
         if (stateFields.containsKey(PlayerStateField.TRACK_TITLE)) {
             String newTitle = (String) stateFields.get(PlayerStateField.TRACK_TITLE);
-
+            if (newTitle == null) {
+                newTitle = "";
+            }
             if (getTrackTitleChar().compareTo(newTitle) != 0) {
-                updateTrackTitleChar(
-                        (String) stateFields.get(PlayerStateField.TRACK_TITLE),
-                        doNotifyValueChange);
+                updateTrackTitleChar(newTitle, doNotifyValueChange);
                 notifyTrackChange = true;
             }
         }
