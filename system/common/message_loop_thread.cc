@@ -39,6 +39,7 @@
 namespace bluetooth {
 namespace common {
 
+tBlockedThreads MessageLoopThread::blocked_threads_;
 static constexpr int kRealTimeFifoSchedulingPriority = 1;
 
 static base::TimeDelta timeDeltaFromMicroseconds(std::chrono::microseconds t) {
@@ -214,7 +215,7 @@ base::PlatformThreadId MessageLoopThread::GetThreadId() const {
 
 bool MessageLoopThread::IsRunningOnSameThread() const {
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
-    return handler_thread_->IsSameThread();
+    return handler_thread_ != nullptr && handler_thread_->IsSameThread();
   }
 
   return thread_id_ == base::PlatformThread::CurrentId();
@@ -341,6 +342,14 @@ PostableContext* MessageLoopThread::Postable() {
   }
 
   return this;
+}
+
+pid_t MessageLoopThread::GetLinuxThreadId(MessageLoopThread* context) {
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    return context == nullptr ? static_cast<pid_t>(syscall(SYS_gettid))
+                              : context->handler_thread_->GetLinuxTid();
+  }
+  return context == nullptr ? static_cast<pid_t>(syscall(SYS_gettid)) : context->GetLinuxTid();
 }
 
 }  // namespace common
