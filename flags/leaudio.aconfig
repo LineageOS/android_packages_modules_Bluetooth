@@ -414,3 +414,10 @@ flag {
     description: "LE Audio Broadcast Sink Feature"
     bug: "452247122"
 }
+
+flag {
+    name: "core_ipu_support"
+    namespace: "bluetooth"
+    description: "Update CIG/CIS parameter without destroying the group"
+    bug: "450606834"
+}
