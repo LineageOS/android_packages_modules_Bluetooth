@@ -78,9 +78,11 @@ class ScanBinderTest {
     @Test
     fun registerScanner() {
         val callback = mock(IScannerCallback::class.java)
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
         val workSource = mock(WorkSource::class.java)
 
-        binder.registerScanner(callback, workSource, attributionSource)
+        binder.registerScanner(callback, settings, filters, workSource, attributionSource)
         verify(scanController).registerScanner(callback, workSource, attributionSource)
     }
 
