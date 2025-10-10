@@ -63,6 +63,10 @@
 
 /* Attribute Profile Attribute UUID */
 #define GATT_UUID_GATT_SRV_CHGD 0x2A05
+
+/*Client char configuration UUID for descriptor*/
+#define GATT_UUID_CLIENT_CHAR_CONFIGURATION 0x2902
+
 /* Attribute Protocol Test */
 
 /* Link Loss Service */
