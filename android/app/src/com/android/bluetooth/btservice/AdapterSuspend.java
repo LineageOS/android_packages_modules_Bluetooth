@@ -188,7 +188,8 @@ public class AdapterSuspend {
                     if (Flags.stopLeScanSystemSuspend()) {
                         final var scanController = mAdapterService.getBluetoothScanController();
                         if (scanController != null) {
-                            scanController.onDisplayChanged(screenOn);
+                            scanController.doOnScanThread(
+                                    () -> scanController.onDisplayChanged(screenOn));
                         }
                     }
                     if (interactive != screenOn) {
@@ -272,7 +273,8 @@ public class AdapterSuspend {
         if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
             final var scanController = mAdapterService.getBluetoothScanController();
             if (scanController != null) {
-                scanController.onSystemSuspendChanged(true /* suspend */);
+                scanController.doOnScanThread(
+                        () -> scanController.onSystemSuspendChanged(true /* suspend */));
             }
         }
 
@@ -335,7 +337,8 @@ public class AdapterSuspend {
         if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
             final var scanController = mAdapterService.getBluetoothScanController();
             if (scanController != null) {
-                scanController.onSystemSuspendChanged(false /* suspend */);
+                scanController.doOnScanThread(
+                        () -> scanController.onSystemSuspendChanged(false /* suspend */));
             }
         }
 

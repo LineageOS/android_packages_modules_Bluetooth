@@ -50,13 +50,7 @@ internal class ScanSuspendManager(
 
     fun onSystemSuspendChanged(suspended: Boolean) {
         if (Flags.scanControllerThread()) {
-            scanController.doOnScanThread(
-                if (suspended) {
-                    this::handleSystemSuspend
-                } else {
-                    this::handleSystemResume
-                }
-            )
+            if (suspended) handleSystemSuspend() else handleSystemResume()
         } else {
             sendMessage(if (suspended) MSG_SYSTEM_SUSPEND else MSG_SYSTEM_RESUME)
         }

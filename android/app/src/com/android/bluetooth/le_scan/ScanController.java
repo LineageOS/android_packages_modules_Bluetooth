@@ -283,13 +283,15 @@ public class ScanController {
 
     /** onDisplayChanged notifies ScanManager when the screen status changes. */
     public void onDisplayChanged(boolean screenOn) {
-        Log.d(TAG, "onDisplayChanged() screen on: " + screenOn);
+        enforceScanThread();
+        Log.d(TAG, "onDisplayChanged(): Screen on=" + screenOn);
         mScanManager.onDisplayChanged(screenOn);
     }
 
     /** onSystemSuspendChanged notifies ScanSuspendManager when the system suspends and resumes. */
     public void onSystemSuspendChanged(boolean suspended) {
-        Log.d(TAG, "onSystemSuspendChanged() suspended: " + suspended);
+        enforceScanThread();
+        Log.d(TAG, "onSystemSuspendChanged(): Suspended=" + suspended);
         mScanSuspendManager.onSystemSuspendChanged(suspended);
     }
 

@@ -2198,10 +2198,8 @@ class ScanManager {
 
     void onDisplayChanged(boolean screenOn) {
         if (Flags.scanControllerThread()) {
-            mScanController.doOnScanThread(
-                    screenOn
-                            ? ScanManager.this::handleScreenOn
-                            : ScanManager.this::handleScreenOff);
+            if (screenOn) handleScreenOn();
+            else handleScreenOff();
         } else {
             sendMessage(screenOn ? MSG_SCREEN_ON : MSG_SCREEN_OFF, null);
         }
