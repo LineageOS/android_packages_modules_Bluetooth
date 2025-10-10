@@ -16,34 +16,38 @@
 
 #pragma once
 
-#include <openssl/rand.h>
-#include <stddef.h>
-
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace bluetooth {
 namespace os {
 
+class RandomDataGenerator {
+public:
+  virtual ~RandomDataGenerator() = default;
+  virtual void GenerateBytes(uint8_t* data, size_t size) = 0;
+};
+
+void SetRandomDataGeneratorForTesting(RandomDataGenerator* generator);
+RandomDataGenerator* GetRandomDataGenerator();
+
 template <size_t SIZE>
 std::array<uint8_t, SIZE> GenerateRandom() {
   std::array<uint8_t, SIZE> ret;
-  log::assert_that(RAND_bytes(ret.data(), ret.size()) == 1,
-                   "assert failed: RAND_bytes(ret.data(), ret.size()) == 1");
+  GetRandomDataGenerator()->GenerateBytes(ret.data(), ret.size());
   return ret;
 }
 
 inline uint32_t GenerateRandom() {
   uint32_t ret{};
-  log::assert_that(RAND_bytes((uint8_t*)(&ret), sizeof(uint32_t)) == 1,
-                   "assert failed: RAND_bytes((uint8_t*)(&ret), sizeof(uint32_t)) == 1");
+  GetRandomDataGenerator()->GenerateBytes(reinterpret_cast<uint8_t*>(&ret), sizeof(uint32_t));
   return ret;
 }
 
 inline uint64_t GenerateRandomUint64() {
   uint64_t ret{};
-  log::assert_that(RAND_bytes((uint8_t*)(&ret), sizeof(uint64_t)) == 1,
-                   "assert failed: RAND_bytes((uint8_t*)(&ret), sizeof(uint64_t)) == 1");
+  GetRandomDataGenerator()->GenerateBytes(reinterpret_cast<uint8_t*>(&ret), sizeof(uint64_t));
   return ret;
 }
 
