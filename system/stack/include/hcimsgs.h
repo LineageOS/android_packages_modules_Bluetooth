@@ -315,11 +315,11 @@ struct EXT_CIS_CFG {
   uint8_t rtn_stom;
 };
 
-void btsnd_hcic_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
-                               uint8_t sca, uint8_t packing, uint8_t framing,
-                               uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
-                               uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
-                               base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
+                                   uint8_t sca, uint8_t packing, uint8_t framing,
+                                   uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
+                                   uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
+                                   base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 struct EXT_CIS_TEST_CFG {
   uint8_t cis_id;
@@ -339,31 +339,31 @@ struct EXT_CIS_CREATE_CFG {
   uint16_t acl_conn_handle;
 };
 
-void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_create_cfg,
-                           base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+void btsnd_hcic_ble_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_create_cfg,
+                               base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hcic_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+void btsnd_hcic_ble_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hcic_req_peer_sca(uint16_t conn_handle);
+void btsnd_hcic_ble_req_peer_sca(uint16_t conn_handle);
 
-void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
-                           uint32_t sdu_itv, uint16_t max_sdu_size, uint16_t max_trans_lat,
-                           uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing, uint8_t enc,
-                           std::array<uint8_t, 16> bcst_code);
+void btsnd_hcic_ble_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+                               uint32_t sdu_itv, uint16_t max_sdu_size, uint16_t max_trans_lat,
+                               uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
+                               uint8_t enc, std::array<uint8_t, 16> bcst_code);
 
-void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason);
+void btsnd_hcic_ble_term_big(uint8_t big_handle, uint8_t reason);
 
-void btsnd_hcic_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
-                                    uint8_t data_path_id, uint8_t codec_id_format,
-                                    uint16_t codec_id_company, uint16_t codec_id_vendor,
-                                    uint32_t controller_delay, std::vector<uint8_t> codec_conf,
-                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
+                                        uint8_t data_path_id, uint8_t codec_id_format,
+                                        uint16_t codec_id_company, uint16_t codec_id_vendor,
+                                        uint32_t controller_delay, std::vector<uint8_t> codec_conf,
+                                        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hcic_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
-                                     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+void btsnd_hcic_ble_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
+                                         base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hcic_read_iso_link_quality(uint16_t iso_handle,
-                                      base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+void btsnd_hcic_ble_read_iso_link_quality(uint16_t iso_handle,
+                                          base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 void btsnd_hcic_ble_periodic_advertising_create_sync(uint8_t options, uint8_t adv_sid,
                                                      uint8_t adv_addr_type,
