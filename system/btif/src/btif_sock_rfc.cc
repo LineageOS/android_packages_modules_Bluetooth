@@ -52,6 +52,7 @@
 #include "osi/include/list.h"
 #include "osi/include/osi.h"  // INVALID_FD
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/port_api.h"
 
 using bluetooth::Uuid;
@@ -593,7 +594,18 @@ static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
                                     int send_fd, uint64_t socket_id) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
-  cs.bd_addr = *addr;
+  if (com_android_bluetooth_flags_pseudo_addr_in_socket_connect_signal()) {
+    RawAddress pseudo_addr =
+            get_btm_client_interface().peer.BTM_GetConnectedTransportAddress(*addr).first;
+    if (pseudo_addr != RawAddress::kEmpty) {
+      cs.bd_addr = pseudo_addr;
+    } else {
+      log::warn("BTM_GetConnectedTransportAddress returned empty pseudo addr, using public addr");
+      cs.bd_addr = *addr;
+    }
+  } else {
+    cs.bd_addr = *addr;
+  }
   cs.channel = channel;
   cs.status = status;
   cs.max_rx_packet_size = 0;  // not used for RFCOMM

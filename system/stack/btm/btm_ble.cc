@@ -370,7 +370,8 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT tra
  ******************************************************************************/
 std::pair<RawAddress, RawAddress> BTM_GetConnectedTransportAddress(RawAddress remote_bda) {
   BtmDevice* p_device = btm_find_dev(remote_bda);
-  std::pair<RawAddress, RawAddress> pseudo_identity_addr_pair;
+  std::pair<RawAddress, RawAddress> pseudo_identity_addr_pair =
+          std::make_pair(RawAddress::kEmpty, RawAddress::kEmpty);
 
   /* if no device can be located, return */
   if (p_device == nullptr) {
