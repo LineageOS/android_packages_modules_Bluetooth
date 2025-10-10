@@ -97,3 +97,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_add_cccd_on_service_changed"
+    namespace: "bluetooth"
+    description: "Add CCCD to the service changed"
+    bug: "450918251"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
