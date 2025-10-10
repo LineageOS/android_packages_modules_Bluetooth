@@ -177,20 +177,27 @@ class ScanBinder(
 
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
     private fun enforcePrivilegedPermissionIfNeeded(settings: ScanSettings?) {
+        // Regular scan, no special permission
+        if (settings == null) {
+            Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(settings=null)")
+            return
+        }
+        Log.d(
+            TAG,
+            "enforcePrivilegedPermissionIfNeeded: " +
+                "scanMode=${ScanUtil.scanModeToString(settings.scanMode)}, " +
+                "reportDelayMillis=${settings.reportDelayMillis}, " +
+                "scanResultType=${settings.scanResultType}",
+        )
         if (needsPrivilegedPermissionForScan(settings)) {
             adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
     }
 
-    private fun needsPrivilegedPermissionForScan(settings: ScanSettings?): Boolean {
+    private fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
         // BLE scan only mode needs special permission.
         if (adapterService.getState() != BluetoothAdapter.STATE_ON) {
             return true
-        }
-
-        // Regular scan, no special permission.
-        if (settings == null) {
-            return false
         }
 
         // Ambient discovery mode, needs privileged permission.
@@ -213,7 +220,7 @@ class ScanBinder(
      */
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
     private fun enforcePrivilegedPermissionIfNeeded(filters: List<ScanFilter>?) {
-        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded($filters))")
+        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded: filters=$filters")
         // Some 3p API cases may have null filters, need to allow
         if (filters == null) return
         for (filter in filters) {
