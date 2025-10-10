@@ -1542,7 +1542,9 @@ public class ScanManagerTest {
                         eq(
                                 BluetoothStatsLog
                                         .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
-                        eq(AppScanStats.convertScanMode(mostAggressiveClient.getScanModeApp())),
+                        eq(
+                                ScanMetricsReporter.convertScanMode(
+                                        mostAggressiveClient.getScanModeApp())),
                         eq(SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL.toMillis()),
                         eq(SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW.toMillis()),
                         eq(false),
