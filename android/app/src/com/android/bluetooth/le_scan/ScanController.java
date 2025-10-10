@@ -1514,14 +1514,16 @@ public class ScanController {
         public void binderDied() {
             Log.d(
                     TAG,
-                    "Binder is dead - unregistering scanner -"
-                            + (" packageName=" + mPackageName)
-                            + (", scannerId=" + mScannerId));
-
-            ScanClient client = findScanClientById(mScannerId);
-            if (client != null) {
-                handleDeadScanClient(client);
-            }
+                    "binderDied(): "
+                            + ("Unregistering scanner for=" + mPackageName)
+                            + (" with scannerId=" + mScannerId));
+            doOnScanThread(
+                    () -> {
+                        ScanClient client = findScanClientById(mScannerId);
+                        if (client != null) {
+                            handleDeadScanClient(client);
+                        }
+                    });
         }
     }
 
