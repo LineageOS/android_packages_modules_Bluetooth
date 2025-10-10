@@ -349,7 +349,12 @@ public class BassClientService extends ConnectableProfile {
                 if (!mCachedBroadcasts.containsKey(broadcastId)) {
                     Log.d(TAG, "selectBroadcastSource: broadcastId " + broadcastId);
                     mCachedBroadcasts.put(broadcastId, result);
-                    addSelectSourceRequest(broadcastId, /* hasPriority */ false);
+                    if (Flags.scanControllerThread()) {
+                        mHandler.post(
+                                () -> addSelectSourceRequest(broadcastId, /* hasPriority */ false));
+                    } else {
+                        addSelectSourceRequest(broadcastId, /* hasPriority */ false);
+                    }
                 } else {
                     if (mTimeoutHandler.isStarted(broadcastId, MESSAGE_SYNC_LOST_TIMEOUT)) {
                         mTimeoutHandler.stop(broadcastId, MESSAGE_SYNC_LOST_TIMEOUT);
@@ -359,7 +364,14 @@ public class BassClientService extends ConnectableProfile {
                     if ((!leaudioBroadcastAllowMonitoringOnResume()
                                     && isMonitoringOrResumingPauseReason(broadcastId))
                             || isOorMonitoringPauseReason(broadcastId)) {
-                        addSelectSourceRequest(broadcastId, /* hasPriority */ true);
+                        if (Flags.scanControllerThread()) {
+                            mHandler.post(
+                                    () ->
+                                            addSelectSourceRequest(
+                                                    broadcastId, /* hasPriority */ true));
+                        } else {
+                            addSelectSourceRequest(broadcastId, /* hasPriority */ true);
+                        }
                     }
                 }
             }
