@@ -1409,11 +1409,6 @@ impl GattClient {
     pub fn read_phy(&mut self, client_if: i32, addr: &RawAddress) -> BtStatus {
         BtStatus::from_i32(mutcxxcall!(self, read_phy, client_if, *addr)).unwrap()
     }
-
-    #[log_args]
-    pub fn test_command(&self, command: i32, params: &BtGattTestParams) -> BtStatus {
-        BtStatus::from(ccall!(self, test_command, command, params))
-    }
 }
 
 pub struct GattServer {
