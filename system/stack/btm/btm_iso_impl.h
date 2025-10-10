@@ -720,6 +720,38 @@ struct iso_impl {
     client_cbs->cig_callbacks->OnCisEvent(kIsoEventCisDisconnected, &evt);
   }
 
+  void handle_race_on_canceling_cis(iso_stream* stream_ptr, uint16_t handle) {
+    /* In case of race when Host being sending HCI Disconnect just in time when Controller already
+     * scheduled CIS Established event, btm_iso should also handled it. We have two cases here:
+     * either CIS managed to be connected or failed to connect*/
+    stream_ptr->state_flags &= ~kStateFlagIsCancelled;
+    if (stream_ptr->state_flags & kStateFlagIsConnected) {
+      /* If CIS managed to connect while user requested to cancel, btm_iso should not notify upper
+       * layer about created CIS but silently wait for this disconnect completed event which will
+       * come soon.
+       */
+      log::warn(
+              "cis: {:#x} got connected just before it was canceled - do not send Established "
+              "event but instead wait for disconnection complete event. Flags: {:#x} ",
+              handle, stream_ptr->state_flags);
+
+      return;
+    }
+    /* In case CIS failed to be established just before host sent HCI DIsconnect. In such a case,
+     * just send Disconnect Complete event*/
+    log::warn(
+            "cis: {:#x} failed to connect just before it was canceled - send disconnect complete "
+            "event. Flags: {:#x}",
+            handle, stream_ptr->state_flags);
+    auto* client_cbs = get_client_callbacks_from_stream(stream_ptr);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for stream {}",
+                     stream_ptr->conn_handle);
+    log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
+
+    send_disconnect_complete_event(client_cbs, stream_ptr->group_id, handle,
+                                   HCI_ERR_CONN_CAUSE_LOCAL_HOST);
+  }
+
   void process_cis_est_pkt(uint8_t len, uint8_t* data) {
     cis_establish_cmpl_evt evt;
 
@@ -793,6 +825,12 @@ struct iso_impl {
       } else {
         cis_hdl_to_addr.erase(evt.cis_conn_hdl);
       }
+    }
+
+    if (com_android_bluetooth_flags_btm_iso_improve_canceling_iso() &&
+        (stream_ptr->state_flags & kStateFlagIsCancelled)) {
+      handle_race_on_canceling_cis(stream_ptr, evt.cis_conn_hdl);
+      return;
     }
     evt.cig_id = stream_ptr->group_id;
 
