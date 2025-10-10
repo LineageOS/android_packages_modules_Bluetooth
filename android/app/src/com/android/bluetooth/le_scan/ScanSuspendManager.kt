@@ -72,26 +72,21 @@ internal class ScanSuspendManager(
     }
 
     fun handleSystemResume() {
-        Log.d(TAG, "handleSystemResume(): scan will be resumed when screen is on.")
+        Log.d(TAG, "handleSystemResume(): Scan will be resumed when screen is on")
         systemSuspended = false
     }
 
-    private fun suspendScan(client: ScanClient) {
-        client.appScanStats.ifPresent { stats: AppScanStats ->
-            stats.recordScanSuspend(client.scannerId)
-        }
-        Log.d(TAG, "suspend scan $client")
-        scanManager.stopScan(client.scannerId)
-        scanManager.suspendedScanQueue.add(client)
-    }
-
     private fun handleSuspendAllScans() {
-        for (client in scanManager.regularScanQueue) {
-            suspendScan(client)
+        fun suspendScan(client: ScanClient) {
+            client.appScanStats.ifPresent { stats: AppScanStats ->
+                stats.recordScanSuspend(client.scannerId)
+            }
+            Log.d(TAG, "Suspend scan for $client")
+            scanManager.stopScan(client.scannerId)
+            scanManager.suspendedScanQueue.add(client)
         }
-        for (client in scanManager.batchScanQueue) {
-            suspendScan(client)
-        }
+        scanManager.regularScanQueue.forEach(::suspendScan)
+        scanManager.batchScanQueue.forEach(::suspendScan)
     }
 
     private inner class ClientHandler(looper: Looper) : Handler(looper) {
@@ -99,17 +94,13 @@ internal class ScanSuspendManager(
             when (msg.what) {
                 MSG_SYSTEM_SUSPEND -> handleSystemSuspendClientHandlerImpl()
                 MSG_SYSTEM_RESUME -> handleSystemResumeClientHandlerImpl()
-                else -> Log.e(TAG, "received an unknown message : " + msg.what)
+                else -> Log.e(TAG, "Received an unknown message=${msg.what}")
             }
         }
 
-        fun handleSystemSuspendClientHandlerImpl() {
-            handleSystemSuspend()
-        }
+        fun handleSystemSuspendClientHandlerImpl() = handleSystemSuspend()
 
-        fun handleSystemResumeClientHandlerImpl() {
-            handleSystemResume()
-        }
+        fun handleSystemResumeClientHandlerImpl() = handleSystemResume()
     }
 
     companion object {
