@@ -234,7 +234,7 @@ class OobPairingTest {
     private fun testStep_initiatePairingFromRemote() {
         val deviceAddr: ByteString
         val scanningResponseObserver = StreamObserverSpliterator<ScanRequest, ScanningResponse>()
-        val deadline = Deadline.after(TIMEOUT_ADVERTISING_MS.toLong(), TimeUnit.MILLISECONDS)
+        val deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS)
         bumble
             .host()
             .withDeadline(deadline)
@@ -300,7 +300,7 @@ class OobPairingTest {
         private const val TAG = "OobPairingTest"
         private val INTENT_TIMEOUT = Duration.ofSeconds(10)
         private const val CF_NAME = "Cuttlefish"
-        private const val TIMEOUT_ADVERTISING_MS = 1000
+        private const val TIMEOUT_ADVERTISING_MS = 1000L
         private const val HASH_START_POSITION = 0
         private const val HASH_END_POSITION = 16
         private const val RANDOMIZER_START_POSITION = 16

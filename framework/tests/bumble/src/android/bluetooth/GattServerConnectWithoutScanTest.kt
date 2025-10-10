@@ -23,7 +23,7 @@ import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.runner.AndroidJUnit4
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
@@ -81,7 +81,7 @@ class GattServerConnectWithoutScanTest {
                 )
 
             gattServer.connect(device, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
@@ -111,7 +111,7 @@ class GattServerConnectWithoutScanTest {
                 )
 
             gattServer.connect(device, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
@@ -135,7 +135,7 @@ class GattServerConnectWithoutScanTest {
 
         try {
             gattServer.connect(bumble.remoteDevice, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
@@ -159,7 +159,7 @@ class GattServerConnectWithoutScanTest {
 
         try {
             gattServer.connect(bumble.remoteDevice, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
@@ -202,7 +202,7 @@ class GattServerConnectWithoutScanTest {
                 )
 
             gattServer.connect(device, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
 
             val status =
@@ -272,7 +272,7 @@ class GattServerConnectWithoutScanTest {
                 )
 
             gattServer.connect(device, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
 
             val status =
@@ -347,7 +347,7 @@ class GattServerConnectWithoutScanTest {
                 )
 
             gattServer.connect(device, false)
-            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS.toLong()))
+            verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
                 .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
 
             val status =
@@ -409,7 +409,7 @@ class GattServerConnectWithoutScanTest {
     }
 
     companion object {
-        private const val TIMEOUT_GATT_CONNECTION_MS = 2_000
+        private const val TIMEOUT_GATT_CONNECTION_MS = 2_000L
         private const val TEST_HUB_ID = 1L
         private const val TEST_ENDPOINT_ID = 2L
 

@@ -128,7 +128,7 @@ class PrivateGattAdvertisingTest {
                         .setRandom(privateAdvAddress)
                         .build()
                 )
-        verify(privateGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(privateGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_CONNECTED))
 
         // TODO(b/411294650): The normal GATT server's onConnectionStateChange() shouldn't be
@@ -150,7 +150,7 @@ class PrivateGattAdvertisingTest {
                     .setConnection(connectLEResponse.connection)
                     .build()
             )
-        verify(privateGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(privateGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_DISCONNECTED))
 
         Mockito.clearInvocations(normalGattServerCallback)
@@ -163,7 +163,7 @@ class PrivateGattAdvertisingTest {
                         .setRandom(normalAdvAddress)
                         .build()
                 )
-        verify(normalGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(normalGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_CONNECTED))
 
         // The service UUIDs from normal GATT server should contain all services.
@@ -178,7 +178,7 @@ class PrivateGattAdvertisingTest {
                     .setConnection(connectLEResponse.connection)
                     .build()
             )
-        verify(normalGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(normalGattServerCallback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_DISCONNECTED))
     }
 
@@ -227,7 +227,7 @@ class PrivateGattAdvertisingTest {
                         .setRandom(privateAdv1Address)
                         .build()
                 )
-        verify(privateGattServer1Callback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(privateGattServer1Callback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_CONNECTED))
 
         // TODO(b/411294650): The private GATT server 2's onConnectionStateChange() shouldn't be
@@ -251,7 +251,7 @@ class PrivateGattAdvertisingTest {
                     .setConnection(connectLEResponse.connection)
                     .build()
             )
-        verify(privateGattServer1Callback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(privateGattServer1Callback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_DISCONNECTED))
 
         Mockito.clearInvocations(privateGattServer2Callback)
@@ -264,7 +264,7 @@ class PrivateGattAdvertisingTest {
                         .setRandom(privateAdv2Address)
                         .build()
                 )
-        verify(privateGattServer2Callback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(privateGattServer2Callback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_CONNECTED))
 
         // Bumble should be able to see the services in private GATT server 2,
@@ -280,14 +280,14 @@ class PrivateGattAdvertisingTest {
                     .setConnection(connectLEResponse.connection)
                     .build()
             )
-        verify(privateGattServer2Callback, timeout(GATT_CONN_TIMEOUT_MS.toLong()))
+        verify(privateGattServer2Callback, timeout(GATT_CONN_TIMEOUT_MS))
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_DISCONNECTED))
     }
 
     /** Return a [ScanningResponse] whose advertising data includes given UUID. */
     private fun scanWithBumble(uuid: UUID): ScanningResponse {
         val responseObserver = StreamObserverSpliterator<ScanRequest, ScanningResponse>()
-        val deadline = Deadline.after(ADVERTISING_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+        val deadline = Deadline.after(ADVERTISING_TIMEOUT_MS, TimeUnit.MILLISECONDS)
 
         bumble
             .host()
@@ -386,8 +386,8 @@ class PrivateGattAdvertisingTest {
     }
 
     companion object {
-        private const val ADVERTISING_TIMEOUT_MS = 2_000
-        private const val GATT_CONN_TIMEOUT_MS = 2_000
+        private const val ADVERTISING_TIMEOUT_MS = 2_000L
+        private const val GATT_CONN_TIMEOUT_MS = 2_000L
         private val TEST_GATT_SERVICE_UUID_1 =
             UUID.fromString("00000000-0000-0000-0000-000000011111")
         private val TEST_GATT_SERVICE_UUID_2 =
