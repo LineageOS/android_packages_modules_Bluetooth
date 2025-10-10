@@ -56,7 +56,7 @@ pub enum BthhStatus {
 
 impl From<bindings::bthh_status_t> for BthhStatus {
     fn from(item: bindings::bthh_status_t) -> Self {
-        BthhStatus::from_u32(item).unwrap_or_else(|| BthhStatus::Unknown)
+        BthhStatus::from_u32(item.into()).unwrap_or_else(|| BthhStatus::Unknown)
     }
 }
 
