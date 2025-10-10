@@ -467,6 +467,7 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
       p_target_rec->sec_rec.ble_keys = temp_rec.sec_rec.ble_keys;
       p_target_rec->ble_hci_handle = temp_rec.ble_hci_handle;
       p_target_rec->sec_rec.enc_key_size = temp_rec.sec_rec.enc_key_size;
+      p_target_rec->sec_rec.le_enc_key_size = temp_rec.sec_rec.le_enc_key_size;
       p_target_rec->conn_params = temp_rec.conn_params;
       p_target_rec->device_type |= temp_rec.device_type;
       p_target_rec->sec_rec.sec_flags |= temp_rec.sec_rec.sec_flags;

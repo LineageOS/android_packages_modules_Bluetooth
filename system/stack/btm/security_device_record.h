@@ -219,7 +219,8 @@ struct tBTM_SEC_REC {
   // BREDR Link Key Info
   LinkKey link_key;      /* Device link key */
   uint8_t link_key_type; /* Type of key used in pairing */
-  uint8_t enc_key_size;  /* current link encryption key size */
+  uint8_t enc_key_size;  /* current link encryption key size for BR/EDR */
+  uint8_t le_enc_key_size;  /* current link encryption key size for LE */
   tBTM_BOND_TYPE bond_type; /* Whether the BR/EDR pairing was persistent or temporary */
 
   // LE Link Key Info
@@ -292,11 +293,12 @@ public:
   std::string ToString() const {
     return std::format(
             "bredr_linkkey_known:{:c},le_linkkey_known:{:c},bond_type:{},bredr_linkkey_type:{},ble_"
-            "enc_key_size:{},bredr_authenticated:{:c},le_authenticated:{:c},16_digit_key_"
-            "authenticated:{:c},bredr_encrypted:{:c},le_encrypted:{:c}",
+            "enc_key_size:{},le_enc_key_size:{},bredr_authenticated:{:c},le_authenticated:{:c},16_"
+            "digit_key_authenticated:{:c},bredr_encrypted:{:c},le_encrypted:{:c}",
             is_link_key_known() ? 'T' : 'F', is_le_link_key_known() ? 'T' : 'F',
             bond_type_text(bond_type), linkkey_type_text(link_key_type), enc_key_size,
-            is_device_authenticated() ? 'T' : 'F', is_le_device_authenticated() ? 'T' : 'F',
+            le_enc_key_size, is_device_authenticated() ? 'T' : 'F',
+            is_le_device_authenticated() ? 'T' : 'F',
             is_le_link_16_digit_key_authenticated() ? 'T' : 'F', is_device_encrypted() ? 'T' : 'F',
             is_le_device_encrypted() ? 'T' : 'F');
   }

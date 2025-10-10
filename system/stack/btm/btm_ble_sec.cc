@@ -753,7 +753,7 @@ void btm_ble_update_sec_key_size(const RawAddress& bd_addr, uint8_t enc_key_size
 
   p_rec = btm_find_dev(bd_addr);
   if (p_rec != NULL) {
-    p_rec->sec_rec.enc_key_size = enc_key_size;
+    p_rec->sec_rec.le_enc_key_size = enc_key_size;
   }
 }
 
@@ -771,7 +771,7 @@ uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr) {
 
   p_rec = btm_find_dev(bd_addr);
   if (p_rec != NULL) {
-    return p_rec->sec_rec.enc_key_size;
+    return p_rec->sec_rec.le_enc_key_size;
   } else {
     return 0;
   }
@@ -1041,8 +1041,8 @@ void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
 
   log::verbose("p_dev_rec->sec_rec.sec_flags=0x{:x}", p_dev_rec->sec_rec.sec_flags);
 
-  if (encr_enable && p_dev_rec->sec_rec.enc_key_size == 0) {
-    p_dev_rec->sec_rec.enc_key_size = p_dev_rec->sec_rec.ble_keys.key_size;
+  if (encr_enable && p_dev_rec->sec_rec.le_enc_key_size == 0) {
+    p_dev_rec->sec_rec.le_enc_key_size = p_dev_rec->sec_rec.ble_keys.key_size;
   }
 
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
