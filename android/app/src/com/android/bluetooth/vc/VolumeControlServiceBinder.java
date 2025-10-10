@@ -29,7 +29,6 @@ import android.bluetooth.AudioInputControl.AudioInputType;
 import android.bluetooth.AudioInputControl.GainMode;
 import android.bluetooth.AudioInputControl.Mute;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IAudioInputCallback;
 import android.bluetooth.IBluetoothVolumeControl;
 import android.bluetooth.IBluetoothVolumeControlCallback;
@@ -38,7 +37,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
-import com.android.bluetooth.flags.Flags;
 
 import java.util.Collections;
 import java.util.List;
@@ -100,17 +98,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         service.post(consumer);
     }
 
-    // Post and wait for the action to be completed
-    private static <T> T syncPost(
-            VolumeControlService service,
-            Function<VolumeControlService, T> function,
-            T defaultValue) {
-        if (service == null) { // No need to re-check for available here
-            return defaultValue;
-        }
-        return service.syncPost(function, defaultValue);
-    }
-
     @Override
     public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
@@ -125,12 +112,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(
             int[] states, AttributionSource source) {
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(
-                    service,
-                    s -> s.getDevicesMatchingConnectionStates(states),
-                    Collections.emptyList());
-        }
         if (service == null) {
             return Collections.emptyList();
         }
@@ -143,9 +124,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         requireNonNull(device);
 
         VolumeControlService service = getService(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(service, s -> s.getConnectionState(device), STATE_DISCONNECTED);
-        }
         if (service == null) {
             return STATE_DISCONNECTED;
         }
@@ -157,18 +135,8 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
     public boolean setConnectionPolicy(
             BluetoothDevice device, int connectionPolicy, AttributionSource source) {
         requireNonNull(device);
-        if (Flags.vcpOnMainLooper()) {
-            if (connectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED
-                    && connectionPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
-                throw new IllegalArgumentException(
-                        "Invalid connectionPolicy value: " + connectionPolicy);
-            }
-        }
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(service, s -> s.setConnectionPolicy(device, connectionPolicy), false);
-        }
         if (service == null) {
             return false;
         }
@@ -181,9 +149,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         requireNonNull(device);
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(service, s -> s.getConnectionPolicy(device), CONNECTION_POLICY_UNKNOWN);
-        }
         if (service == null) {
             return CONNECTION_POLICY_UNKNOWN;
         }
@@ -196,9 +161,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         requireNonNull(device);
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(service, s -> s.isVolumeOffsetAvailable(device), false);
-        }
         if (service == null) {
             return false;
         }
@@ -211,9 +173,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         requireNonNull(device);
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(service, s -> s.getNumberOfVolumeOffsetInstances(device), 0);
-        }
         if (service == null) {
             return 0;
         }
@@ -227,10 +186,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         requireNonNull(device);
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            post(service, s -> s.setVolumeOffset(device, instanceId, volumeOffset));
-            return;
-        }
         if (service == null) {
             return;
         }
@@ -242,17 +197,8 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
     public void setDeviceVolume(
             BluetoothDevice device, int volume, boolean isGroupOp, AttributionSource source) {
         requireNonNull(device);
-        if (Flags.vcpOnMainLooper()) {
-            if (volume < 0 || volume > 255) {
-                throw new IllegalArgumentException("Illegal volume " + volume);
-            }
-        }
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-        if (Flags.vcpOnMainLooper()) {
-            post(service, s -> s.setDeviceVolume(device, volume, isGroupOp));
-            return;
-        }
         if (service == null) {
             return;
         }
@@ -293,20 +239,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
 
-        if (Flags.vcpOnMainLooper()) {
-            post(
-                    service,
-                    s -> {
-                        VolumeControlInputDescriptor inputs = s.getAudioInputs().get(device);
-                        if (inputs == null) {
-                            Log.w(TAG, "No audio inputs for " + device);
-                            return;
-                        }
-                        consumer.accept(inputs);
-                    });
-            return;
-        }
-
         if (service == null) {
             return;
         }
@@ -328,20 +260,6 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
         requireNonNull(device);
 
         VolumeControlService service = getServiceAndEnforcePrivileged(source);
-
-        if (Flags.vcpOnMainLooper()) {
-            return syncPost(
-                    service,
-                    s -> {
-                        VolumeControlInputDescriptor inputs = s.getAudioInputs().get(device);
-                        if (inputs == null) {
-                            Log.w(TAG, "No audio inputs for " + device);
-                            return defaultValue;
-                        }
-                        return fn.apply(inputs);
-                    },
-                    defaultValue);
-        }
 
         if (service == null) {
             return defaultValue;

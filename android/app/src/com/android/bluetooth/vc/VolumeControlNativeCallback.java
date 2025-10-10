@@ -35,7 +35,6 @@ import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.NativeCallback;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -58,10 +57,6 @@ class VolumeControlNativeCallback implements NativeCallback {
     }
 
     private void sendMessageToService(Consumer<VolumeControlService> action) {
-        if (Flags.vcpOnMainLooper()) { // inline in caller when cleaning flag
-            mVolumeControlService.syncPost(action);
-            return;
-        }
         if (!mVolumeControlService.isAvailable()) {
             Log.e(TAG, "Action ignored, service not available: " + inlineStackTrace());
             return;
@@ -70,10 +65,6 @@ class VolumeControlNativeCallback implements NativeCallback {
     }
 
     private void messageFromNative(VolumeControlStackEvent event) {
-        if (Flags.vcpOnMainLooper()) {
-            mVolumeControlService.syncPost(v -> v.messageFromNative(event));
-            return;
-        }
         mVolumeControlService.messageFromNative(event);
     }
 

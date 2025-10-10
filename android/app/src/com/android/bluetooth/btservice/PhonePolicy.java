@@ -388,13 +388,8 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 && (volumeControl.get().getConnectionPolicy(device) == CONNECTION_POLICY_UNKNOWN)) {
             if (isLeAudioProfileAllowed) {
                 Log.d(TAG, log + "Setting VCP priority");
-                if (mAutoConnectProfilesSupported && !Flags.vcpOnMainLooper()) {
+                if (mAutoConnectProfilesSupported) {
                     volumeControl.get().setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
-                } else if (mAutoConnectProfilesSupported && Flags.vcpOnMainLooper()) {
-                    volumeControl
-                            .get()
-                            .syncPost(
-                                    v -> v.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED));
                 } else {
                     mAdapterService.setProfileConnectionPolicy(
                             device, BluetoothProfile.VOLUME_CONTROL, CONNECTION_POLICY_ALLOWED);
@@ -910,19 +905,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 csipSetCoordinator.get().connect(device);
             }
         }
-        if (Flags.vcpOnMainLooper()) {
-            volumeControl.ifPresent(
-                    vcs -> {
-                        List<BluetoothDevice> vcConnDevList = vcs.getConnectedDevices();
-                        if (!vcConnDevList.contains(device)
-                                && (vcs.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)
-                                && (vcs.getConnectionState(device) == STATE_DISCONNECTED)) {
-                            Log.d(TAG, log + "Retrying VCP connection");
-                            vcs.connect(device);
-                        }
-                    });
-        }
-        if (!Flags.vcpOnMainLooper() && volumeControl.isPresent()) {
+        if (volumeControl.isPresent()) {
             List<BluetoothDevice> vcConnDevList = volumeControl.get().getConnectedDevices();
             if (!vcConnDevList.contains(device)
                     && (volumeControl.get().getConnectionPolicy(device)

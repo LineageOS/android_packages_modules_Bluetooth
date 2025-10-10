@@ -27,7 +27,6 @@ import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_VOLUME
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -36,7 +35,6 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.SmallTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -54,7 +52,6 @@ import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 @SmallTest
 @RunWith(ParameterizedAndroidJunit4.class)
@@ -71,7 +68,7 @@ public class VolumeControlNativeCallbackTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+        return FlagsWrapper.progressionOf();
     }
 
     public VolumeControlNativeCallbackTest(FlagsWrapper flags) {
@@ -81,13 +78,6 @@ public class VolumeControlNativeCallbackTest {
     @Before
     public void setUp() throws Exception {
         doReturn(true).when(mService).isAvailable();
-        doAnswer(
-                        inv -> {
-                            ((Consumer<VolumeControlService>) inv.getArgument(0)).accept(mService);
-                            return null;
-                        })
-                .when(mService)
-                .syncPost(any());
 
         mNativeCallback = new VolumeControlNativeCallback(mAdapterService, mService);
     }

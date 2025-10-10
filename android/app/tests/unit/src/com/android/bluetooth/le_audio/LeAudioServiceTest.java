@@ -328,14 +328,6 @@ public class LeAudioServiceTest {
         doReturn(Optional.of(mVolumeControlService))
                 .when(mAdapterService)
                 .getVolumeControlService();
-        doCallRealMethod().when(mVolumeControlService).syncPost(any());
-        doAnswer(
-                        inv -> {
-                            return ((Function<VolumeControlService, ?>) inv.getArgument(0))
-                                    .apply(mVolumeControlService);
-                        })
-                .when(mVolumeControlService)
-                .syncPost(any(), any());
 
         mLooper = new TestLooper();
 
