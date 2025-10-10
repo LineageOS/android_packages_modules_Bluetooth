@@ -669,15 +669,13 @@ public class BluetoothInCallService extends InCallService {
                     Log.d(TAG, "add inference call with reason: " + cause.getReason());
                     mBluetoothCallQueue.add(call.getId());
                     mBluetoothConferenceCallInference.put(call.getId(), call);
-                    if (Flags.maintainCallIndexAfterConference()) {
-                        // If the disconnect is due to call merge, store the index for future use.
-                        if (cause.getReason() != null
-                                && cause.getReason().equals("IMS_MERGED_SUCCESSFULLY")) {
-                            if (!mConferenceCallClccIndexMap.containsKey(getClccMapKey(call))) {
-                                if (call.mClccIndex > -1) {
-                                    mConferenceCallClccIndexMap.put(
-                                            getClccMapKey(call), call.mClccIndex);
-                                }
+                    // If the disconnect is due to call merge, store the index for future use.
+                    if (cause.getReason() != null
+                            && cause.getReason().equals("IMS_MERGED_SUCCESSFULLY")) {
+                        if (!mConferenceCallClccIndexMap.containsKey(getClccMapKey(call))) {
+                            if (call.mClccIndex > -1) {
+                                mConferenceCallClccIndexMap.put(
+                                        getClccMapKey(call), call.mClccIndex);
                             }
                         }
                     }
@@ -700,8 +698,7 @@ public class BluetoothInCallService extends InCallService {
 
             updateHeadsetWithCallState(headset, false /* force */);
 
-            if (Flags.maintainCallIndexAfterConference()
-                    && mConferenceCallClccIndexMap.size() > 0) {
+            if (mConferenceCallClccIndexMap.size() > 0) {
                 int anyActiveCalls = mCallInfo.isNullCall(mCallInfo.getActiveCall()) ? 0 : 1;
                 int numHeldCalls = mCallInfo.getNumHeldCalls();
                 // If no call is active or held clear the hashmap.
@@ -1054,8 +1051,7 @@ public class BluetoothInCallService extends InCallService {
         }
 
         // Check if the call handle is already stored. Return the previously stored index.
-        if (Flags.maintainCallIndexAfterConference()
-                && mConferenceCallClccIndexMap.containsKey(getClccMapKey(call))) {
+        if (mConferenceCallClccIndexMap.containsKey(getClccMapKey(call))) {
             call.mClccIndex = mConferenceCallClccIndexMap.get(getClccMapKey(call));
         }
 
@@ -1071,13 +1067,11 @@ public class BluetoothInCallService extends InCallService {
 
         // NOTE: Indexes are removed in {@link #onCallRemoved}.
         call.mClccIndex = getNextAvailableClccIndex(index);
-        if (Flags.maintainCallIndexAfterConference()) {
-            // Remove the index from conference hashmap, this can be later added if call merges in
-            // conference
-            mConferenceCallClccIndexMap
-                    .entrySet()
-                    .removeIf(entry -> entry.getValue() == call.mClccIndex);
-        }
+        // Remove the index from conference hashmap, this can be later added if call merges in
+        // conference
+        mConferenceCallClccIndexMap
+                .entrySet()
+                .removeIf(entry -> entry.getValue() == call.mClccIndex);
         Log.d(TAG, "call " + call.getId() + " CLCC index is " + call.mClccIndex);
         return call.mClccIndex;
     }
