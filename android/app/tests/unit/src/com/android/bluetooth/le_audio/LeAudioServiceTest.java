@@ -2474,7 +2474,7 @@ public class LeAudioServiceTest {
         mService.setVolume(newVolume);
         verify(mVolumeControlService, never()).setGroupVolume(TEST_GROUP_ID, newVolume);
 
-        mService.mUnicastGroupIdDeactivatedForBroadcastTransition = TEST_GROUP_ID;
+        mService.mBroadcastToUnicastFallbackGroup = TEST_GROUP_ID;
         // Verify setGroupVolume will be called if synced sinks
         doReturn(List.of(mLeftDevice, mRightDevice, mSingleDevice))
                 .when(mBassClientService)
