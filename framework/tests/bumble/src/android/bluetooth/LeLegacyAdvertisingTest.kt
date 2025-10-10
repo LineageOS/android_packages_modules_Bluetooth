@@ -73,7 +73,7 @@ class LeLegacyAdvertisingTest {
 
         try {
             advertiser.startAdvertisingSet(params, advertiseData, null, null, null, callback)
-            future.completeOnTimeout(null, TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS).join()
+            future.completeOnTimeout(null, TIMEOUT_MS, TimeUnit.MILLISECONDS).join()
 
             val setAdvertingDataResult = future.get()
             assertThat(setAdvertingDataResult).isNotNull()
@@ -123,7 +123,7 @@ class LeLegacyAdvertisingTest {
 
         try {
             advertiser.startAdvertisingSet(params, advertiseData, null, null, null, callback)
-            future.completeOnTimeout(null, TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS).join()
+            future.completeOnTimeout(null, TIMEOUT_MS, TimeUnit.MILLISECONDS).join()
 
             val setScanResponseResult = future.get()
             assertThat(setScanResponseResult).isNotNull()
@@ -135,7 +135,7 @@ class LeLegacyAdvertisingTest {
     }
 
     companion object {
-        private const val TIMEOUT_MS = 1_000
+        private const val TIMEOUT_MS = 1_000L
 
         private fun createAdvertiseData(length: Int): AdvertiseData? {
             if (length <= 4) {

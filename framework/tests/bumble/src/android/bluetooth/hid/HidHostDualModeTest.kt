@@ -332,7 +332,7 @@ class HidHostDualModeTest {
             hasExtra(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE, KEYBD_RPT_SIZE + 1),
         )
         isReportUpdated!!
-            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .join()
         assertThat(reportData).isNotNull()
         assertThat(reportData.size).isGreaterThan(0)
@@ -348,7 +348,7 @@ class HidHostDualModeTest {
             hasExtra(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE, MOUSE_RPT_SIZE + 1),
         )
         isReportUpdated!!
-            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .join()
         assertThat(reportData).isNotNull()
         assertThat(reportData.size).isGreaterThan(0)
@@ -498,7 +498,7 @@ class HidHostDualModeTest {
     companion object {
         private val TAG = HidHostDualModeTest::class.java.simpleName
         private val INTENT_TIMEOUT = Duration.ofSeconds(10)
-        private const val REPORT_UPDATE_TIMEOUT_MS = 100
+        private const val REPORT_UPDATE_TIMEOUT_MS = 100L
         private const val KEYBD_RPT_ID = 1
         private const val KEYBD_RPT_SIZE = 9
         private const val MOUSE_RPT_ID = 2

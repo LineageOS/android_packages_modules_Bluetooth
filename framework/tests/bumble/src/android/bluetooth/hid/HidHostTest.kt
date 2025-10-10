@@ -528,7 +528,7 @@ class HidHostTest {
             hasExtra(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE, KEYBD_RPT_SIZE + 1),
         )
         isReportUpdated!!
-            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .join()
         assertThat(reportData).isNotNull()
         assertThat(reportData.size).isGreaterThan(0)
@@ -544,7 +544,7 @@ class HidHostTest {
             hasExtra(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE, MOUSE_RPT_SIZE + 1),
         )
         isReportUpdated!!
-            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+            .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .join()
         assertThat(reportData).isNotNull()
         assertThat(reportData.size).isGreaterThan(0)
@@ -809,7 +809,7 @@ class HidHostTest {
     private fun reconnectionFromRemoteAndVerifyDisconnectedState() {
         hidBlockingStub.connectHost(Empty.getDefaultInstance())
         val future = CompletableFuture<Integer>()
-        future.completeOnTimeout(null, CONNECTION_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS).join()
+        future.completeOnTimeout(null, CONNECTION_TIMEOUT_MS, TimeUnit.MILLISECONDS).join()
         assertThat(hidService.getConnectionState(device)).isEqualTo(STATE_DISCONNECTED)
     }
 
@@ -822,7 +822,7 @@ class HidHostTest {
         // Without delay, some time HID auto reconnection
         // triggered by BluetoothAdapterService
         val future = CompletableFuture<Integer>()
-        future.completeOnTimeout(null, BT_ON_DELAY_MS.toLong(), TimeUnit.MILLISECONDS).join()
+        future.completeOnTimeout(null, BT_ON_DELAY_MS, TimeUnit.MILLISECONDS).join()
 
         adapter.enable()
         verifyIntentReceived(
@@ -868,9 +868,9 @@ class HidHostTest {
         private const val MOUSE_RPT_ID = 2
         private const val MOUSE_RPT_SIZE = 4
         private const val INVALID_RPT_ID = 3
-        private const val CONNECTION_TIMEOUT_MS = 2_000
-        private const val BT_ON_DELAY_MS = 3000
-        private const val REPORT_UPDATE_TIMEOUT_MS = 100
+        private const val CONNECTION_TIMEOUT_MS = 2_000L
+        private const val BT_ON_DELAY_MS = 3000L
+        private const val REPORT_UPDATE_TIMEOUT_MS = 100L
         private val PROTO_MODE_TIMEOUT = Duration.ofSeconds(10)
     }
 }

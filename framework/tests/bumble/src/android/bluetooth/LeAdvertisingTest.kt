@@ -63,7 +63,7 @@ class LeAdvertisingTest {
         val addressType = addressPair.second
 
         val responseObserver = StreamObserverSpliterator<ScanRequest, ScanningResponse>()
-        val deadline = Deadline.after(TIMEOUT_ADVERTISING_MS.toLong(), TimeUnit.MILLISECONDS)
+        val deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS)
         bumble
             .host()
             .withDeadline(deadline)
@@ -87,7 +87,7 @@ class LeAdvertisingTest {
 
     companion object {
         private val TAG = LeAdvertisingTest::class.java.simpleName
-        private const val TIMEOUT_ADVERTISING_MS = 1000
+        private const val TIMEOUT_ADVERTISING_MS = 1000L
 
         private fun startAdvertising(): CompletableFuture<Pair<String, Int>> {
             val future = CompletableFuture<Pair<String, Int>>()
@@ -112,7 +112,7 @@ class LeAdvertisingTest {
                         status: Int,
                     ) {
                         Log.i(TAG, "onAdvertisingSetStarted  txPower:$txPower status:$status")
-                        advertisingSet.enableAdvertising(true, TIMEOUT_ADVERTISING_MS, 0)
+                        advertisingSet.enableAdvertising(true, TIMEOUT_ADVERTISING_MS.toInt(), 0)
                     }
 
                     override fun onOwnAddressRead(
