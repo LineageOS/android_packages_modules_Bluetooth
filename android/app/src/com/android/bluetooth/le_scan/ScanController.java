@@ -109,8 +109,8 @@ public class ScanController {
 
     private final PendingIntent.CancelListener mScanIntentCancelListener =
             intent -> {
-                Log.d(TAG, "scanning PendingIntent canceled");
-                stopScan(intent);
+                Log.d(TAG, "onCanceled(): Scanning PendingIntent canceled");
+                doOnScanThread(() -> stopScan(intent));
             };
 
     private final Map<Integer, Integer> mFilterIndexToMsftAdvMonitorMap = new HashMap<>();

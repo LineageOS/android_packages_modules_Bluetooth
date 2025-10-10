@@ -171,7 +171,7 @@ public final class BluetoothLeScanner {
             conditional = true)
     public void startScan(
             List<ScanFilter> filters, ScanSettings settings, final ScanCallback callback) {
-        startScan(filters, settings, null, callback, /* callbackIntent= */ null);
+        startScan(filters, settings, /* workSource */ null, callback, /* callbackIntent= */ null);
     }
 
     /**
@@ -223,8 +223,8 @@ public final class BluetoothLeScanner {
         return startScan(
                 filters,
                 settings != null ? settings : new ScanSettings.Builder().build(),
-                null,
-                null,
+                /* workSource */ null,
+                /* callback */ null,
                 callbackIntent);
     }
 
@@ -298,7 +298,7 @@ public final class BluetoothLeScanner {
             ScanSettings settings,
             final WorkSource workSource,
             final ScanCallback callback) {
-        startScan(filters, settings, workSource, callback, null);
+        startScan(filters, settings, workSource, callback, /* callbackIntent= */ null);
     }
 
     @RequiresPermission(
