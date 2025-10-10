@@ -10,14 +10,6 @@ flag {
 }
 
 flag {
-    name: "bt_offload_socket_api"
-    namespace: "bluetooth"
-    description: "New socket API to create offload socket"
-    bug: "367419086"
-    is_exported: true
-}
-
-flag {
     name: "set_max_data_length_for_lecoc"
     namespace: "bluetooth"
     description: "set le data length to max on le coc connection to achieve better data rate"
