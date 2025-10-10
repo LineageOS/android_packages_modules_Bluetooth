@@ -29,7 +29,6 @@ import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_INTER
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_WINDOW_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_BOTH;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_FULL;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 import static com.android.bluetooth.le_scan.ScanUtil.clearAutoBatchScanClient;
@@ -241,8 +240,6 @@ class ScanManager {
     private int mProfilesDisconnecting;
     // Whether or not MSFT-based scanning is currently enabled in the controller
     private boolean mScanEnabledMsft = false;
-
-    record BatchScanParams(int scanMode, int fullScanScannerId, int truncatedScanScannerId) {}
 
     @VisibleForTesting
     record UidImportance(int uid, int importance) {}
@@ -1385,17 +1382,19 @@ class ScanManager {
         if (batchScanParams != null && (!batchScanParams.equals(mBatchScanParams))) {
             int notifyThreshold = 95;
             Log.d(TAG, "Starting BLE batch scan");
-            int resultType = getResultType(batchScanParams);
-            int fullScanPercent = getFullScanStoragePercent(resultType);
+            int resultType = BatchScanUtil.resultType(batchScanParams);
+            int fullScanPercent = BatchScanUtil.fullScanStoragePercent(resultType);
             resetCountDownLatch();
             Log.d(TAG, "Configuring batch scan storage for " + client);
             mNativeInterface.configBatchScanStorage(
                     client.getScannerId(), fullScanPercent, 100 - fullScanPercent, notifyThreshold);
             waitForCallback();
             resetCountDownLatch();
+            var scanMode = batchScanParams.getScanMode();
             int scanInterval =
-                    Utils.millsToUnit(getBatchScanIntervalMillis(batchScanParams.scanMode));
-            int scanWindow = Utils.millsToUnit(getBatchScanWindowMillis(batchScanParams.scanMode));
+                    Utils.millsToUnit(BatchScanUtil.intervalMillis(mAdapterService, scanMode));
+            int scanWindow =
+                    Utils.millsToUnit(BatchScanUtil.windowMillis(mAdapterService, scanMode));
             mNativeInterface.startBatchScan(
                     scannerId,
                     resultType,
@@ -1407,15 +1406,6 @@ class ScanManager {
         }
         mBatchScanParams = batchScanParams;
         setBatchAlarm(client);
-    }
-
-    private static int getFullScanStoragePercent(int resultType) {
-        return switch (resultType) {
-            case SCAN_RESULT_TYPE_FULL -> 100;
-            case SCAN_RESULT_TYPE_TRUNCATED -> 0;
-            case SCAN_RESULT_TYPE_BOTH -> 50;
-            default -> 50;
-        };
     }
 
     private BatchScanParams fetchBatchScanParams() {
@@ -1443,57 +1433,6 @@ class ScanManager {
         }
 
         return new BatchScanParams(scanMode, fullScanScannerId, truncatedScanScannerId);
-    }
-
-    // Batched scan doesn't require high duty cycle scan because scan result is reported
-    // infrequently anyway. To avoid redefining parameter sets, map to the low duty cycle
-    // parameter set as follows.
-    private int getBatchScanWindowMillis(int scanMode) {
-        ContentResolver resolver = mAdapterService.getContentResolver();
-        final var windowMs =
-                switch (scanMode) {
-                    case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                            Settings.Global.getInt(
-                                    resolver,
-                                    Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
-                                    SCAN_MODE_BALANCED_WINDOW_MS);
-                    case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                            (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
-                    default ->
-                            Settings.Global.getInt(
-                                    resolver,
-                                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                                    SCAN_MODE_LOW_POWER_WINDOW_MS);
-                };
-        Log.d(
-                TAG,
-                "BatchScan windowMs=" + windowMs + " for scan mode=" + scanModeToString(scanMode));
-        return windowMs;
-    }
-
-    private int getBatchScanIntervalMillis(int scanMode) {
-        ContentResolver resolver = mAdapterService.getContentResolver();
-        final var internalMs =
-                switch (scanMode) {
-                    case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                            Settings.Global.getInt(
-                                    resolver,
-                                    Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
-                                    SCAN_MODE_BALANCED_INTERVAL_MS);
-                    case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                            (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
-                    default ->
-                            Settings.Global.getInt(
-                                    resolver,
-                                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                                    SCAN_MODE_LOW_POWER_INTERVAL_MS);
-                };
-        Log.d(
-                TAG,
-                "BatchScan "
-                        + ("internalMs=" + internalMs)
-                        + (" for scan mode=" + scanModeToString(scanMode)));
-        return internalMs;
     }
 
     // Set the batch alarm to be triggered within a short window after batch interval. This
@@ -1622,16 +1561,16 @@ class ScanManager {
     }
 
     private void flushBatchResults(ScanClient client) {
-        if (mBatchScanParams.fullScanScannerId != -1) {
+        int fullScanScannerId = mBatchScanParams.getFullScanScannerId();
+        if (fullScanScannerId != -1) {
             resetCountDownLatch();
-            mNativeInterface.readScanReports(
-                    mBatchScanParams.fullScanScannerId, SCAN_RESULT_TYPE_FULL);
+            mNativeInterface.readScanReports(fullScanScannerId, SCAN_RESULT_TYPE_FULL);
             waitForCallback();
         }
-        if (mBatchScanParams.truncatedScanScannerId != -1) {
+        int truncatedScanScannerId = mBatchScanParams.getTruncatedScanScannerId();
+        if (truncatedScanScannerId != -1) {
             resetCountDownLatch();
-            mNativeInterface.readScanReports(
-                    mBatchScanParams.truncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
+            mNativeInterface.readScanReports(truncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
             waitForCallback();
         }
         setBatchAlarm(client);
@@ -1759,20 +1698,6 @@ class ScanManager {
             }
         }
         return null;
-    }
-
-    /** Return batch scan result type value defined in bt stack. */
-    private static int getResultType(BatchScanParams params) {
-        if (params.fullScanScannerId != -1 && params.truncatedScanScannerId != -1) {
-            return SCAN_RESULT_TYPE_BOTH;
-        }
-        if (params.truncatedScanScannerId != -1) {
-            return SCAN_RESULT_TYPE_TRUNCATED;
-        }
-        if (params.fullScanScannerId != -1) {
-            return SCAN_RESULT_TYPE_FULL;
-        }
-        return -1;
     }
 
     // Check if ALL_PASS filter should be used for the client.

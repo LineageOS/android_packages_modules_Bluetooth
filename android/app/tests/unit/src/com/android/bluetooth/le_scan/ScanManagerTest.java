@@ -1108,7 +1108,7 @@ public class ScanManagerTest {
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getBatchScanQueue()).contains(client);
-            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().getScanMode()).isEqualTo(expectedScanMode);
         }
     }
 
@@ -1138,13 +1138,13 @@ public class ScanManagerTest {
             startScan(client);
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
-            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().getScanMode()).isEqualTo(expectedScanMode);
             // Turn on screen
             setScreenOn(true);
             assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
             assertThat(mScanManager.getBatchScanQueue()).contains(client);
-            assertThat(mScanManager.getBatchScanParams().scanMode()).isEqualTo(expectedScanMode);
+            assertThat(mScanManager.getBatchScanParams().getScanMode()).isEqualTo(expectedScanMode);
         }
     }
 
@@ -1215,7 +1215,7 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getBatchScanQueue()).contains(client);
-                    assertThat(mScanManager.getBatchScanParams().scanMode())
+                    assertThat(mScanManager.getBatchScanParams().getScanMode())
                             .isEqualTo(expectedScanMode);
                     // Turn on screen
                     setScreenOn(true);
@@ -1229,7 +1229,7 @@ public class ScanManagerTest {
                     assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
                     assertThat(mScanManager.getBatchScanQueue()).contains(client);
-                    assertThat(mScanManager.getBatchScanParams().scanMode())
+                    assertThat(mScanManager.getBatchScanParams().getScanMode())
                             .isEqualTo(expectedScanMode);
                 });
     }
