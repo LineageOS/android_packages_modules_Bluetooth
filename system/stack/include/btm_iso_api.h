@@ -119,6 +119,9 @@ public:
 
   /**
    * Initiates disconnection of connected isochronous stream (CIS).
+   * Note: If function is used for Canceling CIS, which means, CIS was not yet established,
+   * btm_iso will skip OnCisEvent(kIsoEventCisEstablishCmpl) and
+   * will just send OnCisEvent(kIsoEventCisDisconnected) when CIS is canceled.
    *
    * @param conn_handle CIS connection handle
    * @param reason HCI reason for disconnection

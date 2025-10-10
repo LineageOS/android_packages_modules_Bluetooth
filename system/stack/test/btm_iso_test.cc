@@ -139,6 +139,9 @@ protected:
     bluetooth::hci::testing::mock_controller_ =
             std::make_unique<bluetooth::hci::testing::MockController>();
 
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->btm_iso_improve_canceling_iso(true);
+
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
     IsIsoActive = false;
@@ -1225,16 +1228,7 @@ TEST_F(IsoManagerTest, CancelPendingCreateCis_EstablishedThenDisconnected) {
 
   EXPECT_CALL(*cig_callbacks_,
               OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisEstablishCmpl, _))
-          .Times(kDefaultCigParams.cis_cfgs.size())
-          .WillRepeatedly([this](uint8_t /* type */, void* data) {
-            auto* event = static_cast<bluetooth::hci::iso_manager::cis_establish_cmpl_evt*>(data);
-            ASSERT_EQ(event->status, HCI_ERR_CANCELLED_BY_LOCAL_HOST);
-            ASSERT_EQ(event->cig_id, volatile_test_cig_create_cmpl_evt_.cig_id);
-            ASSERT_TRUE(std::find(volatile_test_cig_create_cmpl_evt_.conn_handles.begin(),
-                                  volatile_test_cig_create_cmpl_evt_.conn_handles.end(),
-                                  event->cis_conn_hdl) !=
-                        volatile_test_cig_create_cmpl_evt_.conn_handles.end());
-          });
+          .Times(0);
 
   EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisDisconnected, _))
           .Times(kDefaultCigParams.cis_cfgs.size())
@@ -1308,16 +1302,7 @@ TEST_F(IsoManagerTest, CancelPendingCreateCis_DisconnectedThenEstablished) {
 
   EXPECT_CALL(*cig_callbacks_,
               OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisEstablishCmpl, _))
-          .Times(kDefaultCigParams.cis_cfgs.size())
-          .WillRepeatedly([this](uint8_t /* type */, void* data) {
-            auto* event = static_cast<bluetooth::hci::iso_manager::cis_establish_cmpl_evt*>(data);
-            ASSERT_EQ(event->status, HCI_ERR_CANCELLED_BY_LOCAL_HOST);
-            ASSERT_EQ(event->cig_id, volatile_test_cig_create_cmpl_evt_.cig_id);
-            ASSERT_TRUE(std::find(volatile_test_cig_create_cmpl_evt_.conn_handles.begin(),
-                                  volatile_test_cig_create_cmpl_evt_.conn_handles.end(),
-                                  event->cis_conn_hdl) !=
-                        volatile_test_cig_create_cmpl_evt_.conn_handles.end());
-          });
+          .Times(0);
 
   EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisDisconnected, _))
           .Times(kDefaultCigParams.cis_cfgs.size())
