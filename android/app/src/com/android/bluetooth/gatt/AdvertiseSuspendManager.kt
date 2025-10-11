@@ -48,12 +48,12 @@ class AdvertiseSuspendManager(
         RESUMING, // Enable all paused advertisements.
     }
 
-    class AdvertiserSuspendInfo(var mDuration: Int, var mMaxExtAdvEvents: Int) {
-        var currentlyEnabled: Boolean = false
-        var needEnableOnResume: Boolean = false
+    class AdvertiserSuspendInfo(val duration: Int, val maxExtAdvEvents: Int) {
+        var currentlyEnabled = false
+        var needEnableOnResume = false
         // The number of ongoing start/enable/disable operations for this advertiser.
         // Initially, this advertiser is waiting to be started.
-        var numOfOngoingOperations: Int = 1
+        var numOfOngoingOperations = 1
     }
 
     private var suspendState = SuspendState.NORMAL
@@ -118,7 +118,7 @@ class AdvertiseSuspendManager(
     data class SetPeriodicAdvertisingEnableCommand(val advertiserId: Int, val enable: Boolean) :
         PendingAdvertiseCommand
 
-    private fun runPendingCommand(command: PendingAdvertiseCommand) {
+    private fun runPendingCommand(command: PendingAdvertiseCommand) =
         when (command) {
             is StartAdvertisingSetCommand ->
                 advertiseManager.startAdvertisingSet(
@@ -158,7 +158,6 @@ class AdvertiseSuspendManager(
             is SetPeriodicAdvertisingEnableCommand ->
                 advertiseManager.setPeriodicAdvertisingEnable(command.advertiserId, command.enable)
         }
-    }
 
     /** Returns whether advertising commands should be queued, which is true during suspend. */
     fun shouldQueueCommand(): Boolean {
@@ -255,7 +254,7 @@ class AdvertiseSuspendManager(
         duration: Int,
         maxExtAdvEvents: Int,
     ) {
-        // skip the state check when en/disabling advertisement internally.
+        // Skip the state check when en/disabling advertisement internally.
         forceNoQueue = true
         advertiseManager.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents)
         forceNoQueue = false
@@ -336,8 +335,8 @@ class AdvertiseSuspendManager(
                 enableAdvertisingSet(
                     advertiserId,
                     true,
-                    suspendInfo.mDuration,
-                    suspendInfo.mMaxExtAdvEvents,
+                    suspendInfo.duration,
+                    suspendInfo.maxExtAdvEvents,
                 )
             }
         }
@@ -448,12 +447,7 @@ class AdvertiseSuspendManager(
             } else {
                 Log.w(
                     TAG,
-                    "Unexpected event when resuming: need " +
-                        needEnable +
-                        " was " +
-                        wasEnabled +
-                        " now " +
-                        enable,
+                    "Unexpected event when resuming: need $needEnable was $wasEnabled now $enable",
                 )
             }
 
