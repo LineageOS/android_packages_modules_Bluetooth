@@ -27,6 +27,7 @@ import static android.bluetooth.BluetoothUtils.isValidDevice;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -55,23 +56,19 @@ import java.util.function.Consumer;
  *
  * <p>BluetoothHapClient is a proxy object for controlling the Bluetooth HAP Service client via IPC.
  * Use {@link BluetoothAdapter#getProfileProxy} to get the BluetoothHapClient proxy object.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothHapClient.class.getSimpleName();
 
     private final CloseGuard mCloseGuard;
 
-    /**
-     * This class provides callbacks mechanism for the BluetoothHapClient profile.
-     *
-     * @hide
-     */
+    /** This class provides callbacks mechanism for the BluetoothHapClient profile. */
+    @Hide
     @SystemApi
     public interface Callback {
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -90,15 +87,15 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
          * @param device remote device,
          * @param presetIndex the currently active preset index.
          * @param reason reason for the selected preset change
-         * @hide
          */
+        @Hide
         @SystemApi
         void onPresetSelected(
                 @NonNull BluetoothDevice device,
                 int presetIndex,
                 @PresetSelectionReason int reason);
 
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -117,13 +114,13 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
          *
          * @param device remote device,
          * @param reason failure reason.
-         * @hide
          */
+        @Hide
         @SystemApi
         void onPresetSelectionFailed(
                 @NonNull BluetoothDevice device, @PresetSelectionFailureReason int reason);
 
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -146,13 +143,13 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
          *
          * @param hapGroupId valid HAP group ID,
          * @param reason failure reason.
-         * @hide
          */
+        @Hide
         @SystemApi
         void onPresetSelectionForGroupFailed(
                 int hapGroupId, @GroupPresetSelectionFailureReason int reason);
 
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -171,15 +168,15 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
          * @param device remote device,
          * @param presetInfoList a list of all preset information on the target device
          * @param reason reason for the preset list change
-         * @hide
          */
+        @Hide
         @SystemApi
         void onPresetInfoChanged(
                 @NonNull BluetoothDevice device,
                 @NonNull List<BluetoothHapPresetInfo> presetInfoList,
                 @PresetInfoChangeReason int reason);
 
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -199,13 +196,13 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
          *
          * @param device remote device
          * @param reason Failure reason code.
-         * @hide
          */
+        @Hide
         @SystemApi
         void onSetPresetNameFailed(
                 @NonNull BluetoothDevice device, @PresetNameChangeFailureReason int reason);
 
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -228,8 +225,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
          *
          * @param hapGroupId valid HAP group ID,
          * @param reason Failure reason code.
-         * @hide
          */
+        @Hide
         @SystemApi
         void onSetPresetNameForGroupFailed(
                 int hapGroupId, @GroupPresetNameChangeFailureReason int reason);
@@ -292,9 +289,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -313,30 +309,23 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device.
      *   <li>{@link #EXTRA_HAP_FEATURES} - Supported features map.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     @SdkConstant(SdkConstant.SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_HAP_DEVICE_AVAILABLE =
             "android.bluetooth.action.HAP_DEVICE_AVAILABLE";
 
-    /**
-     * Contains a list of all available presets
-     *
-     * @hide
-     */
-    public static final String EXTRA_HAP_FEATURES = "android.bluetooth.extra.HAP_FEATURES";
+    /** Contains a list of all available presets */
+    @Hide public static final String EXTRA_HAP_FEATURES = "android.bluetooth.extra.HAP_FEATURES";
 
     /**
      * Represents an invalid index value. This is usually value returned in a currently active
      * preset request for a device which is not connected. This value shouldn't be used in the API
      * calls.
-     *
-     * @hide
      */
-    @SystemApi
+    @Hide @SystemApi
     public static final int PRESET_INDEX_UNAVAILABLE = IBluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
 
     /**
@@ -344,37 +333,27 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * set. A binaural hearing aid set is two hearing aids that form a Coordinated Set, one for the
      * right ear and one for the left ear of the user. Typically used by a user with bilateral
      * hearing loss.
-     *
-     * @hide
      */
-    @SystemApi public static final int TYPE_BINAURAL = 0b00;
+    @Hide @SystemApi public static final int TYPE_BINAURAL = 0b00;
 
     /**
      * Hearing aid type value. Indicates this Bluetooth device is a single hearing aid for the left
      * or the right ear. Typically used by a user with unilateral hearing loss.
-     *
-     * @hide
      */
-    @SystemApi
+    @Hide @SystemApi
     public static final int TYPE_MONAURAL = 1 << IBluetoothHapClient.FEATURE_BIT_NUM_TYPE_MONAURAL;
 
     /**
      * Hearing aid type value. Indicates this Bluetooth device is two hearing aids with a connection
      * to one another that expose a single Bluetooth radio interface.
-     *
-     * @hide
      */
-    @SystemApi
+    @Hide @SystemApi
     public static final int TYPE_BANDED = 1 << IBluetoothHapClient.FEATURE_BIT_NUM_TYPE_BANDED;
 
-    /**
-     * Hearing aid type value. This value is reserved for future use.
-     *
-     * @hide
-     */
-    @SystemApi public static final int TYPE_RFU = TYPE_BANDED + 1;
+    /** Hearing aid type value. This value is reserved for future use. */
+    @Hide @SystemApi public static final int TYPE_RFU = TYPE_BANDED + 1;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             flag = true,
@@ -386,46 +365,30 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             })
     @interface HearingAidType {}
 
-    /**
-     * Feature mask value.
-     *
-     * @hide
-     */
-    public static final int FEATURE_HEARING_AID_TYPE_MASK = TYPE_MONAURAL | TYPE_BANDED;
+    /** Feature mask value. */
+    @Hide public static final int FEATURE_HEARING_AID_TYPE_MASK = TYPE_MONAURAL | TYPE_BANDED;
 
-    /**
-     * Feature mask value.
-     *
-     * @hide
-     */
+    /** Feature mask value. */
+    @Hide
     public static final int FEATURE_SYNCHRONIZED_PRESETS_MASK =
             1 << IBluetoothHapClient.FEATURE_BIT_NUM_SYNCHRONIZED_PRESETS;
 
-    /**
-     * Feature mask value.
-     *
-     * @hide
-     */
+    /** Feature mask value. */
+    @Hide
     public static final int FEATURE_INDEPENDENT_PRESETS_MASK =
             1 << IBluetoothHapClient.FEATURE_BIT_NUM_INDEPENDENT_PRESETS;
 
-    /**
-     * Feature mask value.
-     *
-     * @hide
-     */
+    /** Feature mask value. */
+    @Hide
     public static final int FEATURE_DYNAMIC_PRESETS_MASK =
             1 << IBluetoothHapClient.FEATURE_BIT_NUM_DYNAMIC_PRESETS;
 
-    /**
-     * Feature mask value.
-     *
-     * @hide
-     */
+    /** Feature mask value. */
+    @Hide
     public static final int FEATURE_WRITABLE_PRESETS_MASK =
             1 << IBluetoothHapClient.FEATURE_BIT_NUM_WRITABLE_PRESETS;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             flag = true,
@@ -475,7 +438,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         if (mCloseGuard != null) {
@@ -484,14 +447,14 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
         close();
     }
 
-    /** @hide */
+    @Hide
     @Override
     public void close() {
         Log.v(TAG, "close()");
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
@@ -499,7 +462,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
         mCallbackWrapper.registerToNewService(mService);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -510,7 +473,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -529,8 +492,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException if a null executor, or callback is given, or
      *     IllegalArgumentException if the same <var>callback</var> is already registered.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -551,8 +514,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException when callback is null or IllegalArgumentException when no
      *     callback is registered
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -570,8 +533,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return {@code true} if connectionPolicy is set, {@code false} on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -595,8 +558,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param device Bluetooth device
      * @return connection policy of the device or {@link #CONNECTION_POLICY_FORBIDDEN} if device is
      *     null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -612,11 +575,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 defaultValue);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -631,11 +591,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 Collections.emptyList());
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -652,11 +609,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 Collections.emptyList());
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -686,8 +640,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * Audio Coordinated Set member.
      *
      * @return valid group identifier or -1
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -709,8 +663,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to set the active preset
      * @return active preset index
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -733,8 +687,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param device is the device for which we want to get the preset name
      * @return currently active preset info if selected, null if preset info is not available for
      *     the remote device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -760,8 +714,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to set the active preset
      * @param presetIndex is an index of one of the available presets
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -796,8 +750,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param groupId is the device group identifier for which want to set the active preset
      * @param presetIndex is an index of one of the available presets
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -815,8 +769,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * necessarily mean a higher preset index.
      *
      * @param device is the device for which we want to set the active preset
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -839,8 +793,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * group. Note that binaural HA devices may or may not support group.
      *
      * @param groupId is the device group identifier for which want to set the active preset
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -858,8 +812,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * necessarily mean a lower preset index.
      *
      * @param device is the device for which we want to set the active preset
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -884,8 +838,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * group. Note that binaural HA devices may or may not support group.
      *
      * @param groupId is the device group identifier for which want to set the active preset
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -902,8 +856,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param device is the device for which we want to get the preset
      * @param presetIndex is an index of an available presets
      * @return preset info
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -926,8 +880,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to get all presets info
      * @return a list of all known preset info
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -949,8 +903,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to get features for
      * @return features value with feature bits set
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public int getFeatures(@NonNull BluetoothDevice device) {
@@ -971,8 +925,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to get the hearing aid type
      * @return hearing aid type
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -986,8 +940,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to know if it supports synchronized presets
      * @return {@code true} if the device supports synchronized presets, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1001,8 +955,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to know if it supports independent presets
      * @return {@code true} if the device supports independent presets, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1016,8 +970,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to know if it supports dynamic presets
      * @return {@code true} if the device supports dynamic presets, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1030,8 +984,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device is the device for which we want to know if it supports writable presets
      * @return {@code true} if the device supports writable presets, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1052,8 +1006,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param device is the device for which we want to get the preset name
      * @param presetIndex is an index of one of the available presets
      * @param name is a new name for a preset, maximum length is 40 characters
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1082,8 +1036,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * @param groupId is the device group identifier
      * @param presetIndex is an index of one of the available presets
      * @param name is a new name for a preset, maximum length is 40 characters
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

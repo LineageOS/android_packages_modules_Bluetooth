@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -75,12 +76,11 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     /**
      * This class provides a callback that is invoked when audio codec config changes on the remote
      * device.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     public interface Callback {
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -89,7 +89,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
                 })
         @interface GroupStatus {}
 
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -104,8 +104,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          *
          * @param groupId the group id
          * @param status latest codec status for this group
-         * @hide
          */
+        @Hide
         @SystemApi
         void onCodecConfigChanged(int groupId, @NonNull BluetoothLeAudioCodecStatus status);
 
@@ -115,8 +115,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          *
          * @param device the device which is added to the group
          * @param groupId the group id
-         * @hide
          */
+        @Hide
         @SystemApi
         void onGroupNodeAdded(@NonNull BluetoothDevice device, int groupId);
 
@@ -126,8 +126,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          *
          * @param device the device which is removed from the group
          * @param groupId the group id
-         * @hide
          */
+        @Hide
         @SystemApi
         void onGroupNodeRemoved(@NonNull BluetoothDevice device, int groupId);
 
@@ -136,8 +136,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          *
          * @param groupId the group id
          * @param groupStatus active or inactive state.
-         * @hide
          */
+        @Hide
         @SystemApi
         void onGroupStatusChanged(int groupId, @GroupStatus int groupStatus);
 
@@ -146,8 +146,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          *
          * @param groupId the group id
          * @param groupStreamStatus streaming or idle state.
-         * @hide
          */
+        @Hide
         @SystemApi
         default void onGroupStreamStatusChanged(
                 int groupId, @GroupStreamStatus int groupStreamStatus) {
@@ -164,8 +164,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          * changes.
          *
          * @param groupId The ID of the new broadcast to unicast fallback group.
-         * @hide
          */
+        @Hide
         @SystemApi
         default void onBroadcastToUnicastFallbackGroupChanged(int groupId) {
             if (DBG) {
@@ -246,9 +246,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device. It can be null if no device
      *       is active.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -257,106 +256,61 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     public static final String ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED =
             "android.bluetooth.action.LE_AUDIO_ACTIVE_DEVICE_CHANGED";
 
-    /**
-     * Indicates invalid/unset audio context.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_INVALID = 0x0000;
+    /** Indicates invalid/unset audio context. */
+    @Hide public static final int CONTEXT_TYPE_INVALID = 0x0000;
 
-    /**
-     * Indicates unspecified audio content.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_UNSPECIFIED = 0x0001;
+    /** Indicates unspecified audio content. */
+    @Hide public static final int CONTEXT_TYPE_UNSPECIFIED = 0x0001;
 
-    /**
-     * Indicates conversation between humans as, for example, in telephony or video calls.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_CONVERSATIONAL = 0x0002;
+    /** Indicates conversation between humans as, for example, in telephony or video calls. */
+    @Hide public static final int CONTEXT_TYPE_CONVERSATIONAL = 0x0002;
 
-    /**
-     * Indicates media as, for example, in music, public radio, podcast or video soundtrack.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_MEDIA = 0x0004;
+    /** Indicates media as, for example, in music, public radio, podcast or video soundtrack. */
+    @Hide public static final int CONTEXT_TYPE_MEDIA = 0x0004;
 
-    /**
-     * Indicates audio associated with a video gaming.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_GAME = 0x0008;
+    /** Indicates audio associated with a video gaming. */
+    @Hide public static final int CONTEXT_TYPE_GAME = 0x0008;
 
     /**
      * Indicates instructional audio as, for example, in navigation, announcements or user guidance.
-     *
-     * @hide
      */
-    public static final int CONTEXT_TYPE_INSTRUCTIONAL = 0x0010;
+    @Hide public static final int CONTEXT_TYPE_INSTRUCTIONAL = 0x0010;
 
     /**
      * Indicates man machine communication as, for example, with voice recognition or virtual
      * assistant.
-     *
-     * @hide
      */
-    public static final int CONTEXT_TYPE_VOICE_ASSISTANTS = 0x0020;
+    @Hide public static final int CONTEXT_TYPE_VOICE_ASSISTANTS = 0x0020;
 
-    /**
-     * Indicates audio associated with a live audio stream.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_LIVE = 0x0040;
+    /** Indicates audio associated with a live audio stream. */
+    @Hide public static final int CONTEXT_TYPE_LIVE = 0x0040;
 
     /**
      * Indicates sound effects as, for example, in keyboard, touch feedback; menu and user interface
      * sounds, and other system sounds.
-     *
-     * @hide
      */
-    public static final int CONTEXT_TYPE_SOUND_EFFECTS = 0x0080;
+    @Hide public static final int CONTEXT_TYPE_SOUND_EFFECTS = 0x0080;
 
     /**
      * Indicates notification and reminder sounds, attention-seeking audio, for example, in beeps
      * signaling the arrival of a message.
-     *
-     * @hide
      */
-    public static final int CONTEXT_TYPE_NOTIFICATIONS = 0x0100;
+    @Hide public static final int CONTEXT_TYPE_NOTIFICATIONS = 0x0100;
 
-    /**
-     * Indicates ringtone as in a call alert.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_RINGTONE = 0x0200;
+    /** Indicates ringtone as in a call alert. */
+    @Hide public static final int CONTEXT_TYPE_RINGTONE = 0x0200;
 
     /**
      * Indicates alerts and timers, immediate alerts as, for example, in a low battery alarm, timer
      * expiry or alarm clock.
-     *
-     * @hide
      */
-    public static final int CONTEXT_TYPE_ALERTS = 0x0400;
+    @Hide public static final int CONTEXT_TYPE_ALERTS = 0x0400;
 
-    /**
-     * Indicates emergency alarm as, for example, with fire alarms or other urgent alerts.
-     *
-     * @hide
-     */
-    public static final int CONTEXT_TYPE_EMERGENCY_ALARM = 0x0800;
+    /** Indicates emergency alarm as, for example, with fire alarms or other urgent alerts. */
+    @Hide public static final int CONTEXT_TYPE_EMERGENCY_ALARM = 0x0800;
 
-    /**
-     * Indicates all contexts.
-     *
-     * @hide
-     */
+    /** Indicates all contexts. */
+    @Hide
     public static final int CONTEXTS_ALL =
             CONTEXT_TYPE_UNSPECIFIED
                     | CONTEXT_TYPE_CONVERSATIONAL
@@ -387,221 +341,102 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @deprecated As per Bluetooth Assigned Numbers, previously location invalid is now replaced
      *     with a meaning MONO.
-     * @hide
      */
-    @Deprecated @SystemApi public static final int AUDIO_LOCATION_INVALID = 0;
+    @Hide @Deprecated @SystemApi public static final int AUDIO_LOCATION_INVALID = 0;
 
-    /**
-     * This represents an Mono audio location.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_MONO = 0;
+    /** This represents an Mono audio location. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_MONO = 0;
 
     /**
      * This represents an Unknown audio location which will be returned only when Bluetooth is OFF.
-     *
-     * @hide
      */
-    @SystemApi public static final int AUDIO_LOCATION_UNKNOWN = 0x01 << 31;
+    @Hide @SystemApi public static final int AUDIO_LOCATION_UNKNOWN = 0x01 << 31;
 
-    /**
-     * This represents an audio location front left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_LEFT = 0x01 << 0;
+    /** This represents an audio location front left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_LEFT = 0x01 << 0;
 
-    /**
-     * This represents an audio location front right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_RIGHT = 0x01 << 1;
+    /** This represents an audio location front right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_RIGHT = 0x01 << 1;
 
-    /**
-     * This represents an audio location front center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_CENTER = 0x01 << 2;
+    /** This represents an audio location front center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_CENTER = 0x01 << 2;
 
-    /**
-     * This represents an audio location low frequency effects 1.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_LOW_FREQ_EFFECTS_ONE = 0x01 << 3;
+    /** This represents an audio location low frequency effects 1. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_LOW_FREQ_EFFECTS_ONE = 0x01 << 3;
 
-    /**
-     * This represents an audio location back left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_BACK_LEFT = 0x01 << 4;
+    /** This represents an audio location back left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_BACK_LEFT = 0x01 << 4;
 
-    /**
-     * This represents an audio location back right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_BACK_RIGHT = 0x01 << 5;
+    /** This represents an audio location back right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_BACK_RIGHT = 0x01 << 5;
 
-    /**
-     * This represents an audio location front left of center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_LEFT_OF_CENTER = 0x01 << 6;
+    /** This represents an audio location front left of center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_LEFT_OF_CENTER = 0x01 << 6;
 
-    /**
-     * This represents an audio location front right of center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_RIGHT_OF_CENTER = 0x01 << 7;
+    /** This represents an audio location front right of center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_RIGHT_OF_CENTER = 0x01 << 7;
 
-    /**
-     * This represents an audio location back center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_BACK_CENTER = 0x01 << 8;
+    /** This represents an audio location back center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_BACK_CENTER = 0x01 << 8;
 
-    /**
-     * This represents an audio location low frequency effects 2.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_LOW_FREQ_EFFECTS_TWO = 0x01 << 9;
+    /** This represents an audio location low frequency effects 2. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_LOW_FREQ_EFFECTS_TWO = 0x01 << 9;
 
-    /**
-     * This represents an audio location side left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_SIDE_LEFT = 0x01 << 10;
+    /** This represents an audio location side left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_SIDE_LEFT = 0x01 << 10;
 
-    /**
-     * This represents an audio location side right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_SIDE_RIGHT = 0x01 << 11;
+    /** This represents an audio location side right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_SIDE_RIGHT = 0x01 << 11;
 
-    /**
-     * This represents an audio location top front left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_FRONT_LEFT = 0x01 << 12;
+    /** This represents an audio location top front left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_FRONT_LEFT = 0x01 << 12;
 
-    /**
-     * This represents an audio location top front right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_FRONT_RIGHT = 0x01 << 13;
+    /** This represents an audio location top front right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_FRONT_RIGHT = 0x01 << 13;
 
-    /**
-     * This represents an audio location top front center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_FRONT_CENTER = 0x01 << 14;
+    /** This represents an audio location top front center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_FRONT_CENTER = 0x01 << 14;
 
-    /**
-     * This represents an audio location top center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_CENTER = 0x01 << 15;
+    /** This represents an audio location top center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_CENTER = 0x01 << 15;
 
-    /**
-     * This represents an audio location top back left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_BACK_LEFT = 0x01 << 16;
+    /** This represents an audio location top back left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_BACK_LEFT = 0x01 << 16;
 
-    /**
-     * This represents an audio location top back right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_BACK_RIGHT = 0x01 << 17;
+    /** This represents an audio location top back right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_BACK_RIGHT = 0x01 << 17;
 
-    /**
-     * This represents an audio location top side left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_SIDE_LEFT = 0x01 << 18;
+    /** This represents an audio location top side left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_SIDE_LEFT = 0x01 << 18;
 
-    /**
-     * This represents an audio location top side right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_SIDE_RIGHT = 0x01 << 19;
+    /** This represents an audio location top side right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_SIDE_RIGHT = 0x01 << 19;
 
-    /**
-     * This represents an audio location top back center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_TOP_BACK_CENTER = 0x01 << 20;
+    /** This represents an audio location top back center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_TOP_BACK_CENTER = 0x01 << 20;
 
-    /**
-     * This represents an audio location bottom front center.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_BOTTOM_FRONT_CENTER = 0x01 << 21;
+    /** This represents an audio location bottom front center. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_BOTTOM_FRONT_CENTER = 0x01 << 21;
 
-    /**
-     * This represents an audio location bottom front left.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_BOTTOM_FRONT_LEFT = 0x01 << 22;
+    /** This represents an audio location bottom front left. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_BOTTOM_FRONT_LEFT = 0x01 << 22;
 
-    /**
-     * This represents an audio location bottom front right.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_BOTTOM_FRONT_RIGHT = 0x01 << 23;
+    /** This represents an audio location bottom front right. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_BOTTOM_FRONT_RIGHT = 0x01 << 23;
 
-    /**
-     * This represents an audio location front left wide.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_LEFT_WIDE = 0x01 << 24;
+    /** This represents an audio location front left wide. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_LEFT_WIDE = 0x01 << 24;
 
-    /**
-     * This represents an audio location front right wide.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_FRONT_RIGHT_WIDE = 0x01 << 25;
+    /** This represents an audio location front right wide. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_FRONT_RIGHT_WIDE = 0x01 << 25;
 
-    /**
-     * This represents an audio location left surround.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_LEFT_SURROUND = 0x01 << 26;
+    /** This represents an audio location left surround. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_LEFT_SURROUND = 0x01 << 26;
 
-    /**
-     * This represents an audio location right surround.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_LOCATION_RIGHT_SURROUND = 0x01 << 27;
+    /** This represents an audio location right surround. */
+    @Hide @SystemApi public static final int AUDIO_LOCATION_RIGHT_SURROUND = 0x01 << 27;
 
-    /** @hide */
+    @Hide
     @SuppressLint("UniqueConstants")
     @IntDef(
             flag = true,
@@ -642,44 +477,28 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     @Retention(RetentionPolicy.SOURCE)
     public @interface AudioLocation {}
 
-    /**
-     * Contains group id.
-     *
-     * @hide
-     */
-    @SystemApi
+    /** Contains group id. */
+    @Hide @SystemApi
     public static final String EXTRA_LE_AUDIO_GROUP_ID =
             "android.bluetooth.extra.LE_AUDIO_GROUP_ID";
 
-    /**
-     * Contains bit mask for direction, bit 0 set when Sink, bit 1 set when Source.
-     *
-     * @hide
-     */
+    /** Contains bit mask for direction, bit 0 set when Sink, bit 1 set when Source. */
+    @Hide
     public static final String EXTRA_LE_AUDIO_DIRECTION =
             "android.bluetooth.extra.LE_AUDIO_DIRECTION";
 
-    /**
-     * Contains source location as per Bluetooth Assigned Numbers
-     *
-     * @hide
-     */
+    /** Contains source location as per Bluetooth Assigned Numbers */
+    @Hide
     public static final String EXTRA_LE_AUDIO_SOURCE_LOCATION =
             "android.bluetooth.extra.LE_AUDIO_SOURCE_LOCATION";
 
-    /**
-     * Contains sink location as per Bluetooth Assigned Numbers
-     *
-     * @hide
-     */
+    /** Contains sink location as per Bluetooth Assigned Numbers */
+    @Hide
     public static final String EXTRA_LE_AUDIO_SINK_LOCATION =
             "android.bluetooth.extra.LE_AUDIO_SINK_LOCATION";
 
-    /**
-     * Contains available context types for group as per Bluetooth Assigned Numbers
-     *
-     * @hide
-     */
+    /** Contains available context types for group as per Bluetooth Assigned Numbers */
+    @Hide
     public static final String EXTRA_LE_AUDIO_AVAILABLE_CONTEXTS =
             "android.bluetooth.extra.LE_AUDIO_AVAILABLE_CONTEXTS";
 
@@ -687,34 +506,18 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
 
-    /**
-     * Indicating that group is Active ( Audio device is available )
-     *
-     * @hide
-     */
-    public static final int GROUP_STATUS_ACTIVE = IBluetoothLeAudio.GROUP_STATUS_ACTIVE;
+    /** Indicating that group is Active ( Audio device is available ) */
+    @Hide public static final int GROUP_STATUS_ACTIVE = IBluetoothLeAudio.GROUP_STATUS_ACTIVE;
 
-    /**
-     * Indicating that group is Inactive ( Audio device is not available )
-     *
-     * @hide
-     */
-    public static final int GROUP_STATUS_INACTIVE = IBluetoothLeAudio.GROUP_STATUS_INACTIVE;
+    /** Indicating that group is Inactive ( Audio device is not available ) */
+    @Hide public static final int GROUP_STATUS_INACTIVE = IBluetoothLeAudio.GROUP_STATUS_INACTIVE;
 
-    /**
-     * Indicating that group stream is in IDLE (not streaming)
-     *
-     * @hide
-     */
-    @SystemApi
+    /** Indicating that group stream is in IDLE (not streaming) */
+    @Hide @SystemApi
     public static final int GROUP_STREAM_STATUS_IDLE = IBluetoothLeAudio.GROUP_STREAM_STATUS_IDLE;
 
-    /**
-     * Indicating that group is STREAMING
-     *
-     * @hide
-     */
-    @SystemApi
+    /** Indicating that group is STREAMING */
+    @Hide @SystemApi
     public static final int GROUP_STREAM_STATUS_STREAMING =
             IBluetoothLeAudio.GROUP_STREAM_STATUS_STREAMING;
 
@@ -753,13 +556,13 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @Override
     public void close() {
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @SuppressLint("AndroidFrameworkRequiresPermission") // Unexposed re-entrant callback
     @RequiresNoPermission
@@ -768,7 +571,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
         mCallbackWrapper.registerToNewService(mService);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -779,7 +582,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -805,8 +608,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean connect(@Nullable BluetoothDevice device) {
@@ -841,8 +644,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disconnect(@Nullable BluetoothDevice device) {
@@ -979,8 +782,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException if a null executor or callback is given
      * @throws IllegalArgumentException the callback is already registered
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1008,8 +811,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException when callback is null
      * @throws IllegalArgumentException when no callback is registered
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1039,8 +842,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param device the remote Bluetooth device. Could be null to clear the active device and stop
      *     streaming audio to a Bluetooth device.
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean setActiveDevice(@Nullable BluetoothDevice device) {
@@ -1063,8 +866,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * Get the connected LeAudio devices that are active
      *
      * @return the list of active devices. Returns empty list on error.
-     * @hide
      */
+    @Hide
     @NonNull
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -1117,8 +920,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * Set volume for the streaming devices
      *
      * @param volume volume to set
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1143,8 +946,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param groupId group ID the device is being added to
      * @param device the active device
      * @return true on success, otherwise false
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean groupAddNode(int groupId, @NonNull BluetoothDevice device) {
@@ -1169,8 +972,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param groupId group ID the device is being removed from
      * @param device the active device
      * @return true on success, otherwise false
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean groupRemoveNode(int groupId, @NonNull BluetoothDevice device) {
@@ -1196,8 +999,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @param device the bluetooth device
      * @return The bit field of audio location for the device.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1228,8 +1031,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @param groupId LE Audio group id
      * @return {@code true} if inband ringtone is enabled, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1263,8 +1066,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1295,8 +1098,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1332,8 +1135,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @param groupId The group id
      * @return the current codec status
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1365,8 +1168,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param outputCodecConfig the output codec configuration preference
      * @throws IllegalStateException if LE Audio Service is null
      * @throws NullPointerException if any of the configs is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1409,8 +1212,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @param groupId the ID of the group to switch to if unicast fails during a broadcast handover,
      *     {@link #GROUP_ID_INVALID} when there should be no such fallback group.
      * @see BluetoothLeAudio#getGroupId()
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -1442,8 +1245,8 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      *
      * @return groupId the ID of the fallback group, {@link #GROUP_ID_INVALID} when adapter is
      *     disabled
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
