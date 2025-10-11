@@ -590,14 +590,13 @@ int register_com_android_bluetooth_hap_client(JNIEnv* env) {
           {"groupSetPresetNameNative", "(IILjava/lang/String;)V",
            reinterpret_cast<void*>(groupSetPresetNameNative)},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/hap/HapClientNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/hap/HapClientNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sCallbacksField =
-          getNativeCallbackField(env, "com/android/bluetooth/hap/HapClientNativeInterface");
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},

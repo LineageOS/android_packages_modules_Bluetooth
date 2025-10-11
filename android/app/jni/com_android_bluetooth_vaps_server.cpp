@@ -206,14 +206,13 @@
            {"setVaeNameNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(setVaeNameNative)},
            {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
    };
-   const int result = REGISTER_NATIVE_METHODS(
-           env, "com/android/bluetooth/vaps/VapsServerNativeInterface", methods);
+   const char* jniNativeInterfaceClass = "com/android/bluetooth/vaps/VapsServerNativeInterface";
+   const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
    if (result != 0) {
      return result;
    }
 
-   sCallbacksField =
-           getNativeCallbackField(env, "com/android/bluetooth/vaps/VapsServerNativeInterface");
+   sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
    const JNIJavaMethod javaMethods[] = {
            {"onInitialized", "()V", &method_onInitialized},

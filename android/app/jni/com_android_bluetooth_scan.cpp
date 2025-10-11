@@ -993,14 +993,13 @@ static int register_com_android_bluetooth_scan_(JNIEnv* env) {
           {"msftAdvMonitorRemoveNative", "(II)V", (void*)msftAdvMonitorRemoveNative},
           {"msftAdvMonitorEnableNative", "(Z)V", (void*)msftAdvMonitorEnableNative},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/le_scan/ScanNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/le_scan/ScanNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sScanCallbacksField =
-          getNativeCallbackField(env, "com/android/bluetooth/le_scan/ScanNativeInterface");
+  sScanCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in ScanNativeCallback
   const JNIJavaMethod javaMethods[] = {
@@ -1040,14 +1039,13 @@ static int register_com_android_bluetooth_periodic_scan(JNIEnv* env) {
           {"syncTransferNative", "(ILjava/lang/String;II)V", (void*)syncTransferNative},
           {"transferSetInfoNative", "(ILjava/lang/String;II)V", (void*)transferSetInfoNative},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/le_scan/PeriodicScanNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/le_scan/PeriodicScanNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sPeriodicScanCallbacksField =
-          getNativeCallbackField(env, "com/android/bluetooth/le_scan/PeriodicScanNativeInterface");
+  sPeriodicScanCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in PeriodicScanNativeCallback
   const JNIJavaMethod javaMethods[] = {
