@@ -989,10 +989,6 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event, tGAP_
       if (!GAP_IsTransportLe(gap_handle)) {
         evt_data.l2c_open.rem_bda = *GAP_ConnGetRemoteAddr(gap_handle);
         evt_data.l2c_open.tx_mtu = GAP_ConnGetRemMtuSize(gap_handle);
-        if (data != nullptr) {
-          evt_data.l2c_open.local_cid = data->l2cap_cids.local_cid;
-          evt_data.l2c_open.remote_cid = data->l2cap_cids.remote_cid;
-        }
       } else {
         uint16_t remote_mtu, local_mps, remote_mps, local_credit, remote_credit;
         uint16_t local_cid, remote_cid, acl_handle;
@@ -1156,7 +1152,8 @@ void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event, tGAP_CB_DATA* data) {
+static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
+                                      tGAP_CB_DATA* /* data */) {
   tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
   tBTA_JV_L2CAP_CBACK* p_cback;
@@ -1175,10 +1172,6 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event, tGAP_
       if (!GAP_IsTransportLe(gap_handle)) {
         evt_data.l2c_open.rem_bda = *GAP_ConnGetRemoteAddr(gap_handle);
         evt_data.l2c_open.tx_mtu = GAP_ConnGetRemMtuSize(gap_handle);
-        if (data != nullptr) {
-          evt_data.l2c_open.local_cid = data->l2cap_cids.local_cid;
-          evt_data.l2c_open.remote_cid = data->l2cap_cids.remote_cid;
-        }
       } else {
         uint16_t remote_mtu, local_mps, remote_mps, local_credit, remote_credit;
         uint16_t local_cid, remote_cid, acl_handle;

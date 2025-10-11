@@ -37,8 +37,6 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
     private static final int INVALID_FD = -1;
 
-    private static final int INVALID_CID = -1;
-
     private AdapterService mService;
 
     BluetoothSocketManagerBinder(AdapterService service) {
@@ -282,34 +280,6 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         mService.getNative()
                 .requestMaximumTxDataLength(Utils.getBytesFromAddress(device.getAddress()));
-    }
-
-    @Override
-    public int getL2capLocalChannelId(ParcelUuid connectionUuid, AttributionSource source) {
-        AdapterService service = mService;
-        if (service == null
-                || !Utils.callerIsSystemOrActiveOrManagedUser(
-                        service, TAG, "getL2capLocalChannelId")
-                || !Utils.checkConnectPermissionForDataDelivery(
-                        service, source, TAG, "getL2capLocalChannelId")) {
-            return INVALID_CID;
-        }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getNative().getSocketL2capLocalChannelId(connectionUuid);
-    }
-
-    @Override
-    public int getL2capRemoteChannelId(ParcelUuid connectionUuid, AttributionSource source) {
-        AdapterService service = mService;
-        if (service == null
-                || !Utils.callerIsSystemOrActiveOrManagedUser(
-                        service, TAG, "getL2capRemoteChannelId")
-                || !Utils.checkConnectPermissionForDataDelivery(
-                        service, source, TAG, "getL2capRemoteChannelId")) {
-            return INVALID_CID;
-        }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getNative().getSocketL2capRemoteChannelId(connectionUuid);
     }
 
     private void enforceActiveUser() {

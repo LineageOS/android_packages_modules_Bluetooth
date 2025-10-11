@@ -90,7 +90,6 @@ typedef struct l2cap_socket {
   int64_t rx_bytes;
   uint16_t local_cid;   // The local CID
   uint16_t remote_cid;  // The remote CID
-  Uuid conn_uuid;       // The connection uuid
   uint64_t socket_id;   // Socket ID in connected state
   btsock_data_path_t data_path;  // socket data path
   char socket_name[128];         // descriptive socket name
@@ -231,20 +230,6 @@ static l2cap_socket* btsock_l2cap_find_by_id_l(uint32_t id) {
   return sock;
 }
 
-/* only call with std::mutex taken */
-static l2cap_socket* btsock_l2cap_find_by_conn_uuid_l(Uuid& conn_uuid) {
-  l2cap_socket* sock = socks;
-
-  while (sock) {
-    if (sock->conn_uuid == conn_uuid) {
-      return sock;
-    }
-    sock = sock->next;
-  }
-
-  return nullptr;
-}
-
 static void btsock_l2cap_free_l(l2cap_socket* sock, btsock_error_code_t error_code) {
   uint8_t* buf;
   l2cap_socket* t = socks;
@@ -360,7 +345,6 @@ static l2cap_socket* btsock_l2cap_alloc_l(const char* name, const RawAddress* ad
   sock->handle = 0;
   sock->server_psm_sent = false;
   sock->app_uid = -1;
-  sock->conn_uuid = Uuid::kEmpty;
   sock->socket_id = 0;
   sock->data_path = BTSOCK_DATA_PATH_NO_OFFLOAD;
   sock->hub_id = 0;
@@ -447,33 +431,9 @@ static bool send_app_err_code(l2cap_socket* sock, tBTA_JV_L2CAP_REASON code) {
   return sock_send_all(sock->our_fd, (const uint8_t*)&code, sizeof(code)) == sizeof(code);
 }
 
-static uint64_t uuid_lsb(const Uuid& uuid) {
-  uint64_t lsb = 0;
-
-  auto uu = uuid.To128BitBE();
-  for (int i = 8; i <= 15; i++) {
-    lsb <<= 8;
-    lsb |= uu[i];
-  }
-
-  return lsb;
-}
-
-static uint64_t uuid_msb(const Uuid& uuid) {
-  uint64_t msb = 0;
-
-  auto uu = uuid.To128BitBE();
-  for (int i = 0; i <= 7; i++) {
-    msb <<= 8;
-    msb |= uu[i];
-  }
-
-  return msb;
-}
-
 static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel, int status,
                                     int send_fd, uint16_t rx_mtu, uint16_t tx_mtu,
-                                    const Uuid& conn_uuid, uint64_t socket_id) {
+                                    uint64_t socket_id) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
   cs.bd_addr = *addr;
@@ -481,8 +441,6 @@ static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
   cs.status = status;
   cs.max_rx_packet_size = rx_mtu;
   cs.max_tx_packet_size = tx_mtu;
-  cs.conn_uuid_lsb = uuid_lsb(conn_uuid);
-  cs.conn_uuid_msb = uuid_msb(conn_uuid);
   cs.socket_id = socket_id;
   if (send_fd != -1) {
     if (sock_send_fd(fd, (const uint8_t*)&cs, sizeof(cs), send_fd) == sizeof(cs)) {
@@ -568,9 +526,6 @@ static void clone_server_socket_to_accepted_socket(tBTA_JV_L2CAP_OPEN* p_open,
   accept_rs->rx_mtu = sock->rx_mtu;
   accept_rs->local_cid = p_open->local_cid;
   accept_rs->remote_cid = p_open->remote_cid;
-  // TODO(b/342012881) Remove connection uuid when offload socket API is landed.
-  Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
-  accept_rs->conn_uuid = uuid;
   accept_rs->socket_id = btif_l2cap_sock_generate_socket_id();
   accept_rs->data_path = sock->data_path;
   strncpy(accept_rs->socket_name, sock->socket_name, sizeof(accept_rs->socket_name) - 1);
@@ -610,7 +565,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket*
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_EXCEPTION, sock->id);
   btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, accept_rs->id);
   send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0, accept_rs->app_fd,
-                          sock->rx_mtu, p_open->tx_mtu, accept_rs->conn_uuid, accept_rs->socket_id);
+                          sock->rx_mtu, p_open->tx_mtu, accept_rs->socket_id);
   accept_rs->app_fd = -1;  // The fd is closed after sent to app in send_app_connect_signal()
   // But for some reason we still leak a FD - either the server socket
   // one or the accept socket one.
@@ -624,9 +579,6 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* 
   sock->tx_mtu = p_open->tx_mtu;
   sock->local_cid = p_open->local_cid;
   sock->remote_cid = p_open->remote_cid;
-  // TODO(b/342012881) Remove connection uuid when offload socket API is landed.
-  Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
-  sock->conn_uuid = uuid;
   sock->socket_id = btif_l2cap_sock_generate_socket_id();
 
   if (!send_app_psm_or_chan_l(sock)) {
@@ -635,7 +587,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* 
   }
 
   if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1, sock->rx_mtu,
-                               p_open->tx_mtu, sock->conn_uuid, sock->socket_id)) {
+                               p_open->tx_mtu, sock->socket_id)) {
     log::error("Unable to connect l2cap socket to application socket_id:{}", sock->id);
     return;
   }
@@ -1261,32 +1213,6 @@ bt_status_t btsock_l2cap_disconnect(const RawAddress* bd_addr) {
   return BT_STATUS_SUCCESS;
 }
 
-bt_status_t btsock_l2cap_get_l2cap_local_cid(Uuid& conn_uuid, uint16_t* cid) {
-  l2cap_socket* sock;
-
-  std::unique_lock<std::mutex> lock(state_lock);
-  sock = btsock_l2cap_find_by_conn_uuid_l(conn_uuid);
-  if (!sock) {
-    log::error("Unable to find l2cap socket with conn_uuid:{}", conn_uuid.ToString());
-    return BT_STATUS_SOCKET_ERROR;
-  }
-  *cid = sock->local_cid;
-  return BT_STATUS_SUCCESS;
-}
-
-bt_status_t btsock_l2cap_get_l2cap_remote_cid(Uuid& conn_uuid, uint16_t* cid) {
-  l2cap_socket* sock;
-
-  std::unique_lock<std::mutex> lock(state_lock);
-  sock = btsock_l2cap_find_by_conn_uuid_l(conn_uuid);
-  if (!sock) {
-    log::error("Unable to find l2cap socket with conn_uuid:{}", conn_uuid.ToString());
-    return BT_STATUS_SOCKET_ERROR;
-  }
-  *cid = sock->remote_cid;
-  return BT_STATUS_SUCCESS;
-}
-
 // TODO(b/380189525): Replace the randomized socket ID with static counter when we don't have
 // security concerns about using static counter.
 static uint64_t btif_l2cap_sock_generate_socket_id() {
@@ -1333,7 +1259,7 @@ void on_btsocket_l2cap_opened_complete(uint64_t socket_id, bool success) {
   // If the socket was accepted from listen socket, use listen_fd.
   if (sock->listen_fd != -1) {
     send_app_connect_signal(sock->listen_fd, &sock->addr, sock->channel, 0, sock->app_fd,
-                            sock->rx_mtu, sock->tx_mtu, sock->conn_uuid, sock->socket_id);
+                            sock->rx_mtu, sock->tx_mtu, sock->socket_id);
     // The fd is closed after sent to app in send_app_connect_signal()
     sock->app_fd = -1;
   } else {
@@ -1342,7 +1268,7 @@ void on_btsocket_l2cap_opened_complete(uint64_t socket_id, bool success) {
       return;
     }
     if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1, sock->rx_mtu,
-                                 sock->tx_mtu, sock->conn_uuid, sock->socket_id)) {
+                                 sock->tx_mtu, sock->socket_id)) {
       log::error("Unable to connect l2cap socket to application socket_id:{}", sock->id);
       return;
     }
@@ -1382,9 +1308,6 @@ static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_
   sock->tx_mtu = p_open->tx_mtu;
   sock->local_cid = p_open->local_cid;
   sock->remote_cid = p_open->remote_cid;
-  // TODO(b/342012881) Remove connection uuid when offload socket API is landed.
-  Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
-  sock->conn_uuid = uuid;
   sock->socket_id = btif_l2cap_sock_generate_socket_id();
 
   log::info(

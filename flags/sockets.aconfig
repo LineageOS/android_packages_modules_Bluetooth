@@ -2,14 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "bt_socket_api_l2cap_cid"
-    namespace: "bluetooth"
-    description: "New socket API to get L2CAP channel ID"
-    bug: "326351678"
-    is_exported: true
-}
-
-flag {
     name: "set_max_data_length_for_lecoc"
     namespace: "bluetooth"
     description: "set le data length to max on le coc connection to achieve better data rate"

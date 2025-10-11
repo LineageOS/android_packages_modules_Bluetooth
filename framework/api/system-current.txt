@@ -1170,8 +1170,6 @@ package android.bluetooth {
   }
 
   public final class BluetoothSocket implements java.io.Closeable {
-    method @FlaggedApi("com.android.bluetooth.flags.bt_socket_api_l2cap_cid") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getL2capLocalChannelId() throws java.io.IOException;
-    method @FlaggedApi("com.android.bluetooth.flags.bt_socket_api_l2cap_cid") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getL2capRemoteChannelId() throws java.io.IOException;
     method public long getSocketId() throws java.io.IOException;
   }
 

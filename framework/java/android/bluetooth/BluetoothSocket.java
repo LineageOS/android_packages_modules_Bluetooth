@@ -19,7 +19,6 @@ package android.bluetooth;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
-import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -172,14 +171,13 @@ public final class BluetoothSocket implements Closeable {
     @UnsupportedAppUsage private int mPort; /* RFCOMM channel or L2CAP psm */
     private String mServiceName;
 
-    private static final int SOCK_CONNECTION_SIGNAL_SIZE = 44;
+    private static final int SOCK_CONNECTION_SIGNAL_SIZE = 28;
     private static final long INVALID_SOCKET_ID = 0;
     private static final int SOCK_ACCEPT_SIGNAL_SIZE = 4;
 
     private ByteBuffer mL2capBuffer = null;
     private int mMaxTxPacketSize = 0; // The l2cap maximum packet size supported by the peer.
     private int mMaxRxPacketSize = 0; // The l2cap maximum packet size that can be received.
-    private ParcelUuid mConnectionUuid;
     private long mSocketId; // Socket ID in connected state.
 
     private long mSocketCreationTimeNanos = 0;
@@ -443,7 +441,6 @@ public final class BluetoothSocket implements Closeable {
         mOutputStream = new BluetoothOutputStream(this);
         mMaxRxPacketSize = s.mMaxRxPacketSize;
         mMaxTxPacketSize = s.mMaxTxPacketSize;
-        mConnectionUuid = s.mConnectionUuid;
         mSocketId = s.mSocketId;
 
         mServiceName = s.mServiceName;
@@ -1041,7 +1038,6 @@ public final class BluetoothSocket implements Closeable {
                 mPfd.close();
                 mPfd = null;
             }
-            mConnectionUuid = null;
             mSocketId = INVALID_SOCKET_ID;
         }
     }
@@ -1141,88 +1137,6 @@ public final class BluetoothSocket implements Closeable {
     }
 
     /**
-     * Returns the L2CAP local channel ID associated with an open connection to this socket.
-     *
-     * @return the L2CAP local channel ID.
-     * @throws BluetoothSocketException in case of failure, with the corresponding error code.
-     */
-    @Hide
-    @SystemApi
-    @FlaggedApi(Flags.FLAG_BT_SOCKET_API_L2CAP_CID)
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public int getL2capLocalChannelId() throws IOException {
-        if (mType != TYPE_LE) {
-            throw new BluetoothSocketException(BluetoothSocketException.L2CAP_UNKNOWN);
-        }
-        if (mSocketState != SocketState.CONNECTED || mConnectionUuid == null) {
-            throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
-        }
-        int cid;
-        IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();
-        if (bluetoothProxy == null) {
-            throw new BluetoothSocketException(BluetoothSocketException.BLUETOOTH_OFF_FAILURE);
-        }
-        try {
-            IBluetoothSocketManager socketManager = bluetoothProxy.getSocketManager();
-            if (socketManager == null) {
-                throw new BluetoothSocketException(BluetoothSocketException.SOCKET_MANAGER_FAILURE);
-            }
-            cid =
-                    socketManager.getL2capLocalChannelId(
-                            mConnectionUuid, AttributionSource.myAttributionSource());
-        } catch (RemoteException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            throw new IOException("unable to send RPC: " + e.getMessage());
-        }
-        if (cid == -1) {
-            throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
-        }
-        return cid;
-    }
-
-    /**
-     * Returns the L2CAP remote channel ID associated with an open connection to this socket.
-     *
-     * @return the L2CAP remote channel ID.
-     * @throws BluetoothSocketException in case of failure, with the corresponding error code.
-     */
-    @Hide
-    @SystemApi
-    @FlaggedApi(Flags.FLAG_BT_SOCKET_API_L2CAP_CID)
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public int getL2capRemoteChannelId() throws IOException {
-        if (mType != TYPE_LE) {
-            throw new BluetoothSocketException(BluetoothSocketException.L2CAP_UNKNOWN);
-        }
-        if (mSocketState != SocketState.CONNECTED || mConnectionUuid == null) {
-            throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
-        }
-        int cid;
-        IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();
-        if (bluetoothProxy == null) {
-            throw new BluetoothSocketException(BluetoothSocketException.BLUETOOTH_OFF_FAILURE);
-        }
-        try {
-            IBluetoothSocketManager socketManager = bluetoothProxy.getSocketManager();
-            if (socketManager == null) {
-                throw new BluetoothSocketException(BluetoothSocketException.SOCKET_MANAGER_FAILURE);
-            }
-            cid =
-                    socketManager.getL2capRemoteChannelId(
-                            mConnectionUuid, AttributionSource.myAttributionSource());
-        } catch (RemoteException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            throw new IOException("unable to send RPC: " + e.getMessage());
-        }
-        if (cid == -1) {
-            throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
-        }
-        return cid;
-    }
-
-    /**
      * Returns the socket ID assigned to the open connection on this BluetoothSocket. This socket ID
      * is a unique identifier for the socket. It is valid only while the socket is connected.
      *
@@ -1311,9 +1225,6 @@ public final class BluetoothSocket implements Closeable {
         int status = bb.getInt();
         mMaxTxPacketSize = (bb.getShort() & 0xffff); // Convert to unsigned value
         mMaxRxPacketSize = (bb.getShort() & 0xffff); // Convert to unsigned value
-        long uuidLsb = bb.getLong();
-        long uuidMsb = bb.getLong();
-        mConnectionUuid = new ParcelUuid(new UUID(uuidMsb, uuidLsb));
         mSocketId = bb.getLong();
         String RemoteAddr = convertAddr(addr);
         if (VDBG) {
@@ -1331,8 +1242,6 @@ public final class BluetoothSocket implements Closeable {
                             + mMaxRxPacketSize
                             + " MaxTxPktSize: "
                             + mMaxTxPacketSize
-                            + " mConnectionUuid: "
-                            + mConnectionUuid.toString()
                             + " mSocketId: "
                             + mSocketId);
         }
