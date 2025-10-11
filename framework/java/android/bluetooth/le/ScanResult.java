@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -191,7 +192,7 @@ public final class ScanResult implements Parcelable, Attributable {
         return 0;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void setAttributionSource(@NonNull AttributionSource source) {
         Attributable.setAttributionSource(mDevice, source);

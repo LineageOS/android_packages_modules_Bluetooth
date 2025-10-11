@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SystemApi;
@@ -213,9 +214,8 @@ public final class AdvertisingSet {
     /**
      * Returns address associated with this advertising set. This method is exposed only for
      * Bluetooth PTS tests, no app or system service should ever use it.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothAdvertisePermission
     @RequiresPermission(
             allOf = {
@@ -235,9 +235,8 @@ public final class AdvertisingSet {
      *
      * <p>This corresponds to the advertising set ID used at the HCI layer, in either LE Extended
      * Advertising or Android-specific Multi-Advertising.
-     *
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     @SystemApi
     public int getAdvertiserId() {

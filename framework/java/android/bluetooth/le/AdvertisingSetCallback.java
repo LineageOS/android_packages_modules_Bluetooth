@@ -16,6 +16,8 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
+
 /** Bluetooth LE advertising set callbacks, used to deliver advertising operation status. */
 public abstract class AdvertisingSetCallback {
 
@@ -131,7 +133,7 @@ public abstract class AdvertisingSetCallback {
      * @param advertisingSet The advertising set.
      * @param addressType type of address.
      * @param address advertising set bluetooth address.
-     * @hide
      */
+    @Hide
     public void onOwnAddressRead(AdvertisingSet advertisingSet, int addressType, String address) {}
 }

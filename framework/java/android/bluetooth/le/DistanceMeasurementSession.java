@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothUtils.executeFromBinder;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresPermission;
@@ -53,9 +54,8 @@ import java.util.concurrent.Executor;
  * DistanceMeasurementSession.Callback#onStarted(DistanceMeasurementSession)}. If starting a session
  * fails, the failure is reported through {@link
  * DistanceMeasurementSession.Callback#onStartFail(int)} with the failure reason.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class DistanceMeasurementSession {
     private static final String TAG = DistanceMeasurementSession.class.getSimpleName();
@@ -67,7 +67,7 @@ public final class DistanceMeasurementSession {
     private final Callback mCallback;
     private final AttributionSource mAttributionSource;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             value = {
@@ -77,7 +77,7 @@ public final class DistanceMeasurementSession {
             })
     public @interface StopSessionReturnValues {}
 
-    /** @hide */
+    @Hide
     public DistanceMeasurementSession(
             IDistanceMeasurement distanceMeasurement,
             ParcelUuid uuid,
@@ -97,8 +97,8 @@ public final class DistanceMeasurementSession {
      * Stops actively ranging, {@link Callback#onStopped} will be invoked if this succeeds.
      *
      * @return whether successfully stop or not
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -115,34 +115,31 @@ public final class DistanceMeasurementSession {
         }
     }
 
-    /** @hide */
+    @Hide
     void onStarted() {
         executeFromBinder(mExecutor, () -> mCallback.onStarted(this));
     }
 
-    /** @hide */
+    @Hide
     void onStartFail(int reason) {
         executeFromBinder(mExecutor, () -> mCallback.onStartFail(reason));
     }
 
-    /** @hide */
+    @Hide
     void onStopped(int reason) {
         executeFromBinder(mExecutor, () -> mCallback.onStopped(this, reason));
     }
 
-    /** @hide */
+    @Hide
     void onResult(@NonNull BluetoothDevice device, @NonNull DistanceMeasurementResult result) {
         executeFromBinder(mExecutor, () -> mCallback.onResult(device, result));
     }
 
-    /**
-     * Interface for receiving {@link DistanceMeasurementSession} events.
-     *
-     * @hide
-     */
+    /** Interface for receiving {@link DistanceMeasurementSession} events. */
+    @Hide
     @SystemApi
     public interface Callback {
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -164,8 +161,8 @@ public final class DistanceMeasurementSession {
          * DistanceMeasurementParams, Executor, DistanceMeasurementSession.Callback)} is successful.
          *
          * @param session the started {@link DistanceMeasurementSession}
-         * @hide
          */
+        @Hide
         @SystemApi
         void onStarted(@NonNull DistanceMeasurementSession session);
 
@@ -174,8 +171,8 @@ public final class DistanceMeasurementSession {
          * DistanceMeasurementParams, Executor, DistanceMeasurementSession.Callback)} fails.
          *
          * @param reason the failure reason
-         * @hide
          */
+        @Hide
         @SystemApi
         void onStartFail(@Reason int reason);
 
@@ -183,8 +180,8 @@ public final class DistanceMeasurementSession {
          * Invoked when a distance measurement session stopped.
          *
          * @param reason reason for the session stop
-         * @hide
          */
+        @Hide
         @SystemApi
         void onStopped(@NonNull DistanceMeasurementSession session, @Reason int reason);
 
@@ -193,8 +190,8 @@ public final class DistanceMeasurementSession {
          *
          * @param device remote device
          * @param result {@link DistanceMeasurementResult} for this device
-         * @hide
          */
+        @Hide
         @SystemApi
         void onResult(@NonNull BluetoothDevice device, @NonNull DistanceMeasurementResult result);
     }

@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.bluetooth.BluetoothAdapter;
 import android.util.SparseArray;
 
@@ -26,11 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Helper class for Bluetooth LE utils.
- *
- * @hide
- */
+/** Helper class for Bluetooth LE utils. */
+@Hide
 public class BluetoothLeUtils {
     /** Returns a string composed from a byte array. */
     static String toString(byte[] data) {

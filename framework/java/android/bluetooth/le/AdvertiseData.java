@@ -125,7 +125,6 @@ public final class AdvertiseData implements Parcelable {
         return mIncludeDeviceName;
     }
 
-    /** @hide */
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -138,7 +137,6 @@ public final class AdvertiseData implements Parcelable {
                 mIncludeTxPowerLevel);
     }
 
-    /** @hide */
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) {
