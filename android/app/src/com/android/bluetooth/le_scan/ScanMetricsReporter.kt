@@ -106,13 +106,14 @@ class ScanMetricsReporter(
         // Inform battery stats of any results it might be missing on scan stop
         val isUnoptimized =
             !(scan.mIsFilterScan || scan.mIsBackgroundScan || scan.mIsOpportunisticScan)
-        batteryStatsManager.reportBleScanResults(workSource, scan.mResults % 100)
+        val results = scan.mResultsScreenOff + scan.mResultsScreenOn
+        batteryStatsManager.reportBleScanResults(workSource, results % 100)
         batteryStatsManager.reportBleScanStopped(workSource, isUnoptimized)
         BluetoothStatsLog.write(
             BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
             workSourceUtil.uids,
             workSourceUtil.tags,
-            scan.mResults % 100,
+            results % 100,
         )
         BluetoothStatsLog.write(
             BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,

@@ -74,7 +74,8 @@ public class AppScanStats {
         boolean mIsTimeout;
         private boolean mIsDowngraded;
         boolean mIsAutoBatchScan;
-        int mResults;
+        int mResultsScreenOn = 0;
+        int mResultsScreenOff = 0;
 
         private LastScan(
                 long startTimestamp,
@@ -132,7 +133,8 @@ public class AppScanStats {
     int mBalancedScan = 0;
     int mLowLatencyScan = 0;
     int mAmbientDiscoveryScan = 0;
-    int mResults = 0;
+    int mResultsScreenOn = 0;
+    int mResultsScreenOff = 0;
     int mScheduledBatchAlarmCount = 0;
 
     AppScanStats(
@@ -163,29 +165,48 @@ public class AppScanStats {
     }
 
     synchronized void addResult(int scannerId) {
-        mResults++;
+        var isScreenOn = sIsScreenOn.get();
+        if (isScreenOn) {
+            mResultsScreenOn++;
+        } else {
+            mResultsScreenOff++;
+        }
 
-        LastScan scan = getScanFromScannerId(scannerId);
+        var scan = getScanFromScannerId(scannerId);
         if (scan == null) return;
-        scan.mResults++;
+        if (isScreenOn) {
+            scan.mResultsScreenOn++;
+        } else {
+            scan.mResultsScreenOff++;
+        }
 
         // Only update battery stats every 100 results to lower the high-cost of binder transactions
-        if (scan.mResults % 100 == 0) {
+        if ((scan.mResultsScreenOn + scan.mResultsScreenOff) % 100 == 0) {
             mScanMetricsReporter.reportScanResults(100);
         }
     }
 
     synchronized void addResults(int scannerId, int numberOfNewResults) {
-        mResults += numberOfNewResults;
+        var isScreenOn = sIsScreenOn.get();
+        if (isScreenOn) {
+            mResultsScreenOn += numberOfNewResults;
+        } else {
+            mResultsScreenOff += numberOfNewResults;
+        }
 
-        LastScan scan = getScanFromScannerId(scannerId);
+        var scan = getScanFromScannerId(scannerId);
         if (scan == null) return;
 
-        final int resultsBeforeUpdate = scan.mResults;
-        scan.mResults += numberOfNewResults;
+        var resultsBeforeUpdate = scan.mResultsScreenOn + scan.mResultsScreenOff;
+        if (isScreenOn) {
+            scan.mResultsScreenOn += numberOfNewResults;
+        } else {
+            scan.mResultsScreenOff += numberOfNewResults;
+        }
 
         // Only update battery stats every 100 results to lower the high-cost of binder transactions
-        if ((scan.mResults / 100) > (resultsBeforeUpdate / 100)) {
+        if (((scan.mResultsScreenOn + scan.mResultsScreenOff) / 100)
+                > (resultsBeforeUpdate / 100)) {
             mScanMetricsReporter.reportScanResults(100);
         }
     }

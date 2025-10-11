@@ -344,11 +344,11 @@ object ScanUtil {
         }
 
         sb.append("\n    LE scans               ")
-            .append("(started/stopped)                                   : ")
+            .append("(Started/Stopped)                                   : ")
         sb.append("$mScansStarted / $mScansStopped")
 
         sb.append("\n    Scan time(ms)          ")
-            .append("(active/suspend/total)                              : ")
+            .append("(Active/Suspend/Total)                              : ")
         sb.append("$totalActiveTime / $totalSuspendTime / $totalScanTime")
 
         sb.append("\n    Scan time per mode(ms) ")
@@ -364,8 +364,9 @@ object ScanUtil {
         sb.append("\n    Score ")
             .append("                                                                     : $score")
 
-        sb.append("\n    Total number of results")
-            .append("                                                    : $mResults")
+        val results = mResultsScreenOff + mResultsScreenOn
+        sb.append("\n    Number of results      (ScreenOff/ScreenOn/Total)")
+            .append("                          : $mResultsScreenOff / $mResultsScreenOn / $results")
 
         if (mScheduledBatchAlarmCount > 0) {
             sb.append("\n    Number of batch alarms scheduled")
@@ -418,7 +419,9 @@ object ScanUtil {
         if (mIsFilterScan) sb.append("(Filter) ")
         if (ongoing && mIsSuspended) sb.append("(Suspended) ")
 
-        sb.append("Results: $mResults | id: ($mScannerId) | ")
+        val results = mResultsScreenOff + mResultsScreenOn
+        sb.append("Results: ($mResultsScreenOff / $mResultsScreenOn / $results) | ")
+            .append("id: ($mScannerId) | ")
 
         mAttributionTag?.let { sb.append("[$it] | ") }
 
