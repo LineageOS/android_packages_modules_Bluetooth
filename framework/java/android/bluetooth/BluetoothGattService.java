@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -44,38 +45,20 @@ public class BluetoothGattService implements Parcelable {
 
     /**
      * The remote device this service is associated with. This applies to client applications only.
-     *
-     * @hide
      */
-    @UnsupportedAppUsage protected BluetoothDevice mDevice;
+    @Hide @UnsupportedAppUsage protected BluetoothDevice mDevice;
 
-    /**
-     * The UUID of this service.
-     *
-     * @hide
-     */
-    protected UUID mUuid;
+    /** The UUID of this service. */
+    @Hide protected UUID mUuid;
 
-    /**
-     * Instance ID for this service.
-     *
-     * @hide
-     */
-    protected int mInstanceId;
+    /** Instance ID for this service. */
+    @Hide protected int mInstanceId;
 
-    /**
-     * Handle counter override (for conformance testing).
-     *
-     * @hide
-     */
-    protected int mHandles = 0;
+    /** Handle counter override (for conformance testing). */
+    @Hide protected int mHandles = 0;
 
-    /**
-     * Service type (Primary/Secondary).
-     *
-     * @hide
-     */
-    protected int mServiceType;
+    /** Service type (Primary/Secondary). */
+    @Hide protected int mServiceType;
 
     /** List of characteristics included in this service. */
     protected List<BluetoothGattCharacteristic> mCharacteristics;
@@ -103,11 +86,8 @@ public class BluetoothGattService implements Parcelable {
         mIncludedServices = new ArrayList<>();
     }
 
-    /**
-     * Create a new BluetoothGattService
-     *
-     * @hide
-     */
+    /** Create a new BluetoothGattService */
+    @Hide
     /*package*/ BluetoothGattService(
             BluetoothDevice device, UUID uuid, int instanceId, int serviceType) {
         mDevice = device;
@@ -118,11 +98,8 @@ public class BluetoothGattService implements Parcelable {
         mIncludedServices = new ArrayList<>();
     }
 
-    /**
-     * Create a new BluetoothGattService
-     *
-     * @hide
-     */
+    /** Create a new BluetoothGattService */
+    @Hide
     public BluetoothGattService(UUID uuid, int instanceId, int serviceType) {
         mDevice = null;
         mUuid = uuid;
@@ -132,7 +109,6 @@ public class BluetoothGattService implements Parcelable {
         mIncludedServices = new ArrayList<>();
     }
 
-    /** @hide */
     public int describeContents() {
         return 0;
     }
@@ -185,20 +161,14 @@ public class BluetoothGattService implements Parcelable {
         }
     }
 
-    /**
-     * Returns the device associated with this service.
-     *
-     * @hide
-     */
+    /** Returns the device associated with this service. */
+    @Hide
     /*package*/ BluetoothDevice getDevice() {
         return mDevice;
     }
 
-    /**
-     * Returns the device associated with this service.
-     *
-     * @hide
-     */
+    /** Returns the device associated with this service. */
+    @Hide
     /*package*/ void setDevice(BluetoothDevice device) {
         mDevice = device;
     }
@@ -228,11 +198,8 @@ public class BluetoothGattService implements Parcelable {
         return true;
     }
 
-    /**
-     * Get characteristic by UUID and instanceId.
-     *
-     * @hide
-     */
+    /** Get characteristic by UUID and instanceId. */
+    @Hide
     /*package*/ BluetoothGattCharacteristic getCharacteristic(UUID uuid, int instanceId) {
         for (BluetoothGattCharacteristic characteristic : mCharacteristics) {
             if (uuid.equals(characteristic.getUuid())
@@ -243,22 +210,16 @@ public class BluetoothGattService implements Parcelable {
         return null;
     }
 
-    /**
-     * Force the instance ID.
-     *
-     * @hide
-     */
+    /** Force the instance ID. */
+    @Hide
     @UnsupportedAppUsage
     @RequiresNoPermission
     public void setInstanceId(int instanceId) {
         mInstanceId = instanceId;
     }
 
-    /**
-     * Get the handle count override (conformance testing.
-     *
-     * @hide
-     */
+    /** Get the handle count override (conformance testing. */
+    @Hide
     /*package*/ int getHandles() {
         return mHandles;
     }
@@ -266,19 +227,15 @@ public class BluetoothGattService implements Parcelable {
     /**
      * Force the number of handles to reserve for this service. This is needed for conformance
      * testing only.
-     *
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public void setHandles(int handles) {
         mHandles = handles;
     }
 
-    /**
-     * Add an included service to the internal map.
-     *
-     * @hide
-     */
+    /** Add an included service to the internal map. */
+    @Hide
     @RequiresNoPermission
     public void addIncludedService(BluetoothGattService includedService) {
         mIncludedServices.add(includedService);
@@ -356,21 +313,15 @@ public class BluetoothGattService implements Parcelable {
         return null;
     }
 
-    /**
-     * Returns whether the uuid of the service should be advertised.
-     *
-     * @hide
-     */
+    /** Returns whether the uuid of the service should be advertised. */
+    @Hide
     @RequiresNoPermission
     public boolean isAdvertisePreferred() {
         return mAdvertisePreferred;
     }
 
-    /**
-     * Set whether the service uuid should be advertised.
-     *
-     * @hide
-     */
+    /** Set whether the service uuid should be advertised. */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresNoPermission
     public void setAdvertisePreferred(boolean advertisePreferred) {

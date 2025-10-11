@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -89,7 +90,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      */
     public static final int PERMISSION_WRITE_SIGNED_MITM = 0x100;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = "WRITE_TYPE_",
@@ -129,61 +130,29 @@ public class BluetoothGattCharacteristic implements Parcelable {
     /** Characteristic value format type float (32-bit float) */
     public static final int FORMAT_FLOAT = 0x34;
 
-    /**
-     * The UUID of this characteristic.
-     *
-     * @hide
-     */
-    protected UUID mUuid;
+    /** The UUID of this characteristic. */
+    @Hide protected UUID mUuid;
 
-    /**
-     * Instance ID for this characteristic.
-     *
-     * @hide
-     */
-    @UnsupportedAppUsage protected int mInstance;
+    /** Instance ID for this characteristic. */
+    @Hide @UnsupportedAppUsage protected int mInstance;
 
-    /**
-     * Characteristic properties.
-     *
-     * @hide
-     */
-    protected int mProperties;
+    /** Characteristic properties. */
+    @Hide protected int mProperties;
 
-    /**
-     * Characteristic permissions.
-     *
-     * @hide
-     */
-    protected int mPermissions;
+    /** Characteristic permissions. */
+    @Hide protected int mPermissions;
 
-    /**
-     * Key size (default = 16).
-     *
-     * @hide
-     */
-    protected int mKeySize = 16;
+    /** Key size (default = 16). */
+    @Hide protected int mKeySize = 16;
 
-    /**
-     * Write type for this characteristic.
-     *
-     * @hide
-     */
-    protected @WriteType int mWriteType;
+    /** Write type for this characteristic. */
+    @Hide protected @WriteType int mWriteType;
 
-    /**
-     * Back-reference to the service this characteristic belongs to.
-     *
-     * @hide
-     */
-    @UnsupportedAppUsage protected BluetoothGattService mService;
+    /** Back-reference to the service this characteristic belongs to. */
+    @Hide @UnsupportedAppUsage protected BluetoothGattService mService;
 
-    /**
-     * The cached value of this characteristic.
-     *
-     * @hide
-     */
-    protected byte[] mValue;
+    /** The cached value of this characteristic. */
+    @Hide protected byte[] mValue;
 
     /** List of descriptors included in this characteristic. */
     protected List<BluetoothGattDescriptor> mDescriptors;
@@ -199,11 +168,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         initCharacteristic(null, uuid, 0, properties, permissions);
     }
 
-    /**
-     * Create a new BluetoothGattCharacteristic
-     *
-     * @hide
-     */
+    /** Create a new BluetoothGattCharacteristic */
+    @Hide
     /*package*/ BluetoothGattCharacteristic(
             BluetoothGattService service,
             UUID uuid,
@@ -213,11 +179,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         initCharacteristic(service, uuid, instanceId, properties, permissions);
     }
 
-    /**
-     * Create a new BluetoothGattCharacteristic
-     *
-     * @hide
-     */
+    /** Create a new BluetoothGattCharacteristic */
+    @Hide
     public BluetoothGattCharacteristic(UUID uuid, int instanceId, int properties, int permissions) {
         initCharacteristic(null, uuid, instanceId, properties, permissions);
     }
@@ -284,11 +247,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         }
     }
 
-    /**
-     * Returns the desired key size.
-     *
-     * @hide
-     */
+    /** Returns the desired key size. */
+    @Hide
     @RequiresNoPermission
     public int getKeySize() {
         return mKeySize;
@@ -307,11 +267,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         return true;
     }
 
-    /**
-     * Get a descriptor by UUID and instance id.
-     *
-     * @hide
-     */
+    /** Get a descriptor by UUID and instance id. */
+    @Hide
     /*package*/ BluetoothGattDescriptor getDescriptor(UUID uuid, int instanceId) {
         for (BluetoothGattDescriptor descriptor : mDescriptors) {
             if (descriptor.getUuid().equals(uuid) && descriptor.getInstanceId() == instanceId) {
@@ -331,11 +288,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         return mService;
     }
 
-    /**
-     * Sets the service associated with this device.
-     *
-     * @hide
-     */
+    /** Sets the service associated with this device. */
+    @Hide
     @UnsupportedAppUsage
     /*package*/ void setService(BluetoothGattService service) {
         mService = service;
@@ -364,11 +318,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         return mInstance;
     }
 
-    /**
-     * Force the instance ID.
-     *
-     * @hide
-     */
+    /** Force the instance ID. */
+    @Hide
     @RequiresNoPermission
     public void setInstanceId(int instanceId) {
         mInstance = instanceId;
@@ -421,11 +372,8 @@ public class BluetoothGattCharacteristic implements Parcelable {
         mWriteType = writeType;
     }
 
-    /**
-     * Set the desired key size.
-     *
-     * @hide
-     */
+    /** Set the desired key size. */
+    @Hide
     @UnsupportedAppUsage
     @RequiresNoPermission
     public void setKeySize(int keySize) {

@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -110,7 +111,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
     public static final String ACTION_PLAYING_STATE_CHANGED =
             "android.bluetooth.a2dp.profile.action.PLAYING_STATE_CHANGED";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -126,9 +127,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device. It can be null if no device
      *       is active.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -148,9 +148,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device if the device is currently
      *       connected, otherwise it is not included.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -172,7 +171,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
      */
     public static final int STATE_NOT_PLAYING = 11;
 
-    /** @hide */
+    @Hide
     @IntDef(
             prefix = "OPTIONAL_CODECS_",
             value = {
@@ -186,26 +185,16 @@ public final class BluetoothA2dp implements BluetoothProfile {
     /**
      * We don't have a stored preference for whether or not the given A2DP sink device supports
      * optional codecs.
-     *
-     * @hide
      */
-    @SystemApi public static final int OPTIONAL_CODECS_SUPPORT_UNKNOWN = -1;
+    @Hide @SystemApi public static final int OPTIONAL_CODECS_SUPPORT_UNKNOWN = -1;
 
-    /**
-     * The given A2DP sink device does not support optional codecs.
-     *
-     * @hide
-     */
-    @SystemApi public static final int OPTIONAL_CODECS_NOT_SUPPORTED = 0;
+    /** The given A2DP sink device does not support optional codecs. */
+    @Hide @SystemApi public static final int OPTIONAL_CODECS_NOT_SUPPORTED = 0;
 
-    /**
-     * The given A2DP sink device does support optional codecs.
-     *
-     * @hide
-     */
-    @SystemApi public static final int OPTIONAL_CODECS_SUPPORTED = 1;
+    /** The given A2DP sink device does support optional codecs. */
+    @Hide @SystemApi public static final int OPTIONAL_CODECS_SUPPORTED = 1;
 
-    /** @hide */
+    @Hide
     @IntDef(
             prefix = "OPTIONAL_CODECS_PREF_",
             value = {
@@ -219,26 +208,16 @@ public final class BluetoothA2dp implements BluetoothProfile {
     /**
      * We don't have a stored preference for whether optional codecs should be enabled or disabled
      * for the given A2DP device.
-     *
-     * @hide
      */
-    @SystemApi public static final int OPTIONAL_CODECS_PREF_UNKNOWN = -1;
+    @Hide @SystemApi public static final int OPTIONAL_CODECS_PREF_UNKNOWN = -1;
 
-    /**
-     * Optional codecs should be disabled for the given A2DP device.
-     *
-     * @hide
-     */
-    @SystemApi public static final int OPTIONAL_CODECS_PREF_DISABLED = 0;
+    /** Optional codecs should be disabled for the given A2DP device. */
+    @Hide @SystemApi public static final int OPTIONAL_CODECS_PREF_DISABLED = 0;
 
-    /**
-     * Optional codecs should be enabled for the given A2DP device.
-     *
-     * @hide
-     */
-    @SystemApi public static final int OPTIONAL_CODECS_PREF_ENABLED = 1;
+    /** Optional codecs should be enabled for the given A2DP device. */
+    @Hide @SystemApi public static final int OPTIONAL_CODECS_PREF_ENABLED = 1;
 
-    /** @hide */
+    @Hide
     @IntDef(
             prefix = "DYNAMIC_BUFFER_SUPPORT_",
             value = {
@@ -249,26 +228,14 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @Retention(RetentionPolicy.SOURCE)
     public @interface Type {}
 
-    /**
-     * Indicates the supported type of Dynamic Audio Buffer is not supported.
-     *
-     * @hide
-     */
-    @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_NONE = 0;
+    /** Indicates the supported type of Dynamic Audio Buffer is not supported. */
+    @Hide @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_NONE = 0;
 
-    /**
-     * Indicates the supported type of Dynamic Audio Buffer is A2DP offload.
-     *
-     * @hide
-     */
-    @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_A2DP_OFFLOAD = 1;
+    /** Indicates the supported type of Dynamic Audio Buffer is A2DP offload. */
+    @Hide @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_A2DP_OFFLOAD = 1;
 
-    /**
-     * Indicates the supported type of Dynamic Audio Buffer is A2DP software encoding.
-     *
-     * @hide
-     */
-    @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_A2DP_SOFTWARE_ENCODING = 2;
+    /** Indicates the supported type of Dynamic Audio Buffer is A2DP software encoding. */
+    @Hide @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_A2DP_SOFTWARE_ENCODING = 2;
 
     /**
      * Used as an int extra field in {@link BluetoothA2dp#ACTION_CONNECTION_STATE_CHANGED} intents
@@ -303,20 +270,20 @@ public final class BluetoothA2dp implements BluetoothProfile {
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @UnsupportedAppUsage
     public void close() {
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothA2dp.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -327,7 +294,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -351,8 +318,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -389,8 +356,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -487,8 +454,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * @param device the remote Bluetooth device. Could be null to clear the active device and stop
      *     streaming audio to a Bluetooth device.
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -513,8 +480,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * Get the connected device that is active.
      *
      * @return the connected device that is active or null if no device is active
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(trackingBug = 171933273)
     @Nullable
     @RequiresLegacyBluetoothPermission
@@ -547,8 +514,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -583,8 +550,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -608,8 +575,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * Tells remote device to set an absolute volume. Only if absolute volume is supported
      *
      * @param volume Absolute volume to be set on AVRCP side
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -659,9 +626,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
     /**
      * This function checks if the remote device is an AVCRP target and thus whether we should send
      * volume keys changes or not.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean shouldSendVolumeKeys(BluetoothDevice device) {
@@ -716,8 +682,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @param device the remote Bluetooth device.
      * @return the current codec status
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -752,8 +718,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @param device the remote Bluetooth device.
      * @param codecConfig the codec configuration preference
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -793,8 +759,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * device is connected.
      *
      * @param device the remote Bluetooth device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -822,8 +788,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * connected.
      *
      * @param device the remote Bluetooth device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -873,8 +839,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * @param device the remote Bluetooth device
      * @return whether the optional codecs are supported or not, or {@link
      *     #OPTIONAL_CODECS_SUPPORT_UNKNOWN} if the state can't be retrieved.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
@@ -907,8 +873,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * @param device the remote Bluetooth device
      * @return whether the optional codecs are enabled or not, or {@link
      *     #OPTIONAL_CODECS_PREF_UNKNOWN} if the state can't be retrieved.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
@@ -942,8 +908,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @param device the remote Bluetooth device
      * @param value whether the optional codecs should be enabled for this device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
@@ -983,8 +949,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * #DYNAMIC_BUFFER_SUPPORT_A2DP_SOFTWARE_ENCODING}.
      *
      * @return supported type of Dynamic Audio Buffer feature
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -1015,8 +981,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *
      * @return a record with {@link BufferConstraints} or null if report is unavailable or
      *     unsupported
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -1046,8 +1012,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * @param codec audio codec
      * @param value buffer millis
      * @return true to indicate success, or false on immediate error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
