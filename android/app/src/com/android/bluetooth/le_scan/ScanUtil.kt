@@ -27,8 +27,11 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_POWER
 import android.bluetooth.le.ScanSettings.SCAN_MODE_OPPORTUNISTIC
 import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF
 import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED
+import android.provider.Settings
 import android.util.Log
 import com.android.bluetooth.Utils
+import com.android.bluetooth.Utils.millsToUnit
+import com.android.bluetooth.btservice.AdapterService
 import java.time.Instant
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -63,6 +66,16 @@ object ScanUtil {
     const val SCAN_RESULT_TYPE_FULL = 2
     const val SCAN_RESULT_TYPE_BOTH = 3
 
+    private const val ONFOUND_SIGHTINGS_AGGRESSIVE = 1
+    private const val ONFOUND_SIGHTINGS_STICKY = 4
+
+    /** Onfound/onlost for scan settings */
+    private const val MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR = 1
+
+    private const val MATCH_MODE_STICKY_TIMEOUT_FACTOR = 3
+    private const val ONLOST_FACTOR = 2
+    private const val ONLOST_ONFOUND_BASE_TIMEOUT_MS = 500
+
     // The default floor value for LE batch scan report delays greater than 0
     const val DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L
 
@@ -78,6 +91,119 @@ object ScanUtil {
 
     @JvmStatic
     fun appNameOrUnknown(appName: String?, uid: Int) = appName ?: "Unknown App (UID: $uid)"
+
+    // Convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
+    @JvmStatic
+    fun scanWindow(adapterService: AdapterService, client: ScanClient?) =
+        if (client == null) 0 else millsToUnit(windowMillis(adapterService, client.settings))
+
+    @JvmStatic
+    fun scanInterval(adapterService: AdapterService, client: ScanClient?) =
+        if (client == null) 0 else millsToUnit(intervalMillis(adapterService, client.settings))
+
+    @JvmStatic
+    fun windowMillis(adapterService: AdapterService, settings: ScanSettings) =
+        when (settings.scanMode) {
+            SCAN_MODE_LOW_LATENCY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_LATENCY_WINDOW_MS,
+                    SCAN_MODE_LOW_LATENCY_WINDOW_MS,
+                )
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
+                    SCAN_MODE_BALANCED_WINDOW_MS,
+                )
+            SCAN_MODE_LOW_POWER ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                    SCAN_MODE_LOW_POWER_WINDOW_MS,
+                )
+            SCAN_MODE_SCREEN_OFF -> adapterService.screenOffLowPowerWindow.toMillis().toInt()
+            SCAN_MODE_SCREEN_OFF_BALANCED ->
+                adapterService.screenOffBalancedWindow.toMillis().toInt()
+            else ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                    SCAN_MODE_LOW_POWER_WINDOW_MS,
+                )
+        }
+
+    @JvmStatic
+    fun intervalMillis(adapterService: AdapterService, settings: ScanSettings) =
+        when (settings.scanMode) {
+            SCAN_MODE_LOW_LATENCY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_LATENCY_INTERVAL_MS,
+                    SCAN_MODE_LOW_LATENCY_INTERVAL_MS,
+                )
+
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
+                    SCAN_MODE_BALANCED_INTERVAL_MS,
+                )
+            SCAN_MODE_LOW_POWER ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                    SCAN_MODE_LOW_POWER_INTERVAL_MS,
+                )
+            SCAN_MODE_SCREEN_OFF -> adapterService.screenOffLowPowerInterval.toMillis().toInt()
+            SCAN_MODE_SCREEN_OFF_BALANCED ->
+                adapterService.screenOffBalancedInterval.toMillis().toInt()
+            else ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                    SCAN_MODE_LOW_POWER_INTERVAL_MS,
+                )
+        }
+
+    @JvmStatic
+    fun scanPhyMask(usePhy1m: Boolean, usePhyCoded: Boolean): Int {
+        var phy = 0
+        if (usePhy1m) {
+            phy = phy or BluetoothDevice.PHY_LE_1M_MASK
+        }
+        if (usePhyCoded) {
+            phy = phy or BluetoothDevice.PHY_LE_CODED_MASK
+        }
+        return phy
+    }
+
+    @JvmStatic
+    fun onFoundOnLostTimeoutMillis(settings: ScanSettings, onFound: Boolean): Int {
+        val timeout = ONLOST_ONFOUND_BASE_TIMEOUT_MS
+
+        var factor =
+            if (settings.matchMode == ScanSettings.MATCH_MODE_AGGRESSIVE) {
+                MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR
+            } else {
+                MATCH_MODE_STICKY_TIMEOUT_FACTOR
+            }
+
+        if (!onFound) {
+            factor *= ONLOST_FACTOR
+        }
+
+        return timeout * factor
+    }
+
+    @JvmStatic
+    fun onFoundOnLostSightings(settings: ScanSettings) =
+        when (settings.matchMode) {
+            ScanSettings.MATCH_MODE_AGGRESSIVE -> ONFOUND_SIGHTINGS_AGGRESSIVE
+            else -> ONFOUND_SIGHTINGS_STICKY
+        }
 
     @JvmStatic
     fun minScanMode(oldScanMode: Int, newScanMode: Int) =
