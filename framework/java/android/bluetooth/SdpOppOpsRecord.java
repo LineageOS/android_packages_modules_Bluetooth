@@ -15,6 +15,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -22,8 +23,7 @@ import android.os.Parcelable;
 import java.util.Arrays;
 
 /** Data representation of a Object Push Profile Server side SDP record. */
-
-/** @hide */
+@Hide
 public class SdpOppOpsRecord implements Parcelable {
 
     private final String mServiceName;

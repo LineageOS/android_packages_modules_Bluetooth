@@ -15,11 +15,12 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/** @hide */
+@Hide
 public class SdpMnsRecord implements Parcelable {
     private final int mL2capPsm;
     private final int mRfcommChannelNumber;
