@@ -324,55 +324,6 @@ public class ScanControllerTest {
     }
 
     @Test
-    public void createOnTrackAdvFoundLostObject() {
-        int advPacketLen = 1;
-        byte[] advPacket = new byte[] {0x02};
-        int scanResponseLen = 3;
-        byte[] scanResponse = new byte[] {0x04};
-        int filtIndex = 5;
-        int advState = ScanController.ADVT_STATE_ONFOUND;
-        int advInfoPresent = 7;
-        int addrType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        int txPower = 9;
-        int rssiValue = 10;
-        int timeStamp = 11;
-
-        AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfo =
-                new AdvtFilterOnFoundOnLostInfo(
-                        TEST_SCANNER_ID,
-                        advPacketLen,
-                        ByteString.copyFrom(advPacket),
-                        scanResponseLen,
-                        ByteString.copyFrom(scanResponse),
-                        filtIndex,
-                        advState,
-                        advInfoPresent,
-                        TEST_ADDRESS,
-                        addrType,
-                        txPower,
-                        rssiValue,
-                        timeStamp);
-
-        AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfoCreated =
-                mScanController.createOnTrackAdvFoundLostObject(
-                        TEST_SCANNER_ID,
-                        advPacketLen,
-                        advPacket,
-                        scanResponseLen,
-                        scanResponse,
-                        filtIndex,
-                        advState,
-                        advInfoPresent,
-                        TEST_ADDRESS,
-                        addrType,
-                        txPower,
-                        rssiValue,
-                        timeStamp);
-
-        assertThat(advtFilterOnFoundOnLostInfo).isEqualTo(advtFilterOnFoundOnLostInfoCreated);
-    }
-
-    @Test
     public void onTrackAdvFoundLost() throws RemoteException {
         int advPacketLen = 1;
         byte[] advPacket = new byte[] {0x02};

@@ -19,6 +19,7 @@ package com.android.bluetooth.le_scan
 import android.util.Log
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.profile.NativeCallback
+import com.google.protobuf.ByteString
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -172,28 +173,22 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         txPower: Int,
         rssiValue: Int,
         timeStamp: Int,
-    ): AdvtFilterOnFoundOnLostInfo? {
-        return scanController.fetchOnScanThread<AdvtFilterOnFoundOnLostInfo>(
-            {
-                scanController.createOnTrackAdvFoundLostObject(
-                    clientIf,
-                    advPacketLen,
-                    advPacket,
-                    scanResponseLen,
-                    scanResponse,
-                    filtIndex,
-                    advState,
-                    advInfoPresent,
-                    address,
-                    addrType,
-                    txPower,
-                    rssiValue,
-                    timeStamp,
-                )
-            },
-            null,
+    ) =
+        AdvtFilterOnFoundOnLostInfo(
+            clientIf,
+            advPacketLen,
+            ByteString.copyFrom(advPacket),
+            scanResponseLen,
+            ByteString.copyFrom(scanResponse),
+            filtIndex,
+            advState,
+            advInfoPresent,
+            address,
+            addrType,
+            txPower,
+            rssiValue,
+            timeStamp,
         )
-    }
 
     fun onTrackAdvFoundLost(trackingInfo: AdvtFilterOnFoundOnLostInfo) {
         doOnScanThread { onTrackAdvFoundLost(trackingInfo) }
@@ -215,7 +210,6 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         doOnScanThread { onMsftAdvMonitorEnable(enable, status) }
     }
 
-    private fun doOnScanThread(block: ScanController.() -> Unit) {
+    private fun doOnScanThread(block: ScanController.() -> Unit) =
         scanController.doOnScanThread { scanController.block() }
-    }
 }
