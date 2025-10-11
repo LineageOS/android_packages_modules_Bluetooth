@@ -159,7 +159,6 @@ public final class BluetoothCodecType implements Parcelable {
         return new BluetoothCodecType(in);
     }
 
-    @Hide
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeInt(mNativeCodecType);

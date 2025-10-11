@@ -1410,7 +1410,6 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
                     }
                 };
 
-        @Hide
         @Override
         public void writeToParcel(@NonNull Parcel out, int flags) {
             mDevice.writeToParcel(out, flags);
@@ -1420,7 +1419,6 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
             out.writeInt(mIsRoaming ? 1 : 0);
         }
 
-        @Hide
         @Override
         public int describeContents() {
             return 0;

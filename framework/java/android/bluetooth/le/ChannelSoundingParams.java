@@ -148,8 +148,6 @@ public final class ChannelSoundingParams implements Parcelable {
         return 0;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {
         out.writeInt(mSightType);

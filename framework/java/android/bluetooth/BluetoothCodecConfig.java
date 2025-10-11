@@ -491,7 +491,6 @@ public final class BluetoothCodecConfig implements Parcelable {
      * @param out The Parcel in which the object should be written
      * @param flags Additional flags about how the object should be written
      */
-    @Hide
     @Override
     public void writeToParcel(Parcel out, int flags) {
         if (mCodecType != null) {

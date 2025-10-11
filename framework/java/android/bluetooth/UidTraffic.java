@@ -45,7 +45,6 @@ public final class UidTraffic implements Cloneable, Parcelable {
         mTxBytes = in.readLong();
     }
 
-    @Hide
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(mAppUid);

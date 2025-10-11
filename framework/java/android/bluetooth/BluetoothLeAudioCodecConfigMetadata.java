@@ -215,15 +215,11 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
         return mRawMetadata;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeLong(mAudioLocation);

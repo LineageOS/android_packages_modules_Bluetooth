@@ -396,15 +396,11 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
         return mSubgroups;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeInt(mSourceAddressType);

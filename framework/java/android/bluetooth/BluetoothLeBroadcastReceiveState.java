@@ -437,15 +437,11 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
         return mSubgroupMetadata;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     @SuppressWarnings("AndroidFrameworkEfficientParcelable") // No Creator match List<Long>
     public void writeToParcel(Parcel out, int flags) {
@@ -462,8 +458,6 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
         out.writeTypedList(mSubgroupMetadata);
     }
 
-    /** {@inheritDoc} */
-    @Hide
     @Override
     public String toString() {
         String receiveState =

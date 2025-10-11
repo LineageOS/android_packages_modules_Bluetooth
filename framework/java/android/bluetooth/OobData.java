@@ -788,13 +788,11 @@ public final class OobData implements Parcelable {
         mLeFlags = in.readInt();
     }
 
-    @Hide
     @Override
     public int describeContents() {
         return 0;
     }
 
-    @Hide
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {
         // Both
@@ -836,10 +834,6 @@ public final class OobData implements Parcelable {
                 }
             };
 
-    /**
-     * @return a {@link String} representation of the OobData object.
-     */
-    @Hide
     @Override
     public String toString() {
         return "OobData: \n\t"
