@@ -1836,7 +1836,7 @@ public class RemoteDevices {
             }
 
             Log.w(TAG, "Removing " + device + " on behalf of: " + Arrays.toString(packages));
-            device.removeBond();
+            mAdapterService.removeBond(device);
         }
 
         mAdapterService.sendOrderedBroadcast(

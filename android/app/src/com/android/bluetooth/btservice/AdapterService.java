@@ -2871,6 +2871,30 @@ public class AdapterService extends Service {
         return true;
     }
 
+    public boolean removeBond(BluetoothDevice device) {
+        Log.i(TAG, "removeBond: device=" + device + ", from " + Binder.getCallingUid());
+
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        if (deviceProp == null || deviceProp.getBondState() != BluetoothDevice.BOND_BONDED) {
+            Log.w(
+                    TAG,
+                    device
+                            + " cannot be removed since "
+                            + ((deviceProp == null)
+                                    ? "properties are empty"
+                                    : "bond state is " + deviceProp.getBondState()));
+            return false;
+        }
+        getBondAttemptCallerInfo().remove(device.getAddress());
+        getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(device));
+        deviceProp.setBondingInitiatedLocally(false);
+
+        Message msg = getBondStateMachine().obtainMessage(BondStateMachine.REMOVE_BOND);
+        msg.obj = device;
+        getBondStateMachine().sendMessage(msg);
+        return true;
+    }
+
     /**
      * Fetches the local OOB data to give out to remote.
      *

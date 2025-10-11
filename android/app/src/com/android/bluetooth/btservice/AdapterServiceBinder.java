@@ -467,28 +467,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        Log.i(TAG, "removeBond: device=" + device + ", from " + getUidPidString());
-
-        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
-        if (deviceProp == null || deviceProp.getBondState() != BluetoothDevice.BOND_BONDED) {
-            Log.w(
-                    TAG,
-                    device
-                            + " cannot be removed since "
-                            + ((deviceProp == null)
-                                    ? "properties are empty"
-                                    : "bond state is " + deviceProp.getBondState()));
-            return false;
-        }
         service.logUserBondResponse(device, false, source);
-        service.getBondAttemptCallerInfo().remove(device.getAddress());
-        service.getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(device));
-        deviceProp.setBondingInitiatedLocally(false);
-
-        Message msg = service.getBondStateMachine().obtainMessage(BondStateMachine.REMOVE_BOND);
-        msg.obj = device;
-        service.getBondStateMachine().sendMessage(msg);
-        return true;
+        return service.removeBond(device);
     }
 
     @Override
