@@ -72,7 +72,7 @@ class ScanBinder(
 
     override fun registerScanner(
         callback: IScannerCallback,
-        settings: ScanSettings?,
+        settings: ScanSettings,
         filters: List<ScanFilter>?,
         workSource: WorkSource?,
         source: AttributionSource,
@@ -93,7 +93,7 @@ class ScanBinder(
 
     override fun startScan(
         scannerId: Int,
-        settings: ScanSettings?,
+        settings: ScanSettings,
         filters: List<ScanFilter>?,
         source: AttributionSource,
     ) {
@@ -106,7 +106,7 @@ class ScanBinder(
 
     override fun registerPiAndStartScan(
         intent: PendingIntent,
-        settings: ScanSettings?,
+        settings: ScanSettings,
         filters: List<ScanFilter>?,
         source: AttributionSource,
     ) {
@@ -176,12 +176,7 @@ class ScanBinder(
     }
 
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
-    private fun enforcePrivilegedPermissionIfNeeded(settings: ScanSettings?) {
-        // Regular scan, no special permission
-        if (settings == null) {
-            Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(settings=null)")
-            return
-        }
+    private fun enforcePrivilegedPermissionIfNeeded(settings: ScanSettings) {
         Log.d(
             TAG,
             "enforcePrivilegedPermissionIfNeeded: " +
