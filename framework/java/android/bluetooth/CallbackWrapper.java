@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
@@ -45,8 +46,8 @@ import java.util.function.Consumer;
  *
  * @param <S> the type of binder used to register to the bluetooth app (e.g: IBluetoothHapClient)
  * @param <T> the type of the callback (e.g: BluetoothHapClient.Callback)
- * @hide
  */
+@Hide
 public class CallbackWrapper<T, S> {
     @GuardedBy("mCallbackExecutorMap")
     private final Map<T, Executor> mCallbackExecutorMap;

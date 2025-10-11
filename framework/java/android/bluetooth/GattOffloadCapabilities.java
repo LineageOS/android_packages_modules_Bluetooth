@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -32,14 +33,13 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * GATT offload capabilities. This class will be returned by {@link
  * BluetoothAdapter#getSupportedGattOffloadCapabilities()}.
- *
- * @hide
  */
+@Hide
 @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
 @SystemApi
 public final class GattOffloadCapabilities {
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             flag = true,
@@ -54,7 +54,7 @@ public final class GattOffloadCapabilities {
 
     private final InnerParcel mParcel;
 
-    /** @hide */
+    @Hide
     public GattOffloadCapabilities(@NonNull InnerParcel p) {
         mParcel = p;
     }
@@ -63,8 +63,8 @@ public final class GattOffloadCapabilities {
      * Checks whether the GATT client offload is supported.
      *
      * @return {@code true} if GATT client offload is supported, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean isClientOffloadSupported() {
@@ -75,8 +75,8 @@ public final class GattOffloadCapabilities {
      * Checks whether the GATT server offload is supported.
      *
      * @return {@code true} if GATT server offload is supported, {@code false} otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean isServerOffloadSupported() {
@@ -87,8 +87,8 @@ public final class GattOffloadCapabilities {
      * Get the supported offloaded GATT client properties.
      *
      * @return supported GATT client properties
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Properties int getSupportedClientProperties() {
@@ -99,8 +99,8 @@ public final class GattOffloadCapabilities {
      * Get the supported offloaded GATT server properties.
      *
      * @return supported GATT server properties
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Properties int getSupportedServerProperties() {
@@ -116,7 +116,7 @@ public final class GattOffloadCapabilities {
                 + '}';
     }
 
-    /** @hide */
+    @Hide
     public static final class InnerParcel implements Parcelable {
         private final @Properties int mSupportedClientProperties;
         private final @Properties int mSupportedServerProperties;
