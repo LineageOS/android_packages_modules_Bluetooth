@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.SystemApi;
 import android.app.SystemServiceRegistry;
@@ -24,11 +25,8 @@ import android.os.BluetoothServiceManager;
 
 import java.util.function.Consumer;
 
-/**
- * Class for performing registration for Bluetooth service.
- *
- * @hide
- */
+/** Class for performing registration for Bluetooth service. */
+@Hide
 @SystemApi(client = SystemApi.Client.MODULE_LIBRARIES)
 public class BluetoothFrameworkInitializer {
     private BluetoothFrameworkInitializer() {}
@@ -57,7 +55,7 @@ public class BluetoothFrameworkInitializer {
         sBluetoothServiceManager = bluetoothServiceManager;
     }
 
-    /** @hide */
+    @Hide
     public static BluetoothServiceManager getBluetoothServiceManager() {
         return sBluetoothServiceManager;
     }
@@ -82,7 +80,7 @@ public class BluetoothFrameworkInitializer {
         sBinderCallsStatsInitializer = binderCallsStatsConsumer;
     }
 
-    /** @hide */
+    @Hide
     public static void initializeBinderCallsStats(Context context) {
         if (sBinderCallsStatsInitializer == null) {
             throw new IllegalStateException("sBinderCallsStatsInitializer has not been set");

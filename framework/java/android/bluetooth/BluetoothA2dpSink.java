@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -48,9 +49,8 @@ import java.util.List;
  *
  * <p>BluetoothA2dpSink is a proxy object for controlling the Bluetooth A2DP Sink Service via IPC.
  * Use {@link BluetoothAdapter#getProfileProxy} to get the BluetoothA2dpSink proxy object.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothA2dpSink implements BluetoothProfile {
     private static final String TAG = BluetoothA2dpSink.class.getSimpleName();
@@ -71,9 +71,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @SuppressLint("ActionValue")
     @RequiresBluetoothConnectPermission
@@ -96,14 +95,14 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothA2dpSink.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -114,7 +113,7 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -138,8 +137,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean connect(BluetoothDevice device) {
@@ -174,8 +173,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
@@ -196,11 +195,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -221,11 +217,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -247,11 +240,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -278,8 +268,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      * @param device Remote bluetooth device.
      * @return audio configuration for the device, or null
      * @see BluetoothAudioConfig
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -309,8 +299,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -341,8 +331,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -367,8 +357,8 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
      *
      * @param device BluetoothDevice device
      * @return true if audio is playing (A2dp is streaming music), false otherwise
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

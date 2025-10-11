@@ -17,6 +17,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
@@ -24,11 +25,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
-/**
- * Represents the Hearing Access Profile preset.
- *
- * @hide
- */
+/** Represents the Hearing Access Profile preset. */
+@Hide
 @SystemApi
 public final class BluetoothHapPresetInfo implements Parcelable {
     private final int mIndex;
@@ -127,7 +125,6 @@ public final class BluetoothHapPresetInfo implements Parcelable {
                 }
             };
 
-    /** @hide */
     @Override
     public int describeContents() {
         return 0;
@@ -147,9 +144,8 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      * <p>By default, the preset index will be set to {@link
      * BluetoothHapClient#PRESET_INDEX_UNAVAILABLE}, the name to an empty string, writability and
      * availability both to false.
-     *
-     * @hide
      */
+    @Hide
     public static final class Builder {
         private int mIndex = BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
         private String mName = "";

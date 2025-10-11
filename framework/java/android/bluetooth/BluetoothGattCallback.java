@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.SystemApi;
@@ -243,8 +244,8 @@ public abstract class BluetoothGattCallback {
      *     (0.1s) to 3200 (32s)
      * @param status {@link BluetoothGatt#GATT_SUCCESS} if the connection has been updated
      *     successfully
-     * @hide
      */
+    @Hide
     public void onConnectionUpdated(
             BluetoothGatt gatt, int interval, int latency, int timeout, int status) {}
 
@@ -289,8 +290,8 @@ public abstract class BluetoothGattCallback {
      *     characteristics. This object can only be used if the {@code status} is {@link
      *     GattOffloadSession#STATUS_SUCCESS}.
      * @param status The result of the offload operation.
-     * @hide
      */
+    @Hide
     @SystemApi
     @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
     public void onCharacteristicsOffloaded(
@@ -309,8 +310,8 @@ public abstract class BluetoothGattCallback {
      *     originally obtained from {@link GattOffloadSession} after a successful call to {@link
      *     BluetoothGatt#offloadCharacteristics}.
      * @param status An status code indicating why the offload session was terminated.
-     * @hide
      */
+    @Hide
     @SystemApi
     @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
     public void onCharacteristicsUnoffloaded(

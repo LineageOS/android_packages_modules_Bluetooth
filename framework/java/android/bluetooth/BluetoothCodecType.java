@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -82,8 +83,8 @@ public final class BluetoothCodecType implements Parcelable {
      * @param codecType the static codec type
      * @param codecId the unique codec id
      * @param codecName the codec name
-     * @hide
      */
+    @Hide
     @SystemApi
     public BluetoothCodecType(int codecType, long codecId, @NonNull String codecName) {
         mNativeCodecType = codecType;
@@ -127,9 +128,8 @@ public final class BluetoothCodecType implements Parcelable {
     /**
      * Returns the native codec type. The native codec type is arbitrarily assigned to the codec.
      * Prefer {@link BluetoothCodecType#getCodecId}.
-     *
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public int getNativeCodecType() {
         return mNativeCodecType;
@@ -154,12 +154,12 @@ public final class BluetoothCodecType implements Parcelable {
         return false;
     }
 
-    /** @hide */
+    @Hide
     public static @NonNull BluetoothCodecType createFromParcel(Parcel in) {
         return new BluetoothCodecType(in);
     }
 
-    /** @hide */
+    @Hide
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeInt(mNativeCodecType);
@@ -172,8 +172,8 @@ public final class BluetoothCodecType implements Parcelable {
      *
      * @param codecType the static codec type
      * @return the codec type if valid
-     * @hide
      */
+    @Hide
     @SystemApi
     public static @Nullable BluetoothCodecType createFromType(
             @BluetoothCodecConfig.SourceCodecType int codecType) {
@@ -196,10 +196,6 @@ public final class BluetoothCodecType implements Parcelable {
         return new BluetoothCodecType(codecType, codecId);
     }
 
-    /**
-     * @return 0
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;

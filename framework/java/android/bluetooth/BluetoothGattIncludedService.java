@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
@@ -24,11 +25,8 @@ import android.os.Parcelable;
 
 import java.util.UUID;
 
-/**
- * Represents a Bluetooth GATT Included Service
- *
- * @hide
- */
+/** Represents a Bluetooth GATT Included Service */
+@Hide
 public class BluetoothGattIncludedService implements Parcelable {
 
     /** The UUID of this service. */

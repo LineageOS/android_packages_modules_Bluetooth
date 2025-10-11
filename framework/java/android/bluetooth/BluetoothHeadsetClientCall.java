@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -30,9 +31,8 @@ import java.util.UUID;
 /**
  * This class represents a single call, its state and properties. It implements {@link Parcelable}
  * for inter-process message passing.
- *
- * @hide
  */
+@Hide
 public final class BluetoothHeadsetClientCall implements Parcelable, Attributable {
 
     /* Call state */
@@ -105,7 +105,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
         mCreationElapsedMilli = SystemClock.elapsedRealtime();
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void setAttributionSource(@NonNull AttributionSource source) {
         Attributable.setAttributionSource(mDevice, source);
@@ -172,8 +172,8 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * Gets call's UUID.
      *
      * @return call uuid
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public UUID getUUID() {
         return mUUID;

@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -31,11 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-/**
- * A class representing the media metadata information defined in the Basic Audio Profile.
- *
- * @hide
- */
+/** A class representing the media metadata information defined in the Basic Audio Profile. */
+@Hide
 @SystemApi
 public final class BluetoothLeAudioContentMetadata implements Parcelable {
     // From Generic Audio assigned numbers
@@ -84,8 +82,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      *
      * @return title and/or summary of Audio Stream content in UTF-8 format, null if this metadata
      *     does not exist
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable String getProgramInfo() {
@@ -96,8 +94,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      * Get language of the audio stream in 3-byte, lower case language code as defined in ISO 639-3.
      *
      * @return ISO 639-3 formatted language code, null if this metadata does not exist
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable String getLanguage() {
@@ -117,21 +115,11 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
         return mRawMetadata;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         BluetoothUtils.writeStringToParcel(out, mProgramInfo);
@@ -141,10 +129,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
 
     /**
      * A {@link Parcelable.Creator} to create {@link BluetoothLeAudioContentMetadata} from parcel.
-     *
-     * @hide
      */
-    @SystemApi @NonNull
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeAudioContentMetadata> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeAudioContentMetadata createFromParcel(
@@ -172,8 +158,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      * @return parsed {@link BluetoothLeAudioContentMetadata} object
      * @throws IllegalArgumentException if <var>rawBytes</var> is null or when the raw bytes cannot
      *     be parsed to build the object
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public static @NonNull BluetoothLeAudioContentMetadata fromRawBytes(@NonNull byte[] rawBytes) {
@@ -209,22 +195,16 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
         return new BluetoothLeAudioContentMetadata(programInfo, language, rawBytes);
     }
 
-    /**
-     * Builder for {@link BluetoothLeAudioContentMetadata}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeAudioContentMetadata}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private String mProgramInfo = null;
         private String mLanguage = null;
         private byte[] mRawMetadata = null;
 
-        /**
-         * Create an empty builder
-         *
-         * @hide
-         */
+        /** Create an empty builder */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -232,8 +212,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeAudioContentMetadata original) {
             mProgramInfo = original.getProgramInfo();
@@ -247,8 +227,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          * @param programInfo title and/or summary of Audio Stream content in UTF-8 format, null if
          *     this metadata does not exist
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setProgramInfo(@Nullable String programInfo) {
@@ -261,8 +241,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          * 639-3.
          *
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setLanguage(@Nullable String language) {
@@ -275,8 +255,8 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          *
          * @return constructed {@link BluetoothLeAudioContentMetadata}
          * @throws IllegalArgumentException if the object cannot be built
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeAudioContentMetadata build() {

@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SdkConstant;
@@ -42,9 +43,8 @@ import java.util.List;
  * <p>BluetoothAvrcpController is a proxy object for controlling the Bluetooth AVRCP Service via
  * IPC. Use {@link BluetoothAdapter#getProfileProxy} to get the BluetoothAvrcpController proxy
  * object.
- *
- * @hide
  */
+@Hide
 public final class BluetoothAvrcpController implements BluetoothProfile {
     private static final String TAG = BluetoothAvrcpController.class.getSimpleName();
 
@@ -107,14 +107,14 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothAvrcpController.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -125,7 +125,7 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {

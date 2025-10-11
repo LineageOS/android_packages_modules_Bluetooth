@@ -16,11 +16,10 @@
 
 package android.bluetooth;
 
-/**
- * This class contains constants for Bluetooth AVRCP profile.
- *
- * @hide
- */
+import android.annotation.Hide;
+
+/** This class contains constants for Bluetooth AVRCP profile. */
+@Hide
 public final class BluetoothAvrcp {
 
     /*
