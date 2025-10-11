@@ -28,6 +28,7 @@ import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -60,9 +61,8 @@ import java.util.function.Consumer;
  *
  * <p>BluetoothVolumeControl is a proxy object for controlling the Bluetooth VC Service via IPC. Use
  * {@link BluetoothAdapter#getProfileProxy} to get the BluetoothVolumeControl proxy object.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothVolumeControl implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothVolumeControl.class.getSimpleName();
@@ -80,9 +80,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * <p>In order to balance volume on the group of Le Audio devices, Volume Offset Control Service
      * (VOCS) shall be used. User can verify if the remote device supports VOCS by calling {@link
      * #isVolumeOffsetAvailable(device)}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     public interface Callback {
         /**
@@ -93,8 +92,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          * @param device remote device whose volume offset changed
          * @param volumeOffset latest volume offset for this device
          * @deprecated Use new callback which give information about a VOCS instance ID
-         * @hide
          */
+        @Hide
         @Deprecated
         @SystemApi
         default void onVolumeOffsetChanged(
@@ -110,8 +109,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          * @param device remote device whose volume offset changed
          * @param instanceId identifier of VOCS instance on the remote device
          * @param volumeOffset latest volume offset for this VOCS instance
-         * @hide
          */
+        @Hide
         @SystemApi
         default void onVolumeOffsetChanged(
                 @NonNull BluetoothDevice device,
@@ -129,8 +128,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          * @param device remote device whose audio location changed
          * @param instanceId identifier of VOCS instance on the remote device
          * @param audioLocation latest audio location for this VOCS instance
-         * @hide
          */
+        @Hide
         @SystemApi
         default void onVolumeOffsetAudioLocationChanged(
                 @NonNull BluetoothDevice device,
@@ -144,8 +143,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          * @param device remote device whose audio description changed
          * @param instanceId identifier of VOCS instance on the remote device
          * @param audioDescription latest audio description for this VOCS instance
-         * @hide
          */
+        @Hide
         @SystemApi
         default void onVolumeOffsetAudioDescriptionChanged(
                 @NonNull BluetoothDevice device,
@@ -160,8 +159,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          *
          * @param device remote device whose volume changed
          * @param volume level
-         * @hide
          */
+        @Hide
         @SystemApi
         default void onDeviceVolumeChanged(
                 @NonNull BluetoothDevice device, @IntRange(from = 0, to = 255) int volume) {}
@@ -233,9 +232,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @SuppressLint("ActionValue")
     @RequiresBluetoothConnectPermission
@@ -272,11 +270,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         close();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @SystemApi
     public void close() {
@@ -285,7 +280,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     @SuppressLint("AndroidFrameworkRequiresPermission") // Unexposed re-entrant callback
@@ -304,7 +299,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         }
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -315,7 +310,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -326,8 +321,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * Get the list of connected devices. Currently at most one.
      *
      * @return list of connected devices
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -344,11 +339,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 defaultValue);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -367,11 +359,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 defaultValue);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -402,8 +391,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException if a null executor, or callback is given, or
      *     IllegalArgumentException if the same <var>callback<var> is already registered.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -464,8 +453,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      *
      * @param callback user implementation of the {@link Callback}
      * @throws IllegalArgumentException when callback is null or when no callback is registered
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -503,8 +492,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @param volumeOffset volume offset to be set on the remote device
      * @deprecated Use new method which allows for choosing a VOCS instance. This method will always
      *     use the first instance.
-     * @hide
      */
+    @Hide
     @Deprecated
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -526,8 +515,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      *     #getNumberOfVolumeOffsetInstances(BluetoothDevice)}. Providing non existing instance ID
      *     will be ignored
      * @param volumeOffset volume offset to be set on VOCS instance
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -551,8 +540,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      *     #getNumberOfVolumeOffsetInstances(BluetoothDevice)}. Providing non existing instance ID
      *     will be ignored
      * @param volumeOffset volume offset to be set on VOCS instance
-     * @hide
      */
+    @Hide
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     private void setVolumeOffsetInternal(
             @NonNull BluetoothDevice device,
@@ -580,8 +569,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @param device {@link BluetoothDevice} representing the remote device
      * @return {@code true} if volume offset function is supported and available to use on the
      *     remote device. When Bluetooth is off, the return value should always be {@code false}.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -605,8 +594,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      *
      * @param device {@link BluetoothDevice} representing the remote device
      * @return number of VOCS instances. When Bluetooth is off, the return value is 0.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -635,8 +624,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -659,8 +648,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -693,8 +682,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      *     coordinated set members throughout this session. Otherwise, caller would have to control
      *     individual device volume.
      * @throws IllegalArgumentException if volume is not in the range [0, 255].
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -730,8 +719,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @return A list of {@link AudioInputControl} objects, or an empty list if no AICS instances
      *     are found or if an error occurs.
      * @throws IllegalArgumentException If the provided device is invalid.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

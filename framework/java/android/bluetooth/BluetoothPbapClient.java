@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -40,11 +41,8 @@ import android.util.Log;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * This class provides the APIs to control the Bluetooth PBAP Client Profile.
- *
- * @hide
- */
+/** This class provides the APIs to control the Bluetooth PBAP Client Profile. */
+@Hide
 @SystemApi
 public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothPbapClient.class.getSimpleName();
@@ -68,9 +66,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @SuppressLint("ActionValue")
     @RequiresBluetoothConnectPermission
@@ -80,29 +77,22 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
             "android.bluetooth.pbapclient.profile.action.CONNECTION_STATE_CHANGED";
 
     /** There was an error trying to obtain the state */
-    /** @hide */
-    public static final int STATE_ERROR = -1;
+    @Hide public static final int STATE_ERROR = -1;
 
-    /** @hide */
-    public static final int RESULT_FAILURE = 0;
+    @Hide public static final int RESULT_FAILURE = 0;
 
-    /** @hide */
-    public static final int RESULT_SUCCESS = 1;
+    @Hide public static final int RESULT_SUCCESS = 1;
 
     /** Connection canceled before completion. */
-    /** @hide */
-    public static final int RESULT_CANCELED = 2;
+    @Hide public static final int RESULT_CANCELED = 2;
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
 
     private IBluetoothPbapClient mService;
 
-    /**
-     * Create a BluetoothPbapClient proxy object.
-     *
-     * @hide
-     */
+    /** Create a BluetoothPbapClient proxy object. */
+    @Hide
     BluetoothPbapClient(Context context, BluetoothAdapter adapter) {
         if (DBG) {
             Log.d(TAG, "Create BluetoothPbapClient proxy object");
@@ -114,7 +104,7 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         if (mCloseGuard != null) {
@@ -127,9 +117,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
      * Close the connection to the backing service. Other public functions of BluetoothPbapClient
      * will return default error results once close() has been called. Multiple invocations of
      * close() are ok.
-     *
-     * @hide
      */
+    @Hide
     @Override
     public synchronized void close() {
         mAdapter.closeProfileProxy(this);
@@ -138,14 +127,14 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
         }
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothPbapClient.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -156,7 +145,7 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -170,8 +159,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
      * @param device a remote device we want connect to
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise;
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean connect(BluetoothDevice device) {
@@ -197,8 +186,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
      *
      * @param device Remote Bluetooth Device
      * @return false on error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean disconnect(BluetoothDevice device) {
@@ -219,11 +208,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -247,11 +233,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -277,11 +260,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -322,8 +302,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -356,8 +336,8 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
