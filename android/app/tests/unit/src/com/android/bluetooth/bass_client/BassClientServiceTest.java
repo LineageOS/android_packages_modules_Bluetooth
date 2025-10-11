@@ -726,7 +726,7 @@ public class BassClientServiceTest {
         mBassClientService.cleanup();
 
         // Start again
-        mBassClientService = new BassClientService(mAdapterService);
+        mBassClientService = new BassClientService(mAdapterService, mLooper.getLooper());
 
         // Start searching again
         prepareConnectedDeviceGroup();
@@ -1162,6 +1162,9 @@ public class BassClientServiceTest {
     private void generateScanResult(ScanResult result) {
         try {
             mBassScanCallbackCaptor.getValue().onScanResult(result);
+            if (Flags.scanControllerThread()) {
+                mLooper.dispatchAll();
+            }
         } catch (RemoteException e) {
             // the mocked onScanResult doesn't throw RemoteException
         }
