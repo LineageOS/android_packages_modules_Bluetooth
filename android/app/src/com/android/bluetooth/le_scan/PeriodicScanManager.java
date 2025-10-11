@@ -113,8 +113,8 @@ public class PeriodicScanManager {
 
         @Override
         public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering advertising set");
-            stopSync(mCallback);
+            Log.d(TAG, "binderDied(): Unregistering advertising set");
+            doOnScanThread(() -> stopSync(mCallback));
         }
     }
 
