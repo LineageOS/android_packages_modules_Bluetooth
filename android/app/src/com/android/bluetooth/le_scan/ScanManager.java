@@ -23,12 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.le_scan.ScanUtil.ACTION_REFRESH_BATCHED_SCAN;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_LATENCY_WINDOW_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS;
-import static com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_FULL;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 import static com.android.bluetooth.le_scan.ScanUtil.clearAutoBatchScanClient;
@@ -58,14 +52,12 @@ import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -75,7 +67,6 @@ import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Display;
@@ -139,21 +130,11 @@ class ScanManager {
     private static final int DELIVERY_MODE_ON_FOUND_LOST = 1;
     private static final int DELIVERY_MODE_BATCH = 2;
 
-    private static final int ONFOUND_SIGHTINGS_AGGRESSIVE = 1;
-    private static final int ONFOUND_SIGHTINGS_STICKY = 4;
-
     private static final int ALL_PASS_FILTER_INDEX_REGULAR_SCAN = 1;
     private static final int ALL_PASS_FILTER_INDEX_BATCH_SCAN = 2;
     private static final int ALL_PASS_FILTER_SELECTION = 0;
 
     private static final int DISCARD_OLDEST_WHEN_BUFFER_FULL = 0;
-
-    /** Onfound/onlost for scan settings */
-    private static final int MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR = (1);
-
-    private static final int MATCH_MODE_STICKY_TIMEOUT_FACTOR = (3);
-    private static final int ONLOST_FACTOR = 2;
-    private static final int ONLOST_ONFOUND_BASE_TIMEOUT_MS = 500;
 
     // The logic is AND for each filter field.
     private static final int LIST_LOGIC_TYPE = 0x1111111;
@@ -1214,10 +1195,10 @@ class ScanManager {
         }
 
         int curPhyMask =
-                getScanPhyMask(
+                ScanUtil.scanPhyMask(
                         mLastConfiguredScanSetting1m != Integer.MIN_VALUE,
                         mLastConfiguredScanSettingCoded != Integer.MIN_VALUE);
-        int scanPhyMask = getScanPhyMask(client1m != null, clientCoded != null);
+        int scanPhyMask = ScanUtil.scanPhyMask(client1m != null, clientCoded != null);
 
         // Only update scan parameters if at least one of the following is true:
         // 1. The 1M PHY mode has changed and is a valid value
@@ -1226,10 +1207,10 @@ class ScanManager {
         if (shouldUpdateScan(newScanSetting1m, mLastConfiguredScanSetting1m)
                 || shouldUpdateScan(newScanSettingCoded, mLastConfiguredScanSettingCoded)
                 || (scanPhyMask != 0 && curPhyMask != scanPhyMask)) {
-            int scanWindow1m = getScanWindow(client1m);
-            int scanInterval1m = getScanInterval(client1m);
-            int scanWindowCoded = getScanWindow(clientCoded);
-            int scanIntervalCoded = getScanInterval(clientCoded);
+            int scanWindow1m = ScanUtil.scanWindow(mAdapterService, client1m);
+            int scanInterval1m = ScanUtil.scanInterval(mAdapterService, client1m);
+            int scanWindowCoded = ScanUtil.scanWindow(mAdapterService, clientCoded);
+            int scanIntervalCoded = ScanUtil.scanInterval(mAdapterService, clientCoded);
             mNativeInterface.scan(false);
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
@@ -1283,15 +1264,6 @@ class ScanManager {
         return result;
     }
 
-    private int getScanWindow(@Nullable ScanClient client) {
-        return client == null ? 0 : Utils.millsToUnit(getScanWindowMillis(client.getSettings()));
-    }
-
-    private int getScanInterval(@Nullable ScanClient client) {
-        // convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
-        return client == null ? 0 : Utils.millsToUnit(getScanIntervalMillis(client.getSettings()));
-    }
-
     private void recordScanRadioStart(
             @Nullable ScanClient client1m,
             @Nullable ScanClient clientCoded,
@@ -1308,17 +1280,18 @@ class ScanManager {
                             ? client1m
                             : clientCoded;
         }
-        if (chosenClient != null
-                && chosenClient.getAppScanStats().isPresent()
-                && !mScanController
-                        .getScanRadioStats()
-                        .recordScanRadioStart(
-                                chosenClient.getScanModeApp(),
-                                chosenClient.getScannerId(),
-                                chosenClient.getAppScanStats().get(),
-                                getScanWindowMillis(chosenClient.getSettings()),
-                                getScanIntervalMillis(chosenClient.getSettings()))) {
-            Log.w(TAG, "Scan radio already started");
+        if (chosenClient != null && chosenClient.getAppScanStats().isPresent()) {
+            var chosenClientSettings = chosenClient.getSettings();
+            if (!mScanController
+                    .getScanRadioStats()
+                    .recordScanRadioStart(
+                            chosenClient.getScanModeApp(),
+                            chosenClient.getScannerId(),
+                            chosenClient.getAppScanStats().get(),
+                            ScanUtil.windowMillis(mAdapterService, chosenClientSettings),
+                            ScanUtil.intervalMillis(mAdapterService, chosenClientSettings))) {
+                Log.w(TAG, "Scan radio already started");
+            }
         }
     }
 
@@ -1751,8 +1724,8 @@ class ScanManager {
         if (Flags.rssiScanFilter()) {
             rssiThreshold = settings.getRssiThreshold();
         }
-        int onFoundTimeout = getOnFoundOnLostTimeoutMillis(settings, true);
-        int onFoundCount = getOnFoundOnLostSightings(settings);
+        int onFoundTimeout = ScanUtil.onFoundOnLostTimeoutMillis(settings, true);
+        int onFoundCount = ScanUtil.onFoundOnLostSightings(settings);
         int onLostTimeout = 10000;
         Log.d(
                 TAG,
@@ -1816,116 +1789,6 @@ class ScanManager {
                         + "ms) to set delivery mode to "
                         + ((delay == 0) ? "DELIVERY_MODE_IMMEDIATE" : "DELIVERY_MODE_BATCH"));
         return mode;
-    }
-
-    private int getScanWindowMillis(ScanSettings settings) {
-        ContentResolver resolver = mAdapterService.getContentResolver();
-        if (settings == null) {
-            return Settings.Global.getInt(
-                    resolver,
-                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                    SCAN_MODE_LOW_POWER_WINDOW_MS);
-        }
-
-        return switch (settings.getScanMode()) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_LATENCY_WINDOW_MS,
-                            SCAN_MODE_LOW_LATENCY_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
-                            SCAN_MODE_BALANCED_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_LOW_POWER ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                            SCAN_MODE_LOW_POWER_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    (int) mAdapterService.getScreenOffLowPowerWindow().toMillis();
-            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    (int) mAdapterService.getScreenOffBalancedWindow().toMillis();
-            default ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                            SCAN_MODE_LOW_POWER_WINDOW_MS);
-        };
-    }
-
-    private int getScanIntervalMillis(ScanSettings settings) {
-        ContentResolver resolver = mAdapterService.getContentResolver();
-        if (settings == null) {
-            return Settings.Global.getInt(
-                    resolver,
-                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                    SCAN_MODE_LOW_POWER_INTERVAL_MS);
-        }
-        return switch (settings.getScanMode()) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_LATENCY_INTERVAL_MS,
-                            SCAN_MODE_LOW_LATENCY_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
-                            SCAN_MODE_BALANCED_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_LOW_POWER ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    (int) mAdapterService.getScreenOffLowPowerInterval().toMillis();
-            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    (int) mAdapterService.getScreenOffBalancedInterval().toMillis();
-            default ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
-        };
-    }
-
-    private static int getScanPhyMask(boolean usePhy1m, boolean usePhyCoded) {
-        int phy = 0;
-        if (usePhy1m) {
-            phy |= BluetoothDevice.PHY_LE_1M_MASK;
-        }
-        if (usePhyCoded) {
-            phy |= BluetoothDevice.PHY_LE_CODED_MASK;
-        }
-        return phy;
-    }
-
-    private static int getOnFoundOnLostTimeoutMillis(ScanSettings settings, boolean onFound) {
-        int factor;
-        int timeout = ONLOST_ONFOUND_BASE_TIMEOUT_MS;
-
-        if (settings.getMatchMode() == ScanSettings.MATCH_MODE_AGGRESSIVE) {
-            factor = MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR;
-        } else {
-            factor = MATCH_MODE_STICKY_TIMEOUT_FACTOR;
-        }
-        if (!onFound) {
-            factor = factor * ONLOST_FACTOR;
-        }
-        return (timeout * factor);
-    }
-
-    private static int getOnFoundOnLostSightings(ScanSettings settings) {
-        if (settings == null) {
-            return ONFOUND_SIGHTINGS_AGGRESSIVE;
-        }
-        if (settings.getMatchMode() == ScanSettings.MATCH_MODE_AGGRESSIVE) {
-            return ONFOUND_SIGHTINGS_AGGRESSIVE;
-        } else {
-            return ONFOUND_SIGHTINGS_STICKY;
-        }
     }
 
     @VisibleForTesting
