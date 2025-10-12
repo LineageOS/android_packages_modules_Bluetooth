@@ -886,49 +886,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public boolean setPasskey(
-            BluetoothDevice device,
-            boolean accept,
-            int len,
-            byte[] passkey,
-            AttributionSource source) {
-        requireNonNull(device);
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setPasskey")
-                || !checkConnectPermissionForDataDelivery(service, source, TAG, "setPasskey")) {
-            return false;
-        }
-
-        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
-        if (deviceProp == null || !deviceProp.isBonding()) {
-            Log.e(TAG, "setPasskey: device=" + device + ", not bonding");
-            return false;
-        }
-        if (passkey.length != len) {
-            android.util.EventLog.writeEvent(
-                    0x534e4554, "139287605", -1, "Passkey length mismatch");
-            return false;
-        }
-        service.logUserBondResponse(device, accept, source);
-        Log.i(
-                TAG,
-                "setPasskey: device="
-                        + device
-                        + ", accept="
-                        + accept
-                        + ", from "
-                        + getUidPidString());
-
-        return service.getNative()
-                .sspReply(
-                        getBytesFromAddress(device.getAddress()),
-                        AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY,
-                        accept,
-                        Utils.byteArrayToInt(passkey));
-    }
-
-    @Override
     public boolean setPairingConfirmation(
             BluetoothDevice device, boolean accept, AttributionSource source) {
         requireNonNull(device);
