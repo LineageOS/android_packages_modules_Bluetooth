@@ -30,11 +30,9 @@ import java.util.List;
  */
 @Hide
 public interface Attributable {
-    @Hide
     @SuppressWarnings("AmbiguousMethodReference")
     void setAttributionSource(@NonNull AttributionSource source);
 
-    @Hide
     @SuppressWarnings("AmbiguousMethodReference")
     static @Nullable <T extends Attributable> T setAttributionSource(
             @Nullable T attributable, @NonNull AttributionSource source) {
@@ -44,7 +42,6 @@ public interface Attributable {
         return attributable;
     }
 
-    @Hide
     static @Nullable <T extends Attributable> List<T> setAttributionSource(
             @Nullable List<T> attributableList, @NonNull AttributionSource source) {
         if (attributableList != null) {
