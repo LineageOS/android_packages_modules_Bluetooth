@@ -957,14 +957,13 @@ int register_com_android_bluetooth_vc(JNIEnv* env) {
            reinterpret_cast<void*>(setExtAudioInGainModeNative)},
           {"setExtAudioInMuteNative", "([BII)Z", reinterpret_cast<void*>(setExtAudioInMuteNative)},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/vc/VolumeControlNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/vc/VolumeControlNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sCallbacksField =
-          getNativeCallbackField(env, "com/android/bluetooth/vc/VolumeControlNativeInterface");
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in VolumeControlNativeCallback
   const JNIJavaMethod javaMethods[] = {

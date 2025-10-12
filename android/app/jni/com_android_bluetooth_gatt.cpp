@@ -2041,14 +2041,14 @@ static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
           {"setPeriodicAdvertisingEnableNative", "(IZ)V",
            (void*)setPeriodicAdvertisingEnableNative},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/gatt/AdvertiseManagerNativeInterface", methods);
+  const char* jniNativeInterfaceClass =
+          "com/android/bluetooth/gatt/AdvertiseManagerNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sAdvertiseCallbacksField =
-          getNativeCallbackField(env, "com/android/bluetooth/gatt/AdvertiseManagerNativeInterface");
+  sAdvertiseCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in AdvertiseManagerNativeCallback
   const JNIJavaMethod javaMethods[] = {
@@ -2164,13 +2164,13 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"gattServerUnoffloadCharacteristicsNative", "(II)V",
            (void*)gattServerUnoffloadCharacteristicsNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/gatt/GattNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/gatt/GattNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sCallbacksField = getNativeCallbackField(env, "com/android/bluetooth/gatt/GattNativeInterface");
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in GattNativeCallback
   const JNIJavaMethod javaMethods[] = {

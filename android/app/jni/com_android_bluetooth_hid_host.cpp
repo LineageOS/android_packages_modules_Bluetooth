@@ -560,14 +560,13 @@ int register_com_android_bluetooth_hid_host(JNIEnv* env) {
           {"getIdleTimeNative", "([BII)Z", (void*)getIdleTimeNative},
           {"setIdleTimeNative", "([BIIB)Z", (void*)setIdleTimeNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/hid/HidHostNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/hid/HidHostNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sCallbacksField =
-          getNativeCallbackField(env, "com/android/bluetooth/hid/HidHostNativeInterface");
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in HidHostNativeCallback
   const JNIJavaMethod javaMethods[] = {

@@ -216,13 +216,13 @@ int register_com_android_bluetooth_pan(JNIEnv* env) {
           {"connectPanNative", "([BII)Z", (void*)connectPanNative},
           {"disconnectPanNative", "([B)Z", (void*)disconnectPanNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/pan/PanNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/pan/PanNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  sCallbacksField = getNativeCallbackField(env, "com/android/bluetooth/pan/PanNativeInterface");
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   // Client callback functions defined in PanNativeCallback
   const JNIJavaMethod javaMethods[]{
