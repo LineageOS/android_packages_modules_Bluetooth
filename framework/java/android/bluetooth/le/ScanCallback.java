@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 
 import java.lang.annotation.Retention;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 public abstract class ScanCallback {
     // Le Roles
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"SCAN_FAILED_"},
@@ -61,8 +62,7 @@ public abstract class ScanCallback {
     /** Fails to start scan as application tries to scan too frequently. */
     public static final int SCAN_FAILED_SCANNING_TOO_FREQUENTLY = 6;
 
-    /** @hide */
-    public static final int NO_ERROR = 0;
+    @Hide public static final int NO_ERROR = 0;
 
     /**
      * Callback when a BLE advertisement has been found.

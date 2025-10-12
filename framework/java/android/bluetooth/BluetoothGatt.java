@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -191,18 +192,15 @@ public final class BluetoothGatt implements BluetoothProfile {
     @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public static final int SUBRATE_MODE_NOT_UPDATED = 255;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"SUBRATE_MODE"},
             value = {SUBRATE_MODE_OFF, SUBRATE_MODE_LOW, SUBRATE_MODE_BALANCED, SUBRATE_MODE_HIGH})
     public @interface SubrateMode {}
 
-    /**
-     * Subrate modes update.
-     *
-     * @hide
-     */
+    /** Subrate modes update. */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"ON_SUBRATE_CHANGE_MODE"},
@@ -216,11 +214,8 @@ public final class BluetoothGatt implements BluetoothProfile {
             })
     public @interface OnSubrateChangeModeValues {}
 
-    /**
-     * Subrate request return values.
-     *
-     * @hide
-     */
+    /** Subrate request return values. */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"ON_SUBRATE_CHANGE_STATUS"},
@@ -236,26 +231,14 @@ public final class BluetoothGatt implements BluetoothProfile {
             })
     public @interface OnSubrateChangeStatusValues {}
 
-    /**
-     * No authentication required.
-     *
-     * @hide
-     */
-    /*package*/ static final int AUTHENTICATION_NONE = 0;
+    /** No authentication required. */
+    @Hide /*package*/ static final int AUTHENTICATION_NONE = 0;
 
-    /**
-     * Authentication requested; no person-in-the-middle protection required.
-     *
-     * @hide
-     */
-    /*package*/ static final int AUTHENTICATION_NO_MITM = 1;
+    /** Authentication requested; no person-in-the-middle protection required. */
+    @Hide /*package*/ static final int AUTHENTICATION_NO_MITM = 1;
 
-    /**
-     * Authentication with person-in-the-middle protection requested.
-     *
-     * @hide
-     */
-    /*package*/ static final int AUTHENTICATION_MITM = 2;
+    /** Authentication with person-in-the-middle protection requested. */
+    @Hide /*package*/ static final int AUTHENTICATION_MITM = 2;
 
     /** Bluetooth GATT callbacks. Overrides the default BluetoothGattCallback implementation. */
     private final IBluetoothGattCallback mBluetoothGattCallback = new GattCallback();
@@ -280,11 +263,8 @@ public final class BluetoothGatt implements BluetoothProfile {
             }
         }
 
-        /**
-         * Application interface registered - app is ready to go
-         *
-         * @hide
-         */
+        /** Application interface registered - app is ready to go */
+        @Hide
         @Override
         @SuppressLint("AndroidFrameworkRequiresPermission")
         @RequiresNoPermission // Callback to app
@@ -335,11 +315,8 @@ public final class BluetoothGatt implements BluetoothProfile {
             }
         }
 
-        /**
-         * Phy update callback
-         *
-         * @hide
-         */
+        /** Phy update callback */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
@@ -363,11 +340,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Phy read callback
-         *
-         * @hide
-         */
+        /** Phy read callback */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
@@ -391,11 +365,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Client connection state changed
-         *
-         * @hide
-         */
+        /** Client connection state changed */
+        @Hide
         @Override
         @RequiresBluetoothConnectPermission
         @RequiresPermission(BLUETOOTH_CONNECT)
@@ -441,9 +412,8 @@ public final class BluetoothGatt implements BluetoothProfile {
          * Remote search has been completed. The internal object structure should now reflect the
          * state of the remote device database. Let the application know that we are done at this
          * point.
-         *
-         * @hide
          */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onSearchComplete(
@@ -487,11 +457,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Remote characteristic has been read. Updates the internal value.
-         *
-         * @hide
-         */
+        /** Remote characteristic has been read. Updates the internal value. */
+        @Hide
         @Override
         @SuppressLint("AndroidFrameworkRequiresPermission")
         @RequiresNoPermission // Callback to app
@@ -551,11 +518,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Characteristic has been written to the remote device. Let the app know how we did...
-         *
-         * @hide
-         */
+        /** Characteristic has been written to the remote device. Let the app know how we did... */
+        @Hide
         @Override
         @SuppressLint("AndroidFrameworkRequiresPermission")
         @RequiresNoPermission // Callback to app
@@ -629,11 +593,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Remote characteristic has been updated. Updates the internal value.
-         *
-         * @hide
-         */
+        /** Remote characteristic has been updated. Updates the internal value. */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onNotify(BluetoothDevice device, int handle, byte[] value) {
@@ -658,11 +619,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Descriptor has been read.
-         *
-         * @hide
-         */
+        /** Descriptor has been read. */
+        @Hide
         @Override
         @SuppressLint("AndroidFrameworkRequiresPermission")
         @RequiresNoPermission // Callback to app
@@ -713,11 +671,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Descriptor write operation complete.
-         *
-         * @hide
-         */
+        /** Descriptor write operation complete. */
+        @Hide
         @Override
         @SuppressLint("AndroidFrameworkRequiresPermission")
         @RequiresNoPermission // Callback to app
@@ -772,11 +727,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Prepared write transaction completed (or aborted)
-         *
-         * @hide
-         */
+        /** Prepared write transaction completed (or aborted) */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onExecuteWrite(BluetoothDevice device, int status) {
@@ -801,11 +753,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Remote device RSSI has been read
-         *
-         * @hide
-         */
+        /** Remote device RSSI has been read */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onReadRemoteRssi(BluetoothDevice device, int rssi, int status) {
@@ -824,11 +773,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Callback invoked when the MTU for a given connection changes
-         *
-         * @hide
-         */
+        /** Callback invoked when the MTU for a given connection changes */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onConfigureMTU(BluetoothDevice device, int mtu, int status) {
@@ -846,11 +792,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Callback invoked when the given connection is updated
-         *
-         * @hide
-         */
+        /** Callback invoked when the given connection is updated */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onConnectionUpdated(
@@ -877,11 +820,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Callback invoked when service changed event is received
-         *
-         * @hide
-         */
+        /** Callback invoked when service changed event is received */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         public void onServiceChanged(BluetoothDevice device) {
@@ -900,11 +840,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Callback invoked when the given connection's subrate is changed
-         *
-         * @hide
-         */
+        /** Callback invoked when the given connection's subrate is changed */
+        @Hide
         @Override
         @RequiresNoPermission // Callback to app
         @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
@@ -928,11 +865,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Callback indicating whether GATT characteristics offload has been added.
-         *
-         * @hide
-         */
+        /** Callback indicating whether GATT characteristics offload has been added. */
+        @Hide
         @RequiresNoPermission
         @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
         /* package */ void onCharacteristicsOffloaded(
@@ -958,11 +892,8 @@ public final class BluetoothGatt implements BluetoothProfile {
                     });
         }
 
-        /**
-         * Callback indicating whether GATT characteristics offload has been removed.
-         *
-         * @hide
-         */
+        /** Callback indicating whether GATT characteristics offload has been removed. */
+        @Hide
         @Override
         @RequiresNoPermission
         @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
@@ -1005,17 +936,17 @@ public final class BluetoothGatt implements BluetoothProfile {
         mAttributionSource = source;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -1040,11 +971,8 @@ public final class BluetoothGatt implements BluetoothProfile {
         mAuthRetryState = AUTH_RETRY_STATE_IDLE;
     }
 
-    /**
-     * Returns a service by UUID, instance and type.
-     *
-     * @hide
-     */
+    /** Returns a service by UUID, instance and type. */
+    @Hide
     /*package*/ BluetoothGattService getService(BluetoothDevice device, UUID uuid, int instanceId) {
         for (BluetoothGattService svc : mServices) {
             if (svc.getDevice().equals(device)
@@ -1056,11 +984,8 @@ public final class BluetoothGatt implements BluetoothProfile {
         return null;
     }
 
-    /**
-     * Returns a characteristic with id equal to instanceId.
-     *
-     * @hide
-     */
+    /** Returns a characteristic with id equal to instanceId. */
+    @Hide
     /*package*/ BluetoothGattCharacteristic getCharacteristicById(
             BluetoothDevice device, int instanceId) {
         for (BluetoothGattService svc : mServices) {
@@ -1073,11 +998,8 @@ public final class BluetoothGatt implements BluetoothProfile {
         return null;
     }
 
-    /**
-     * Returns a descriptor with id equal to instanceId.
-     *
-     * @hide
-     */
+    /** Returns a descriptor with id equal to instanceId. */
+    @Hide
     /*package*/ BluetoothGattDescriptor getDescriptorById(BluetoothDevice device, int instanceId) {
         for (BluetoothGattService svc : mServices) {
             for (BluetoothGattCharacteristic charac : svc.getCharacteristics()) {
@@ -1100,8 +1022,8 @@ public final class BluetoothGatt implements BluetoothProfile {
      * @param callback GATT callback handler that will receive asynchronous callbacks.
      * @return If true, the callback will be called to notify success or failure, false on immediate
      *     error
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1355,8 +1277,8 @@ public final class BluetoothGatt implements BluetoothProfile {
      * or returned in any callback.
      *
      * @return true, if the remote service discovery has been started
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1480,8 +1402,8 @@ public final class BluetoothGatt implements BluetoothProfile {
      *
      * @param uuid UUID of characteristic to read from the remote device
      * @return true, if the read operation was initiated successfully
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -1547,7 +1469,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         }
     }
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             value = {
@@ -1937,11 +1859,8 @@ public final class BluetoothGatt implements BluetoothProfile {
         return true;
     }
 
-    /**
-     * Clears the internal cache and forces a refresh of the services from the remote device.
-     *
-     * @hide
-     */
+    /** Clears the internal cache and forces a refresh of the services from the remote device. */
+    @Hide
     @UnsupportedAppUsage
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -2057,8 +1976,8 @@ public final class BluetoothGatt implements BluetoothProfile {
      * <p>This function will send an LE connection parameters update request to the remote device.
      *
      * @return true, if the request is send to the Bluetooth stack.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean requestLeConnectionUpdate(
@@ -2108,11 +2027,8 @@ public final class BluetoothGatt implements BluetoothProfile {
         return true;
     }
 
-    /**
-     * Subrate request return values.
-     *
-     * @hide
-     */
+    /** Subrate request return values. */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"SUBRATE_REQUEST_RETURN"},
@@ -2206,8 +2122,8 @@ public final class BluetoothGatt implements BluetoothProfile {
      *     status indicates an immediate failure to start the operation.
      * @throws IllegalArgumentException if the service or characteristics are not valid.
      * @throws IllegalStateException if GATT client offload is not supported.
-     * @hide
      */
+    @Hide
     @SystemApi
     @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
     @RequiresBluetoothConnectPermission
@@ -2297,8 +2213,8 @@ public final class BluetoothGatt implements BluetoothProfile {
      *     successful call to {@link #offloadCharacteristics}.
      * @throws IllegalArgumentException if session id is not valid
      * @throws IllegalStateException if BluetoothGatt service not available.
-     * @hide
      */
+    @Hide
     @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

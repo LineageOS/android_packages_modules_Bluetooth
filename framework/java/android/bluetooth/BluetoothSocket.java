@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -99,8 +100,7 @@ public final class BluetoothSocket implements Closeable {
     private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
     private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
-    /** @hide */
-    public static final int MAX_RFCOMM_CHANNEL = 30;
+    @Hide public static final int MAX_RFCOMM_CHANNEL = 30;
 
     /*package*/ static final int MAX_L2CAP_PACKAGE_SIZE = 0xFFFF;
 
@@ -116,7 +116,7 @@ public final class BluetoothSocket implements Closeable {
     /** L2CAP socket on LE transport */
     public static final int TYPE_LE = 4;
 
-    /** @hide */
+    @Hide
     @IntDef(
             prefix = {"BluetoothSocket.TYPE_"},
             value = {
@@ -478,7 +478,7 @@ public final class BluetoothSocket implements Closeable {
         return as;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() throws Throwable {
@@ -1100,8 +1100,8 @@ public final class BluetoothSocket implements Closeable {
      * @param excludeSdp
      *     <li>TRUE - do not auto generate SDP record.
      *     <li>FALSE - default - auto generate SPP SDP record.
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public void setExcludeSdp(boolean excludeSdp) {
         mExcludeSdp = excludeSdp;
@@ -1111,9 +1111,8 @@ public final class BluetoothSocket implements Closeable {
      * Set the LE Transmit Data Length to be the maximum that the BT Controller is capable of. This
      * parameter is used by the BT Controller to set the maximum transmission packet size on this
      * connection. This function is currently used for testing only.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void requestMaximumTxDataLength() throws IOException {
@@ -1146,8 +1145,8 @@ public final class BluetoothSocket implements Closeable {
      *
      * @return the L2CAP local channel ID.
      * @throws BluetoothSocketException in case of failure, with the corresponding error code.
-     * @hide
      */
+    @Hide
     @SystemApi
     @FlaggedApi(Flags.FLAG_BT_SOCKET_API_L2CAP_CID)
     @RequiresBluetoothConnectPermission
@@ -1187,8 +1186,8 @@ public final class BluetoothSocket implements Closeable {
      *
      * @return the L2CAP remote channel ID.
      * @throws BluetoothSocketException in case of failure, with the corresponding error code.
-     * @hide
      */
+    @Hide
     @SystemApi
     @FlaggedApi(Flags.FLAG_BT_SOCKET_API_L2CAP_CID)
     @RequiresBluetoothConnectPermission
@@ -1230,8 +1229,8 @@ public final class BluetoothSocket implements Closeable {
      * @return The socket ID in connected state.
      * @throws BluetoothSocketException If the socket is not connected or an error occurs while
      *     retrieving the socket ID.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getSocketId() throws IOException {
@@ -1241,7 +1240,7 @@ public final class BluetoothSocket implements Closeable {
         return mSocketId;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public ParcelFileDescriptor getParcelFileDescriptor() {
         return mPfd;
@@ -1273,8 +1272,8 @@ public final class BluetoothSocket implements Closeable {
      * @param isAccepting {@code true} if the socket connection is being accepted, {@code false}
      *     otherwise.
      * @throws IOException If an I/O error occurs while writing to the output stream.
-     * @hide
      */
+    @Hide
     private void sendSocketAcceptSignal(OutputStream os, boolean isAccepting) throws IOException {
         if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
             return;

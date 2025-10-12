@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -426,14 +427,14 @@ public final class BluetoothHidDevice implements BluetoothProfile {
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothHidDevice.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -444,7 +445,7 @@ public final class BluetoothHidDevice implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -675,8 +676,8 @@ public final class BluetoothHidDevice implements BluetoothProfile {
      * Gets the application name of the current HidDeviceService user.
      *
      * @return the current user name, or empty string if cannot get the name
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public String getUserAppName() {
@@ -751,9 +752,8 @@ public final class BluetoothHidDevice implements BluetoothProfile {
      * every time. It is not possible to store a persistent connection policy that would be set
      * automatically. Because of this limitation, this API has never worked and will always return
      * {@code false}
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

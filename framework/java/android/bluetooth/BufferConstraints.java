@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -28,11 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A parcelable collection of buffer constraints by codec type.
- *
- * @hide
- */
+/** A parcelable collection of buffer constraints by codec type. */
+@Hide
 @SystemApi
 public final class BufferConstraints implements Parcelable {
     private static final String TAG = BufferConstraints.class.getSimpleName();
@@ -85,8 +83,8 @@ public final class BufferConstraints implements Parcelable {
      *
      * @param codec Audio codec
      * @return buffer constraints by codec type.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable BufferConstraint forCodec(@BluetoothCodecConfig.SourceCodecType int codec) {

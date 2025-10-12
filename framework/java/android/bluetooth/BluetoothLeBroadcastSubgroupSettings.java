@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -30,11 +31,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
 
-/**
- * This class contains the subgroup settings information for this Broadcast Subgroup.
- *
- * @hide
- */
+/** This class contains the subgroup settings information for this Broadcast Subgroup. */
+@Hide
 @SystemApi
 public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
     private final @Quality int mPreferredQuality;
@@ -44,9 +42,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
      * Audio quality for this broadcast subgroup
      *
      * <p>Audio quality for this broadcast subgroup.
-     *
-     * @hide
      */
+    @Hide
     @IntDef(
             prefix = "QUALITY_",
             value = {
@@ -56,19 +53,11 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     public @interface Quality {}
 
-    /**
-     * Indicates standard quality for this subgroup audio configuration.
-     *
-     * @hide
-     */
-    @SystemApi public static final int QUALITY_STANDARD = 0;
+    /** Indicates standard quality for this subgroup audio configuration. */
+    @Hide @SystemApi public static final int QUALITY_STANDARD = 0;
 
-    /**
-     * Indicates high quality for this subgroup audio configuration.
-     *
-     * @hide
-     */
-    @SystemApi public static final int QUALITY_HIGH = 1;
+    /** Indicates high quality for this subgroup audio configuration. */
+    @Hide @SystemApi public static final int QUALITY_HIGH = 1;
 
     private BluetoothLeBroadcastSubgroupSettings(
             int preferredQuality, BluetoothLeAudioContentMetadata contentMetadata) {
@@ -95,8 +84,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
      * Get content metadata for this Broadcast Source subgroup.
      *
      * @return content metadata for this Broadcast Source subgroup
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull BluetoothLeAudioContentMetadata getContentMetadata() {
@@ -107,29 +96,19 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
      * Get preferred audio quality for this Broadcast Source subgroup.
      *
      * @return preferred audio quality for this Broadcast Source subgroup
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Quality int getPreferredQuality() {
         return mPreferredQuality;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeInt(mPreferredQuality);
@@ -139,10 +118,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
     /**
      * A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastSubgroupSettings} from
      * parcel.
-     *
-     * @hide
      */
-    @SystemApi @NonNull
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeBroadcastSubgroupSettings> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeBroadcastSubgroupSettings createFromParcel(
@@ -159,21 +136,15 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
                 }
             };
 
-    /**
-     * Builder for {@link BluetoothLeBroadcastSubgroupSettings}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeBroadcastSubgroupSettings}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private BluetoothLeAudioContentMetadata mContentMetadata = null;
         private @Quality int mPreferredQuality = QUALITY_STANDARD;
 
-        /**
-         * Create an empty constructor.
-         *
-         * @hide
-         */
+        /** Create an empty constructor. */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -181,8 +152,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeBroadcastSubgroupSettings original) {
             mPreferredQuality = original.getPreferredQuality();
@@ -194,8 +165,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          *
          * @param preferredQuality audio quality for this Broadcast Source subgroup
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPreferredQuality(@Quality int preferredQuality) {
@@ -209,8 +180,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          * @param contentMetadata content metadata for this Broadcast Source subgroup
          * @throws NullPointerException if contentMetadata is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setContentMetadata(
@@ -226,8 +197,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          * @return constructed {@link BluetoothLeBroadcastSubgroupSettings}
          * @throws NullPointerException if {@link NonNull} items are null
          * @throws IllegalArgumentException if the object cannot be built
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastSubgroupSettings build() {

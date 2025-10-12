@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -45,7 +46,7 @@ public final class EncryptionStatus {
         mParcel = p;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public InnerParcel getParcel() {
         return mParcel;
@@ -77,7 +78,7 @@ public final class EncryptionStatus {
                 + "}";
     }
 
-    /** @hide */
+    @Hide
     public static final class InnerParcel implements Parcelable {
         private final int mKeySize;
         private final int mAlgorithm;

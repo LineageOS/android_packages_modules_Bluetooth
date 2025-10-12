@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.annotation.Hide;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -46,9 +47,8 @@ import java.util.IdentityHashMap;
  *
  * <p>Use {@link BluetoothAdapter#getPeriodicAdvertisingManager()} to get an instance of {@link
  * PeriodicAdvertisingManager}.
- *
- * @hide
  */
+@Hide
 public final class PeriodicAdvertisingManager {
     private static final String TAG = PeriodicAdvertisingManager.class.getSimpleName();
 
@@ -64,11 +64,8 @@ public final class PeriodicAdvertisingManager {
     private final BluetoothAdapter mBluetoothAdapter;
     private final AttributionSource mAttributionSource;
 
-    /**
-     * Use {@link BluetoothAdapter#getBluetoothLeScanner()} instead.
-     *
-     * @hide
-     */
+    /** Use {@link BluetoothAdapter#getBluetoothLeScanner()} instead. */
+    @Hide
     public PeriodicAdvertisingManager(BluetoothAdapter bluetoothAdapter) {
         mBluetoothAdapter = requireNonNull(bluetoothAdapter);
         mAttributionSource = mBluetoothAdapter.getAttributionSource();
@@ -191,11 +188,8 @@ public final class PeriodicAdvertisingManager {
         }
     }
 
-    /**
-     * Transfer periodic sync
-     *
-     * @hide
-     */
+    /** Transfer periodic sync */
+    @Hide
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
@@ -207,11 +201,8 @@ public final class PeriodicAdvertisingManager {
         }
     }
 
-    /**
-     * Transfer set info
-     *
-     * @hide
-     */
+    /** Transfer set info */
+    @Hide
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void transferSetInfo(
@@ -222,11 +213,8 @@ public final class PeriodicAdvertisingManager {
         transferSetInfo(bda, serviceData, advHandle, callback, null);
     }
 
-    /**
-     * Transfer set info
-     *
-     * @hide
-     */
+    /** Transfer set info */
+    @Hide
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void transferSetInfo(

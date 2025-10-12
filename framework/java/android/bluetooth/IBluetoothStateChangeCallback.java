@@ -16,12 +16,13 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
+
 /**
  * Non-SDK interface used by apps, was previously an AIDL interface. This class is only here for
  * compatibility.
- *
- * @hide
  */
+@Hide
 public interface IBluetoothStateChangeCallback {
     class Stub {
         public Stub() {}

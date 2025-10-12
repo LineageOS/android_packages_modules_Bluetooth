@@ -16,18 +16,14 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * BluetoothInputStream.
- *
- * <p>Used to write to a Bluetooth socket.
- *
- * @hide
- */
+/** Used to write to a Bluetooth socket. */
+@Hide
 final class BluetoothInputStream extends InputStream {
     private final BluetoothSocket mSocket;
 

@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -282,11 +283,8 @@ public final class BluetoothServerSocket implements Closeable {
         mSocket.setServiceName(serviceName);
     }
 
-    /**
-     * Returns the channel on which this socket is bound.
-     *
-     * @hide
-     */
+    /** Returns the channel on which this socket is bound. */
+    @Hide
     @RequiresNoPermission // Permission is checked when creating the socket
     public int getChannel() {
         return mChannel;

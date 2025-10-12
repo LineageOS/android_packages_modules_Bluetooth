@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -81,416 +82,351 @@ public final class BluetoothGattServer implements BluetoothProfile {
             new GattServerCallback();
 
     private class GattServerCallback extends IBluetoothGattServerCallback.Stub {
-                /**
-                 * Application interface registered - app is ready to go
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onServerRegistered(int status) {
-                    Log.d(TAG, "onServerRegistered(" + status + ")");
-                    synchronized (mServerIfLock) {
-                        if (mCallback != null) {
-                            mServerRegistered = true;
-                            mServerIfLock.notify();
-                        } else {
-                            // registration timeout
-                            Log.e(TAG, "onServerRegistered: mCallback is null");
-                        }
-                    }
+        /** Application interface registered - app is ready to go */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onServerRegistered(int status) {
+            Log.d(TAG, "onServerRegistered(" + status + ")");
+            synchronized (mServerIfLock) {
+                if (mCallback != null) {
+                    mServerRegistered = true;
+                    mServerIfLock.notify();
+                } else {
+                    // registration timeout
+                    Log.e(TAG, "onServerRegistered: mCallback is null");
                 }
+            }
+        }
 
-                /**
-                 * Server connection state changed
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onServerConnectionState(
-                        int status, boolean connected, BluetoothDevice device) {
-                    Log.d(
-                            TAG,
-                            "onServerConnectionState() - status="
-                                    + status
-                                    + " connected="
-                                    + connected
-                                    + " device="
-                                    + device);
+        /** Server connection state changed */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onServerConnectionState(int status, boolean connected, BluetoothDevice device) {
+            Log.d(
+                    TAG,
+                    "onServerConnectionState() - status="
+                            + status
+                            + " connected="
+                            + connected
+                            + " device="
+                            + device);
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onConnectionStateChange(
-                                device, status, connected ? STATE_CONNECTED : STATE_DISCONNECTED);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onConnectionStateChange(
+                        device, status, connected ? STATE_CONNECTED : STATE_DISCONNECTED);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
+
+        /** Service has been added */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onServiceAdded(int status, BluetoothGattService service) {
+            Log.d(
+                    TAG,
+                    "onServiceAdded() - handle="
+                            + service.getInstanceId()
+                            + " uuid="
+                            + service.getUuid()
+                            + " status="
+                            + status);
+
+            if (mPendingService == null) {
+                return;
+            }
+
+            BluetoothGattService tmp = mPendingService;
+            mPendingService = null;
+
+            // Rewrite newly assigned handles to existing service.
+            tmp.setInstanceId(service.getInstanceId());
+            List<BluetoothGattCharacteristic> temp_chars = tmp.getCharacteristics();
+            List<BluetoothGattCharacteristic> svc_chars = service.getCharacteristics();
+            for (int i = 0; i < svc_chars.size(); i++) {
+                BluetoothGattCharacteristic temp_char = temp_chars.get(i);
+                BluetoothGattCharacteristic svc_char = svc_chars.get(i);
+
+                temp_char.setInstanceId(svc_char.getInstanceId());
+
+                List<BluetoothGattDescriptor> temp_descs = temp_char.getDescriptors();
+                List<BluetoothGattDescriptor> svc_descs = svc_char.getDescriptors();
+                for (int j = 0; j < svc_descs.size(); j++) {
+                    temp_descs.get(j).setInstanceId(svc_descs.get(j).getInstanceId());
                 }
+            }
 
-                /**
-                 * Service has been added
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onServiceAdded(int status, BluetoothGattService service) {
-                    Log.d(
-                            TAG,
-                            "onServiceAdded() - handle="
-                                    + service.getInstanceId()
-                                    + " uuid="
-                                    + service.getUuid()
-                                    + " status="
-                                    + status);
+            mServices.add(tmp);
 
-                    if (mPendingService == null) {
-                        return;
-                    }
+            try {
+                mCallback.onServiceAdded((int) status, tmp);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
 
-                    BluetoothGattService tmp = mPendingService;
-                    mPendingService = null;
+        /** Remote client characteristic read request. */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onCharacteristicReadRequest(
+                BluetoothDevice device, int transId, int offset, boolean isLong, int handle) {
+            if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
 
-                    // Rewrite newly assigned handles to existing service.
-                    tmp.setInstanceId(service.getInstanceId());
-                    List<BluetoothGattCharacteristic> temp_chars = tmp.getCharacteristics();
-                    List<BluetoothGattCharacteristic> svc_chars = service.getCharacteristics();
-                    for (int i = 0; i < svc_chars.size(); i++) {
-                        BluetoothGattCharacteristic temp_char = temp_chars.get(i);
-                        BluetoothGattCharacteristic svc_char = svc_chars.get(i);
+            BluetoothGattCharacteristic characteristic = getCharacteristicByHandle(handle);
+            if (characteristic == null) {
+                Log.w(TAG, "onCharacteristicReadRequest() no char for handle " + handle);
+                return;
+            }
 
-                        temp_char.setInstanceId(svc_char.getInstanceId());
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onCharacteristicReadRequest(device, transId, offset, characteristic);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
 
-                        List<BluetoothGattDescriptor> temp_descs = temp_char.getDescriptors();
-                        List<BluetoothGattDescriptor> svc_descs = svc_char.getDescriptors();
-                        for (int j = 0; j < svc_descs.size(); j++) {
-                            temp_descs.get(j).setInstanceId(svc_descs.get(j).getInstanceId());
-                        }
-                    }
+        /** Remote client descriptor read request. */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onDescriptorReadRequest(
+                BluetoothDevice device, int transId, int offset, boolean isLong, int handle) {
+            if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
 
-                    mServices.add(tmp);
+            BluetoothGattDescriptor descriptor = getDescriptorByHandle(handle);
+            if (descriptor == null) {
+                Log.w(TAG, "onDescriptorReadRequest() no desc for handle " + handle);
+                return;
+            }
 
-                    try {
-                        mCallback.onServiceAdded((int) status, tmp);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onDescriptorReadRequest(device, transId, offset, descriptor);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
 
-                /**
-                 * Remote client characteristic read request.
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onCharacteristicReadRequest(
-                        BluetoothDevice device,
-                        int transId,
-                        int offset,
-                        boolean isLong,
-                        int handle) {
-                    if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
+        /** Remote client characteristic write request. */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onCharacteristicWriteRequest(
+                BluetoothDevice device,
+                int transId,
+                int offset,
+                int length,
+                boolean isPrep,
+                boolean needRsp,
+                int handle,
+                byte[] value) {
+            if (VDBG) Log.d(TAG, "onCharacteristicWriteRequest() - handle=" + handle);
 
-                    BluetoothGattCharacteristic characteristic = getCharacteristicByHandle(handle);
-                    if (characteristic == null) {
-                        Log.w(TAG, "onCharacteristicReadRequest() no char for handle " + handle);
-                        return;
-                    }
+            BluetoothGattCharacteristic characteristic = getCharacteristicByHandle(handle);
+            if (characteristic == null) {
+                Log.w(TAG, "onCharacteristicWriteRequest() no char for handle " + handle);
+                return;
+            }
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onCharacteristicReadRequest(
-                                device, transId, offset, characteristic);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onCharacteristicWriteRequest(
+                        device, transId, characteristic, isPrep, needRsp, offset, value);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
 
-                /**
-                 * Remote client descriptor read request.
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onDescriptorReadRequest(
-                        BluetoothDevice device,
-                        int transId,
-                        int offset,
-                        boolean isLong,
-                        int handle) {
-                    if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
+        /** Remote client descriptor write request. */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onDescriptorWriteRequest(
+                BluetoothDevice device,
+                int transId,
+                int offset,
+                int length,
+                boolean isPrep,
+                boolean needRsp,
+                int handle,
+                byte[] value) {
+            if (VDBG) Log.d(TAG, "onDescriptorWriteRequest() - handle=" + handle);
 
-                    BluetoothGattDescriptor descriptor = getDescriptorByHandle(handle);
-                    if (descriptor == null) {
-                        Log.w(TAG, "onDescriptorReadRequest() no desc for handle " + handle);
-                        return;
-                    }
+            BluetoothGattDescriptor descriptor = getDescriptorByHandle(handle);
+            if (descriptor == null) {
+                Log.w(TAG, "onDescriptorWriteRequest() no desc for handle " + handle);
+                return;
+            }
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onDescriptorReadRequest(device, transId, offset, descriptor);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onDescriptorWriteRequest(
+                        device, transId, descriptor, isPrep, needRsp, offset, value);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
 
-                /**
-                 * Remote client characteristic write request.
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onCharacteristicWriteRequest(
-                        BluetoothDevice device,
-                        int transId,
-                        int offset,
-                        int length,
-                        boolean isPrep,
-                        boolean needRsp,
-                        int handle,
-                        byte[] value) {
-                    if (VDBG) Log.d(TAG, "onCharacteristicWriteRequest() - handle=" + handle);
+        /** Execute pending writes. */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onExecuteWrite(BluetoothDevice device, int transId, boolean execWrite) {
+            Log.d(
+                    TAG,
+                    "onExecuteWrite() - "
+                            + "device="
+                            + device
+                            + ", transId="
+                            + transId
+                            + "execWrite="
+                            + execWrite);
 
-                    BluetoothGattCharacteristic characteristic = getCharacteristicByHandle(handle);
-                    if (characteristic == null) {
-                        Log.w(TAG, "onCharacteristicWriteRequest() no char for handle " + handle);
-                        return;
-                    }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onExecuteWrite(device, transId, execWrite);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            }
+        }
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onCharacteristicWriteRequest(
-                                device, transId, characteristic, isPrep, needRsp, offset, value);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
-                }
+        /** A notification/indication has been sent. */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onNotificationSent(BluetoothDevice device, int status) {
+            if (VDBG) {
+                Log.d(TAG, "onNotificationSent() - " + "device=" + device + ", status=" + status);
+            }
 
-                /**
-                 * Remote client descriptor write request.
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onDescriptorWriteRequest(
-                        BluetoothDevice device,
-                        int transId,
-                        int offset,
-                        int length,
-                        boolean isPrep,
-                        boolean needRsp,
-                        int handle,
-                        byte[] value) {
-                    if (VDBG) Log.d(TAG, "onDescriptorWriteRequest() - handle=" + handle);
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onNotificationSent(device, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
 
-                    BluetoothGattDescriptor descriptor = getDescriptorByHandle(handle);
-                    if (descriptor == null) {
-                        Log.w(TAG, "onDescriptorWriteRequest() no desc for handle " + handle);
-                        return;
-                    }
+        /** The MTU for a connection has changed */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onMtuChanged(BluetoothDevice device, int mtu) {
+            Log.d(TAG, "onMtuChanged() - device=" + device + ", mtu=" + mtu);
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onDescriptorWriteRequest(
-                                device, transId, descriptor, isPrep, needRsp, offset, value);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onMtuChanged(device, mtu);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
 
-                /**
-                 * Execute pending writes.
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onExecuteWrite(BluetoothDevice device, int transId, boolean execWrite) {
-                    Log.d(
-                            TAG,
-                            "onExecuteWrite() - "
-                                    + "device="
-                                    + device
-                                    + ", transId="
-                                    + transId
-                                    + "execWrite="
-                                    + execWrite);
+        /** The PHY for a connection was updated */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+            Log.d(
+                    TAG,
+                    "onPhyUpdate() - "
+                            + "device="
+                            + device
+                            + ", txPHy="
+                            + txPhy
+                            + ", rxPHy="
+                            + rxPhy);
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onExecuteWrite(device, transId, execWrite);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception in callback", ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onPhyUpdate(device, txPhy, rxPhy, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
 
-                /**
-                 * A notification/indication has been sent.
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onNotificationSent(BluetoothDevice device, int status) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onNotificationSent() - "
-                                        + "device="
-                                        + device
-                                        + ", status="
-                                        + status);
-                    }
+        /** The PHY for a connection was read */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+            Log.d(
+                    TAG,
+                    "onPhyUpdate() - "
+                            + "device="
+                            + device
+                            + ", txPHy="
+                            + txPhy
+                            + ", rxPHy="
+                            + rxPhy);
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onNotificationSent(device, status);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception: " + ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onPhyRead(device, txPhy, rxPhy, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
 
-                /**
-                 * The MTU for a connection has changed
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onMtuChanged(BluetoothDevice device, int mtu) {
-                    Log.d(TAG, "onMtuChanged() - device=" + device + ", mtu=" + mtu);
+        /** Callback invoked when the given connection is updated */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onConnectionUpdated(
+                BluetoothDevice device, int interval, int latency, int timeout, int status) {
+            Log.d(
+                    TAG,
+                    "onConnectionUpdated() - device="
+                            + device
+                            + " interval="
+                            + interval
+                            + " latency="
+                            + latency
+                            + " timeout="
+                            + timeout
+                            + " status="
+                            + status);
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onMtuChanged(device, mtu);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception: " + ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onConnectionUpdated(device, interval, latency, timeout, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
 
-                /**
-                 * The PHY for a connection was updated
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
-                    Log.d(
-                            TAG,
-                            "onPhyUpdate() - "
-                                    + "device="
-                                    + device
-                                    + ", txPHy="
-                                    + txPhy
-                                    + ", rxPHy="
-                                    + rxPhy);
+        /** Callback invoked when the given connection's subrating is changed */
+        @Hide
+        @Override
+        @RequiresNoPermission // Callback to app
+        @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
+        public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
+            Log.d(
+                    TAG,
+                    "onSubrateChange() - "
+                            + "device="
+                            + device
+                            + ", subrateMode="
+                            + subrateMode
+                            + ", status="
+                            + status);
 
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onPhyUpdate(device, txPhy, rxPhy, status);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception: " + ex);
-                    }
-                }
+            Attributable.setAttributionSource(device, mAttributionSource);
+            try {
+                mCallback.onSubrateChange(device, subrateMode, status);
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception: " + ex);
+            }
+        }
 
-                /**
-                 * The PHY for a connection was read
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
-                    Log.d(
-                            TAG,
-                            "onPhyUpdate() - "
-                                    + "device="
-                                    + device
-                                    + ", txPHy="
-                                    + txPhy
-                                    + ", rxPHy="
-                                    + rxPhy);
-
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onPhyRead(device, txPhy, rxPhy, status);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception: " + ex);
-                    }
-                }
-
-                /**
-                 * Callback invoked when the given connection is updated
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                public void onConnectionUpdated(
-                        BluetoothDevice device,
-                        int interval,
-                        int latency,
-                        int timeout,
-                        int status) {
-                    Log.d(
-                            TAG,
-                            "onConnectionUpdated() - device="
-                                    + device
-                                    + " interval="
-                                    + interval
-                                    + " latency="
-                                    + latency
-                                    + " timeout="
-                                    + timeout
-                                    + " status="
-                                    + status);
-
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onConnectionUpdated(device, interval, latency, timeout, status);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception: " + ex);
-                    }
-                }
-
-                /**
-                 * Callback invoked when the given connection's subrating is changed
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresNoPermission // Callback to app
-                @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
-                public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
-                    Log.d(
-                            TAG,
-                            "onSubrateChange() - "
-                                    + "device="
-                                    + device
-                                    + ", subrateMode="
-                                    + subrateMode
-                                    + ", status="
-                                    + status);
-
-                    Attributable.setAttributionSource(device, mAttributionSource);
-                    try {
-                        mCallback.onSubrateChange(device, subrateMode, status);
-                    } catch (Exception ex) {
-                        Log.w(TAG, "Unhandled exception: " + ex);
-                    }
-                }
-
-        /**
-         * Callback indicating whether GATT characteristics offload has been added.
-         *
-         * @hide
-         */
+        /** Callback indicating whether GATT characteristics offload has been added. */
+        @Hide
         @RequiresNoPermission
         @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
         /* package */ void onCharacteristicsOffloaded(
@@ -510,11 +446,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
             }
         }
 
-        /**
-         * Callback indicating whether GATT characteristics offload has been removed.
-         *
-         * @hide
-         */
+        /** Callback indicating whether GATT characteristics offload has been removed. */
+        @Hide
         @Override
         @RequiresNoPermission
         @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
@@ -534,7 +467,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 Log.w(TAG, "Unhandled exception: " + ex);
             }
         }
-            };
+    }
+    ;
 
     /** Create a BluetoothGattServer proxy object. */
     /* package */ BluetoothGattServer(
@@ -547,21 +481,15 @@ public final class BluetoothGattServer implements BluetoothProfile {
         mServices = new ArrayList<BluetoothGattService>();
     }
 
-    /**
-     * Get the identifier of the BluetoothGattServer
-     *
-     * @hide
-     */
+    /** Get the identifier of the BluetoothGattServer */
+    @Hide
     @RequiresNoPermission
     public IBluetoothGattServerCallback getCallbackId() {
         return mBluetoothGattServerCallback;
     }
 
-    /**
-     * Returns a characteristic with given handle.
-     *
-     * @hide
-     */
+    /** Returns a characteristic with given handle. */
+    @Hide
     /*package*/ BluetoothGattCharacteristic getCharacteristicByHandle(int handle) {
         for (BluetoothGattService svc : mServices) {
             for (BluetoothGattCharacteristic charac : svc.getCharacteristics()) {
@@ -573,11 +501,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
         return null;
     }
 
-    /**
-     * Returns a descriptor with given handle.
-     *
-     * @hide
-     */
+    /** Returns a descriptor with given handle. */
+    @Hide
     /*package*/ BluetoothGattDescriptor getDescriptorByHandle(int handle) {
         for (BluetoothGattService svc : mServices) {
             for (BluetoothGattCharacteristic charac : svc.getCharacteristics()) {
@@ -591,17 +516,17 @@ public final class BluetoothGattServer implements BluetoothProfile {
         return null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -648,8 +573,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
      * @param eattSupport indicates if server can use eatt
      * @return true, the callback will be called to notify success or failure, false on immediate
      *     error
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -716,11 +641,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
         }
     }
 
-    /**
-     * Returns a service by UUID, instance and type.
-     *
-     * @hide
-     */
+    /** Returns a service by UUID, instance and type. */
+    @Hide
     /*package*/ BluetoothGattService getService(UUID uuid, int instanceId, int type) {
         for (BluetoothGattService svc : mServices) {
             if (svc.getType() == type
@@ -914,7 +836,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 == BluetoothStatusCodes.SUCCESS;
     }
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             value = {
@@ -1144,8 +1066,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
      * @throws SecurityException if the caller does not have the necessary permissions.
      * @throws IllegalArgumentException if the service or characteristics are not valid.
      * @throws IllegalStateException if GATT server offload is not supported.
-     * @hide
      */
+    @Hide
     @SystemApi
     @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
     @RequiresBluetoothConnectPermission
@@ -1245,8 +1167,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
      * @throws SecurityException if the caller does not have the necessary permissions.
      * @throws IllegalArgumentException if session id is not valid
      * @throws IllegalStateException if BluetoothGatt service not available.
-     * @hide
      */
+    @Hide
     @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

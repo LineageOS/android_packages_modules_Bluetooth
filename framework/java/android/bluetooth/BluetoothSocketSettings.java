@@ -20,6 +20,7 @@ import static android.bluetooth.BluetoothSocket.SocketType;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -48,9 +49,8 @@ public final class BluetoothSocketSettings {
     /**
      * Annotation to define the data path used for Bluetooth socket communication. This determines
      * how data flows between the application and the Bluetooth controller.
-     *
-     * @hide
      */
+    @Hide
     @IntDef(
             prefix = {"DATA_PATH_"},
             value = {DATA_PATH_NO_OFFLOAD, DATA_PATH_HARDWARE_OFFLOAD})
@@ -60,10 +60,8 @@ public final class BluetoothSocketSettings {
     /**
      * Non-offload data path where the application's socket data is processed by the main Bluetooth
      * stack.
-     *
-     * @hide
      */
-    @SystemApi public static final int DATA_PATH_NO_OFFLOAD = 0;
+    @Hide @SystemApi public static final int DATA_PATH_NO_OFFLOAD = 0;
 
     /**
      * Hardware offload data path where the application's socket data is processed by a offloaded
@@ -71,10 +69,8 @@ public final class BluetoothSocketSettings {
      *
      * <p>Using this data path requires the {@code BLUETOOTH_PRIVILEGED} permission, which will be
      * checked when a socket connection or channel is created.
-     *
-     * @hide
      */
-    @SystemApi public static final int DATA_PATH_HARDWARE_OFFLOAD = 1;
+    @Hide @SystemApi public static final int DATA_PATH_HARDWARE_OFFLOAD = 1;
 
     /**
      * Maximum size (in bytes) of a data packet that can be received from the endpoint when using
@@ -90,18 +86,14 @@ public final class BluetoothSocketSettings {
     /**
      * Constant representing an invalid hub ID. This value indicates that a hub ID has not been
      * assigned or is not valid.
-     *
-     * @hide
      */
-    private static final long INVALID_HUB_ID = 0;
+    @Hide private static final long INVALID_HUB_ID = 0;
 
     /**
      * Constant representing an invalid hub endpoint ID. This value indicates that an endpoint ID
      * has not been assigned or is not valid.
-     *
-     * @hide
      */
-    private static final long INVALID_ENDPOINT_ID = 0;
+    @Hide private static final long INVALID_ENDPOINT_ID = 0;
 
     /** Type of the Bluetooth socket */
     @SocketType private final int mSocketType;
@@ -232,9 +224,8 @@ public final class BluetoothSocketSettings {
      *
      * <p>This API is part of the System API because {@link #DATA_PATH_HARDWARE_OFFLOAD} is only
      * available through the System API.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @SocketDataPath int getDataPath() {
@@ -252,9 +243,8 @@ public final class BluetoothSocketSettings {
      *
      * <p>This API is part of the System API because {@link #DATA_PATH_HARDWARE_OFFLOAD} is only
      * available through the System API.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @NonNull
     @RequiresNoPermission
@@ -271,9 +261,8 @@ public final class BluetoothSocketSettings {
      *
      * <p>This API is part of the System API because {@link #DATA_PATH_HARDWARE_OFFLOAD} is only
      * available through the System API.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getHubId() {
@@ -293,9 +282,8 @@ public final class BluetoothSocketSettings {
      *
      * <p>This API is part of the System API because {@link #DATA_PATH_HARDWARE_OFFLOAD} is only
      * available through the System API.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getEndpointId() {
@@ -313,9 +301,8 @@ public final class BluetoothSocketSettings {
      *
      * <p>This API is part of the System API because {@link #DATA_PATH_HARDWARE_OFFLOAD} is only
      * available through the System API.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getRequestedMaximumPacketSize() {
@@ -533,8 +520,8 @@ public final class BluetoothSocketSettings {
          * @param dataPath The desired data path for the socket.
          * @return This Builder object to allow for method chaining.
          * @throws IllegalArgumentException If {@code dataPath} is an invalid value.
-         * @hide
          */
+        @Hide
         @SystemApi
         @NonNull
         @RequiresNoPermission
@@ -563,8 +550,8 @@ public final class BluetoothSocketSettings {
          * @return This Builder object to allow for method chaining.
          * @throws IllegalArgumentException if the provided `socketName` exceeds {@link
          *     #HARDWARE_OFFLOAD_SOCKET_NAME_MAX_LENGTH} bytes when encoded in UTF-8.
-         * @hide
          */
+        @Hide
         @SystemApi
         @NonNull
         @RequiresNoPermission
@@ -589,8 +576,8 @@ public final class BluetoothSocketSettings {
          *
          * @param hubId The ID of the hub.
          * @return This Builder object to allow for method chaining.
-         * @hide
          */
+        @Hide
         @SystemApi
         @NonNull
         @RequiresNoPermission
@@ -609,8 +596,8 @@ public final class BluetoothSocketSettings {
          *
          * @param endpointId The ID of the endpoint within the hub.
          * @return This Builder object to allow for method chaining.
-         * @hide
          */
+        @Hide
         @SystemApi
         @NonNull
         @RequiresNoPermission
@@ -633,8 +620,8 @@ public final class BluetoothSocketSettings {
          *
          * @param maximumPacketSize The maximum packet size in bytes.
          * @return This Builder object to allow for method chaining.
-         * @hide
          */
+        @Hide
         @SystemApi
         @NonNull
         @RequiresNoPermission

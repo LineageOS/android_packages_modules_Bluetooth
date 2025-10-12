@@ -15,13 +15,14 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.Arrays;
 
-/** @hide */
+@Hide
 public class SdpRecord implements Parcelable {
 
     private final byte[] mRawData;

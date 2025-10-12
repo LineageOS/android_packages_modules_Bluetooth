@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -78,7 +79,7 @@ public interface BluetoothProfile {
     /** The profile is in disconnecting state */
     int STATE_DISCONNECTING = 3;
 
-    /** @hide */
+    @Hide
     @IntDef({
         STATE_DISCONNECTED,
         STATE_CONNECTING,
@@ -104,26 +105,14 @@ public interface BluetoothProfile {
      */
     @Deprecated int HEALTH = 3;
 
-    /**
-     * Human Interface Device (HID) Host
-     *
-     * @hide
-     */
-    @SystemApi int HID_HOST = 4;
+    /** Human Interface Device (HID) Host */
+    @Hide @SystemApi int HID_HOST = 4;
 
-    /**
-     * Personal Area Networking Profile (PAN)
-     *
-     * @hide
-     */
-    @SystemApi int PAN = 5;
+    /** Personal Area Networking Profile (PAN) */
+    @Hide @SystemApi int PAN = 5;
 
-    /**
-     * Phone Book Access Profile (PBAP)
-     *
-     * @hide
-     */
-    @SystemApi int PBAP = 6;
+    /** Phone Book Access Profile (PBAP) */
+    @Hide @SystemApi int PBAP = 6;
 
     /** Generic Attribute Profile (GATT) */
     int GATT = 7;
@@ -131,67 +120,35 @@ public interface BluetoothProfile {
     /** Generic Attribute Profile (GATT) Server */
     int GATT_SERVER = 8;
 
-    /**
-     * Message Access Profile (MAP)
-     *
-     * @hide
-     */
-    @SystemApi int MAP = 9;
+    /** Message Access Profile (MAP) */
+    @Hide @SystemApi int MAP = 9;
 
     /** SIM Access Profile (SAP) */
     int SAP = 10;
 
-    /**
-     * Advanced Audio Distribution Profile (A2DP) Sink
-     *
-     * @hide
-     */
-    @SystemApi int A2DP_SINK = 11;
+    /** Advanced Audio Distribution Profile (A2DP) Sink */
+    @Hide @SystemApi int A2DP_SINK = 11;
 
-    /**
-     * Audio/Video Remote Control Profile (AVRCP) Controller
-     *
-     * @hide
-     */
-    @SystemApi int AVRCP_CONTROLLER = 12;
+    /** Audio/Video Remote Control Profile (AVRCP) Controller */
+    @Hide @SystemApi int AVRCP_CONTROLLER = 12;
 
-    /**
-     * Audio/Video Remote Control Profile (AVRCP) Target
-     *
-     * @hide
-     */
-    int AVRCP = 13;
+    /** Audio/Video Remote Control Profile (AVRCP) Target */
+    @Hide int AVRCP = 13;
 
-    /**
-     * Headset Client - HFP HF Role
-     *
-     * @hide
-     */
-    @SystemApi int HEADSET_CLIENT = 16;
+    /** Headset Client - HFP HF Role */
+    @Hide @SystemApi int HEADSET_CLIENT = 16;
 
-    /**
-     * Phone Book Access Profile (PBAP) Client
-     *
-     * @hide
-     */
-    @SystemApi int PBAP_CLIENT = 17;
+    /** Phone Book Access Profile (PBAP) Client */
+    @Hide @SystemApi int PBAP_CLIENT = 17;
 
-    /**
-     * Message Access Profile (MAP) Messaging Client Equipment (MCE)
-     *
-     * @hide
-     */
-    @SystemApi int MAP_CLIENT = 18;
+    /** Message Access Profile (MAP) Messaging Client Equipment (MCE) */
+    @Hide @SystemApi int MAP_CLIENT = 18;
 
     /** Human Interface Device (HID) Device */
     int HID_DEVICE = 19;
 
-    /**
-     * Object Push Profile (OPP)
-     *
-     * @hide
-     */
-    @SystemApi int OPP = 20;
+    /** Object Push Profile (OPP) */
+    @Hide @SystemApi int OPP = 20;
 
     /** Hearing Aid Device */
     int HEARING_AID = 21;
@@ -199,36 +156,20 @@ public interface BluetoothProfile {
     /** LE Audio Device */
     int LE_AUDIO = 22;
 
-    /**
-     * Volume Control Profile (VCP)
-     *
-     * @hide
-     */
-    @SystemApi int VOLUME_CONTROL = 23;
+    /** Volume Control Profile (VCP) */
+    @Hide @SystemApi int VOLUME_CONTROL = 23;
 
-    /**
-     * Media Control Profile (MCP) server
-     *
-     * @hide
-     */
-    int MCP_SERVER = 24;
+    /** Media Control Profile (MCP) server */
+    @Hide int MCP_SERVER = 24;
 
     /** Coordinated Set Identification Profile (CSIP) set coordinator */
     int CSIP_SET_COORDINATOR = 25;
 
-    /**
-     * LE Audio Broadcast Source
-     *
-     * @hide
-     */
-    @SystemApi int LE_AUDIO_BROADCAST = 26;
+    /** LE Audio Broadcast Source */
+    @Hide @SystemApi int LE_AUDIO_BROADCAST = 26;
 
-    /**
-     * Telephone Bearer Service (TBS) from Call Control Profile (CCP)
-     *
-     * @hide
-     */
-    int LE_CALL_CONTROL = 27;
+    /** Telephone Bearer Service (TBS) from Call Control Profile (CCP) */
+    @Hide int LE_CALL_CONTROL = 27;
 
     /*
      * Hearing Access Profile (HAP) Client
@@ -236,77 +177,51 @@ public interface BluetoothProfile {
      */
     int HAP_CLIENT = 28;
 
-    /**
-     * LE Audio Broadcast Assistant
-     *
-     * @hide
-     */
-    @SystemApi int LE_AUDIO_BROADCAST_ASSISTANT = 29;
+    /** LE Audio Broadcast Assistant */
+    @Hide @SystemApi int LE_AUDIO_BROADCAST_ASSISTANT = 29;
 
-    /**
-     * Battery Service (BAS)
-     *
-     * @hide
-     */
-    int BATTERY = 30;
+    /** Battery Service (BAS) */
+    @Hide int BATTERY = 30;
 
-    /**
-     * Gaming Audio Profile (GMAP)
-     *
-     * @hide
-     */
-    int GMAP = 31;
+    /** Gaming Audio Profile (GMAP) */
+    @Hide int GMAP = 31;
 
-
-    /**
-     * Voice Assistant Profile and Service
-     *
-     * @hide
-     */
-    int VAPS_SERVER = 32;
+    /** Voice Assistant Profile and Service */
+    @Hide int VAPS_SERVER = 32;
 
     /**
      * Max profile ID. This value should be updated whenever a new profile is added to match the
      * largest value assigned to a profile.
-     *
-     * @hide
      */
-    int MAX_PROFILE_ID = 32;
+    @Hide int MAX_PROFILE_ID = 32;
 
     /**
      * Default priority for devices that we try to auto-connect to and allow incoming connections
      * for the profile
-     *
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     int PRIORITY_AUTO_CONNECT = 1000;
 
     /**
      * Default priority for devices that allow incoming and outgoing connections for the profile
      *
-     * @hide
      * @deprecated Replaced with {@link #CONNECTION_POLICY_ALLOWED}
      */
-    @Deprecated @SystemApi int PRIORITY_ON = 100;
+    @Hide @Deprecated @SystemApi int PRIORITY_ON = 100;
 
     /**
      * Default priority for devices that does not allow incoming connections and outgoing
      * connections for the profile.
      *
-     * @hide
      * @deprecated Replaced with {@link #CONNECTION_POLICY_FORBIDDEN}
      */
-    @Deprecated @SystemApi int PRIORITY_OFF = 0;
+    @Hide @Deprecated @SystemApi int PRIORITY_OFF = 0;
 
-    /**
-     * Default priority when not set or when the device is unpaired
-     *
-     * @hide
-     */
-    @UnsupportedAppUsage int PRIORITY_UNDEFINED = -1;
+    /** Default priority when not set or when the device is unpaired */
+    @Hide @UnsupportedAppUsage int PRIORITY_UNDEFINED = -1;
 
-    /** @hide */
+    @Hide
     @IntDef(
             prefix = "CONNECTION_POLICY_",
             value = {
@@ -320,25 +235,17 @@ public interface BluetoothProfile {
     /**
      * Default connection policy for devices that allow incoming and outgoing connections for the
      * profile
-     *
-     * @hide
      */
-    @SystemApi int CONNECTION_POLICY_ALLOWED = 100;
+    @Hide @SystemApi int CONNECTION_POLICY_ALLOWED = 100;
 
     /**
      * Default connection policy for devices that do not allow incoming or outgoing connections for
      * the profile.
-     *
-     * @hide
      */
-    @SystemApi int CONNECTION_POLICY_FORBIDDEN = 0;
+    @Hide @SystemApi int CONNECTION_POLICY_FORBIDDEN = 0;
 
-    /**
-     * Default connection policy when not set or when the device is unpaired
-     *
-     * @hide
-     */
-    @SystemApi int CONNECTION_POLICY_UNKNOWN = -1;
+    /** Default connection policy when not set or when the device is unpaired */
+    @Hide @SystemApi int CONNECTION_POLICY_UNKNOWN = -1;
 
     /**
      * Get connected devices for this specific profile.
@@ -373,23 +280,16 @@ public interface BluetoothProfile {
     /**
      * Called by the BluetoothAdapter when the Bluetooth service is connected with a Binder instance
      * corresponding to the service associated with the profile
-     *
-     * @hide
      */
+    @Hide
     void onServiceConnected(IBinder service);
 
-    /**
-     * Called by the BluetoothAdapter when the Bluetooth service connection has been lost
-     *
-     * @hide
-     */
+    /** Called by the BluetoothAdapter when the Bluetooth service connection has been lost */
+    @Hide
     void onServiceDisconnected();
 
-    /**
-     * Get the BluetoothAdapter that created this proxy
-     *
-     * @hide
-     */
+    /** Get the BluetoothAdapter that created this proxy */
+    @Hide
     BluetoothAdapter getAdapter();
 
     /**
@@ -423,8 +323,8 @@ public interface BluetoothProfile {
      *     {@link #STATE_CONNECTED}, or {@link #STATE_DISCONNECTED}
      * @return a string representation of the connection state, STATE_UNKNOWN if the state is not
      *     defined
-     * @hide
      */
+    @Hide
     @SystemApi
     @NonNull
     @RequiresNoPermission
@@ -443,8 +343,8 @@ public interface BluetoothProfile {
      *
      * @param profile profile ID
      * @return profile name as String, UNKNOWN_PROFILE if the profile ID is not defined.
-     * @hide
      */
+    @Hide
     @SystemApi
     @NonNull
     @RequiresNoPermission
@@ -482,7 +382,7 @@ public interface BluetoothProfile {
         };
     }
 
-    /** @hide */
+    @Hide
     static boolean isValidConnectionPolicy(int connectionPolicy) {
         return connectionPolicy == CONNECTION_POLICY_ALLOWED
                 || connectionPolicy == CONNECTION_POLICY_FORBIDDEN;

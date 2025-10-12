@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
@@ -35,11 +36,8 @@ import android.os.Parcelable;
 @Deprecated
 public final class BluetoothHealthAppConfiguration implements Parcelable {
 
-    /**
-     * Hide auto-created default constructor
-     *
-     * @hide
-     */
+    /** Hide auto-created default constructor */
+    @Hide
     BluetoothHealthAppConfiguration() {}
 
     @Override

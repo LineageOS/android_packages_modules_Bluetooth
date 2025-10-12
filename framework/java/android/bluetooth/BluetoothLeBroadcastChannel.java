@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -30,9 +31,8 @@ import java.util.Objects;
 /**
  * This class contains the Broadcast Isochronous Channel level information as defined in the BASE
  * structure of the Basic Audio Profile.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothLeBroadcastChannel implements Parcelable {
     private static final int UNKNOWN_VALUE_PLACEHOLDER = -1;
@@ -81,8 +81,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
      * <p>Used by Broadcast Assistant and Sink, but not Broadcast Source
      *
      * @return true if the channel is selected by Broadcast Assistant for the Broadcast Sink
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean isSelected() {
@@ -93,8 +93,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
      * Get the Broadcast Isochronous Channel index of this Broadcast Channel.
      *
      * @return Broadcast Isochronous Channel index
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getChannelIndex() {
@@ -105,29 +105,19 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
      * Return the codec specific configuration for this Broadcast Channel.
      *
      * @return codec specific configuration for this Broadcast Channel
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull BluetoothLeAudioCodecConfigMetadata getCodecMetadata() {
         return mCodecMetadata;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeBoolean(mIsSelected);
@@ -135,12 +125,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
         out.writeTypedObject(mCodecMetadata, 0);
     }
 
-    /**
-     * A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastChannel} from parcel.
-     *
-     * @hide
-     */
-    @SystemApi @NonNull
+    /** A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastChannel} from parcel. */
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeBroadcastChannel> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeBroadcastChannel createFromParcel(@NonNull Parcel in) {
@@ -158,22 +144,16 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
                 }
             };
 
-    /**
-     * Builder for {@link BluetoothLeBroadcastChannel}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeBroadcastChannel}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private boolean mIsSelected = false;
         private int mChannelIndex = UNKNOWN_VALUE_PLACEHOLDER;
         private BluetoothLeAudioCodecConfigMetadata mCodecMetadata = null;
 
-        /**
-         * Create an empty builder.
-         *
-         * @hide
-         */
+        /** Create an empty builder. */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -181,8 +161,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeBroadcastChannel original) {
             mIsSelected = original.isSelected();
@@ -198,8 +178,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @param isSelected true if the channel is selected by Broadcast Assistant for the
          *     Broadcast Sink
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setSelected(boolean isSelected) {
@@ -213,8 +193,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @param channelIndex Broadcast Isochronous Channel index
          * @throws IllegalArgumentException if the input argument is not valid
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setChannelIndex(int channelIndex) {
@@ -232,8 +212,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @param codecMetadata codec specific configuration for this Broadcast Channel
          * @throws NullPointerException if codecMetadata is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setCodecMetadata(
@@ -249,8 +229,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @return constructed {@link BluetoothLeBroadcastChannel}
          * @throws NullPointerException if {@link NonNull} items are null
          * @throws IllegalArgumentException if the object cannot be built
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastChannel build() {

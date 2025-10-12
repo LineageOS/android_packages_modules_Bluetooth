@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -41,9 +42,8 @@ import java.util.Objects;
  * <p>For example, an LE Audio Broadcast Sink can use the information contained within an instance
  * of this class to synchronize with an LE Audio Broadcast group in order to listen to audio from
  * Broadcast subgroup using one or more Broadcast Channels.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothLeBroadcastMetadata implements Parcelable {
     // Information needed for adding broadcast Source
@@ -68,9 +68,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * presenting the audio stream quality for this BIG, either public broadcast or non-public
      * broadcast Bit0 indicates at least one broadcast Audio Stream configuration is standard
      * quality Bit1 indicates at least one broadcast Audio Stream configuration is high quality
-     *
-     * @hide
      */
+    @Hide
     @IntDef(
             flag = true,
             prefix = "AUDIO_CONFIG_QUALITY_",
@@ -82,30 +81,22 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     public @interface AudioConfigQuality {}
 
-    /**
-     * Audio config quality is none, default value used for audio config quality.
-     *
-     * @hide
-     */
-    @SystemApi public static final int AUDIO_CONFIG_QUALITY_NONE = 0;
+    /** Audio config quality is none, default value used for audio config quality. */
+    @Hide @SystemApi public static final int AUDIO_CONFIG_QUALITY_NONE = 0;
 
     /**
      * Audio config quality is standard. This indicates the BIG shall include at least one broadcast
      * Audio Stream configuration defined as Mandatory for a Broadcast Sink in Basic Audio Profile,
      * Version 1 or later, table 6.4
-     *
-     * @hide
      */
-    @SystemApi public static final int AUDIO_CONFIG_QUALITY_STANDARD = 0x1 << 0;
+    @Hide @SystemApi public static final int AUDIO_CONFIG_QUALITY_STANDARD = 0x1 << 0;
 
     /**
      * Audio config quality is standard. This indicates the BIG shall include at least one broadcast
      * Audio Stream configuration setting listed in Public Broadcast Profile, Version 1 or later,
      * table 4.2
-     *
-     * @hide
      */
-    @SystemApi public static final int AUDIO_CONFIG_QUALITY_HIGH = 0x1 << 1;
+    @Hide @SystemApi public static final int AUDIO_CONFIG_QUALITY_HIGH = 0x1 << 1;
 
     // BASE structure
 
@@ -216,8 +207,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * BluetoothDevice#ADDRESS_TYPE_RANDOM}
      *
      * @return address type of the Broadcast Source
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @BluetoothDevice.AddressType int getSourceAddressType() {
@@ -229,8 +220,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * Device Address, Public Identity Address or Random (static) Identity Address.
      *
      * @return MAC address of the Broadcast Source
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull BluetoothDevice getSourceDevice() {
@@ -243,8 +234,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * Broadcast Source.
      *
      * @return 1-byte long Advertising_SID of the Broadcast Source
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getSourceAdvertisingSid() {
@@ -255,28 +246,24 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * Broadcast_ID of the Broadcast Source.
      *
      * @return 3-byte long Broadcast_ID of the Broadcast Source
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getBroadcastId() {
         return mBroadcastId;
     }
 
-    /**
-     * Indicated that Periodic Advertising Sync interval is unknown.
-     *
-     * @hide
-     */
-    @SystemApi public static final int PA_SYNC_INTERVAL_UNKNOWN = 0xFFFF;
+    /** Indicated that Periodic Advertising Sync interval is unknown. */
+    @Hide @SystemApi public static final int PA_SYNC_INTERVAL_UNKNOWN = 0xFFFF;
 
     /**
      * Get Periodic Advertising Sync interval of the broadcast Source.
      *
      * @return Periodic Advertising Sync interval of the broadcast Source, {@link
      *     #PA_SYNC_INTERVAL_UNKNOWN} if unknown
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getPaSyncInterval() {
@@ -287,8 +274,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * Return true if the Broadcast Source is encrypted.
      *
      * @return true if the Broadcast Source is encrypted
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean isEncrypted() {
@@ -298,9 +285,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
     /**
      * Return {@code true} if this Broadcast Group is broadcasting Public Broadcast Announcement
      * otherwise return {@code false}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean isPublicBroadcast() {
@@ -311,8 +297,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * Get the broadcast name for this Broadcast Group as UTF-8 format.
      *
      * @return broadcast name or null for this Broadcast Group
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable String getBroadcastName() {
@@ -331,8 +317,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      *
      * @return Broadcast Code currently set for this Broadcast Source, {@code null} if code is not
      *     required or code is currently unknown
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getBroadcastCode() {
@@ -345,8 +331,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * <p>Presentation delay is defined in Section 7 of the Basic Audio Profile.
      *
      * @return presentation delay of this Broadcast Source in microseconds
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @IntRange(from = 0, to = 0xFFFFFF) int getPresentationDelayMicros() {
@@ -357,20 +343,16 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * Get broadcast audio config quality for this Broadcast Group.
      *
      * @return Broadcast audio config quality for this Broadcast Group
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @AudioConfigQuality int getAudioConfigQuality() {
         return mAudioConfigQuality;
     }
 
-    /**
-     * Indicated that rssi value is unknown.
-     *
-     * @hide
-     */
-    @SystemApi public static final int RSSI_UNKNOWN = 0x7F;
+    /** Indicated that rssi value is unknown. */
+    @Hide @SystemApi public static final int RSSI_UNKNOWN = 0x7F;
 
     /**
      * Get the Received Signal Strength Indication (RSSI) value of this Broadcast Source.
@@ -380,8 +362,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * available.
      *
      * @return the RSSI {@link #RSSI_UNKNOWN} if unknown
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @IntRange(from = -127, to = 127) int getRssi() {
@@ -393,8 +375,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      *
      * @return public broadcast metadata for this Broadcast Group, {@code null} if no public
      *     metadata exists
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable BluetoothLeAudioContentMetadata getPublicBroadcastMetadata() {
@@ -406,29 +388,19 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      *
      * @return list of subgroups in this broadcast source, which should contain at least one
      *     subgroup for each Broadcast Source
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull List<BluetoothLeBroadcastSubgroup> getSubgroups() {
         return mSubgroups;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeInt(mSourceAddressType);
@@ -459,12 +431,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
         out.writeInt(mRssi);
     }
 
-    /**
-     * A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastMetadata} from parcel.
-     *
-     * @hide
-     */
-    @SystemApi @NonNull
+    /** A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastMetadata} from parcel. */
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeBroadcastMetadata> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeBroadcastMetadata createFromParcel(@NonNull Parcel in) {
@@ -511,11 +479,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
 
     private static final int UNKNOWN_VALUE_PLACEHOLDER = -1;
 
-    /**
-     * Builder for {@link BluetoothLeBroadcastMetadata}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeBroadcastMetadata}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private @BluetoothDevice.AddressType int mSourceAddressType =
@@ -534,11 +499,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
         private BluetoothLeAudioContentMetadata mPublicBroadcastMetadata = null;
         private final List<BluetoothLeBroadcastSubgroup> mSubgroups = new ArrayList<>();
 
-        /**
-         * Create an empty builder.
-         *
-         * @hide
-         */
+        /** Create an empty builder. */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -546,8 +508,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeBroadcastMetadata original) {
             mSourceAddressType = original.getSourceAddressType();
@@ -582,8 +544,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @throws IllegalArgumentException if sourceAddressType is invalid
          * @throws NullPointerException if sourceDevice is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setSourceDevice(
@@ -611,8 +573,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          *
          * @param sourceAdvertisingSid 1-byte long Advertising_SID of the Broadcast Source
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setSourceAdvertisingSid(int sourceAdvertisingSid) {
@@ -625,8 +587,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          *
          * @param broadcastId 3-byte long Broadcast_ID of the Broadcast Source
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setBroadcastId(int broadcastId) {
@@ -640,8 +602,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param paSyncInterval Periodic Advertising Sync interval of the broadcast Source, {@link
          *     #PA_SYNC_INTERVAL_UNKNOWN} if unknown
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPaSyncInterval(int paSyncInterval) {
@@ -658,8 +620,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          *
          * @param isEncrypted whether the Broadcast Source is encrypted
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setEncrypted(boolean isEncrypted) {
@@ -673,8 +635,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param isPublicBroadcast whether this Broadcast Group is broadcasting Public Broadcast
          *     Announcement
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPublicBroadcast(boolean isPublicBroadcast) {
@@ -688,8 +650,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param broadcastName Broadcast name for this Broadcast Group, {@code null} if no name
          *     provided
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setBroadcastName(@Nullable String broadcastName) {
@@ -710,8 +672,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param broadcastCode Broadcast Code for this Broadcast Source, {@code null} if code is
          *     not required
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setBroadcastCode(@Nullable byte[] broadcastCode) {
@@ -729,8 +691,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @throws IllegalArgumentException if presentationDelayMicros does not fall in [0,
          *     0xFFFFFF]
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPresentationDelayMicros(
@@ -750,8 +712,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          *
          * @param audioConfigQuality broadcast audio config quality for this Broadcast Group
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setAudioConfigQuality(@AudioConfigQuality int audioConfigQuality) {
@@ -769,8 +731,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param rssi the RSSI
          * @return this builder
          * @throws IllegalArgumentException if rssi is not in the range [-127, 127].
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setRssi(@IntRange(from = -127, to = 127) int rssi) {
@@ -788,8 +750,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param publicBroadcastMetadata public broadcast metadata for this Broadcast Group, {@code
          *     null} if no public meta data provided
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPublicBroadcastMetadata(
@@ -804,8 +766,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @param subgroup {@link BluetoothLeBroadcastSubgroup} that contains a subgroup's metadata
          * @throws NullPointerException if subgroup is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder addSubgroup(@NonNull BluetoothLeBroadcastSubgroup subgroup) {
@@ -819,8 +781,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * object.
          *
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder clearSubgroup() {
@@ -834,8 +796,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @return {@link BluetoothLeBroadcastMetadata}
          * @throws IllegalArgumentException if the object cannot be built
          * @throws NullPointerException if {@link NonNull} items are null
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastMetadata build() {

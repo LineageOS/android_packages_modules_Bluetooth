@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 
 import java.io.IOException;
@@ -25,9 +26,8 @@ import java.io.OutputStream;
  * BluetoothOutputStream.
  *
  * <p>Used to read from a Bluetooth socket.
- *
- * @hide
  */
+@Hide
 final class BluetoothOutputStream extends OutputStream {
     private final BluetoothSocket mSocket;
 

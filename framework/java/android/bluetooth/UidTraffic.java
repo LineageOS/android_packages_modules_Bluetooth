@@ -16,38 +16,35 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/**
- * Record of data traffic (in bytes) by an application identified by its UID.
- *
- * @hide
- */
+/** Record of data traffic (in bytes) by an application identified by its UID. */
+@Hide
 @SystemApi(client = SystemApi.Client.PRIVILEGED_APPS)
 public final class UidTraffic implements Cloneable, Parcelable {
     private final int mAppUid;
     private long mRxBytes;
     private long mTxBytes;
 
-    /** @hide */
+    @Hide
     public UidTraffic(int appUid, long rx, long tx) {
         mAppUid = appUid;
         mRxBytes = rx;
         mTxBytes = tx;
     }
 
-    /** @hide */
+    @Hide
     private UidTraffic(Parcel in) {
         mAppUid = in.readInt();
         mRxBytes = in.readLong();
         mTxBytes = in.readLong();
     }
 
-    /** @hide */
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(mAppUid);
@@ -55,25 +52,25 @@ public final class UidTraffic implements Cloneable, Parcelable {
         dest.writeLong(mTxBytes);
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void setRxBytes(long bytes) {
         mRxBytes = bytes;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void setTxBytes(long bytes) {
         mTxBytes = bytes;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void addRxBytes(long bytes) {
         mRxBytes += bytes;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void addTxBytes(long bytes) {
         mTxBytes += bytes;
@@ -108,7 +105,7 @@ public final class UidTraffic implements Cloneable, Parcelable {
         return 0;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public UidTraffic clone() {

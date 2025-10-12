@@ -22,6 +22,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -43,9 +44,8 @@ import java.util.Optional;
 /**
  * GATT offload session information. This class will be returned by {@link
  * BluetoothGatt#offloadCharacteristics() or @link BluetoothGattServer#offloadCharacteristics()}.
- *
- * @hide
  */
+@Hide
 @FlaggedApi(Flags.FLAG_GATT_OFFLOAD_API)
 @SystemApi
 public final class GattOffloadSession implements AutoCloseable {
@@ -63,9 +63,8 @@ public final class GattOffloadSession implements AutoCloseable {
      *
      * <p>This specifies the possible outcomes when attempting to offload or unoffload GATT
      * characteristics.
-     *
-     * @hide
      */
+    @Hide
     @IntDef(
             prefix = {"STATUS_"},
             value = {
@@ -126,7 +125,7 @@ public final class GattOffloadSession implements AutoCloseable {
     private final long mEndpointId;
     private final long mHubId;
 
-    /** @hide */
+    @Hide
     public GattOffloadSession(
             int sessionId,
             @NonNull BluetoothDevice device,
@@ -162,8 +161,8 @@ public final class GattOffloadSession implements AutoCloseable {
      * Returns the offload session ID assigned from host stack.
      *
      * @return The offloaded session ID
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getSessionId() {
@@ -174,8 +173,8 @@ public final class GattOffloadSession implements AutoCloseable {
      * Returns the GATT service associated with this offload session.
      *
      * @return The {@link BluetoothGattService} instance for this session
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull BluetoothGattService getGattService() {
@@ -186,8 +185,8 @@ public final class GattOffloadSession implements AutoCloseable {
      * Returns the list of GATT characteristics included in this offload session.
      *
      * @return A list of the {@link BluetoothGattCharacteristic}s in this session.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull List<BluetoothGattCharacteristic> getGattCharacteristics() {
@@ -198,8 +197,8 @@ public final class GattOffloadSession implements AutoCloseable {
      * Returns the ID of the endpoint within the hub associated with this offload session.
      *
      * @return The ID of the endpoint
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getEndpointId() {
@@ -210,8 +209,8 @@ public final class GattOffloadSession implements AutoCloseable {
      * Returns the ID of the hub associated with this offload session.
      *
      * @return The ID of the hub
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getHubId() {
@@ -240,8 +239,8 @@ public final class GattOffloadSession implements AutoCloseable {
      *
      * @throws SecurityException if the caller does not have the necessary permissions.
      * @throws IllegalArgumentException if session is not valid
-     * @hide
      */
+    @Hide
     @Override
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -275,7 +274,7 @@ public final class GattOffloadSession implements AutoCloseable {
                 + "}";
     }
 
-    /** @hide */
+    @Hide
     public static final class InnerParcel implements Parcelable {
         private final int mSessionId;
         private final @Status int mStatus;

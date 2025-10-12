@@ -16,23 +16,20 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.bluetooth.BluetoothDevice;
 
 /**
  * Bluetooth LE periodic advertising callbacks, used to deliver periodic advertising operation
  * status.
  *
- * @hide
  * @see PeriodicAdvertisingManager#createSync
  */
+@Hide
 public abstract class PeriodicAdvertisingCallback {
 
-    /**
-     * The requested operation was successful.
-     *
-     * @hide
-     */
-    public static final int SYNC_SUCCESS = 0;
+    /** The requested operation was successful. */
+    @Hide public static final int SYNC_SUCCESS = 0;
 
     /** Sync failed to be established because remote device did not respond. */
     public static final int SYNC_NO_RESPONSE = 1;

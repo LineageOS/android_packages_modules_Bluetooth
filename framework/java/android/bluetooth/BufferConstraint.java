@@ -16,17 +16,15 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/**
- * Stores a codec's constraints on buffering length in milliseconds.
- *
- * @hide
- */
+/** Stores a codec's constraints on buffering length in milliseconds. */
+@Hide
 @SystemApi
 public final class BufferConstraint implements Parcelable {
     private static final String TAG = BufferConstraint.class.getSimpleName();
@@ -74,8 +72,8 @@ public final class BufferConstraint implements Parcelable {
      * Get the default buffer millis
      *
      * @return default buffer millis
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getDefaultMillis() {
@@ -86,8 +84,8 @@ public final class BufferConstraint implements Parcelable {
      * Get the maximum buffer millis
      *
      * @return maximum buffer millis
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getMaxMillis() {
@@ -98,8 +96,8 @@ public final class BufferConstraint implements Parcelable {
      * Get the minimum buffer millis
      *
      * @return minimum buffer millis
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getMinMillis() {

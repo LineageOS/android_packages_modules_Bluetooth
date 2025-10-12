@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -51,9 +52,8 @@ import java.util.List;
  * BluetoothAdapter#getProfileProxy} to get the BluetoothHidHost proxy object.
  *
  * <p>Each method is protected with its appropriate permission.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothHidHost implements BluetoothProfile {
     private static final String TAG = BluetoothHidHost.class.getSimpleName();
@@ -87,111 +87,95 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public static final String ACTION_CONNECTION_STATE_CHANGED =
             "android.bluetooth.input.profile.action.CONNECTION_STATE_CHANGED";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_PROTOCOL_MODE_CHANGED =
             "android.bluetooth.input.profile.action.PROTOCOL_MODE_CHANGED";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_HANDSHAKE =
             "android.bluetooth.input.profile.action.HANDSHAKE";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_REPORT = "android.bluetooth.input.profile.action.REPORT";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_VIRTUAL_UNPLUG_STATUS =
             "android.bluetooth.input.profile.action.VIRTUAL_UNPLUG_STATUS";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_IDLE_TIME_CHANGED =
             "android.bluetooth.input.profile.action.IDLE_TIME_CHANGED";
 
-    /**
-     * Return codes for the connect and disconnect Bluez / Dbus calls.
-     *
-     * @hide
-     */
-    public static final int INPUT_DISCONNECT_FAILED_NOT_CONNECTED = 5000;
+    /** Return codes for the connect and disconnect Bluez / Dbus calls. */
+    @Hide public static final int INPUT_DISCONNECT_FAILED_NOT_CONNECTED = 5000;
 
-    /** @hide */
-    public static final int INPUT_CONNECT_FAILED_ALREADY_CONNECTED = 5001;
+    @Hide public static final int INPUT_CONNECT_FAILED_ALREADY_CONNECTED = 5001;
 
-    /** @hide */
-    public static final int INPUT_CONNECT_FAILED_ATTEMPT_FAILED = 5002;
+    @Hide public static final int INPUT_CONNECT_FAILED_ATTEMPT_FAILED = 5002;
 
-    /** @hide */
-    public static final int INPUT_OPERATION_GENERIC_FAILURE = 5003;
+    @Hide public static final int INPUT_OPERATION_GENERIC_FAILURE = 5003;
 
-    /** @hide */
-    public static final int INPUT_OPERATION_SUCCESS = 5004;
+    @Hide public static final int INPUT_OPERATION_SUCCESS = 5004;
 
-    /** @hide */
-    public static final int PROTOCOL_REPORT_MODE = 0;
+    @Hide public static final int PROTOCOL_REPORT_MODE = 0;
 
-    /** @hide */
-    public static final int PROTOCOL_BOOT_MODE = 1;
+    @Hide public static final int PROTOCOL_BOOT_MODE = 1;
 
-    /** @hide */
-    public static final int PROTOCOL_UNSUPPORTED_MODE = 255;
+    @Hide public static final int PROTOCOL_UNSUPPORTED_MODE = 255;
 
     /*  int reportType, int reportType, int bufferSize */
-    /** @hide */
-    public static final byte REPORT_TYPE_INPUT = 1;
+    @Hide public static final byte REPORT_TYPE_INPUT = 1;
 
-    /** @hide */
-    public static final byte REPORT_TYPE_OUTPUT = 2;
+    @Hide public static final byte REPORT_TYPE_OUTPUT = 2;
 
-    /** @hide */
-    public static final byte REPORT_TYPE_FEATURE = 3;
+    @Hide public static final byte REPORT_TYPE_FEATURE = 3;
 
-    /** @hide */
-    public static final int VIRTUAL_UNPLUG_STATUS_SUCCESS = 0;
+    @Hide public static final int VIRTUAL_UNPLUG_STATUS_SUCCESS = 0;
 
-    /** @hide */
-    public static final int VIRTUAL_UNPLUG_STATUS_FAIL = 1;
+    @Hide public static final int VIRTUAL_UNPLUG_STATUS_FAIL = 1;
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_PROTOCOL_MODE =
             "android.bluetooth.BluetoothHidHost.extra.PROTOCOL_MODE";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_REPORT_TYPE =
             "android.bluetooth.BluetoothHidHost.extra.REPORT_TYPE";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_REPORT_ID =
             "android.bluetooth.BluetoothHidHost.extra.REPORT_ID";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_REPORT_BUFFER_SIZE =
             "android.bluetooth.BluetoothHidHost.extra.REPORT_BUFFER_SIZE";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_REPORT = "android.bluetooth.BluetoothHidHost.extra.REPORT";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_STATUS = "android.bluetooth.BluetoothHidHost.extra.STATUS";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_VIRTUAL_UNPLUG_STATUS =
             "android.bluetooth.BluetoothHidHost.extra.VIRTUAL_UNPLUG_STATUS";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_IDLE_TIME =
             "android.bluetooth.BluetoothHidHost.extra.IDLE_TIME";
 
@@ -210,14 +194,14 @@ public final class BluetoothHidHost implements BluetoothProfile {
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothHidHost.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -228,7 +212,7 @@ public final class BluetoothHidHost implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -247,8 +231,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
             allOf = {
@@ -287,8 +271,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
             allOf = {
@@ -311,11 +295,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -336,11 +317,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -361,11 +339,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -398,8 +373,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -439,8 +414,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param transport the preferred transport to set for this device
      * @return true if preferred transport is set, false on error
      * @throws IllegalArgumentException if the {@code device} invalid.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -487,8 +462,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -520,8 +495,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param device Bluetooth device
      * @return preferred transport for the device
      * @throws IllegalArgumentException if the {@code device} invalid.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -559,8 +534,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -585,8 +560,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -610,8 +585,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -639,8 +614,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param reportId Report ID
      * @param bufferSize Report receiving buffer size
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -679,8 +654,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param reportType Report type
      * @param report Report receiving buffer size
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -706,8 +681,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param device Remote Bluetooth Device
      * @param report Report to send
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -732,8 +707,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -759,8 +734,8 @@ public final class BluetoothHidHost implements BluetoothProfile {
      * @param device Remote Bluetooth Device
      * @param idleTime Idle time to be set on HID Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
