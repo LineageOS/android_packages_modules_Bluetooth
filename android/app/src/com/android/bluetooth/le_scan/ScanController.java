@@ -1149,7 +1149,7 @@ public class ScanController {
                 ScanUtil.appNameOrUnknown(
                         mAdapterService.getPackageManager().getNameForUid(uid), uid);
         final var uuid = UUID.randomUUID();
-        Log.d(TAG, "registerScanner(): uid=" + uid + ", appName=" + appName + ", uuid=" + uuid);
+        Log.d(TAG, "registerScanner(): uid=" + uid + ", app=" + appName + ", UUID=" + uuid);
         mScannerMap.addWithCallback(
                 uid, appName, uuid, source, workSource, callback, mAdapterService);
         mScanManager.registerScanner(uuid);

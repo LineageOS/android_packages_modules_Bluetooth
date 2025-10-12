@@ -312,8 +312,7 @@ class ScanManager {
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
         mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
 
-        Log.d(TAG, "MSFT - IsSupported? " + mIsMsftSupported);
-        Log.d(TAG, "MSFT - UseFiltering? " + mUseMsftFiltering);
+        Log.d(TAG, "MSFT: isSupported=" + mIsMsftSupported + ", useFiltering=" + mUseMsftFiltering);
     }
 
     void cleanup() {
