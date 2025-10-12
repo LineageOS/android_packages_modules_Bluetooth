@@ -70,8 +70,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import libcore.util.HexEncoding;
 
-import com.google.protobuf.ByteString;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -971,36 +969,6 @@ public class ScanController {
         enforceScanThread();
         Log.d(TAG, "onBatchScanThresholdCrossed() - clientIf=" + clientIf);
         flushPendingBatchResults(clientIf);
-    }
-
-    AdvtFilterOnFoundOnLostInfo createOnTrackAdvFoundLostObject(
-            int clientIf,
-            int advPacketLen,
-            byte[] advPacket,
-            int scanResponseLen,
-            byte[] scanResponse,
-            int filtIndex,
-            int advState,
-            int advInfoPresent,
-            String address,
-            int addrType,
-            int txPower,
-            int rssiValue,
-            int timeStamp) {
-        return new AdvtFilterOnFoundOnLostInfo(
-                clientIf,
-                advPacketLen,
-                ByteString.copyFrom(advPacket),
-                scanResponseLen,
-                ByteString.copyFrom(scanResponse),
-                filtIndex,
-                advState,
-                advInfoPresent,
-                address,
-                addrType,
-                txPower,
-                rssiValue,
-                timeStamp);
     }
 
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) {
