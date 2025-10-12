@@ -53,11 +53,10 @@ class ScanBinder(
         source: AttributionSource,
         method: String,
         block: ScanController.() -> Unit,
-    ) {
+    ) =
         getController(source, method)?.let { controller ->
             controller.doOnScanThread { controller.block() }
         }
-    }
 
     @RequiresPermission(BLUETOOTH_SCAN)
     private fun getController(source: AttributionSource, method: String): ScanController? {
@@ -77,8 +76,7 @@ class ScanBinder(
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
-        enforcePrivilegedPermissionIfNeeded(settings)
-        enforcePrivilegedPermissionIfNeeded(filters)
+        enforcePrivilegedPermissionIfNeeded(settings, filters)
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
@@ -97,8 +95,7 @@ class ScanBinder(
         filters: List<ScanFilter>?,
         source: AttributionSource,
     ) {
-        enforcePrivilegedPermissionIfNeeded(settings)
-        enforcePrivilegedPermissionIfNeeded(filters)
+        enforcePrivilegedPermissionIfNeeded(settings, filters)
         withControllerRunOnScanThread(source, "startScan") {
             startScan(scannerId, settings, filters, source)
         }
@@ -110,8 +107,7 @@ class ScanBinder(
         filters: List<ScanFilter>?,
         source: AttributionSource,
     ) {
-        enforcePrivilegedPermissionIfNeeded(settings)
-        enforcePrivilegedPermissionIfNeeded(filters)
+        enforcePrivilegedPermissionIfNeeded(settings, filters)
         withControllerRunOnScanThread(source, "registerPiAndStartScan") {
             registerPiAndStartScan(intent, settings, filters, source)
         }
@@ -176,67 +172,69 @@ class ScanBinder(
     }
 
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
-    private fun enforcePrivilegedPermissionIfNeeded(settings: ScanSettings) {
+    private fun enforcePrivilegedPermissionIfNeeded(
+        settings: ScanSettings,
+        filters: List<ScanFilter>?,
+    ) {
+        fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
+            // BLE scan only mode needs special permission.
+            if (adapterService.getState() != BluetoothAdapter.STATE_ON) {
+                return true
+            }
+
+            return when {
+                // Ambient discovery mode, needs privileged permission.
+                settings.scanMode == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> true
+                // Regular scan, no special permission.
+                settings.reportDelayMillis == 0L -> false
+                // Batch scan, truncated mode needs permission.
+                else -> settings.scanResultType == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED
+            }
+        }
+
+        /**
+         * The ScanFilter#setDeviceAddress API overloads are @SystemApi access methods. This
+         * requires that the permissions be BLUETOOTH_PRIVILEGED.
+         */
+        fun enforcePrivilegedPermissionIfNeeded(filters: List<ScanFilter>) =
+            filters.forEach { filter ->
+                // The only case to enforce here is if there is an address. If there is an address,
+                // enforce if the correct combination criteria is met.
+                if (filter.deviceAddress != null) {
+                    // At this point we have an address, that means a caller used the
+                    // setDeviceAddress(address) public API for the ScanFilter. We don't want to
+                    // enforce if the type is PUBLIC and the IRK is null. However, if we have a
+                    // different type that means the caller used a new @SystemApi such as
+                    // setDeviceAddress(address, type) or setDeviceAddress(address, type, irk) which
+                    // are both @SystemApi and require permissions to be enforced
+                    if (
+                        filter.addressType == BluetoothDevice.ADDRESS_TYPE_PUBLIC &&
+                            filter.irk == null
+                    ) {
+                        // Do not enforce
+                    } else {
+                        adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+                        return
+                    }
+                }
+            }
+
         Log.d(
             TAG,
             "enforcePrivilegedPermissionIfNeeded: " +
                 "scanMode=${ScanUtil.scanModeToString(settings.scanMode)}, " +
                 "reportDelayMillis=${settings.reportDelayMillis}, " +
-                "scanResultType=${settings.scanResultType}",
+                "scanResultType=${settings.scanResultType}, " +
+                "filters=$filters",
         )
+
         if (needsPrivilegedPermissionForScan(settings)) {
             adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        }
-    }
-
-    private fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
-        // BLE scan only mode needs special permission.
-        if (adapterService.getState() != BluetoothAdapter.STATE_ON) {
-            return true
+            return
         }
 
-        // Ambient discovery mode, needs privileged permission.
-        if (settings.scanMode == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY) {
-            return true
-        }
-
-        // Regular scan, no special permission.
-        if (settings.reportDelayMillis == 0L) {
-            return false
-        }
-
-        // Batch scan, truncated mode needs permission.
-        return settings.scanResultType == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED
-    }
-
-    /**
-     * The ScanFilter#setDeviceAddress API overloads are @SystemApi access methods. This requires
-     * that the permissions be BLUETOOTH_PRIVILEGED.
-     */
-    @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
-    private fun enforcePrivilegedPermissionIfNeeded(filters: List<ScanFilter>?) {
-        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded: filters=$filters")
         // Some 3p API cases may have null filters, need to allow
         if (filters == null) return
-        for (filter in filters) {
-            // The only case to enforce here is if there is an address. If there is an address,
-            // enforce if the correct combination criteria is met.
-            if (filter.deviceAddress != null) {
-                // At this point we have an address, that means a caller used the
-                // setDeviceAddress(address) public API for the ScanFilter. We don't want to enforce
-                // if the type is PUBLIC and the IRK is null. However, if we have a different type
-                // that means the caller used a new @SystemApi such as setDeviceAddress(address,
-                // type) or setDeviceAddress(address, type, irk) which are both @SystemApi and
-                // require permissions to be enforced
-                if (
-                    filter.addressType == BluetoothDevice.ADDRESS_TYPE_PUBLIC && filter.irk == null
-                ) {
-                    // Do not enforce
-                } else {
-                    adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-                    return
-                }
-            }
-        }
+        enforcePrivilegedPermissionIfNeeded(filters)
     }
 }
