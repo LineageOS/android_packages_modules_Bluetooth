@@ -20,11 +20,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.bluetooth.BluetoothLeBroadcastReceiveState;
 
-/**
-* Callback definitions for interacting with LE broadcast assistant service
-*
-* @hide
-*/
+/** Callback definitions for interacting with LE broadcast assistant service */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothLeBroadcastAssistantCallback {
     void onSearchStarted(in int reason);
     void onSearchStartFailed(in int reason);

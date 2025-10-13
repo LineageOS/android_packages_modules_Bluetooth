@@ -21,11 +21,8 @@ import android.bluetooth.BluetoothHapPresetInfo;
 
 import java.util.List;
 
-/**
- * Callback definitions for interacting with HAP Client service
- *
- * @hide
- */
+/** Callback definitions for interacting with HAP Client service */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothHapClientCallback {
     void onPresetSelected(in BluetoothDevice device, in int presetIndex, in int reasonCode);
     void onPresetSelectionFailed(in  BluetoothDevice device, in int statusCode);

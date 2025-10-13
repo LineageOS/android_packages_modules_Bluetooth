@@ -25,10 +25,8 @@ import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.content.AttributionSource;
 
-/**
- * API for interacting with BLE advertising
- * @hide
- */
+/** Binder method for BLE advertising interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothAdvertise {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_ADVERTISE,android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true)")
     void startAdvertisingSet(in AdvertisingSetParameters parameters, in AdvertiseData advertiseData,

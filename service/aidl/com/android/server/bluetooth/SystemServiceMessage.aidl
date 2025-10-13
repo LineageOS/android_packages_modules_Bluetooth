@@ -18,7 +18,8 @@ package com.android.server.bluetooth;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 
-/** @hide */
+/** Binder object definition to use in the Bluetotoh System Server messenger */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface SystemServiceMessage {
     parcelable RegisterAdapter {
         IBluetoothManagerCallback binder;

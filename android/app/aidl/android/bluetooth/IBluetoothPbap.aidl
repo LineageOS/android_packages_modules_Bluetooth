@@ -19,11 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 
-/**
- * System private API for Bluetooth pbap service
- *
- * @hide
- */
+/** Binder method for PBAP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothPbap {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     List<BluetoothDevice> getConnectedDevices(in AttributionSource attributionSource);

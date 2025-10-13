@@ -23,11 +23,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BufferConstraints;
 import android.content.AttributionSource;
 
-/**
- * APIs for Bluetooth A2DP service
- *
- * @hide
- */
+/** Binder method for A2DP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothA2dp {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean connect(in BluetoothDevice device, in AttributionSource attributionSource);

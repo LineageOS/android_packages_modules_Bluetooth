@@ -19,10 +19,8 @@ package android.bluetooth.le;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.DistanceMeasurementResult;
 
-/**
- * Callback definitions for interacting with Distance Measurement Manager
- * @hide
- */
+/** Callback definitions for interacting with Distance Measurement Manager */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IDistanceMeasurementCallback {
     void onStarted(in BluetoothDevice device);
     void onStartFail(in BluetoothDevice device, in int reason);

@@ -19,11 +19,8 @@ package android.bluetooth;
 import android.content.ComponentName;
 import android.os.IBinder;
 
-/**
- * Callback for bluetooth profile connections.
- *
- * @hide
- */
+/** Callback for bluetooth profile connections. */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothProfileServiceConnection {
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void onServiceConnected(in ComponentName comp, in IBinder service);

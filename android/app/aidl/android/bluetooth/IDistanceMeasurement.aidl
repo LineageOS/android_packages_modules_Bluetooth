@@ -23,10 +23,8 @@ import android.bluetooth.le.IDistanceMeasurementCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
-/**
- * API for interacting with distance measurement
- * @hide
- */
+/** Binder method for distance measurement interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IDistanceMeasurement {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     List<DistanceMeasurementMethod> getSupportedDistanceMeasurementMethods(in AttributionSource attributionSource);

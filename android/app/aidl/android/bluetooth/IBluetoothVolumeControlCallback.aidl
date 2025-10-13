@@ -20,11 +20,8 @@ import android.bluetooth.BluetoothDevice;
 
 import java.util.List;
 
-/**
- * Callback definitions for interacting with Volume Control service
- *
- * @hide
- */
+/** Callback definitions for interacting with Volume Control service */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothVolumeControlCallback {
     void onVolumeOffsetChanged(in BluetoothDevice device, in int instanceId, in int volumeOffset);
     void onVolumeOffsetAudioLocationChanged(in BluetoothDevice device, in int instanceId, in int audioLocation);

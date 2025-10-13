@@ -18,7 +18,7 @@ package android.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
 
-/** @hide */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothHidDeviceCallback {
    void onAppStatusChanged(in BluetoothDevice device, boolean registered);
    void onConnectionStateChanged(in BluetoothDevice device, in int state);

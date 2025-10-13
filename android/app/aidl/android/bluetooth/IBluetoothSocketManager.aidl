@@ -20,13 +20,9 @@ import android.bluetooth.BluetoothDevice;
 import android.os.ParcelUuid;
 import android.os.ParcelFileDescriptor;
 
-/**
- * API for Bluetooth Sockets service.
- *
- * @hide
- */
-interface IBluetoothSocketManager
-{
+/** Binder method for Socket interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
+interface IBluetoothSocketManager {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     @nullable ParcelFileDescriptor connectSocket(in BluetoothDevice device, int type, in @nullable ParcelUuid uuid, int port, int flag,  in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")

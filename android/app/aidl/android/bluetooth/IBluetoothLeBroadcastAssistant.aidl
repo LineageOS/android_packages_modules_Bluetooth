@@ -23,11 +23,8 @@ import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
 import android.bluetooth.le.ScanFilter;
 import android.content.AttributionSource;
 
-/**
- * APIs for Bluetooth LE Audio Broadcast Assistant service
- *
- * @hide
- */
+/** Binder method for LeAudio Broadcast Assistant interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothLeBroadcastAssistant {
     // Public API
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")

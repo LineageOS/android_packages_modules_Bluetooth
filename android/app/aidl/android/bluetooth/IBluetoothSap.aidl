@@ -19,11 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 
-/**
- * System private API for Bluetooth SAP service
- *
- * @hide
- */
+/** Binder method for SAP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothSap {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getState(in AttributionSource attributionSource);

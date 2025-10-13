@@ -20,11 +20,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid.AdvertisementServiceData;
 import android.content.AttributionSource;
 
-/**
- * APIs for Bluetooth Hearing Aid service
- *
- * @hide
- */
+/** Binder method for ASHA (Hearing aid) interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothHearingAid {
     // Public API
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")

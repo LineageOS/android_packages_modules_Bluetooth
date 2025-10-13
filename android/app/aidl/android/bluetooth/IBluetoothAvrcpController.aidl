@@ -22,11 +22,8 @@ import android.content.AttributionSource;
 import android.media.MediaMetadata;
 import android.media.session.PlaybackState;
 
-/**
- * APIs for Bluetooth AVRCP controller service
- *
- * @hide
- */
+/** Binder method for AVRCP controller interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothAvrcpController {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     List<BluetoothDevice> getConnectedDevices(in AttributionSource attributionSource);

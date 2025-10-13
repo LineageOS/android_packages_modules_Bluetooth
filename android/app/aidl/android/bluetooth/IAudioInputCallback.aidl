@@ -16,11 +16,8 @@
 
 package android.bluetooth;
 
-/**
- * Callback definitions for interacting with @see AudioInputControl
- *
- * @hide
- */
+/** Callback definitions for interacting with @see AudioInputControl */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IAudioInputCallback {
     void onDescriptionChanged(in String description);
     void onStatusChanged(int status);

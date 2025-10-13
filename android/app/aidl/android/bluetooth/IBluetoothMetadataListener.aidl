@@ -19,10 +19,8 @@ package android.bluetooth;
 import android.os.ParcelUuid;
 import android.bluetooth.BluetoothDevice;
 
-/**
- * Callback definitions for interacting with database change
- * @hide
- */
+/** Callback definitions for interacting with database change */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothMetadataListener {
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void onMetadataChanged(in BluetoothDevice devices, in int key, in byte[] value);
