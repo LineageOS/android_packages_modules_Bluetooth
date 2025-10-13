@@ -159,7 +159,6 @@ final class BluetoothMapContract {
                 .build();
     }
 
-    /** @hide */
     static final String TABLE_ACCOUNT = "Account";
 
     static final String TABLE_MESSAGE = "Message";
