@@ -27,10 +27,8 @@ import android.os.WorkSource;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 
-/**
- * API for interacting with BLE Scan
- * @hide
- */
+/** Binder method for BLE scan interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothScan {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN,android.Manifest.permission.UPDATE_DEVICE_STATS}, conditional=true)")
     void registerScanner(in IScannerCallback callback, in ScanSettings settings, in List<ScanFilter> filters, in WorkSource workSource, in AttributionSource attributionSource);

@@ -20,11 +20,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothPanCallback;
 import android.content.AttributionSource;
 
-/**
- * API for Bluetooth Pan service
- *
- * @hide
- */
+/** Binder method for PAN interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothPan {
     // Public API
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

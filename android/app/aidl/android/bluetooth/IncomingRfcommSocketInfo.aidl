@@ -19,11 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.os.ParcelFileDescriptor;
 
-/**
- * Output parameters for IBluetooth.retrievePendingSocketForServiceRecord
- *
- * @hide
- */
+/** Output parameters for IBluetooth.retrievePendingSocketForServiceRecord */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 parcelable IncomingRfcommSocketInfo {
     /** The underlying file descriptor for the socket. */
     ParcelFileDescriptor pfd;

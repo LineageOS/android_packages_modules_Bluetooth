@@ -16,12 +16,7 @@
 
 package android.bluetooth;
 
-/**
- * System private API for Bluetooth profiles callbacks.
- *
- * @hide
- */
-oneway interface IBluetoothProfileCallback
-{
+@JavaPassthrough(annotation="@android.annotation.Hide")
+oneway interface IBluetoothProfileCallback {
     void getProfileReply(in IBinder binder);
 }

@@ -29,11 +29,8 @@ import android.content.AttributionSource;
 
 import android.os.ParcelUuid;
 
-/**
- * APIs for Bluetooth LE Audio service
- *
- * @hide
- */
+/** Binder method for LeAudio interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothLeAudio {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean connect(in BluetoothDevice device, in AttributionSource attributionSource);

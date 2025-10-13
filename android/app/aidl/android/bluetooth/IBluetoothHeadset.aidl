@@ -19,15 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 
-/**
- * API for Bluetooth Headset service
- *
- * Note before adding anything new:
- *   Internal interactions within com.android.bluetooth should be handled through
- *   HeadsetService directly instead of going through binder
- *
- * @hide
- */
+/** Binder method for HFP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothHeadset {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     List<BluetoothDevice> getConnectedDevices(in AttributionSource attributionSource);

@@ -16,11 +16,8 @@
 
 package android.bluetooth;
 
-/**
- * Callback for Bluetooth Pan Tethering
- *
- * @hide
- */
+/** Callback for Bluetooth Pan Tethering */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothPanCallback {
     void onAvailable(in String iface);
     void onUnavailable();

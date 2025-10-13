@@ -18,10 +18,8 @@ package android.bluetooth;
 
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 
-/**
- * Callback definitions for interacting with Le Audio Broadcaster
- * @hide
- */
+/** Callback definitions for interacting with Le Audio Broadcaster */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothLeBroadcastCallback {
     void onBroadcastStarted(in int reason, in int broadcastId);
     void onBroadcastStartFailed(in int reason);

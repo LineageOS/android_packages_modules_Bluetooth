@@ -18,13 +18,9 @@ package android.bluetooth;
 
 import android.bluetooth.BluetoothActivityEnergyInfo;
 
-/**
- * Interface for Bluetooth activity energy info listener.
- *
- * @hide
- */
-oneway interface IBluetoothActivityEnergyInfoListener
-{
+/** Interface for Bluetooth activity energy info listener. */
+@JavaPassthrough(annotation="@android.annotation.Hide")
+oneway interface IBluetoothActivityEnergyInfoListener {
     /**
      * AdapterService to BluetoothAdapter callback providing current Bluetooth
      * activity energy info.

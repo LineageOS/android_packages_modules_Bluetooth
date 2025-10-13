@@ -16,11 +16,8 @@
 
 package android.bluetooth;
 
-/**
- * API for Communication between BluetoothAdapter and BluetoothManager
- *
- * @hide
- */
+/** Binder callback for Bluetooth System Server <-> BluetoothAdapter interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothManagerCallback {
     void onBluetoothServiceUp(in IBinder bluetoothService);
     void onBluetoothServiceDown();

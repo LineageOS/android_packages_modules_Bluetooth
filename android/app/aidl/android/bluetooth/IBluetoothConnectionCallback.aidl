@@ -18,10 +18,8 @@ package android.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
 
-/**
- * Callback definitions for identifying when an ACL connection or disconnection happens
- * @hide
- */
+/** Callback definitions for identifying when an ACL connection or disconnection happens */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothConnectionCallback {
     void onDeviceConnected(in BluetoothDevice device);
     void onDeviceDisconnected(in BluetoothDevice device, in int hciReason);

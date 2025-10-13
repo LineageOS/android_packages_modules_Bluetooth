@@ -19,13 +19,9 @@ package android.bluetooth;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 
-/**
- * System private API for talking with the Bluetooth service.
- *
- * @hide
- */
-interface IBluetoothManager
-{
+/** Binder method for Bluetooth System Server interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
+interface IBluetoothManager {
     const String DEFAULT_MAC_ADDRESS = "02:00:00:00:00:00";
 
     const String IPC_CACHE_MODULE_SYSTEM = "system_server"; // See IpcDataCache.MODULE_SYSTEM

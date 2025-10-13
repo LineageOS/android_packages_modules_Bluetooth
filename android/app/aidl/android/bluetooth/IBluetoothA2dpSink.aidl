@@ -20,11 +20,8 @@ import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 
-/**
- * APIs for Bluetooth A2DP sink service
- *
- * @hide
- */
+/** Binder method for A2DPSink interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothA2dpSink {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean connect(in BluetoothDevice device, in AttributionSource attributionSource);

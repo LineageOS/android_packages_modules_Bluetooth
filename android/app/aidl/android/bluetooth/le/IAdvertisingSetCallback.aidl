@@ -16,10 +16,8 @@
 
 package android.bluetooth.le;
 
-/**
- * Callback definitions for interacting with Advertiser
- * @hide
- */
+/** Callback definitions for interacting with Advertiser */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IAdvertisingSetCallback {
   void onAdvertisingSetStarted(in IBinder advertiseBinder, in int advertiserId, in int tx_power, in int status);
   void onOwnAddressRead(in int advertiserId, in int addressType, in String address);

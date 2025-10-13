@@ -16,13 +16,9 @@
 
 package android.bluetooth;
 
-/**
- * System private API for Bluetooth service callbacks.
- *
- * @hide
- */
-oneway interface IBluetoothCallback
-{
+/** AdapterService callbacks exposed exclusively to the Bluetooth System Server */
+@JavaPassthrough(annotation="@android.annotation.Hide")
+oneway interface IBluetoothCallback {
     void onBluetoothStateChange(int prevState, int newState);
     void onAdapterNameChange(String name);
     void onAdapterAddressChange(String address);

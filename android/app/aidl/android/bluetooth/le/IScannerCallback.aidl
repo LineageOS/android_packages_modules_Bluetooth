@@ -18,10 +18,8 @@ package android.bluetooth.le;
 
 import android.bluetooth.le.ScanResult;
 
-/**
- * Callback definitions for interacting with Advertiser
- * @hide
- */
+/** Callback definitions for interacting with Advertiser */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IScannerCallback {
     void onScannerRegistered(in int status, in int scannerId);
 

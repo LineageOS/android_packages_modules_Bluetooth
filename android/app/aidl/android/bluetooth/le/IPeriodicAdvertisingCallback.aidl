@@ -19,10 +19,8 @@ package android.bluetooth.le;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.PeriodicAdvertisingReport;
 
-/**
- * Callback definitions for interacting with Periodic Advertising
- * @hide
- */
+/** Callback definitions for interacting with Periodic Advertising */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IPeriodicAdvertisingCallback {
 
   void onSyncEstablished(in int syncHandle, in BluetoothDevice device, in int advertisingSid,
