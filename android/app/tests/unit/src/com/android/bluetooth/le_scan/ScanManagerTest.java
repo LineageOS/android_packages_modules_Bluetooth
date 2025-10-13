@@ -54,6 +54,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
@@ -2057,7 +2058,7 @@ public class ScanManagerTest {
         // Stop scan on coded
         stopScan(clientCoded);
 
-        verify(mScanNativeInterface, atLeastOnce()).scan(false);
+        verify(mScanNativeInterface, atLeastOnce()).scan(eq(false), anyString());
         verify(mScanNativeInterface, never())
                 .setScanParameters(
                         anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), eq(0));

@@ -18,9 +18,12 @@ package com.android.bluetooth.le_scan;
 
 import static java.util.Objects.requireNonNull;
 
+import android.util.Log;
+
 import com.android.bluetooth.profile.NativeInterface;
 
 public class ScanNativeInterface extends NativeInterface<ScanNativeCallback> {
+    private static final String TAG = ScanNativeInterface.class.getSimpleName();
 
     ScanNativeInterface(ScanNativeCallback nativeCallback) {
         super(requireNonNull(nativeCallback));
@@ -100,18 +103,16 @@ public class ScanNativeInterface extends NativeInterface<ScanNativeCallback> {
 
     private native void readScanReportsNative(int clientIf, int scanType);
 
-    /** Register BLE scanner */
     void registerScanner(long appUuidLsb, long appUuidMsb) {
         registerScannerNative(appUuidLsb, appUuidMsb);
     }
 
-    /** Unregister BLE scanner */
     void unregisterScanner(int scannerId) {
         unregisterScannerNative(scannerId);
     }
 
-    /** Enable/disable BLE scan */
-    void scan(boolean start) {
+    void scan(boolean start, String caller) {
+        Log.d(TAG, "Scan=(" + (start ? "START" : "STOP") + "), caller=(" + caller + ")");
         scanNative(start);
     }
 

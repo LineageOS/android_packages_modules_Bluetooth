@@ -1211,7 +1211,7 @@ class ScanManager {
             int scanInterval1m = ScanUtil.scanInterval(mAdapterService, client1m);
             int scanWindowCoded = ScanUtil.scanWindow(mAdapterService, clientCoded);
             int scanIntervalCoded = ScanUtil.scanInterval(mAdapterService, clientCoded);
-            mNativeInterface.scan(false);
+            mNativeInterface.scan(false, "configureRegularScanParams");
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
@@ -1234,7 +1234,7 @@ class ScanManager {
                     scanIntervalCoded,
                     scanWindowCoded,
                     scanPhyMask);
-            mNativeInterface.scan(true);
+            mNativeInterface.scan(true, "configureRegularScanParams");
             recordScanRadioStart(client1m, clientCoded, newScanSetting1m, newScanSettingCoded);
         } else {
             Log.d(TAG, "configureRegularScanParams() - queue empty, scan stopped");
@@ -1310,8 +1310,7 @@ class ScanManager {
         // Start scan native only for the first client.
         if (numRegularScanClients() == 1
                 && client.getSettings().getScanMode() != ScanSettings.SCAN_MODE_OPPORTUNISTIC) {
-            Log.d(TAG, "start scanNative from startRegularScan()");
-            mNativeInterface.scan(true);
+            mNativeInterface.scan(true, "startRegularScan");
         }
     }
 
@@ -1456,8 +1455,7 @@ class ScanManager {
         }
         mRegularScanClients.remove(client);
         if (numRegularScanClients() == 0) {
-            Log.d(TAG, "stop scanNative");
-            mNativeInterface.scan(false);
+            mNativeInterface.scan(false, "stopRegularScan");
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
@@ -1498,8 +1496,7 @@ class ScanManager {
         // The scan should continue for background scans
         configureRegularScanParams();
         if (numRegularScanClients() == 0) {
-            Log.d(TAG, "stop scanNative");
-            mNativeInterface.scan(false);
+            mNativeInterface.scan(false, "regularScanTimeout");
             if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
@@ -1962,9 +1959,9 @@ class ScanManager {
             // Restart scanning, since enabling/disabling may have changed
             // the filter policy
             Log.d(TAG, "Restarting MSFT scan");
-            mNativeInterface.scan(false);
+            mNativeInterface.scan(false, "updateScanMsft");
             if (numRegularScanClients() > 0) {
-                mNativeInterface.scan(true);
+                mNativeInterface.scan(true, "updateScanMsft");
             }
         }
     }
