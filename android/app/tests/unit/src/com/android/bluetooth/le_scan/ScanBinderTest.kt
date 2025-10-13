@@ -16,7 +16,9 @@
 
 package com.android.bluetooth.le_scan
 
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.app.PendingIntent
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanFilter
@@ -40,6 +42,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 
@@ -72,6 +75,7 @@ class ScanBinderTest {
             }
             .whenever(scanController)
             .fetchOnScanThread<Any>(any(), any())
+        whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_ON)
         binder = ScanBinder(adapterService, scanController)
     }
 
@@ -95,12 +99,86 @@ class ScanBinderTest {
     }
 
     @Test
-    fun startScan() {
+    fun startScan_withDefaultSettings_doesNotEnforcePrivilegedPermission() {
         val scannerId = 1
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
+
+        // Verify that the scan is started on the controller
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+        // Verify that privileged permission is not required for default settings
+        verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+    }
+
+    @Test
+    fun startScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
+        // Setup: Bluetooth adapter is STATE_BLE_ON
+        whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_BLE_ON)
+        val scannerId = 1
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+
+        // Verify that privileged permission is enforced
+        verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        // Verify that the scan is still started on the controller
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+    }
+
+    @Test
+    fun startScan_withAmbientDiscoveryMode_enforcesPrivilegedPermission() {
+        val scannerId = 1
+        // Setup: ScanSettings with ambient discovery mode
+        val settings =
+            ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY).build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+
+        // Verify that privileged permission is enforced
+        verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        // Verify that the scan is still started on the controller
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+    }
+
+    @Test
+    fun startScan_withBatchScanTruncated_enforcesPrivilegedPermission() {
+        val scannerId = 1
+        // Setup: ScanSettings for truncated batch scan
+        val settings =
+            ScanSettings.Builder()
+                .setReportDelay(1000)
+                .setScanResultType(ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED)
+                .build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+
+        // Verify that privileged permission is enforced
+        verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        // Verify that the scan is still started on the controller
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+    }
+
+    @Test
+    fun startScan_withBatchScanFull_doesNotEnforcePrivilegedPermission() {
+        val scannerId = 1
+        // Setup: ScanSettings for full batch scan
+        val settings =
+            ScanSettings.Builder()
+                .setReportDelay(1000)
+                .setScanResultType(ScanSettings.SCAN_RESULT_TYPE_FULL)
+                .build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+
+        // Verify that privileged permission is NOT enforced
+        verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        // Verify that the scan is started on the controller
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
     }
 
