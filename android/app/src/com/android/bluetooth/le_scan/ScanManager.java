@@ -679,6 +679,7 @@ class ScanManager {
     }
 
     private void handleStopScan(ScanClient tmpClient) {
+        var header = "handleStopScan(): ";
         int scannerIdToStop = tmpClient.getScannerId();
         ScanClient client = getBatchScanClient(scannerIdToStop);
         if (client == null) {
@@ -688,12 +689,10 @@ class ScanManager {
             client = getSuspendedScanClient(scannerIdToStop);
         }
         if (client == null) {
-            Log.d(
-                    TAG,
-                    "Handling stopping scan, no client found for scannerId - " + scannerIdToStop);
+            Log.d(TAG, header + "No client found for scannerId=" + scannerIdToStop);
             return;
         }
-        Log.d(TAG, "Handling stopping scan for " + client);
+        Log.d(TAG, header + "For " + client);
         final var appDied = client.getAppDied();
         final var scannerId = client.getScannerId();
 
@@ -726,7 +725,7 @@ class ScanManager {
             stopBatchScan(client);
         }
         if (appDied) {
-            Log.d(TAG, "App died, unregister scanner - " + scannerId);
+            Log.d(TAG, header + "App died, unregister scannerId=" + scannerId);
             mScanController.unregisterScanner(scannerId);
         }
     }

@@ -1396,28 +1396,32 @@ public class ScanController {
 
     public void stopScan(int scannerId) {
         enforceScanThread();
-        final int scanQueueSize =
-                mScanManager.getBatchScanQueue().size() + mScanManager.getRegularScanQueue().size();
-        Log.d(TAG, "stopScan() - queue size =" + scanQueueSize);
-
-        AppScanStats app = mScannerMap.getAppScanStatsById(scannerId);
-        if (app != null) {
-            app.recordScanStop(scannerId);
+        int regularScanQueueSize = mScanManager.getRegularScanQueue().size();
+        int batchScanQueueSize = mScanManager.getBatchScanQueue().size();
+        Log.d(
+                TAG,
+                ("stopScan(scannerId=" + scannerId + "): ")
+                        + ("regularScanQueueSize=" + regularScanQueueSize)
+                        + (", batchScanQueueSize=" + batchScanQueueSize));
+        var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
+        if (appScanStats != null) {
+            appScanStats.recordScanStop(scannerId);
         }
         mScanManager.stopScan(scannerId);
     }
 
     void stopScan(PendingIntent intent) {
         enforceScanThread();
-        ScannerApp app = mScannerMap.getByPendingIntentInfo(intent);
-        Log.v(TAG, "stopScan(PendingIntent): app found = " + app);
-        if (app != null) {
-            intent.removeCancelListener(mScanIntentCancelListener);
-            final int scannerId = app.getId();
-            stopScan(scannerId);
-            // Also unregister the scanner
-            unregisterScanner(scannerId);
+        var scannerApp = mScannerMap.getByPendingIntentInfo(intent);
+        if (scannerApp == null) {
+            Log.e(TAG, "stopScan(PendingIntent): Cannot find app for intent=" + intent);
+            return;
         }
+        var scannerId = scannerApp.getId();
+        Log.v(TAG, "stopScan(PendingIntent): For " + scannerApp + " with scannerId=" + scannerId);
+        intent.removeCancelListener(mScanIntentCancelListener);
+        stopScan(scannerId);
+        unregisterScanner(scannerId);
     }
 
     /**************************************************************************
