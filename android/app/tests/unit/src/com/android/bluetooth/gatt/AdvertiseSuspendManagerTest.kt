@@ -35,7 +35,6 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.eq
-import org.mockito.InOrder
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.inOrder
@@ -70,7 +69,7 @@ class AdvertiseSuspendManagerTest {
     @Before
     fun setUp() {
         advertiseSuspendManager = AdvertiseSuspendManager(advertiseManager, adapterService)
-        doReturn(adapterSuspend).whenever(adapterService).getAdapterSuspend()
+        doReturn(adapterSuspend).whenever(adapterService).adapterSuspend
     }
 
     @Test
@@ -125,7 +124,7 @@ class AdvertiseSuspendManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWhenCreatingAdvertisement() {
-        val order: InOrder = inOrder(advertiseManager)
+        val order = inOrder(advertiseManager)
 
         // Create two advertisements. The native layer hasn't finished creating it.
         advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
@@ -183,7 +182,7 @@ class AdvertiseSuspendManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWhenDisablingAdvertisement() {
-        val order: InOrder = inOrder(advertiseManager)
+        val order = inOrder(advertiseManager)
 
         // Start an advertisement.
         advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
@@ -214,7 +213,7 @@ class AdvertiseSuspendManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendThenQueueFutureRequests() {
-        val order: InOrder = inOrder(advertiseManager)
+        val order = inOrder(advertiseManager)
 
         // Start an advertisement.
         advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
