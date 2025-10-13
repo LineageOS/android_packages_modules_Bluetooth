@@ -91,7 +91,9 @@ private fun String.anonymizeAddress() = this.replace(PATTERN_TO_OBFUSCATE, "XX:X
 
 // The new storage manager for Bluetooth user data.
 // This class is responsible for storing and retrieving user data using Proto DataStore.
-class BluetoothStorageManager(
+class BluetoothStorageManager
+@JvmOverloads
+constructor(
     private val adapterService: AdapterService,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
