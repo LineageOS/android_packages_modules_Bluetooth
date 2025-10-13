@@ -99,7 +99,7 @@ const uint8_t MSFT_FILTER_ENABLE_CMD_DISALLOWED = 0x0C;
 #endif
 
 static void btm_ble_start_scan();
-static void btm_ble_stop_scan();
+static void btm_ble_stop_scan(bool update_scan_filter_policy);
 
 static ::BleScannerInterface* scanner = bluetooth::shim::get_ble_scanner_instance();
 
@@ -1080,13 +1080,13 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
              (btm_cb.ble_ctr_cb.inq_var.scan_interval_1m != scan_interval) ||
              (btm_cb.ble_ctr_cb.inq_var.scan_window_1m != scan_window)) {
     log::verbose("restart LE scan with low latency scan params");
-    btm_send_hci_scan_enable(BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+    btm_ble_stop_scan(/*update_scan_filter_policy=*/false);
     btm_send_hci_set_scan_params(BTM_BLE_SCAN_MODE_ACTI, scan_interval, scan_window,
                                  btm_cb.ble_ctr_cb.inq_var.scan_interval_coded,
                                  btm_cb.ble_ctr_cb.inq_var.scan_window_coded,
                                  btm_cb.ble_ctr_cb.inq_var.scan_phy | scan_phy,
                                  btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, SP_ADV_ALL);
-    btm_send_hci_scan_enable(BTM_BLE_SCAN_ENABLE, BTM_BLE_DUPLICATE_DISABLE);
+    btm_ble_start_scan();
   }
 
   btm_cb.btm_inq_vars.inq_active |= BTM_BLE_GENERAL_INQUIRY;
@@ -1790,7 +1790,7 @@ static void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  * Returns          void
  *
  ******************************************************************************/
-static void btm_ble_stop_scan(void) {
+static void btm_ble_stop_scan(bool update_scan_filter_policy = true) {
   /* Clear the inquiry callback if set */
   btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
 
@@ -1803,7 +1803,9 @@ static void btm_ble_stop_scan(void) {
                       btm_cb.neighbor.le_legacy_scan.results));
   btm_send_hci_scan_enable(BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
 
-  btm_update_scanner_filter_policy(SP_ADV_ALL);
+  if (update_scan_filter_policy) {
+    btm_update_scanner_filter_policy(SP_ADV_ALL);
+  }
 
   // For simplicity, disable MSFT filtered scan whenever we stop LE scanning.
   // Defer the decision on whether or not to re-enable it for later.
