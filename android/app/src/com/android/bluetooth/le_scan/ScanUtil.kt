@@ -69,12 +69,17 @@ object ScanUtil {
     private const val ONFOUND_SIGHTINGS_AGGRESSIVE = 1
     private const val ONFOUND_SIGHTINGS_STICKY = 4
 
-    /** Onfound/onlost for scan settings */
+    // Onfound/onlost for scan settings
     private const val MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR = 1
 
     private const val MATCH_MODE_STICKY_TIMEOUT_FACTOR = 3
     private const val ONLOST_FACTOR = 2
     private const val ONLOST_ONFOUND_BASE_TIMEOUT_MS = 500
+
+    // Delivery mode defined in bt stack.
+    private const val DELIVERY_MODE_IMMEDIATE = 0
+    const val DELIVERY_MODE_ON_FOUND_LOST = 1
+    const val DELIVERY_MODE_BATCH = 2
 
     // The default floor value for LE batch scan report delays greater than 0
     const val DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L
@@ -204,6 +209,35 @@ object ScanUtil {
             ScanSettings.MATCH_MODE_AGGRESSIVE -> ONFOUND_SIGHTINGS_AGGRESSIVE
             else -> ONFOUND_SIGHTINGS_STICKY
         }
+
+    @JvmStatic
+    fun deliveryMode(client: ScanClient?): Int {
+        val header = "deliveryMode($client):"
+        return when {
+            client == null -> {
+                Log.d(TAG, "$header Client is null, defaulting to DELIVERY_MODE_IMMEDIATE")
+                DELIVERY_MODE_IMMEDIATE
+            }
+            (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0 ||
+                (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_MATCH_LOST) != 0 -> {
+                val types = "CALLBACK_TYPE_FIRST_MATCH OR CALLBACK_TYPE_MATCH_LOST"
+                Log.d(TAG, "$header Callback type is $types, using DELIVERY_MODE_ON_FOUND_LOST")
+                DELIVERY_MODE_ON_FOUND_LOST
+            }
+            isAllMatchesAutoBatchScanClient(client) -> {
+                val enabled = isAutoBatchScanClientEnabled(client)
+                val mode = if (enabled) "DELIVERY_MODE_BATCH" else "DELIVERY_MODE_IMMEDIATE"
+                Log.d(TAG, "$header Client is auto-batch (enabled=$enabled), using $mode")
+                if (enabled) DELIVERY_MODE_BATCH else DELIVERY_MODE_IMMEDIATE
+            }
+            else -> {
+                val delay = client.settings.reportDelayMillis
+                val mode = if (delay == 0L) "DELIVERY_MODE_IMMEDIATE" else "DELIVERY_MODE_BATCH"
+                Log.d(TAG, "$header Using report delay (${delay}ms) to set delivery mode to $mode")
+                if (delay == 0L) DELIVERY_MODE_IMMEDIATE else DELIVERY_MODE_BATCH
+            }
+        }
+    }
 
     @JvmStatic
     fun minScanMode(oldScanMode: Int, newScanMode: Int) =
