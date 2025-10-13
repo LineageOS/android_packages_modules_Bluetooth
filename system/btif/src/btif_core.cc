@@ -94,28 +94,7 @@ using namespace bluetooth;
  ******************************************************************************/
 
 static tBTA_SERVICE_MASK btif_enabled_services = 0;
-
-/*
- * This variable should be set to 1, if the Bluedroid+BTIF libraries are to
- * function in DUT mode.
- *
- * To set this, the btif_init_bluetooth needs to be called with argument as 1
- */
-static uint8_t btif_dut_mode = 0;
-
 static uid_set_t* uid_set;
-
-/*******************************************************************************
- *
- * Function         btif_is_dut_mode
- *
- * Description      checks if BTIF is currently in DUT mode
- *
- * Returns          true if test mode, otherwise false
- *
- ******************************************************************************/
-
-bool btif_is_dut_mode() { return btif_dut_mode == 1; }
 
 /*******************************************************************************
  *
@@ -127,9 +106,7 @@ bool btif_is_dut_mode() { return btif_dut_mode == 1; }
  *
  ******************************************************************************/
 
-int btif_is_enabled(void) {
-  return (!btif_is_dut_mode()) && (stack_manager_get_interface()->get_stack_is_running());
-}
+int btif_is_enabled(void) { return stack_manager_get_interface()->get_stack_is_running(); }
 
 void btif_init_ok() {
   btif_dm_load_ble_local_keys();
@@ -241,43 +218,8 @@ bt_status_t btif_cleanup_bluetooth() {
   GetInterfaceToProfiles()->events->invoke_thread_evt_cb(DISASSOCIATE_JVM);
   btif_queue_release();
   jni_thread_shutdown();
-  btif_dut_mode = 0;
   log::info("finished");
   return BT_STATUS_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         btif_dut_mode_configure
- *
- * Description      Configure Test Mode - 'enable' to 1 puts the device in test
- *                       mode and 0 exits test mode
- *
- ******************************************************************************/
-void btif_dut_mode_configure(uint8_t enable) {
-  log::verbose("");
-
-  btif_dut_mode = enable;
-  if (enable == 1) {
-    BTA_EnableTestMode();
-  } else {
-    // Can't do in process reset anyways - just quit
-    kill(getpid(), SIGKILL);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         btif_dut_mode_send
- *
- * Description     Sends a HCI Vendor specific command to the controller
- *
- ******************************************************************************/
-void btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  log::verbose("");
-  /* For now nothing to be done. */
-  get_btm_client_interface().vendor.BTM_VendorSpecificCommand(opcode, len, buf,
-                                                              [](tBTM_VSC_CMPL*) {});
 }
 
 /*****************************************************************************
