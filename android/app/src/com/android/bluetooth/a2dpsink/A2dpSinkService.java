@@ -74,9 +74,11 @@ public class A2dpSinkService extends ConnectableProfile {
     A2dpSinkService(
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.A2DP_SINK, requireNonNull(adapterService));
+        var nativeCallback = new A2dpSinkNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new A2dpSinkNativeInterface(mAdapterService, this));
+                        nativeInterface,
+                        () -> new A2dpSinkNativeInterface(nativeCallback, mAdapterService));
         mLooper = looper;
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
         mNativeInterface.init(mMaxConnectedAudioDevices);

@@ -22,22 +22,20 @@ import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.profile.NativeInterface;
 
-/** A2DP Sink Native Interface to/from JNI. */
-public class A2dpSinkNativeInterface {
-    private static final String TAG = A2dpSinkNativeInterface.class.getSimpleName();
+public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallback> {
 
     private final AdapterService mAdapterService;
-    private final A2dpSinkService mService;
 
     // match up with btav_audio_state_t enum of bt_av.h
     static final int AUDIO_STATE_REMOTE_SUSPEND = 0;
     static final int AUDIO_STATE_STOPPED = 1;
     static final int AUDIO_STATE_STARTED = 2;
 
-    A2dpSinkNativeInterface(AdapterService adapterService, A2dpSinkService service) {
-        mAdapterService = requireNonNull(adapterService);
-        mService = service;
+    A2dpSinkNativeInterface(A2dpSinkNativeCallback nativeCallback, AdapterService adapterService) {
+        super(requireNonNull(nativeCallback));
+        mAdapterService = adapterService;
     }
 
     /**
@@ -49,13 +47,9 @@ public class A2dpSinkNativeInterface {
         initNative(maxConnectedAudioDevices);
     }
 
-    /** Cleanup the native interface. */
+    @Override
     public void cleanup() {
         cleanupNative();
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     /**
@@ -107,21 +101,6 @@ public class A2dpSinkNativeInterface {
     /** Inform A2DP decoder the desired audio gain */
     public void informAudioTrackGain(float gain) {
         informAudioTrackGainNative(gain);
-    }
-
-    /** For the JNI to send messages about connection state changes */
-    public void onConnectionStateChanged(byte[] address, int state) {
-        mService.onConnectionStateChangedFromNative(getDevice(address), state);
-    }
-
-    /** For the JNI to send messages about audio stream state changes */
-    public void onAudioStateChanged(int state) {
-        mService.onAudioStateChangedFromNative(state);
-    }
-
-    /** For the JNI to send messages about audio configuration changes */
-    public void onAudioConfigChanged(byte[] address, int sampleRate, int channelCount) {
-        mService.onAudioConfigChangedFromNative(getDevice(address), sampleRate, channelCount);
     }
 
     // Native methods that call into the JNI interface

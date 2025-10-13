@@ -40,6 +40,7 @@ static jmethodID method_onAudioStateChanged;
 static jmethodID method_onAudioConfigChanged;
 
 static jobject mCallbacksObj = NULL;
+static jfieldID sCallbacksField;
 static std::shared_timed_mutex callbacks_mutex;
 
 static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
@@ -138,7 +139,10 @@ static void initNative(JNIEnv* env, jobject object, jint maxConnectedAudioDevice
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for A2DP Sink Callbacks");
+  }
 }
 
 static void cleanupNative(JNIEnv* env, jobject /* object */) {
@@ -223,6 +227,7 @@ static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteAr
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
+// JNI functions defined in A2dpSinkNativeInterface
 int register_com_android_bluetooth_a2dp_sink(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "(I)V", reinterpret_cast<void*>(initNative)},
@@ -235,18 +240,21 @@ int register_com_android_bluetooth_a2dp_sink(JNIEnv* env) {
            reinterpret_cast<void*>(informAudioTrackGainNative)},
           {"setActiveDeviceNative", "([B)Z", reinterpret_cast<void*>(setActiveDeviceNative)},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/a2dpsink/A2dpSinkNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/a2dpsink/A2dpSinkNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
+
+  // Client callback functions defined in A2dpSinkNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},
           {"onAudioStateChanged", "(I)V", &method_onAudioStateChanged},
           {"onAudioConfigChanged", "([BII)V", &method_onAudioConfigChanged},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/a2dpsink/A2dpSinkNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/a2dpsink/A2dpSinkNativeCallback", javaMethods);
 
   return 0;
 }
