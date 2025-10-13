@@ -42,6 +42,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -72,9 +73,6 @@ private val PATTERN_REFORMAT_POLICIES by lazy {
 }
 private val PATTERN_TO_OBFUSCATE = "(?:(?:[0-9A-F]{2}:){4})([0-9A-F]{2}:[0-9A-F]{2})".toRegex()
 
-private fun UserStorage.getExistingDeviceBuilder(device: BluetoothDevice) =
-    this.devicesMap[device.address]?.toBuilder()
-
 private fun UserStorage.Builder.getExistingOrNewDeviceBuilder(device: BluetoothDevice) =
     this.devicesMap[device.address]?.toBuilder()
         ?: run {
@@ -93,8 +91,11 @@ private fun String.anonymizeAddress() = this.replace(PATTERN_TO_OBFUSCATE, "XX:X
 
 // The new storage manager for Bluetooth user data.
 // This class is responsible for storing and retrieving user data using Proto DataStore.
-class BluetoothStorageManager constructor(private val adapterService: AdapterService) {
-    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+class BluetoothStorageManager(
+    private val adapterService: AdapterService,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+) {
+    private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
     private val mEventLog = BluetoothEventLogger(30, TAG) // Dumpsys logger
 
@@ -127,12 +128,11 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
     private val currentStorage: UserStorage
         get() = runBlocking { dataStore.data.first() }
 
-    fun initialize() {
-        // Eagerly launch a coroutine to trigger the DataStore's serializer. This will perform
-        // the initial disk read, run migrations, and populate the in-memory cache on a
-        // background thread.
-        // This operation require the Context to be ready, hence why it is not started during the
-        // constructor as the AdapterService doesn't have an attached context yet
+    // Eagerly launch a coroutine to trigger the DataStore's serializer. This will perform the
+    // initial disk read, run migrations, and populate the in-memory cache on a background thread.
+    // This operation require the Context to be ready, hence why it is not started during the
+    // constructor as the AdapterService doesn't have an attached context yet
+    fun initialize() =
         ioScope.launch {
             val userStorage = dataStore.data.first()
             userStorage.devicesMap.keys.forEach {
@@ -144,7 +144,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
             }
             Log.v(TAG, "User storage ready")
         }
-    }
 
     /** Dump metadata changes for debugging purposes while keeping the address anonymized. */
     fun dump(sb: StringBuilder) {
@@ -353,7 +352,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
             .build()
     }
 
-    fun setAudioPolicyMetadata(device: BluetoothDevice, policy: BluetoothSinkAudioPolicy) {
+    fun setAudioPolicyMetadata(device: BluetoothDevice, policy: BluetoothSinkAudioPolicy) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -371,7 +370,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.putDevices(device.address, deviceBuilder.build()).build()
             }
         }
-    }
 
     fun getA2dpOptionalCodecsSupported(device: BluetoothDevice): Int {
         val settings = currentStorage.devicesMap[device.address]?.a2DpSettings
@@ -384,7 +382,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
         return toSupported(status)
     }
 
-    fun setA2dpOptionalCodecsSupported(device: BluetoothDevice, value: Int) {
+    fun setA2dpOptionalCodecsSupported(device: BluetoothDevice, value: Int) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -403,7 +401,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.putDevices(device.address, deviceBuilder.build()).build()
             }
         }
-    }
 
     fun getA2dpOptionalCodecsEnabled(device: BluetoothDevice): Int {
         val settings = currentStorage.devicesMap[device.address]?.a2DpSettings
@@ -416,7 +413,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
         return toPreference(status)
     }
 
-    fun setA2dpOptionalCodecsEnabled(device: BluetoothDevice, value: Int) {
+    fun setA2dpOptionalCodecsEnabled(device: BluetoothDevice, value: Int) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -435,7 +432,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.putDevices(device.address, deviceBuilder.build()).build()
             }
         }
-    }
 
     fun getPhonebookAccessPermission(device: BluetoothDevice): Int {
         val permissions = currentStorage.devicesMap[device.address]?.permissions
@@ -533,11 +529,10 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
         }
     }
 
-    fun getKeyMissingCount(device: BluetoothDevice): Int {
-        return currentStorage.devicesMap[device.address]?.keyMissingCount ?: 0
-    }
+    fun getKeyMissingCount(device: BluetoothDevice): Int =
+        currentStorage.devicesMap[device.address]?.keyMissingCount ?: 0
 
-    fun updateKeyMissingCount(device: BluetoothDevice, isKeyMissingDetected: Boolean) {
+    fun updateKeyMissingCount(device: BluetoothDevice, isKeyMissingDetected: Boolean) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -560,7 +555,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.putDevices(device.address, deviceBuilder.build()).build()
             }
         }
-    }
 
     fun isMicrophonePreferredForCalls(device: BluetoothDevice): Boolean {
         val proto = currentStorage.devicesMap[device.address]
@@ -571,7 +565,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
         }
     }
 
-    fun setMicrophonePreferredForCalls(device: BluetoothDevice, enabled: Boolean) {
+    fun setMicrophonePreferredForCalls(device: BluetoothDevice, enabled: Boolean) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -590,7 +584,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.putDevices(device.address, deviceBuilder.build()).build()
             }
         }
-    }
 
     fun getLeAudioCodecPreferences(
         devices: List<BluetoothDevice>
@@ -614,7 +607,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
     fun setLeAudioCodecPreferences(
         devices: List<BluetoothDevice>,
         codecPreferences: Map<Int, Pair<BluetoothLeAudioCodecConfig, BluetoothLeAudioCodecConfig>>,
-    ) {
+    ) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -638,7 +631,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.build()
             }
         }
-    }
 
     /**
      * Gets the most recently connected bluetooth devices in order with most recently connected
@@ -647,11 +639,10 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
      * @return a [List] of [BluetoothDevice] representing connected bluetooth devices in order of
      *   most recently connected.
      */
-    fun getMostRecentlyConnectedDevices(): List<BluetoothDevice> {
-        return currentStorage.devicesMap.entries
+    fun getMostRecentlyConnectedDevices(): List<BluetoothDevice> =
+        currentStorage.devicesMap.entries
             .sortedByDescending { it.value.connectionCounter }
             .mapNotNull { (address, _) -> adapterService.getDeviceFromAddress(address) }
-    }
 
     /**
      * Gets the most recently connected bluetooth device in a given list.
@@ -660,8 +651,8 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
      * @return the most recently connected [BluetoothDevice] in the given `devicesList`, or null if
      *   an error occurred
      */
-    fun getMostRecentlyConnectedDeviceInList(devicesList: List<BluetoothDevice>): BluetoothDevice? {
-        return devicesList
+    fun getMostRecentlyConnectedDeviceInList(devicesList: List<BluetoothDevice>): BluetoothDevice? =
+        devicesList
             .mapNotNull { device ->
                 currentStorage.devicesMap[device.address]?.let { deviceData ->
                     Pair(device, deviceData.connectionCounter)
@@ -669,7 +660,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
             }
             .maxByOrNull { it.second }
             ?.first
-    }
 
     /**
      * Gets the least recently connected bluetooth device in a given list.
@@ -679,8 +669,8 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
      */
     fun getLeastRecentlyConnectedDeviceInList(
         devicesList: List<BluetoothDevice>
-    ): BluetoothDevice? {
-        return devicesList
+    ): BluetoothDevice? =
+        devicesList
             .mapNotNull { device ->
                 currentStorage.devicesMap[device.address]?.let { deviceData ->
                     Pair(device, deviceData.connectionCounter)
@@ -688,25 +678,22 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
             }
             .minByOrNull { it.second }
             ?.first
-    }
 
     /**
      * Gets the last active a2dp device
      *
      * @return the most recently active a2dp device or null if the last a2dp device was null
      */
-    fun getMostRecentlyActiveA2dpDevice(): BluetoothDevice? {
-        return currentStorage.activeA2DpDevicesList.lastOrNull()?.let {
+    fun getMostRecentlyActiveA2dpDevice(): BluetoothDevice? =
+        currentStorage.activeA2DpDevicesList.lastOrNull()?.let {
             adapterService.getDeviceFromAddress(it)
         }
-    }
 
     /** @return the list of most recently active HFP devices */
-    fun getMostRecentlyActiveHfpDevices(): List<BluetoothDevice> {
-        return currentStorage.activeHfpDevicesList
+    fun getMostRecentlyActiveHfpDevices(): List<BluetoothDevice> =
+        currentStorage.activeHfpDevicesList
             .mapNotNull { adapterService.getDeviceFromAddress(it) }
             .reversed()
-    }
 
     /**
      * Updates the storage when a device connects.
@@ -718,7 +705,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
      * @param profileId The profile ID from [BluetoothProfile] that is now active, or `null` if no
      *   profile's active status needs to be updated.
      */
-    fun onDeviceConnected(device: BluetoothDevice, profileId: Int) {
+    fun onDeviceConnected(device: BluetoothDevice, profileId: Int) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -745,7 +732,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.build()
             }
         }
-    }
 
     /**
      * Updates the storage when a device disconnects for a specific profile.
@@ -755,7 +741,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
      * @param device The remote Bluetooth device that has disconnected.
      * @param profileId The profile ID from [BluetoothProfile] that is no longer active.
      */
-    fun onDeviceDisconnected(device: BluetoothDevice, profileId: Int) {
+    fun onDeviceDisconnected(device: BluetoothDevice, profileId: Int) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 val builder = storage.toBuilder()
@@ -775,10 +761,9 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.build()
             }
         }
-    }
 
     /** Removes a device from storage */
-    fun removeDevice(device: BluetoothDevice) {
+    fun removeDevice(device: BluetoothDevice) =
         ioScope.launch {
             dataStore.updateData { storage ->
                 logEvent(device, "Remove from storage")
@@ -795,9 +780,8 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
                 builder.build()
             }
         }
-    }
 
-    private suspend fun recompactConnectionCounter() {
+    private suspend fun recompactConnectionCounter() =
         dataStore.updateData { storage ->
             Log.d(TAG, "Re-compacting the connection counter")
 
@@ -818,7 +802,6 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
             builder.currentConnectionNumber = newConnectionNumber
             builder.build()
         }
-    }
 
     private suspend fun removeUnbondedDevices() {
         val bondedAddresses = adapterService.bondedDevices.map { it.address }.toSet()
@@ -868,7 +851,7 @@ class BluetoothStorageManager constructor(private val adapterService: AdapterSer
     }
 
     // Serializer for the UserStorage proto to tells DataStore how to read and write the data.
-    object UserStorageSerializer : Serializer<UserStorage> {
+    private object UserStorageSerializer : Serializer<UserStorage> {
         // The default value to be used if the file does not exist yet.
         override val defaultValue: UserStorage = UserStorage.getDefaultInstance()
 
