@@ -871,7 +871,8 @@ void PORT_DataInd(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
   /* Check if rx queue exceeds the limit */
   if ((p_port->rx.queue_size + p_buf->len > PORT_RX_CRITICAL_WM) ||
       (fixed_queue_length(p_port->rx.queue) + 1 > p_port->rx_buf_critical)) {
-    log::verbose("PORT_DataInd. Buffer over run. Dropping the buffer");
+    log::verbose("PORT_DataInd. Buffer over run. Dropping the buffer, queue_size={}, "
+                 "rx_buf_critical={}", p_port->rx.queue_size, p_port->rx_buf_critical);
     osi_free(p_buf);
     RFCOMM_LineStatusReq(p_mcb, dlci, LINE_STATUS_OVERRUN);
     return;
