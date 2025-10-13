@@ -42,6 +42,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -90,8 +91,11 @@ private fun String.anonymizeAddress() = this.replace(PATTERN_TO_OBFUSCATE, "XX:X
 
 // The new storage manager for Bluetooth user data.
 // This class is responsible for storing and retrieving user data using Proto DataStore.
-class BluetoothStorageManager(private val adapterService: AdapterService) {
-    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+class BluetoothStorageManager(
+    private val adapterService: AdapterService,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+) {
+    private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
     private val mEventLog = BluetoothEventLogger(30, TAG) // Dumpsys logger
 
