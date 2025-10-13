@@ -88,33 +88,33 @@ void IsoManager::DisconnectCis(uint16_t cis_handle, uint8_t reason) {
   pimpl_->DisconnectCis(cis_handle, reason);
 }
 
-void IsoManager::SetupIsoDataPath(uint16_t iso_handle,
+void IsoManager::SetupIsoDataPath(uint16_t conn_handle,
                                   struct iso_manager::iso_data_path_params path_params) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->SetupIsoDataPath(iso_handle, std::move(path_params));
+  pimpl_->SetupIsoDataPath(conn_handle, std::move(path_params));
 }
 
-void IsoManager::RemoveIsoDataPath(uint16_t iso_handle, uint8_t data_path_dir) {
+void IsoManager::RemoveIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->RemoveIsoDataPath(iso_handle, data_path_dir);
+  pimpl_->RemoveIsoDataPath(conn_handle, data_path_dir);
 }
 
-void IsoManager::ReadIsoLinkQuality(uint16_t iso_handle) {
+void IsoManager::ReadIsoLinkQuality(uint16_t conn_handle) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->ReadIsoLinkQuality(iso_handle);
+  pimpl_->ReadIsoLinkQuality(conn_handle);
 }
 
-void IsoManager::SendIsoData(uint16_t iso_handle, const uint8_t* data, uint16_t data_len) {
+void IsoManager::SendIsoData(uint16_t conn_handle, const uint8_t* data, uint16_t data_len) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->SendIsoData(iso_handle, data, data_len);
+  pimpl_->SendIsoData(conn_handle, data, data_len);
 }
 
 void IsoManager::CreateBig(uint8_t big_id, struct iso_manager::big_create_params big_params) {

@@ -27,7 +27,9 @@
 namespace bluetooth {
 namespace hci {
 namespace iso_manager {
-struct CigCallbacks {
+
+class CigCallbacks {
+public:
   virtual ~CigCallbacks() = default;
   virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t cig_id) = 0;
   virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t cig_id) = 0;
@@ -40,7 +42,8 @@ struct CigCallbacks {
   virtual void OnCigEvent(uint8_t event, void* data) = 0;
 };
 
-struct BigCallbacks {
+class BigCallbacks {
+public:
   virtual ~BigCallbacks() = default;
   virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_id) = 0;
   virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_id) = 0;
