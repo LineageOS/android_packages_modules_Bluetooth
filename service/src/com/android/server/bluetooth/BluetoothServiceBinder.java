@@ -366,8 +366,8 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        Log.d(TAG, "factoryReset(0)");
-        return postFromBinder(() -> mApi.factoryReset(0));
+        Log.d(TAG, "factoryReset()");
+        return postFromBinder(() -> mApi.factoryReset());
     }
 
     @Override

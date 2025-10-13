@@ -57,10 +57,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     private fun runOnBmsThread(block: suspend CoroutineScope.() -> Unit) = scope.launch { block() }
 
     override fun onStart() {
-        publishBinderService(
-            SERVICE_NAME,
-            BluetoothServiceBinder(looper, supervisor.api(), context),
-        )
+        publishBinderService(SERVICE_NAME, BluetoothServiceBinder(looper, supervisor.api, context))
     }
 
     override fun onUserStarting(user: TargetUser) {
