@@ -43,6 +43,8 @@ class ScannerApp(
     var associatedDevices: MutableList<String>? = null
     private var deathRecipient: ScanController.ScannerDeathRecipient? = null
 
+    override fun toString() = "ScannerApp($name)"
+
     fun linkToDeath(recipient: ScanController.ScannerDeathRecipient) {
         callback?.let { cb ->
             try {
