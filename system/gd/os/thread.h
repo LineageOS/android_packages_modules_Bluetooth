@@ -69,12 +69,15 @@ public:
 
   std::thread::id GetThreadId() const { return running_thread_.get_id(); }
 
+  pid_t GetLinuxTid() const { return linux_tid_; }
+
 private:
   void run(Priority priority);
   mutable std::mutex mutex_;
   const std::string name_;
   mutable Reactor reactor_;
   std::thread running_thread_;
+  pid_t linux_tid_;
 };
 
 }  // namespace os
