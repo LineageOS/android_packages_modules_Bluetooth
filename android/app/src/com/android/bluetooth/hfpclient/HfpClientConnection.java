@@ -30,7 +30,7 @@ import android.util.Log;
 import java.util.Objects;
 import java.util.UUID;
 
-public class HfpClientConnection extends Connection {
+class HfpClientConnection extends Connection {
     private static final String TAG = HfpClientConnection.class.getSimpleName();
 
     private static final String EVENT_SCO_CONNECT = "com.android.bluetooth.hfpclient.SCO_CONNECT";
@@ -38,9 +38,9 @@ public class HfpClientConnection extends Connection {
             "com.android.bluetooth.hfpclient.SCO_DISCONNECT";
 
     private final BluetoothDevice mDevice;
-    private HfpClientCall mCurrentCall;
     private final HfpClientConnectionService mConnServ;
     private final HeadsetClientServiceInterface mServiceInterface;
+    private HfpClientCall mCurrentCall;
 
     private int mPreviousCallState = -1;
     private boolean mClosed;
@@ -50,7 +50,7 @@ public class HfpClientConnection extends Connection {
 
     // Constructor to be used when there's an existing call (such as that created on the AG or
     // when connection happens and we see calls for the first time).
-    public HfpClientConnection(
+    HfpClientConnection(
             BluetoothDevice device,
             HfpClientCall call,
             HfpClientConnectionService connServ,
@@ -66,7 +66,7 @@ public class HfpClientConnection extends Connection {
 
     // Constructor to be used when a call is initiated on the HF. The call handle is obtained by
     // using the dial() command.
-    public HfpClientConnection(
+    HfpClientConnection(
             BluetoothDevice device,
             Uri number,
             HfpClientConnectionService connServ,
@@ -86,7 +86,10 @@ public class HfpClientConnection extends Connection {
         finishInitializing();
     }
 
-    void finishInitializing() {
+    private void finishInitializing() {
+        if (mClosed) {
+            return;
+        }
         setAudioModeIsVoip(false);
         Uri number = Uri.fromParts(PhoneAccount.SCHEME_TEL, mCurrentCall.getNumber(), null);
         setAddress(number, TelecomManager.PRESENTATION_ALLOWED);
@@ -100,35 +103,35 @@ public class HfpClientConnection extends Connection {
                                 : 0));
     }
 
-    public UUID getUUID() {
+    UUID getUUID() {
         return mCurrentCall.getUUID();
     }
 
-    public void onHfpDisconnected() {
+    void onHfpDisconnected() {
         close(DisconnectCause.ERROR);
     }
 
-    public void onAdded() {
+    void onAdded() {
         mAdded = true;
     }
 
-    public HfpClientCall getCall() {
+    HfpClientCall getCall() {
         return mCurrentCall;
     }
 
-    public boolean inConference() {
+    boolean inConference() {
         return mAdded
                 && mCurrentCall != null
                 && mCurrentCall.isMultiParty()
                 && getState() != Connection.STATE_DISCONNECTED;
     }
 
-    public void enterPrivateMode() {
+    void enterPrivateMode() {
         mServiceInterface.enterPrivateMode(mDevice, mCurrentCall.getId());
         setActive();
     }
 
-    public void updateCall(HfpClientCall call) {
+    void updateCall(HfpClientCall call) {
         if (call == null) {
             error("Updating call to a null value.");
             return;
@@ -136,7 +139,7 @@ public class HfpClientConnection extends Connection {
         mCurrentCall = call;
     }
 
-    public void handleCallChanged() {
+    void handleCallChanged() {
         HfpClientConference conference = (HfpClientConference) getConference();
         int state = mCurrentCall.getState();
 
@@ -174,7 +177,7 @@ public class HfpClientConnection extends Connection {
         mPreviousCallState = state;
     }
 
-    public synchronized void close(int cause) {
+    synchronized void close(int cause) {
         debug("Closing call " + mCurrentCall + "state: " + mClosed);
         if (mClosed) {
             return;
@@ -188,11 +191,11 @@ public class HfpClientConnection extends Connection {
         destroy();
     }
 
-    public synchronized boolean isClosing() {
+    synchronized boolean isClosing() {
         return mClosing;
     }
 
-    public BluetoothDevice getDevice() {
+    BluetoothDevice getDevice() {
         return mDevice;
     }
 
