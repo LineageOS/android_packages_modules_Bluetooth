@@ -125,7 +125,7 @@ struct gatt_interface_t {
         .BTA_GATTC_AppRegister =
                 [](const std::string& name, tBTA_GATTC_CBACK* p_client_cb,
                    BtaAppRegisterCallback cb, bool eatt_support) {
-                  BTA_GATTC_AppRegister(name, p_client_cb, cb, eatt_support);
+                  BTA_GATTC_AppRegister(name, p_client_cb, std::move(cb), eatt_support);
                 },
         .BTA_GATTC_Close = [](tCONN_ID conn_id) { BTA_GATTC_Close(conn_id); },
         .BTA_GATTC_ServiceSearchRequest =

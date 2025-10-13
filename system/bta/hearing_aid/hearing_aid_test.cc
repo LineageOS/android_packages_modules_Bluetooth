@@ -496,11 +496,12 @@ class HearingAidTest : public HearingAidTestBase {
     HearingAidTestBase::SetUp();
     BtaAppRegisterCallback app_register_callback;
     EXPECT_CALL(gatt_interface, AppRegister(_, _, _, _))
-            .WillOnce(DoAll(SaveArg<1>(&gatt_callback), SaveArg<2>(&app_register_callback)));
+            .WillOnce(DoAll(SaveArg<1>(&gatt_callback),
+                            WithArg<2>([&](auto arg) { app_register_callback = std::move(arg); })));
     HearingAid::Initialize(callbacks.get(), base::DoNothing());
     ASSERT_TRUE(gatt_callback);
     ASSERT_TRUE(app_register_callback);
-    app_register_callback.Run(gatt_if, GATT_SUCCESS);
+    std::move(app_register_callback).Run(gatt_if, GATT_SUCCESS);
     ASSERT_TRUE(HearingAid::IsHearingAidRunning());
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }

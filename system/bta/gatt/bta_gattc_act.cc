@@ -201,7 +201,7 @@ void bta_gattc_register(const Uuid& app_uuid, const std::string& name, tBTA_GATT
   }
 
   if (!cb.is_null()) {
-    cb.Run(client_if, status);
+    std::move(cb).Run(client_if, status);
   } else {
     log::warn("No GATT callback available, client_if={}, status={}", client_if, status);
   }

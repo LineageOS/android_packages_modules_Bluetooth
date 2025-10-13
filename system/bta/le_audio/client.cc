@@ -283,7 +283,7 @@ public:
 
   LeAudioClientImpl(bluetooth::le_audio::LeAudioClientCallbacks* callbacks,
                     LeAudioGroupStateMachine::Callbacks* state_machine_callbacks,
-                    base::Closure initCb)
+                    base::OnceClosure initCb)
       : gatt_if_(0),
         callbacks_(callbacks),
         active_group_id_(bluetooth::groups::kGroupUnknown),
@@ -318,16 +318,16 @@ public:
 
     BTA_GATTC_AppRegister(
             "le_audio", le_audio_gattc_callback,
-            base::Bind(
-                    [](base::Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error("Can't start LeAudio profile - no gatt clients left!");
                         return;
                       }
                       instance->gatt_if_ = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
 
     DeviceGroups::Initialize(device_group_callbacks);
@@ -7941,8 +7941,8 @@ LeAudioClient* LeAudioClient::Get() {
 
 /* Initializer of main le audio implementation class and its instance */
 void LeAudioClient::Initialize(
-        bluetooth::le_audio::LeAudioClientCallbacks* callbacks_, base::Closure initCb,
-        base::Callback<bool()> hal_2_1_verifier,
+        bluetooth::le_audio::LeAudioClientCallbacks* callbacks_, base::OnceClosure initCb,
+        base::OnceCallback<bool()> hal_2_1_verifier,
         const std::vector<bluetooth::le_audio::btle_audio_codec_config_t>& offloading_preference) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
@@ -7967,7 +7967,7 @@ void LeAudioClient::Initialize(
   stateMachineHciCallbacks = &stateMachineHciCallbacksImpl;
   stateMachineCallbacks = &stateMachineCallbacksImpl;
   device_group_callbacks = &deviceGroupsCallbacksImpl;
-  instance = new LeAudioClientImpl(callbacks_, stateMachineCallbacks, initCb);
+  instance = new LeAudioClientImpl(callbacks_, stateMachineCallbacks, std::move(initCb));
 
   IsoManager::GetInstance()->RegisterCigCallbacks(stateMachineHciCallbacks);
   CodecManager::GetInstance()->Start(offloading_preference);

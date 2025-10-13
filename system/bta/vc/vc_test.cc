@@ -562,11 +562,12 @@ protected:
   void TestAppRegister(void) {
     BtaAppRegisterCallback app_register_callback;
     EXPECT_CALL(gatt_interface, AppRegister(_, _, _, _))
-            .WillOnce(DoAll(SaveArg<1>(&gatt_callback), SaveArg<2>(&app_register_callback)));
+            .WillOnce(DoAll(SaveArg<1>(&gatt_callback),
+                            WithArg<2>([&](auto arg) { app_register_callback = std::move(arg); })));
     VolumeControl::Initialize(&callbacks, base::DoNothing());
     ASSERT_TRUE(gatt_callback);
     ASSERT_TRUE(app_register_callback);
-    app_register_callback.Run(gatt_if, GATT_SUCCESS);
+    std::move(app_register_callback).Run(gatt_if, GATT_SUCCESS);
     ASSERT_TRUE(VolumeControl::IsVolumeControlRunning());
   }
 
@@ -771,13 +772,14 @@ TEST_F(VolumeControlTest, test_initialize) {
   bool init_cb_called = false;
   BtaAppRegisterCallback app_register_callback;
   EXPECT_CALL(gatt_interface, AppRegister(_, _, _, _))
-          .WillOnce(DoAll(SaveArg<1>(&gatt_callback), SaveArg<2>(&app_register_callback)));
+          .WillOnce(DoAll(SaveArg<1>(&gatt_callback),
+                          WithArg<2>([&](auto arg) { app_register_callback = std::move(arg); })));
   VolumeControl::Initialize(
           &callbacks,
           base::Bind([](bool* init_cb_called) { *init_cb_called = true; }, &init_cb_called));
   ASSERT_TRUE(gatt_callback);
   ASSERT_TRUE(app_register_callback);
-  app_register_callback.Run(gatt_if, GATT_SUCCESS);
+  std::move(app_register_callback).Run(gatt_if, GATT_SUCCESS);
   ASSERT_TRUE(init_cb_called);
 
   ASSERT_TRUE(VolumeControl::IsVolumeControlRunning());
