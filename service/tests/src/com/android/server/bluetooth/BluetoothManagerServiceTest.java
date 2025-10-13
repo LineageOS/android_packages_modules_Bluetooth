@@ -69,7 +69,6 @@ import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionManager;
 import android.platform.test.flag.junit.SetFlagsRule;
-import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -180,10 +179,10 @@ public class BluetoothManagerServiceTest {
         // Mock these functions so security errors won't throw
         doReturn("name")
                 .when(mBluetoothServerProxy)
-                .settingsSecureGetString(any(), eq(Settings.Secure.BLUETOOTH_NAME));
+                .settingsSecureGetString(any(), eq("bluetooth_name"));
         doReturn("00:11:22:33:44:55")
                 .when(mBluetoothServerProxy)
-                .settingsSecureGetString(any(), eq(Settings.Secure.BLUETOOTH_ADDRESS));
+                .settingsSecureGetString(any(), eq("bluetooth_address"));
         doAnswer(
                         inv -> {
                             return mPersistedState;

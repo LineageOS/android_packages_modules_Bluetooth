@@ -73,6 +73,6 @@ android_test {
         exclude_filter: [],
     },
 
-    sdk_version: "system_server_current",
+    sdk_version: "test_current",
     min_sdk_version: "36",
 }
