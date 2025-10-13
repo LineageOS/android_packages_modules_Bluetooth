@@ -80,14 +80,12 @@ private constructor(
         return Objects.hash(scannerId)
     }
 
-    override fun toString(): String {
-        val sb = StringBuilder("ScanClient(")
-        sb.append("scannerId=").append(scannerId)
-        sb.append(", scanModeApp=").append(scanModeToString(scanModeApp))
-        sb.append(", scanModeUsed=").append(scanModeToString(settings.scanMode))
-        appScanStats.getOrNull()?.let { stats -> sb.append(", appName=").append(stats.mAppName) }
-        return sb.append(")").toString()
-    }
+    override fun toString() =
+        "ScanClient(" +
+            (appScanStats.getOrNull()?.let { "app=${it.mAppName}, " } ?: "") +
+            "scannerId=$scannerId, " +
+            "scanMode[app=${scanModeToString(scanModeApp)}, " +
+            "used=${scanModeToString(settings.scanMode)}])"
 
     /**
      * Update scan settings with the new scan mode.
