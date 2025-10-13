@@ -3063,7 +3063,14 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
-    private void setGroupAllowedContextMask(
+    /**
+     * Set allowed context which should be considered while Audio Framework would request streaming.
+     *
+     * @param groupId LE Audio group id
+     * @param sinkContextTypes sink context types that would be allowed to stream
+     * @param sourceContextTypes source context types that would be allowed to stream
+     */
+    public void setGroupAllowedContextMask(
             int groupId, int sinkContextTypes, int sourceContextTypes) {
         if (!mLeAudioNativeIsInitialized) {
             Log.e(TAG, "Le Audio not initialized properly.");
@@ -3822,6 +3829,15 @@ public class LeAudioService extends ConnectableProfile {
                             startBroadcast(mBroadcastIdDeactivatedForUnicastTransition.get());
                             mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
                         }
+                    }
+
+                    if (groupStatus == LeAudioStackEvent.GROUP_STATUS_AUTONOMOUS_INACTIVE) {
+                        mAdapterService
+                                .getBassClientService()
+                                .ifPresent(
+                                        bassClient ->
+                                                bassClient.notifyLeAudioGroupAutonomousInactivated(
+                                                        getLeadDeviceForTheGroup(groupId)));
                     }
                 }
                 case LeAudioStackEvent.GROUP_STATUS_TURNED_IDLE_DURING_CALL -> {

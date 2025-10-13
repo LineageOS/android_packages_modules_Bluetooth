@@ -30,6 +30,7 @@ import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetada
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSyncHandleToDeviceFix;
 import static com.android.bluetooth.flags.Flags.leaudioFallbackGroupSelection;
+import static com.android.bluetooth.flags.Flags.leaudioReactivateAutonomouslyInactivatedGroupByBroadcast;
 
 import static java.util.Objects.requireNonNull;
 
@@ -126,6 +127,9 @@ public class BassClientService extends ConnectableProfile {
     // 1 minute timeout for sync metadata update
     private static final Duration sUpdateMetadataTimeout = Duration.ofMinutes(1);
 
+    // 2 seconds timeout for autonomous inactivation monitor
+    @VisibleForTesting static final Duration sAutoInactiveMonitorTimeout = Duration.ofSeconds(2);
+
     private enum PauseReason {
         SUSPENDED_BY_HOST, // Broadcast suspended by host; monitoring is blocked.
         BIG_MONITORING, // BIG monitoring is activated.
@@ -138,6 +142,13 @@ public class BassClientService extends ConnectableProfile {
         RESUME,
         SUSPEND,
         REMOVE
+    }
+
+    private enum SyncStatus {
+        NOT_SYNCED,
+        SOURCE_ADDED,
+        PA_SYNCED,
+        BIS_SYNCED
     }
 
     private static BassClientService sService;
@@ -184,6 +195,8 @@ public class BassClientService extends ConnectableProfile {
     private final Callbacks mCallbacks;
 
     private DialingOutTimeoutEvent mDialingOutTimeoutEvent = null;
+    private final Map<Integer, ReactivateGroupMonitor> mReactivateGroupMonitors =
+            new ConcurrentHashMap<>();
 
     /* Caching the PeriodicAdvertisementResult from Broadcast source */
     /* This is stored at service so that each device state machine can access
@@ -198,6 +211,9 @@ public class BassClientService extends ConnectableProfile {
     /*bcastSrcDevice, corresponding broadcast id and PeriodicAdvertisementResult*/
     private final Map<BluetoothDevice, HashMap<Integer, PeriodicAdvertisementResult>>
             mPeriodicAdvertisementResultMap = new HashMap<>();
+    /* BluetoothDevice, broadcastId, SyncStatus */
+    private final Map<BluetoothDevice, Map<Integer, SyncStatus>> mSyncStatusMap =
+            new ConcurrentHashMap<>();
     private boolean mIsForegroundScan = false;
     private boolean mIsBackgroundScan = false;
     private boolean mIsAssistantActive = false;
@@ -824,6 +840,10 @@ public class BassClientService extends ConnectableProfile {
             mDialingOutTimeoutEvent = null;
         }
 
+        mReactivateGroupMonitors.forEach((k, v) -> mHandler.removeCallbacks(v));
+        mReactivateGroupMonitors.clear();
+        mSyncStatusMap.clear();
+
         if (mIsAssistantActive) {
             mAdapterService
                     .getLeAudioService()
@@ -1122,6 +1142,142 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
+    /**
+     * During a unicast stream, if the remote device synchronizes to a broadcast, it may release its
+     * ASEs without proper stream closing. In such a case, Android disconnects such a device from
+     * the Audio Framework, making it INACTIVE.
+     *
+     * <p>Below mechanism allows BASS to detect this situation. If it is determined that the Stream
+     * was dropped due to the Broadcast Activities, BASS can re-activate the device to the Audio
+     * Framework, which improves the user experience, e.g. the user can still use the device to pick
+     * up a phone call or control the volume.
+     *
+     * <p>This mechanism monitors autonomous ASE releases together with add/modify source operations
+     * or broadcast sync advancing within a 2-second window.
+     */
+    private class ReactivateGroupMonitor implements Runnable {
+        private final int mGroupId;
+        final boolean mInactivated;
+
+        ReactivateGroupMonitor(int groupId, boolean inactivated) {
+            mGroupId = groupId;
+            mInactivated = inactivated;
+        }
+
+        @Override
+        public void run() {
+            mReactivateGroupMonitors.remove(mGroupId);
+        }
+    }
+
+    private void startReactivateGroupMonitor(BluetoothDevice device, boolean inactivated) {
+        if (!leaudioReactivateAutonomouslyInactivatedGroupByBroadcast()) {
+            return;
+        }
+
+        final var leAudio = mAdapterService.getLeAudioService();
+        if (leAudio.isEmpty()) {
+            Log.d(TAG, "startReactivateGroupMonitor: LeAudioService is not available");
+            return;
+        }
+
+        int groupId = leAudio.get().getGroupId(device);
+
+        Log.v(
+                TAG,
+                "startReactivateGroupMonitor:"
+                        + (" groupId: " + groupId)
+                        + (", device: " + device)
+                        + (", inactivated: " + inactivated));
+
+        ReactivateGroupMonitor monitor = mReactivateGroupMonitors.remove(groupId);
+        if (monitor != null) {
+            mHandler.removeCallbacks(monitor);
+
+            if (inactivated != monitor.mInactivated) {
+                Log.d(TAG, "startReactivateGroupMonitor: group reactivation");
+                leAudio.get().setActiveDevice(device);
+                leAudio.get()
+                        .setGroupAllowedContextMask(
+                                groupId,
+                                BluetoothLeAudio.CONTEXTS_ALL
+                                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS),
+                                BluetoothLeAudio.CONTEXTS_ALL);
+                mIsAllowedContextOfActiveGroupModified = true;
+                return;
+            }
+        }
+
+        if (inactivated || (groupId == leAudio.get().getActiveGroupId())) {
+            Log.v(TAG, "startReactivateGroupMonitor: enable monitor");
+            ReactivateGroupMonitor newMonitor = new ReactivateGroupMonitor(groupId, inactivated);
+            mReactivateGroupMonitors.put(groupId, newMonitor);
+            mHandler.postDelayed(newMonitor, sAutoInactiveMonitorTimeout.toMillis());
+        }
+    }
+
+    public void notifyLeAudioGroupAutonomousInactivated(BluetoothDevice leadDevice) {
+        startReactivateGroupMonitor(leadDevice, /* inactivated */ true);
+    }
+
+    /**
+     * Checks if the synchronization state for a given sink and its broadcast source has advanced.
+     *
+     * <p>This method tracks the synchronization progress for each sink-broadcast pair. It compares
+     * the previously stored sync status with the new status to determine if there has been an
+     * improvement (e.g., moving from PA synced to BIS synced).
+     *
+     * @param sink The sink (receiver) device.
+     * @param receiveState The current receive state for the broadcast source.
+     * @return {@code true} if the sync state has advanced (e.g., from PA_SYNCED to BIS_SYNCED),
+     *     {@code false} otherwise. Also returns {@code false} if the state has not changed or has
+     *     regressed.
+     */
+    @VisibleForTesting
+    boolean isBroadcastSyncAdvancing(
+            BluetoothDevice sink, BluetoothLeBroadcastReceiveState receiveState) {
+        SyncStatus newSyncStatus = SyncStatus.NOT_SYNCED;
+        if (isReceiveStateSyncedToBis(receiveState)) {
+            newSyncStatus = SyncStatus.BIS_SYNCED;
+        } else if (receiveState.getPaSyncState()
+                == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED) {
+            newSyncStatus = SyncStatus.PA_SYNCED;
+        } else if (!isEmptyBluetoothDevice(receiveState.getSourceDevice())) {
+            newSyncStatus = SyncStatus.SOURCE_ADDED;
+        }
+
+        if (newSyncStatus == SyncStatus.NOT_SYNCED) {
+            HashSet<Integer> syncedBroadcastIds =
+                    getAllSources(sink).stream()
+                            .map(BluetoothLeBroadcastReceiveState::getBroadcastId)
+                            .collect(Collectors.toCollection(HashSet::new));
+            if (syncedBroadcastIds.isEmpty()) {
+                mSyncStatusMap.remove(sink);
+            } else {
+                mSyncStatusMap.computeIfPresent(
+                        sink,
+                        (k, v) -> {
+                            v.entrySet().removeIf(e -> !syncedBroadcastIds.contains(e.getKey()));
+                            return v.isEmpty() ? null : v;
+                        });
+            }
+            return false;
+        }
+
+        int broadcastId = receiveState.getBroadcastId();
+        SyncStatus oldSyncStatus =
+                mSyncStatusMap
+                        .getOrDefault(sink, Collections.emptyMap())
+                        .getOrDefault(broadcastId, SyncStatus.NOT_SYNCED);
+
+        mSyncStatusMap
+                .computeIfAbsent(sink, k -> new ConcurrentHashMap<>())
+                .put(broadcastId, newSyncStatus);
+
+        return (newSyncStatus.compareTo(oldSyncStatus) > 0);
+    }
+
     void syncRequestForPast(BluetoothDevice sink, int broadcastId, int sourceId) {
         Log.d(
                 TAG,
@@ -1210,6 +1366,7 @@ public class BassClientService extends ConnectableProfile {
     private void localNotifyReceiveStateChanged(
             BluetoothDevice sink, BluetoothLeBroadcastReceiveState receiveState) {
         int broadcastId = receiveState.getBroadcastId();
+        boolean broadcastSyncIsAdvancing = isBroadcastSyncAdvancing(sink, receiveState);
         // If sink has broadcast synced && not paused by the host
         if ((leaudioBroadcastAllowMonitoringOnResume() || !isLocalBroadcast(receiveState))
                 && !isEmptyBluetoothDevice(receiveState.getSourceDevice())
@@ -1283,6 +1440,10 @@ public class BassClientService extends ConnectableProfile {
         final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isEmpty()) {
             return;
+        }
+
+        if (broadcastSyncIsAdvancing) {
+            startReactivateGroupMonitor(sink, /* inactivated */ false);
         }
 
         if (isPrimaryDeviceSyncedToExternalBroadcast()) {
@@ -1791,6 +1952,7 @@ public class BassClientService extends ConnectableProfile {
 
             checkAndStopBroadcastMonitoring();
             removeSinkMetadataFromGroupIfWholeUnsynced(device);
+            mSyncStatusMap.remove(device);
 
             if (getConnectedDevices().isEmpty()
                     || (mPausedBroadcastSinks.isEmpty()
@@ -3871,6 +4033,8 @@ public class BassClientService extends ConnectableProfile {
                     /* Store metadata for sink device */
                     storeSinkMetadata(device, broadcastId, sourceMetadata);
 
+                    startReactivateGroupMonitor(device, /* inactivated */ false);
+
                     Message message =
                             stateMachine.obtainMessage(BassClientStateMachine.SWITCH_BCAST_SOURCE);
                     message.obj = sourceMetadata;
@@ -3906,6 +4070,8 @@ public class BassClientService extends ConnectableProfile {
                             + (", broadcastId: " + broadcastId)
                             + (", broadcastName: " + sourceMetadata.getBroadcastName())
                             + (", isGroupOp: " + isGroupOp));
+
+            startReactivateGroupMonitor(device, /* inactivated */ false);
 
             Message message = stateMachine.obtainMessage(BassClientStateMachine.ADD_BCAST_SOURCE);
             message.obj = sourceMetadata;
@@ -4932,7 +5098,7 @@ public class BassClientService extends ConnectableProfile {
         logPausedBroadcastsAndSinks();
     }
 
-    private static void sendModifySource(
+    private void sendModifySource(
             BassClientStateMachine sm,
             BluetoothDevice device,
             int sourceId,
@@ -4952,6 +5118,8 @@ public class BassClientService extends ConnectableProfile {
                                         : BassConstants.INVALID_BROADCAST_ID))
                         + (", broadcastName: "
                                 + (metadata != null ? metadata.getBroadcastName() : "")));
+
+        startReactivateGroupMonitor(device, /* inactivated */ false);
 
         Message message = sm.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
         message.arg1 = sourceId;
