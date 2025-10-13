@@ -127,6 +127,9 @@ std::vector<base::OnceClosure> pending_tasks_;
 std::vector<base::OnceClosure> pending_delayed_tasks_;
 bool hold_delayed_tasks = false;
 
+void init_message_loop_thread();
+void cleanup_message_loop_thread();
+
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   // Wrap the task with task counter so we could later know if there are
   // any callbacks scheduled and we should wait before performing some actions
@@ -172,7 +175,7 @@ static void execute_delayed_tasks() {
   pending_delayed_tasks_.clear();
 }
 
-static void init_message_loop_thread() {
+void init_message_loop_thread() {
   num_async_tasks = 0;
   message_loop_thread.StartUp();
   if (!message_loop_thread.IsRunning()) {
@@ -196,7 +199,7 @@ static void init_delayed_message_loop_thread() {
   }
 }
 
-static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
+void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
 
 static void cleanup_delayed_message_loop_thread() { delayed_message_loop_thread.ShutDown(); }
 
