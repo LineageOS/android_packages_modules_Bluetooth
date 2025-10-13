@@ -840,7 +840,7 @@ public final class BluetoothCodecConfig implements Parcelable {
          *
          * @param codecType of this codec
          * @return the same Builder instance
-         * @deprecated use {@link BluetoothCodecType} instead
+         * @deprecated use {@link #setExtendedCodecType} instead
          */
         @Deprecated
         @RequiresNoPermission
