@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.le_scan;
 
-import static android.bluetooth.BluetoothUtils.extractBytes;
-
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
@@ -64,7 +62,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.util.NumberUtils;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -74,7 +71,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,9 +89,6 @@ public class ScanController {
     private static final String TAG = ScanController.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
-
-    // Batch scan related constants.
-    private static final int TRUNCATED_RESULT_SIZE = 11;
 
     // onFoundLost related constants
     @VisibleForTesting static final int ADVT_STATE_ONFOUND = 0;
@@ -789,7 +782,8 @@ public class ScanController {
                         + (", reportType=" + reportType)
                         + (", numRecords=" + numRecords));
 
-        Set<ScanResult> results = parseBatchScanResults(numRecords, reportType, recordData);
+        Set<ScanResult> results =
+                BatchScanUtil.parseResults(mAdapterService, numRecords, reportType, recordData);
         if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             // We only support single client for truncated mode.
             ScannerApp app = mScannerMap.getById(scannerId);
@@ -834,85 +828,6 @@ public class ScanController {
             }
         }
         mScanManager.callbackDone(scannerId, status);
-    }
-
-    private Set<ScanResult> parseBatchScanResults(
-            int numRecords, int reportType, byte[] batchRecord) {
-        if (numRecords == 0) {
-            return Collections.emptySet();
-        }
-        Log.d(
-                TAG,
-                ("Parsing " + numRecords + " batch scan results at " + Utils.getLocalTimeString())
-                        + (" (elapsed: " + SystemClock.elapsedRealtime() + "ms)"));
-        if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
-            return parseTruncatedResults(numRecords, batchRecord);
-        } else {
-            return parseFullResults(numRecords, batchRecord);
-        }
-    }
-
-    private Set<ScanResult> parseTruncatedResults(int numRecords, byte[] batchRecord) {
-        Set<ScanResult> results = new HashSet<>(numRecords);
-        long now = SystemClock.elapsedRealtimeNanos();
-        for (int i = 0; i < numRecords; ++i) {
-            byte[] record =
-                    extractBytes(batchRecord, i * TRUNCATED_RESULT_SIZE, TRUNCATED_RESULT_SIZE);
-            byte[] address = extractBytes(record, 0, 6);
-            Utils.reverse(address);
-            BluetoothDevice device =
-                    mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
-            int rssi = record[8];
-            long timestampNanos = now - parseTimestampNanos(extractBytes(record, 9, 2));
-            results.add(
-                    new ScanResult(
-                            device, ScanRecord.parseFromBytes(new byte[0]), rssi, timestampNanos));
-        }
-        return results;
-    }
-
-    @VisibleForTesting
-    long parseTimestampNanos(byte[] data) {
-        long timestampUnit = NumberUtils.littleEndianByteArrayToInt(data);
-        // Timestamp is in every 50 ms.
-        return TimeUnit.MILLISECONDS.toNanos(timestampUnit * 50);
-    }
-
-    private Set<ScanResult> parseFullResults(int numRecords, byte[] batchRecord) {
-        Set<ScanResult> results = new HashSet<>(numRecords);
-        int position = 0;
-        long now = SystemClock.elapsedRealtimeNanos();
-        while (position < batchRecord.length) {
-            byte[] address = extractBytes(batchRecord, position, 6);
-            // TODO: remove temp hack.
-            Utils.reverse(address);
-            BluetoothDevice device =
-                    mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
-            position += 6;
-            // Skip address type.
-            position++;
-            // Skip tx power level.
-            position++;
-            int rssi = batchRecord[position++];
-            long timestampNanos = now - parseTimestampNanos(extractBytes(batchRecord, position, 2));
-            position += 2;
-
-            // Combine advertise packet and scan response packet.
-            int advertisePacketLen = batchRecord[position++];
-            byte[] advertiseBytes = extractBytes(batchRecord, position, advertisePacketLen);
-            position += advertisePacketLen;
-            int scanResponsePacketLen = batchRecord[position++];
-            byte[] scanResponseBytes = extractBytes(batchRecord, position, scanResponsePacketLen);
-            position += scanResponsePacketLen;
-            byte[] scanRecord = new byte[advertisePacketLen + scanResponsePacketLen];
-            System.arraycopy(advertiseBytes, 0, scanRecord, 0, advertisePacketLen);
-            System.arraycopy(
-                    scanResponseBytes, 0, scanRecord, advertisePacketLen, scanResponsePacketLen);
-            results.add(
-                    new ScanResult(
-                            device, ScanRecord.parseFromBytes(scanRecord), rssi, timestampNanos));
-        }
-        return results;
     }
 
     // Check and deliver scan results for different scan clients.
