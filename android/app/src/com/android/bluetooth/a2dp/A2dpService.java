@@ -57,6 +57,8 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -101,17 +103,20 @@ public class A2dpService extends ConnectableProfile {
             new AudioManagerAudioDeviceCallback();
 
     public A2dpService(
-            AdapterService adapterService, CompanionDeviceManager companionDeviceManager) {
-        this(adapterService, null, companionDeviceManager, Looper.getMainLooper());
+            AdapterService adapterService,
+            BluetoothStorageManager storage,
+            CompanionDeviceManager companionDeviceManager) {
+        this(adapterService, storage, null, companionDeviceManager, Looper.getMainLooper());
     }
 
     @VisibleForTesting
     A2dpService(
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             A2dpNativeInterface nativeInterface,
             CompanionDeviceManager companionDeviceManager,
             Looper looper) {
-        super(BluetoothProfile.A2DP, requireNonNull(adapterService));
+        super(BluetoothProfile.A2DP, adapterService, storage);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -732,7 +737,10 @@ public class A2dpService extends ConnectableProfile {
      *     OptionalCodecsSupportStatus#OPTIONAL_CODECS_SUPPORT_UNKNOWN}.
      */
     public @OptionalCodecsSupportStatus int getSupportsOptionalCodecs(BluetoothDevice device) {
-        return getDatabaseManager().getA2dpSupportsOptionalCodecs(device);
+        if (Flags.mainlineBetaStorage()) {
+            return getStorage().getA2dpOptionalCodecsSupported(device);
+        }
+        return getDatabaseManager().getA2dpSupportsOptionalCodecs(device); // Migrating
     }
 
     public void setSupportsOptionalCodecs(BluetoothDevice device, boolean doesSupport) {
@@ -740,40 +748,45 @@ public class A2dpService extends ConnectableProfile {
                 doesSupport
                         ? BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED
                         : BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED;
-        getDatabaseManager().setA2dpSupportsOptionalCodecs(device, value);
+        if (Flags.mainlineBetaStorage()) {
+            getStorage().setA2dpOptionalCodecsSupported(device, value);
+            return;
+        }
+        getDatabaseManager().setA2dpSupportsOptionalCodecs(device, value); // Migrating
     }
 
     /**
      * Checks whether optional codecs are enabled
      *
      * @param device is the remote bluetooth device
-     * @return whether the optional codecs are enabled. Possible values are: {@link
-     *     OptionalCodecsPreferenceStatus#OPTIONAL_CODECS_PREF_ENABLED}, {@link
-     *     OptionalCodecsPreferenceStatus#OPTIONAL_CODECS_PREF_DISABLED}, {@link
-     *     OptionalCodecsPreferenceStatus#OPTIONAL_CODECS_PREF_UNKNOWN}.
+     * @return whether the optional codecs are enabled.
      */
     public @OptionalCodecsPreferenceStatus int getOptionalCodecsEnabled(BluetoothDevice device) {
-        return getDatabaseManager().getA2dpOptionalCodecsEnabled(device);
+        if (Flags.mainlineBetaStorage()) {
+            return getStorage().getA2dpOptionalCodecsEnabled(device);
+        }
+        return getDatabaseManager().getA2dpOptionalCodecsEnabled(device); // Migrating
     }
 
     /**
      * Sets the optional codecs to be set to the passed in value
      *
      * @param device is the remote bluetooth device
-     * @param value is the new status for the optional codecs. Possible values are: {@link
-     *     OptionalCodecsPreferenceStatus#OPTIONAL_CODECS_PREF_ENABLED}, {@link
-     *     OptionalCodecsPreferenceStatus#OPTIONAL_CODECS_PREF_DISABLED}, {@link
-     *     OptionalCodecsPreferenceStatus#OPTIONAL_CODECS_PREF_UNKNOWN}.
+     * @param value is the new status for the optional codecs.
      */
     public void setOptionalCodecsEnabled(
             BluetoothDevice device, @OptionalCodecsPreferenceStatus int value) {
+        if (Flags.mainlineBetaStorage()) {
+            getStorage().setA2dpOptionalCodecsEnabled(device, value);
+            return;
+        }
         if (value != BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN
                 && value != BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED
                 && value != BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED) {
             Log.w(TAG, "Unexpected value passed to setOptionalCodecsEnabled:" + value);
             return;
         }
-        getDatabaseManager().setA2dpOptionalCodecsEnabled(device, value);
+        getDatabaseManager().setA2dpOptionalCodecsEnabled(device, value); // Migrating
     }
 
     /**
@@ -1227,7 +1240,11 @@ public class A2dpService extends ConnectableProfile {
 
     /** Retrieves the most recently connected device in the A2DP connected devices list. */
     public BluetoothDevice getFallbackDevice() {
-        return getDatabaseManager().getMostRecentlyConnectedDevicesInList(getConnectedDevices());
+        if (Flags.mainlineBetaStorage()) {
+            return getStorage().getMostRecentlyConnectedDeviceInList(getConnectedDevices());
+        }
+        return getDatabaseManager() // Migrating
+                .getMostRecentlyConnectedDevicesInList(getConnectedDevices());
     }
 
     @Override

@@ -47,15 +47,31 @@ import android.bluetooth.BluetoothUuid
 import android.util.Log
 import com.android.bluetooth.Utils
 import com.android.bluetooth.Utils.arrayContains
+import com.android.bluetooth.btservice.storage.DatabaseManager
+import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.hid.HidHostService
+import com.android.bluetooth.storage.BluetoothStorageManager
 
 private const val TAG = Utils.BT_PREFIX + "ConnectableProfile"
 
 // Base class for a Bluetooth profile that supports connection semantics
-abstract class ConnectableProfile(id: Int, adapterService: AdapterService) :
-    ProfileService(id, adapterService) {
+abstract class ConnectableProfile
+@JvmOverloads
+constructor(
+    id: Int,
+    adapterService: AdapterService,
+    protected val storage: BluetoothStorageManager? = null,
+) : ProfileService(id, adapterService) {
 
-    protected val databaseManager = mAdapterService.databaseManager
+    protected val databaseManager: DatabaseManager?
+
+    init {
+        if (Flags.mainlineBetaStorage()) {
+            databaseManager = null
+        } else {
+            databaseManager = mAdapterService.databaseManager
+        }
+    }
 
     /**
      * Connects the given Bluetooth device to the profile.

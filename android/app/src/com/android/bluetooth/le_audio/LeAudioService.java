@@ -89,6 +89,7 @@ import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsGatt;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -213,17 +214,18 @@ public class LeAudioService extends ConnectableProfile {
     final RemoteCallbackList<IBluetoothLeAudioCallback> mLeAudioCallbacks =
             new RemoteCallbackList<>();
 
-    public LeAudioService(AdapterService adapterService) {
-        this(adapterService, null, null, null);
+    public LeAudioService(AdapterService adapterService, BluetoothStorageManager storage) {
+        this(adapterService, storage, null, null, null);
     }
 
     @VisibleForTesting
     LeAudioService(
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             Looper looper,
             LeAudioNativeInterface nativeInterface,
             LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface) {
-        super(BluetoothProfile.LE_AUDIO, requireNonNull(adapterService));
+        super(BluetoothProfile.LE_AUDIO, adapterService, storage);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
@@ -840,9 +842,32 @@ public class LeAudioService extends ConnectableProfile {
         mNativeInterface.setEnableState(device, enabled);
     }
 
+    // During a personal audio sharing session, the owner's device is assumed to be the first
+    // one that connected. Guests' devices connect later just to listen to the broadcast.
+    //
+    // When the session ends, we must fall back to a unicast group. For privacy reasons (calls..),
+    // we select the owner's group, which corresponds to the least recently connected device.
     private void setDefaultBroadcastToUnicastFallbackGroup() {
+        if (Flags.mainlineBetaStorage()) {
+            List<BluetoothDevice> connectedDevices = getConnectedDevices();
+            List<BluetoothDevice> availableDevices;
+            if (Flags.leaudioFallbackGroupSelection()) {
+                availableDevices =
+                        connectedDevices.stream()
+                                .filter(device -> mBroadcastReceivers.contains(device))
+                                .toList();
+            } else {
+                availableDevices = connectedDevices;
+            }
+
+            BluetoothDevice device =
+                    getStorage().getLeastRecentlyConnectedDeviceInList(availableDevices);
+            updateFallbackUnicastGroupIdForBroadcast(getDeviceDescriptor(device).mGroupId);
+            return;
+        }
+
         List<BluetoothDevice> mostRecentDevices =
-                getDatabaseManager().getMostRecentlyConnectedDevices();
+                getDatabaseManager().getMostRecentlyConnectedDevices(); // Migrating
         List<BluetoothDevice> connectedDevices = getConnectedDevices();
         int targetGroupId = LE_AUDIO_GROUP_ID_INVALID;
         int targetDeviceIdx = -1;
@@ -5344,13 +5369,20 @@ public class LeAudioService extends ConnectableProfile {
                 "storeActiveGroupCodecConfigPreference("
                         + groupId
                         + "): "
-                        + Objects.toString(inputCodecConfig)
-                        + Objects.toString(outputCodecConfig));
+                        + inputCodecConfig
+                        + outputCodecConfig);
 
         // Update the active group codec preference map
         mActiveGroupCodecPreferences.put(
                 Integer.valueOf(outputCodecConfig.getCodecType()),
                 new Pair<>(inputCodecConfig, outputCodecConfig));
+
+        if (Flags.mainlineBetaStorage()) {
+            getStorage()
+                    .setLeAudioCodecPreferences(
+                            getGroupDevices(groupId), mActiveGroupCodecPreferences);
+            return;
+        }
 
         for (Map.Entry<BluetoothDevice, LeAudioDeviceDescriptor> entry :
                 mDeviceDescriptors.entrySet()) {
@@ -5367,12 +5399,12 @@ public class LeAudioService extends ConnectableProfile {
             }
 
             if (input_configs.size() > 0) {
-                getDatabaseManager()
+                getDatabaseManager() // Migrating
                         .setLeAudioUnicastInputCodecPreferenceList(entry.getKey(), input_configs);
             }
 
             if (output_configs.size() > 0) {
-                getDatabaseManager()
+                getDatabaseManager() // Migrating
                         .setLeAudioUnicastOutputCodecPreferenceList(entry.getKey(), output_configs);
             }
         }
@@ -5389,6 +5421,18 @@ public class LeAudioService extends ConnectableProfile {
         Log.d(TAG, "restoreActiveGroupCodecConfigPreference(" + groupId + ")");
 
         // Reload the active group codec preferences map from storage
+        if (Flags.mainlineBetaStorage()) {
+            mActiveGroupCodecPreferences.clear();
+            mActiveGroupCodecPreferences.putAll(
+                    getStorage().getLeAudioCodecPreferences(getGroupDevices(groupId)));
+            mActiveGroupCodecPreferences.values().stream()
+                    .filter(pair -> shouldUpdateCodecConfigPreference(pair.second))
+                    .forEach(
+                            pair ->
+                                    mNativeInterface.setCodecConfigPreference(
+                                            groupId, pair.first, pair.second));
+            return;
+        }
         mActiveGroupCodecPreferences.clear();
         for (Map.Entry<BluetoothDevice, LeAudioDeviceDescriptor> entry :
                 mDeviceDescriptors.entrySet()) {
@@ -5397,9 +5441,11 @@ public class LeAudioService extends ConnectableProfile {
             }
 
             List<BluetoothLeAudioCodecConfig> output_configs =
-                    getDatabaseManager().getLeAudioUnicastOutputCodecPreferenceList(entry.getKey());
+                    getDatabaseManager() // Migrating
+                            .getLeAudioUnicastOutputCodecPreferenceList(entry.getKey());
             List<BluetoothLeAudioCodecConfig> input_configs =
-                    getDatabaseManager().getLeAudioUnicastInputCodecPreferenceList(entry.getKey());
+                    getDatabaseManager() // Migrating
+                            .getLeAudioUnicastInputCodecPreferenceList(entry.getKey());
 
             if (input_configs != null && output_configs != null) {
                 Log.d(

@@ -17,7 +17,6 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
@@ -74,7 +73,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /** Remote device manager. This class is currently mostly used for HF and AG remote devices. */
 public class RemoteDevices {
@@ -1589,7 +1587,9 @@ public class RemoteDevices {
                     .getBatteryService()
                     .filter(battery -> transport == TRANSPORT_LE)
                     .ifPresent(battery -> battery.connectIfPossible(device));
-            mAdapterService.updatePhonePolicyOnAclConnect(device);
+            if (!Flags.mainlineBetaStorage()) {
+                mAdapterService.updatePhonePolicyOnAclConnect(device);
+            }
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_CONNECTION,
                     Utils.getLoggableAddress(device), /* success */

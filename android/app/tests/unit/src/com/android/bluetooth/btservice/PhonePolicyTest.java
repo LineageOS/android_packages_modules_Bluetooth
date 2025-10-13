@@ -65,6 +65,7 @@ import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
@@ -95,6 +96,7 @@ public class PhonePolicyTest {
     @Mock private A2dpService mA2dpService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private CsipSetCoordinatorService mCsipSetCoordinatorService;
     @Mock private HearingAidService mHearingAidService;
     @Mock private HapClientService mHapClientService;
@@ -144,7 +146,7 @@ public class PhonePolicyTest {
 
         mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3, mDevice4);
 
-        mPhonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper());
+        mPhonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
         mOriginalDualModeState = Utils.isDualModeAudioEnabled();
     }
 
@@ -892,7 +894,7 @@ public class PhonePolicyTest {
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
         doReturn(db).when(mAdapterService).getDatabaseManager();
-        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper());
+        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
 
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
@@ -922,7 +924,7 @@ public class PhonePolicyTest {
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
         doReturn(db).when(mAdapterService).getDatabaseManager();
-        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper());
+        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
 
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
@@ -957,7 +959,7 @@ public class PhonePolicyTest {
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
         doReturn(db).when(mAdapterService).getDatabaseManager();
-        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper());
+        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
 
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());

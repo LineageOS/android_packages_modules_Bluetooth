@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.btservice;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothProfile;
 import android.content.ComponentName;
@@ -43,7 +45,7 @@ public abstract class ProfileService extends ContextWrapper {
     private boolean mAvailable = false;
 
     protected ProfileService(int id, AdapterService adapterService) {
-        super(adapterService);
+        super(requireNonNull(adapterService));
         mProfileId = id;
         mAdapterService = adapterService;
         mName = getClass().getSimpleName();

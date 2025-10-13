@@ -82,6 +82,7 @@ public class DatabaseManager {
 
     /** Constructor of the DatabaseManager */
     public DatabaseManager(AdapterService service) {
+        if (Flags.mainlineBetaStorage()) throw new IllegalStateException("mainlineBetaStorage");
         mAdapterService = requireNonNull(service);
     }
 
@@ -1185,7 +1186,6 @@ public class DatabaseManager {
         logMetadataChange(data, "Metadata deleted");
         mHandler.obtainMessage(MSG_DELETE_DATABASE, data.getAddress()).sendToTarget();
     }
-
 
     private void logMetadataChange(Metadata data, String log) {
         String uidPid = Utils.getUidPidString();
