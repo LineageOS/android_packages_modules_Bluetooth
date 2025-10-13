@@ -31,6 +31,8 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
@@ -77,15 +79,17 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     private final BluetoothEventLogger mVolumeEventLogger =
             new BluetoothEventLogger(VOLUME_CHANGE_LOGGER_SIZE, VOLUME_CHANGE_LOG_TITLE);
 
-    AdapterService mAdapterService;
-    AudioManager mAudioManager;
-    AvrcpNativeInterface mNativeInterface;
+    private final AudioManager mAudioManager;
+    private final AdapterService mAdapterService;
+    private final BluetoothStorageManager mStorage;
+    private final AvrcpNativeInterface mNativeInterface;
 
     // Absolute volume support map.
-    HashMap<BluetoothDevice, Boolean> mDeviceMap = new HashMap<>();
+    final HashMap<BluetoothDevice, Boolean> mDeviceMap = new HashMap<>();
 
     // Volume stored is system volume (0 - {@code mDeviceMaxVolume}).
-    HashMap<BluetoothDevice, Integer> mVolumeMap = new HashMap<>();
+    final HashMap<BluetoothDevice, Integer> mVolumeMap =
+            Flags.mainlineBetaStorage() ? null : new HashMap<>();
 
     BluetoothDevice mCurrentDevice = null;
     boolean mAbsoluteVolumeSupported = false;
@@ -123,6 +127,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
      * <p>The map is written each time a volume update occurs from or to the remote device.
      */
     private SharedPreferences getVolumeMap() {
+        if (Flags.mainlineBetaStorage()) throw new IllegalStateException("mainlineBetaStorage");
         return ((Context) mAdapterService).getSharedPreferences(VOLUME_MAP, Context.MODE_PRIVATE);
     }
 
@@ -173,14 +178,19 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         }
     }
 
+    // TODO remove comment when removing mainlineBetaStorage flag
     /**
      * Instantiates all class variables.
      *
      * <p>Fills {@code mVolumeMap} with content from {@link #getVolumeMap}, removing unbonded
      * devices if necessary.
      */
-    AvrcpVolumeManager(AdapterService adapterService, AvrcpNativeInterface nativeInterface) {
+    AvrcpVolumeManager(
+            AdapterService adapterService,
+            BluetoothStorageManager storage,
+            AvrcpNativeInterface nativeInterface) {
         mAdapterService = adapterService;
+        mStorage = storage;
         mAudioManager = mAdapterService.getSystemService(AudioManager.class);
         mNativeInterface = nativeInterface;
         mDeviceMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -190,6 +200,9 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
 
         mAudioManager.registerAudioDeviceCallback(this, null);
 
+        if (Flags.mainlineBetaStorage()) {
+            return;
+        }
         // Load the stored volume preferences into a hash map since shared preferences are slow
         // to poll and update. If the device has been unbonded since last start remove it from
         // the map.
@@ -228,8 +241,12 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
             newVolume = mSafeMediaVolume;
             Log.w(TAG, logHeader + "Saved volume overrode to safe volume" + newVolume);
         }
-        mVolumeMap.put(device, newVolume);
         mVolumeEventLogger.logd(TAG, logHeader + "Final volume stored is " + newVolume);
+        if (Flags.mainlineBetaStorage()) {
+            mStorage.setAvrcpVolume(device, newVolume);
+            return;
+        }
+        mVolumeMap.put(device, newVolume);
         // Always use apply() since it is asynchronous, otherwise the call can hang waiting for
         // storage to be written.
         getVolumeMap().edit().putInt(device.getAddress(), newVolume).apply();
@@ -240,6 +257,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
      * {@link SharedPreferences}.
      */
     synchronized void removeStoredVolumeForDevice(@NonNull BluetoothDevice device) {
+        if (Flags.mainlineBetaStorage()) throw new IllegalStateException("mainlineBetaStorage");
         if (mAdapterService.getBondState(device) != BluetoothDevice.BOND_NONE) {
             return;
         }
@@ -260,6 +278,10 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
      * @param defaultValue Value to return if device is not in the map.
      */
     synchronized int getVolume(@NonNull BluetoothDevice device, int defaultValue) {
+        if (Flags.mainlineBetaStorage()) {
+            return mStorage.getAvrcpVolume(device, defaultValue);
+        }
+
         if (!mVolumeMap.containsKey(device)) {
             Log.w(TAG, "getVolume: Couldn't find volume preference for device: " + device);
             return defaultValue;
@@ -431,36 +453,43 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         sb.append("AvrcpVolumeManager:\n");
         sb.append("  mCurrentDevice: ").append(mCurrentDevice).append("\n");
         sb.append("  Current System Volume: ").append(mCurrentSystemVolume).append("\n");
-        sb.append("  Device Volume Memory Map:\n");
-        sb.append(
-                String.format(
-                        "    %-17s : %-14s : %3s : %s\n",
-                        "Device Address", "Device Name", "Vol", "AbsVol"));
-        Map<String, ?> allKeys = getVolumeMap().getAll();
-        for (Map.Entry<String, ?> entry : allKeys.entrySet()) {
-            Object value = entry.getValue();
-            BluetoothDevice d = mAdapterService.getRemoteDevice(entry.getKey());
-            String deviceName = mAdapterService.getRemoteName(d);
-            if (deviceName == null) {
-                deviceName = "";
-            } else if (deviceName.length() > 14) {
-                deviceName = deviceName.substring(0, 11).concat("...");
+        if (Flags.mainlineBetaStorage()) {
+            sb.append("  Device Absolute Volume Map:\n");
+            for (Map.Entry<BluetoothDevice, Boolean> entry : mDeviceMap.entrySet()) {
+                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
             }
+        } else {
+            sb.append("  Device Volume Memory Map:\n");
+            sb.append(
+                    String.format(
+                            "    %-17s : %-14s : %3s : %s\n",
+                            "Device Address", "Device Name", "Vol", "AbsVol"));
+            Map<String, ?> allKeys = getVolumeMap().getAll();
+            for (Map.Entry<String, ?> entry : allKeys.entrySet()) {
+                Object value = entry.getValue();
+                BluetoothDevice d = mAdapterService.getRemoteDevice(entry.getKey());
+                String deviceName = mAdapterService.getRemoteName(d);
+                if (deviceName == null) {
+                    deviceName = "";
+                } else if (deviceName.length() > 14) {
+                    deviceName = deviceName.substring(0, 11).concat("...");
+                }
 
-            String absoluteVolume = "NotConnected";
-            if (mDeviceMap.containsKey(d)) {
-                absoluteVolume = mDeviceMap.get(d).toString();
-            }
+                String absoluteVolume = "NotConnected";
+                if (mDeviceMap.containsKey(d)) {
+                    absoluteVolume = mDeviceMap.get(d).toString();
+                }
 
-            if (value instanceof Integer) {
-                sb.append(
-                        String.format(
-                                Locale.ROOT,
-                                "    %-17s : %-14s : %3d : %s\n",
-                                d.getAddress(),
-                                deviceName,
-                                (Integer) value,
-                                absoluteVolume));
+                if (value instanceof Integer) {
+                    sb.append(
+                            String.format(
+                                    Locale.ROOT,
+                                    "    %-17s : %-14s : %3d : %s\n",
+                                    d.getAddress(),
+                                    deviceName,
+                                    (Integer) value,
+                                    absoluteVolume));
+                }
             }
         }
 
@@ -468,7 +497,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         mVolumeEventLogger.dump(tempBuilder);
         // Tab volume event logs over by two spaces
         sb.append(tempBuilder.toString().replaceAll("(?m)^", "  "));
-        tempBuilder.append("\n");
+        sb.append("\n");
     }
 
     static void d(String msg) {

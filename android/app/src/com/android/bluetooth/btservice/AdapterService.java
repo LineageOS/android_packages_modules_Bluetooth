@@ -1297,7 +1297,7 @@ public class AdapterService extends Service {
             case BluetoothProfile.A2DP -> new A2dpService(this, mStorage, mCompanionDeviceManager);
             case BluetoothProfile.A2DP_SINK -> new A2dpSinkService(this);
             case BluetoothProfile.AVRCP_CONTROLLER -> new AvrcpControllerService(this);
-            case BluetoothProfile.AVRCP -> new AvrcpTargetService(this, mUserManager);
+            case BluetoothProfile.AVRCP -> new AvrcpTargetService(this, mStorage, mUserManager);
             case BluetoothProfile.BATTERY -> new BatteryService(this);
             case BluetoothProfile.CSIP_SET_COORDINATOR -> new CsipSetCoordinatorService(this);
             case BluetoothProfile.HAP_CLIENT -> new HapClientService(this);

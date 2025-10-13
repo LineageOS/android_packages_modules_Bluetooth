@@ -34,13 +34,14 @@ message Device {
   uint64 connection_counter = 3;
 
   A2dpSettings a2dp_settings = 4;
-  HfpClientSettings hfp_client_settings = 5;
-  LeAudioSettings le_audio_settings = 6;
+  AvrcpSettings avrcp_settings = 5;
+  HfpClientSettings hfp_client_settings = 6;
+  LeAudioSettings le_audio_settings = 7;
 
-  map<uint32, bytes> custom_metadata = 7;
+  map<uint32, bytes> custom_metadata = 8;
 
-  optional bool microphone_preferred_for_calls = 8;
-  uint32 key_missing_count = 9;
+  optional bool microphone_preferred_for_calls = 9;
+  uint32 key_missing_count = 10;
 }
 
 enum Policy {
@@ -86,6 +87,10 @@ message HfpClientSettings {
   bool call_establish = 1;
   bool set_active_after_connection = 2;
   bool in_band_ringtone_enabled = 3;
+}
+
+message AvrcpSettings {
+  optional int32 volume = 1;
 }
 
 message MediaProfile {

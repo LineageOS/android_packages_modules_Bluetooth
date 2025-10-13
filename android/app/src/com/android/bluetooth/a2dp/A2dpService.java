@@ -1079,13 +1079,17 @@ public class A2dpService extends ConnectableProfile {
         if (bondState != BluetoothDevice.BOND_NONE) {
             return;
         }
-        mAdapterService
-                .getAvrcpTargetService()
-                .ifPresent(
-                        avrcpTarget -> {
-                            Log.d(TAG, "bondStateChanged: going for removeStoredVolumeForDevice");
-                            avrcpTarget.removeStoredVolumeForDevice(device);
-                        });
+        if (!Flags.mainlineBetaStorage()) {
+            mAdapterService
+                    .getAvrcpTargetService()
+                    .ifPresent(
+                            avrcpTarget -> {
+                                Log.d(
+                                        TAG,
+                                        "bondStateChanged: going for removeStoredVolumeForDevice");
+                                avrcpTarget.removeStoredVolumeForDevice(device);
+                            });
+        }
         synchronized (mStateMachines) {
             A2dpStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
