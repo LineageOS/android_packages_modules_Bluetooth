@@ -16,11 +16,13 @@
 
 #include "hci/le_address_manager.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/octets.h"
+#include "os/mock_rand.h"
 #include "packet/raw_builder.h"
 
 using ::bluetooth::hci::Octet16;
@@ -216,6 +218,109 @@ TEST_F(LeAddressManagerTest, DISABLED_rotator_address_for_multiple_clients) {
   le_address_manager_->Unregister(clients[1].get());
   le_address_manager_->Unregister(clients[2].get());
   sync_handler(handler_);
+}
+
+TEST_F(LeAddressManagerTest, generate_rpa_with_invalid_prands) {
+  constexpr uint8_t BLE_ADDR_MASK = 0b11000000;
+  constexpr uint8_t BLE_RESOLVE_ADDR_MSB = 0b01000000;
+  std::array<uint8_t, 3> invalid_prand_zeros = {0x00, 0x00, 0x00};
+  std::array<uint8_t, 3> invalid_prand_ones = {0xff, 0xff, 0xff};
+  std::array<uint8_t, 3> valid_prand = {0x41, 0x73, 0xFF};
+
+  // Set up mock random generator for subsequent calls to generate_rpa()
+  auto mock_random_generator = new bluetooth::os::testing::MockRandomDataGenerator;
+  bluetooth::os::SetRandomDataGeneratorForTesting(mock_random_generator);
+  {
+    ::testing::InSequence s;
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 3))
+            .WillOnce(::testing::SetArrayArgument<0>(invalid_prand_zeros.begin(),
+                                                     invalid_prand_zeros.end()));
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 3))
+            .WillOnce(::testing::SetArrayArgument<0>(invalid_prand_ones.begin(),
+                                                     invalid_prand_ones.end()));
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 3))
+            .WillOnce(::testing::SetArrayArgument<0>(valid_prand.begin(), valid_prand.end()));
+  }
+
+  // Trigger a new address generation by setting the policy again.
+  // This will cause the internal generate_rpa() method to be called again,
+  // which will trigger the InSequence mocks for the random data generator.
+  le_address_manager_->SetPrivacyPolicyForInitiatorAddressForTest(
+          LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS, AddressWithType(), Octet16(),
+          std::chrono::milliseconds(1000), std::chrono::milliseconds(3000));
+  sync_handler(handler_);
+
+  // Get the LE_SET_RANDOM_ADDRESS command and extract the RPA.
+  auto packet = hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
+  auto packet_view = LeSetRandomAddressView::Create(
+          LeAdvertisingCommandView::Create(AclCommandView::Create(packet)));
+  ASSERT_TRUE(packet_view.IsValid());
+  hci::Address rpa = packet_view.GetRandomAddress();
+
+  // Match the random part of the RPA with the valid_prand value
+  ASSERT_EQ(rpa.address[5] >> 6, BLE_RESOLVE_ADDR_MSB >> 6);  // Check two most significant bits
+  ASSERT_EQ(rpa.address[5] | BLE_ADDR_MASK, valid_prand[2] | BLE_ADDR_MASK);
+  ASSERT_EQ(rpa.address[4], valid_prand[1]);
+  ASSERT_EQ(rpa.address[3], valid_prand[0]);
+
+  bluetooth::os::SetRandomDataGeneratorForTesting(nullptr);
+  delete mock_random_generator;
+}
+
+TEST_F(LeAddressManagerTest, generate_nrpa_with_invalid_random) {
+  constexpr uint8_t BLE_ADDR_MASK = 0b11000000;
+  std::array<uint8_t, 6> invalid_random_zeros = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  std::array<uint8_t, 6> invalid_random_ones = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+  // Public address set in LeAddressManagerTest::SetUp()
+  std::array<uint8_t, 6> public_address_raw = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+  std::array<uint8_t, 6> valid_random = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+
+  auto mock_random_generator = new bluetooth::os::testing::MockRandomDataGenerator;
+  bluetooth::os::SetRandomDataGeneratorForTesting(mock_random_generator);
+  {
+    ::testing::InSequence s;
+    // First return all zeros, which is invalid
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 6))
+            .WillOnce(::testing::SetArrayArgument<0>(invalid_random_zeros.begin(),
+                                                     invalid_random_zeros.end()));
+    // Next return all ones, which is invalid
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 6))
+            .WillOnce(::testing::SetArrayArgument<0>(invalid_random_ones.begin(),
+                                                     invalid_random_ones.end()));
+    // Next return the public address, which is invalid
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 6))
+            .WillOnce(::testing::SetArrayArgument<0>(public_address_raw.begin(),
+                                                     public_address_raw.end()));
+    // Finally, return a valid random value
+    EXPECT_CALL(*mock_random_generator, GenerateBytes(::testing::_, 6))
+            .WillOnce(::testing::SetArrayArgument<0>(valid_random.begin(), valid_random.end()));
+  }
+
+  // Trigger a new address generation by setting the policy again.
+  // This will cause the internal generate_nrpa() method to be called again,
+  // which will trigger the InSequence mocks for the random data generator.
+  le_address_manager_->SetPrivacyPolicyForInitiatorAddressForTest(
+          LeAddressManager::AddressPolicy::USE_NON_RESOLVABLE_ADDRESS, AddressWithType(), Octet16(),
+          std::chrono::milliseconds(1000), std::chrono::milliseconds(3000));
+  sync_handler(handler_);
+
+  auto packet = hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
+  auto packet_view = LeSetRandomAddressView::Create(
+          LeAdvertisingCommandView::Create(AclCommandView::Create(packet)));
+  ASSERT_TRUE(packet_view.IsValid());
+  hci::Address nrpa = packet_view.GetRandomAddress();
+  // Check it is a non-resolvable random address (top two bits are 00)
+  ASSERT_EQ(nrpa.address[5] & BLE_ADDR_MASK, 0);
+
+  std::array<uint8_t, 6> correct_random = valid_random;
+  correct_random[5] &= ~BLE_ADDR_MASK;
+  hci::Address correct_nrpa;
+  correct_nrpa.FromOctets(correct_random.data());
+
+  ASSERT_EQ(nrpa, correct_nrpa);
+
+  bluetooth::os::SetRandomDataGeneratorForTesting(nullptr);
+  delete mock_random_generator;
 }
 
 class LeAddressManagerWithSingleClientTest : public LeAddressManagerTest {

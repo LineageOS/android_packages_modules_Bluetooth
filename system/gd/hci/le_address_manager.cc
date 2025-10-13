@@ -30,7 +30,7 @@
 namespace bluetooth {
 namespace hci {
 
-static constexpr uint8_t BLE_ADDR_MASK = 0xc0u;
+static constexpr uint8_t BLE_ADDR_MASK = 0b11000000;
 
 enum class LeAddressManager::ClientState {
   WAITING_FOR_PAUSE,
@@ -492,17 +492,19 @@ void LeAddressManager::update_irk(UpdateIRKCommand command) {
 }
 
 /* This function generates Resolvable Private Address (RPA) from Identity
- * Resolving Key |irk| and |prand|*/
+ * Resolving Key |irk| and |prand| */
 hci::Address LeAddressManager::generate_rpa() {
-  // most significant bit, bit7, bit6 is 01 to be resolvable random
+  // The most significant bit shall be '0', the second most significant bit shall be '1'
   // Bits of the random part of prand shall not be all 1 or all 0
-  std::array<uint8_t, 3> prand = os::GenerateRandom<3>();
-  constexpr uint8_t BLE_RESOLVE_ADDR_MSB = 0x40;
-  prand[2] &= ~BLE_ADDR_MASK;
-  if ((prand[0] == 0x00 && prand[1] == 0x00 && prand[2] == 0x00) ||
-      (prand[0] == 0xFF && prand[1] == 0xFF && prand[2] == 0x3F)) {
-    prand[0] = (uint8_t)(os::GenerateRandom() % 0xFE + 1);
-  }
+  constexpr uint8_t BLE_RESOLVE_ADDR_MSB = 0b01000000;
+  constexpr std::array<uint8_t, 3> invalid_prand = {0x00, 0x00, 0x00};
+  constexpr std::array<uint8_t, 3> invalid_prand_2 = {0xFF, 0xFF, (0xFF & ~BLE_ADDR_MASK)};
+
+  std::array<uint8_t, 3> prand;
+  do {
+    prand = os::GenerateRandom<3>();
+    prand[2] &= ~BLE_ADDR_MASK;
+  } while (prand == invalid_prand || prand == invalid_prand_2);
   prand[2] |= BLE_RESOLVE_ADDR_MSB;
 
   hci::Address address;
@@ -515,10 +517,10 @@ hci::Address LeAddressManager::generate_rpa() {
   rand[1] = prand[1];
   rand[2] = prand[2];
 
-  /* encrypt with IRK */
+  // Encrypt with IRK
   Octet16 p = crypto_toolbox::aes_128(rotation_irk_, rand);
 
-  /* set hash to be LSB of rpAddress */
+  // Set hash to be LSB of rpAddress
   address.address[0] = p[0];
   address.address[1] = p[1];
   address.address[2] = p[2];
@@ -527,24 +529,20 @@ hci::Address LeAddressManager::generate_rpa() {
 
 // This function generates NON-Resolvable Private Address (NRPA)
 hci::Address LeAddressManager::generate_nrpa() {
-  // The two most significant bits of the address shall be equal to 0
-  // Bits of the random part of the address shall not be all 1 or all 0
-  std::array<uint8_t, 6> random = os::GenerateRandom<6>();
-  random[5] &= ~BLE_ADDR_MASK;
-  if ((random[0] == 0x00 && random[1] == 0x00 && random[2] == 0x00 && random[3] == 0x00 &&
-       random[4] == 0x00 && random[5] == 0x00) ||
-      (random[0] == 0xFF && random[1] == 0xFF && random[2] == 0xFF && random[3] == 0xFF &&
-       random[4] == 0xFF && random[5] == 0x3F)) {
-    random[0] = (uint8_t)(os::GenerateRandom() % 0xFE + 1);
-  }
-
   hci::Address address;
-  address.FromOctets(random.data());
-
-  // the address shall not be equal to the public address
-  while (address == public_address_) {
-    address.address[0] = (uint8_t)(os::GenerateRandom() % 0xFE + 1);
-  }
+  do {
+    // The two most significant bits of the address shall be equal to 0
+    // Bits of the random part of the address shall not be all 1 or all 0
+    constexpr std::array<uint8_t, 6> invalid_rand = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    constexpr std::array<uint8_t, 6> invalid_rand2 = {0xFF, 0xFF, 0xFF,
+                                                      0xFF, 0xFF, (0xFF & ~BLE_ADDR_MASK)};
+    std::array<uint8_t, 6> rand;
+    do {
+      rand = os::GenerateRandom<6>();
+      rand[5] &= ~BLE_ADDR_MASK;
+    } while (rand == invalid_rand || rand == invalid_rand2);
+    address.FromOctets(rand.data());
+  } while (address == public_address_);  // Address shall not be same as the public address
 
   return address;
 }
