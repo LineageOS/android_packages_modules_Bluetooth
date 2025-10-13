@@ -169,9 +169,9 @@ public class GattServiceTest {
         clientApp.id = CLIENT_IF;
         doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
         doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
-        doReturn(clientApp, null)
+        doReturn(clientApp, (Object[]) null)
                 .when(mClientMap)
-                .remove(anyInt(), any(com.android.bluetooth.gatt.ContextMap.RemoveReason.class));
+                .remove(anyInt(), any(ContextMap.RemoveReason.class));
 
         doAnswer(
                         (Answer<Void>)
