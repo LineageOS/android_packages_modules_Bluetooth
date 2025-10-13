@@ -319,7 +319,7 @@ public class ScanControllerTest {
 
     @Test
     public void parseTimestampNanos() {
-        long timestampNanos = mScanController.parseTimestampNanos(new byte[] {-54, 7});
+        long timestampNanos = BatchScanUtil.parseTimestampNanos(new byte[] {-54, 7});
         assertThat(timestampNanos).isEqualTo(99700000000L);
     }
 

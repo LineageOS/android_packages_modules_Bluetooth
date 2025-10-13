@@ -16,15 +16,22 @@
 
 package com.android.bluetooth.le_scan
 
+import android.bluetooth.BluetoothUtils.extractBytes
+import android.bluetooth.le.ScanRecord
+import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
+import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS
 import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
+import com.android.bluetooth.util.NumberUtils
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "BatchScanUtil"
 
@@ -35,6 +42,8 @@ data class BatchScanParams(
 )
 
 object BatchScanUtil {
+
+    private const val TRUNCATED_RESULT_SIZE = 11
 
     /** Return batch scan result type value defined in bt stack. */
     @JvmStatic
@@ -100,4 +109,91 @@ object BatchScanUtil {
         }.also { intervalMs ->
             Log.d(TAG, "intervalMillis=${intervalMs}ms for scan mode=${scanModeToString(scanMode)}")
         }
+
+    @JvmStatic
+    fun parseResults(
+        adapterService: AdapterService,
+        numRecords: Int,
+        reportType: Int,
+        batchRecord: ByteArray,
+    ): Set<ScanResult> {
+        if (numRecords == 0) return emptySet()
+        val now = Utils.getLocalTimeString()
+        val elapsed = SystemClock.elapsedRealtime()
+        Log.d(TAG, "Parsing $numRecords results at $now (elapsed: ${elapsed}ms)")
+        return when (reportType) {
+            ScanUtil.SCAN_RESULT_TYPE_TRUNCATED ->
+                truncatedResults(adapterService, numRecords, batchRecord)
+            else -> fullResults(adapterService, numRecords, batchRecord)
+        }
+    }
+
+    private fun truncatedResults(
+        adapterService: AdapterService,
+        numRecords: Int,
+        batchRecord: ByteArray,
+    ): Set<ScanResult> {
+        val now = SystemClock.elapsedRealtimeNanos()
+        val results: MutableSet<ScanResult> = HashSet(numRecords)
+        for (i in 0..<numRecords) {
+            val record = extractBytes(batchRecord, i * TRUNCATED_RESULT_SIZE, TRUNCATED_RESULT_SIZE)
+            val address = extractBytes(record, 0, 6)
+            Utils.reverse(address)
+            val device = adapterService.getRemoteDevice(Utils.getAddressStringFromByte(address))
+            val rssi = record[8].toInt()
+            val nanos = now - parseTimestampNanos(extractBytes(record, 9, 2))
+            results.add(ScanResult(device, ScanRecord.parseFromBytes(byteArrayOf()), rssi, nanos))
+        }
+        return results
+    }
+
+    private fun fullResults(
+        adapterService: AdapterService,
+        numRecords: Int,
+        batchRecord: ByteArray,
+    ): Set<ScanResult> {
+        val now = SystemClock.elapsedRealtimeNanos()
+        val results: MutableSet<ScanResult> = HashSet(numRecords)
+        var position = 0
+        while (position < batchRecord.size) {
+            val address = extractBytes(batchRecord, position, 6)
+            // TODO: remove temp hack.
+            Utils.reverse(address)
+            val device = adapterService.getRemoteDevice(Utils.getAddressStringFromByte(address))
+            position += 6
+            // Skip address type.
+            position++
+            // Skip tx power level
+            position++
+            val rssi = batchRecord[position++].toInt()
+            val nanos = now - parseTimestampNanos(extractBytes(batchRecord, position, 2))
+            position += 2
+
+            // Combine advertise packet and scan response packet.
+            val advertisePacketLen = batchRecord[position++].toInt()
+            val advertiseBytes = extractBytes(batchRecord, position, advertisePacketLen)
+            position += advertisePacketLen
+            val scanResponsePacketLen = batchRecord[position++].toInt()
+            val scanResponseBytes = extractBytes(batchRecord, position, scanResponsePacketLen)
+            position += scanResponsePacketLen
+            val scanRecordBytes = ByteArray(advertisePacketLen + scanResponsePacketLen)
+            System.arraycopy(advertiseBytes, 0, scanRecordBytes, 0, advertisePacketLen)
+            System.arraycopy(
+                scanResponseBytes,
+                0,
+                scanRecordBytes,
+                advertisePacketLen,
+                scanResponsePacketLen,
+            )
+            results.add(ScanResult(device, ScanRecord.parseFromBytes(scanRecordBytes), rssi, nanos))
+        }
+        return results
+    }
+
+    @JvmStatic
+    fun parseTimestampNanos(data: ByteArray): Long {
+        val timestampUnit = NumberUtils.littleEndianByteArrayToInt(data).toLong()
+        // Timestamp is in every 50 ms.
+        return TimeUnit.MILLISECONDS.toNanos(timestampUnit * 50)
+    }
 }
