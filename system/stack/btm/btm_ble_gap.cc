@@ -1635,15 +1635,20 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
                                               uint16_t periodic_adv_int,
                                               std::vector<uint8_t> advertising_data) {
   bool update = true;
-
   bool include_rsi = false;
+
   uint8_t len;
+  const uint8_t* p_flag =
+          AdvertiseDataParser::GetFieldByType(advertising_data, BTM_BLE_AD_TYPE_FLAG, &len);
+
+  if (len != 1) {
+    log::warn("Dropping bad advertising packet from {}: len={}", bda, len);
+    return;
+  }
+
   if (AdvertiseDataParser::GetFieldByType(advertising_data, BTM_BLE_AD_TYPE_RSI, &len)) {
     include_rsi = true;
   }
-
-  const uint8_t* p_flag =
-          AdvertiseDataParser::GetFieldByType(advertising_data, BTM_BLE_AD_TYPE_FLAG, &len);
 
   tINQ_DB_ENT* p_i = btm_inq_db_find(bda);
 
