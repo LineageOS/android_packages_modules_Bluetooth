@@ -282,10 +282,11 @@ public class BassClientService extends ConnectableProfile {
                     mCallbacks.notifySearchStopFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
                     return;
                 }
+                final var scannerIdToStop = mScannerId;
                 scanController.doOnScanThread(
                         () -> {
-                            scanController.stopScan(mScannerId);
-                            scanController.unregisterScanner(mScannerId);
+                            scanController.stopScan(scannerIdToStop);
+                            scanController.unregisterScanner(scannerIdToStop);
                         });
                 mBaasUuidFilters.clear();
                 mScannerId = SCANNER_ID_NOT_INITIALIZED;
