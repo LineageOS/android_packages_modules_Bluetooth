@@ -773,12 +773,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @Hide @SystemApi public static final int METADATA_ENHANCED_SETTINGS_UI_URI = 16;
 
-    @Hide public static final String COMPANION_TYPE_PRIMARY = "COMPANION_PRIMARY";
-
-    @Hide public static final String COMPANION_TYPE_SECONDARY = "COMPANION_SECONDARY";
-
-    @Hide public static final String COMPANION_TYPE_NONE = "COMPANION_NONE";
-
     /**
      * Type of the Bluetooth device, must be within the list of BluetoothDevice.DEVICE_TYPE_* Data
      * type should be {@link String} as {@link Byte} array.

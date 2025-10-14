@@ -355,7 +355,7 @@ public class AdapterService extends Service {
     private Optional<PhonePolicy> mPhonePolicy = Optional.empty();
 
     private ActiveDeviceManager mActiveDeviceManager;
-    private CompanionManager mBtCompanionManager;
+    private CompanionManager mCompanionManager;
     private AppOpsManager mAppOps;
 
     private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
@@ -639,7 +639,7 @@ public class AdapterService extends Service {
                         mNativeInterface.getAdapterProperty(
                                 AbstractionLayer.BT_PROPERTY_DYNAMIC_AUDIO_BUFFER);
                         mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
-                        mBtCompanionManager.loadCompanionInfo();
+                        mCompanionManager.loadCompanionInfo();
                     }
                 }
                 case BluetoothAdapter.STATE_OFF -> {
@@ -1078,7 +1078,7 @@ public class AdapterService extends Service {
         mActiveDeviceManager = new ActiveDeviceManager(this, mStorage);
         mActiveDeviceManager.start();
 
-        mBtCompanionManager = new CompanionManager(this);
+        mCompanionManager = new CompanionManager(this);
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
@@ -2248,6 +2248,10 @@ public class AdapterService extends Service {
         logManufacturerInfo(device, key, value);
         if (Flags.mainlineBetaStorage()) {
             mStorage.setCustomMetadata(device, key, value);
+            if (key == BluetoothDevice.METADATA_SOFTWARE_VERSION
+                    && getBondState(device) == BOND_BONDED) {
+                mCompanionManager.setCompanionDevice(device, value);
+            }
             return true;
         } else {
             return mDatabaseManager.setCustomMeta(device, key, value); // Migrating
@@ -4924,19 +4928,7 @@ public class AdapterService extends Service {
     }
 
     public CompanionManager getCompanionManager() {
-        return mBtCompanionManager;
-    }
-
-    /**
-     * Call for the AdapterService receives bond state change
-     *
-     * @param device Bluetooth device
-     * @param state bond state
-     */
-    public void onBondStateChanged(BluetoothDevice device, int state) {
-        if (mBtCompanionManager != null) {
-            mBtCompanionManager.onBondStateChanged(device, state);
-        }
+        return mCompanionManager;
     }
 
     /**
