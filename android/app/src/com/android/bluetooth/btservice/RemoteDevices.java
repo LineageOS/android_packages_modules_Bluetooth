@@ -83,7 +83,7 @@ public class RemoteDevices {
 
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
-    private final ArrayList<BluetoothDevice> mSdpTracker;
+    private final ArrayList<BluetoothDevice> mSdpTracker = new ArrayList<>();
     private final Object mObject = new Object();
 
     private static final int UUID_INTENT_DELAY = 6000;
@@ -92,8 +92,10 @@ public class RemoteDevices {
     private static final int MESSAGE_UUID_STATUS_TIMEOUT = 1;
     private static final String LOG_SOURCE_DIS = "DIS";
 
-    private final LinkedHashMap<String, DeviceProperties> mDevices;
-    private final HashMap<String, String> mAddressMap; // Identity address to pseudo address map
+    private final LinkedHashMap<String, DeviceProperties> mDevices =
+            new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
+    private final HashMap<String, String> mAddressMap =
+            new HashMap<>(); // Identity address to pseudo address map
     private final WatchConnectionStateListener mWatchConnectionStateListener;
 
     /**
@@ -154,9 +156,6 @@ public class RemoteDevices {
     RemoteDevices(AdapterService service, Looper looper) {
         mAdapterService = service;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
-        mSdpTracker = new ArrayList<>();
-        mDevices = new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
-        mAddressMap = new HashMap<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
         mWatchConnectionStateListener = new WatchConnectionStateListener(mAdapterService, looper);
@@ -1836,7 +1835,11 @@ public class RemoteDevices {
             }
 
             Log.w(TAG, "Removing " + device + " on behalf of: " + Arrays.toString(packages));
-            mAdapterService.removeBond(device);
+            if (Flags.mainlineBetaStorage()) {
+                mAdapterService.syncPost(() -> mAdapterService.removeBond(device), false);
+            } else {
+                mAdapterService.removeBond(device);
+            }
         }
 
         mAdapterService.sendOrderedBroadcast(
