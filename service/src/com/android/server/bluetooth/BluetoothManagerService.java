@@ -1818,6 +1818,7 @@ class BluetoothManagerService {
         writer.println("  State:         " + mState);
         writer.println("  Address:       " + Log.address(mAddress));
         writer.println("  Name:          " + mName);
+        writer.println("  Inner app:     " + mBluetoothComponent.getPackageName());
         if (mEnable) {
             Duration elapsed = Duration.between(mLastBindingTime, Instant.now());
             writer.println(
