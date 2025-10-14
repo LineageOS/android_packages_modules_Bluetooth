@@ -159,13 +159,8 @@ void btsnd_hcic_rem_oob_neg_reply(const RawAddress& bd_addr);
 
 /**** end of Simple Pairing Commands ****/
 
-extern void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type,
-                                        uint8_t* filt_cond, uint8_t filt_cond_len);
-/* Set Event Filter */
-
 /* Delete Stored Key */
 void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr, bool delete_all_flag);
-/* Delete Stored Key */
 
 #define HCIC_PARAM_SIZE_READ_CMD 0
 
@@ -202,7 +197,6 @@ void btsnd_hcic_write_cur_iac_lap(uint8_t num_cur_iac,
 void btsnd_hcic_read_rssi(uint16_t handle); /* Read RSSI */
 using ReadEncKeySizeCb = base::OnceCallback<void(uint8_t, uint16_t, uint8_t)>;
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb);
-void btsnd_hcic_enable_test_mode(void);            /* Enable Device Under Test Mode */
 void btsnd_hcic_write_pagescan_type(uint8_t type); /* Write Page Scan Type */
 void btsnd_hcic_write_inqscan_type(uint8_t type);  /* Write Inquiry Scan Type */
 void btsnd_hcic_write_inquiry_mode(uint8_t type);  /* Write Inquiry Mode */

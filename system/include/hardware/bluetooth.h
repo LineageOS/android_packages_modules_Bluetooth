@@ -860,13 +860,6 @@ typedef struct {
   /** Get Bluetooth profile interface */
   const void* (*get_profile_interface)(const char* profile_id);
 
-  /** Bluetooth Test Mode APIs - Bluetooth must be enabled for these APIs */
-  /* Configure DUT Mode - Use this mode to enter/exit DUT mode */
-  int (*dut_mode_configure)(uint8_t enable);
-
-  /* Send any test HCI (vendor-specific) command to the controller. Must be in
-   * DUT Mode */
-  int (*dut_mode_send)(uint16_t opcode, uint8_t* buf, uint8_t len);
   /** BLE Test Mode APIs */
   /* opcode MUST be one of: LE_Receiver_Test, LE_Transmitter_Test, LE_Test_End
    */
