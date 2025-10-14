@@ -76,7 +76,7 @@ import android.provider.Telephony;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.profile.ProfileService;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -1203,7 +1203,6 @@ public final class Utils {
     public static @NonNull String formatSimple(@NonNull String format, Object... args) {
         return android.bluetooth.BluetoothUtils.formatSimple(format, args);
     }
-
 
     /** Execute a remote callback without propagating the RemoteException of a dead app */
     public static void callbackToApp(RemoteExceptionIgnoringRunnable callback) {

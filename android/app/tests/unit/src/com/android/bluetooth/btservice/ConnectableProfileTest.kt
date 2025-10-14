@@ -20,7 +20,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothProfile
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder
+import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -83,7 +83,7 @@ class ConnectableProfileTest {
 
     @Test
     fun profileId_returnsCorrectId() {
-        assertThat(connectableProfile.profileId).isEqualTo(TEST_PROFILE_ID)
+        assertThat(connectableProfile.mProfileId).isEqualTo(TEST_PROFILE_ID)
     }
 
     @Test

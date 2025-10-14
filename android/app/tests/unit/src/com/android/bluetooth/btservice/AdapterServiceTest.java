@@ -100,6 +100,7 @@ import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
@@ -236,8 +237,7 @@ public class AdapterServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_BOND_STATE_MACHINE_LOOPER,
-                Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);
+                Flags.FLAG_BOND_STATE_MACHINE_LOOPER, Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);
     }
 
     public AdapterServiceTest(FlagsWrapper flags) {
