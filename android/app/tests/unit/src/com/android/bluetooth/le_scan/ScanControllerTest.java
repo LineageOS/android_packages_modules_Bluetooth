@@ -231,7 +231,7 @@ public class ScanControllerTest {
         doReturn(callback).when(mApp).getCallback();
         doReturn(mApp).when(mScannerMap).getByUuid(uuid);
 
-        mScanController.onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID, uuidLsb, uuidMsb);
+        mScanController.onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID, uuid);
 
         verify(mApp).linkToDeath(any());
         verify(callback).onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID);
