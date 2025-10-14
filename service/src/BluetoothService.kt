@@ -84,7 +84,15 @@ class BluetoothService(context: Context) : SystemService(context) {
             }
             Log.i(TAG, "onUserStarting($user) Initializing for foreground user ")
         }
-        runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
+        runOnBmsThread { supervisor.onUserStarting(user.userHandle) }
+    }
+
+    override fun onUserStopping(user: TargetUser) {
+        Log.i(TAG, "onUserStopping($user): Not implemented")
+    }
+
+    override fun onUserStopped(user: TargetUser) {
+        Log.i(TAG, "onUserStopped($user): Not implemented")
     }
 
     override fun onUserSwitching(from: TargetUser?, to: TargetUser) {
