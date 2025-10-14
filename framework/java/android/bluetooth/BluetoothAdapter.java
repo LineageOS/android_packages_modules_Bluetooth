@@ -757,9 +757,6 @@ public final class BluetoothAdapter {
                             Map.entry(BluetoothProfile.HEADSET, BluetoothHeadset::new),
                             Map.entry(BluetoothProfile.A2DP, BluetoothA2dp::new),
                             Map.entry(BluetoothProfile.A2DP_SINK, BluetoothA2dpSink::new),
-                            Map.entry(
-                                    BluetoothProfile.AVRCP_CONTROLLER,
-                                    BluetoothAvrcpController::new),
                             Map.entry(BluetoothProfile.HID_HOST, BluetoothHidHost::new),
                             Map.entry(BluetoothProfile.PAN, BluetoothPan::new),
                             Map.entry(BluetoothProfile.PBAP, BluetoothPbap::new),

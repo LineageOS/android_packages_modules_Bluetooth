@@ -346,7 +346,7 @@ public class AvrcpControllerService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new AvrcpControllerServiceBinder(this);
+        return null;
     }
 
     // Called by JNI when a device has connected or disconnected.
