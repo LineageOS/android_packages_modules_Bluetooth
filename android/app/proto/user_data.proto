@@ -14,6 +14,46 @@
  * limitations under the License.
  */
 
+//
+// This file defines the data structure for user-specific Bluetooth data storage.
+// It uses Protocol Buffers (proto3) to ensure data consistency and backward
+// compatibility. The serialized data is stored on disk using Jetpack DataStore.
+//
+// IMPORTANT: Maintaining backward and forward compatibility is crucial.
+// Failure to do so can lead to data loss or application crashes for users
+// when they update the application.
+//
+// When modifying this file, please adhere to the following rules:
+//
+// 1.  **Do NOT change the field numbers (tags) of existing fields.**
+//     Field numbers are used to identify fields in the binary format. Changing
+//     them will break parsing for existing data.
+//
+// 2.  **Do NOT remove existing fields.**
+//     Instead of removing a field, you can mark it as `reserved` to prevent
+//     it from being reused in the future. This ensures that older clients can
+//     still parse the data without errors. If a field is no longer used, it can
+//     be deprecated with a comment.
+//
+// 3.  **You CAN add new fields.**
+//     When adding new fields, use a new, unique field number. Older clients
+//     will simply ignore fields they don't recognize.
+//
+// 4.  **Be careful when changing field types.**
+//     Some type changes are compatible (e.g., int32 to int64), but others are
+//     not. Refer to the official Protobuf documentation for compatibility rules
+//     before changing a type.
+//
+// 5.  **Default values are not serialized.**
+//     In proto3, fields with their default value (e.g., 0 for numbers, empty
+//     string for strings) are not written to the wire. When a client parses a
+//     message and a field is missing, it will assume the default value for that
+//     field.
+//
+// For more details on Protobuf best practices and data evolution, see:
+// https://developers.google.com/protocol-buffers/docs/proto3#updating
+//
+
 syntax = "proto3";
 
 option java_package = "com.android.bluetooth.storage";
