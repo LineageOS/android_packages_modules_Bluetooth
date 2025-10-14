@@ -844,12 +844,12 @@ static void hh_get_rpt_handler(tBTA_HH_HSDATA& hs_data) {
   if (hdr) { /* Get report response */
     uint8_t* data = (uint8_t*)(hdr + 1) + hdr->offset;
     uint16_t len = hdr->len;
-    HAL_CBACK(bt_hh_callbacks, get_report_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
+    HAL_CBACK(bt_hh_callbacks, get_report_cb, &p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status, data, len);
 
     bta_hh_co_get_rpt_rsp(p_dev->dev_handle, hs_data.status, data, len);
   } else { /* Handshake */
-    HAL_CBACK(bt_hh_callbacks, handshake_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
+    HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status);
     bta_hh_co_get_rpt_rsp(p_dev->dev_handle, hs_data.status, NULL, 0);
   }
@@ -863,8 +863,8 @@ static void hh_set_rpt_handler(tBTA_HH_CBDATA& dev_status) {
   }
 
   log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
-  HAL_CBACK(bt_hh_callbacks, handshake_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
-            p_dev->link_spec.addrt.type, p_dev->link_spec.transport, dev_status.status);
+  HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+            p_dev->link_spec.transport, dev_status.status);
 
   bta_hh_co_set_rpt_rsp(p_dev->dev_handle, dev_status.status);
 }
@@ -882,11 +882,11 @@ static void hh_get_proto_handler(tBTA_HH_HSDATA& hs_data) {
             : (hs_data.rsp_data.proto_mode == BTA_HH_PROTO_BOOT_MODE) ? "Boot Mode"
                                                                       : "Unsupported");
   if (hs_data.rsp_data.proto_mode != BTA_HH_PROTO_UNKNOWN) {
-    HAL_CBACK(bt_hh_callbacks, protocol_mode_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
+    HAL_CBACK(bt_hh_callbacks, protocol_mode_cb, &p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status,
               (bthh_protocol_mode_t)hs_data.rsp_data.proto_mode);
   } else {
-    HAL_CBACK(bt_hh_callbacks, handshake_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
+    HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status);
   }
 }
@@ -899,8 +899,8 @@ static void hh_set_proto_handler(tBTA_HH_CBDATA& dev_status) {
   }
 
   log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
-  HAL_CBACK(bt_hh_callbacks, handshake_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
-            p_dev->link_spec.addrt.type, p_dev->link_spec.transport, dev_status.status);
+  HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+            p_dev->link_spec.transport, dev_status.status);
 }
 
 static void hh_get_idle_handler(tBTA_HH_HSDATA& hs_data) {
@@ -912,9 +912,8 @@ static void hh_get_idle_handler(tBTA_HH_HSDATA& hs_data) {
 
   log::verbose("Handle = {}, status = {}, rate = {}", hs_data.handle, hs_data.status,
                hs_data.rsp_data.idle_rate);
-  HAL_CBACK(bt_hh_callbacks, idle_time_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
-            p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status,
-            hs_data.rsp_data.idle_rate);
+  HAL_CBACK(bt_hh_callbacks, idle_time_cb, &p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+            p_dev->link_spec.transport, hs_data.status, hs_data.rsp_data.idle_rate);
 }
 
 static void hh_set_idle_handler(tBTA_HH_CBDATA& dev_status) {
