@@ -38,16 +38,16 @@ abstract class ProfileService(
         fun cleanup()
     }
 
-    @JvmField protected val mName = javaClass.simpleName
+    val name = javaClass.simpleName
     val binder: Optional<IProfileServiceBinder>
     @get:JvmName("isAvailable") @set:JvmName("setAvailable") var available = false
 
     init {
-        Log.d(mName, "Service created")
+        Log.d(name, "Service created")
         binder = Optional.ofNullable(initBinder())
     }
 
-    override fun toString() = mName
+    override fun toString() = name
 
     /**
      * Called in ProfileService constructor to init binder interface for this profile service.
@@ -74,18 +74,17 @@ abstract class ProfileService(
      * @param className The class name of the owned component residing in the Bluetooth package
      * @param enable True to enable the component, False to disable it
      */
-    protected fun setComponentAvailable(className: String?, enable: Boolean) {
-        Log.d(mName, "setComponentAvailable(className=$className, enable=$enable)")
-        className ?: return
+    protected fun setComponentAvailable(className: String, enable: Boolean) {
+        Log.d(name, "setComponentAvailable(className=$className, enable=$enable)")
 
         val component = ComponentName(packageName, className)
         // Test should not set components available for the device
         if (Utils.isInstrumentationTestMode()) {
-            Log.w(mName, "Skip call to setComponentAvailable($component, $enable)")
+            Log.w(name, "Skip call to setComponentAvailable($component, $enable)")
             return
         }
 
-        Log.d(mName, "setComponentAvailable($component, $enable)")
+        Log.d(name, "setComponentAvailable($component, $enable)")
 
         packageManager.setComponentEnabledSetting(
             component,
@@ -103,7 +102,7 @@ abstract class ProfileService(
     // Suppressed since this is called from framework
     @SuppressLint("AndroidFrameworkRequiresPermission")
     open fun dump(sb: StringBuilder) {
-        sb.append("\nProfile: ").append(mName).append("\n")
+        sb.append("\nProfile: ").append(name).append("\n")
     }
 
     companion object {
