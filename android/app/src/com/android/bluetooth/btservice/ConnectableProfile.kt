@@ -47,7 +47,6 @@ import android.bluetooth.BluetoothUuid
 import android.util.Log
 import com.android.bluetooth.Utils
 import com.android.bluetooth.Utils.arrayContains
-import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.hid.HidHostService
 import com.android.bluetooth.profile.ProfileService
@@ -64,15 +63,12 @@ constructor(
     protected val storage: BluetoothStorageManager? = null,
 ) : ProfileService(id, adapterService) {
 
-    protected val databaseManager: DatabaseManager?
-
-    init {
+    protected val databaseManager =
         if (Flags.mainlineBetaStorage()) {
-            databaseManager = null
+            null
         } else {
-            databaseManager = mAdapterService.databaseManager
+            mAdapterService.databaseManager
         }
-    }
 
     /**
      * Connects the given Bluetooth device to the profile.
@@ -89,14 +85,14 @@ constructor(
         val log = "okToConnect($device): Connect rejected: "
         // Check if this is an incoming connection in Quiet mode.
         if (mAdapterService.isQuietModeEnabled) {
-            Log.e(mName, "${log}quiet mode enabled")
+            Log.e(name, "${log}quiet mode enabled")
             return false
         }
         // Allow this connection only if the device is bonded.
         // Any attempt to connect while bonding would lead to an unauthorized connection.
         val bondState = mAdapterService.getBondState(device)
         if (bondState != BOND_BONDED) {
-            Log.e(mName, "${log}invalid bond state: $bondState")
+            Log.e(name, "${log}invalid bond state: $bondState")
             return false
         }
         // Check connectionPolicy and reject the connection if it is not valid.
@@ -105,7 +101,7 @@ constructor(
             connectionPolicy != CONNECTION_POLICY_UNKNOWN &&
                 connectionPolicy != CONNECTION_POLICY_ALLOWED
         ) {
-            Log.e(mName, "${log}invalid connection policy: $connectionPolicy")
+            Log.e(name, "${log}invalid connection policy: $connectionPolicy")
             return false
         }
         return true
@@ -132,7 +128,7 @@ constructor(
      * @return connection policy of the device
      */
     @BluetoothProfile.ConnectionPolicy
-    fun getConnectionPolicy(device: BluetoothDevice): Int =
+    fun getConnectionPolicy(device: BluetoothDevice) =
         mAdapterService.getProfileConnectionPolicy(device, mProfileId)
 
     /**
@@ -153,7 +149,7 @@ constructor(
 
     /** Process a change in the bonding state for a device */
     open fun handleBondStateChanged(device: BluetoothDevice?, fromState: Int, toState: Int) {
-        Log.w(mName, "handleBondStateChanged(): Called but not implemented")
+        Log.w(name, "handleBondStateChanged(): Called but not implemented")
     }
 
     companion object {
