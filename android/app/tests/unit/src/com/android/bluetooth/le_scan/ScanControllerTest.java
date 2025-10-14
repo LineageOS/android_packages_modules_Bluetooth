@@ -75,7 +75,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
@@ -189,7 +188,7 @@ public class ScanControllerTest {
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                         .setLegacy(false)
                         .build();
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
+        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID, scanSettings);
         scanClient.setHasNetworkSettingsPermission(true);
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mApp).getAppScanStats();
@@ -284,8 +283,7 @@ public class ScanControllerTest {
 
         Set<ScanClient> scanClientSet = new HashSet<>();
         final int appUid = 1234;
-        ScanSettings scanSettings = new ScanSettings.Builder().build();
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
+        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID);
         scanClient.setAssociatedDevices(new ArrayList<>());
         if (expectResults) {
             if (isTruncated) {
@@ -338,8 +336,7 @@ public class ScanControllerTest {
         int timeStamp = 11;
 
         final int appUid = 1234;
-        ScanSettings scanSettings = new ScanSettings.Builder().build();
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
+        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID);
         scanClient.setHasNetworkSettingsPermission(true);
         scanClient.setSettings(
                 new ScanSettings.Builder()
@@ -408,9 +405,10 @@ public class ScanControllerTest {
 
     @Test
     public void continuePiStartScan() {
+        List<ScanFilter> filters = new ArrayList<>();
         ScanController.PendingIntentInfo pii =
                 new ScanController.PendingIntentInfo(
-                        null, new ScanSettings.Builder().build(), null, null, 0);
+                        null, new ScanSettings.Builder().build(), filters, null, 0);
         doReturn(pii).when(mApp).getInfo();
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
@@ -424,9 +422,10 @@ public class ScanControllerTest {
 
     @Test
     public void continuePiStartScanCheckUid() {
+        List<ScanFilter> filters = new ArrayList<>();
         ScanController.PendingIntentInfo pii =
                 new ScanController.PendingIntentInfo(
-                        null, new ScanSettings.Builder().build(), null, null, 123);
+                        null, new ScanSettings.Builder().build(), filters, null, 123);
         doReturn(pii).when(mApp).getInfo();
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
@@ -435,23 +434,14 @@ public class ScanControllerTest {
         verify(appScanStats)
                 .recordScanStart(
                         pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
-        verify(mScanManager)
-                .startScan(
-                        argThat(
-                                new ArgumentMatcher<ScanClient>() {
-                                    @Override
-                                    public boolean matches(ScanClient client) {
-                                        return pii.callingUid() == client.getAppUid();
-                                    }
-                                }));
+        verify(mScanManager).startScan(argThat(client -> pii.callingUid() == client.getAppUid()));
     }
 
     @Test
     public void flushPendingBatchResults() {
         Set<ScanClient> scanClientSet = new HashSet<>();
         final int appUid = 1234;
-        ScanSettings scanSettings = new ScanSettings.Builder().build();
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
+        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID);
         scanClientSet.add(scanClient);
         doReturn(scanClientSet).when(mScanManager).getBatchScanQueue();
 
@@ -535,16 +525,16 @@ public class ScanControllerTest {
 
         ScanSettings settings = new ScanSettings.Builder().setRssiThreshold(rssiThreshold).build();
         final int appUid = 1234;
-        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, null, appUid);
+        ScanClient client = new ScanClient(appUid, TEST_SCANNER_ID, settings);
 
         ScanRecord mockScanRecord = mock(ScanRecord.class);
         ScanResult resultAboveThreshold =
                 new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiAboveThreshold, 0, mockScanRecord, 0);
-        assertThat(mScanController.matchesFilters(client, resultAboveThreshold)).isTrue();
+        assertThat(ScanController.matchesFilters(client, resultAboveThreshold)).isTrue();
 
         ScanResult resultBelowThreshold =
                 new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiBelowThreshold, 0, mockScanRecord, 0);
-        assertThat(mScanController.matchesFilters(client, resultBelowThreshold)).isFalse();
+        assertThat(ScanController.matchesFilters(client, resultBelowThreshold)).isFalse();
     }
 
     @Test
@@ -553,16 +543,16 @@ public class ScanControllerTest {
         // This address is different from mDevice.getAddress()
         String originalAddress = "00:11:22:33:CC:DD";
         ScanFilter filter = new ScanFilter.Builder().setDeviceAddress(originalAddress).build();
-        List<ScanFilter> filterList = new ArrayList<>();
-        filterList.add(filter);
+        List<ScanFilter> filters = new ArrayList<>();
+        filters.add(filter);
         ScanSettings settings = new ScanSettings.Builder().build();
         ScanRecord mockScanRecord = mock(ScanRecord.class);
 
         final int appUid = 1234;
-        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, filterList, appUid);
+        ScanClient client = new ScanClient(appUid, TEST_SCANNER_ID, settings, filters);
         ScanResult scanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, mockScanRecord, 0);
 
-        assertThat(mScanController.matchesFilters(client, scanResult, originalAddress)).isTrue();
+        assertThat(ScanController.matchesFilters(client, scanResult, originalAddress)).isTrue();
     }
 
     @Test

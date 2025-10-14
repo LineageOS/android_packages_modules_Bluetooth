@@ -1113,7 +1113,7 @@ public class ScanController {
         settings = enforceReportDelayFloor(settings);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         final ScanClient scanClient =
-                new ScanClient(scannerId, settings, filters, uid, Binder.getCallingUserHandle());
+                new ScanClient(uid, scannerId, settings, filters, Binder.getCallingUserHandle());
         mAppOps.checkPackage(uid, callingPackage);
         scanClient.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));
@@ -1149,10 +1149,10 @@ public class ScanController {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         final ScanClient scanClient =
                 new ScanClient(
+                        Binder.getCallingUid(),
                         scannerId,
                         settings,
                         filters,
-                        Binder.getCallingUid(),
                         Binder.getCallingUserHandle(),
                         true);
         scanClient.setQApp(true);
@@ -1169,24 +1169,24 @@ public class ScanController {
 
     private void startScan(
             int scannerId, ScanSettings settings, List<ScanFilter> filters, ScanClient scanClient) {
-        AppScanStats app = mScannerMap.getAppScanStatsById(scannerId);
-        if (app != null) {
-            scanClient.setAppScanStats(Optional.of(app));
+        var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
+        if (appScanStats != null) {
+            scanClient.setAppScanStats(Optional.of(appScanStats));
             mScanManager.fetchAppForegroundState(scanClient);
-            boolean isFilteredScan = (filters != null) && !filters.isEmpty();
+            boolean isFilteredScan = !filters.isEmpty();
             boolean isCallbackScan = false;
 
-            ScannerApp cbApp = mScannerMap.getById(scannerId);
-            if (cbApp != null) {
-                isCallbackScan = cbApp.getCallback() != null;
+            ScannerApp scannerApp = mScannerMap.getById(scannerId);
+            if (scannerApp != null) {
+                isCallbackScan = scannerApp.getCallback() != null;
             }
-            app.recordScanStart(
+            appScanStats.recordScanStart(
                     settings,
                     filters,
                     isFilteredScan,
                     isCallbackScan,
                     scannerId,
-                    cbApp == null ? null : cbApp.getAttributionTag());
+                    scannerApp == null ? null : scannerApp.getAttributionTag());
         }
         mScanManager.startScan(scanClient);
     }
@@ -1264,10 +1264,10 @@ public class ScanController {
         final PendingIntentInfo piInfo = app.getInfo();
         final ScanClient scanClient =
                 new ScanClient(
+                        piInfo.callingUid,
                         scannerId,
                         piInfo.settings,
                         piInfo.filters,
-                        piInfo.callingUid,
                         app.getUserHandle());
         scanClient.setHasLocationPermission(app.getHasLocationPermission());
         scanClient.setQApp(
@@ -1287,7 +1287,7 @@ public class ScanController {
         if (scanStats != null) {
             scanClient.setAppScanStats(Optional.of(scanStats));
             mScanManager.fetchAppForegroundState(scanClient);
-            boolean isFilteredScan = (piInfo.filters != null) && !piInfo.filters.isEmpty();
+            boolean isFilteredScan = !piInfo.filters.isEmpty();
             scanStats.recordScanStart(
                     piInfo.settings,
                     piInfo.filters,

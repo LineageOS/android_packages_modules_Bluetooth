@@ -46,6 +46,7 @@ import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -346,6 +347,10 @@ public final class BluetoothLeScanner {
                     return postCallbackErrorOrReturn(
                             callback, ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED);
                 }
+            }
+            // If no filters are provided, initialize an empty list to simplify downstream logic
+            if (filters == null) {
+                filters = new ArrayList<>();
             }
             if (callback != null) {
                 BleScanCallbackWrapper wrapper =

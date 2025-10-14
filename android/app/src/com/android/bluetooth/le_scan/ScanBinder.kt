@@ -72,7 +72,7 @@ class ScanBinder(
     override fun registerScanner(
         callback: IScannerCallback,
         settings: ScanSettings,
-        filters: List<ScanFilter>?,
+        filters: List<ScanFilter>,
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
@@ -92,7 +92,7 @@ class ScanBinder(
     override fun startScan(
         scannerId: Int,
         settings: ScanSettings,
-        filters: List<ScanFilter>?,
+        filters: List<ScanFilter>,
         source: AttributionSource,
     ) {
         enforcePrivilegedPermissionIfNeeded(settings, filters)
@@ -104,7 +104,7 @@ class ScanBinder(
     override fun registerPiAndStartScan(
         intent: PendingIntent,
         settings: ScanSettings,
-        filters: List<ScanFilter>?,
+        filters: List<ScanFilter>,
         source: AttributionSource,
     ) {
         enforcePrivilegedPermissionIfNeeded(settings, filters)
@@ -174,7 +174,7 @@ class ScanBinder(
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
     private fun enforcePrivilegedPermissionIfNeeded(
         settings: ScanSettings,
-        filters: List<ScanFilter>?,
+        filters: List<ScanFilter>,
     ) {
         fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
             // BLE scan only mode needs special permission.
@@ -233,8 +233,6 @@ class ScanBinder(
             return
         }
 
-        // Some 3p API cases may have null filters, need to allow
-        if (filters == null) return
         enforcePrivilegedPermissionIfNeeded(filters)
     }
 }
