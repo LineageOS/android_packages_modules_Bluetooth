@@ -1561,15 +1561,15 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         requireNonNull(modeToProfileBundle);
-        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
-            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "setPreferredAudioProfiles")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
         return service.setPreferredAudioProfiles(device, modeToProfileBundle);
     }
 
@@ -1583,15 +1583,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "getPreferredAudioProfiles")) {
             return Bundle.EMPTY;
         }
-        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
-            return Bundle.EMPTY;
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "getPreferredAudioProfiles")) {
             return Bundle.EMPTY;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+
+        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            return Bundle.EMPTY;
+        }
         return service.getPreferredAudioProfiles(device);
     }
 
@@ -1605,15 +1606,15 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystem(TAG, "notifyActiveDeviceChangeApplied")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
-            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "notifyActiveDeviceChangeApplied")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
         return service.notifyActiveDeviceChangeApplied(device);
     }
 
