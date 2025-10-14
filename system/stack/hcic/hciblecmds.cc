@@ -359,11 +359,11 @@ void btsnd_hcic_ble_set_extended_scan_enable(uint8_t enable, uint8_t filter_dupl
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
-                               uint8_t sca, uint8_t packing, uint8_t framing,
-                               uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
-                               uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
-                               base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom,
+                                   uint8_t sca, uint8_t packing, uint8_t framing,
+                                   uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
+                                   uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
+                                   base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 15 + cis_cnt * 9;
   uint8_t param[params_len];
   uint8_t* pp = param;
@@ -391,8 +391,8 @@ void btsnd_hcic_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t s
   btu_hcif_send_cmd_with_cb(HCI_LE_SET_CIG_PARAMS, param, params_len, std::move(cb));
 }
 
-void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
-                           base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+void btsnd_hcic_ble_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
+                               base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 1 + num_cis * 4;
   uint8_t param[params_len];
   uint8_t* pp = param;
@@ -407,7 +407,7 @@ void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
   btu_hcif_send_cmd_with_cb(HCI_LE_CREATE_CIS, param, params_len, std::move(cb));
 }
 
-void btsnd_hcic_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+void btsnd_hcic_ble_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 1;
   uint8_t param[params_len];
   uint8_t* pp = param;
@@ -417,7 +417,7 @@ void btsnd_hcic_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uin
   btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_CIG, param, params_len, std::move(cb));
 }
 
-void btsnd_hcic_req_peer_sca(uint16_t conn_handle) {
+void btsnd_hcic_ble_req_peer_sca(uint16_t conn_handle) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -432,10 +432,10 @@ void btsnd_hcic_req_peer_sca(uint16_t conn_handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
-                           uint32_t sdu_itv, uint16_t max_sdu_size, uint16_t transport_latency,
-                           uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing, uint8_t enc,
-                           std::array<uint8_t, 16> bcst_code) {
+void btsnd_hcic_ble_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+                               uint32_t sdu_itv, uint16_t max_sdu_size, uint16_t transport_latency,
+                               uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
+                               uint8_t enc, std::array<uint8_t, 16> bcst_code) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -464,7 +464,7 @@ void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t num_b
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason) {
+void btsnd_hcic_ble_term_big(uint8_t big_handle, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -481,11 +481,11 @@ void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
-                                    uint8_t data_path_id, uint8_t codec_id_format,
-                                    uint16_t codec_id_company, uint16_t codec_id_vendor,
-                                    uint32_t controller_delay, std::vector<uint8_t> codec_conf,
-                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
+                                        uint8_t data_path_id, uint8_t codec_id_format,
+                                        uint16_t codec_id_company, uint16_t codec_id_vendor,
+                                        uint32_t controller_delay, std::vector<uint8_t> codec_conf,
+                                        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 13 + codec_conf.size();
   uint8_t param[params_len];
   uint8_t* pp = param;
@@ -503,8 +503,8 @@ void btsnd_hcic_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
   btu_hcif_send_cmd_with_cb(HCI_LE_SETUP_ISO_DATA_PATH, param, params_len, std::move(cb));
 }
 
-void btsnd_hcic_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
-                                     base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+void btsnd_hcic_ble_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
+                                         base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 3;
   uint8_t param[params_len];
   uint8_t* pp = param;
@@ -515,8 +515,8 @@ void btsnd_hcic_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
   btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_ISO_DATA_PATH, param, params_len, std::move(cb));
 }
 
-void btsnd_hcic_read_iso_link_quality(uint16_t iso_handle,
-                                      base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+void btsnd_hcic_ble_read_iso_link_quality(uint16_t iso_handle,
+                                          base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 2;
   uint8_t param[params_len];
   uint8_t* pp = param;

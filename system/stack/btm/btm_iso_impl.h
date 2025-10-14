@@ -181,7 +181,7 @@ struct iso_impl {
   void create_cig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
     log::assert_that(!IsCigKnown(cig_id), "Invalid cig - already exists: {}", cig_id);
 
-    btsnd_hcic_set_cig_params(
+    btsnd_hcic_ble_set_cig_params(
             cig_id, cig_params.sdu_itv_mtos, cig_params.sdu_itv_stom, cig_params.sca,
             cig_params.packing, cig_params.framing, cig_params.max_trans_lat_stom,
             cig_params.max_trans_lat_mtos, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
@@ -195,7 +195,7 @@ struct iso_impl {
   void reconfigure_cig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
     log::assert_that(IsCigKnown(cig_id), "No such cig: {}", cig_id);
 
-    btsnd_hcic_set_cig_params(
+    btsnd_hcic_ble_set_cig_params(
             cig_id, cig_params.sdu_itv_mtos, cig_params.sdu_itv_stom, cig_params.sca,
             cig_params.packing, cig_params.framing, cig_params.max_trans_lat_stom,
             cig_params.max_trans_lat_mtos, cig_params.cis_cfgs.size(), cig_params.cis_cfgs.data(),
@@ -244,8 +244,8 @@ struct iso_impl {
       log::warn("Forcing to remove CIG {}", cig_id);
     }
 
-    btsnd_hcic_remove_cig(cig_id,
-                          base::BindOnce(&iso_impl::on_remove_cig, weak_factory_.GetWeakPtr()));
+    btsnd_hcic_ble_remove_cig(cig_id,
+                              base::BindOnce(&iso_impl::on_remove_cig, weak_factory_.GetWeakPtr()));
     BTM_LogHistory(kBtmLogTag, RawAddress::kEmpty, "CIG Remove",
                    std::format("cig_id:0x{:02x} (f:{})", cig_id, force));
   }
@@ -306,9 +306,9 @@ struct iso_impl {
       log::verbose("{}, cis_handle: {:#x}, flags: {:#x}", cis_hdl_to_addr[el.cis_conn_handle],
                    el.cis_conn_handle, cis->state_flags);
     }
-    btsnd_hcic_create_cis(conn_params.conn_pairs.size(), conn_params.conn_pairs.data(),
-                          base::BindOnce(&iso_impl::on_status_establish_cis,
-                                         weak_factory_.GetWeakPtr(), conn_params));
+    btsnd_hcic_ble_create_cis(conn_params.conn_pairs.size(), conn_params.conn_pairs.data(),
+                              base::BindOnce(&iso_impl::on_status_establish_cis,
+                                             weak_factory_.GetWeakPtr(), conn_params));
   }
 
   void disconnect_cis(uint16_t cis_handle, uint8_t reason) {
@@ -385,7 +385,7 @@ struct iso_impl {
 
     iso->state_flags |= kStateFlagSettingDataPath;
 
-    btsnd_hcic_setup_iso_data_path(
+    btsnd_hcic_ble_setup_iso_data_path(
             conn_handle, path_params.data_path_dir, path_params.data_path_id,
             path_params.codec_id_format, path_params.codec_id_company, path_params.codec_id_vendor,
             path_params.controller_delay, std::move(path_params.codec_conf),
@@ -441,7 +441,7 @@ struct iso_impl {
             (iso->state_flags & (kStateFlagHasDataPathSet | kStateFlagSettingDataPath)) != 0,
             "Data path not set");
 
-    btsnd_hcic_remove_iso_data_path(
+    btsnd_hcic_ble_remove_iso_data_path(
             conn_handle, data_path_dir,
             base::BindOnce(&iso_impl::on_remove_iso_data_path, weak_factory_.GetWeakPtr()));
 
@@ -506,7 +506,7 @@ struct iso_impl {
       return;
     }
 
-    btsnd_hcic_read_iso_link_quality(
+    btsnd_hcic_ble_read_iso_link_quality(
             conn_handle,
             base::BindOnce(&iso_impl::on_iso_link_quality_read, weak_factory_.GetWeakPtr()));
   }
@@ -790,16 +790,16 @@ struct iso_impl {
     }
 
     last_big_create_req_sdu_itv_ = big_params.sdu_itv;
-    btsnd_hcic_create_big(big_id, big_params.adv_handle, big_params.num_bis, big_params.sdu_itv,
-                          big_params.max_sdu_size, big_params.max_transport_latency, big_params.rtn,
-                          big_params.phy, big_params.packing, big_params.framing, big_params.enc,
-                          big_params.enc_code);
+    btsnd_hcic_ble_create_big(big_id, big_params.adv_handle, big_params.num_bis, big_params.sdu_itv,
+                              big_params.max_sdu_size, big_params.max_transport_latency,
+                              big_params.rtn, big_params.phy, big_params.packing,
+                              big_params.framing, big_params.enc, big_params.enc_code);
   }
 
   void terminate_big(uint8_t big_id, uint8_t reason) {
     log::assert_that(IsBigKnown(big_id), "No such big: {}", big_id);
 
-    btsnd_hcic_term_big(big_id, reason);
+    btsnd_hcic_ble_term_big(big_id, reason);
   }
 
   void on_iso_event(uint8_t code, uint8_t* packet, uint16_t packet_len) {

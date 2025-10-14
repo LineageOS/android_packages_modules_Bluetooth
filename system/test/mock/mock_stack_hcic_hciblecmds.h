@@ -414,12 +414,12 @@ struct btsnd_hcic_ble_transmitter_test {
 };
 extern struct btsnd_hcic_ble_transmitter_test btsnd_hcic_ble_transmitter_test;
 
-// Name: btsnd_hcic_create_big
+// Name: btsnd_hcic_ble_create_big
 // Params: uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis, uint32_t
 // sdu_itv, uint16_t max_sdu_size, uint16_t transport_latency, uint8_t rtn,
 // uint8_t phy, uint8_t packing, uint8_t framing, uint8_t enc,
 // std::array<uint8_t, 16> bcst_code Return: void
-struct btsnd_hcic_create_big {
+struct btsnd_hcic_ble_create_big {
   std::function<void(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis, uint32_t sdu_itv,
                      uint16_t max_sdu_size, uint16_t transport_latency, uint8_t rtn, uint8_t phy,
                      uint8_t packing, uint8_t framing, uint8_t enc,
@@ -437,12 +437,12 @@ struct btsnd_hcic_create_big {
          packing, framing, enc, bcst_code);
   }
 };
-extern struct btsnd_hcic_create_big btsnd_hcic_create_big;
+extern struct btsnd_hcic_ble_create_big btsnd_hcic_ble_create_big;
 
-// Name: btsnd_hcic_create_cis
+// Name: btsnd_hcic_ble_create_cis
 // Params: uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
 // base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_create_cis {
+struct btsnd_hcic_ble_create_cis {
   std::function<void(uint8_t, const EXT_CIS_CREATE_CFG*,
                      base::OnceCallback<void(uint8_t*, uint16_t)>)>
           body{[](uint8_t /* num_cis */, const EXT_CIS_CREATE_CFG* /* cis_cfg */,
@@ -452,36 +452,36 @@ struct btsnd_hcic_create_cis {
     body(num_cis, cis_cfg, std::move(cb));
   }
 };
-extern struct btsnd_hcic_create_cis btsnd_hcic_create_cis;
+extern struct btsnd_hcic_ble_create_cis btsnd_hcic_ble_create_cis;
 
-// Name: btsnd_hcic_read_iso_link_quality
+// Name: btsnd_hcic_ble_read_iso_link_quality
 // Params: uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t
 // Return: void
-struct btsnd_hcic_read_iso_link_quality {
+struct btsnd_hcic_ble_read_iso_link_quality {
   std::function<void(uint16_t, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
           [](uint16_t /* iso_handle */, base::OnceCallback<void(uint8_t*, uint16_t)>) {}};
   void operator()(uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
     body(iso_handle, std::move(cb));
   }
 };
-extern struct btsnd_hcic_read_iso_link_quality btsnd_hcic_read_iso_link_quality;
+extern struct btsnd_hcic_ble_read_iso_link_quality btsnd_hcic_ble_read_iso_link_quality;
 
-// Name: btsnd_hcic_remove_cig
+// Name: btsnd_hcic_ble_remove_cig
 // Params: uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t
 // Return: void
-struct btsnd_hcic_remove_cig {
+struct btsnd_hcic_ble_remove_cig {
   std::function<void(uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
           [](uint8_t /* cig_id */, base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
   void operator()(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
     body(cig_id, std::move(cb));
   }
 };
-extern struct btsnd_hcic_remove_cig btsnd_hcic_remove_cig;
+extern struct btsnd_hcic_ble_remove_cig btsnd_hcic_ble_remove_cig;
 
-// Name: btsnd_hcic_remove_iso_data_path
+// Name: btsnd_hcic_ble_remove_iso_data_path
 // Params: uint16_t iso_handle, uint8_t data_path_dir,
 // base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_remove_iso_data_path {
+struct btsnd_hcic_ble_remove_iso_data_path {
   std::function<void(uint16_t, uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
           [](uint16_t /* iso_handle */, uint8_t /* data_path_dir */,
              base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
@@ -490,23 +490,23 @@ struct btsnd_hcic_remove_iso_data_path {
     body(iso_handle, data_path_dir, std::move(cb));
   }
 };
-extern struct btsnd_hcic_remove_iso_data_path btsnd_hcic_remove_iso_data_path;
+extern struct btsnd_hcic_ble_remove_iso_data_path btsnd_hcic_ble_remove_iso_data_path;
 
-// Name: btsnd_hcic_req_peer_sca
+// Name: btsnd_hcic_ble_req_peer_sca
 // Params: uint16_t conn_handle
 // Return: void
-struct btsnd_hcic_req_peer_sca {
+struct btsnd_hcic_ble_req_peer_sca {
   std::function<void(uint16_t)> body{[](uint16_t /* conn_handle */) {}};
   void operator()(uint16_t conn_handle) { body(conn_handle); }
 };
-extern struct btsnd_hcic_req_peer_sca btsnd_hcic_req_peer_sca;
+extern struct btsnd_hcic_ble_req_peer_sca btsnd_hcic_ble_req_peer_sca;
 
-// Name: btsnd_hcic_set_cig_params
+// Name: btsnd_hcic_ble_set_cig_params
 // Params: uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom, uint8_t
 // sca, uint8_t packing, uint8_t framing, uint16_t max_trans_lat_stom, uint16_t
 // max_trans_lat_mtos, uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
 // base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_set_cig_params {
+struct btsnd_hcic_ble_set_cig_params {
   std::function<void(uint8_t, uint32_t, uint32_t, uint8_t, uint8_t, uint8_t, uint16_t, uint16_t,
                      uint8_t, const EXT_CIS_CFG*, base::OnceCallback<void(uint8_t*, uint16_t)>)>
           body{[](uint8_t /* cig_id */, uint32_t /* sdu_itv_mtos */, uint32_t /* sdu_itv_stom */,
@@ -522,14 +522,14 @@ struct btsnd_hcic_set_cig_params {
          max_trans_lat_mtos, cis_cnt, cis_cfg, std::move(cb));
   }
 };
-extern struct btsnd_hcic_set_cig_params btsnd_hcic_set_cig_params;
+extern struct btsnd_hcic_ble_set_cig_params btsnd_hcic_ble_set_cig_params;
 
-// Name: btsnd_hcic_setup_iso_data_path
+// Name: btsnd_hcic_ble_setup_iso_data_path
 // Params: uint16_t iso_handle, uint8_t data_path_dir, uint8_t data_path_id,
 // uint8_t codec_id_format, uint16_t codec_id_company, uint16_t codec_id_vendor,
 // uint32_t controller_delay, std::vector<uint8_t> codec_conf,
 // base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_setup_iso_data_path {
+struct btsnd_hcic_ble_setup_iso_data_path {
   std::function<void(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t, uint16_t, uint32_t,
                      std::vector<uint8_t>, base::OnceCallback<void(uint8_t*, uint16_t)>)>
           body{[](uint16_t /* iso_handle */, uint8_t /* data_path_dir */,
@@ -545,16 +545,16 @@ struct btsnd_hcic_setup_iso_data_path {
          codec_id_vendor, controller_delay, codec_conf, std::move(cb));
   }
 };
-extern struct btsnd_hcic_setup_iso_data_path btsnd_hcic_setup_iso_data_path;
+extern struct btsnd_hcic_ble_setup_iso_data_path btsnd_hcic_ble_setup_iso_data_path;
 
-// Name: btsnd_hcic_term_big
+// Name: btsnd_hcic_ble_term_big
 // Params: uint8_t big_handle, uint8_t reason
 // Return: void
-struct btsnd_hcic_term_big {
+struct btsnd_hcic_ble_term_big {
   std::function<void(uint8_t, uint8_t)> body{[](uint8_t /* big_handle */, uint8_t /* reason */) {}};
   void operator()(uint8_t big_handle, uint8_t reason) { body(big_handle, reason); }
 };
-extern struct btsnd_hcic_term_big btsnd_hcic_term_big;
+extern struct btsnd_hcic_ble_term_big btsnd_hcic_ble_term_big;
 
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock

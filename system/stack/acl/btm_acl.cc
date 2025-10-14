@@ -1170,7 +1170,7 @@ void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
     return;
   }
 
-  btsnd_hcic_req_peer_sca(p->hci_handle);
+  btsnd_hcic_ble_req_peer_sca(p->hci_handle);
 }
 
 /*******************************************************************************
