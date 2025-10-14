@@ -921,7 +921,12 @@ public class RemoteDevices {
 
         void setBatteryLevelFromBatteryService(int batteryLevel) {
             synchronized (mObject) {
-                if (Flags.consistentBatteryLevel() && batteryLevel != BATTERY_LEVEL_UNKNOWN) {
+                // Preserve the last battery level to prevent
+                // battery level fluctuation between BAS and HFP.
+                // We can safely reset it if there is no HFP.
+                if (Flags.consistentBatteryLevel()
+                        && (batteryLevel != BATTERY_LEVEL_UNKNOWN
+                                || mBatteryLevelFromHfp == BATTERY_LEVEL_UNKNOWN)) {
                     mLastBatteryLevelFromBatteryService = batteryLevel;
                 }
                 mBatteryLevelFromBatteryService = batteryLevel;
