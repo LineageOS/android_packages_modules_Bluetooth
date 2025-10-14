@@ -399,8 +399,7 @@ class ScanManager {
     }
 
     void stopScan(int scannerId) {
-        ScanSettings scanSettings = new ScanSettings.Builder().build();
-        ScanClient tmpClient = new ScanClient(scannerId, scanSettings, null, 0);
+        ScanClient tmpClient = new ScanClient(0, scannerId);
         if (Flags.scanControllerThread()) {
             handleStopScan(tmpClient);
         } else {

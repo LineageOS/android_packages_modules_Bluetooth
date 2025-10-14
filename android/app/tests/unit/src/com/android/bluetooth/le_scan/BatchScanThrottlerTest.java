@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -183,14 +184,14 @@ public class BatchScanThrottlerTest {
                         .setReportDelay(reportDelayMillis)
                         .build();
 
-        return new ScanClient(1, scanSettings, createScanFilterList(isFiltered), 1);
+        return new ScanClient(1, 1, scanSettings, createScanFilterList(isFiltered));
     }
 
     private static List<ScanFilter> createScanFilterList(boolean isFiltered) {
-        List<ScanFilter> scanFilterList = null;
         if (isFiltered) {
-            scanFilterList = List.of(new ScanFilter.Builder().setDeviceName("TestName").build());
+            return List.of(new ScanFilter.Builder().setDeviceName("TestName").build());
+        } else {
+            return new ArrayList<>();
         }
-        return scanFilterList;
     }
 }

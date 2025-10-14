@@ -30,27 +30,31 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ScanClientTest {
     @Test
-    fun constructor_withFilters() {
+    fun constructor() {
         val appUid = 1234
-        val filters = listOf(ScanFilter.Builder().build())
-        val scanSettings = ScanSettings.Builder().build()
-        val scanClientWithFilters = ScanClient(1, scanSettings, filters, appUid)
-        assertThat(scanClientWithFilters.filters).isEqualTo(filters)
+        val scannerId = 1
+        val scanClientWithFilters = ScanClient(appUid, scannerId)
+        assertThat(scanClientWithFilters.appUid).isEqualTo(appUid)
+        assertThat(scanClientWithFilters.scannerId).isEqualTo(scannerId)
     }
 
     @Test
-    fun constructor_noFilters() {
+    fun constructorWithBasicSettingsAndFilters() {
         val appUid = 1234
+        val scannerId = 1
         val scanSettings = ScanSettings.Builder().build()
-        val scanClientWithAppUid = ScanClient(1, scanSettings, null, appUid)
-        assertThat(scanClientWithAppUid.appUid).isEqualTo(appUid)
+        val filters = listOf(ScanFilter.Builder().build())
+        val scanClientWithFilters = ScanClient(appUid, scannerId, scanSettings, filters)
+        assertThat(scanClientWithFilters.settings).isEqualTo(scanSettings)
+        assertThat(scanClientWithFilters.filters).isEqualTo(filters)
     }
 
     @Test
     fun updateScanMode() {
         val appUid = 1234
         val scanSettings = ScanSettings.Builder().build()
-        val scanClient = ScanClient(1, scanSettings, null, appUid)
+        val filters = listOf(ScanFilter.Builder().build())
+        val scanClient = ScanClient(appUid, 1, scanSettings, filters)
 
         val newScanMode = ScanSettings.SCAN_MODE_BALANCED
         val updated = scanClient.updateScanMode(newScanMode)
@@ -66,14 +70,17 @@ class ScanClientTest {
     @Test
     fun equals() {
         val scanSettings = ScanSettings.Builder().build()
+        val filters = listOf(ScanFilter.Builder().build())
         EqualsTester()
             .addEqualityGroup(
-                ScanClient(1, scanSettings, null, 1234),
-                ScanClient(1, scanSettings, null, 5678),
-                ScanClient(1, scanSettings, listOf(ScanFilter.Builder().build()), 1234),
-                ScanClient(1, scanSettings, listOf(ScanFilter.Builder().build()), 5678),
+                ScanClient(1234, 1),
+                ScanClient(5678, 1),
+                ScanClient(1234, 1, scanSettings, filters),
+                ScanClient(5678, 1, scanSettings, filters),
+                ScanClient(1234, 1, scanSettings, listOf(ScanFilter.Builder().build())),
+                ScanClient(5678, 1, scanSettings, listOf(ScanFilter.Builder().build())),
             )
-            .addEqualityGroup(ScanClient(2, scanSettings, null, 1234))
+            .addEqualityGroup(ScanClient(1234, 2, scanSettings, filters))
             .testEquals()
     }
 
@@ -81,7 +88,8 @@ class ScanClientTest {
     fun toString_doesNotCrash() {
         val appUid = 1234
         val scanSettings = ScanSettings.Builder().build()
-        val scanClient = ScanClient(1, scanSettings, null, appUid)
+        val filters = listOf(ScanFilter.Builder().build())
+        val scanClient = ScanClient(appUid, 1, scanSettings, filters)
         scanClient.toString()
     }
 }
