@@ -141,30 +141,38 @@ bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::m
 
 void MessageLoopThread::ShutDown() {
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
-    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-    if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
-      log::error("handler is already stopped for thread {}", *this);
-      return;
+    std::future<void> future;
+    {
+      std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+      if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
+        log::error("handler is already stopped for thread {}", *this);
+        return;
+      }
+
+      /**
+       * Waiting for the handler to be idle.
+       * This replicates RunLoop::QuitWhenIdle() functionality.
+       */
+      future = handler_->NotifyWhenIdle();
     }
 
-    /**
-     * Waiting for the handler to be idle.
-     * This replicates RunLoop::QuitWhenIdle() functionality.
-     */
-    auto future = handler_->NotifyWhenIdle();
+    // Let this thread finish with `api_mutex_` released.
     log::assert_that(future.wait_for(kHandlerStopTimeout) == std::future_status::ready,
                      "assert failed: Thread {} is not idle after waiting for {} ms",
                      handler_thread_->GetThreadName(), kHandlerStopTimeout.count());
-    handler_->Clear();
-    handler_->WaitUntilStopped(
-            kHandlerStopTimeout);  // this should be quick as the handler is already synchronized.
-    delete handler_;
-    delete handler_thread_;
-    // The destructor of os::Thread will stop and join the thread.
+    {
+      std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+      handler_->Clear();
+      handler_->WaitUntilStopped(
+              kHandlerStopTimeout);  // this should be quick as the handler is already synchronized.
+      delete handler_;
+      delete handler_thread_;
+      // The destructor of os::Thread will stop and join the thread.
 
-    handler_ = nullptr;
-    handler_thread_ = nullptr;
-    return;
+      handler_ = nullptr;
+      handler_thread_ = nullptr;
+      return;
+    }
   }
 
   {
