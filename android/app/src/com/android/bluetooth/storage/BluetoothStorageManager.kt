@@ -276,7 +276,7 @@ constructor(
         return value.toByteArray()
     }
 
-    fun setCustomMetadata(device: BluetoothDevice, key: Int, value: ByteArray?) {
+    fun setCustomMetadata(device: BluetoothDevice, key: Int, value: ByteArray) {
         validateMetadataKey(key)
 
         ioScope.launch {
@@ -285,8 +285,8 @@ constructor(
                 val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
                 val newByteString =
-                    if (value == null) ByteString.EMPTY else ByteString.copyFrom(value)
-                val oldByteString = deviceBuilder.customMetadataMap[key]
+                    if (value.isEmpty()) ByteString.EMPTY else ByteString.copyFrom(value)
+                val oldByteString = deviceBuilder.customMetadataMap[key] ?: ByteString.EMPTY
 
                 if (oldByteString == newByteString) {
                     return@updateData storage
@@ -296,7 +296,7 @@ constructor(
                 logEvent(device, "Custom metadata changed for $key")
 
                 val metadataBuilder = deviceBuilder.customMetadataMap.toMutableMap()
-                if (value == null) {
+                if (value.isEmpty()) {
                     metadataBuilder.remove(key)
                 } else {
                     metadataBuilder[key] = newByteString
