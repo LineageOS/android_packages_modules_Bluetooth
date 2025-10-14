@@ -94,8 +94,24 @@ object ScanUtil {
     const val WEIGHT_BALANCED = 25
     const val WEIGHT_LOW_LATENCY = 100
 
+    @JvmStatic fun findById(clients: Set<ScanClient>, id: Int) = clients.find { it.scannerId == id }
+
     @JvmStatic
     fun appNameOrUnknown(appName: String?, uid: Int) = appName ?: "Unknown App (UID: $uid)"
+
+    @JvmStatic
+    fun hasScanResultPermission(adapterService: AdapterService, client: ScanClient) =
+        when {
+            // Bypass permission check for internal clients
+            client.isInternalClient ||
+                client.hasNetworkSettingsPermission ||
+                client.hasNetworkSetupWizardPermission ||
+                client.hasScanWithoutLocationPermission ||
+                client.hasDisavowedLocation -> true
+            else ->
+                client.hasLocationPermission &&
+                    !Utils.blockedByLocationOff(adapterService, client.userHandle)
+        }
 
     // Convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
     @JvmStatic

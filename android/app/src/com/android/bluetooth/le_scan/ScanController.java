@@ -540,7 +540,7 @@ public class ScanController {
                 }
             }
 
-            var hasPermission = hasScanResultPermission(client);
+            var hasPermission = ScanUtil.hasScanResultPermission(mAdapterService, client);
             if (!hasPermission) {
                 for (String associatedDevice : client.getAssociatedDevices()) {
                     if (associatedDevice.equalsIgnoreCase(address)) {
@@ -654,24 +654,8 @@ public class ScanController {
         }
     }
 
-    /** Determines if the given scan client has the appropriate permissions to receive callbacks. */
-    private boolean hasScanResultPermission(final ScanClient client) {
-        if (client.isInternalClient()) {
-            // Bypass permission check for internal clients
-            return true;
-        }
-        if (client.getHasNetworkSettingsPermission()
-                || client.getHasNetworkSetupWizardPermission()
-                || client.getHasScanWithoutLocationPermission()
-                || client.getHasDisavowedLocation()) {
-            return true;
-        }
-        return client.getHasLocationPermission()
-                && !Utils.blockedByLocationOff(mAdapterService, client.getUserHandle());
-    }
-
     private List<ScanResult> permittedResults(final ScanClient client, Set<ScanResult> results) {
-        if (hasScanResultPermission(client)) {
+        if (ScanUtil.hasScanResultPermission(mAdapterService, client)) {
             return new ArrayList<>(results);
         }
 

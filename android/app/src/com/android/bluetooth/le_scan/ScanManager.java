@@ -681,12 +681,12 @@ class ScanManager {
     private void handleStopScan(ScanClient tmpClient) {
         var header = "handleStopScan(): ";
         int scannerIdToStop = tmpClient.getScannerId();
-        ScanClient client = getBatchScanClient(scannerIdToStop);
+        ScanClient client = ScanUtil.findById(mBatchClients, scannerIdToStop);
         if (client == null) {
-            client = getRegularScanClient(scannerIdToStop);
+            client = ScanUtil.findById(mRegularScanClients, scannerIdToStop);
         }
         if (client == null) {
-            client = getSuspendedScanClient(scannerIdToStop);
+            client = ScanUtil.findById(mSuspendedScanClients, scannerIdToStop);
         }
         if (client == null) {
             Log.d(TAG, header + "No client found for scannerId=" + scannerIdToStop);
@@ -1495,25 +1495,6 @@ class ScanManager {
         }
     }
 
-    // Find the regular scan client information.
-    private ScanClient getRegularScanClient(int scannerId) {
-        for (ScanClient client : mRegularScanClients) {
-            if (client.getScannerId() == scannerId) {
-                return client;
-            }
-        }
-        return null;
-    }
-
-    private ScanClient getSuspendedScanClient(int scannerId) {
-        for (ScanClient client : mSuspendedScanClients) {
-            if (client.getScannerId() == scannerId) {
-                return client;
-            }
-        }
-        return null;
-    }
-
     private void stopBatchScan(ScanClient client) {
         mBatchClients.remove(client);
         removeScanFilters(client.getScannerId());
@@ -1651,15 +1632,6 @@ class ScanManager {
             mNativeInterface.scanFilterParamDelete(scannerId, filterIndex);
             waitForCallback();
         }
-    }
-
-    private ScanClient getBatchScanClient(int scannerId) {
-        for (ScanClient client : mBatchClients) {
-            if (client.getScannerId() == scannerId) {
-                return client;
-            }
-        }
-        return null;
     }
 
     // Check if ALL_PASS filter should be used for the client.
