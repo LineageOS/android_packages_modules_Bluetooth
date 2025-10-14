@@ -622,35 +622,33 @@ public class ScanController {
     }
 
     /** Callback method for scanner registration. */
-    void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb) {
+    void onScannerRegistered(int status, int scannerId, UUID uuid) {
         enforceScanThread();
-        final var uuid = new UUID(uuidMsb, uuidLsb);
+        var header = "onScannerRegistered(): ";
         Log.d(
                 TAG,
-                "onScannerRegistered() -"
-                        + (" UUID=" + uuid)
-                        + (", scannerId=" + scannerId)
-                        + (", status=" + status));
+                (header + "UUID=" + uuid + ", scannerId=" + scannerId)
+                        + (", status=" + ScanUtil.statusToString(status)));
 
-        // First check the callback map
-        var app = mScannerMap.getByUuid(uuid);
-        if (app == null) {
+        var scannerApp = mScannerMap.getByUuid(uuid);
+        if (scannerApp == null) {
+            Log.e(TAG, header + "ScannerApp not found in ScannerMap");
             return;
         }
-        if (app.getCallback() != null) {
-            callbackToApp(() -> app.getCallback().onScannerRegistered(status, scannerId));
+        if (scannerApp.getCallback() != null) {
+            callbackToApp(() -> scannerApp.getCallback().onScannerRegistered(status, scannerId));
         }
         if (status != ScanCallback.NO_ERROR) {
             mScannerMap.remove(uuid);
             return;
         }
-        app.setId(scannerId);
+        scannerApp.setId(scannerId);
         // If app is callback based, setup a death recipient. App will initiate the start.
         // Otherwise, if PendingIntent based, start the scan directly.
-        if (app.getCallback() != null) {
-            app.linkToDeath(new ScannerDeathRecipient(scannerId, app.getName()));
+        if (scannerApp.getCallback() != null) {
+            scannerApp.linkToDeath(new ScannerDeathRecipient(scannerId, scannerApp.getName()));
         } else {
-            continuePiStartScan(scannerId, app);
+            continuePiStartScan(scannerId, scannerApp);
         }
     }
 
@@ -758,14 +756,6 @@ public class ScanController {
     @VisibleForTesting
     void onBatchScanReportsInternal(
             int status, int scannerId, int reportType, int numRecords, byte[] recordData) {
-        Log.d(
-                TAG,
-                "onBatchScanReports() -"
-                        + (" scannerId=" + scannerId)
-                        + (", status=" + status)
-                        + (", reportType=" + reportType)
-                        + (", numRecords=" + numRecords));
-
         Set<ScanResult> results =
                 BatchScanUtil.parseResults(mAdapterService, numRecords, reportType, recordData);
         if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
@@ -1028,7 +1018,7 @@ public class ScanController {
         if (app != null
                 && app.isScanningTooFrequently()
                 && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
-            Log.e(TAG, "App '" + app.mAppName + "' is scanning too frequently");
+            Log.e(TAG, "registerScanner(): App '" + app.mAppName + "' is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
             } catch (RemoteException e) {
@@ -1056,7 +1046,7 @@ public class ScanController {
 
     public void unregisterScanner(int scannerId) {
         enforceScanThread();
-        Log.d(TAG, "unregisterScanner() - scannerId=" + scannerId);
+        Log.d(TAG, "unregisterScanner(scannerId=" + scannerId + ")");
         mScannerMap.remove(scannerId);
         mScanManager.unregisterScanner(scannerId);
     }
@@ -1181,23 +1171,18 @@ public class ScanController {
             List<ScanFilter> filters,
             AttributionSource source) {
         enforceScanThread();
-        Log.d(TAG, "Register pendingIntent with filters and start scan");
+        var header = "registerPiAndStartScan(): ";
         settings = enforceReportDelayFloor(settings);
         UUID uuid = UUID.randomUUID();
         String callingPackage = source.getPackageName();
         int callingUid = source.getUid();
         PendingIntentInfo piInfo =
                 new PendingIntentInfo(pendingIntent, settings, filters, callingPackage, callingUid);
-        Log.d(
-                TAG,
-                "startScan(PI) -"
-                        + (" UUID=" + uuid)
-                        + (" Package=" + callingPackage)
-                        + (" UID=" + callingUid));
+        Log.d(TAG, header + "UUID=" + uuid + " package=" + callingPackage + " uid=" + callingUid);
 
         // Don't start scan if the Pi scan already in mScannerMap.
         if (mScannerMap.getByPendingIntentInfo(pendingIntent) != null) {
-            Log.d(TAG, "Don't startScan(PI) since the same Pi scan already in mScannerMap.");
+            Log.d(TAG, header + "Ignoring since the same PI scan is already in ScannerMap");
             return;
         }
 
@@ -1237,7 +1222,7 @@ public class ScanController {
         mScanManager.registerScanner(uuid);
         // If this fails, we should stop the scan immediately.
         if (!pendingIntent.addCancelListener(Runnable::run, mScanIntentCancelListener)) {
-            Log.d(TAG, "scanning PendingIntent is already cancelled, stopping scan.");
+            Log.d(TAG, header + "Stopping scan as the PI scan is already cancelled");
             stopScan(pendingIntent);
         }
     }
@@ -1410,8 +1395,9 @@ public class ScanController {
     @VisibleForTesting
     ScanSettings enforceReportDelayFloor(ScanSettings settings) {
         final long originalDelay = settings.getReportDelayMillis();
+        var header = "enforceReportDelayFloor(): ";
         if (originalDelay == 0) {
-            Log.d(TAG, "enforceReportDelayFloor(): Report delay is 0, skipping floor enforcement.");
+            Log.d(TAG, header + "Report delay is 0, skipping floor enforcement");
             return settings;
         }
 
@@ -1426,20 +1412,16 @@ public class ScanController {
             if (originalDelay >= floor) {
                 Log.d(
                         TAG,
-                        "enforceReportDelayFloor(): Report delay "
-                                + originalDelay
-                                + "ms is above or equal to floor "
-                                + floor
-                                + "ms, no changes.");
+                        header
+                                + ("Report delay=" + originalDelay + "ms is above or equal")
+                                + (" to floor " + floor + "ms, no changes"));
                 return settings;
             } else {
                 Log.d(
                         TAG,
-                        "enforceReportDelayFloor(): Enforcing floor: original delay "
-                                + originalDelay
-                                + "ms is below floor, setting to "
-                                + floor
-                                + "ms.");
+                        header
+                                + ("Enforcing floor as originalDelay=" + originalDelay + "ms is")
+                                + (" below floor, setting to=" + floor + "ms"));
                 return new ScanSettings.Builder()
                         .setCallbackType(settings.getCallbackType())
                         .setLegacy(settings.getLegacy())

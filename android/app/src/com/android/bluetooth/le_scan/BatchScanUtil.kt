@@ -29,7 +29,6 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS
-import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
 import com.android.bluetooth.util.NumberUtils
 import java.util.concurrent.TimeUnit
 
@@ -85,8 +84,6 @@ object BatchScanUtil {
                     Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
                     SCAN_MODE_LOW_POWER_WINDOW_MS,
                 )
-        }.also { windowMs ->
-            Log.d(TAG, "windowMillis=${windowMs}ms for scan mode=${scanModeToString(scanMode)}")
         }
 
     @JvmStatic
@@ -106,8 +103,6 @@ object BatchScanUtil {
                     Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
                     SCAN_MODE_LOW_POWER_INTERVAL_MS,
                 )
-        }.also { intervalMs ->
-            Log.d(TAG, "intervalMillis=${intervalMs}ms for scan mode=${scanModeToString(scanMode)}")
         }
 
     @JvmStatic
@@ -142,6 +137,7 @@ object BatchScanUtil {
             val device = adapterService.getRemoteDevice(Utils.getAddressStringFromByte(address))
             val rssi = record[8].toInt()
             val nanos = now - parseTimestampNanos(extractBytes(record, 9, 2))
+            @Suppress("DEPRECATION")
             results.add(ScanResult(device, ScanRecord.parseFromBytes(byteArrayOf()), rssi, nanos))
         }
         return results
@@ -185,6 +181,7 @@ object BatchScanUtil {
                 advertisePacketLen,
                 scanResponsePacketLen,
             )
+            @Suppress("DEPRECATION")
             results.add(ScanResult(device, ScanRecord.parseFromBytes(scanRecordBytes), rssi, nanos))
         }
         return results

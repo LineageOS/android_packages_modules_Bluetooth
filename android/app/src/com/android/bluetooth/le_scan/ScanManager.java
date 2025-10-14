@@ -390,7 +390,7 @@ class ScanManager {
     }
 
     void startScan(ScanClient client) {
-        Log.d(TAG, "startScan() " + client);
+        Log.d(TAG, "startScan(" + client + ")");
         if (Flags.scanControllerThread()) {
             handleStartScan(client);
         } else {
@@ -408,7 +408,7 @@ class ScanManager {
     }
 
     void flushBatchScanResults(ScanClient client) {
-        Log.d(TAG, "flushBatchScanResults for client: " + client);
+        Log.d(TAG, "flushBatchScanResults(" + client + ")");
         if (Flags.scanControllerThread()) {
             handleFlushBatchResults(client);
         } else {
@@ -575,7 +575,6 @@ class ScanManager {
     }
 
     private void handleStartScan(ScanClient client) {
-        Log.d(TAG, "Handling start scan");
         fetchAppForegroundState(client);
 
         if (!isScanSupported(client)) {
@@ -834,13 +833,14 @@ class ScanManager {
 
     @VisibleForTesting
     void handleSuspendScans() {
+        var isLocationEnabled = mLocationManager.isLocationEnabled();
         for (ScanClient client : mRegularScanClients) {
-            if ((requiresScreenOn(client) && !mScreenOn)
-                    || (requiresLocationOn(client) && !mLocationManager.isLocationEnabled())) {
-                // Suspend unfiltered scans
+            var screenRequirementUnmet = requiresScreenOn(client) && !mScreenOn;
+            var locationRequirementUnmet = requiresLocationOn(client) && !isLocationEnabled;
+            if (screenRequirementUnmet || locationRequirementUnmet) {
                 client.getAppScanStats()
                         .ifPresent(stats -> stats.recordScanSuspend(client.getScannerId()));
-                Log.d(TAG, "suspend scan " + client);
+                Log.d(TAG, "Suspending scan for " + client);
                 handleStopScan(client);
                 mSuspendedScanClients.add(client);
             }
@@ -851,7 +851,7 @@ class ScanManager {
         boolean updatedScanParams = false;
         for (ScanClient client : mRegularScanClients) {
             if (!isExemptFromAutoBatchScanUpdate(client)) {
-                Log.d(TAG, "Updating regular scan to batch scan" + client);
+                Log.d(TAG, "Updating regular scan to batch scan for " + client);
                 handleStopScan(client);
                 setAutoBatchScanClient(client);
                 handleStartScan(client);
@@ -867,7 +867,7 @@ class ScanManager {
         boolean updatedScanParams = false;
         for (ScanClient client : mBatchClients) {
             if (!isExemptFromAutoBatchScanUpdate(client)) {
-                Log.d(TAG, "Updating batch scan to regular scan" + client);
+                Log.d(TAG, "Updating batch scan to regular scan for " + client);
                 handleStopScan(client);
                 clearAutoBatchScanClient(client);
                 handleStartScan(client);
@@ -1173,7 +1173,7 @@ class ScanManager {
     }
 
     private void configureRegularScanParams() {
-        Log.d(TAG, "configureRegularScanParams() - queue=" + mRegularScanClients.size());
+        var header = "configureRegularScanParams(): ";
         int newScanSetting1m = Integer.MIN_VALUE;
         int newScanSettingCoded = Integer.MIN_VALUE;
         ScanClient client1m = getAggressiveClient(mRegularScanClients, true, false);
@@ -1193,11 +1193,19 @@ class ScanManager {
 
         // Only update scan parameters if at least one of the following is true:
         // 1. The 1M PHY mode has changed and is a valid value
+        var has1mPhyChanged = shouldUpdateScan(newScanSetting1m, mLastConfiguredScanSetting1m);
         // 2. The coded PHY mode has changed and is a valid value
+        var hasCodedPhyChanged =
+                shouldUpdateScan(newScanSettingCoded, mLastConfiguredScanSettingCoded);
         // 3. The PHYs to scan on have changed and the new setting is valid (not 0)
-        if (shouldUpdateScan(newScanSetting1m, mLastConfiguredScanSetting1m)
-                || shouldUpdateScan(newScanSettingCoded, mLastConfiguredScanSettingCoded)
-                || (scanPhyMask != 0 && curPhyMask != scanPhyMask)) {
+        var hasPhyMaskChanged = scanPhyMask != 0 && curPhyMask != scanPhyMask;
+        Log.d(
+                TAG,
+                (header + "queueSize=" + mRegularScanClients.size())
+                        + (" has1mPhyChanged=" + has1mPhyChanged)
+                        + (" hasCodedPhyChanged=" + hasCodedPhyChanged)
+                        + (" hasPhyMaskChanged=" + hasPhyMaskChanged));
+        if (has1mPhyChanged || hasCodedPhyChanged || hasPhyMaskChanged) {
             int scanWindow1m = ScanUtil.scanWindow(mAdapterService, client1m);
             int scanInterval1m = ScanUtil.scanInterval(mAdapterService, client1m);
             int scanWindowCoded = ScanUtil.scanWindow(mAdapterService, clientCoded);
@@ -1208,7 +1216,7 @@ class ScanManager {
             }
             Log.d(
                     TAG,
-                    "Start scanNative with"
+                    (header + "Set Scan Parameters Native")
                             + (" old 1M scanMode=" + mLastConfiguredScanSetting1m)
                             + (", new 1M scanMode=" + newScanSetting1m)
                             + (" (in scan unit=" + scanInterval1m + " / " + scanWindow1m + ")")
@@ -1228,7 +1236,7 @@ class ScanManager {
             mNativeInterface.scan(true, "configureRegularScanParams");
             recordScanRadioStart(client1m, clientCoded, newScanSetting1m, newScanSettingCoded);
         } else {
-            Log.d(TAG, "configureRegularScanParams() - queue empty, scan stopped");
+            Log.d(TAG, header + "Queue empty, scan stopped");
         }
         mLastConfiguredScanSetting1m = newScanSetting1m;
         mLastConfiguredScanSettingCoded = newScanSettingCoded;
@@ -1329,11 +1337,12 @@ class ScanManager {
     }
 
     private void resetBatchScan(ScanClient client) {
+        var header = "resetBatchScan(" + client + "): ";
         int scannerId = client.getScannerId();
         BatchScanParams batchScanParams = fetchBatchScanParams();
         // Stop batch if batch scan params changed and previous params is not null.
         if (mBatchScanParams != null && (!mBatchScanParams.equals(batchScanParams))) {
-            Log.d(TAG, "Stopping BLE Batch");
+            Log.d(TAG, header + "Stopping BLE Batch");
             resetCountDownLatch();
             mNativeInterface.stopBatchScan(scannerId);
             waitForCallback();
@@ -1344,11 +1353,10 @@ class ScanManager {
         // Start batch if batchScanParams changed and current params is not null.
         if (batchScanParams != null && (!batchScanParams.equals(mBatchScanParams))) {
             int notifyThreshold = 95;
-            Log.d(TAG, "Starting BLE batch scan");
             int resultType = BatchScanUtil.resultType(batchScanParams);
             int fullScanPercent = BatchScanUtil.fullScanStoragePercent(resultType);
             resetCountDownLatch();
-            Log.d(TAG, "Configuring batch scan storage for " + client);
+            Log.d(TAG, header + "Configuring batch scan storage");
             mNativeInterface.configBatchScanStorage(
                     client.getScannerId(), fullScanPercent, 100 - fullScanPercent, notifyThreshold);
             waitForCallback();
@@ -1358,6 +1366,11 @@ class ScanManager {
                     Utils.millsToUnit(BatchScanUtil.intervalMillis(mAdapterService, scanMode));
             int scanWindow =
                     Utils.millsToUnit(BatchScanUtil.windowMillis(mAdapterService, scanMode));
+            Log.d(
+                    TAG,
+                    header
+                            + ("Start BLE batch scan with scanIntervalMs=" + scanInterval)
+                            + (", windowIntervalMs" + scanWindow));
             mNativeInterface.startBatchScan(
                     scannerId,
                     resultType,
@@ -1401,11 +1414,12 @@ class ScanManager {
     // Set the batch alarm to be triggered within a short window after batch interval. This
     // allows system to optimize wake up time while still allows a degree of precise control.
     private void setBatchAlarm(ScanClient client) {
-        Log.d(TAG, "setBatchAlarm(): Caller: " + client + ". Canceling pending batch scan alarm");
+        var header = "setBatchAlarm(" + client + "): ";
+        Log.d(TAG, header + "Canceling pending batch scan alarm");
         mAlarmManager.cancel(mBatchScanIntervalIntent);
 
         if (mBatchClients.isEmpty()) {
-            Log.d(TAG, "setBatchAlarm(): No batch clients; Skipping alarm setup");
+            Log.d(TAG, header + "No batch clients; Skipping alarm setup");
             return;
         }
         final long batchTriggerIntervalMillis =
@@ -1415,7 +1429,7 @@ class ScanManager {
         final long windowLengthMillis = batchTriggerIntervalMillis / 10;
         final long windowStartMs = mTimeProvider.elapsedRealtime() + batchTriggerIntervalMillis;
         final var windowStartReadable = Utils.formatElapsedRealtime(windowStartMs);
-        Log.d(TAG, "setBatchAlarm(): for:" + windowStartReadable + " (" + windowStartMs + "ms)");
+        Log.d(TAG, header + "For=" + windowStartReadable + " (" + windowStartMs + "ms)");
         client.getAppScanStats().ifPresent(AppScanStats::recordBatchAlarmScheduled);
         mAlarmManager.setWindow(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
@@ -1460,28 +1474,27 @@ class ScanManager {
     }
 
     private void regularScanTimeout(ScanClient client) {
-        if (!isExemptFromScanTimeout(client)
-                && (client.getAppScanStats().isEmpty()
-                        || client.getAppScanStats().get().isScanningTooLong())) {
-            Log.d(TAG, "RegularScanTimeout(): Client scan time was too long");
+        var header = "regularScanTimeout(" + client + "): ";
+        var appScanStats = client.getAppScanStats();
+        var isScanningTooLong = appScanStats.isEmpty() || appScanStats.get().isScanningTooLong();
+        if (!isExemptFromScanTimeout(client) && isScanningTooLong) {
+            Log.d(TAG, header + "Scan time was too long");
             if (client.getFilters().isEmpty()) {
-                Log.w(TAG, "Moving unfiltered scan to opportunistic scan for " + client);
+                Log.w(TAG, header + "Moving unfiltered scan to opportunistic scan");
                 setOpportunisticScanClient(client);
                 removeScanFilters(client.getScannerId());
             } else {
-                Log.w(TAG, "Moving filtered scan to downgraded scan for " + client);
+                Log.w(TAG, header + "Moving filtered scan to downgraded scan");
                 int scanMode = client.getSettings().getScanMode();
                 int maxScanMode = SCAN_MODE_FORCE_DOWNGRADED;
                 client.updateScanMode(minScanMode(scanMode, maxScanMode));
             }
-            client.getAppScanStats()
-                    .ifPresent(
-                            stats -> {
-                                stats.setScanTimeout(client.getScannerId());
-                                stats.recordScanTimeoutCountMetrics(
-                                        client.getScannerId(),
-                                        mAdapterService.getScanTimeout().toMillis());
-                            });
+            appScanStats.ifPresent(
+                    stats -> {
+                        stats.setScanTimeout(client.getScannerId());
+                        stats.recordScanTimeoutCountMetrics(
+                                client.getScannerId(), mAdapterService.getScanTimeout().toMillis());
+                    });
         }
 
         // The scan should continue for background scans
@@ -1689,14 +1702,11 @@ class ScanManager {
         int onLostTimeout = 10000;
         Log.d(
                 TAG,
-                "configureFilterParameter "
-                        + onFoundTimeout
-                        + " "
-                        + onLostTimeout
-                        + " "
-                        + onFoundCount
-                        + " "
-                        + numOfTrackingEntries);
+                "configureFilterParameter(): "
+                        + ("onFoundTimeout=" + onFoundTimeout)
+                        + (" onLostTimeout=" + onLostTimeout)
+                        + (" onFoundCount=" + onFoundCount)
+                        + (" numOfTrackingEntries=" + numOfTrackingEntries));
         FilterParams filtValue =
                 new FilterParams(
                         scannerId,

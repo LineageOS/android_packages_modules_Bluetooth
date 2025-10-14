@@ -20,6 +20,7 @@ import android.util.Log
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.profile.NativeCallback
 import com.google.protobuf.ByteString
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -49,10 +50,10 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         if (Flags.scanControllerThread()) {
             return true
         }
-        try {
-            return latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        return try {
+            latch.await(timeoutMs, TimeUnit.MILLISECONDS)
         } catch (_: InterruptedException) {
-            return false
+            false
         }
     }
 
@@ -68,27 +69,26 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         periodicAdvInt: Int,
         advData: ByteArray?,
         originalAddress: String?,
-    ) {
-        doOnScanThread {
-            onScanResult(
-                eventType,
-                addressType,
-                address,
-                primaryPhy,
-                secondaryPhy,
-                advertisingSid,
-                txPower,
-                rssi,
-                periodicAdvInt,
-                advData,
-                originalAddress,
-            )
-        }
+    ) = doOnScanThread {
+        onScanResult(
+            eventType,
+            addressType,
+            address,
+            primaryPhy,
+            secondaryPhy,
+            advertisingSid,
+            txPower,
+            rssi,
+            periodicAdvInt,
+            advData,
+            originalAddress,
+        )
     }
 
-    fun onScannerRegistered(status: Int, scannerId: Int, uuidLsb: Long, uuidMsb: Long) {
-        doOnScanThread { onScannerRegistered(status, scannerId, uuidLsb, uuidMsb) }
-    }
+    fun onScannerRegistered(status: Int, scannerId: Int, uuidLsb: Long, uuidMsb: Long) =
+        doOnScanThread {
+            onScannerRegistered(status, scannerId, UUID(uuidMsb, uuidLsb))
+        }
 
     fun onScanFilterEnableDisabled(action: Int, status: Int, clientIf: Int) {
         Log.d(
@@ -155,8 +155,8 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         doOnScanThread { onBatchScanReports(status, scannerId, reportType, numRecords, recordData) }
     }
 
-    fun onBatchScanThresholdCrossed(clientIf: Int) {
-        doOnScanThread { onBatchScanThresholdCrossed(clientIf) }
+    fun onBatchScanThresholdCrossed(clientIf: Int) = doOnScanThread {
+        onBatchScanThresholdCrossed(clientIf)
     }
 
     fun createOnTrackAdvFoundLostObject(
@@ -190,24 +190,24 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
             timeStamp,
         )
 
-    fun onTrackAdvFoundLost(trackingInfo: AdvtFilterOnFoundOnLostInfo) {
-        doOnScanThread { onTrackAdvFoundLost(trackingInfo) }
+    fun onTrackAdvFoundLost(trackingInfo: AdvtFilterOnFoundOnLostInfo) = doOnScanThread {
+        onTrackAdvFoundLost(trackingInfo)
     }
 
-    fun onScanParamSetupCompleted(status: Int, scannerId: Int) {
-        doOnScanThread { onScanParamSetupCompleted(status, scannerId) }
+    fun onScanParamSetupCompleted(status: Int, scannerId: Int) = doOnScanThread {
+        onScanParamSetupCompleted(status, scannerId)
     }
 
-    fun onMsftAdvMonitorAdd(filter_index: Int, monitor_handle: Int, status: Int) {
-        doOnScanThread { onMsftAdvMonitorAdd(filter_index, monitor_handle, status) }
+    fun onMsftAdvMonitorAdd(filter_index: Int, monitor_handle: Int, status: Int) = doOnScanThread {
+        onMsftAdvMonitorAdd(filter_index, monitor_handle, status)
     }
 
-    fun onMsftAdvMonitorRemove(filter_index: Int, status: Int) {
-        doOnScanThread { onMsftAdvMonitorRemove(filter_index, status) }
+    fun onMsftAdvMonitorRemove(filter_index: Int, status: Int) = doOnScanThread {
+        onMsftAdvMonitorRemove(filter_index, status)
     }
 
-    fun onMsftAdvMonitorEnable(enable: Boolean, status: Int) {
-        doOnScanThread { onMsftAdvMonitorEnable(enable, status) }
+    fun onMsftAdvMonitorEnable(enable: Boolean, status: Int) = doOnScanThread {
+        onMsftAdvMonitorEnable(enable, status)
     }
 
     private fun doOnScanThread(block: ScanController.() -> Unit) =

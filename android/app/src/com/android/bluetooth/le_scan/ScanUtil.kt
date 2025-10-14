@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.bluetooth.le.ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY
@@ -249,7 +250,7 @@ object ScanUtil {
             else -> {
                 val delay = client.settings.reportDelayMillis
                 val mode = if (delay == 0L) "DELIVERY_MODE_IMMEDIATE" else "DELIVERY_MODE_BATCH"
-                Log.d(TAG, "$header Using report delay (${delay}ms) to set delivery mode to $mode")
+                Log.d(TAG, "$header Using report delay=${delay}ms to set delivery mode to $mode")
                 if (delay == 0L) DELIVERY_MODE_IMMEDIATE else DELIVERY_MODE_BATCH
             }
         }
@@ -288,6 +289,19 @@ object ScanUtil {
             SCAN_MODE_AMBIENT_DISCOVERY,
             SCAN_MODE_SCREEN_OFF_BALANCED -> WEIGHT_BALANCED
             else -> WEIGHT_LOW_POWER
+        }
+
+    @JvmStatic
+    fun statusToString(status: Int) =
+        when (status) {
+            ScanCallback.NO_ERROR -> "SUCCESS"
+            ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "ALREADY_STARTED"
+            ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "APP_REGISTRATION_FAILED"
+            ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "INTERNAL_ERROR"
+            ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "FEATURE_UNSUPPORTED"
+            ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> "OUT_OF_HARDWARE_RESOURCES"
+            ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> "SCANNING_TOO_FREQUENTLY"
+            else -> "UNKNOWN($status)"
         }
 
     @JvmStatic

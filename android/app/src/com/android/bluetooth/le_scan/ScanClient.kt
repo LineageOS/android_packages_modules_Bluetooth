@@ -74,10 +74,9 @@ private constructor(
 
     override fun toString() =
         "ScanClient(" +
-            (appScanStats.getOrNull()?.let { "app=${it.mAppName}, " } ?: "") +
-            "scannerId=$scannerId, " +
-            "scanMode[app=${scanModeToString(scanModeApp)}, " +
-            "used=${scanModeToString(settings.scanMode)}])"
+            (appScanStats.getOrNull()?.let { "${it.mAppName}, " } ?: "") +
+            "id=$scannerId, " +
+            "mode[${scanModeToString(scanModeApp)}, used=${scanModeToString(settings.scanMode)}])"
 
     /**
      * Update scan settings with the new scan mode.
