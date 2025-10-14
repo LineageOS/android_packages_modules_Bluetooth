@@ -203,7 +203,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_REGISTER_APP_EVT: {
-      RawAddress* addr = (RawAddress*)&p_data->reg_status.bda;
+      RawAddress* addr = &p_data->reg_status.bda;
 
       if (!p_data->reg_status.in_use) {
         addr = NULL;
@@ -224,7 +224,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_OPEN_EVT: {
-      RawAddress& addr = p_data->conn.bda;
+      RawAddress addr = p_data->conn.bda;
       log::warn("BTA_HD_OPEN_EVT, address={}", addr);
       /* Check if the connection is from hid host and not hid device */
       if (btif_check_cod_hid(addr)) {
@@ -236,19 +236,17 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       }
       btif_storage_set_hidd(p_data->conn.bda);
 
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, (RawAddress*)&p_data->conn.bda,
-                BTHD_CONN_STATE_CONNECTED);
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda, BTHD_CONN_STATE_CONNECTED);
     } break;
 
     case BTA_HD_CLOSE_EVT:
       if (btif_hd_cb.forced_disc) {
-        RawAddress* addr = (RawAddress*)&p_data->conn.bda;
         log::warn("remote device was forcefully disconnected");
-        btif_hd_remove_device(*addr);
+        btif_hd_remove_device(p_data->conn.bda);
         btif_hd_cb.forced_disc = FALSE;
         break;
       }
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, (RawAddress*)&p_data->conn.bda,
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda,
                 BTHD_CONN_STATE_DISCONNECTED);
       break;
 
@@ -272,21 +270,20 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HD_VC_UNPLUG_EVT:
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, (RawAddress*)&p_data->conn.bda,
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda,
                 BTHD_CONN_STATE_DISCONNECTED);
       if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
         log::verbose("Removing bonding as only HID profile connected");
         BTA_DmRemoveDevice(p_data->conn.bda);
       } else {
-        RawAddress* bd_addr = (RawAddress*)&p_data->conn.bda;
         log::verbose("Only removing HID data as some other profiles connected");
-        btif_hd_remove_device(*bd_addr);
+        btif_hd_remove_device(p_data->conn.bda);
       }
       HAL_CBACK(bt_hd_callbacks, vc_unplug_cb);
       break;
 
     case BTA_HD_CONN_STATE_EVT:
-      HAL_CBACK(bt_hd_callbacks, connection_state_cb, (RawAddress*)&p_data->conn.bda,
+      HAL_CBACK(bt_hd_callbacks, connection_state_cb, &p_data->conn.bda,
                 (bthd_connection_state_t)p_data->conn.status);
       break;
 
