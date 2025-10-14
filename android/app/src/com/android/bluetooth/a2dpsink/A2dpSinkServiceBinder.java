@@ -65,26 +65,6 @@ class A2dpSinkServiceBinder extends IBluetoothA2dpSink.Stub implements IProfileS
     }
 
     @Override
-    public boolean connect(BluetoothDevice device, AttributionSource source) {
-        A2dpSinkService service = getService(source);
-        if (service == null) {
-            return false;
-        }
-
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.connect(device);
-    }
-
-    @Override
-    public boolean disconnect(BluetoothDevice device, AttributionSource source) {
-        A2dpSinkService service = getService(source);
-        if (service == null) {
-            return false;
-        }
-        return service.disconnect(device);
-    }
-
-    @Override
     public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
         A2dpSinkService service = getService(source);
         if (service == null) {

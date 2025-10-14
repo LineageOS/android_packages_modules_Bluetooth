@@ -61,22 +61,6 @@ public class A2dpSinkServiceBinderTest {
     }
 
     @Test
-    public void connect() {
-        BluetoothDevice device = getTestDevice(0);
-
-        mBinder.connect(device, mAttributionSource);
-        verify(mService).connect(device);
-    }
-
-    @Test
-    public void disconnect() {
-        BluetoothDevice device = getTestDevice(0);
-
-        mBinder.disconnect(device, mAttributionSource);
-        verify(mService).disconnect(device);
-    }
-
-    @Test
     public void getConnectedDevices() {
 
         mBinder.getConnectedDevices(mAttributionSource);

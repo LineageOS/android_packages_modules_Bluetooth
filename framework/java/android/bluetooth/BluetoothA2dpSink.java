@@ -31,12 +31,9 @@ import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
-import android.bluetooth.annotations.RequiresLegacyBluetoothAdminPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
-import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
 import android.content.Context;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -123,77 +120,6 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
     @Override
     @SuppressWarnings("Finalize") // empty finalize for api signature
     public void finalize() {}
-
-    /**
-     * Initiate connection to a profile of the remote bluetooth device.
-     *
-     * <p>Currently, the system supports only 1 connection to the A2DP profile. The API will
-     * automatically disconnect connected devices before connecting.
-     *
-     * <p>This API returns false in scenarios like the profile on the device is already connected or
-     * Bluetooth is not turned on. When this API returns true, it is guaranteed that connection
-     * state intent for the profile will be broadcasted with the state. Users can get the connection
-     * state of the profile from this intent.
-     *
-     * @param device Remote Bluetooth Device
-     * @return false on immediate error, true otherwise
-     */
-    @Hide
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public boolean connect(BluetoothDevice device) {
-        log("connect(" + device + ")");
-        final IBluetoothA2dpSink service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled() && isValidDevice(device)) {
-            try {
-                return service.connect(device, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Initiate disconnection from a profile
-     *
-     * <p>This API will return false in scenarios like the profile on the Bluetooth device is not in
-     * connected state etc. When this API returns, true, it is guaranteed that the connection state
-     * change intent will be broadcasted with the state. Users can get the disconnection state of
-     * the profile from this intent.
-     *
-     * <p>If the disconnection is initiated by a remote device, the state will transition from
-     * {@link #STATE_CONNECTED} to {@link #STATE_DISCONNECTED}. If the disconnect is initiated by
-     * the host (local) device the state will transition from {@link #STATE_CONNECTED} to state
-     * {@link #STATE_DISCONNECTING} to state {@link #STATE_DISCONNECTED}. The transition to {@link
-     * #STATE_DISCONNECTING} can be used to distinguish between the two scenarios.
-     *
-     * @param device Remote Bluetooth Device
-     * @return false on immediate error, true otherwise
-     */
-    @Hide
-    @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
-    @RequiresLegacyBluetoothAdminPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public boolean disconnect(BluetoothDevice device) {
-        log("disconnect(" + device + ")");
-        final IBluetoothA2dpSink service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled() && isValidDevice(device)) {
-            try {
-                return service.disconnect(device, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return false;
-    }
 
     /** {@inheritDoc} */
     @Hide
