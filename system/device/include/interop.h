@@ -356,6 +356,9 @@ typedef enum {
   // Som A2DP sink devices don't respond SDP request during A2DP reconnection
   INTEROP_A2DP_SKIP_SDP_DURING_RECONNECTION,
 
+  // After receiving the service changed ind, ignore the subsequent operation.
+  INTEROP_IGNORE_SERVICE_CHANGED_IND,
+
   // Some devices response slowly after setting non zero latency.
   // To avoid slowing down profile connection set latency to 0.
   // Peer can request proper latency based on its power state later.
