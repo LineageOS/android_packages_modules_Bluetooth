@@ -481,9 +481,13 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
 
   // Do not update device properties of already bonded devices.
   if (!BTM_IsBonded(raw_address)) {
-    do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
-                                    base::Unretained(this), raw_address, ble_addr_type,
-                                    advertising_data));
+    // Prevent updating properties without scan response
+    if (!com_android_bluetooth_flags_support_passive_scanning() || !(event_type & kScannableMask) ||
+        (event_type & kScanResponseMask) || msft_adv_monitor_enabled_) {
+      do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
+                                      base::Unretained(this), raw_address, ble_addr_type,
+                                      advertising_data));
+    }
   }
 
   do_in_jni_thread(base::BindOnce(
