@@ -1073,7 +1073,6 @@ public class BluetoothInCallServiceTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_MAINTAIN_CALL_INDEX_AFTER_CONFERENCE)
     public void conferenceLastCallIndexIsMaintained() throws Exception {
         doReturn("").when(mTelephonyManager).getNetworkCountryIso();
 
