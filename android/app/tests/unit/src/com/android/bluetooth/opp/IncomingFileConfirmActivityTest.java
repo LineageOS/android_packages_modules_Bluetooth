@@ -18,6 +18,7 @@ package com.android.bluetooth.opp;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
@@ -40,7 +41,6 @@ import android.view.KeyEvent;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.action.ViewActions;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -75,7 +75,6 @@ public class IncomingFileConfirmActivityTest {
 
     @Mock Cursor mCursor;
 
-    //     private static final int TIMEOUT_MS = 3_000;
     private static final Context sContext =
             InstrumentationRegistry.getInstrumentation().getContext();
 
@@ -163,13 +162,10 @@ public class IncomingFileConfirmActivityTest {
         try (ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
                 ActivityScenario.launch(mIntent)) {
             activityScenario.onActivity(activity -> {});
-            onView(withText(sContext.getText(R.string.incoming_file_confirm_cancel).toString()))
-                    .inRoot(isDialog())
-                    .perform(ViewActions.scrollTo());
-            onView(withText(sContext.getText(R.string.incoming_file_confirm_cancel).toString()))
+            onView(withText(R.string.incoming_file_confirm_cancel))
                     .inRoot(isDialog())
                     .check(matches(isDisplayed()))
-                    .perform(click());
+                    .perform(scrollTo(), click());
 
             verify(mBluetoothMethodProxy)
                     .contentResolverUpdate(
@@ -192,13 +188,10 @@ public class IncomingFileConfirmActivityTest {
 
         try (ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
                 ActivityScenario.launch(mIntent)) {
-            onView(withText(sContext.getText(R.string.incoming_file_confirm_ok).toString()))
-                    .inRoot(isDialog())
-                    .perform(ViewActions.scrollTo());
-            onView(withText(sContext.getText(R.string.incoming_file_confirm_ok).toString()))
+            onView(withText(R.string.incoming_file_confirm_ok))
                     .inRoot(isDialog())
                     .check(matches(isDisplayed()))
-                    .perform(click());
+                    .perform(scrollTo(), click());
 
             verify(mBluetoothMethodProxy)
                     .contentResolverUpdate(
@@ -216,17 +209,15 @@ public class IncomingFileConfirmActivityTest {
     }
 
     @Test
-    public void onKeyDown() throws Exception {
+    public void onKeyDown() {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
         try (ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
                 ActivityScenario.launch(mIntent)) {
             AtomicBoolean atomicBoolean = new AtomicBoolean();
             activityScenario.onActivity(
                     activity -> {
-                        atomicBoolean.set(
-                                activity.onKeyDown(
-                                        KeyEvent.KEYCODE_A,
-                                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)));
+                        var keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A);
+                        atomicBoolean.set(activity.onKeyDown(KeyEvent.KEYCODE_A, keyEvent));
                     });
 
             assertThat(atomicBoolean.get()).isFalse();
@@ -234,12 +225,9 @@ public class IncomingFileConfirmActivityTest {
 
             activityScenario.onActivity(
                     activity -> {
+                        var keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK);
                         atomicBoolean.set(
-                                activity.onKeyDown(
-                                                KeyEvent.KEYCODE_BACK,
-                                                new KeyEvent(
-                                                        KeyEvent.ACTION_DOWN,
-                                                        KeyEvent.KEYCODE_BACK))
+                                activity.onKeyDown(KeyEvent.KEYCODE_BACK, keyEvent)
                                         && activity.isFinishing());
                     });
 
