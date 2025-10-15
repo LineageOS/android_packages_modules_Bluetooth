@@ -489,6 +489,40 @@ static void btif_hh_incoming_connection_timeout(void* data) {
   do_in_jni_thread(base::BindOnce(reject_incoming_connection, handle));
 }
 
+static void start_pending_incoming_connection_timer(uint64_t delay, tBTA_HH_CONN& conn) {
+  if (!btif_hh_cb.pending_incoming_connection.link_spec.addrt.bda.IsEmpty()) {
+    log::error("Replacing existing pending connection {}",
+               btif_hh_cb.pending_incoming_connection.link_spec);
+    BTA_HhRemoveDev(btif_hh_cb.pending_incoming_connection.handle);
+  }
+  btif_hh_cb.pending_incoming_connection = conn;
+
+  if (btif_hh_cb.incoming_connection_timer != nullptr) {
+    alarm_cancel(btif_hh_cb.incoming_connection_timer);
+  } else {
+    btif_hh_cb.incoming_connection_timer = alarm_new("btif_hh.incoming_connection_timer");
+  }
+  alarm_set_on_mloop(btif_hh_cb.incoming_connection_timer, delay,
+                     btif_hh_incoming_connection_timeout, reinterpret_cast<void*>(conn.handle));
+}
+
+static void cancel_pending_incoming_connection_timer(bool remove_dev) {
+  if (btif_hh_cb.pending_incoming_connection.link_spec.addrt.bda.IsEmpty()) {
+    log::error("No pending incoming connection to be canceled");
+    return;
+  }
+
+  if (remove_dev) {
+    log::warn("Pending incoming connection {} closed, handle: {} ",
+              btif_hh_cb.pending_incoming_connection.link_spec,
+              btif_hh_cb.pending_incoming_connection.handle);
+    BTA_HhRemoveDev(btif_hh_cb.pending_incoming_connection.handle);
+  }
+
+  alarm_cancel(btif_hh_cb.incoming_connection_timer);
+  btif_hh_cb.pending_incoming_connection = {};
+}
+
 static void hh_connect_complete(tBTA_HH_CONN& conn, bthh_connection_state_t state) {
   if (state != BTHH_CONN_STATE_CONNECTED && conn.status == BTHH_OK) {
     BTA_HhClose(conn.handle);
@@ -573,15 +607,7 @@ static void hh_save_incoming_connection(tBTA_HH_CONN& conn) {
     delay = BTIF_HH_UNEXPECTED_INCOMING_CONNECTION_TIMEOUT_MS;
   }
 
-  if (!btif_hh_cb.pending_incoming_connection.link_spec.addrt.bda.IsEmpty()) {
-    log::error("Replacing existing pending connection {}",
-               btif_hh_cb.pending_incoming_connection.link_spec);
-    BTA_HhRemoveDev(btif_hh_cb.pending_incoming_connection.handle);
-  }
-  btif_hh_cb.pending_incoming_connection = conn;
-  alarm_cancel(btif_hh_cb.incoming_connection_timer);
-  alarm_set_on_mloop(btif_hh_cb.incoming_connection_timer, delay,
-                     btif_hh_incoming_connection_timeout, reinterpret_cast<void*>(conn.handle));
+  start_pending_incoming_connection_timer(delay, conn);
 }
 
 /*******************************************************************************
@@ -674,11 +700,7 @@ static void hh_close_handler(tBTA_HH_CBDATA& dev_status) {
   if (p_dev == nullptr) {
     if (btif_hh_cb.pending_incoming_connection.handle == dev_status.handle &&
         !btif_hh_cb.pending_incoming_connection.link_spec.addrt.bda.IsEmpty()) {
-      log::warn("Pending incoming connection {} closed, handle: {} ",
-                btif_hh_cb.pending_incoming_connection.link_spec, dev_status.handle);
-      BTA_HhRemoveDev(btif_hh_cb.pending_incoming_connection.handle);
-      alarm_cancel(btif_hh_cb.incoming_connection_timer);
-      btif_hh_cb.pending_incoming_connection = {};
+      cancel_pending_incoming_connection_timer(true);
       return;
     }
     log::warn("Unknown device handle {}", dev_status.handle);
@@ -934,12 +956,7 @@ void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
   link_spec.transport = BT_TRANSPORT_LE;
 
   if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
-    log::warn("Pending incoming connection {} closed, handle: {} ",
-              btif_hh_cb.pending_incoming_connection.link_spec,
-              btif_hh_cb.pending_incoming_connection.handle);
-    BTA_HhRemoveDev(btif_hh_cb.pending_incoming_connection.handle);
-    alarm_cancel(btif_hh_cb.incoming_connection_timer);
-    btif_hh_cb.pending_incoming_connection = {};
+    cancel_pending_incoming_connection_timer(true);
   }
 
   btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(link_spec);
@@ -961,12 +978,7 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
   bool announce_vup = false;
 
   if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
-    log::warn("Pending incoming connection {} closed, handle: {} ",
-              btif_hh_cb.pending_incoming_connection.link_spec,
-              btif_hh_cb.pending_incoming_connection.handle);
-    BTA_HhRemoveDev(btif_hh_cb.pending_incoming_connection.handle);
-    alarm_cancel(btif_hh_cb.incoming_connection_timer);
-    btif_hh_cb.pending_incoming_connection = {};
+    cancel_pending_incoming_connection_timer(true);
   }
 
   for (int i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
@@ -1218,8 +1230,7 @@ BtStatus btif_hh_connect(const AclLinkSpec& link_spec) {
   if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
     log::info("Resume pending incoming connection {}", link_spec);
     tBTA_HH_CONN conn = btif_hh_cb.pending_incoming_connection;
-    alarm_cancel(btif_hh_cb.incoming_connection_timer);
-    btif_hh_cb.pending_incoming_connection = {};
+    cancel_pending_incoming_connection_timer(false);
     hh_open_handler(conn);
     return BtifStatus();
   }
@@ -1587,7 +1598,6 @@ static BtStatus init(bthh_callbacks_t* callbacks) {
   for (i = 0; i < BTIF_HH_MAX_HID; i++) {
     btif_hh_cb.devices[i].state = BTHH_CONN_STATE_UNKNOWN;
   }
-  btif_hh_cb.incoming_connection_timer = alarm_new("btif_hh.incoming_connection_timer");
 
   /* Invoke the enable service API to the core to set the appropriate service_id
    */
