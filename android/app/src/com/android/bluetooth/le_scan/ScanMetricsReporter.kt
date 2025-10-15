@@ -53,16 +53,16 @@ class ScanMetricsReporter(
         appImportance: Int,
     ) {
         val isUnoptimized =
-            !(scan.mIsFilterScan || scan.mIsBackgroundScan || scan.mIsOpportunisticScan)
+            !(scan.isFilterScan || scan.isBackgroundScan || scan.isOpportunisticScan)
         batteryStatsManager.reportBleScanStarted(workSource, isUnoptimized)
         BluetoothStatsLog.write(
             BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
             workSourceUtil.uids,
             workSourceUtil.tags,
             BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__ON,
-            scan.mIsFilterScan,
-            scan.mIsBackgroundScan,
-            scan.mIsOpportunisticScan,
+            scan.isFilterScan,
+            scan.isBackgroundScan,
+            scan.isOpportunisticScan,
         )
 
         val logger = MetricsLogger.getInstance()
@@ -71,25 +71,24 @@ class ScanMetricsReporter(
             workSourceUtil.uids,
             workSourceUtil.tags,
             true, /* enabled */
-            scan.mIsFilterScan,
-            scan.mIsCallbackScan,
-            convertScanCallbackType(scan.mScanCallbackType),
+            scan.isFilterScan,
+            scan.isCallbackScan,
+            convertScanCallbackType(scan.scanCallbackType),
             convertScanType(scan),
-            convertScanMode(scan.mScanMode),
-            scan.mReportDelayMillis,
+            convertScanMode(scan.scanMode),
+            scan.reportDelayMillis,
             0, /* app_scan_duration_ms */
             ongoingScansCount,
             isScreenOn,
             isAppDead,
             appImportance,
-            scan.mAttributionTag ?: "",
+            scan.attributionTag ?: "",
         )
         when {
-            scan.mIsAutoBatchScan ->
+            scan.isAutoBatchScan ->
                 logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_AUTO_BATCH_ENABLE, 1)
-            scan.mIsBatchScan ->
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_ENABLE, 1)
-            scan.mIsFilterScan ->
+            scan.isBatchScan -> logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_ENABLE, 1)
+            scan.isFilterScan ->
                 logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_FILTERED_ENABLE, 1)
             else -> logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_UNFILTERED_ENABLE, 1)
         }
@@ -105,8 +104,8 @@ class ScanMetricsReporter(
     ) {
         // Inform battery stats of any results it might be missing on scan stop
         val isUnoptimized =
-            !(scan.mIsFilterScan || scan.mIsBackgroundScan || scan.mIsOpportunisticScan)
-        val results = scan.mResultsScreenOff + scan.mResultsScreenOn
+            !(scan.isFilterScan || scan.isBackgroundScan || scan.isOpportunisticScan)
+        val results = scan.resultsScreenOff + scan.resultsScreenOn
         batteryStatsManager.reportBleScanResults(workSource, results % 100)
         batteryStatsManager.reportBleScanStopped(workSource, isUnoptimized)
         BluetoothStatsLog.write(
@@ -120,9 +119,9 @@ class ScanMetricsReporter(
             workSourceUtil.uids,
             workSourceUtil.tags,
             BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__OFF,
-            scan.mIsFilterScan,
-            scan.mIsBackgroundScan,
-            scan.mIsOpportunisticScan,
+            scan.isFilterScan,
+            scan.isBackgroundScan,
+            scan.isOpportunisticScan,
         )
 
         val logger = MetricsLogger.getInstance()
@@ -131,25 +130,25 @@ class ScanMetricsReporter(
             workSourceUtil.uids,
             workSourceUtil.tags,
             false, /* enabled */
-            scan.mIsFilterScan,
-            scan.mIsCallbackScan,
-            convertScanCallbackType(scan.mScanCallbackType),
+            scan.isFilterScan,
+            scan.isCallbackScan,
+            convertScanCallbackType(scan.scanCallbackType),
             convertScanType(scan),
-            convertScanMode(scan.mScanMode),
-            scan.mReportDelayMillis,
+            convertScanMode(scan.scanMode),
+            scan.reportDelayMillis,
             duration,
             ongoingScansCount,
             isScreenOn,
             isAppDead,
             appImportance,
-            scan.mAttributionTag ?: "",
+            scan.attributionTag ?: "",
         )
         when {
-            scan.mIsAutoBatchScan ->
+            scan.isAutoBatchScan ->
                 logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_AUTO_BATCH_DISABLE, 1)
-            scan.mIsBatchScan ->
+            scan.isBatchScan ->
                 logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_DISABLE, 1)
-            scan.mIsFilterScan ->
+            scan.isFilterScan ->
                 logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_FILTERED_DISABLE, 1)
             else -> logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_UNFILTERED_DISABLE, 1)
         }
@@ -163,7 +162,7 @@ class ScanMetricsReporter(
             convertScanType(scan),
             BluetoothStatsLog.LE_SCAN_ABUSED__LE_SCAN_ABUSE_REASON__REASON_SCAN_TIMEOUT,
             scanTimeoutMillis,
-            scan?.mAttributionTag ?: "",
+            scan?.attributionTag ?: "",
         )
         MetricsLogger.getInstance()
             .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_SCAN_TIMEOUT, 1)
@@ -180,7 +179,7 @@ class ScanMetricsReporter(
             convertScanType(scan),
             BluetoothStatsLog.LE_SCAN_ABUSED__LE_SCAN_ABUSE_REASON__REASON_HW_FILTER_NA,
             numOfFilterSupported,
-            scan?.mAttributionTag ?: "",
+            scan?.attributionTag ?: "",
         )
         MetricsLogger.getInstance()
             .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1)
@@ -229,9 +228,9 @@ class ScanMetricsReporter(
             when {
                 scan == null ->
                     BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_UNKNOWN
-                scan.mIsAutoBatchScan ->
+                scan.isAutoBatchScan ->
                     BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_AUTO_BATCH
-                scan.mIsBatchScan ->
+                scan.isBatchScan ->
                     BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_BATCH
                 else -> BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR
             }

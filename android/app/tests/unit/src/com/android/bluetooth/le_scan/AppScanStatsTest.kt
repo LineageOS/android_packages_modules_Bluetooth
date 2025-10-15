@@ -55,7 +55,7 @@ class AppScanStatsTest {
         val uid = 1234
         val appScanStats = AppScanStats(name, source, uid, adapterService, timeProvider)
 
-        assertThat(appScanStats.isScanning).isFalse()
+        assertThat(appScanStats.isScanning()).isFalse()
     }
 
     @Test
@@ -79,7 +79,7 @@ class AppScanStatsTest {
             scannerId,
             "tag",
         )
-        appScanStats.mIsRegistered = true
+        appScanStats.isRegistered = true
 
         val stringBuilder = StringBuilder()
         appScanStats.dump(stringBuilder, emptyList())

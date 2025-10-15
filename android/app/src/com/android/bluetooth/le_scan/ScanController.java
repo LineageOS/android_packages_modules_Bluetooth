@@ -715,7 +715,7 @@ public class ScanController {
             return;
         }
         client.setAppDied(true);
-        client.getAppScanStats().ifPresent(stats -> stats.mIsAppDead = true);
+        client.getAppScanStats().ifPresent(stats -> stats.setAppDead(true));
         stopScan(client.getScannerId());
     }
 
@@ -1018,7 +1018,9 @@ public class ScanController {
         if (app != null
                 && app.isScanningTooFrequently()
                 && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
-            Log.e(TAG, "registerScanner(): App '" + app.mAppName + "' is scanning too frequently");
+            Log.e(
+                    TAG,
+                    "registerScanner(): App '" + app.getAppName() + "' is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
             } catch (RemoteException e) {
