@@ -20,7 +20,6 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.OobData;
-import android.os.ParcelUuid;
 
 import com.android.bluetooth.Utils;
 
@@ -248,18 +247,6 @@ public class AdapterNativeInterface {
         return pbapPseDynamicVersionUpgradeIsEnabledNative();
     }
 
-    int getSocketL2capLocalChannelId(ParcelUuid connectionUuid) {
-        return getSocketL2capLocalChannelIdNative(
-                connectionUuid.getUuid().getLeastSignificantBits(),
-                connectionUuid.getUuid().getMostSignificantBits());
-    }
-
-    int getSocketL2capRemoteChannelId(ParcelUuid connectionUuid) {
-        return getSocketL2capRemoteChannelIdNative(
-                connectionUuid.getUuid().getLeastSignificantBits(),
-                connectionUuid.getUuid().getMostSignificantBits());
-    }
-
     boolean setDefaultEventMaskExcept(long mask, long leMask) {
         return setDefaultEventMaskExceptNative(mask, leMask);
     }
@@ -411,12 +398,6 @@ public class AdapterNativeInterface {
     private native int getRemotePbapPceVersionNative(String address);
 
     private native boolean pbapPseDynamicVersionUpgradeIsEnabledNative();
-
-    private native int getSocketL2capLocalChannelIdNative(
-            long connectionUuidLsb, long connectionUuidMsb);
-
-    private native int getSocketL2capRemoteChannelIdNative(
-            long connectionUuidLsb, long connectionUuidMsb);
 
     private native boolean setDefaultEventMaskExceptNative(long mask, long leMask);
 

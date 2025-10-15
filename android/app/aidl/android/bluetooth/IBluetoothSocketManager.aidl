@@ -33,8 +33,4 @@ interface IBluetoothSocketManager {
     @nullable ParcelFileDescriptor createSocketChannelWithOffload(int type, in @nullable String serviceName, in @nullable ParcelUuid uuid, int port, int flag, int dataPath, in String socketName, long hubId, long endpointId, int maximumPacketSize,  in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void requestMaximumTxDataLength(in BluetoothDevice device,  in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    int getL2capLocalChannelId(in ParcelUuid connectionUuid, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    int getL2capRemoteChannelId(in ParcelUuid connectionUuid, in AttributionSource attributionSource);
 }
