@@ -1961,8 +1961,6 @@ TEST_P(LeAudioAseConfigurationTest, test_lc3_config_media) {
 }
 
 TEST_P(LeAudioAseConfigurationTest, test_use_codec_preference_earbuds_media) {
-  com::android::bluetooth::flags::provider_->leaudio_set_codec_config_preference(true);
-
   LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
                                       {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
   LeAudioDevice* right = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontRight}},
@@ -1989,8 +1987,6 @@ TEST_P(LeAudioAseConfigurationTest, test_use_codec_preference_earbuds_media) {
 }
 
 TEST_P(LeAudioAseConfigurationTest, test_not_use_codec_preference_earbuds_media) {
-  com::android::bluetooth::flags::provider_->leaudio_set_codec_config_preference(true);
-
   LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
                                       {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
   LeAudioDevice* right = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontRight}},
@@ -2017,8 +2013,6 @@ TEST_P(LeAudioAseConfigurationTest, test_not_use_codec_preference_earbuds_media)
 }
 
 TEST_P(LeAudioAseConfigurationTest, test_use_codec_preference_earbuds_conv) {
-  com::android::bluetooth::flags::provider_->leaudio_set_codec_config_preference(true);
-
   LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
                                       {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
   LeAudioDevice* right = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontRight}},
@@ -2045,8 +2039,6 @@ TEST_P(LeAudioAseConfigurationTest, test_use_codec_preference_earbuds_conv) {
 }
 
 TEST_P(LeAudioAseConfigurationTest, test_not_use_codec_preference_earbuds_conv) {
-  com::android::bluetooth::flags::provider_->leaudio_set_codec_config_preference(true);
-
   LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
                                       {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
   LeAudioDevice* right = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontRight}},

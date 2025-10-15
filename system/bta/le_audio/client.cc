@@ -1337,11 +1337,6 @@ public:
   void SetCodecConfigPreference(
           int group_id, bluetooth::le_audio::btle_audio_codec_config_t input_codec_config,
           bluetooth::le_audio::btle_audio_codec_config_t output_codec_config) override {
-    if (!com_android_bluetooth_flags_leaudio_set_codec_config_preference()) {
-      log::debug("leaudio_set_codec_config_preference flag is not enabled");
-      return;
-    }
-
     LeAudioDeviceGroup* group = aseGroups_.FindById(group_id);
 
     if (!group) {
