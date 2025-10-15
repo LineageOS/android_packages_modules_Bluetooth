@@ -53,6 +53,7 @@ import com.android.bluetooth.audio_util.PlayerSettingsManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -99,19 +100,30 @@ public class AvrcpTargetService extends ProfileService {
     // Only used to see if the metadata has changed from its previous value
     private MediaData mCurrentData;
 
-    public AvrcpTargetService(AdapterService adapterService, UserManager userManager) {
-        this(requireNonNull(adapterService), null, null, null, userManager, Looper.myLooper());
+    public AvrcpTargetService(
+            AdapterService adapterService,
+            BluetoothStorageManager storage,
+            UserManager userManager) {
+        this(
+                requireNonNull(adapterService),
+                storage,
+                null,
+                null,
+                null,
+                userManager,
+                Looper.myLooper());
     }
 
     @VisibleForTesting
     AvrcpTargetService(
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             AudioManager audioManager,
             AvrcpNativeInterface nativeInterface,
             AvrcpVolumeManager volumeManager,
             UserManager userManager,
             Looper looper) {
-        super(BluetoothProfile.AVRCP, requireNonNull(adapterService));
+        super(BluetoothProfile.AVRCP, adapterService);
         mAudioManager =
                 requireNonNullElseGet(audioManager, () -> obtainSystemService(AudioManager.class));
         mNativeInterface =
@@ -135,9 +147,7 @@ public class AvrcpTargetService extends ProfileService {
         mVolumeManager =
                 requireNonNullElseGet(
                         volumeManager,
-                        () ->
-                                new AvrcpVolumeManager(
-                                        requireNonNull(adapterService), mNativeInterface));
+                        () -> new AvrcpVolumeManager(adapterService, storage, mNativeInterface));
 
         if (userManager.isUserUnlocked()) {
             mMediaPlayerList.init(new ListCallback());
@@ -286,6 +296,7 @@ public class AvrcpTargetService extends ProfileService {
 
     /** Removes the stored volume for a device. */
     public void removeStoredVolumeForDevice(BluetoothDevice device) {
+        if (Flags.mainlineBetaStorage()) throw new IllegalStateException("mainlineBetaStorage");
         if (device == null) return;
 
         mVolumeManager.removeStoredVolumeForDevice(device);

@@ -60,6 +60,7 @@ import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.audio_util.MediaData;
 import com.android.bluetooth.audio_util.Metadata;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
@@ -85,6 +86,7 @@ public class AvrcpTargetServiceTest {
     public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
 
     @Mock private AdapterService mAdapterService;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private A2dpService mA2dpService;
     @Mock private AudioManager mAudioManager;
     @Mock private AvrcpNativeInterface mNativeInterface;
@@ -141,10 +143,11 @@ public class AvrcpTargetServiceTest {
         doReturn(true).when(mUserManager).isUserUnlocked();
 
         AvrcpVolumeManager volumeManager =
-                new AvrcpVolumeManager(mAdapterService, mNativeInterface);
+                new AvrcpVolumeManager(mAdapterService, mStorage, mNativeInterface);
         mService =
                 new AvrcpTargetService(
                         mAdapterService,
+                        mStorage,
                         mAudioManager,
                         mNativeInterface,
                         volumeManager,
