@@ -105,7 +105,7 @@ class ScannerMap {
                 appScanStats,
             )
         apps.add(app)
-        appScanStats.mIsRegistered = true
+        appScanStats.isRegistered = true
         return app
     }
 

@@ -68,6 +68,6 @@ class ScannerApp(
                 }
             }
         }
-        appScanStats.mIsRegistered = false
+        appScanStats.isRegistered = false
     }
 }

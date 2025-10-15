@@ -79,7 +79,7 @@ class AppScanStatsTest {
             scannerId,
             "tag",
         )
-        appScanStats.mIsRegistered = true
+        appScanStats.isRegistered = true
 
         val stringBuilder = StringBuilder()
         appScanStats.dump(stringBuilder, emptyList())

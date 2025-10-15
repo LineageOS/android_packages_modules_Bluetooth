@@ -68,13 +68,13 @@ class ScanRadioStats {
             return false;
         }
         mRadioStartTime = mTimeProvider.elapsedRealtime();
-        mRadioScanWorkSourceUtil = stats.mWorkSourceUtil;
+        mRadioScanWorkSourceUtil = stats.getWorkSourceUtil();
         mRadioScanType = ScanMetricsReporter.convertScanType(stats.getScanFromScannerId(scannerId));
         mRadioScanMode = scanMode;
         mRadioScanWindowMs = scanWindowMs;
         mRadioScanIntervalMs = scanIntervalMs;
         mIsRadioStarted = true;
-        mRadioScanAppImportance = stats.mAppImportance;
+        mRadioScanAppImportance = stats.getAppImportance();
         mRadioScanAttributionTag = stats.getAttributionTagFromScannerId(scannerId);
         return true;
     }
