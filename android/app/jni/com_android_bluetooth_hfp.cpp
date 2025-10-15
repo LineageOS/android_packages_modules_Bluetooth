@@ -64,6 +64,7 @@ static bluetooth::headset::Interface* sBluetoothHfpInterface = nullptr;
 static std::shared_timed_mutex interface_mutex;
 
 static jobject mCallbacksObj = nullptr;
+static jfieldID sCallbacksField;
 static std::shared_timed_mutex callbacks_mutex;
 
 static jbyteArray marshall_bda(RawAddress* bd_addr) {
@@ -521,7 +522,10 @@ static void initializeNative(JNIEnv* env, jobject object, jint max_hf_clients,
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for Handsfree Callbacks");
+  }
 }
 
 static void cleanupNative(JNIEnv* env, jobject /* object */) {
@@ -1044,6 +1048,7 @@ static jboolean setIsScoManagedByAudioNative(JNIEnv* /* env */, jobject /* objec
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
+// JNI functions defined in HeadsetNativeInterface
 int register_com_android_bluetooth_hfp(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "(IZ)V", (void*)initializeNative},
@@ -1071,12 +1076,15 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"enableSwbNative", "(IZ[B)Z", (void*)enableSwbNative},
           {"setIsScoManagedByAudioNative", "(Z)Z", (void*)setIsScoManagedByAudioNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/hfp/HeadsetNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
+
+  // Client callback functions defined in HeadsetNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "(I[BI)V", &method_onConnectionStateChanged},
           {"onAudioStateChanged", "(I[B)V", &method_onAudioStateChanged},
@@ -1101,7 +1109,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"onATBiev", "(II[B)V", &method_onAtBiev},
           {"onAtBia", "(ZZZZ[B)V", &method_onAtBia},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeCallback", javaMethods);
 
   return 0;
 }

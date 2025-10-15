@@ -16,29 +16,25 @@
 
 package com.android.bluetooth.hfp;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.profile.NativeInterface;
 
 /**
  * Defines native calls that are used by state machine/service to either send or receive messages
  * to/from the native stack. This file is registered for the native methods in corresponding CPP
  * file.
  */
-public class HeadsetNativeInterface {
-    private static final String TAG = HeadsetNativeInterface.class.getSimpleName();
-
+public class HeadsetNativeInterface extends NativeInterface<HeadsetNativeCallback> {
     private final AdapterService mAdapterService;
-    private final HeadsetService mService;
 
-    HeadsetNativeInterface(AdapterService adapterService, HeadsetService service) {
+    HeadsetNativeInterface(HeadsetNativeCallback nativeCallback, AdapterService adapterService) {
+        super(requireNonNull(nativeCallback));
         mAdapterService = adapterService;
-        mService = service;
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     private byte[] getByteAddress(BluetoothDevice device) {
@@ -48,170 +44,6 @@ public class HeadsetNativeInterface {
         }
         return Utils.getByteBrEdrAddress(mAdapterService, device);
     }
-
-    void onConnectionStateChanged(int state, byte[] address, int reason) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
-                        state,
-                        getDevice(address));
-        event.reason = reason;
-        mService.messageFromNative(event);
-    }
-
-    // Callbacks for native code
-    private void onAudioStateChanged(int state, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
-                        state,
-                        getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onVrStateChanged(int state, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED, state, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAnswerCall(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_ANSWER_CALL, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onHangupCall(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_HANGUP_CALL, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onVolumeChanged(int type, int volume, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_VOLUME_CHANGED,
-                        type,
-                        volume,
-                        getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onDialCall(String number, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_DIAL_CALL, number, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onSendDtmf(int dtmf, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_SEND_DTMF, dtmf, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onNoiseReductionEnable(boolean enable, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_NOISE_REDUCTION,
-                        enable ? 1 : 0,
-                        getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onWBS(int codec, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_WBS, codec, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onSWB(int codec, int swb, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_SWB, codec, swb, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtChld(int chld, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_AT_CHLD, chld, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtCnum(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtCind(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CIND, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtCops(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_COPS, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtClcc(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CLCC, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onUnknownAt(String atString, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_UNKNOWN_AT, atString, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onKeyPressed(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_KEY_PRESSED, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onATBind(String atString, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_BIND, atString, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onATBiev(int indId, int indValue, byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_BIEV, indId, indValue, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtBia(
-            boolean service, boolean roam, boolean signal, boolean battery, byte[] address) {
-        HeadsetAgIndicatorEnableState agIndicatorEnableState =
-                new HeadsetAgIndicatorEnableState(service, roam, signal, battery);
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(
-                        HeadsetStackEvent.EVENT_TYPE_BIA,
-                        agIndicatorEnableState,
-                        getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    private void onAtBcc(byte[] address) {
-        HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_BCC, getDevice(address));
-        mService.messageFromNative(event);
-    }
-
-    // Native wrappers to help unit testing
 
     /**
      * Initialize native stack
@@ -223,8 +55,8 @@ public class HeadsetNativeInterface {
         initializeNative(maxHfClients, inbandRingingEnabled);
     }
 
-    /** Closes the interface */
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 
