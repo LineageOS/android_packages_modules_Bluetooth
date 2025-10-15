@@ -38,7 +38,6 @@ constexpr uint64_t kWaitForIdle = 1 << 1;
 
 namespace bluetooth {
 namespace os {
-using common::Closure;
 
 struct Reactor::Event::impl {
   impl() {
@@ -80,15 +79,15 @@ void Reactor::Event::Notify(uint64_t num_events_generated) {
 
 class Reactor::Reactable {
 public:
-  Reactable(int fd, Closure on_read_ready, Closure on_write_ready)
+  Reactable(int fd, base::RepeatingClosure on_read_ready, base::RepeatingClosure on_write_ready)
       : fd_(fd),
         on_read_ready_(std::move(on_read_ready)),
         on_write_ready_(std::move(on_write_ready)),
         is_executing_(false),
         removed_(false) {}
   const int fd_;
-  Closure on_read_ready_;
-  Closure on_write_ready_;
+  base::RepeatingClosure on_read_ready_;
+  base::RepeatingClosure on_write_ready_;
   bool is_executing_;
   bool removed_;
   std::mutex mutex_;
@@ -209,7 +208,8 @@ std::unique_ptr<Reactor::Event> Reactor::NewEvent() const {
   return std::make_unique<Reactor::Event>();
 }
 
-Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_write_ready) {
+Reactor::Reactable* Reactor::Register(int fd, base::RepeatingClosure on_read_ready,
+                                      base::RepeatingClosure on_write_ready) {
   uint32_t poll_event_type = 0;
   if (!on_read_ready.is_null()) {
     poll_event_type |= (EPOLLIN | EPOLLRDHUP);
@@ -217,7 +217,7 @@ Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_
   if (!on_write_ready.is_null()) {
     poll_event_type |= EPOLLOUT;
   }
-  auto* reactable = new Reactable(fd, on_read_ready, on_write_ready);
+  auto* reactable = new Reactable(fd, std::move(on_read_ready), std::move(on_write_ready));
   epoll_event event = {
           .events = poll_event_type,
           .data = {.ptr = reactable},
