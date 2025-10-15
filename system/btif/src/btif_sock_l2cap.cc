@@ -962,8 +962,8 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
   if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
-    sock->lecoc_fixed_psm_slots =
-            android::sysprop::bluetooth::Ble::lecoc_fixed_psm_slots().value();
+    sock->lecoc_fixed_psm_slots = android::sysprop::bluetooth::Ble::lecoc_fixed_psm_slots()
+                                          .value_or(LECOC_FIXED_PSM_SLOTS_DEFAULT);
     log::info("fixed psm range : {}", sock->lecoc_fixed_psm_slots);
     if (sock->lecoc_fixed_psm_slots < LECOC_FIXED_PSM_RANGE_MIN ||
         sock->lecoc_fixed_psm_slots > LECOC_FIXED_PSM_RANGE_MAX) {
