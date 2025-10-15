@@ -3597,8 +3597,6 @@ TEST_F(UnicastTest, ConnectOneEarbudNoAscs) {
 }
 
 TEST_F(UnicastTest, ConnectOneEarbudAscsMultipleOfGattMultiRead) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
-
   const RawAddress test_address0 = GetTestAddress(0);
   uint16_t conn_id = 1;
   SetSampleDatabaseEarbudsValid(conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
@@ -10587,8 +10585,6 @@ TEST_F(UnicastTest, CheckDeviceIsNotAttachedToStreamWhenNotNeeded) {
 }
 
 TEST_F(UnicastTest, ReconnectedDeviceAndAttachedToStreamBecauseOfAvailableContextTypeChange) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
-
   uint8_t group_size = 2;
   int group_id = 2;
 
