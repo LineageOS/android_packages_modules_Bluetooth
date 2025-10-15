@@ -52,13 +52,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_set_codec_config_preference"
-    namespace: "bluetooth"
-    description: "New apis to set codec config preference"
-    bug: "353909820"
-}
-
-flag {
     name: "leaudio_config_profile_enabling"
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"
@@ -413,4 +406,11 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "leaudio_broadcast_sink_feature"
+    namespace: "bluetooth"
+    description: "LE Audio Broadcast Sink Feature"
+    bug: "452247122"
 }
