@@ -48,7 +48,6 @@ struct bta_av_co_audio_open bta_av_co_audio_open;
 struct bta_av_co_audio_setconfig bta_av_co_audio_setconfig;
 struct bta_av_co_audio_source_data_path bta_av_co_audio_source_data_path;
 struct bta_av_co_audio_start bta_av_co_audio_start;
-struct bta_av_co_audio_stop bta_av_co_audio_stop;
 struct bta_av_co_audio_update_mtu bta_av_co_audio_update_mtu;
 struct bta_av_co_get_encoder_effective_frame_size bta_av_co_get_encoder_effective_frame_size;
 struct bta_av_co_get_encoder_interface bta_av_co_get_encoder_interface;
@@ -143,10 +142,6 @@ void bta_av_co_audio_start(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_ad
   inc_func_call_count(__func__);
   test::mock::btif_co_bta_av_co::bta_av_co_audio_start(bta_av_handle, peer_address, p_codec_info,
                                                        p_no_rtp_header);
-}
-void bta_av_co_audio_stop(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address) {
-  inc_func_call_count(__func__);
-  test::mock::btif_co_bta_av_co::bta_av_co_audio_stop(bta_av_handle, peer_address);
 }
 void bta_av_co_audio_update_mtu(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
                                 uint16_t mtu) {

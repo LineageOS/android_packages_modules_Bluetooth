@@ -149,19 +149,6 @@ void bta_av_co_audio_start(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_ad
 
 /*******************************************************************************
  *
- * Function         bta_av_co_audio_stop
- *
- * Description      This function is called by AV when the audio streaming data
- *                  transfer is stopped.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_av_co_audio_stop(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address);
-
-/*******************************************************************************
- *
  * Function         bta_av_co_audio_source_data_path
  *
  * Description      This function is called to get the next data buffer from
