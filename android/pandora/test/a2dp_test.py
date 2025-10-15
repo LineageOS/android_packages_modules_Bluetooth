@@ -75,7 +75,6 @@ from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
-AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR = 'com.android.bluetooth.flags.avdt_wait_for_initial_delay_report_as_initiator'
 AVDT_CLOSE_ON_START_FAILURE_BAD_STATE = 'com.android.bluetooth.flags.avdt_close_on_start_failure_bad_state'
 
 AUDIO_SIGNAL_AMPLITUDE = 0.8
@@ -943,7 +942,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info("<< 6. DUT A2DP source configured and connected >>")
 
     @avatar.asynchronous
-    @enableFlag(AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR)
     async def test_avdt_wait_before_sending_open_command__no_delay_report_sent(self) -> None:
         """Test if AOSP DUT will wait for 2 seconds before sending AVDT Open command.
         DUT should wait for that time to allow RD1 sink device to send AVDT Delay Report command
@@ -1010,7 +1008,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                              channel.accept_suspend())
 
     @avatar.asynchronous
-    @enableFlag(AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR)
     async def test_avdt_wait_before_sending_open_command__delay_report_sent(self) -> None:
         """Test if AOSP DUT will wait for 2 seconds before sending AVDT Open command.
         DUT should wait for that time to allow REF sink device to send AVDT Delay Report command
