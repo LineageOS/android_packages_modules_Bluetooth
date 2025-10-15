@@ -61,7 +61,7 @@ class BluetoothSupervisor(
         bms.onBluetoothDisallowed()
     }
 
-    fun handleOnBootPhase(userHandle: UserHandle) {
+    fun onUserStarting(userHandle: UserHandle) {
         enforceCorrectThread()
         if (mInitialized) {
             Log.i(TAG, "onUserStarting($userHandle) but already initialized")
