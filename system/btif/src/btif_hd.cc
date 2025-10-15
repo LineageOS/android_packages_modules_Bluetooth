@@ -485,7 +485,7 @@ static BtStatus unregister_app(void) {
  * Returns          BtStatus
  *
  ******************************************************************************/
-static BtStatus connect(RawAddress* bd_addr) {
+static BtStatus connect(RawAddress bd_addr) {
   log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
@@ -498,7 +498,7 @@ static BtStatus connect(RawAddress* bd_addr) {
     return BtifStatus(NOT_READY);
   }
 
-  BTA_HdConnect(*bd_addr);
+  BTA_HdConnect(bd_addr);
 
   return BtifStatus();
 }
