@@ -550,6 +550,10 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               connection_handle, cs_requester_trackers_[connection_handle].used_config_id,
               cs_requester_trackers_[connection_handle].remote_num_antennas_supported_,
               cs_requester_trackers_[connection_handle].remote_max_antenna_paths_supported_);
+    } else if (com::android::bluetooth::flags::channel_sounding_26q1_fix() &&
+               cs_requester_trackers_[connection_handle].local_hci_role == hci::Role::CENTRAL) {
+      cs_requester_trackers_[connection_handle].state = CsTrackerState::WAIT_FOR_SECURITY_ENABLED;
+      send_le_cs_security_enable(connection_handle, true);
     } else {
       send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
     }
@@ -835,6 +839,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   void send_le_cs_read_remote_supported_capabilities(uint16_t connection_handle) {
+    log::info("connection_handle:0x{:04x}", connection_handle);
     hci_layer_->EnqueueCommand(
             LeCsReadRemoteSupportedCapabilitiesBuilder::Create(connection_handle),
             handler_->BindOnceOn(
@@ -843,13 +848,15 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   void send_le_cs_security_enable(uint16_t connection_handle, bool local_start) {
+    log::info("connection_handle:0x{:04x}, local_start:{}", connection_handle, local_start);
     if (local_start) {
       auto req_it = cs_requester_trackers_.find(connection_handle);
-      if (req_it != cs_requester_trackers_.end() &&
-          req_it->second.state == CsTrackerState::WAIT_FOR_CONFIG_COMPLETE) {
-        req_it->second.state = CsTrackerState::WAIT_FOR_SECURITY_ENABLED;
-      } else {
+      if (req_it == cs_requester_trackers_.end()) {
         log::error("no requester tracker. something wrong.");
+      } else if (req_it->second.state == CsTrackerState::WAIT_FOR_CONFIG_COMPLETE) {
+        req_it->second.state = CsTrackerState::WAIT_FOR_SECURITY_ENABLED;
+      } else if (req_it->second.state != CsTrackerState::WAIT_FOR_SECURITY_ENABLED) {
+        log::error("Unexpected state {}", static_cast<uint16_t>(req_it->second.state));
       }
     } else {
       auto res_it = cs_responder_trackers_.find(connection_handle);
@@ -869,6 +876,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   void send_le_cs_set_default_settings(uint16_t connection_handle) {
+    log::info("connection_handle:0x{:04x}", connection_handle);
     uint8_t role_enable = (1 << (uint8_t)CsRole::INITIATOR) | 1 << ((uint8_t)CsRole::REFLECTOR);
     hci_layer_->EnqueueCommand(
             LeCsSetDefaultSettingsBuilder::Create(connection_handle, role_enable,
@@ -877,11 +885,13 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   void send_le_cs_read_remote_fae_table(uint16_t connection_handle) const {
+    log::info("connection_handle:0x{:04x}", connection_handle);
     hci_layer_->EnqueueCommand(LeCsReadRemoteFaeTableBuilder::Create(connection_handle),
                                handler_->BindOnce(check_status<LeCsReadRemoteFaeTableStatusView>));
   }
 
   void send_le_cs_create_config(uint16_t connection_handle, uint8_t config_id) {
+    log::info("connection_handle:0x{:04x}, config_id:{}", connection_handle, config_id);
     if (cs_requester_trackers_.find(connection_handle) == cs_requester_trackers_.end()) {
       log::warn("no cs tracker found for {}", connection_handle);
     }
@@ -1407,7 +1417,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     }
 
     if (it->second.measurement_ongoing) {
-      log::debug("cs set up succeed");
+      log::info("cs set up succeed");
       it->second.setup_complete = true;
       send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
     }

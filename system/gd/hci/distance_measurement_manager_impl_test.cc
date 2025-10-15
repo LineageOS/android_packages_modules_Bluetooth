@@ -1182,7 +1182,23 @@ TEST_F(DistanceMeasurementManagerTest, duplicated_requesting_session) {
 
   // start a new request after stop
   cs_requester_.StartMeasurement(params);
-  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+
+  // Verify that LE_CS_SECURITY_ENABLE is sent upon restart
+  command_view = cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
+  auto security_enable_view =
+          LeCsSecurityEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+  EXPECT_TRUE(security_enable_view.IsValid());
+  EXPECT_EQ(security_enable_view.GetConnectionHandle(), params.connection_handle);
+
+  // Allow the flow to continue to verify the next command
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsSecurityEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS,
+          /*num_hci_command_packets=*/0xFF));
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
+          LeCsSecurityEnableCompleteBuilder::Create(ErrorCode::SUCCESS, params.connection_handle));
+  cs_requester_.sync_client_handler();
+
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
   cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 }
 
