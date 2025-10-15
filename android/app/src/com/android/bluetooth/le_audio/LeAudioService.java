@@ -89,7 +89,6 @@ import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
-import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsGatt;
 import com.android.internal.annotations.GuardedBy;

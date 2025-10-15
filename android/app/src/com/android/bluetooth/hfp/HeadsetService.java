@@ -66,7 +66,6 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
 import com.android.bluetooth.profile.ProfileService;
-import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -185,9 +184,11 @@ public class HeadsetService extends ConnectableProfile {
             HeadsetSystemInterface systemInterface,
             Looper looper) {
         super(BluetoothProfile.HEADSET, adapterService, storage);
+        var nativeCallback = new HeadsetNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new HeadsetNativeInterface(mAdapterService, this));
+                        nativeInterface,
+                        () -> new HeadsetNativeInterface(nativeCallback, mAdapterService));
         if (looper != null) {
             mHandler = new Handler(looper);
             mStateMachinesThread = null;
