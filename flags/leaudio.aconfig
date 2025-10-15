@@ -407,3 +407,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_sink_feature"
+    namespace: "bluetooth"
+    description: "LE Audio Broadcast Sink Feature"
+    bug: "452247122"
+}
