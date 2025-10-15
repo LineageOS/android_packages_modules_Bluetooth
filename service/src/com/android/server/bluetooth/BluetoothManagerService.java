@@ -1853,10 +1853,11 @@ class BluetoothManagerService {
         writer.println("  mQuietEnableExternal:" + mQuietEnableExternal);
 
         writer.println("");
-        writer.flush();
 
         dumpBluetoothFlags(writer);
         writer.println("");
+
+        writer.flush();
 
         if (mAdapter == null) {
             errorMsg = "Bluetooth Service not connected";
