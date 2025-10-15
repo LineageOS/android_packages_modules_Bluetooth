@@ -331,3 +331,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "migrate_btm_scan_to_gd"
+    namespace: "bluetooth"
+    description: "Migrate btm scan logic to gd le scanning manager"
+    bug: "452239954"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
