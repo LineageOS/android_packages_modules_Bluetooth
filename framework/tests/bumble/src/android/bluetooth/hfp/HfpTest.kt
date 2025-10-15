@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHeadset.STATE_AUDIO_CONNECTED
 import android.bluetooth.BluetoothHeadset.STATE_AUDIO_CONNECTING
@@ -49,6 +50,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Log
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.platform.app.InstrumentationRegistry
@@ -58,6 +60,7 @@ import com.google.protobuf.ByteString
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.Duration
 import org.hamcrest.Matcher
+import org.hamcrest.core.AllOf
 import org.hamcrest.core.AllOf.allOf
 import org.junit.After
 import org.junit.Before
@@ -73,10 +76,13 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
+import org.mockito.hamcrest.MockitoHamcrest
 import org.mockito.hamcrest.MockitoHamcrest.argThat
 import pandora.HFPGrpc
 import pandora.HfpProto
 import pandora.HostProto
+import pandora.HostProto.AdvertiseRequest
+import pandora.HostProto.OwnAddressType
 import pandora.SecurityProto
 
 @RunWith(TestParameterInjector::class)
@@ -85,8 +91,9 @@ class HfpTest {
     @get:Rule(order = 0) val permissionRule: AdoptShellPermissionsRule = AdoptShellPermissionsRule()
 
     @get:Rule(order = 1) val bumble = PandoraDevice()
+    @get:Rule(order = 2) val secondBumble = PandoraDevice.createSecondPandoraDevice()
 
-    @get:Rule(order = 2) val enableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
     @Mock private lateinit var serviceListener: BluetoothProfile.ServiceListener
@@ -97,6 +104,7 @@ class HfpTest {
 
     private lateinit var hfBlockingStub: HFPGrpc.HFPBlockingStub
     private lateinit var bumbleDevice: BluetoothDevice
+    private lateinit var secondBumbleDevice: BluetoothDevice
     private lateinit var hfpService: BluetoothHeadset
     private lateinit var a2dpService: BluetoothA2dp
     private lateinit var inOrder: InOrder
@@ -123,6 +131,45 @@ class HfpTest {
 
         hfBlockingStub = bumble.hfBlocking()
         bumbleDevice = bumble.remoteDevice
+        secondBumbleDevice = secondBumble.remoteDevice
+        if (bumbleDevice in adapter.bondedDevices) {
+            if (bumbleDevice.removeBond()) {
+                verifyIntentReceived(
+                    hasAction(ACTION_BOND_STATE_CHANGED),
+                    hasExtra(EXTRA_DEVICE, bumbleDevice),
+                    hasExtra(EXTRA_BOND_STATE, BOND_NONE),
+                )
+            }
+        }
+        if (secondBumbleDevice in adapter.bondedDevices) {
+            if (secondBumbleDevice.removeBond()) {
+                verifyIntentReceived(
+                    hasAction(ACTION_BOND_STATE_CHANGED),
+                    hasExtra(EXTRA_DEVICE, secondBumbleDevice),
+                    hasExtra(EXTRA_BOND_STATE, BOND_NONE),
+                )
+            }
+        }
+        // Start advertising from bumble side with address type PUBLIC
+        bumble
+            .hostBlocking()
+            .advertise(
+                AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(OwnAddressType.PUBLIC)
+                    .build()
+            )
+        // Start advertising from bumble side with address type PUBLIC
+        secondBumble
+            .hostBlocking()
+            .advertise(
+                AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(OwnAddressType.PUBLIC)
+                    .build()
+            )
     }
 
     @After
@@ -136,13 +183,13 @@ class HfpTest {
         prepareBumbleDeviceAsBondedAndDisconnected()
 
         assertThat(hfpService.connect(bumbleDevice)).isTrue()
-        verifyConnectionState(STATE_CONNECTING)
-        verifyConnectionState(STATE_CONNECTED)
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
 
         assertThat(hfpService.disconnect(bumbleDevice)).isTrue()
-        verifyConnectionState(STATE_DISCONNECTING)
-        verifyConnectionState(STATE_DISCONNECTED)
+        verifyConnectionState(STATE_DISCONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_DISCONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_DISCONNECTED)
     }
 
@@ -162,8 +209,8 @@ class HfpTest {
                 .build()
         )
 
-        verifyConnectionState(STATE_CONNECTING)
-        verifyConnectionState(STATE_CONNECTED)
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
 
         // Disable Slc from HF/Bumble side
@@ -173,8 +220,8 @@ class HfpTest {
                 .build()
         )
 
-        verifyConnectionState(STATE_DISCONNECTING)
-        verifyConnectionState(STATE_DISCONNECTED)
+        verifyConnectionState(STATE_DISCONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_DISCONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_DISCONNECTED)
     }
 
@@ -208,8 +255,8 @@ class HfpTest {
         prepareBumbleDeviceAsBondedAndDisconnected()
 
         assertThat(hfpService.connect(bumbleDevice)).isTrue()
-        verifyConnectionState(STATE_CONNECTING)
-        verifyConnectionState(STATE_CONNECTED)
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
         hfpService.setForceScoAudio(true)
@@ -251,8 +298,8 @@ class HfpTest {
         prepareBumbleDeviceAsBondedAndDisconnected()
 
         assertThat(hfpService.connect(bumbleDevice)).isTrue()
-        verifyConnectionState(STATE_CONNECTING)
-        verifyConnectionState(STATE_CONNECTED)
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
         hfpService.setForceScoAudio(true)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
@@ -271,6 +318,74 @@ class HfpTest {
         verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
     }
 
+    @Test
+    @Throws(Exception::class)
+    fun disconnectScoWhileConnectingFirstBumbleThenConnectScoToSecondBumble() {
+        prepareBumbleDeviceAsBondedAndDisconnected()
+
+        assertThat(hfpService.connect(bumbleDevice)).isTrue()
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
+        assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
+
+        Log.d(TAG, "Start to bond the second device")
+        prepareSecondBumbleDeviceAsBondedAndDisconnected()
+        assertThat(hfpService.connect(secondBumbleDevice)).isTrue()
+        verifyConnectionState(STATE_CONNECTING, secondBumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, secondBumbleDevice)
+
+        assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
+
+        hfpService.setForceScoAudio(true)
+        assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
+        // Disconnect sco to first bumble device while in connecting state
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
+        assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
+
+        assertThat(hfpService.setActiveDevice(secondBumbleDevice)).isTrue()
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, secondBumbleDevice)
+        verifyAudioState(STATE_AUDIO_CONNECTED, secondBumbleDevice)
+        assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_DISCONNECTED, secondBumbleDevice)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun switchScoFromFirstBumbleToSecondBumble() {
+        prepareBumbleDeviceAsBondedAndDisconnected()
+
+        assertThat(hfpService.connect(bumbleDevice)).isTrue()
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
+        assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
+
+        Log.d(TAG, "Start to bond the second device")
+        prepareSecondBumbleDeviceAsBondedAndDisconnected()
+
+        assertThat(hfpService.connect(secondBumbleDevice)).isTrue()
+        verifyConnectionState(STATE_CONNECTING, secondBumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, secondBumbleDevice)
+        assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
+
+        hfpService.setForceScoAudio(true)
+
+        assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
+
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
+        verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)
+
+        assertThat(hfpService.setActiveDevice(secondBumbleDevice)).isTrue()
+        verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
+
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, secondBumbleDevice)
+        verifyAudioState(STATE_AUDIO_CONNECTED, secondBumbleDevice)
+    }
+
     private fun prepareBumbleDeviceAsBondedAndDisconnected() {
         if (bumbleDevice.bondState == BOND_BONDED) {
             assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_DISCONNECTED)
@@ -284,17 +399,17 @@ class HfpTest {
             hasExtra(EXTRA_BOND_STATE, BOND_BONDING),
         )
         verifyIntentReceived(
-            hasAction(ACTION_ACL_CONNECTED),
-            hasExtra(EXTRA_DEVICE, bumbleDevice),
-            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
-        )
-        restartSettingsApp()
-        verifyIntentReceived(
             hasAction(ACTION_PAIRING_REQUEST),
             hasExtra(EXTRA_DEVICE, bumbleDevice),
         )
-
         bumbleDevice.setPairingConfirmation(true)
+        verifyIntentReceivedUnordered(
+            hasAction(ACTION_ACL_CONNECTED),
+            hasExtra(EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE),
+        )
+        restartSettingsApp()
+
         verifyIntentReceived(
             hasAction(ACTION_BOND_STATE_CHANGED),
             hasExtra(EXTRA_DEVICE, bumbleDevice),
@@ -306,17 +421,71 @@ class HfpTest {
         }
         // Connect HFP
         assertThat(bumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
-        verifyConnectionState(STATE_CONNECTING)
-        verifyConnectionState(STATE_CONNECTED)
+        verifyConnectionState(STATE_CONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
 
         assertThat(bumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
-        verifyConnectionState(STATE_DISCONNECTING)
-        verifyConnectionState(STATE_DISCONNECTED)
+        verifyConnectionState(STATE_DISCONNECTING, bumbleDevice)
+        verifyConnectionState(STATE_DISCONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_DISCONNECTED)
         verifyIntentReceived(
             hasAction(ACTION_ACL_DISCONNECTED),
             hasExtra(EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
+        )
+    }
+
+    private fun prepareSecondBumbleDeviceAsBondedAndDisconnected() {
+        if (secondBumbleDevice.bondState == BOND_BONDED) {
+            assertThat(hfpService.getConnectionState(secondBumbleDevice))
+                .isEqualTo(STATE_DISCONNECTED)
+            return
+        }
+
+        assertThat(secondBumbleDevice.createBond(TRANSPORT_BREDR)).isTrue()
+        verifyIntentReceived(
+            hasAction(ACTION_BOND_STATE_CHANGED),
+            hasExtra(EXTRA_DEVICE, secondBumbleDevice),
+            hasExtra(EXTRA_BOND_STATE, BOND_BONDING),
+        )
+        verifyIntentReceived(
+            hasAction(ACTION_PAIRING_REQUEST),
+            hasExtra(EXTRA_DEVICE, secondBumbleDevice),
+        )
+        secondBumbleDevice.setPairingConfirmation(true)
+        verifyIntentReceivedUnordered(
+            hasAction(ACTION_ACL_CONNECTED),
+            hasExtra(EXTRA_DEVICE, secondBumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE),
+        )
+        restartSettingsApp()
+
+        verifyIntentReceived(
+            hasAction(ACTION_BOND_STATE_CHANGED),
+            hasExtra(EXTRA_DEVICE, secondBumbleDevice),
+            hasExtra(EXTRA_BOND_STATE, BOND_BONDED),
+        )
+
+        if (a2dpService.getConnectionPolicy(secondBumbleDevice) == CONNECTION_POLICY_ALLOWED) {
+            assertThat(
+                    a2dpService.setConnectionPolicy(secondBumbleDevice, CONNECTION_POLICY_FORBIDDEN)
+                )
+                .isTrue()
+        }
+        // Connect HFP
+        assertThat(secondBumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(STATE_CONNECTING, secondBumbleDevice)
+        verifyConnectionState(STATE_CONNECTED, secondBumbleDevice)
+        assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
+
+        assertThat(secondBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(STATE_DISCONNECTING, secondBumbleDevice)
+        verifyConnectionState(STATE_DISCONNECTED, secondBumbleDevice)
+        assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_DISCONNECTED)
+        verifyIntentReceived(
+            hasAction(ACTION_ACL_DISCONNECTED),
+            hasExtra(EXTRA_DEVICE, secondBumbleDevice),
             hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
         )
     }
@@ -336,9 +505,21 @@ class HfpTest {
                 hasExtra(EXTRA_BOND_STATE, BOND_NONE),
             )
         }
+        if (secondBumbleDevice.removeBond()) {
+            verifyIntentReceived(
+                hasAction(ACTION_BOND_STATE_CHANGED),
+                hasExtra(EXTRA_DEVICE, secondBumbleDevice),
+                hasExtra(EXTRA_BOND_STATE, BOND_NONE),
+            )
+        }
         // Remove the bond on the Bumble device as well.
         val localAddress = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
         bumble
+            .securityStorageBlocking()
+            .deleteBond(
+                SecurityProto.DeleteBondRequest.newBuilder().setPublic(localAddress).build()
+            )
+        secondBumble
             .securityStorageBlocking()
             .deleteBond(
                 SecurityProto.DeleteBondRequest.newBuilder().setPublic(localAddress).build()
@@ -351,10 +532,20 @@ class HfpTest {
             .onReceive(any(Context::class.java), argThat(allOf(*matchers)))
     }
 
-    private fun verifyConnectionState(state: Int) {
+    private fun verifyIntentReceivedUnordered(num: Int, vararg matchers: Matcher<Intent>) {
+        inOrder
+            .verify(receiver, timeout(INTENT_TIMEOUT.toMillis()).times(num))
+            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
+    }
+
+    private fun verifyIntentReceivedUnordered(vararg matchers: Matcher<Intent>) {
+        verifyIntentReceivedUnordered(1, *matchers)
+    }
+
+    private fun verifyConnectionState(state: Int, device: BluetoothDevice) {
         verifyIntentReceived(
             hasAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED),
-            hasExtra(EXTRA_DEVICE, bumbleDevice),
+            hasExtra(EXTRA_DEVICE, device),
             hasExtra(EXTRA_STATE, state),
         )
     }
