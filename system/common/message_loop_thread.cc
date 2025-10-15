@@ -273,13 +273,7 @@ bool MessageLoopThread::EnableRealTimeScheduling() {
   }
 
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
-    // If the handler thread is already having the real time scheduling priority,
-    // then we don't need to do anything, else false.
-    // This is a temp log, should be removed before merging.
-    log::debug(
-            "MessageLoopThread priority: {}, while request priority: REAL_TIME",
-            handler_thread_priority_ == os::Thread::Priority::REAL_TIME ? "REAL_TIME" : "NORMAL");
-    return handler_thread_priority_ == os::Thread::Priority::REAL_TIME;
+    return handler_thread_->GetPriority() == os::Thread::Priority::REAL_TIME;
   }
 
   struct sched_param rt_params = {.sched_priority = kRealTimeFifoSchedulingPriority};

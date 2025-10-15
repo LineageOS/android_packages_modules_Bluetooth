@@ -71,13 +71,16 @@ public:
 
   pid_t GetLinuxTid() const { return linux_tid_; }
 
+  Priority GetPriority() const { return priority_; }
+
 private:
-  void run(Priority priority);
+  void run();
   mutable std::mutex mutex_;
   const std::string name_;
   mutable Reactor reactor_;
   std::thread running_thread_;
   pid_t linux_tid_;
+  Priority priority_;
 };
 
 }  // namespace os

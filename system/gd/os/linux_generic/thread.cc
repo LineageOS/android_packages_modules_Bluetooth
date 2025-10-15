@@ -33,16 +33,22 @@ constexpr int kRealTimeFifoSchedulingPriority = 1;
 }
 
 Thread::Thread(const std::string& name, const Priority priority)
-    : name_(name), reactor_(), running_thread_(&Thread::run, this, priority), linux_tid_(-1) {}
+    : name_(name),
+      reactor_(),
+      running_thread_(&Thread::run, this),
+      linux_tid_(-1),
+      priority_(priority) {}
 
-void Thread::run(Priority priority) {
+void Thread::run() {
   pthread_setname_np(pthread_self(), name_.c_str());
   linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));
-  if (priority == Priority::REAL_TIME) {
+  if (priority_ == Priority::REAL_TIME) {
     struct sched_param rt_params = {.sched_priority = kRealTimeFifoSchedulingPriority};
     int rc;
     RUN_NO_INTR(rc = sched_setscheduler(linux_tid_, SCHED_FIFO, &rt_params));
     if (rc != 0) {
+      priority_ =
+              Priority::NORMAL;  // set to NORMAL if we are unable to set the priority to REAL_TIME
       log::error("unable to set SCHED_FIFO priority: {}", strerror(errno));
     }
   }
