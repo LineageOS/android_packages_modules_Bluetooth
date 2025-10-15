@@ -94,22 +94,6 @@ import java.util.stream.Collectors;
  *
  * <p>8) If there is already an active device, however, if active device change notified with a null
  * device, the corresponding profile is marked as having no active device.
- *
- * <p>TODO: Remove with com.android.bluetooth.flags.adm_remove_handling_wired
- *
- * <p>9) If a wired audio device is connected, the audio output is switched by the Audio Framework
- * itself to that device. We detect this here, and the active device for each profile
- * (A2DP/HFP/HearingAid/LE audio) is set to null to reflect the output device state change. However,
- * if the wired audio device is disconnected, we don't do anything explicit and apply the default
- * behavior instead:
- *
- * <p>9.1) If the wired headset is still the selected output device (i.e. the active device is set
- * to null), the Phone itself will become the output device (i.e. the active device will remain
- * null). If music was playing, it will stop.
- *
- * <p>9.2) If one of the Bluetooth devices is the selected active device (e.g., by the user in the
- * UI), disconnecting the wired audio device will have no impact. E.g., music will continue
- * streaming over the active Bluetooth device.
  */
 public class ActiveDeviceManager implements AdapterService.BluetoothStateCallback {
     private static final String TAG = Utils.BT_PREFIX + ActiveDeviceManager.class.getSimpleName();
@@ -122,7 +106,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
     private HandlerThread mHandlerThread = null;
     private Handler mHandler = null;
     private final AudioManager mAudioManager;
-    @VisibleForTesting final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback;
 
     private final Object mLock = new Object();
 
@@ -992,46 +975,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         }
     }
 
-    /** Notifications of audio device connection and disconnection events. */
-    @VisibleForTesting
-    class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
-        private static boolean isWiredAudioHeadset(AudioDeviceInfo deviceInfo) {
-            return switch (deviceInfo.getType()) {
-                case AudioDeviceInfo.TYPE_WIRED_HEADSET,
-                        AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-                        AudioDeviceInfo.TYPE_USB_HEADSET ->
-                        true;
-                default -> false;
-            };
-        }
-
-        @Override
-        public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
-            Log.d(TAG, "onAudioDevicesAdded");
-            if (!Flags.admRemoveHandlingWired()) {
-                if (!Arrays.stream(addedDevices)
-                        .anyMatch(AudioManagerAudioDeviceCallback::isWiredAudioHeadset)) {
-                    return;
-                }
-                wiredAudioDeviceConnected();
-            }
-        }
-
-        @Override
-        public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
-            Log.d(TAG, "onAudioDevicesRemoved");
-            if (!Flags.admRemoveHandlingWired()) {
-                if (!Arrays.stream(removedDevices)
-                        .anyMatch(AudioManagerAudioDeviceCallback::isWiredAudioHeadset)) {
-                    return;
-                }
-                synchronized (mLock) {
-                    setFallbackDeviceActiveLocked(null);
-                }
-            }
-        }
-    }
-
     ActiveDeviceManager(AdapterService service, BluetoothStorageManager storage) {
         mAdapterService = service;
         if (Flags.mainlineBetaStorage()) {
@@ -1042,7 +985,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             mDatabaseManager = mAdapterService.getDatabaseManager(); // Migrating
         }
         mAudioManager = service.getSystemService(AudioManager.class);
-        mAudioManagerAudioDeviceCallback = new AudioManagerAudioDeviceCallback();
     }
 
     void start() {
@@ -1053,14 +995,12 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         mp.threadStart(mHandlerThread);
         mHandler = new Handler(mp.handlerThreadGetLooper(mHandlerThread));
 
-        mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
         mAdapterService.registerBluetoothStateCallback((command) -> mHandler.post(command), this);
     }
 
     void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
         mAdapterService.unregisterBluetoothStateCallback(this);
         if (mHandlerThread != null) {
             mHandlerThread.quitSafely();
