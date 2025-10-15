@@ -44,6 +44,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <future>
 
 #include "bt_device_type.h"
 #include "bta_api.h"
@@ -1084,15 +1085,7 @@ void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
   BTA_HhOpen(p_dev->link_spec, false);
 }
 
-/*******************************************************************************
- **
- ** Function         btif_hh_remove_device
- **
- ** Description      Remove an added device from the stack.
- **
- ** Returns          void
- ******************************************************************************/
-void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
+static void btif_hh_remove_device_in_jni_thread(const tAclLinkSpec& link_spec) {
   BTHH_LOG_LINK(link_spec);
   bool announce_vup = false;
 
@@ -1128,9 +1121,13 @@ void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
   while ((p_dev = btif_hh_find_dev_by_link_spec(link_spec)) != nullptr) {
     announce_vup = true;
     // Notify service of disconnection to avoid state mismatch
-    do_in_jni_thread(base::Bind(
-            [](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK); },
-            p_dev->link_spec));
+    if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+      BTHH_STATE_UPDATE(p_dev->link_spec, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
+    } else {
+      do_in_jni_thread(base::Bind(
+              [](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK); },
+              p_dev->link_spec));
+    }
 
     if (btif_hh_cb.device_num > 0) {
       btif_hh_cb.device_num--;
@@ -1156,12 +1153,36 @@ void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
     return;
   }
 
+  if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+    RawAddress bd_addr = link_spec.addrt.bda;
+    HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &bd_addr, link_spec.addrt.type,
+              link_spec.transport, BTHH_OK);
+    return;
+  }
+
   do_in_jni_thread(base::Bind(
           [](tAclLinkSpec ls) {
             HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
                       ls.transport, BTHH_OK);
           },
           link_spec));
+}
+
+/*******************************************************************************
+ **
+ ** Function         btif_hh_remove_device
+ **
+ ** Description      Remove an added device from the stack.
+ **
+ ** Returns          void
+ ******************************************************************************/
+void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
+  if (!com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+    btif_hh_remove_device_in_jni_thread(link_spec);
+    return;
+  }
+
+  get_jni_thread()->DoInThreadSynchronously(&btif_hh_remove_device_in_jni_thread, link_spec);
 }
 
 /*******************************************************************************
@@ -2268,16 +2289,7 @@ static BtStatus send_data(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
   }
 }
 
-/*******************************************************************************
- *
- * Function         cleanup
- *
- * Description      Closes the HH interface
- *
- * Returns          BtStatus
- *
- ******************************************************************************/
-static void cleanup(void) {
+static void cleanup_in_jni_thread(void) {
   log::verbose("");
   btif_hh_device_t* p_dev;
   int i;
@@ -2304,6 +2316,24 @@ static void cleanup(void) {
       bta_hh_co_close(p_dev);
     }
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         cleanup
+ *
+ * Description      Closes the HH interface
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void cleanup(void) {
+  if (!com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
+    cleanup_in_jni_thread();
+    return;
+  }
+
+  get_jni_thread()->DoInThreadSynchronously(&cleanup_in_jni_thread);
 }
 
 /*******************************************************************************
