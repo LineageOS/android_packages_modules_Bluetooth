@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,432 +14,394 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
+import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
+import android.os.BatteryStatsManager
+import android.os.WorkSource
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.le_scan.ScanUtil.dumpExt
+import com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan
+import com.android.bluetooth.le_scan.ScanUtil.isBatchScan
+import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan
+import com.android.bluetooth.le_scan.ScanUtil.scanFilterToStringWithoutNullParam
+import com.android.bluetooth.util.TimeProvider
+import com.android.bluetooth.util.WorkSourceUtil
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 
-import static com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan;
-import static com.android.bluetooth.le_scan.ScanUtil.isBatchScan;
-import static com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan;
-import static com.android.bluetooth.le_scan.ScanUtil.scanFilterToStringWithoutNullParam;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElseGet;
-
-import android.annotation.Nullable;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanSettings;
-import android.os.BatteryStatsManager;
-import android.os.WorkSource;
-
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.util.TimeProvider;
-import com.android.bluetooth.util.WorkSourceUtil;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+private const val TAG = "AppScanStats"
 
 /** ScanStats class helps keep track of information about scans on a per application basis. */
-public class AppScanStats {
-    private static final String TAG = AppScanStats.class.getSimpleName();
+class AppScanStats(
+    val appName: String,
+    source: WorkSource?,
+    uid: Int,
+    private val adapterService: AdapterService,
+    val timeProvider: TimeProvider,
+) {
 
-    private static final int LARGE_SCAN_TIME_GAP_MS = 24000;
+    class LastScan(
+        startTimestamp: Long,
+        scannerId: Int,
+        scanMode: Int,
+        scanCallbackType: Int,
+        reportDelayMillis: Long,
+        isBackgroundScan: Boolean,
+        isBatchScan: Boolean,
+        isCallbackScan: Boolean,
+        isFilterScan: Boolean,
+        isOpportunisticScan: Boolean,
+        appImportanceOnStart: Int,
+        attributionTag: String?,
+    ) {
+        val mFilterString: StringBuilder = StringBuilder()
+        val mScannerId: Int
+        val mScanMode: Int
+        val mScanCallbackType: Int
+        val mIsBackgroundScan: Boolean
+        val mIsBatchScan: Boolean
+        val mIsCallbackScan: Boolean
+        val mIsFilterScan: Boolean
+        val mIsOpportunisticScan: Boolean
+        val mReportDelayMillis: Long
+        val mAppImportanceOnStart: Int
+        val mAttributionTag: String?
 
-    private static final AtomicBoolean sIsScreenOn = new AtomicBoolean(false);
+        val mStartTimestamp: Long
+        var mEndTimestamp: Long = 0
 
-    public static class LastScan {
-        final StringBuilder mFilterString = new StringBuilder();
-        final int mScannerId;
-        final int mScanMode;
-        final int mScanCallbackType;
-        final boolean mIsBackgroundScan;
-        final boolean mIsBatchScan;
-        final boolean mIsCallbackScan;
-        final boolean mIsFilterScan;
-        final boolean mIsOpportunisticScan;
-        final long mReportDelayMillis;
-        final int mAppImportanceOnStart;
-        @Nullable final String mAttributionTag;
+        var mSuspendDuration: Long = 0
+        var mSuspendStartTime: Long = 0
+        var mIsSuspended = false
+        var mIsTimeout = false
+        var mIsDowngraded = false
+        var mIsAutoBatchScan = false
+        var mResultsScreenOn = 0
+        var mResultsScreenOff = 0
 
-        final long mStartTimestamp;
-        long mEndTimestamp;
-
-        long mSuspendDuration;
-        long mSuspendStartTime;
-        boolean mIsSuspended;
-        boolean mIsTimeout;
-        private boolean mIsDowngraded;
-        boolean mIsAutoBatchScan;
-        int mResultsScreenOn = 0;
-        int mResultsScreenOff = 0;
-
-        private LastScan(
-                long startTimestamp,
-                int scannerId,
-                int scanMode,
-                int scanCallbackType,
-                long reportDelayMillis,
-                boolean isBackgroundScan,
-                boolean isBatchScan,
-                boolean isCallbackScan,
-                boolean isFilterScan,
-                boolean isOpportunisticScan,
-                int appImportanceOnStart,
-                @Nullable String attributionTag) {
-            mStartTimestamp = startTimestamp;
-            mScannerId = scannerId;
-            mScanMode = scanMode;
-            mScanCallbackType = scanCallbackType;
-            mReportDelayMillis = reportDelayMillis;
-            mIsBackgroundScan = isBackgroundScan;
-            mIsBatchScan = isBatchScan;
-            mIsCallbackScan = isCallbackScan;
-            mIsFilterScan = isFilterScan;
-            mIsOpportunisticScan = isOpportunisticScan;
-            mAppImportanceOnStart = appImportanceOnStart;
-            mAttributionTag = attributionTag;
+        init {
+            mStartTimestamp = startTimestamp
+            mScannerId = scannerId
+            mScanMode = scanMode
+            mScanCallbackType = scanCallbackType
+            mReportDelayMillis = reportDelayMillis
+            mIsBackgroundScan = isBackgroundScan
+            mIsBatchScan = isBatchScan
+            mIsCallbackScan = isCallbackScan
+            mIsFilterScan = isFilterScan
+            mIsOpportunisticScan = isOpportunisticScan
+            mAppImportanceOnStart = appImportanceOnStart
+            mAttributionTag = attributionTag
         }
     }
 
-    final List<LastScan> mLastScans = new ArrayList<>();
-    final Map<Integer, LastScan> mOngoingScans = new HashMap<>();
+    val mLastScans: MutableList<LastScan> = ArrayList()
+    val mOngoingScans: MutableMap<Int, LastScan> = HashMap()
 
-    final String mAppName;
-    final WorkSourceUtil mWorkSourceUtil;
-    private final AdapterService mAdapterService;
-    final TimeProvider mTimeProvider;
-    private final ScanMetricsReporter mScanMetricsReporter;
+    @JvmField val mWorkSourceUtil: WorkSourceUtil
+    private val mScanMetricsReporter: ScanMetricsReporter
 
-    boolean mIsAppDead = false;
-    boolean mIsRegistered = false;
-    int mAppImportance = IMPORTANCE_CACHED;
-    int mScansStarted = 0;
-    int mScansStopped = 0;
-    private long mScanStartTimestamp = 0;
-    long mTotalActiveTime = 0;
-    long mTotalSuspendTime = 0;
-    long mTotalScanTime = 0;
-    long mOppScanTime = 0;
-    long mLowPowerScanTime = 0;
-    long mBalancedScanTime = 0;
-    long mLowLatencyScanTime = 0;
-    long mAmbientDiscoveryScanTime = 0;
-    int mOppScan = 0;
-    int mLowPowerScan = 0;
-    int mBalancedScan = 0;
-    int mLowLatencyScan = 0;
-    int mAmbientDiscoveryScan = 0;
-    int mResultsScreenOn = 0;
-    int mResultsScreenOff = 0;
-    int mScheduledBatchAlarmCount = 0;
+    @JvmField var mIsAppDead = false
+    var mIsRegistered = false
+    @JvmField var mAppImportance = IMPORTANCE_CACHED
+    var mScansStarted = 0
+    var mScansStopped = 0
+    private var mScanStartTimestamp: Long = 0
+    var mTotalActiveTime: Long = 0
+    var mTotalSuspendTime: Long = 0
+    var mTotalScanTime: Long = 0
+    var mOppScanTime: Long = 0
+    var mLowPowerScanTime: Long = 0
+    var mBalancedScanTime: Long = 0
+    var mLowLatencyScanTime: Long = 0
+    var mAmbientDiscoveryScanTime: Long = 0
+    var mOppScan = 0
+    var mLowPowerScan = 0
+    var mBalancedScan = 0
+    var mLowLatencyScan = 0
+    var mAmbientDiscoveryScan = 0
+    var mResultsScreenOn = 0
+    var mResultsScreenOff = 0
+    var mScheduledBatchAlarmCount = 0
 
-    AppScanStats(
-            String name,
-            WorkSource source,
-            int uid,
-            AdapterService adapterService,
-            TimeProvider timeProvider) {
-        mAppName = name;
-        mAdapterService = requireNonNull(adapterService);
+    init {
         // Bill the caller uid if the work source isn't passed through
-        var workSource = requireNonNullElseGet(source, () -> new WorkSource(uid, mAppName));
-        mWorkSourceUtil = new WorkSourceUtil(workSource);
-        var batteryStatsManager =
-                requireNonNull(mAdapterService.getSystemService(BatteryStatsManager.class));
-        mScanMetricsReporter =
-                new ScanMetricsReporter(workSource, mWorkSourceUtil, batteryStatsManager);
-        mTimeProvider = requireNonNull(timeProvider);
+        val workSource = source ?: WorkSource(uid, appName)
+        mWorkSourceUtil = WorkSourceUtil(workSource)
+        val batteryStatsManager = adapterService.getSystemService(BatteryStatsManager::class.java)
+        mScanMetricsReporter = ScanMetricsReporter(workSource, mWorkSourceUtil, batteryStatsManager)
     }
 
-    @Nullable
-    synchronized LastScan getScanFromScannerId(int scannerId) {
-        return mOngoingScans.get(scannerId);
-    }
+    @Synchronized fun getScanFromScannerId(scannerId: Int) = mOngoingScans[scannerId]
 
-    static void setScreenState(boolean isScreenOn) {
-        sIsScreenOn.set(isScreenOn);
-    }
-
-    synchronized void addResult(int scannerId) {
-        var isScreenOn = sIsScreenOn.get();
+    @Synchronized
+    fun addResult(scannerId: Int) {
+        val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
-            mResultsScreenOn++;
+            mResultsScreenOn++
         } else {
-            mResultsScreenOff++;
+            mResultsScreenOff++
         }
 
-        var scan = getScanFromScannerId(scannerId);
-        if (scan == null) return;
+        val scan = getScanFromScannerId(scannerId) ?: return
         if (isScreenOn) {
-            scan.mResultsScreenOn++;
+            scan.mResultsScreenOn++
         } else {
-            scan.mResultsScreenOff++;
+            scan.mResultsScreenOff++
         }
 
         // Only update battery stats every 100 results to lower the high-cost of binder transactions
         if ((scan.mResultsScreenOn + scan.mResultsScreenOff) % 100 == 0) {
-            mScanMetricsReporter.reportScanResults(100);
+            mScanMetricsReporter.reportScanResults(100)
         }
     }
 
-    synchronized void addResults(int scannerId, int numberOfNewResults) {
-        var isScreenOn = sIsScreenOn.get();
+    @Synchronized
+    fun addResults(scannerId: Int, numberOfNewResults: Int) {
+        val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
-            mResultsScreenOn += numberOfNewResults;
+            mResultsScreenOn += numberOfNewResults
         } else {
-            mResultsScreenOff += numberOfNewResults;
+            mResultsScreenOff += numberOfNewResults
         }
 
-        var scan = getScanFromScannerId(scannerId);
-        if (scan == null) return;
+        val scan = getScanFromScannerId(scannerId) ?: return
 
-        var resultsBeforeUpdate = scan.mResultsScreenOn + scan.mResultsScreenOff;
+        val resultsBeforeUpdate = scan.mResultsScreenOn + scan.mResultsScreenOff
         if (isScreenOn) {
-            scan.mResultsScreenOn += numberOfNewResults;
+            scan.mResultsScreenOn += numberOfNewResults
         } else {
-            scan.mResultsScreenOff += numberOfNewResults;
+            scan.mResultsScreenOff += numberOfNewResults
         }
 
         // Only update battery stats every 100 results to lower the high-cost of binder transactions
-        if (((scan.mResultsScreenOn + scan.mResultsScreenOff) / 100)
-                > (resultsBeforeUpdate / 100)) {
-            mScanMetricsReporter.reportScanResults(100);
+        if ((scan.mResultsScreenOn + scan.mResultsScreenOff) / 100 > resultsBeforeUpdate / 100) {
+            mScanMetricsReporter.reportScanResults(100)
         }
     }
 
-    synchronized boolean isScanning() {
-        return !mOngoingScans.isEmpty();
+    @Synchronized fun isScanning() = mOngoingScans.isNotEmpty()
+
+    @Synchronized
+    fun isScanTimeout(scannerId: Int) = getScanFromScannerId(scannerId)?.mIsTimeout ?: false
+
+    @Synchronized
+    fun isScanDowngraded(scannerId: Int) = getScanFromScannerId(scannerId)?.mIsDowngraded ?: false
+
+    @Synchronized
+    fun isAutoBatchScan(scannerId: Int) = getScanFromScannerId(scannerId)?.mIsAutoBatchScan ?: false
+
+    @Synchronized
+    fun setAppImportance(importance: Int) {
+        mAppImportance = importance
     }
 
-    synchronized boolean isScanTimeout(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan == null) {
-            return false;
-        }
-        return scan.mIsTimeout;
-    }
-
-    synchronized boolean isScanDowngraded(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan == null) {
-            return false;
-        }
-        return scan.mIsDowngraded;
-    }
-
-    synchronized boolean isAutoBatchScan(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan == null) {
-            return false;
-        }
-        return scan.mIsAutoBatchScan;
-    }
-
-    synchronized void setAppImportance(int importance) {
-        mAppImportance = importance;
-    }
-
-    synchronized void recordScanStart(
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            boolean isFilterScan,
-            boolean isCallbackScan,
-            int scannerId,
-            @Nullable String attributionTag) {
-        LastScan existingScan = getScanFromScannerId(scannerId);
-        if (existingScan != null) {
-            return;
-        }
-        mScansStarted++;
-        final var startTimestamp = mTimeProvider.elapsedRealtime();
-        LastScan scan =
-                new LastScan(
-                        startTimestamp,
-                        scannerId,
-                        settings.getScanMode(),
-                        settings.getCallbackType(),
-                        settings.getReportDelayMillis(),
-                        isBackgroundScan(settings),
-                        isBatchScan(settings),
-                        isCallbackScan,
-                        isFilterScan,
-                        isOpportunisticScan(settings),
-                        mAppImportance,
-                        attributionTag);
-        switch (scan.mScanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScan++;
-            case ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScan++;
-            case ScanSettings.SCAN_MODE_BALANCED -> mBalancedScan++;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScan++;
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> mAmbientDiscoveryScan++;
-            default -> {} // Nothing to do
+    @Synchronized
+    fun recordScanStart(
+        settings: ScanSettings,
+        filters: List<ScanFilter>,
+        isFilterScan: Boolean,
+        isCallbackScan: Boolean,
+        scannerId: Int,
+        attributionTag: String?,
+    ) {
+        val existingScan = getScanFromScannerId(scannerId)
+        if (existingScan != null) return
+        mScansStarted++
+        val startTimestamp = timeProvider.elapsedRealtime()
+        val scan =
+            LastScan(
+                startTimestamp,
+                scannerId,
+                settings.scanMode,
+                settings.callbackType,
+                settings.reportDelayMillis,
+                isBackgroundScan(settings),
+                isBatchScan(settings),
+                isCallbackScan,
+                isFilterScan,
+                isOpportunisticScan(settings),
+                mAppImportance,
+                attributionTag,
+            )
+        when (scan.mScanMode) {
+            ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScan++
+            ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScan++
+            ScanSettings.SCAN_MODE_BALANCED -> mBalancedScan++
+            ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScan++
+            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> mAmbientDiscoveryScan++
         }
 
         if (isFilterScan) {
-            for (ScanFilter filter : filters) {
+            filters.forEach { filter ->
                 scan.mFilterString
-                        .append("\n        └ ")
-                        .append(scanFilterToStringWithoutNullParam(filter));
+                    .append("\n        └ ")
+                    .append(scanFilterToStringWithoutNullParam(filter))
             }
         }
 
         if (!isScanning()) {
-            mScanStartTimestamp = startTimestamp;
+            mScanStartTimestamp = startTimestamp
         }
 
         mScanMetricsReporter.recordScanStart(
-                scan, mOngoingScans.size(), sIsScreenOn.get(), mIsAppDead, mAppImportance);
+            scan,
+            mOngoingScans.size,
+            sIsScreenOn.get(),
+            mIsAppDead,
+            mAppImportance,
+        )
 
-        mOngoingScans.put(scannerId, scan);
+        mOngoingScans[scannerId] = scan
     }
 
-    synchronized void recordScanStop(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan == null) {
-            return;
-        }
-        mScansStopped++;
-        long stopTime = mTimeProvider.elapsedRealtime();
-        scan.mEndTimestamp = stopTime;
+    @Synchronized
+    fun recordScanStop(scannerId: Int) {
+        val scan = getScanFromScannerId(scannerId) ?: return
+        mScansStopped++
+        val stopTime = timeProvider.elapsedRealtime()
+        scan.mEndTimestamp = stopTime
         if (scan.mIsSuspended) {
-            long suspendDuration = stopTime - scan.mSuspendStartTime;
-            scan.mSuspendDuration += suspendDuration;
-            mTotalSuspendTime += suspendDuration;
+            val suspendDuration = stopTime - scan.mSuspendStartTime
+            scan.mSuspendDuration += suspendDuration
+            mTotalSuspendTime += suspendDuration
         }
-        mOngoingScans.remove(scannerId);
-        if (mLastScans.size() >= mAdapterService.getScanQuotaCount()) {
-            mLastScans.remove(0);
+        mOngoingScans.remove(scannerId)
+        if (mLastScans.size >= adapterService.scanQuotaCount) {
+            mLastScans.removeFirst()
         }
-        mLastScans.add(scan);
+        mLastScans.add(scan)
 
-        long scanDuration = scan.mEndTimestamp - scan.mStartTimestamp;
-        mTotalScanTime += scanDuration;
-        long activeDuration = scanDuration - scan.mSuspendDuration;
-        mTotalActiveTime += activeDuration;
-        switch (scan.mScanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScanTime += activeDuration;
-            case ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScanTime += activeDuration;
-            case ScanSettings.SCAN_MODE_BALANCED -> mBalancedScanTime += activeDuration;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScanTime += activeDuration;
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
-                    mAmbientDiscoveryScanTime += activeDuration;
-            default -> {} // Nothing to do
+        val scanDuration = scan.mEndTimestamp - scan.mStartTimestamp
+        mTotalScanTime += scanDuration
+        val activeDuration = scanDuration - scan.mSuspendDuration
+        mTotalActiveTime += activeDuration
+        when (scan.mScanMode) {
+            ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScanTime += activeDuration
+            ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScanTime += activeDuration
+            ScanSettings.SCAN_MODE_BALANCED -> mBalancedScanTime += activeDuration
+            ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScanTime += activeDuration
+            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> mAmbientDiscoveryScanTime += activeDuration
         }
 
         mScanMetricsReporter.recordScanStop(
-                scan,
-                scanDuration,
-                mOngoingScans.size(),
-                sIsScreenOn.get(),
-                mIsAppDead,
-                mAppImportance);
+            scan,
+            scanDuration,
+            mOngoingScans.size,
+            sIsScreenOn.get(),
+            mIsAppDead,
+            mAppImportance,
+        )
     }
 
-    synchronized void recordScanTimeoutCountMetrics(int scannerId, long scanTimeoutMillis) {
-        var scan = getScanFromScannerId(scannerId);
-        mScanMetricsReporter.recordScanTimeoutCountMetrics(scan, scanTimeoutMillis);
+    @Synchronized
+    fun recordScanTimeoutCountMetrics(scannerId: Int, scanTimeoutMillis: Long) {
+        val scan = getScanFromScannerId(scannerId)
+        mScanMetricsReporter.recordScanTimeoutCountMetrics(scan, scanTimeoutMillis)
     }
 
-    synchronized void recordHwFilterNotAvailableCountMetrics(
-            int scannerId, long numOfFilterSupported) {
-        var scan = getScanFromScannerId(scannerId);
-        mScanMetricsReporter.recordHwFilterNotAvailableCountMetrics(scan, numOfFilterSupported);
+    @Synchronized
+    fun recordHwFilterNotAvailableCountMetrics(scannerId: Int, numOfFilterSupported: Long) {
+        val scan = getScanFromScannerId(scannerId)
+        mScanMetricsReporter.recordHwFilterNotAvailableCountMetrics(scan, numOfFilterSupported)
     }
 
-    synchronized void recordScanSuspend(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
+    @Synchronized
+    fun recordScanSuspend(scannerId: Int) {
+        val scan = getScanFromScannerId(scannerId)
         if (scan == null || scan.mIsSuspended) {
-            return;
+            return
         }
-        scan.mSuspendStartTime = mTimeProvider.elapsedRealtime();
-        scan.mIsSuspended = true;
+        scan.mSuspendStartTime = timeProvider.elapsedRealtime()
+        scan.mIsSuspended = true
     }
 
-    synchronized void recordScanResume(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
+    @Synchronized
+    fun recordScanResume(scannerId: Int) {
+        val scan = getScanFromScannerId(scannerId)
         if (scan == null || !scan.mIsSuspended) {
-            return;
+            return
         }
-        scan.mIsSuspended = false;
-        long stopTime = mTimeProvider.elapsedRealtime();
-        long suspendDuration = stopTime - scan.mSuspendStartTime;
-        scan.mSuspendDuration += suspendDuration;
-        mTotalSuspendTime += suspendDuration;
+        scan.mIsSuspended = false
+        val stopTime = timeProvider.elapsedRealtime()
+        val suspendDuration = stopTime - scan.mSuspendStartTime
+        scan.mSuspendDuration += suspendDuration
+        mTotalSuspendTime += suspendDuration
     }
 
-    synchronized void setScanTimeout(int scannerId) {
+    @Synchronized
+    fun setScanTimeout(scannerId: Int) {
         if (!isScanning()) {
-            return;
+            return
         }
-
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan != null) {
-            scan.mIsTimeout = true;
-        }
+        getScanFromScannerId(scannerId)?.mIsTimeout = true
     }
 
-    synchronized void setScanDowngrade(int scannerId, boolean isDowngrade) {
+    @Synchronized
+    fun setScanDowngrade(scannerId: Int, isDowngrade: Boolean) {
         if (!isScanning()) {
-            return;
+            return
         }
-
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan != null) {
-            scan.mIsDowngraded = isDowngrade;
-        }
+        getScanFromScannerId(scannerId)?.mIsDowngraded = isDowngrade
     }
 
-    synchronized void setAutoBatchScan(int scannerId, boolean isBatchScan) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan != null) {
-            scan.mIsAutoBatchScan = isBatchScan;
-        }
+    @Synchronized
+    fun setAutoBatchScan(scannerId: Int, isBatchScan: Boolean) {
+        getScanFromScannerId(scannerId)?.mIsAutoBatchScan = isBatchScan
     }
 
-    synchronized boolean isScanningTooFrequently() {
-        if (mLastScans.size() < mAdapterService.getScanQuotaCount()) {
-            return false;
+    @Synchronized
+    fun isScanningTooFrequently(): Boolean {
+        if (mLastScans.size < adapterService.scanQuotaCount) {
+            return false
         }
-
-        var oldestLastScanStartTimestamp = mLastScans.getFirst().mStartTimestamp;
-        return Duration.ofMillis(mTimeProvider.elapsedRealtime() - oldestLastScanStartTimestamp)
-                        .compareTo(mAdapterService.getScanQuotaWindow())
-                < 0;
+        val oldestLastScanStartTimestamp = mLastScans.first().mStartTimestamp
+        return Duration.ofMillis(timeProvider.elapsedRealtime() - oldestLastScanStartTimestamp)
+            .compareTo(adapterService.scanQuotaWindow) < 0
     }
 
-    synchronized boolean isScanningTooLong() {
+    @Synchronized
+    fun isScanningTooLong(): Boolean {
         if (!isScanning()) {
-            return false;
+            return false
         }
-
-        return Duration.ofMillis(mTimeProvider.elapsedRealtime() - mScanStartTimestamp)
-                        .compareTo(mAdapterService.getScanTimeout())
-                >= 0;
+        return Duration.ofMillis(timeProvider.elapsedRealtime() - mScanStartTimestamp)
+            .compareTo(adapterService.scanTimeout) >= 0
     }
 
-    synchronized boolean hasRecentScan() {
+    @Synchronized
+    fun hasRecentScan(): Boolean {
         if (!isScanning() || mLastScans.isEmpty()) {
-            return false;
+            return false
         }
-        var lastScan = mLastScans.getLast();
-        return (mTimeProvider.elapsedRealtime() - lastScan.mEndTimestamp) < LARGE_SCAN_TIME_GAP_MS;
+        val lastScan = mLastScans.last()
+        return (timeProvider.elapsedRealtime() - lastScan.mEndTimestamp) < LARGE_SCAN_TIME_GAP_MS
     }
 
-    synchronized void recordBatchAlarmScheduled() {
-        mScheduledBatchAlarmCount++;
+    @Synchronized
+    fun recordBatchAlarmScheduled() {
+        mScheduledBatchAlarmCount++
     }
 
-    String getAttributionTagFromScannerId(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        return scan == null ? "" : (scan.mAttributionTag == null ? "" : scan.mAttributionTag);
-    }
+    fun getAttributionTagFromScannerId(scannerId: Int): String =
+        getScanFromScannerId(scannerId)?.mAttributionTag ?: ""
 
-    synchronized void dump(StringBuilder sb, List<ScannerApp> apps) {
+    @Synchronized
+    fun dump(sb: StringBuilder, apps: List<ScannerApp>) {
         // TODO(b/397863857) Inline this on `Flags.scanControllerThread()` cleanup within ScannerMap
-        ScanUtil.dump(this, sb, apps);
+        dumpExt(sb, apps)
+    }
+
+    companion object {
+        private const val LARGE_SCAN_TIME_GAP_MS = 24000
+        private val sIsScreenOn = AtomicBoolean(false)
+
+        @JvmStatic
+        fun setScreenState(isScreenOn: Boolean) {
+            sIsScreenOn.set(isScreenOn)
+        }
     }
 }

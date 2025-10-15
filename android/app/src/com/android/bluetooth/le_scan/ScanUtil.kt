@@ -477,9 +477,9 @@ object ScanUtil {
     }
 
     @JvmStatic
-    fun AppScanStats.dump(sb: StringBuilder, apps: List<ScannerApp>) {
+    fun AppScanStats.dumpExt(sb: StringBuilder, apps: List<ScannerApp>) {
         val currentTimeMs = System.currentTimeMillis()
-        val elapsedRealtimeMs = mTimeProvider.elapsedRealtime()
+        val elapsedRealtimeMs = timeProvider.elapsedRealtime()
         val opportunisticScan = mOppScan
         val lowPowerScan = mLowPowerScan
         val balancedScan = mBalancedScan
@@ -523,7 +523,7 @@ object ScanUtil {
                 lowLatencyScanTime * WEIGHT_LOW_LATENCY +
                 ambientDiscoveryScanTime * WEIGHT_AMBIENT_DISCOVERY) / 100
 
-        sb.append("  $mAppName")
+        sb.append("  $appName")
         sb.append(if (mIsRegistered) " (Registered):" else ":")
 
         if (mIsRegistered) {

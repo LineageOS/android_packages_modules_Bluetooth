@@ -55,7 +55,7 @@ class AppScanStatsTest {
         val uid = 1234
         val appScanStats = AppScanStats(name, source, uid, adapterService, timeProvider)
 
-        assertThat(appScanStats.isScanning).isFalse()
+        assertThat(appScanStats.isScanning()).isFalse()
     }
 
     @Test

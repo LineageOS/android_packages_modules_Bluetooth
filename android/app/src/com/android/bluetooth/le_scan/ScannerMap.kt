@@ -177,7 +177,7 @@ class ScannerMap {
         sb.append("\nLE Scanner Map:\n")
         sb.append("  Entries: ${appScanStatsMap.size}\n\n")
         for (appScanStats in appScanStatsMap.values) {
-            val scannerApps = apps.filter { it.name == appScanStats.mAppName }
+            val scannerApps = apps.filter { it.name == appScanStats.appName }
             appScanStats.dump(sb, scannerApps)
         }
     }
