@@ -1782,9 +1782,9 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus connect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
+static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -1818,11 +1818,11 @@ static BtStatus connect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANS
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                            bool reconnect_allowed) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -1878,11 +1878,11 @@ static BtStatus disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TR
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus virtual_unplug(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static BtStatus virtual_unplug(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                tBT_TRANSPORT transport) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -1918,11 +1918,11 @@ static BtStatus virtual_unplug(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
 ** Returns         BtStatus
 **
 *******************************************************************************/
-static BtStatus get_idle_time(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static BtStatus get_idle_time(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                               tBT_TRANSPORT transport) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -1949,11 +1949,11 @@ static BtStatus get_idle_time(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
 ** Returns         BtStatus
 **
 *******************************************************************************/
-static BtStatus set_idle_time(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                              tBT_TRANSPORT transport, uint8_t idle_time) {
+static BtStatus set_idle_time(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+                              uint8_t idle_time) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -1981,12 +1981,12 @@ static BtStatus set_idle_time(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus set_info(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus set_info(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                          bthh_hid_info_t hid_info) {
   CHECK_BTHH_INIT();
   tBTA_HH_DEV_DSCP_INFO dscp_info = {};
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -2030,11 +2030,11 @@ static BtStatus set_info(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRAN
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus get_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus get_protocol(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                              bthh_protocol_mode_t /* protocolMode */) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -2061,13 +2061,13 @@ static BtStatus get_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus set_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus set_protocol(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                              bthh_protocol_mode_t protocolMode) {
   CHECK_BTHH_INIT();
   btif_hh_device_t* p_dev;
   uint8_t proto_mode = protocolMode;
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -2099,12 +2099,12 @@ static BtStatus set_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus get_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus get_report(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                            bthh_report_type_t reportType, uint8_t reportId, int bufferSize) {
   CHECK_BTHH_INIT();
   btif_hh_device_t* p_dev;
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -2137,12 +2137,12 @@ static BtStatus get_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TR
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus get_report_reply(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static BtStatus get_report_reply(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                  tBT_TRANSPORT transport, bthh_status_t status, char* report,
                                  uint16_t size) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -2169,12 +2169,12 @@ static BtStatus get_report_reply(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus set_report(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                            bthh_report_type_t reportType, char* report) {
   CHECK_BTHH_INIT();
   btif_hh_device_t* p_dev;
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 
@@ -2225,11 +2225,11 @@ static BtStatus set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TR
  * Returns         BtStatus
  *
  ******************************************************************************/
-static BtStatus send_data(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static BtStatus send_data(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                           char* data) {
   CHECK_BTHH_INIT();
   tAclLinkSpec link_spec = {};
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
 

@@ -443,7 +443,8 @@ static jboolean connectNative(JNIEnv* env, jobject /* thiz */, jbyteArray addres
     return JNI_FALSE;
   }
 
-  BtStatus ret = sHiddIf->connect((RawAddress*)addr);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  BtStatus ret = sHiddIf->connect(bd_addr);
 
   env->ReleaseByteArrayElements(address, addr, 0);
 
