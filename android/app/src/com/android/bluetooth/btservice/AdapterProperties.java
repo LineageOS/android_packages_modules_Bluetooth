@@ -52,7 +52,6 @@ import android.util.Pair;
 
 import androidx.annotation.VisibleForTesting;
 
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
@@ -81,7 +80,6 @@ class AdapterProperties {
 
     private static final long DEFAULT_DISCOVERY_TIMEOUT_MS = 12800;
     @VisibleForTesting static final int BLUETOOTH_NAME_MAX_LENGTH_BYTES = 248;
-    private static final int SYSTEM_CONNECTION_LATENCY_METRIC = 65536;
 
     private volatile String mName;
     private volatile byte[] mAddress;
@@ -524,15 +522,7 @@ class AdapterProperties {
         if (!isNormalStateTransition(prevState, newState)) {
             Log.w(TAG, "updateOnProfileConnectionChanged: Unexpected transition. " + logInfo);
         }
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.BLUETOOTH_CONNECTION_STATE_CHANGED,
-                newState,
-                0 /* deprecated */,
-                profile,
-                mService.obfuscateAddress(device),
-                mService.getMetricId(device),
-                0,
-                SYSTEM_CONNECTION_LATENCY_METRIC);
+        MetricsLogger.getInstance().logDeviceConnectionStateChanges(device, profile, newState);
         if (!validateProfileConnectionState(newState)
                 || !validateProfileConnectionState(prevState)) {
             // Previously, an invalid state was broadcast anyway,

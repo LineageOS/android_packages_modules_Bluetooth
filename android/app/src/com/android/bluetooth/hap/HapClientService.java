@@ -418,6 +418,8 @@ public class HapClientService extends ConnectableProfile {
         if (adManager != null) {
             adManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
         }
+        mAdapterService.updateProfileConnectionAdapterProperties(
+                device, mProfileId, toState, fromState);
     }
 
     @Override
