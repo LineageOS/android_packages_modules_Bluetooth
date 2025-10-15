@@ -3739,16 +3739,7 @@ BtStatus btif_av_source_set_codec_config_preference(
     return status;
   }
 
-    BtifAvEvent btif_av_event(BTIF_AV_RECONFIGURE_REQ_EVT, nullptr, 0);
-    status = BtifStatus(static_cast<BtifStatusCode>(
-        do_in_main_thread(base::BindOnce(&btif_av_handle_event,
-                                         AVDT_TSEP_SNK,  // peer_sep
-                                         peer_address, kBtaHandleUnknown, btif_av_event))));
-
-    if (!status) {
-      log::error("do_in_main_thread failed, status: {}", status);
-      return status;
-    }
+  btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_RECONFIGURE_REQ_EVT);
 
   if (peer_ready_future.wait_for(std::chrono::seconds(10)) != std::future_status::ready) {
     log::error("BTIF AV Source fails to config codec");
