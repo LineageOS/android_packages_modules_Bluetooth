@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
 #include <base/thread_annotations.h>
 
 #include <chrono>
@@ -23,8 +25,6 @@
 #include <mutex>
 #include <queue>
 
-#include "common/bind.h"
-#include "common/callback.h"
 #include "common/postable_context.h"
 #include "os/alarm.h"
 #include "os/boottime_clock.h"
@@ -34,7 +34,7 @@ namespace bluetooth {
 // Timeout for waiting for a handler to stop, used in Handler::WaitUntilStopped()
 constexpr std::chrono::milliseconds kHandlerStopTimeout = std::chrono::milliseconds(2000);
 using TimePoint = os::boottime_clock::time_point;
-using DelayedTask = std::pair<TimePoint, common::OnceClosure>;
+using DelayedTask = std::pair<TimePoint, base::OnceClosure>;
 
 // Define the lambda comparator
 inline auto compare_task_by_time = [](const DelayedTask& a, const DelayedTask& b) {
@@ -67,7 +67,7 @@ public:
   virtual ~Handler();
 
   // Enqueue a closure to the queue of this handler
-  virtual void Post(common::OnceClosure closure) override;
+  virtual void Post(base::OnceClosure closure) override;
 
   // Remove all pending events from the queue of this handler, and asynchronously stop the handler.
   void Clear();
@@ -77,13 +77,13 @@ public:
 
   template <typename Functor, typename... Args>
   void Call(Functor&& functor, Args&&... args) {
-    Post(common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...));
+    Post(base::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...));
   }
 
   template <typename T, typename Functor, typename... Args>
   void CallOn(T* obj, Functor&& functor, Args&&... args) {
-    Post(common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj),
-                          std::forward<Args>(args)...));
+    Post(base::BindOnce(std::forward<Functor>(functor), base::Unretained(obj),
+                        std::forward<Args>(args)...));
   }
 
   Thread& thread() const { return *thread_; }
@@ -98,13 +98,13 @@ public:
   bool Synchronize(std::chrono::milliseconds timeout) {
     std::promise<void> promise;
     auto future = promise.get_future();
-    Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    Post(base::BindOnce(&std::promise<void>::set_value, base::Unretained(&promise)));
     return future.wait_for(timeout) == std::future_status::ready;
   }
 
   common::PostableContext* GetPostableContext() { return this; }
 
-  bool PostWithDelay(common::OnceClosure closure, std::chrono::milliseconds delay);
+  bool PostWithDelay(base::OnceClosure closure, std::chrono::milliseconds delay);
 
   std::future<void> NotifyWhenIdle();
 
@@ -119,7 +119,7 @@ private:
   inline bool was_cleared() const EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
     return tasks_ == nullptr || delayed_tasks_ == nullptr;
   }
-  std::queue<common::OnceClosure>* tasks_ GUARDED_BY(mutex_);
+  std::queue<base::OnceClosure>* tasks_ GUARDED_BY(mutex_);
 
   Thread* thread_;
   std::unique_ptr<Reactor::Event> event_;

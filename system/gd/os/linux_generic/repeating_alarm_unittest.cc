@@ -16,9 +16,11 @@
 
 #include "os/repeating_alarm.h"
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
+
 #include <future>
 
-#include "common/bind.h"
 #include "gtest/gtest.h"
 #include "os/fake_timer/fake_timerfd.h"
 #include "os/handler.h"
@@ -27,7 +29,6 @@ namespace bluetooth {
 namespace os {
 namespace {
 
-using common::BindOnce;
 using fake_timer::fake_timerfd_advance;
 using fake_timer::fake_timerfd_reset;
 
@@ -53,11 +54,11 @@ protected:
     auto future = promise.get_future();
     auto start_time = std::chrono::steady_clock::now();
     int counter = 0;
-    alarm_->Schedule(
-            common::Bind(&RepeatingAlarmTest::verify_delayed_tasks, common::Unretained(this),
-                         common::Unretained(&counter), start_time, scheduled_tasks,
-                         common::Unretained(&promise), task_length_ms, interval_between_tasks_ms),
-            std::chrono::milliseconds(interval_between_tasks_ms));
+    alarm_->Schedule(base::BindRepeating(&RepeatingAlarmTest::verify_delayed_tasks,
+                                         base::Unretained(this), base::Unretained(&counter),
+                                         start_time, scheduled_tasks, base::Unretained(&promise),
+                                         task_length_ms, interval_between_tasks_ms),
+                     std::chrono::milliseconds(interval_between_tasks_ms));
     fake_timer_advance(interval_between_tasks_ms * scheduled_tasks);
     future.get();
     alarm_->Cancel();
@@ -72,13 +73,11 @@ protected:
     }
   }
 
-  void fake_timer_advance(uint64_t ms) {
-    handler_->Post(common::BindOnce(fake_timerfd_advance, ms));
-  }
+  void fake_timer_advance(uint64_t ms) { handler_->Post(base::BindOnce(fake_timerfd_advance, ms)); }
 
   RepeatingAlarm* alarm_;
 
-  common::Closure should_not_happen_ = common::Bind([]() { FAIL(); });
+  base::RepeatingClosure should_not_happen_ = base::BindRepeating([]() { FAIL(); });
 
 private:
   Thread* thread_;
@@ -91,7 +90,7 @@ TEST_F(RepeatingAlarmTest, schedule) {
   std::promise<void> promise;
   auto future = promise.get_future();
   int period_ms = 10;
-  alarm_->Schedule(common::Bind(&std::promise<void>::set_value, common::Unretained(&promise)),
+  alarm_->Schedule(base::BindRepeating(&std::promise<void>::set_value, base::Unretained(&promise)),
                    std::chrono::milliseconds(period_ms));
   fake_timer_advance(period_ms);
   future.get();
@@ -108,12 +107,12 @@ TEST_F(RepeatingAlarmTest, cancel_alarm) {
 TEST_F(RepeatingAlarmTest, cancel_alarm_from_callback) {
   std::promise<void> promise;
   auto future = promise.get_future();
-  alarm_->Schedule(common::Bind(
+  alarm_->Schedule(base::BindRepeating(
                            [](RepeatingAlarm* alarm, std::promise<void>* promise) {
                              alarm->Cancel();
                              promise->set_value();
                            },
-                           common::Unretained(this->alarm_), common::Unretained(&promise)),
+                           base::Unretained(this->alarm_), base::Unretained(&promise)),
                    std::chrono::milliseconds(1));
   fake_timer_advance(1);
   ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(1)));
@@ -123,7 +122,7 @@ TEST_F(RepeatingAlarmTest, schedule_while_alarm_armed) {
   alarm_->Schedule(should_not_happen_, std::chrono::milliseconds(1));
   std::promise<void> promise;
   auto future = promise.get_future();
-  alarm_->Schedule(common::Bind(&std::promise<void>::set_value, common::Unretained(&promise)),
+  alarm_->Schedule(base::BindRepeating(&std::promise<void>::set_value, base::Unretained(&promise)),
                    std::chrono::milliseconds(10));
   fake_timer_advance(10);
   ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(1)));

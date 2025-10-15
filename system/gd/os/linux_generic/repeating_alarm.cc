@@ -16,13 +16,14 @@
 
 #include "os/repeating_alarm.h"
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
 #include <cstring>
 
-#include "common/bind.h"
 #include "os/linux_generic/linux.h"
 #include "os/utils.h"
 
@@ -34,14 +35,14 @@
 
 namespace bluetooth {
 namespace os {
-using common::Closure;
 
 RepeatingAlarm::RepeatingAlarm(Thread* thread)
     : thread_(thread), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
   log::assert_that(fd_ != -1, "assert failed: fd_ != -1");
 
   token_ = thread_->GetReactor()->Register(
-          fd_, common::Bind(&RepeatingAlarm::on_fire, common::Unretained(this)), common::Closure());
+          fd_, base::BindRepeating(&RepeatingAlarm::on_fire, base::Unretained(this)),
+          base::RepeatingClosure());
 }
 
 RepeatingAlarm::~RepeatingAlarm() {
@@ -52,7 +53,7 @@ RepeatingAlarm::~RepeatingAlarm() {
   log::assert_that(close_status != -1, "assert failed: close_status != -1");
 }
 
-void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
+void RepeatingAlarm::Schedule(base::RepeatingClosure task, std::chrono::milliseconds period) {
   std::lock_guard<std::mutex> lock(mutex_);
   long period_ms = period.count();
   itimerspec timer_itimerspec{{period_ms / 1000, period_ms % 1000 * 1000000},
