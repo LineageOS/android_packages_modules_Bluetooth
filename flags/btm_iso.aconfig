@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "btm_multi_client_support"
+    namespace: "bluetooth"
+    description: "Support multi iso client"
+    bug: "451535239"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
