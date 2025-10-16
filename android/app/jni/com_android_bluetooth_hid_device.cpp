@@ -42,6 +42,7 @@ static jmethodID method_onVirtualCableUnplug;
 
 static const bthd_interface_t* sHiddIf = NULL;
 static jobject mCallbacksObj = NULL;
+static jfieldID sCallbacksField;
 
 static jbyteArray marshall_bda(RawAddress* bd_addr) {
   CallbackEnv sCallbackEnv(__func__);
@@ -183,7 +184,10 @@ static void initNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for HID Device Callbacks");
+  }
 
   log::verbose("done");
 }
@@ -482,6 +486,7 @@ static jboolean disconnectNative(JNIEnv* /* env */, jobject /* thiz */) {
   return result;
 }
 
+// JNI functions defined in HidDeviceNativeInterface
 int register_com_android_bluetooth_hid_device(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "()V", (void*)initNative},
@@ -496,12 +501,15 @@ int register_com_android_bluetooth_hid_device(JNIEnv* env) {
           {"connectNative", "([B)Z", (void*)connectNative},
           {"disconnectNative", "()Z", (void*)disconnectNative},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/hid/HidDeviceNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/hid/HidDeviceNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
+
+  // Client callback functions defined in HidDeviceNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onApplicationStateChanged", "([BZ)V", &method_onApplicationStateChanged},
           {"onConnectStateChanged", "([BI)V", &method_onConnectStateChanged},
@@ -511,7 +519,7 @@ int register_com_android_bluetooth_hid_device(JNIEnv* env) {
           {"onInterruptData", "(B[B)V", &method_onInterruptData},
           {"onVirtualCableUnplug", "()V", &method_onVirtualCableUnplug},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/hid/HidDeviceNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/hid/HidDeviceNativeCallback", javaMethods);
 
   return 0;
 }

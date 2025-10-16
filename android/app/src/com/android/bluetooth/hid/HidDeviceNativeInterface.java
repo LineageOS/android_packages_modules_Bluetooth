@@ -28,27 +28,24 @@ import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.VisibleForTesting;
+import com.android.bluetooth.profile.NativeInterface;
 
-/** HID Device Native Interface to/from JNI. */
-public class HidDeviceNativeInterface {
-    private static final String TAG = HidDeviceNativeInterface.class.getSimpleName();
+public class HidDeviceNativeInterface extends NativeInterface<HidDeviceNativeCallback> {
 
     private final AdapterService mAdapterService;
-    private final HidDeviceService mService;
 
-    HidDeviceNativeInterface(AdapterService adapterService, HidDeviceService service) {
+    HidDeviceNativeInterface(
+            HidDeviceNativeCallback nativeCallback, AdapterService adapterService) {
+        super(requireNonNull(nativeCallback));
         mAdapterService = requireNonNull(adapterService);
-        mService = service;
     }
 
-    /** Initializes the native interface. */
     void init() {
         initNative();
     }
 
-    /** Cleanup the native interface. */
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 
@@ -143,48 +140,6 @@ public class HidDeviceNativeInterface {
      */
     boolean reportError(byte error) {
         return reportErrorNative(error);
-    }
-
-    @VisibleForTesting
-    synchronized void onApplicationStateChanged(byte[] address, boolean registered) {
-        mService.onApplicationStateChangedFromNative(getDevice(address), registered);
-    }
-
-    @VisibleForTesting
-    synchronized void onConnectStateChanged(byte[] address, int state) {
-        mService.onConnectStateChangedFromNative(getDevice(address), state);
-    }
-
-    @VisibleForTesting
-    synchronized void onGetReport(byte type, byte id, short bufferSize) {
-        mService.onGetReportFromNative(type, id, bufferSize);
-    }
-
-    @VisibleForTesting
-    synchronized void onSetReport(byte reportType, byte reportId, byte[] data) {
-        mService.onSetReportFromNative(reportType, reportId, data);
-    }
-
-    @VisibleForTesting
-    synchronized void onSetProtocol(byte protocol) {
-        mService.onSetProtocolFromNative(protocol);
-    }
-
-    @VisibleForTesting
-    synchronized void onInterruptData(byte reportId, byte[] data) {
-        mService.onInterruptDataFromNative(reportId, data);
-    }
-
-    @VisibleForTesting
-    synchronized void onVirtualCableUnplug() {
-        mService.onVirtualCableUnplugFromNative();
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        if (address == null) {
-            return null;
-        }
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     private native void initNative();
