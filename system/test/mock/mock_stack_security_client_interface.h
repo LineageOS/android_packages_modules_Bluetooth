@@ -46,8 +46,8 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
   MOCK_METHOD((bool), BTM_SecIsLeSecurityPending, (const RawAddress& /* bd_addr */));
   MOCK_METHOD((bool), BTM_IsDeviceBonded,
               (const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */));
-  MOCK_METHOD((bool), BTM_SetSecurityLevel,
-              (bool /* is_originator */, const char* /* p_name */, uint8_t /* service_id */,
+  MOCK_METHOD(bool, BTM_SetSecurityLevel,
+              (bool /* outgoing */, const char* /* p_name */, uint8_t /* service_id */,
                uint16_t /* sec_level */, uint16_t /* psm */, uint32_t /* mx_proto_id */,
                uint32_t /* mx_chan_id */));
   MOCK_METHOD((uint8_t), BTM_SecClrService, (uint8_t /* service_id */));

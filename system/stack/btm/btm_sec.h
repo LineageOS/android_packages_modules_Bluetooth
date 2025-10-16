@@ -78,7 +78,7 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
  *
  * Description      Register service security level with Security Manager
  *
- * Parameters:      is_originator - true if originating the connection
+ * Parameters:      outgoing    - true if originating the connection
  *                  p_name      - Name of the service relevant only if
  *                                authorization will show this name to user.
  *                                Ignored if BT_MAX_SERVICE_NAME_LEN is 0.
@@ -92,9 +92,8 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool BTM_SetSecurityLevel(bool is_originator, const char* p_name, uint8_t service_id,
-                          uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
-                          uint32_t mx_chan_id);
+bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
+                          uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id);
 
 /*******************************************************************************
  *

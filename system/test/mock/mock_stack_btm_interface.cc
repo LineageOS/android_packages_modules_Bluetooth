@@ -148,7 +148,7 @@ struct btm_client_interface_t default_btm_client_interface = {
                 },
                 .BTM_IsBonded = [](const RawAddress& /* bd_addr */,
                                    tBT_TRANSPORT /* transport */) -> bool { return false; },
-                .BTM_SetSecurityLevel = [](bool /* is_originator */, const char* /*p_name */,
+                .BTM_SetSecurityLevel = [](bool /* outgoing */, const char* /*p_name */,
                                            uint8_t /* service_id */, uint16_t /* sec_level */,
                                            uint16_t /* psm */, uint32_t /* mx_proto_id */,
                                            uint32_t /* mx_chan_id */) -> bool { return false; },

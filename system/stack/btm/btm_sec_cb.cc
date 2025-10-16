@@ -106,11 +106,11 @@ void BTM_Sec_Free() { btm_sec_cb.Free(); }
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_SERV_REC* tBTM_SEC_CB::find_first_serv_rec(bool is_originator, uint16_t psm) {
+tBTM_SEC_SERV_REC* tBTM_SEC_CB::find_first_serv_rec(bool outgoing, uint16_t psm) {
   tBTM_SEC_SERV_REC* p_serv_rec = &sec_serv_rec[0];
   int i;
 
-  if (is_originator && p_out_serv && p_out_serv->psm == psm) {
+  if (outgoing && p_out_serv && p_out_serv->psm == psm) {
     /* If this is outgoing connection and the PSM matches p_out_serv,
      * use it as the current service */
     return p_out_serv;
@@ -192,7 +192,7 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transpo
 }
 
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
-bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name, uint8_t service_id,
+bool tBTM_SEC_CB::AddService(bool outgoing, const char* p_name, uint8_t service_id,
                              uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
                              uint32_t mx_chan_id) {
   tBTM_SEC_SERV_REC* p_srec;
@@ -245,7 +245,7 @@ bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name, uint8_t ser
   p_srec->service_id = service_id;
   p_srec->mx_proto_id = mx_proto_id;
 
-  if (is_originator) {
+  if (outgoing) {
     p_srec->orig_mx_chan_id = mx_chan_id;
     osi_strlcpy((char*)p_srec->orig_service_name, p_name, BT_MAX_SERVICE_NAME_LEN + 1);
     /* clear out the old setting, just in case it exists */
@@ -304,8 +304,8 @@ bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name, uint8_t ser
   log::debug(
           "[{}]: id:{}, is_orig:{} psm:0x{:04x} proto_id:{} chan_id:{}  : "
           "sec:0x{:x} service_name:[{}] (up to {} chars saved)",
-          index, service_id, is_originator, psm, mx_proto_id, mx_chan_id, p_srec->security_flags,
-          p_name, BT_MAX_SERVICE_NAME_LEN);
+          index, service_id, outgoing, psm, mx_proto_id, mx_chan_id, p_srec->security_flags, p_name,
+          BT_MAX_SERVICE_NAME_LEN);
 
   return record_allocated;
 }

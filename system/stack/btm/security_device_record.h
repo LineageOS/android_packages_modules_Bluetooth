@@ -312,7 +312,7 @@ public:
   void set_suggested_tx_octect(uint16_t octets) { suggested_tx_octets = octets; }
 
   uint16_t get_suggested_tx_octets() const { return suggested_tx_octets; }
-  bool IsLocallyInitiated() const { return is_originator; }
+  bool IsLocallyInitiated() const { return outgoing; }
 
   uint16_t get_br_edr_hci_handle() const { return hci_handle; }
   uint16_t get_ble_hci_handle() const { return ble_hci_handle; }
@@ -377,7 +377,7 @@ public:
   tREMOTE_VERSION_INFO remote_version_info;
 
   bool role_central;  /* true if current mode is central (BLE) */
-  bool is_originator; /* true if device is originating ACL connection */
+  bool outgoing;      /* true if device is originating ACL connection */
   enum class RoleSwitchPending { kNone = 0, kAfterEnc, kAfterCtkd } role_switch_pending;
 
   // BLE connection parameters

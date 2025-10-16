@@ -121,7 +121,7 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec);
 static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec, tHCI_STATUS reason,
                                                uint16_t conn_handle, std::string comment);
 
-static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security, bool is_originator);
+static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security, bool outgoing);
 
 static void btm_sec_queue_encrypt_request(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                           tBTM_BLE_SEC_ACT sec_act, tBTM_SEC_CALLBACK* callback,
@@ -296,7 +296,7 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
  *
  * Description      Register service security level with Security Manager
  *
- * Parameters:      is_originator - true if originating the connection
+ * Parameters:      outgoing    - true if originating the connection
  *                  p_name      - Name of the service relevant only if
  *                                authorization will show this name to user.
  *                                Ignored if BT_MAX_SERVICE_NAME_LEN is 0.
@@ -310,10 +310,9 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
  * Returns          true if registered OK, else false
  *
  ******************************************************************************/
-bool BTM_SetSecurityLevel(bool is_originator, const char* p_name, uint8_t service_id,
-                          uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
-                          uint32_t mx_chan_id) {
-  return btm_sec_cb.AddService(is_originator, p_name, service_id, sec_level, psm, mx_proto_id,
+bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
+                          uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id) {
+  return btm_sec_cb.AddService(outgoing, p_name, service_id, sec_level, psm, mx_proto_id,
                                mx_chan_id);
 }
 
@@ -531,7 +530,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
   btm_sec_cb.pairing_flags = BTM_PAIR_FLAGS_WE_STARTED_DD;
 
   p_dev_rec->sec_rec.security_required = BTM_SEC_OUT_AUTHENTICATE;
-  p_dev_rec->is_originator = true;
+  p_dev_rec->outgoing = true;
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Bonding initiated", bt_transport_text(transport));
 
@@ -887,7 +886,7 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
   p_dev_rec->sec_rec.p_callback = p_callback;
   p_dev_rec->sec_rec.p_ref_data = p_ref_data;
   p_dev_rec->sec_rec.security_required |= (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT);
-  p_dev_rec->is_originator = false;
+  p_dev_rec->outgoing = false;
 
   log::debug(
           "Security Manager: BTM_SetEncryption classic_handle:0x{:04x} "
@@ -1218,8 +1217,8 @@ uint8_t BTM_GetSecurityMode() { return btm_sec_cb.security_mode; }
  * Returns          bool
  *
  ******************************************************************************/
-static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool is_originator) {
-  uint16_t mtm_check = is_originator ? BTM_SEC_OUT_MITM : BTM_SEC_IN_MITM;
+static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool outgoing) {
+  uint16_t mtm_check = outgoing ? BTM_SEC_OUT_MITM : BTM_SEC_IN_MITM;
   bool is_possible = true;
 
   if (p_dev_rec->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN) {
@@ -1248,7 +1247,7 @@ static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool is_ori
      * trigger pairing */
     if (com_android_bluetooth_flags_upgrade_temp_bonding_on_auth_req() &&
         (p_dev_rec->sec_rec.security_required &
-         (is_originator ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE)) &&
+         (outgoing ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE)) &&
         p_dev_rec->sec_rec.is_bond_type_temporary()) {
       is_possible = true;
     }
@@ -1267,7 +1266,7 @@ static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool is_ori
  * Returns          void
  *
  ******************************************************************************/
-static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec, bool is_originator) {
+static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec, bool outgoing) {
   log::verbose("verify whether the link key should be upgraded");
 
   /* Only check if link key already exists */
@@ -1275,7 +1274,7 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec, bool is_originato
     return;
   }
 
-  if (btm_sec_is_upgrade_possible(p_dev_rec, is_originator)) {
+  if (btm_sec_is_upgrade_possible(p_dev_rec, outgoing)) {
     log::verbose("need upgrade!! sec_flags:0x{:x}", p_dev_rec->sec_rec.sec_flags);
     /* if the application confirms the upgrade, set the upgrade bit */
     p_dev_rec->sm4 |= BTM_SM4_UPGRADE;
@@ -1288,13 +1287,13 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec, bool is_originato
 }
 
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
-                                                    uint16_t security_required, bool is_originator,
+                                                    uint16_t security_required, bool outgoing,
                                                     tBTM_SEC_CALLBACK* p_callback,
                                                     void* p_ref_data) {
   log::debug(
           "Checking l2cap access requirements peer:{} security:0x{:x} "
           "is_initiator:{}",
-          bd_addr, security_required, is_originator);
+          bd_addr, security_required, outgoing);
 
   tBTM_STATUS rc = tBTM_STATUS::BTM_SUCCESS;
   bool chk_acp_auth_done = false;
@@ -1312,7 +1311,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
   p_dev_rec->hci_handle =
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
 
-  if ((!is_originator) && (security_required & BTM_SEC_MODE4_LEVEL4)) {
+  if ((!outgoing) && (security_required & BTM_SEC_MODE4_LEVEL4)) {
     bool local_supports_sc = bluetooth::shim::GetController()->SupportsSecureConnections();
     /* acceptor receives L2CAP Channel Connect Request for Secure Connections
      * Only service */
@@ -1337,11 +1336,10 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
                p_dev_rec->sec_rec.sec_flags);
     rc = tBTM_STATUS::BTM_CMD_STARTED;
     if ((btm_sec_cb.security_mode == BTM_SEC_MODE_SERVICE) || (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
-        (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
-         (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
+        (BTM_SEC_IS_SM4(p_dev_rec->sm4) && (!btm_sec_is_upgrade_possible(p_dev_rec, outgoing)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
-      if (is_originator) {
+      if (outgoing) {
         if (((security_required & BTM_SEC_OUT_FLAGS) == 0) ||
             (((security_required & BTM_SEC_OUT_FLAGS) == BTM_SEC_OUT_AUTHENTICATE) &&
              btm_dev_authenticated(p_dev_rec)) ||
@@ -1372,7 +1370,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
       }
 
       if (rc == tBTM_STATUS::BTM_SUCCESS) {
-        if (access_secure_service_from_temp_bond(p_dev_rec, is_originator, security_required)) {
+        if (access_secure_service_from_temp_bond(p_dev_rec, outgoing, security_required)) {
           log::error(
                   "Trying to access a secure service from a temp bonding, "
                   "rejecting");
@@ -1396,7 +1394,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
   /* Modify security_required in btm_sec_l2cap_access_req for Lisbon */
   if (btm_sec_cb.security_mode == BTM_SEC_MODE_SP || btm_sec_cb.security_mode == BTM_SEC_MODE_SC) {
     if (BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
-      if (is_originator) {
+      if (outgoing) {
         /* SM4 to SM4 -> always encrypt */
         security_required |= BTM_SEC_OUT_ENCRYPT;
       } else /* acceptor */
@@ -1410,7 +1408,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
     } else if (!(BTM_SM4_KNOWN & p_dev_rec->sm4)) {
       /* the remote features are not known yet */
       log::debug("Remote features have not yet been received sec_flags:0x{:02x} {}",
-                 p_dev_rec->sec_rec.sec_flags, (is_originator) ? "initiator" : "acceptor");
+                 p_dev_rec->sec_rec.sec_flags, (outgoing) ? "initiator" : "acceptor");
 
       p_dev_rec->sm4 |= BTM_SM4_REQ_PEND;
       return tBTM_STATUS::BTM_CMD_STARTED;
@@ -1422,7 +1420,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
 
   p_dev_rec->sec_rec.security_required = security_required;
   p_dev_rec->sec_rec.p_ref_data = p_ref_data;
-  p_dev_rec->is_originator = is_originator;
+  p_dev_rec->outgoing = outgoing;
 
   if (chk_acp_auth_done) {
     log::verbose(
@@ -1470,7 +1468,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
     } else {
       /* If we already have a link key to the connected peer, is it secure
        * enough? */
-      btm_sec_check_upgrade(p_dev_rec, is_originator);
+      btm_sec_check_upgrade(p_dev_rec, outgoing);
     }
   }
 
@@ -1494,7 +1492,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
  *
  * Parameters:      bd_addr       - Address of the peer device
  *                  psm           - L2CAP PSM
- *                  is_originator - true if protocol above L2CAP originates
+ *                  outgoing - true if protocol above L2CAP originates
  *                                  connection
  *                  p_callback    - Pointer to callback function called if
  *                                  this function returns PENDING after required
@@ -1503,15 +1501,15 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
  * Returns          tBTM_STATUS
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                                      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   // should check PSM range in LE connection oriented L2CAP connection
   constexpr tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
-  log::debug("is_originator:{}, psm=0x{:04x}", is_originator, psm);
+  log::debug("outgoing:{}, psm=0x{:04x}", outgoing, psm);
 
   // Find the service record for the PSM
-  tBTM_SEC_SERV_REC* p_serv_rec = btm_sec_cb.find_first_serv_rec(is_originator, psm);
+  tBTM_SEC_SERV_REC* p_serv_rec = btm_sec_cb.find_first_serv_rec(outgoing, psm);
 
   // If there is no application registered with this PSM do not allow connection
   if (!p_serv_rec) {
@@ -1529,13 +1527,13 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bo
 
   uint16_t security_required;
   if (btm_sec_cb.security_mode == BTM_SEC_MODE_SC) {
-    security_required = btm_sec_set_serv_level4_flags(p_serv_rec->security_flags, is_originator);
+    security_required = btm_sec_set_serv_level4_flags(p_serv_rec->security_flags, outgoing);
   } else {
     security_required = p_serv_rec->security_flags;
   }
 
-  return btm_sec_l2cap_access_req_by_requirement(bd_addr, security_required, is_originator,
-                                                 p_callback, p_ref_data);
+  return btm_sec_l2cap_access_req_by_requirement(bd_addr, security_required, outgoing, p_callback,
+                                                 p_ref_data);
 }
 
 /*******************************************************************************
@@ -1547,7 +1545,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bo
  *                  permission to establish application connection.
  *
  * Parameters:      bd_addr       - Address of the peer device
- *                  is_originator - true if protocol above L2CAP originates
+ *                  outgoing - true if protocol above L2CAP originates
  *                                  connection
  *                  p_callback    - Pointer to callback function called if
  *                                  this function returns PENDING after required
@@ -1563,7 +1561,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bo
  *                  completed.
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_originator,
+tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool outgoing,
                                            uint16_t security_required,
                                            tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
@@ -1590,11 +1588,10 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
     rc = tBTM_STATUS::BTM_CMD_STARTED;
 
     if ((btm_sec_cb.security_mode == BTM_SEC_MODE_SERVICE) || (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
-        (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
-         (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
+        (BTM_SEC_IS_SM4(p_dev_rec->sm4) && (!btm_sec_is_upgrade_possible(p_dev_rec, outgoing)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
-      if (is_originator) {
+      if (outgoing) {
         if (((security_required & BTM_SEC_OUT_FLAGS) == 0) ||
             (((security_required & BTM_SEC_OUT_FLAGS) == BTM_SEC_OUT_AUTHENTICATE) &&
              btm_dev_authenticated(p_dev_rec)) ||
@@ -1630,14 +1627,14 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
       rc = tBTM_STATUS::BTM_CMD_STARTED;
     }
     if (rc == tBTM_STATUS::BTM_CMD_STARTED) {
-      btm_sec_queue_service_access_request(bd_addr, BT_PSM_RFCOMM, is_originator, security_required,
+      btm_sec_queue_service_access_request(bd_addr, BT_PSM_RFCOMM, outgoing, security_required,
                                            p_callback, p_ref_data);
       if (com_android_bluetooth_flags_separate_encryption_queue()) {
         return tBTM_STATUS::BTM_CMD_STORED;
       }
     } else /* rc == tBTM_STATUS::BTM_SUCCESS */
     {
-      if (access_secure_service_from_temp_bond(p_dev_rec, is_originator, security_required)) {
+      if (access_secure_service_from_temp_bond(p_dev_rec, outgoing, security_required)) {
         log::error(
                 "Trying to access a secure rfcomm service from a temp bonding, "
                 "rejecting");
@@ -1651,8 +1648,8 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
     return rc;
   }
 
-  if ((!is_originator) && ((security_required & BTM_SEC_MODE4_LEVEL4) ||
-                           (btm_sec_cb.security_mode == BTM_SEC_MODE_SC))) {
+  if ((!outgoing) && ((security_required & BTM_SEC_MODE4_LEVEL4) ||
+                      (btm_sec_cb.security_mode == BTM_SEC_MODE_SC))) {
     bool local_supports_sc = bluetooth::shim::GetController()->SupportsSecureConnections();
     /* acceptor receives service connection establishment Request for */
     /* Secure Connections Only service */
@@ -1695,12 +1692,12 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
         log::verbose("sec_flags:0x{:x}", p_dev_rec->sec_rec.sec_flags);
       } else {
         log::debug("Already have link key; checking if link key is sufficient");
-        btm_sec_check_upgrade(p_dev_rec, is_originator);
+        btm_sec_check_upgrade(p_dev_rec, outgoing);
       }
     }
   }
 
-  p_dev_rec->is_originator = is_originator;
+  p_dev_rec->outgoing = outgoing;
   p_dev_rec->sec_rec.p_callback = p_callback;
   p_dev_rec->sec_rec.p_ref_data = p_ref_data;
 
@@ -3875,8 +3872,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
   /* After connection is established we perform security if we do not know */
   /* the name, or if we are originator because some procedure can have */
   /* been scheduled while connection was down */
-  log::debug("Is connection locally initiated:{}", p_dev_rec->is_originator);
-  if (!(p_dev_rec->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->is_originator) {
+  log::debug("Is connection locally initiated:{}", p_dev_rec->outgoing);
+  if (!(p_dev_rec->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->outgoing) {
     tBTM_STATUS res = btm_sec_execute_procedure(p_dev_rec);
     if (res != tBTM_STATUS::BTM_CMD_STARTED) {
       btm_sec_dev_rec_cback_event(p_dev_rec, res, false);
@@ -5195,8 +5192,8 @@ static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANS
  *                  connections only mode.
  *
  ******************************************************************************/
-static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security, bool is_originator) {
-  uint16_t sec_level4_flags = is_originator ? BTM_SEC_OUT_LEVEL4_FLAGS : BTM_SEC_IN_LEVEL4_FLAGS;
+static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security, bool outgoing) {
+  uint16_t sec_level4_flags = outgoing ? BTM_SEC_OUT_LEVEL4_FLAGS : BTM_SEC_IN_LEVEL4_FLAGS;
 
   return cur_security | sec_level4_flags;
 }
@@ -5289,7 +5286,7 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool hos
 
   uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
-  if (!(p_dev_rec->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->is_originator) {
+  if (!(p_dev_rec->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) || p_dev_rec->outgoing) {
     tBTM_STATUS btm_status = btm_sec_execute_procedure(p_dev_rec);
     if (btm_status != tBTM_STATUS::BTM_CMD_STARTED) {
       log::warn("Security procedure not started! status:{}", btm_status_text(btm_status));
