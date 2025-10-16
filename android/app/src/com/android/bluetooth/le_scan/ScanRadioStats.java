@@ -20,6 +20,7 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHE
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothProtoEnums;
+import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.MetricsLogger;
@@ -62,10 +63,11 @@ class ScanRadioStats {
         recordScreenOnOffMetrics();
     }
 
-    boolean recordScanRadioStart(
+    void recordScanRadioStart(
             int scanMode, int scannerId, AppScanStats stats, int scanWindowMs, int scanIntervalMs) {
         if (mIsRadioStarted) {
-            return false;
+            Log.w(TAG, "recordScanRadioStart(): Scan radio already started");
+            return;
         }
         mRadioStartTime = mTimeProvider.elapsedRealtime();
         mRadioScanWorkSourceUtil = stats.getWorkSourceUtil();
@@ -76,15 +78,14 @@ class ScanRadioStats {
         mIsRadioStarted = true;
         mRadioScanAppImportance = stats.getAppImportance();
         mRadioScanAttributionTag = stats.getAttributionTagFromScannerId(scannerId);
-        return true;
     }
 
-    boolean recordScanRadioStop() {
+    void recordScanRadioStop(String caller) {
         if (!mIsRadioStarted) {
-            return false;
+            Log.w(TAG, "recordScanRadioStop(caller=" + caller + "): No scan radio to stop");
+            return;
         }
         recordScanRadioDurationMetrics();
-        return true;
     }
 
     void recordScanRadioResultCount() {

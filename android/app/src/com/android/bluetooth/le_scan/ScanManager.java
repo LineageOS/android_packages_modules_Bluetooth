@@ -1211,9 +1211,7 @@ class ScanManager {
             int scanWindowCoded = ScanUtil.scanWindow(mAdapterService, clientCoded);
             int scanIntervalCoded = ScanUtil.scanInterval(mAdapterService, clientCoded);
             mNativeInterface.scan(false, "configureRegularScanParams");
-            if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
-                Log.w(TAG, "There is no scan radio to stop");
-            }
+            mScanController.getScanRadioStats().recordScanRadioStop("configureRegularScanParams");
             Log.d(
                     TAG,
                     (header + "Set Scan Parameters Native")
@@ -1281,16 +1279,14 @@ class ScanManager {
         }
         if (chosenClient != null && chosenClient.getAppScanStats().isPresent()) {
             var chosenClientSettings = chosenClient.getSettings();
-            if (!mScanController
+            mScanController
                     .getScanRadioStats()
                     .recordScanRadioStart(
                             chosenClient.getScanModeApp(),
                             chosenClient.getScannerId(),
                             chosenClient.getAppScanStats().get(),
                             ScanUtil.windowMillis(mAdapterService, chosenClientSettings),
-                            ScanUtil.intervalMillis(mAdapterService, chosenClientSettings))) {
-                Log.w(TAG, "Scan radio already started");
-            }
+                            ScanUtil.intervalMillis(mAdapterService, chosenClientSettings));
         }
     }
 
@@ -1461,9 +1457,7 @@ class ScanManager {
         mRegularScanClients.remove(client);
         if (numRegularScanClients() == 0) {
             mNativeInterface.scan(false, "stopRegularScan");
-            if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
-                Log.w(TAG, "There is no scan radio to stop");
-            }
+            mScanController.getScanRadioStats().recordScanRadioStop("stopRegularScan");
         }
 
         if (mUseMsftFiltering) {
@@ -1501,9 +1495,7 @@ class ScanManager {
         configureRegularScanParams();
         if (numRegularScanClients() == 0) {
             mNativeInterface.scan(false, "regularScanTimeout");
-            if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
-                Log.w(TAG, "There is no scan radio to stop");
-            }
+            mScanController.getScanRadioStats().recordScanRadioStop("regularScanTimeout");
         }
     }
 
