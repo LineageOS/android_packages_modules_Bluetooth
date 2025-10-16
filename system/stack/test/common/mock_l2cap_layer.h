@@ -71,6 +71,7 @@ public:
                uint16_t(uint16_t psm, const tL2CAP_APPL_INFO& cb_info, uint16_t sec_level));
   MOCK_METHOD1(DeregisterLECoc, void(uint16_t psm));
   MOCK_METHOD1(GetBleConnRole, uint8_t(const RawAddress& bd_addr));
+  MOCK_METHOD1(GetBleSubrateFactor, uint16_t(const RawAddress& bd_addr));
   MOCK_METHOD1(GetBleConnInterval, uint16_t(const RawAddress& bd_addr));
   MOCK_METHOD1(GetBlePeriphLatency, uint16_t(const RawAddress& bd_addr));
   MOCK_METHOD1(GetBleSupervisionTimeout, uint16_t(const RawAddress& bd_addr));

@@ -442,6 +442,8 @@ public:
 
 private:
   tHCI_ROLE link_role_{HCI_ROLE_CENTRAL}; /* Central or peripheral */
+  uint16_t subrate_factor_;
+  uint16_t cont_num_;
   uint16_t conn_interval_;
   uint16_t periph_latency_;
   uint16_t supervision_tout_;
@@ -452,6 +454,10 @@ public:
   bool IsLinkRolePeripheral() const { return link_role_ == HCI_ROLE_PERIPHERAL; }
   void SetLinkRoleAsCentral() { link_role_ = HCI_ROLE_CENTRAL; }
   void SetLinkRoleAsPeripheral() { link_role_ = HCI_ROLE_PERIPHERAL; }
+  uint16_t SubrateFactor() { return subrate_factor_; }
+  void SetSubrateFactor(uint16_t subrate_factor) { subrate_factor_ = subrate_factor; }
+  uint16_t ContNumber() const { return cont_num_; }
+  void SetContNumber(uint16_t cont_num) { cont_num_ = cont_num; }
   uint16_t ConnInterval() const { return conn_interval_; }
   void SetConnInterval(uint16_t conn_interval) { conn_interval_ = conn_interval; }
   uint16_t PeriphLatency() const { return periph_latency_; }
@@ -554,6 +560,7 @@ public:
 #define L2C_BLE_SUBRATE_REQ_DISABLE 0x1  // disable subrate req
 #define L2C_BLE_NEW_SUBRATE_PARAM 0x2    // new subrate req parameter to be set
 #define L2C_BLE_SUBRATE_REQ_PENDING 0x4  // waiting for subrate to be completed
+#define L2C_BLE_RESET_SUBRATE_PARAM 0x8  // reset subrate parameter because of timeout
 
   /* subrate req params */
   uint16_t subrate_min;
