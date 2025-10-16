@@ -95,8 +95,8 @@ static bool stack_initialized;
 
 static bt_status_t btpan_jni_init(const btpan_callbacks_t* callbacks);
 static void btpan_jni_cleanup();
-static bt_status_t btpan_connect(const RawAddress* bd_addr, int local_role, int remote_role);
-static bt_status_t btpan_disconnect(const RawAddress* bd_addr);
+static bt_status_t btpan_connect(const RawAddress bd_addr, int local_role, int remote_role);
+static bt_status_t btpan_disconnect(const RawAddress bd_addr);
 static bt_status_t btpan_enable(int local_role);
 static int btpan_get_local_role(void);
 
@@ -222,11 +222,11 @@ static bt_status_t btpan_enable(int local_role) {
 
 static int btpan_get_local_role() { return static_cast<int>(btpan_dev_local_role); }
 
-static bt_status_t btpan_connect(const RawAddress* bd_addr, int local_role, int remote_role) {
+static bt_status_t btpan_connect(RawAddress bd_addr, int local_role, int remote_role) {
   tBTA_PAN_ROLE bta_local_role = btpan_role_to_bta(local_role);
   tBTA_PAN_ROLE bta_remote_role = btpan_role_to_bta(remote_role);
-  btpan_new_conn(-1, *bd_addr, bta_local_role, bta_remote_role);
-  BTA_PanOpen(*bd_addr, bta_local_role, bta_remote_role);
+  btpan_new_conn(-1, bd_addr, bta_local_role, bta_remote_role);
+  BTA_PanOpen(bd_addr, bta_local_role, bta_remote_role);
   return BT_STATUS_SUCCESS;
 }
 
@@ -253,12 +253,12 @@ static void btif_in_pan_generic_evt(uint16_t event, char* p_param) {
   }
 }
 
-static bt_status_t btpan_disconnect(const RawAddress* bd_addr) {
-  btpan_conn_t* conn = btpan_find_conn_addr(*bd_addr);
+static bt_status_t btpan_disconnect(RawAddress bd_addr) {
+  btpan_conn_t* conn = btpan_find_conn_addr(bd_addr);
   if (conn && conn->handle >= 0) {
     /* Inform the application that the disconnect has been initiated
      * successfully */
-    btif_transfer_context(btif_in_pan_generic_evt, BTIF_PAN_CB_DISCONNECTING, (char*)bd_addr,
+    btif_transfer_context(btif_in_pan_generic_evt, BTIF_PAN_CB_DISCONNECTING, (char*)&bd_addr,
                           sizeof(RawAddress), NULL);
     BTA_PanClose(conn->handle);
     return BT_STATUS_SUCCESS;

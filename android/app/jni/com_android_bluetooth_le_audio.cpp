@@ -505,8 +505,8 @@ static jboolean connectLeAudioNative(JNIEnv* env, jobject /* object */, jbyteArr
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sLeAudioClientInterface->Connect(*tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sLeAudioClientInterface->Connect(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
@@ -524,8 +524,8 @@ static jboolean disconnectLeAudioNative(JNIEnv* env, jobject /* object */, jbyte
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sLeAudioClientInterface->Disconnect(*tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sLeAudioClientInterface->Disconnect(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
@@ -545,8 +545,8 @@ static jboolean setEnableStateNative(JNIEnv* env, jobject /* object */, jbyteArr
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sLeAudioClientInterface->SetEnableState(*tmpraw, enabled);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sLeAudioClientInterface->SetEnableState(bd_addr, enabled);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
@@ -566,8 +566,8 @@ static jboolean groupAddNodeNative(JNIEnv* env, jobject /* object */, jint group
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sLeAudioClientInterface->GroupAddNode(group_id, *tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sLeAudioClientInterface->GroupAddNode(group_id, bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
 
   return JNI_TRUE;
@@ -587,8 +587,8 @@ static jboolean groupRemoveNodeNative(JNIEnv* env, jobject /* object */, jint gr
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sLeAudioClientInterface->GroupRemoveNode(group_id, *tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sLeAudioClientInterface->GroupRemoveNode(group_id, bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }

@@ -126,8 +126,8 @@ static bt_status_t deinit() {
   return BT_STATUS_SUCCESS;
 }
 
-static bt_status_t search(RawAddress* bd_addr, const Uuid& uuid) {
-  BTA_SdpSearch(*bd_addr, uuid);
+static bt_status_t search(RawAddress bd_addr, const Uuid& uuid) {
+  BTA_SdpSearch(bd_addr, uuid);
   return BT_STATUS_SUCCESS;
 }
 

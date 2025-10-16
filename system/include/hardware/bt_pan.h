@@ -70,12 +70,12 @@ typedef struct {
    * start bluetooth pan connection to the remote device by specified pan role.
    * The result state will be returned by btpan_connection_state_callback
    */
-  bt_status_t (*connect)(const RawAddress* bd_addr, int local_role, int remote_role);
+  bt_status_t (*connect)(const RawAddress bd_addr, int local_role, int remote_role);
   /**
    * stop bluetooth pan connection. The result state will be returned by
    * btpan_connection_state_callback
    */
-  bt_status_t (*disconnect)(const RawAddress* bd_addr);
+  bt_status_t (*disconnect)(const RawAddress bd_addr);
 
   /**
    * Cleanup the pan interface

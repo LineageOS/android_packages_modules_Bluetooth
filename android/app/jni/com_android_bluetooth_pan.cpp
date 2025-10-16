@@ -175,7 +175,8 @@ static jboolean connectPanNative(JNIEnv* env, jobject /* object */, jbyteArray a
   }
 
   jboolean ret = JNI_TRUE;
-  bt_status_t status = sPanIf->connect((RawAddress*)addr, src_role, dest_role);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  bt_status_t status = sPanIf->connect(bd_addr, src_role, dest_role);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed PAN channel connection, status: {}", bt_status_text(status));
     ret = JNI_FALSE;
@@ -198,7 +199,8 @@ static jboolean disconnectPanNative(JNIEnv* env, jobject /* object */, jbyteArra
   }
 
   jboolean ret = JNI_TRUE;
-  bt_status_t status = sPanIf->disconnect((RawAddress*)addr);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  bt_status_t status = sPanIf->disconnect(bd_addr);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed disconnect pan channel, status: {}", bt_status_text(status));
     ret = JNI_FALSE;
