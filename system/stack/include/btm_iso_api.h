@@ -49,7 +49,9 @@ public:
   virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_handle) = 0;
   virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_handle) = 0;
 
+  virtual void OnBisEvent(uint8_t event, void* data) = 0;
   virtual void OnBigSourceEvent(BigSourceEvent event, void* data) = 0;
+  virtual void OnBigSinkEvent(BigSinkEvent event, void* data) = 0;
 };
 
 struct IsoManagerCallbacks {
@@ -181,6 +183,22 @@ public:
    * @param reason termination reason data
    */
   virtual void TerminateBig(uint8_t big_handle, uint8_t reason);
+
+  /**
+   * Creates sync with Broadcast Isochronous Group
+   *
+   * @param client_handle client handle
+   * @param sync_params BIG sync parameters
+   */
+  virtual void BigCreateSync(iso_manager::IsoClientHandle client_handle,
+                             struct iso_manager::big_create_sync_params sync_params);
+
+  /**
+   * Terminates sync with Broadcast Isochronous Group
+   *
+   * @param big_handle BIG identifier
+   */
+  virtual void BigTerminateSync(uint8_t big_handle);
 
   /* Below are defined handlers called by the legacy code in btu_hcif.cc */
 

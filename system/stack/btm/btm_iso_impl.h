@@ -52,7 +52,8 @@ static constexpr uint8_t kStateFlagsNone = 0x00;
 static constexpr uint8_t kStateFlagIsConnecting = 0x01;
 static constexpr uint8_t kStateFlagIsConnected = 0x02;
 static constexpr uint8_t kStateFlagHasDataPathSet = 0x04;
-static constexpr uint8_t kStateFlagIsBroadcast = 0x10;
+static constexpr uint8_t kStateFlagIsBroadcastSource = 0x10;
+static constexpr uint8_t kStateFlagIsBroadcastSink = 0x80;
 static constexpr uint8_t kStateFlagIsCancelled = 0x20;
 static constexpr uint8_t kStateFlagSettingDataPath = 0x40;
 
@@ -119,10 +120,12 @@ struct iso_impl {
     return &client_it->second;
   }
 
-  IsoManagerCallbacks* get_client_callbacks_from_big(uint8_t big_handle) {
+  IsoManagerCallbacks* get_client_callbacks_from_big(uint8_t big_handle, bool is_source) {
     const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-    auto group_it = source_big_handle_to_group_map_.find(big_handle);
-    if (group_it == source_big_handle_to_group_map_.end()) {
+    auto& big_handle_to_group_map_ =
+            is_source ? source_big_handle_to_group_map_ : sink_big_handle_to_group_map_;
+    auto group_it = big_handle_to_group_map_.find(big_handle);
+    if (group_it == big_handle_to_group_map_.end()) {
       return nullptr;
     }
     auto client_it = iso_clients_.find(group_it->second->client_handle);
@@ -136,9 +139,12 @@ struct iso_impl {
     if (stream == nullptr) {
       return nullptr;
     }
-    return (stream->state_flags & kStateFlagIsBroadcast)
-                   ? get_client_callbacks_from_big(stream->group_id)
-                   : get_client_callbacks_from_cig(stream->group_id);
+    if (stream->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink)) {
+      bool is_source = (stream->state_flags & kStateFlagIsBroadcastSource);
+      return get_client_callbacks_from_big(stream->group_id, is_source);
+    } else {
+      return get_client_callbacks_from_cig(stream->group_id);
+    }
   }
 
   IsoClientHandle register_callbacks(IsoManagerCallbacks callbacks) {
@@ -479,7 +485,7 @@ struct iso_impl {
       iso->state_flags |= kStateFlagHasDataPathSet;
     }
 
-    if (iso->state_flags & kStateFlagIsBroadcast) {
+    if (iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink)) {
       log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
       client_cbs->big_callbacks->OnSetupIsoDataPath(status, conn_handle, iso->group_id);
     } else {
@@ -491,9 +497,7 @@ struct iso_impl {
   void setup_iso_data_path(uint16_t conn_handle,
                            struct iso_manager::iso_data_path_params path_params) {
     iso_stream* iso = GetStream(conn_handle);
-    log::assert_that(iso != nullptr, "No such iso connection: {}", conn_handle);
-
-    if (!(iso->state_flags & kStateFlagIsBroadcast)) {
+    if (!(iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink))) {
       log::assert_that(iso->state_flags & kStateFlagIsConnected, "CIS not established");
     }
 
@@ -543,7 +547,7 @@ struct iso_impl {
       iso->state_flags &= ~kStateFlagHasDataPathSet;
     }
 
-    if (iso->state_flags & kStateFlagIsBroadcast) {
+    if (iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink)) {
       log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
       client_cbs->big_callbacks->OnRemoveIsoDataPath(status, conn_handle, iso->group_id);
     } else {
@@ -659,7 +663,7 @@ struct iso_impl {
     iso_stream* iso = GetStream(conn_handle);
     log::assert_that(iso != nullptr, "No such iso connection handle: 0x{:x}", conn_handle);
 
-    if (!(iso->state_flags & kStateFlagIsBroadcast)) {
+    if (!(iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink))) {
       if (!(iso->state_flags & kStateFlagIsConnected)) {
         log::warn("Cis handle: 0x{:x} not established", conn_handle);
         return;
@@ -938,7 +942,7 @@ struct iso_impl {
         stream_ptr->sdu_itv = last_big_create_req_sdu_itv_;
         stream_ptr->sync_info = {.tx_seq_nb = 0, .rx_seq_nb = 0};
         stream_ptr->used_credits = 0;
-        stream_ptr->state_flags = kStateFlagIsBroadcast;
+        stream_ptr->state_flags = kStateFlagIsBroadcastSource;
 
         log::verbose("BIG_HANDLE {}, bis_handle: {:#x}, flags: {:#x}, status {}", evt.big_handle,
                      conn_handle, stream_ptr->state_flags,
@@ -948,7 +952,7 @@ struct iso_impl {
       }
     }
 
-    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle);
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle, true);
     log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
                      evt.big_handle);
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
@@ -974,7 +978,7 @@ struct iso_impl {
     log::assert_that(group_it != source_big_handle_to_group_map_.end(), "No such big: {}",
                      evt.big_handle);
 
-    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle);
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle, true);
     log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
                      evt.big_handle);
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
@@ -995,7 +999,7 @@ struct iso_impl {
 
   void create_big(IsoClientHandle client_handle, uint8_t big_handle,
                   struct big_create_params big_params) {
-    log::assert_that(!IsBigKnown(big_handle), "Invalid big - already exists: {}", big_handle);
+    log::assert_that(!IsBigSourceKnown(big_handle), "Invalid big - already exists: {}", big_handle);
 
     {
       const std::lock_guard<std::mutex> lock(iso_client_mutex_);
@@ -1020,9 +1024,165 @@ struct iso_impl {
   }
 
   void terminate_big(uint8_t big_handle, uint8_t reason) {
-    log::assert_that(IsBigKnown(big_handle), "No such big: {}", big_handle);
+    log::assert_that(IsBigSourceKnown(big_handle), "No such big: {}", big_handle);
 
     btsnd_hcic_ble_term_big(big_handle, reason);
+  }
+
+  void big_create_sync(IsoClientHandle client_handle, struct big_create_sync_params sync_params) {
+    if (!com_android_bluetooth_flags_btm_broadcast_sink_support()) {
+      return;
+    }
+
+    log::assert_that(!IsBigSinkKnown(sync_params.big_handle), "Invalid big - already exists: {}",
+                     sync_params.big_handle);
+
+    {
+      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+      auto group = std::make_unique<iso_group>();
+      group->id = sync_params.big_handle;
+      group->client_handle = client_handle;
+      sink_big_handle_to_group_map_[sync_params.big_handle] = std::move(group);
+    }
+
+    btsnd_hcic_ble_big_create_sync(sync_params.big_handle, sync_params.sync_handle,
+                                   sync_params.encryption, sync_params.broadcast_code,
+                                   sync_params.mse, sync_params.big_sync_timeout, sync_params.bis);
+  }
+
+  void process_big_sync_est_pkt(uint8_t len, uint8_t* data) {
+    log::assert_that(len >= 14, "Invalid packet length: {}", len);
+
+    struct big_sync_est_evt evt;
+
+    STREAM_TO_UINT8(evt.status, data);
+    STREAM_TO_UINT8(evt.big_handle, data);
+    STREAM_TO_UINT24(evt.transport_latency_big, data);
+    STREAM_TO_UINT8(evt.nse, data);
+    STREAM_TO_UINT8(evt.bn, data);
+    STREAM_TO_UINT8(evt.pto, data);
+    STREAM_TO_UINT8(evt.irc, data);
+    STREAM_TO_UINT16(evt.max_pdu, data);
+    STREAM_TO_UINT16(evt.iso_interval, data);
+
+    uint8_t num_bis;
+    STREAM_TO_UINT8(num_bis, data);
+
+    log::assert_that(len == (14 + num_bis * sizeof(uint16_t)),
+                     "Invalid packet length: {}. Number of bis: {}", len, num_bis);
+
+    auto group_it = sink_big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != sink_big_handle_to_group_map_.end(),
+                     "Cannot find group for big_handle: {}", evt.big_handle);
+
+    size_t stream_sz_before_big_sync = conn_hdl_to_iso_stream_map_.size();
+
+    if (evt.status == HCI_SUCCESS) {
+      for (auto i = 0; i < num_bis; ++i) {
+        uint16_t conn_handle;
+        STREAM_TO_UINT16(conn_handle, data);
+        evt.conn_handles.push_back(conn_handle);
+        group_it->second->stream_conn_handles.push_back(conn_handle);
+        log::info("received BIS conn_hdl {}", conn_handle);
+
+        auto stream_ptr = std::make_unique<iso_stream>();
+        stream_ptr->conn_handle = conn_handle;
+        stream_ptr->group_id = evt.big_handle;
+        stream_ptr->sdu_itv = evt.iso_interval * 1250; /* sdu_itv in us */
+        stream_ptr->sync_info = {.tx_seq_nb = 0, .rx_seq_nb = 0};
+        stream_ptr->used_credits = 0;
+        stream_ptr->state_flags = kStateFlagIsBroadcastSink;
+
+        conn_hdl_to_iso_stream_map_[conn_handle] = std::move(stream_ptr);
+      }
+    }
+
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle, false);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
+                     evt.big_handle);
+    log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
+    client_cbs->big_callbacks->OnBigSinkEvent(BigSinkEvent::kSyncEst, &evt);
+
+    if (stream_sz_before_big_sync) {
+      return;
+    }
+
+    // Only set active for the first stream setup.
+    notify_iso_traffic_active(true);
+  }
+
+  void process_big_sync_lost_pkt(uint8_t len, uint8_t* data) {
+    log::assert_that(len == 2, "Invalid packet length: {}", len);
+
+    struct big_sync_lost_evt evt;
+
+    STREAM_TO_UINT8(evt.big_handle, data);
+    STREAM_TO_UINT8(evt.reason, data);
+
+    auto group_it = sink_big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != sink_big_handle_to_group_map_.end(), "No such big: {}",
+                     evt.big_handle);
+
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle, false);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
+                     evt.big_handle);
+    log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
+    client_cbs->big_callbacks->OnBigSinkEvent(BigSinkEvent::kSyncLost, &evt);
+
+    for (auto handle : group_it->second->stream_conn_handles) {
+      conn_hdl_to_iso_stream_map_.erase(handle);
+    }
+    sink_big_handle_to_group_map_.erase(group_it);
+
+    if (!conn_hdl_to_iso_stream_map_.empty()) {
+      return;
+    }
+
+    // Only set inactive after last stream removal.
+    notify_iso_traffic_active(false);
+  }
+
+  void on_big_terminate_sync_cmpl(uint8_t* stream, uint16_t len) {
+    log::assert_that(len == 2, "Invalid packet length: {}", len);
+
+    big_terminate_sync_cmpl_evt evt;
+
+    STREAM_TO_UINT8(evt.status, stream);
+    STREAM_TO_UINT8(evt.big_handle, stream);
+
+    auto group_it = sink_big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != sink_big_handle_to_group_map_.end(), "No such big: {}",
+                     evt.big_handle);
+
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle, false);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
+                     evt.big_handle);
+    log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
+    client_cbs->big_callbacks->OnBigSinkEvent(BigSinkEvent::kTerminateSyncCmpl, &evt);
+
+    for (auto handle : group_it->second->stream_conn_handles) {
+      conn_hdl_to_iso_stream_map_.erase(handle);
+    }
+    sink_big_handle_to_group_map_.erase(group_it);
+
+    if (!conn_hdl_to_iso_stream_map_.empty()) {
+      return;
+    }
+
+    // Only set inactive after last stream removal.
+    notify_iso_traffic_active(false);
+  }
+
+  void big_terminate_sync(uint8_t big_handle) {
+    if (!com_android_bluetooth_flags_btm_broadcast_sink_support()) {
+      return;
+    }
+
+    log::assert_that(IsBigSinkKnown(big_handle), "No such big: {}", big_handle);
+
+    btsnd_hcic_ble_big_terminate_sync(
+            big_handle,
+            base::BindOnce(&iso_impl::on_big_terminate_sync_cmpl, weak_factory_.GetWeakPtr()));
   }
 
   void on_iso_event(uint8_t code, uint8_t* packet, uint16_t packet_len) {
@@ -1040,10 +1200,10 @@ struct iso_impl {
         /* Not supported */
         break;
       case HCI_BLE_BIG_SYNC_EST_EVT:
-        /* Not supported */
+        process_big_sync_est_pkt(packet_len, packet);
         break;
       case HCI_BLE_BIG_SYNC_LOST_EVT:
-        /* Not supported */
+        process_big_sync_lost_pkt(packet_len, packet);
         break;
       default:
         log::error("Unhandled event code {}", code);
@@ -1052,8 +1212,8 @@ struct iso_impl {
 
   void handle_iso_data(BT_HDR* p_msg) {
     const uint8_t* stream = p_msg->data;
-    cis_data_evt evt;
-    uint16_t handle, seq_nb;
+    uint16_t handle;
+    uint16_t seq_nb;
 
     if (p_msg->len <= ((p_msg->layer_specific & BT_ISO_HDR_CONTAINS_TS) ? kIsoHeaderWithTsLen
                                                                         : kIsoHeaderWithoutTsLen)) {
@@ -1061,24 +1221,22 @@ struct iso_impl {
     }
 
     STREAM_TO_UINT16(handle, stream);
-    evt.cis_conn_hdl = HCID_GET_HANDLE(handle);
+    uint16_t conn_handle = HCID_GET_HANDLE(handle);
 
-    iso_stream* iso = GetStream(evt.cis_conn_hdl);
+    iso_stream* iso = GetStream(conn_handle);
     if (iso == nullptr) {
-      log::error(", received data for the non-registered CIS!");
+      log::error("received data for the non-registered ISO handle: {}", conn_handle);
       return;
     }
 
     auto* client_cbs = get_client_callbacks_from_stream(iso);
     log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for stream {}",
                      iso->conn_handle);
-    log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
 
     STREAM_SKIP_UINT16(stream);
+    uint32_t ts = 0;
     if (p_msg->layer_specific & BT_ISO_HDR_CONTAINS_TS) {
-      STREAM_TO_UINT32(evt.ts, stream);
-    } else {
-      evt.ts = 0;
+      STREAM_TO_UINT32(ts, stream);
     }
 
     STREAM_TO_UINT16(seq_nb, stream);
@@ -1086,20 +1244,38 @@ struct iso_impl {
     uint16_t expected_seq_nb = iso->sync_info.rx_seq_nb;
     iso->sync_info.rx_seq_nb = (seq_nb + 1) & 0xffff;
 
-    evt.evt_lost = ((1 << 16) + seq_nb - expected_seq_nb) & 0xffff;
-    if (evt.evt_lost > 0) {
-      iso->evt_stats.evt_lost_count += evt.evt_lost;
+    uint16_t evt_lost = ((1 << 16) + seq_nb - expected_seq_nb) & 0xffff;
+    if (evt_lost > 0) {
+      iso->evt_stats.evt_lost_count += evt_lost;
       iso->evt_stats.evt_last_lost_us = bluetooth::common::time_get_os_boottime_us();
 
-      log::warn("{} packets lost.", evt.evt_lost);
+      log::warn("{} packets lost on handle {}.", evt_lost, conn_handle);
       iso->evt_stats.seq_nb_mismatch_count++;
     }
 
-    evt.p_msg = p_msg;
-    evt.cig_id = iso->group_id;
-    evt.seq_nb = seq_nb;
-
-    client_cbs->cig_callbacks->OnCisEvent(kIsoEventCisDataAvailable, &evt);
+    if (iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink)) {
+      log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
+      bis_data_evt evt = {
+              .big_handle = iso->group_id,
+              .bis_conn_hdl = conn_handle,
+              .ts = ts,
+              .evt_lost = evt_lost,
+              .seq_nb = seq_nb,
+              .p_msg = p_msg,
+      };
+      client_cbs->big_callbacks->OnBisEvent(kIsoEventBisDataAvailable, &evt);
+    } else {
+      log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
+      cis_data_evt evt = {
+              .cig_id = iso->group_id,
+              .cis_conn_hdl = conn_handle,
+              .ts = ts,
+              .evt_lost = evt_lost,
+              .seq_nb = seq_nb,
+              .p_msg = p_msg,
+      };
+      client_cbs->cig_callbacks->OnCisEvent(kIsoEventCisDataAvailable, &evt);
+    }
   }
 
   iso_stream* GetStream(uint16_t conn_handle) {
@@ -1112,19 +1288,48 @@ struct iso_impl {
             std::find_if(conn_hdl_to_iso_stream_map_.cbegin(), conn_hdl_to_iso_stream_map_.cend(),
                          [cig_id](const auto& pair) {
                            return pair.second->group_id == cig_id &&
-                                  !(pair.second->state_flags & kStateFlagIsBroadcast);
+                                  !(pair.second->state_flags &
+                                    (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink));
                          });
     return stream_it != conn_hdl_to_iso_stream_map_.cend();
   }
 
-  bool IsBigKnown(uint8_t big_handle) const {
+  bool IsBigKnown(uint8_t big_handle, uint32_t required_flag) const {
+    if (required_flag != kStateFlagIsBroadcastSink &&
+        required_flag != kStateFlagIsBroadcastSource) {
+      log::warn("Invalid flag: {}", required_flag);
+      return false;
+    }
+
+    const uint32_t other_flag = (required_flag == kStateFlagIsBroadcastSink)
+                                        ? kStateFlagIsBroadcastSource
+                                        : kStateFlagIsBroadcastSink;
+
+    /*
+     * NOTE on Connection Handle Uniqueness:
+     * The Bluetooth specification guarantees that all Connection Handles (for both
+     * source BIS and sink BIS connections) generated by the controller reside within a **single,
+     * shared namespace**. Consequently, any Connection Handle assigned by the controller is
+     * guaranteed to be unique, making it safe to use the connection handle as the unique key for
+     * `conn_hdl_to_iso_stream_map_`.
+     */
     const auto stream_it =
             std::find_if(conn_hdl_to_iso_stream_map_.cbegin(), conn_hdl_to_iso_stream_map_.cend(),
-                         [big_handle](const auto& pair) {
+                         [big_handle, required_flag, other_flag](const auto& pair) {
                            return pair.second->group_id == big_handle &&
-                                  (pair.second->state_flags & kStateFlagIsBroadcast);
+                                  (pair.second->state_flags & required_flag) &&
+                                  !(pair.second->state_flags & other_flag);
                          });
+
     return stream_it != conn_hdl_to_iso_stream_map_.cend();
+  }
+
+  bool IsBigSinkKnown(uint8_t big_handle) const {
+    return IsBigKnown(big_handle, kStateFlagIsBroadcastSink);
+  }
+
+  bool IsBigSourceKnown(uint8_t big_handle) const {
+    return IsBigKnown(big_handle, kStateFlagIsBroadcastSource);
   }
 
   static void dump_credits_stats(int fd, const iso_stream::credits_stats& stats) {
@@ -1181,6 +1386,7 @@ struct iso_impl {
     dprintf(fd, "    Controller buffer size: %d\n", iso_buffer_size_);
     dump_iso_group(fd, "CIGs", "CIG ID", "CIS", cig_id_to_group_map_);
     dump_iso_group(fd, "BIGs (Source)", "BIG handle", "BIS", source_big_handle_to_group_map_);
+    dump_iso_group(fd, "BIGs (Sink)", "BIG handle", "BIS", sink_big_handle_to_group_map_);
     dprintf(fd, "  ----------------\n");
   }
 
@@ -1217,6 +1423,8 @@ struct iso_impl {
 
   std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>>
           source_big_handle_to_group_map_;
+  std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>>
+          sink_big_handle_to_group_map_;
 
   // Member variables should appear before the WeakPtrFactory, to ensure
   // that any WeakPtrs are invalidated before its members

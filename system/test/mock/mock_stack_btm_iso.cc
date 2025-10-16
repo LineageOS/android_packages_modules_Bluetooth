@@ -130,6 +130,21 @@ void IsoManager::TerminateBig(uint8_t big_handle, uint8_t reason) {
   pimpl_->TerminateBig(big_handle, reason);
 }
 
+void IsoManager::BigCreateSync(iso_manager::IsoClientHandle client_handle,
+                               struct iso_manager::big_create_sync_params sync_params) {
+  if (!pimpl_) {
+    return;
+  }
+  pimpl_->BigCreateSync(client_handle, std::move(sync_params));
+}
+
+void IsoManager::BigTerminateSync(uint8_t big_handle) {
+  if (!pimpl_) {
+    return;
+  }
+  pimpl_->BigTerminateSync(big_handle);
+}
+
 void IsoManager::HandleIsoData(void* p_msg) {
   if (!pimpl_) {
     return;

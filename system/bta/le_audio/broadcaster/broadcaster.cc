@@ -73,6 +73,7 @@ using bluetooth::hci::IsoManager;
 using bluetooth::hci::iso_manager::big_create_cmpl_evt;
 using bluetooth::hci::iso_manager::big_terminate_cmpl_evt;
 using bluetooth::hci::iso_manager::BigCallbacks;
+using bluetooth::hci::iso_manager::BigSinkEvent;
 using bluetooth::hci::iso_manager::BigSourceEvent;
 using bluetooth::hci::iso_manager::IsoClientHandle;
 using bluetooth::hci::iso_manager::IsoManagerCallbacks;
@@ -909,6 +910,10 @@ public:
         log::error("Invalid event={}", static_cast<uint8_t>(event));
     }
   }
+
+  void OnBigSinkEvent(BigSinkEvent /*event*/, void* /*data*/) override {}
+
+  void OnBisEvent(uint8_t /*event*/, void* /*data*/) override {}
 
   void IsoTrafficEventCb(bool is_active) {
     is_iso_running_ = is_active;

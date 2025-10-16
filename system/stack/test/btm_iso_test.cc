@@ -126,8 +126,11 @@ public:
   MOCK_METHOD((void), OnRemoveIsoDataPath,
               (uint8_t status, uint16_t conn_handle, uint8_t big_handle), (override));
 
+  MOCK_METHOD((void), OnBisEvent, (uint8_t event, void* data), (override));
   MOCK_METHOD((void), OnBigSourceEvent,
               (bluetooth::hci::iso_manager::BigSourceEvent event, void* data), (override));
+  MOCK_METHOD((void), OnBigSinkEvent,
+              (bluetooth::hci::iso_manager::BigSinkEvent event, void* data), (override));
 };
 }  // namespace
 
@@ -2030,6 +2033,103 @@ TEST_F(IsoManagerTest, TerminateBigValid) {
   ASSERT_EQ(evt.big_handle, big_handle);
   ASSERT_EQ(evt.reason, reason);
   ASSERT_EQ(is_iso_active_, false);
+}
+
+TEST_F(IsoManagerTest, BigSyncAndTerminate) {
+  com::android::bluetooth::flags::provider_->btm_broadcast_sink_support(true);
+
+  constexpr uint8_t big_handle = 0x23;
+  constexpr uint16_t sync_handle = 0x1234;
+  constexpr uint16_t bis_conn_handle = 0x0EFE;
+
+  bluetooth::hci::iso_manager::big_create_sync_params sync_params = {
+          .big_handle = big_handle,
+          .sync_handle = sync_handle,
+          .encryption = 0,
+          .broadcast_code = {},
+          .mse = 1,
+          .big_sync_timeout = 100,
+          .bis = {1},
+  };
+
+  EXPECT_CALL(hcic_interface_, BigCreateSync(big_handle, sync_handle, sync_params.encryption, _,
+                                             sync_params.mse, sync_params.big_sync_timeout, _))
+          .Times(1);
+  IsoManager::GetInstance()->BigCreateSync(client_handle_, sync_params);
+
+  // Simulate sync established event
+  bluetooth::hci::iso_manager::big_sync_est_evt est_evt;
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSinkEvent(bluetooth::hci::iso_manager::BigSinkEvent::kSyncEst, _))
+          .WillOnce([&est_evt](bluetooth::hci::iso_manager::BigSinkEvent /* type */, void* data) {
+            est_evt = *static_cast<bluetooth::hci::iso_manager::big_sync_est_evt*>(data);
+          });
+
+  std::vector<uint8_t> est_buf(14 + sizeof(uint16_t));
+  uint8_t* p = est_buf.data();
+  UINT8_TO_STREAM(p, HCI_SUCCESS);
+  UINT8_TO_STREAM(p, big_handle);
+  UINT24_TO_STREAM(p, 0x123456);  // transport_latency_big
+  UINT8_TO_STREAM(p, 1);          // nse
+  UINT8_TO_STREAM(p, 2);          // bn
+  UINT8_TO_STREAM(p, 3);          // pto
+  UINT8_TO_STREAM(p, 4);          // irc
+  UINT16_TO_STREAM(p, 251);       // max_pdu
+  UINT16_TO_STREAM(p, 10000);     // iso_interval
+  UINT8_TO_STREAM(p, 1);          // num_bis
+  UINT16_TO_STREAM(p, bis_conn_handle);
+  IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_BIG_SYNC_EST_EVT, est_buf.data(),
+                                            est_buf.size());
+
+  ASSERT_EQ(est_evt.status, HCI_SUCCESS);
+  ASSERT_EQ(est_evt.big_handle, big_handle);
+  ASSERT_EQ(est_evt.conn_handles.size(), 1u);
+  ASSERT_EQ(est_evt.conn_handles[0], bis_conn_handle);
+
+  // Simulate BIS data
+  bluetooth::hci::iso_manager::bis_data_evt data_evt;
+  EXPECT_CALL(*big_callbacks_,
+              OnBisEvent(bluetooth::hci::iso_manager::kIsoEventBisDataAvailable, _))
+          .WillOnce([&data_evt](uint8_t /* type */, void* data) {
+            data_evt = *static_cast<bluetooth::hci::iso_manager::bis_data_evt*>(data);
+          });
+
+  std::vector<uint8_t> data_buf(18);
+  p = data_buf.data();
+  UINT16_TO_STREAM(p, BT_EVT_TO_BTU_HCI_ISO);
+  UINT16_TO_STREAM(p, 10);  // len
+  UINT16_TO_STREAM(p, 0);   // offset
+  UINT16_TO_STREAM(p, 0);   // layer_specific
+  UINT16_TO_STREAM(p, bis_conn_handle);
+  IsoManager::GetInstance()->HandleIsoData(data_buf.data());
+
+  ASSERT_EQ(data_evt.big_handle, big_handle);
+  ASSERT_EQ(data_evt.bis_conn_hdl, bis_conn_handle);
+
+  // Terminate sync and simulate terminate complete
+  bluetooth::hci::iso_manager::big_terminate_sync_cmpl_evt term_evt;
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSinkEvent(bluetooth::hci::iso_manager::BigSinkEvent::kTerminateSyncCmpl, _))
+          .WillOnce([&term_evt](bluetooth::hci::iso_manager::BigSinkEvent /* type */, void* data) {
+            term_evt =
+                    *static_cast<bluetooth::hci::iso_manager::big_terminate_sync_cmpl_evt*>(data);
+          });
+
+  base::OnceCallback<void(uint8_t*, uint16_t)> captured_cb;
+  EXPECT_CALL(hcic_interface_, BigTerminateSync)
+          .WillOnce([&captured_cb](uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+            captured_cb = std::move(cb);
+          });
+  IsoManager::GetInstance()->BigTerminateSync(big_handle);
+
+  std::vector<uint8_t> term_buf(2);
+  p = term_buf.data();
+  UINT8_TO_STREAM(p, HCI_SUCCESS);
+  UINT8_TO_STREAM(p, big_handle);
+  std::move(captured_cb).Run(term_buf.data(), term_buf.size());
+
+  ASSERT_EQ(term_evt.status, HCI_SUCCESS);
+  ASSERT_EQ(term_evt.big_handle, big_handle);
 }
 
 TEST_F(IsoManagerTest, SetupIsoDataPathValid) {
