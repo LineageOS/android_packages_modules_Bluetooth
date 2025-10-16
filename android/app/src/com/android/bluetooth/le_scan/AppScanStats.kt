@@ -46,11 +46,26 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** ScanStats class helps keep track of information about scans on a per application basis. */
+/**
+ * Helps keep track of all scan-related information on a per-application basis.
+ *
+ * This class is the central owner of an application's identity ([uid], [name]) and all its
+ * associated scanning statistics. It maintains a list of currently [ongoingScans] (keyed by
+ * scannerId) and a historical log of [lastScans] (up to a system-defined limit).
+ *
+ * Key responsibilities:
+ * - Recording scan starts ([recordScanStart]) and stops ([recordScanStop])
+ * - Tracking scan suspensions ([recordScanSuspend]) and resumes ([recordScanResume])
+ * - Aggregating total scan time, active time, and time spent in each scan mode (e.g. `oppScanTime`)
+ * - Counting scan results received while the screen is on vs. off ([addResult], [addResults])
+ * - Enforcing scan quotas by checking [isScanningTooFrequently] and [isScanningTooLong]
+ * - Reporting scan activity and results to [ScanMetricsReporter]
+ * - Storing application state like [appImportance] and [isRegistered]
+ */
 class AppScanStats(
-    val appName: String,
+    val uid: Int,
+    val name: String,
     source: WorkSource?,
-    uid: Int,
     private val adapterService: AdapterService,
     private val timeProvider: TimeProvider,
 ) {
@@ -114,11 +129,13 @@ class AppScanStats(
 
     init {
         // Bill the caller uid if the work source isn't passed through
-        val workSource = source ?: WorkSource(uid, appName)
+        val workSource = source ?: WorkSource(uid, name)
         workSourceUtil = WorkSourceUtil(workSource)
         val batteryStatsManager = adapterService.getSystemService(BatteryStatsManager::class.java)
         scanMetricsReporter = ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
     }
+
+    override fun toString() = "AppScanStats(uid=$uid, name=$name)"
 
     @Synchronized fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
 
@@ -416,7 +433,7 @@ class AppScanStats(
                 lowLatencyScanTime * WEIGHT_LOW_LATENCY +
                 ambientDiscoveryScanTime * WEIGHT_AMBIENT_DISCOVERY) / 100
 
-        sb.append("  $appName")
+        sb.append("  $name")
         sb.append(if (isRegistered) " (Registered):" else ":")
 
         if (isRegistered) {
