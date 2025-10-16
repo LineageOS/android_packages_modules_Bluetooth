@@ -25,35 +25,23 @@ package com.android.bluetooth.hearingaid;
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.profile.NativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
-/** HearingAid Native Interface to/from JNI. */
-public class HearingAidNativeInterface {
-    private static final String TAG = HearingAidNativeInterface.class.getSimpleName();
+public class HearingAidNativeInterface extends NativeInterface<HearingAidNativeCallback> {
 
-    private final AdapterService mAdapterService;
-    private final HearingAidService mService;
-
-    HearingAidNativeInterface(AdapterService adapterService, HearingAidService service) {
-        mAdapterService = requireNonNull(adapterService);
-        mService = service;
+    HearingAidNativeInterface(HearingAidNativeCallback nativeCallback) {
+        super(requireNonNull(nativeCallback));
     }
 
-    /**
-     * Initializes the native interface.
-     *
-     * <p>priorities to configure.
-     */
     void init() {
         initNative();
     }
 
-    /** Cleanup the native interface. */
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 
@@ -92,10 +80,6 @@ public class HearingAidNativeInterface {
         setVolumeNative(volume);
     }
 
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
-    }
-
     @VisibleForTesting
     byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
@@ -104,34 +88,6 @@ public class HearingAidNativeInterface {
         return Utils.getBytesFromAddress(device.getAddress());
     }
 
-    // Callbacks from the native stack back into the Java framework.
-    // All callbacks are routed via the Service which will disambiguate which
-    // state machine the message should be routed to.
-
-    @VisibleForTesting
-    void onConnectionStateChanged(int state, byte[] address) {
-        HearingAidStackEvent event =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = getDevice(address);
-        event.valueInt1 = state;
-
-        Log.d(TAG, "onConnectionStateChanged: " + event);
-        mService.messageFromNative(event);
-    }
-
-    @VisibleForTesting
-    void onDeviceAvailable(byte capabilities, long hiSyncId, byte[] address) {
-        HearingAidStackEvent event =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
-        event.device = getDevice(address);
-        event.valueInt1 = capabilities;
-        event.valueLong2 = hiSyncId;
-
-        Log.d(TAG, "onDeviceAvailable: " + event);
-        mService.messageFromNative(event);
-    }
-
-    // Native methods that call into the JNI interface
     private native void initNative();
 
     private native void cleanupNative();

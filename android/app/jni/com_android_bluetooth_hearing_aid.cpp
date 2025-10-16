@@ -44,6 +44,7 @@ static HearingAidInterface* sHearingAidInterface = nullptr;
 static std::shared_timed_mutex interface_mutex;
 
 static jobject mCallbacksObj = nullptr;
+static jfieldID sCallbacksField;
 static std::shared_timed_mutex callbacks_mutex;
 
 class HearingAidCallbacksImpl : public HearingAidCallbacks {
@@ -117,7 +118,8 @@ static void initNative(JNIEnv* env, jobject object) {
     mCallbacksObj = nullptr;
   }
 
-  if ((mCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
     log::fatal("Failed to allocate Global Ref for Hearing Aid Callbacks");
   }
 
@@ -215,6 +217,7 @@ static void setVolumeNative(JNIEnv* /* env */, jclass /* clazz */, jint volume) 
   sHearingAidInterface->SetVolume(volume);
 }
 
+// JNI functions defined in HearingAidNativeInterface
 int register_com_android_bluetooth_hearing_aid(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "()V", (void*)initNative},
@@ -224,17 +227,21 @@ int register_com_android_bluetooth_hearing_aid(JNIEnv* env) {
           {"addToAcceptlistNative", "([B)Z", (void*)addToAcceptlistNative},
           {"setVolumeNative", "(I)V", (void*)setVolumeNative},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/hearingaid/HearingAidNativeInterface", methods);
+  const char* jniNativeInterfaceClass =
+          "com/android/bluetooth/hearingaid/HearingAidNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
+
+  // Client callback functions defined in HearingAidNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
           {"onDeviceAvailable", "(BJ[B)V", &method_onDeviceAvailable},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/hearingaid/HearingAidNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/hearingaid/HearingAidNativeCallback", javaMethods);
 
   return 0;
 }

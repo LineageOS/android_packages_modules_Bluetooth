@@ -105,10 +105,10 @@ public class HearingAidService extends ConnectableProfile {
             mStateMachinesThread = null;
             mStateMachinesLooper = looper;
         }
+        var nativeCallback = new HearingAidNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface,
-                        () -> new HearingAidNativeInterface(mAdapterService, this));
+                        nativeInterface, () -> new HearingAidNativeInterface(nativeCallback));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         mNativeInterface.init();
