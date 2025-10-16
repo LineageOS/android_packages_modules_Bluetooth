@@ -611,7 +611,6 @@ public final class BondStateMachine extends StateMachine {
         if (newState == BluetoothDevice.BOND_NONE) {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
         }
-        mAdapterService.onBondStateChanged(device, newState);
         if (Flags.onlyBroadcastToLocalUser()) {
             mAdapterService.sendBroadcast(
                     intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
