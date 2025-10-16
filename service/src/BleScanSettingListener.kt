@@ -35,12 +35,10 @@ object BleScanSettingListener {
     /**
      * Listen on Ble Scan setting and trigger the callback when scanning is no longer enabled
      *
-     * @param callback: The callback to trigger when there is a mode change, pass new mode as
-     *   parameter
-     * @return The initial value of the radio
+     * @param onScanSettingDisabled: The callback to trigger when the BLE scan setting is disabled
      */
     @JvmStatic
-    fun initialize(looper: Looper, resolver: ContentResolver, callback: () -> Unit) {
+    fun initialize(looper: Looper, resolver: ContentResolver, onScanSettingDisabled: () -> Unit) {
         val notifyForDescendants = false
 
         resolver.registerContentObserver(
@@ -58,7 +56,7 @@ object BleScanSettingListener {
                         return
                     } else {
                         Log.i(TAG, "Trigger callback to disable BLE_ONLY mode")
-                        callback()
+                        onScanSettingDisabled()
                     }
                 }
             },
