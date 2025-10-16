@@ -316,6 +316,115 @@ class LeScanningTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_USE_FILTER_FOR_EACH_MANUFACTURER_DATA_BLOCK)
+    fun startBleScan_scanFilterOnManufacturerDataInScanResponse() {
+        val payloadInAdvData = byteArrayOf(0x01, 0x02)
+        // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
+        val manufacturerDataInAdvData =
+            byteArrayOf(0xE0.toByte(), 0x00, payloadInAdvData[0], payloadInAdvData[1])
+        val advData =
+            HostProto.DataTypes.newBuilder()
+                .setManufacturerSpecificData(ByteString.copyFrom(manufacturerDataInAdvData))
+
+        val payloadInScanRsp = byteArrayOf(0x03, 0x04)
+        // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
+        val manufacturerDataInScanRsp =
+            byteArrayOf(0xE0.toByte(), 0x00, payloadInScanRsp[0], payloadInScanRsp[1])
+        val scanResponse =
+            HostProto.DataTypes.newBuilder()
+                .setManufacturerSpecificData(ByteString.copyFrom(manufacturerDataInScanRsp))
+
+        val requestBuilder =
+            AdvertiseRequest.newBuilder()
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.PUBLIC)
+                .setData(advData)
+                .setScanResponseData(scanResponse)
+        advertiseWithBumble(requestBuilder, true)
+
+        // Set the filter on manufacturer data in scan response
+        val scanFilter = ScanFilter.Builder().setManufacturerData(0xE0, payloadInScanRsp).build()
+        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+
+        assertThat(results).isNotNull()
+        assertThat(results!![0].scanRecord!!.getManufacturerSpecificData(0x00E0))
+            .isEqualTo(byteArrayOf(0x01, 0x02, 0x03, 0x04))
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_USE_FILTER_FOR_EACH_MANUFACTURER_DATA_BLOCK)
+    fun startBleScan_scanFilterOnManufacturerDataInAdvertisingData() {
+        val payloadInAdvData = byteArrayOf(0x01, 0x02)
+        // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
+        val manufacturerDataInAdvData =
+            byteArrayOf(0xE0.toByte(), 0x00, payloadInAdvData[0], payloadInAdvData[1])
+        val advData =
+            HostProto.DataTypes.newBuilder()
+                .setManufacturerSpecificData(ByteString.copyFrom(manufacturerDataInAdvData))
+
+        val payloadInScanRsp = byteArrayOf(0x03, 0x04)
+        // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
+        val manufacturerDataInScanRsp =
+            byteArrayOf(0xE0.toByte(), 0x00, payloadInScanRsp[0], payloadInScanRsp[1])
+        val scanResponse =
+            HostProto.DataTypes.newBuilder()
+                .setManufacturerSpecificData(ByteString.copyFrom(manufacturerDataInScanRsp))
+
+        val requestBuilder =
+            AdvertiseRequest.newBuilder()
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.PUBLIC)
+                .setData(advData)
+                .setScanResponseData(scanResponse)
+        advertiseWithBumble(requestBuilder, true)
+
+        // Set the filter on manufacturer data in advertising data
+        val scanFilter = ScanFilter.Builder().setManufacturerData(0xE0, payloadInAdvData).build()
+        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+
+        assertThat(results).isNotNull()
+        assertThat(results!![0].scanRecord!!.getManufacturerSpecificData(0x00E0))
+            .isEqualTo(byteArrayOf(0x01, 0x02, 0x03, 0x04))
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_USE_FILTER_FOR_EACH_MANUFACTURER_DATA_BLOCK)
+    fun startBleScan_scanFilterOnConcatenatedManufacturerData() {
+        val payloadInAdvData = byteArrayOf(0x01, 0x02)
+        // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
+        val manufacturerDataInAdvData =
+            byteArrayOf(0xE0.toByte(), 0x00, payloadInAdvData[0], payloadInAdvData[1])
+        val advData =
+            HostProto.DataTypes.newBuilder()
+                .setManufacturerSpecificData(ByteString.copyFrom(manufacturerDataInAdvData))
+
+        val payloadInScanRsp = byteArrayOf(0x03, 0x04)
+        // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
+        val manufacturerDataInScanRsp =
+            byteArrayOf(0xE0.toByte(), 0x00, payloadInScanRsp[0], payloadInScanRsp[1])
+        val scanResponse =
+            HostProto.DataTypes.newBuilder()
+                .setManufacturerSpecificData(ByteString.copyFrom(manufacturerDataInScanRsp))
+
+        val requestBuilder =
+            AdvertiseRequest.newBuilder()
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.PUBLIC)
+                .setData(advData)
+                .setScanResponseData(scanResponse)
+        advertiseWithBumble(requestBuilder, true)
+
+        // Set the filter on concatenated manufacturer data (Advertising data + Scan response)
+        val concatenatedPayload = byteArrayOf(0x01, 0x02, 0x03, 0x04)
+        val scanFilter = ScanFilter.Builder().setManufacturerData(0xE0, concatenatedPayload).build()
+        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+
+        assertThat(results).isNotNull()
+        assertThat(results!![0].scanRecord!!.getManufacturerSpecificData(0x00E0))
+            .isEqualTo(byteArrayOf(0x01, 0x02, 0x03, 0x04))
+    }
+
+    @Test
     @VirtualOnly
     fun startBleScan_withServiceData() {
         advertiseWithBumbleWithServiceData()
