@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "defer_br_edr_sdp_results"
+    namespace: "bluetooth"
+    description: "Delay the BR/EDR service discovery notification until after the LE discovery process"
+    bug: "452481091"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
