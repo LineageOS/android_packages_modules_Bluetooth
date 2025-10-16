@@ -117,8 +117,6 @@ void btif_dm_set_event_filter_inquiry_result_all_devices();
 void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
                               std::vector<uint8_t> value);
 
-void btif_dm_hh_open_failed(RawAddress* bdaddr);
-
 bool btif_dm_is_pairing(const RawAddress& bdaddr);
 
 /*callout for reading SMP properties from Text file*/
