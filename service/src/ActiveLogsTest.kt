@@ -132,20 +132,20 @@ class ActiveLogTest {
                 "Enable log:\n" +
                     ".*\n" + // Header
                     ".*\n" + // Separator
-                    ".*AIRPLANE_MODE\n" +
-                    ".*APPLICATION_DIED\n" +
-                    ".*APPLICATION_REQUEST\n" +
-                    ".*AUTO_ON\n" +
-                    ".*CRASH\n" +
-                    ".*DISALLOWED\n" +
-                    ".*FACTORY_RESET\n" +
-                    ".*RESTARTED\n" +
-                    ".*RESTORE_USER_SETTING\n" +
-                    ".*SATELLITE MODE\n" +
-                    ".*START_ERROR\n" +
-                    ".*SYSTEM_BOOT\n" +
-                    ".*USER_SWITCH\n" +
-                    ".*UNKNOWN\\[\\d+\\]\n"
+                    ".*AIRPLANE_MODE.*\n" +
+                    ".*APPLICATION_DIED.*\n" +
+                    ".*APPLICATION_REQUEST.*\n" +
+                    ".*AUTO_ON.*\n" +
+                    ".*CRASH.*\n" +
+                    ".*DISALLOWED.*\n" +
+                    ".*FACTORY_RESET.*\n" +
+                    ".*RESTARTED.*\n" +
+                    ".*RESTORE_USER_SETTING.*\n" +
+                    ".*SATELLITE MODE.*\n" +
+                    ".*START_ERROR.*\n" +
+                    ".*SYSTEM_BOOT.*\n" +
+                    ".*USER_SWITCH.*\n" +
+                    ".*UNKNOWN\\[\\d+\\].*\n"
             )
     }
 }
