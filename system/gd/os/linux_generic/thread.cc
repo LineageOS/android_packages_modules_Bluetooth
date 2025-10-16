@@ -32,14 +32,14 @@ namespace {
 constexpr int kRealTimeFifoSchedulingPriority = 1;
 }
 
-Thread::Thread(const std::string& name, const Priority priority)
+Thread::Thread(const std::string& name, const Priority priority, std::promise<void> start_promise)
     : name_(name),
       reactor_(),
-      running_thread_(&Thread::run, this),
+      running_thread_(&Thread::run, this, std::move(start_promise)),
       linux_tid_(-1),
       priority_(priority) {}
 
-void Thread::run() {
+void Thread::run(std::promise<void> start_promise) {
   pthread_setname_np(pthread_self(), name_.c_str());
   linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));
   if (priority_ == Priority::REAL_TIME) {
@@ -52,6 +52,7 @@ void Thread::run() {
       log::error("unable to set SCHED_FIFO priority: {}", strerror(errno));
     }
   }
+  start_promise.set_value();
   reactor_.Run();
 }
 
