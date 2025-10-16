@@ -108,6 +108,23 @@ class BluetoothStorageManagerTest {
         }
 
     @Test
+    fun setCustomMetadata_withEmptyValue_removesMetadata() =
+        runTest(testDispatcher) {
+            val key = BluetoothDevice.METADATA_MANUFACTURER_NAME
+            val value = "Test Manufacturer".toByteArray()
+
+            // Set an initial value for the metadata
+            storageManager.setCustomMetadata(device1, key, value)
+            assertThat(storageManager.getCustomMetadata(device1, key)).isEqualTo(value)
+
+            // Set an empty byte array, which should remove the metadata
+            storageManager.setCustomMetadata(device1, key, byteArrayOf())
+
+            // Verify the metadata is removed (get returns null)
+            assertThat(storageManager.getCustomMetadata(device1, key)).isNull()
+        }
+
+    @Test
     fun testDeviceConnectionHistory() =
         runTest(testDispatcher) {
             assertThat(storageManager.getMostRecentlyConnectedDevices()).isEmpty()
