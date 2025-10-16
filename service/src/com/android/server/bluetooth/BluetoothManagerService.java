@@ -705,10 +705,6 @@ class BluetoothManagerService {
         mCallbacks.unregister(callback);
     }
 
-    boolean isEnabled() {
-        return getState() == State.ON;
-    }
-
     int getState() {
         return mState.get();
     }
@@ -1814,12 +1810,11 @@ class BluetoothManagerService {
         String errorMsg = null;
 
         writer.println("Bluetooth Status:");
-        writer.println("  Enabled:       " + isEnabled());
         writer.println("  State:         " + mState);
         writer.println("  Address:       " + Log.address(mAddress));
         writer.println("  Name:          " + mName);
         writer.println("  Inner app:     " + mBluetoothComponent.getPackageName());
-        if (mEnable) {
+        if (!mState.oneOf(State.OFF)) {
             Duration elapsed = Duration.between(mLastBindingTime, Instant.now());
             writer.println(
                     "  Uptime:        "
