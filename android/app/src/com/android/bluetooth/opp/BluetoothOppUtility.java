@@ -50,7 +50,6 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemProperties;
-import android.provider.Settings;
 import android.util.EventLog;
 import android.util.Log;
 
@@ -550,7 +549,9 @@ public class BluetoothOppUtility {
 
     private static String getNearbyComponentPackageName(Context context) {
         String componentString =
-                Settings.Secure.getString(context.getContentResolver(), NEARBY_SHARING_COMPONENT);
+                BluetoothMethodProxy.getInstance()
+                        .settingsSecureGetString(
+                                context.getContentResolver(), NEARBY_SHARING_COMPONENT);
         if (componentString == null) {
             return null;
         }

@@ -45,7 +45,6 @@ import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.OpenableColumns;
-import android.provider.Settings;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
@@ -412,11 +411,10 @@ public class BluetoothOppLauncherActivityTest {
         doReturn(PackageManager.PERMISSION_GRANTED)
                 .when(mMethodProxy)
                 .componentCallerCheckContentUriPermission(any(), any(), anyInt());
+        doReturn("com.example/.BComponent")
+                .when(mMethodProxy)
+                .settingsSecureGetString(any(), eq("nearby_sharing_component"));
         String uriString = "content://test.provider/1";
-        Settings.Secure.putString(
-                sContext.getContentResolver(),
-                "nearby_sharing_component",
-                "com.example/.BComponent");
 
         ActivityScenario<BluetoothOppLauncherActivity> unused =
                 ActivityScenario.launch(createSendIntent(uriString));
