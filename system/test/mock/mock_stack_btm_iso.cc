@@ -115,19 +115,19 @@ void IsoManager::SendIsoData(uint16_t conn_handle, const uint8_t* data, uint16_t
   pimpl_->SendIsoData(conn_handle, data, data_len);
 }
 
-void IsoManager::CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_id,
+void IsoManager::CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_handle,
                            struct iso_manager::big_create_params big_params) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->CreateBig(client_handle, big_id, std::move(big_params));
+  pimpl_->CreateBig(client_handle, big_handle, std::move(big_params));
 }
 
-void IsoManager::TerminateBig(uint8_t big_id, uint8_t reason) {
+void IsoManager::TerminateBig(uint8_t big_handle, uint8_t reason) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->TerminateBig(big_id, reason);
+  pimpl_->TerminateBig(big_handle, reason);
 }
 
 void IsoManager::HandleIsoData(void* p_msg) {

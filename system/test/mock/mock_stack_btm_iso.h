@@ -54,9 +54,9 @@ public:
   MOCK_METHOD((void), SendIsoData, (uint16_t conn_handle, const uint8_t* data, uint16_t data_len));
   MOCK_METHOD((void), ReadIsoLinkQuality, (uint16_t conn_handle));
   MOCK_METHOD((void), CreateBig,
-              (bluetooth::hci::iso_manager::IsoClientHandle client_handle, uint8_t big_id,
+              (bluetooth::hci::iso_manager::IsoClientHandle client_handle, uint8_t big_handle,
                struct bluetooth::hci::iso_manager::big_create_params big_params));
-  MOCK_METHOD((void), TerminateBig, (uint8_t big_id, uint8_t reason));
+  MOCK_METHOD((void), TerminateBig, (uint8_t big_handle, uint8_t reason));
   MOCK_METHOD((void), HandleIsoData, (void* p_msg));
   MOCK_METHOD((void), HandleDisconnect, (uint16_t handle, uint8_t reason));
   MOCK_METHOD((void), HandleNumComplDataPkts, (uint16_t handle, uint16_t credits));

@@ -429,12 +429,12 @@ protected:
     return broadcast_id;
   }
 
-  void InjectBigCreateComplete(uint8_t big_id, uint8_t status) {
+  void InjectBigCreateComplete(uint8_t big_handle, uint8_t status) {
     std::vector<uint16_t> conn_handles = {0x10, 0x12};
 
     hci::iso_manager::big_create_cmpl_evt evt = {
             .status = status,
-            .big_id = big_id,
+            .big_handle = big_handle,
             .big_sync_delay = 1231,
             .transport_latency_big = 1234,
             .phy = 2,
@@ -450,8 +450,8 @@ protected:
     big_callbacks_->OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, &evt);
   }
 
-  void InjectBigTerminateComplete(uint8_t big_id, uint8_t reason) {
-    hci::iso_manager::big_terminate_cmpl_evt evt = {.big_id = big_id, .reason = reason};
+  void InjectBigTerminateComplete(uint8_t big_handle, uint8_t reason) {
+    hci::iso_manager::big_terminate_cmpl_evt evt = {.big_handle = big_handle, .reason = reason};
     big_callbacks_->OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, &evt);
   }
 
@@ -612,7 +612,7 @@ TEST_F(BroadcasterTest, StartAudioBroadcast) {
   //         IsoManager to prepare one (and that's good since IsoManager is also
   //         a mocked one).
   BigConfig big_cfg;
-  big_cfg.big_id = MockBroadcastStateMachine::GetLastInstance()->GetAdvertisingSid();
+  big_cfg.big_handle = MockBroadcastStateMachine::GetLastInstance()->GetAdvertisingSid();
   big_cfg.connection_handles = {0x10, 0x12};
   big_cfg.max_pdu = 128;
   MockBroadcastStateMachine::GetLastInstance()->SetExpectedBigConfig(big_cfg);
@@ -663,7 +663,7 @@ TEST_F(BroadcasterTest, StartAudioBroadcastMedia) {
 
   auto mock_state_machine = MockBroadcastStateMachine::GetLastInstance();
   BigConfig big_cfg;
-  big_cfg.big_id = mock_state_machine->GetAdvertisingSid();
+  big_cfg.big_handle = mock_state_machine->GetAdvertisingSid();
   big_cfg.connection_handles = {0x10, 0x12};
   big_cfg.max_pdu = 128;
   mock_state_machine->SetExpectedBigConfig(big_cfg);
@@ -694,12 +694,12 @@ TEST_F(BroadcasterTest, StopAudioBroadcast) {
 
   auto mock_state_machine = MockBroadcastStateMachine::GetLastInstance();
   BigConfig big_cfg;
-  big_cfg.big_id = mock_state_machine->GetAdvertisingSid();
+  big_cfg.big_handle = mock_state_machine->GetAdvertisingSid();
   big_cfg.connection_handles = {0x10, 0x12};
   big_cfg.max_pdu = 128;
   mock_state_machine->SetExpectedBigConfig(big_cfg);
 
-  InjectBigCreateComplete(big_cfg.big_id, 0x00);
+  InjectBigCreateComplete(big_cfg.big_handle, 0x00);
   EXPECT_CALL(mock_broadcaster_callbacks_,
               OnBroadcastStateChanged(broadcast_id, BroadcastState::STOPPED))
           .Times(1);
@@ -707,7 +707,7 @@ TEST_F(BroadcasterTest, StopAudioBroadcast) {
   EXPECT_CALL(*mock_audio_source_, Stop).Times(AtLeast(1));
   LeAudioBroadcaster::Get()->StopAudioBroadcast(broadcast_id);
 
-  InjectBigTerminateComplete(big_cfg.big_id, 0x16);
+  InjectBigTerminateComplete(big_cfg.big_handle, 0x16);
   Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
