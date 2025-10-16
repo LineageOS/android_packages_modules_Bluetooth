@@ -21,8 +21,8 @@ import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 
 class HidDeviceNativeCallback(
-    private val service: HidDeviceService,
     private val adapterService: AdapterService,
+    private val service: HidDeviceService,
 ) : NativeCallback {
 
     @Synchronized
