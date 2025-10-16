@@ -35,7 +35,7 @@ private const val TAG = "ScannerMap"
 /** List of our registered scanners. */
 class ScannerMap {
 
-    /** Internal map to keep track of logging information by app name */
+    /** Internal map to keep track of logging information by app uid */
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
     private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
@@ -92,17 +92,16 @@ class ScannerMap {
     ): ScannerApp {
         val appScanStats =
             appScanStatsMap.getOrPut(appUid) {
-                AppScanStats(appName, workSource, appUid, adapterService, TimeProvider.systemClock)
+                AppScanStats(appUid, appName, workSource, adapterService, TimeProvider.systemClock)
             }
         val app =
             ScannerApp(
+                appScanStats,
                 uuid,
                 userHandle,
                 source.getLastAttributionTag(),
                 callback,
                 piInfo,
-                appName,
-                appScanStats,
             )
         apps.add(app)
         appScanStats.isRegistered = true
@@ -161,12 +160,12 @@ class ScannerMap {
     /** Logs debug information for registered apps and their scan statistics. */
     fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
         sb.append("LE Scanner:\n")
-        for (entry in apps) {
-            sb.append("  app_if: ${entry.id}, appName: ${entry.name}")
+        for (app in apps) {
+            sb.append("  uid: ${app.uid}, app: ${app.name}, scannerId: ${app.id}")
 
-            entry.attributionTag?.let { tag -> sb.append(", tag: $tag") }
+            app.attributionTag?.let { tag -> sb.append(", tag: $tag") }
 
-            settingsMap[entry.id]?.let { settings ->
+            settingsMap[app.id]?.let { settings ->
                 if (settings.reportDelayMillis > 0) {
                     sb.append(", reportDelayMillis: ${settings.reportDelayMillis}")
                 }
@@ -177,7 +176,7 @@ class ScannerMap {
         sb.append("\nLE Scanner Map:\n")
         sb.append("  Entries: ${appScanStatsMap.size}\n\n")
         for (appScanStats in appScanStatsMap.values) {
-            val scannerApps = apps.filter { it.name == appScanStats.appName }
+            val scannerApps = apps.filter { it.name == appScanStats.name }
             appScanStats.dump(sb, scannerApps)
         }
     }

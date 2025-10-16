@@ -25,13 +25,12 @@ import java.util.UUID
 private const val TAG = "ScannerApp"
 
 class ScannerApp(
+    val appScanStats: AppScanStats,
     val uuid: UUID,
     val userHandle: UserHandle?, // User handle of the scanning app
     val attributionTag: String?, // Final attribution tag in chain
     val callback: IScannerCallback?,
     val info: ScanController.PendingIntentInfo?, // Context information
-    val name: String, // App package name
-    val appScanStats: AppScanStats,
 ) {
     var id = 0
     var hasLocationPermission = false
@@ -43,7 +42,10 @@ class ScannerApp(
     var associatedDevices: MutableList<String>? = null
     private var deathRecipient: ScanController.ScannerDeathRecipient? = null
 
-    override fun toString() = "ScannerApp($name)"
+    val uid = appScanStats.uid
+    val name = appScanStats.name
+
+    override fun toString() = "ScannerApp(uid=$uid, name=$name)"
 
     fun linkToDeath(recipient: ScanController.ScannerDeathRecipient) {
         callback?.let { cb ->

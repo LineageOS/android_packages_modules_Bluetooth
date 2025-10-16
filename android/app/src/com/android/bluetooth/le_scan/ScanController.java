@@ -1013,14 +1013,12 @@ public class ScanController {
     void registerScanner(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
         enforceScanThread();
-        final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        final AppScanStats app = mScannerMap.getAppScanStatsByUid(uid);
-        if (app != null
-                && app.isScanningTooFrequently()
+        var uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
+        if (appScanStats != null
+                && appScanStats.isScanningTooFrequently()
                 && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
-            Log.e(
-                    TAG,
-                    "registerScanner(): App '" + app.getAppName() + "' is scanning too frequently");
+            Log.e(TAG, "registerScanner(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
             } catch (RemoteException e) {
@@ -1254,12 +1252,12 @@ public class ScanController {
                         : app.getAssociatedDevices());
         scanClient.setHasDisavowedLocation(app.getHasDisavowedLocation());
 
-        AppScanStats scanStats = mScannerMap.getAppScanStatsById(scannerId);
-        if (scanStats != null) {
-            scanClient.setAppScanStats(Optional.of(scanStats));
+        var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
+        if (appScanStats != null) {
+            scanClient.setAppScanStats(Optional.of(appScanStats));
             mScanManager.fetchAppForegroundState(scanClient);
             boolean isFilteredScan = !piInfo.filters.isEmpty();
-            scanStats.recordScanStart(
+            appScanStats.recordScanStart(
                     piInfo.settings,
                     piInfo.filters,
                     isFilteredScan,
