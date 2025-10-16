@@ -122,16 +122,6 @@ flag {
 }
 
 flag {
-    name: "non_bonded_device_properties"
-    namespace: "bluetooth"
-    description: "ACL disconnection should not remove device properties for devices which were never bonded"
-    bug: "406602074"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reset_collision_state_on_encryption"
     namespace: "bluetooth"
     description: "Reset encryption collision state if peer successfully encrypts the link before collision timer expires"
