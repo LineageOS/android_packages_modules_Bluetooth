@@ -606,7 +606,7 @@ void btsnd_hcic_ble_set_periodic_advertising_receive_enable(
   uint8_t* pp = param;
 
   UINT16_TO_STREAM(pp, sync_handle);
-  UINT8_TO_STREAM(pp, (enable ? 0x01 : 0x00));
+  UINT8_TO_STREAM(pp, enable ? 0x01 : 0x00);
 
   btu_hcif_send_cmd_with_cb(HCI_LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE, param,
                             HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE, std::move(cb));
