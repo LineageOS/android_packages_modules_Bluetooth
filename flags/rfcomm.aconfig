@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "indicate_rfcomm_connection_complete_after_msc"
-    namespace: "bluetooth"
-    description: "Indicate RFCOMM connection complete after sending Modem Status Command"
-    bug: "393594567"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "rfcomm_fix_mux_collision_handling"
     namespace: "bluetooth"
     description: "Properly handle incoming connections while connecting"
