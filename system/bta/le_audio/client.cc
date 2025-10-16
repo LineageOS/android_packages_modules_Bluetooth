@@ -119,6 +119,9 @@ using bluetooth::hci::IsoManager;
 using bluetooth::hci::iso_manager::cig_create_cmpl_evt;
 using bluetooth::hci::iso_manager::cig_remove_cmpl_evt;
 using bluetooth::hci::iso_manager::CigCallbacks;
+using bluetooth::hci::iso_manager::IsoClientHandle;
+using bluetooth::hci::iso_manager::IsoManagerCallbacks;
+using bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
 using bluetooth::le_audio::CodecManager;
 using bluetooth::le_audio::ConnectionState;
 using bluetooth::le_audio::ContentControlIdKeeper;
@@ -237,10 +240,10 @@ LeAudioClientImpl* instance;
 std::mutex instance_mutex;
 LeAudioSourceAudioHalClient::Callbacks* audioSinkReceiver;
 LeAudioSinkAudioHalClient::Callbacks* audioSourceReceiver;
-CigCallbacks* stateMachineHciCallbacks;
 LeAudioGroupStateMachine::Callbacks* stateMachineCallbacks;
 DeviceGroupsCallbacks* device_group_callbacks;
 LeAudioIsoDataCallback* iso_data_callback;
+IsoManagerCallbacks* iso_manager_callbacks;
 
 /*
  * Coordinatet Set Identification Profile (CSIP) based on CSIP 1.0
@@ -274,7 +277,12 @@ LeAudioIsoDataCallback* iso_data_callback;
  */
 class LeAudioClientImpl : public LeAudioClient {
 public:
+  IsoClientHandle iso_client_handle_ = kInvalidIsoClientHandle;
+
   ~LeAudioClientImpl() {
+    if (iso_client_handle_ != kInvalidIsoClientHandle) {
+      IsoManager::GetInstance()->DeregisterCallbacks(iso_client_handle_);
+    }
     alarm_free(close_vbc_timeout_);
     alarm_free(disable_timer_);
     alarm_free(suspend_timeout_);
@@ -283,7 +291,7 @@ public:
 
   LeAudioClientImpl(bluetooth::le_audio::LeAudioClientCallbacks* callbacks,
                     LeAudioGroupStateMachine::Callbacks* state_machine_callbacks,
-                    base::OnceClosure initCb)
+                    base::OnceClosure initCb, IsoManagerCallbacks* iso_manager_callbacks)
       : gatt_if_(0),
         callbacks_(callbacks),
         active_group_id_(bluetooth::groups::kGroupUnknown),
@@ -304,7 +312,8 @@ public:
         suspend_timeout_(alarm_new("LeAudioSuspendTimeout")),
         reconfiguration_timeout_(alarm_new("LeAudioReconfigurationTimeout")),
         disable_timer_(alarm_new("LeAudioDisableTimer")) {
-    LeAudioGroupStateMachine::Initialize(state_machine_callbacks);
+    iso_client_handle_ = IsoManager::GetInstance()->RegisterCallbacks(*iso_manager_callbacks);
+    LeAudioGroupStateMachine::Initialize(state_machine_callbacks, iso_client_handle_);
     groupStateMachine_ = LeAudioGroupStateMachine::Get();
 
     audioContextTypeManager_ = bluetooth::le_audio::AudioContextTypeManager::Get();
@@ -7959,12 +7968,15 @@ void LeAudioClient::Initialize(
 
   audioSinkReceiver = &audioSinkReceiverImpl;
   audioSourceReceiver = &audioSourceReceiverImpl;
-  stateMachineHciCallbacks = &stateMachineHciCallbacksImpl;
   stateMachineCallbacks = &stateMachineCallbacksImpl;
   device_group_callbacks = &deviceGroupsCallbacksImpl;
-  instance = new LeAudioClientImpl(callbacks_, stateMachineCallbacks, std::move(initCb));
 
-  IsoManager::GetInstance()->RegisterCigCallbacks(stateMachineHciCallbacks);
+  iso_manager_callbacks = new IsoManagerCallbacks();
+  iso_manager_callbacks->cig_callbacks = &stateMachineHciCallbacksImpl;
+
+  instance = new LeAudioClientImpl(callbacks_, stateMachineCallbacks, std::move(initCb),
+                                   iso_manager_callbacks);
+
   CodecManager::GetInstance()->Start(offloading_preference);
   ContentControlIdKeeper::GetInstance()->Start();
 

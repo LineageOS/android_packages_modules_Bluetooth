@@ -55,6 +55,7 @@
 #include "btm_api_types.h"
 #include "btm_ble_api_types.h"
 #include "btm_iso_api.h"
+#include "btm_iso_api_types.h"
 #include "btm_sec_api_types.h"
 #include "embdrv/g722/g722_enc_dec.h"
 #include "gap_api.h"
@@ -83,6 +84,9 @@
 namespace bluetooth::asha {
 
 using base::Closure;
+using bluetooth::hci::iso_manager::IsoClientHandle;
+using bluetooth::hci::iso_manager::IsoManagerCallbacks;
+using bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
 using hci::IsoManager;
 
 // The MIN_CE_LEN parameter for Connection Parameters based on the current
@@ -295,8 +299,15 @@ private:
   // connected.
   std::unique_ptr<bluetooth::audio::asrc::SourceAudioHalAsrc> asrc;
 
+  IsoManagerCallbacks iso_callbacks_;
+  IsoClientHandle iso_client_handle_ = kInvalidIsoClientHandle;
+
 public:
-  ~HearingAidImpl() override = default;
+  ~HearingAidImpl() override {
+    if (iso_client_handle_ != kInvalidIsoClientHandle) {
+      IsoManager::GetInstance()->DeregisterCallbacks(iso_client_handle_);
+    }
+  }
 
   HearingAidImpl(HearingAidCallbacks* callbacks, Closure initCb)
       : audio_running(false),
@@ -336,13 +347,15 @@ public:
                     initCb),
             false);
 
-    IsoManager::GetInstance()->Start();
-    IsoManager::GetInstance()->RegisterOnIsoTrafficActiveCallback([](bool is_active) {
+    iso_callbacks_.iso_traffic_active_callback = [](bool is_active) {
       if (!instance) {
         return;
       }
       instance->IsoTrafficEventCb(is_active);
-    });
+    };
+
+    IsoManager::GetInstance()->Start();
+    iso_client_handle_ = IsoManager::GetInstance()->RegisterCallbacks(iso_callbacks_);
   }
 
   void IsoTrafficEventCb(bool is_active) {

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -50,6 +51,13 @@ public:
 
   virtual void OnBigEvent(uint8_t event, void* data) = 0;
 };
+
+struct IsoManagerCallbacks {
+  CigCallbacks* cig_callbacks = nullptr;
+  BigCallbacks* big_callbacks = nullptr;
+  std::function<void(bool)> iso_traffic_active_callback;
+};
+
 }  // namespace iso_manager
 
 class IsoManager {
@@ -63,37 +71,28 @@ public:
   static IsoManager* GetInstance();
 
   /**
-   * Set CIG and CIS related callbacks
-   *
-   * <p> Shall be set by the Le Audio Unicaster implementation
-   *
-   * @param callbacks CigCallbacks implementation
+   * Registers iso manager callbacks for a new client.
+   * @param callbacks A struct of function pointers for IsoManagerCallbacks.
+   * @return A unique client handle or kInvalidIsoClientHandle on failure.
    */
-  virtual void RegisterCigCallbacks(iso_manager::CigCallbacks* callbacks) const;
+  virtual iso_manager::IsoClientHandle RegisterCallbacks(
+          iso_manager::IsoManagerCallbacks callbacks) const;
 
   /**
-   * Set BIG related callbacks
-   *
-   * <p> Shall be set by the Le Audio Broadcaster implementation
-   *
-   * @param callbacks BigCallbacks implementation
+   * Unregisters a client and cleans up its resources.
+   * @param client_handle The handle obtained from RegisterCallbacks.
    */
-  virtual void RegisterBigCallbacks(iso_manager::BigCallbacks* callbacks) const;
-
-  /**
-   * Set true when CIG or BIG is active, false when CIG or BIG is closed
-   *
-   * @param callback function takes bool as parameter and return void
-   */
-  virtual void RegisterOnIsoTrafficActiveCallback(void callback(bool)) const;
+  virtual void DeregisterCallbacks(iso_manager::IsoClientHandle client_handle) const;
 
   /**
    * Creates connected isochronous group (CIG) according to given params.
    *
+   * @param client_handle client handle
    * @param cig_id connected isochronous group id
    * @param cig_params CIG parameters
    */
-  virtual void CreateCig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params);
+  virtual void CreateCig(iso_manager::IsoClientHandle client_handle, uint8_t cig_id,
+                         struct iso_manager::cig_create_params cig_params);
 
   /**
    * Reconfigures connected isochronous group (CIG) according to given params.
@@ -165,10 +164,12 @@ public:
   /**
    * Creates the Broadcast Isochronous Group
    *
+   * @param client_handle client handle
    * @param big_id host assigned BIG identifier
    * @param big_params BIG parameters
    */
-  virtual void CreateBig(uint8_t big_id, struct iso_manager::big_create_params big_params);
+  virtual void CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_id,
+                         struct iso_manager::big_create_params big_params);
 
   /**
    * Terminates the Broadcast Isochronous Group

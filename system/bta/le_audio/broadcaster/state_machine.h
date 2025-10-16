@@ -127,7 +127,8 @@ public:
   // ADDRESS_TYPE_RANDOM_NON_RESOLVABLE = 2
   static constexpr int8_t kBroadcastAdvertisingType = 0x2;
 
-  static void Initialize(IBroadcastStateMachineCallbacks*, AdvertisingCallbacks* adv_callbacks);
+  static void Initialize(IBroadcastStateMachineCallbacks*, AdvertisingCallbacks* adv_callbacks,
+                         hci::iso_manager::IsoClientHandle client_handle);
   static std::unique_ptr<BroadcastStateMachine> CreateInstance(BroadcastStateMachineConfig msg);
 
   enum class Message : uint8_t {

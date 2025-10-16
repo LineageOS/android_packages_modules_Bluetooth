@@ -921,7 +921,7 @@ protected:
                       return addr.address[RawAddress::kLength - 1];
                     });
 
-    ON_CALL(mock_state_machine_, Initialize(_))
+    ON_CALL(mock_state_machine_, Initialize(_, _))
             .WillByDefault(SaveArg<0>(&state_machine_callbacks_));
 
     ON_CALL(mock_state_machine_, EnableStreamingDirection(_, _))
@@ -1683,7 +1683,12 @@ protected:
     iso_manager_->Start();
 
     mock_iso_manager_ = MockIsoManager::GetInstance();
-    ON_CALL(*mock_iso_manager_, RegisterCigCallbacks(_)).WillByDefault(SaveArg<0>(&cig_callbacks_));
+    ON_CALL(*mock_iso_manager_, RegisterCallbacks(_))
+            .WillByDefault([this](bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks) {
+              this->cig_callbacks_ = callbacks.cig_callbacks;
+              constexpr bluetooth::hci::iso_manager::IsoClientHandle kIsoClientHandle = 1;
+              return kIsoClientHandle;
+            });
 
     ON_CALL(mock_btm_interface_, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
 

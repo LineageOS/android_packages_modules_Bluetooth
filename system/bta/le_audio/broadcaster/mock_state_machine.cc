@@ -21,10 +21,14 @@ using namespace bluetooth::le_audio::broadcaster;
 
 IBroadcastStateMachineCallbacks* callbacks;
 AdvertisingCallbacks* adv_callbacks;
+bluetooth::hci::iso_manager::IsoClientHandle client_hdl;
+
 void BroadcastStateMachine::Initialize(IBroadcastStateMachineCallbacks* cb,
-                                       AdvertisingCallbacks* adv_cb) {
+                                       AdvertisingCallbacks* adv_cb,
+                                       bluetooth::hci::iso_manager::IsoClientHandle client_handle) {
   callbacks = cb;
   adv_callbacks = adv_cb;
+  client_hdl = client_handle;
 }
 
 std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(

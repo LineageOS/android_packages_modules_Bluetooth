@@ -33,6 +33,7 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/le_audio/mock_codec_manager.h"
 #include "btif/include/btif_common.h"
+#include "btm_iso_api_types.h"
 #include "gd/common/utils.h"
 #include "hci/controller_mock.h"
 #include "stack/include/btm_iso_api.h"
@@ -174,7 +175,7 @@ BroadcastConfiguration GetBroadcastConfig(
 class MockAudioHalClientEndpoint;
 MockAudioHalClientEndpoint* mock_audio_source_;
 bool is_audio_hal_acquired;
-void (*iso_active_callback)(bool);
+std::function<void(bool)> iso_active_callback;
 
 std::unique_ptr<LeAudioSourceAudioHalClient> LeAudioSourceAudioHalClient::AcquireBroadcast() {
   if (mock_audio_source_) {
@@ -311,12 +312,14 @@ protected:
     iso_manager_->Start();
 
     mock_iso_manager_ = MockIsoManager::GetInstance();
-    ON_CALL(*mock_iso_manager_, RegisterBigCallbacks(_)).WillByDefault(SaveArg<0>(&big_callbacks_));
-
+    EXPECT_CALL(*mock_iso_manager_, RegisterCallbacks(_))
+            .WillOnce([this](bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks) {
+              this->big_callbacks_ = callbacks.big_callbacks;
+              iso_active_callback = callbacks.iso_traffic_active_callback;
+              constexpr bluetooth::hci::iso_manager::IsoClientHandle kIsoClientHandle = 1;
+              return kIsoClientHandle;
+            });
     ConfigAudioHalClientMock();
-
-    EXPECT_CALL(*MockIsoManager::GetInstance(), RegisterOnIsoTrafficActiveCallbacks)
-            .WillOnce(SaveArg<0>(&iso_active_callback));
 
     ASSERT_FALSE(LeAudioBroadcaster::IsLeAudioBroadcasterRunning());
     LeAudioBroadcaster::Initialize(&mock_broadcaster_callbacks_,

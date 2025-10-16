@@ -156,9 +156,10 @@ LeAudioGroupStateMachineImpl* instance;
 
 class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 public:
-  LeAudioGroupStateMachineImpl(Callbacks* state_machine_callbacks)
+  LeAudioGroupStateMachineImpl(Callbacks* state_machine_callbacks,
+                               bluetooth::hci::iso_manager::IsoClientHandle iso_client_handle)
       : state_machine_callbacks_(state_machine_callbacks),
-        watchdog_(alarm_new("LeAudioStateMachineTimer")) {
+        watchdog_(alarm_new("LeAudioStateMachineTimer")), iso_client_handle_(iso_client_handle) {
     log_history_ = LeAudioLogHistory::Get();
   }
 
@@ -793,8 +794,8 @@ public:
       case CigState::NONE:
       case CigState::CREATING:
       case CigState::CREATED:
-        log::fatal("Invalid CIG state {} for group {} - controller issue",
-                   ToString(cig_state), group->group_id_);
+        log::fatal("Invalid CIG state {} for group {} - controller issue", ToString(cig_state),
+                   group->group_id_);
         break;
     }
   }
@@ -1549,6 +1550,8 @@ private:
   Callbacks* state_machine_callbacks_;
   alarm_t* watchdog_;
   LeAudioLogHistory* log_history_;
+  bluetooth::hci::iso_manager::IsoClientHandle iso_client_handle_ =
+          bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
 
   /* This callback is called on timeout during transition to target state */
   void OnStateTransitionTimeout(int group_id) {
@@ -1663,8 +1666,7 @@ private:
     log::info(
             "Added {} Stream Configuration. CIS Connection Handle: {}, Audio "
             "Channel Allocation: {}, Number Of Devices: {}, Number Of Channels: {}",
-            (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink ? "Sink"
-                                                                                 : "Source"),
+            ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink ? "Sink" : "Source",
             cis_conn_hdl, ase_audio_channel_allocation, params.num_of_devices,
             params.num_of_channels);
 
@@ -1883,7 +1885,7 @@ private:
                                 kLogCigCreateOp + "#CIS: " + std::to_string(param.cis_cfgs.size()));
 
     group->cig.SetState(CigState::CREATING);
-    IsoManager::GetInstance()->CreateCig(group->group_id_, std::move(param));
+    IsoManager::GetInstance()->CreateCig(iso_client_handle_, group->group_id_, std::move(param));
     log::debug("Group: {}, id: {} cig state: {}", std::format_ptr(group), group->group_id_,
                ToString(group->cig.GetState()));
     return true;
@@ -3657,13 +3659,15 @@ private:
 }  // namespace
 
 namespace bluetooth::le_audio {
-void LeAudioGroupStateMachine::Initialize(Callbacks* state_machine_callbacks_) {
+void LeAudioGroupStateMachine::Initialize(
+        Callbacks* state_machine_callbacks_,
+        bluetooth::hci::iso_manager::IsoClientHandle iso_client_handle) {
   if (instance) {
     log::error("Already initialized");
     return;
   }
 
-  instance = new LeAudioGroupStateMachineImpl(state_machine_callbacks_);
+  instance = new LeAudioGroupStateMachineImpl(state_machine_callbacks_, iso_client_handle);
 }
 
 void LeAudioGroupStateMachine::Cleanup() {
