@@ -250,7 +250,7 @@ public class AdapterProperties {
         }
     }
 
-    ParcelUuid[] getUuids() {
+    public ParcelUuid[] getUuids() {
         return mUuids;
     }
 

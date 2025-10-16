@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice
+package com.android.bluetooth.profile
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.BOND_BONDED
@@ -47,9 +47,9 @@ import android.bluetooth.BluetoothUuid
 import android.util.Log
 import com.android.bluetooth.Utils
 import com.android.bluetooth.Utils.arrayContains
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.hid.HidHostService
-import com.android.bluetooth.profile.ProfileService
 import com.android.bluetooth.storage.BluetoothStorageManager
 
 private const val TAG = Utils.BT_PREFIX + "ConnectableProfile"
@@ -165,7 +165,7 @@ constructor(
             }
 
             val profile = getProfileName(id)
-            val localDeviceUuids = adapterService.adapterProperties.uuids
+            val localDeviceUuids = adapterService.getAdapterProperties().getUuids()
             Log.v(
                 TAG,
                 "isSupported(device=$device, profile=$profile): " +

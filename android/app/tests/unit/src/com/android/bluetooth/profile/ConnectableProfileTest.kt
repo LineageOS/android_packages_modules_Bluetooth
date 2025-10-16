@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice
+package com.android.bluetooth.profile
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothProfile
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat

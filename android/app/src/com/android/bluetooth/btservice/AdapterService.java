@@ -164,6 +164,7 @@ import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.pbap.BluetoothPbapService;
 import com.android.bluetooth.pbapclient.PbapClientService;
+import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.sdp.SdpManager;
@@ -783,7 +784,7 @@ public class AdapterService extends Service {
         return mStorage.isMicrophonePreferredForCalls(device);
     }
 
-    AdapterProperties getAdapterProperties() {
+    public AdapterProperties getAdapterProperties() {
         return mAdapterProperties;
     }
 
@@ -947,7 +948,7 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.VAPS_SERVER, VapsServerService.class);
     }
 
-    Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
+    public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
     }
 
