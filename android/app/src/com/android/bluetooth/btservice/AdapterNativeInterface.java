@@ -24,18 +24,19 @@ import android.bluetooth.OobData;
 import com.android.bluetooth.Utils;
 
 import java.io.FileDescriptor;
+import java.lang.annotation.Native;
 
 /** Native interface to be used by AdapterService */
 public class AdapterNativeInterface {
     private static final String TAG =
             Utils.BT_PREFIX + AdapterNativeInterface.class.getSimpleName();
 
-    private JniCallbacks mJniCallbacks;
+    @Native private AdapterNativeCallback mNativeCallback;
 
     AdapterNativeInterface() {}
 
-    JniCallbacks getCallbacks() {
-        return mJniCallbacks;
+    AdapterNativeCallback getCallbacks() {
+        return mNativeCallback;
     }
 
     boolean init(
@@ -46,7 +47,7 @@ public class AdapterNativeInterface {
             int configCompareResult,
             boolean isAtvDevice,
             String hciInstanceName) {
-        mJniCallbacks = new JniCallbacks(service, adapterProperties);
+        mNativeCallback = new AdapterNativeCallback(service, adapterProperties);
         return initNative(
                 startRestricted,
                 isCommonCriteriaMode,
@@ -278,16 +279,6 @@ public class AdapterNativeInterface {
     boolean restoreFilterAcceptList() {
         return restoreFilterAcceptListNative();
     }
-
-    /**********************************************************************************************/
-    /*********************************** callbacks from native ************************************/
-    /**********************************************************************************************/
-
-    // See JniCallbacks.java
-
-    /**********************************************************************************************/
-    /******************************************* native *******************************************/
-    /**********************************************************************************************/
 
     private native boolean initNative(
             boolean startRestricted,

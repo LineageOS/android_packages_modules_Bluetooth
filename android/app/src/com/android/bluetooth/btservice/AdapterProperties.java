@@ -67,7 +67,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-class AdapterProperties {
+public class AdapterProperties {
     private static final String TAG = Utils.BT_PREFIX + AdapterProperties.class.getSimpleName();
 
     private static final String MAX_CONNECTED_AUDIO_DEVICES_PROPERTY =
@@ -110,7 +110,7 @@ class AdapterProperties {
     private final RemoteDevices mRemoteDevices;
     private final Handler mHandler;
 
-    // TODO(b/447313374): Remove when ignore_redundant_disovery_if_same_state is shipped.
+    // TODO(b/447313374): Remove when ignore_redundant_discovery_if_same_state is shipped.
     private boolean mDiscovering;
     private long mDiscoveryEndMs; // < Time (ms since epoch) that discovery ended or will end.
     // TODO - all hw capabilities to be exposed as a class
@@ -509,7 +509,7 @@ class AdapterProperties {
         return mDiscoveryEndMs;
     }
 
-    // TODO(b/447313374): Remove when ignore_redundant_disovery_if_same_state is shipped.
+    // TODO(b/447313374): Remove when ignore_redundant_discovery_if_same_state is shipped.
     boolean isDiscovering() {
         return mDiscovering;
     }

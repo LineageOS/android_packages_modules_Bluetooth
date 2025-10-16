@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,155 +14,169 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import android.bluetooth.OobData;
-import android.bluetooth.UidTraffic;
+import android.bluetooth.OobData
+import android.bluetooth.UidTraffic
+import com.android.bluetooth.profile.NativeCallback
 
-class JniCallbacks {
+class AdapterNativeCallback(
+    private val adapterService: AdapterService,
+    private val adapterProperties: AdapterProperties,
+) : NativeCallback {
 
-    private final AdapterProperties mAdapterProperties;
-    private final AdapterService mAdapterService;
+    private var remoteDevices: RemoteDevices? = null
+    private var bondStateMachine: BondStateMachine? = null
 
-    private RemoteDevices mRemoteDevices;
-    private BondStateMachine mBondStateMachine;
-
-    JniCallbacks(AdapterService adapterService, AdapterProperties adapterProperties) {
-        mAdapterService = adapterService;
-        mAdapterProperties = adapterProperties;
+    fun init(bondStateMachine: BondStateMachine, remoteDevices: RemoteDevices) {
+        this.remoteDevices = remoteDevices
+        this.bondStateMachine = bondStateMachine
     }
 
-    void init(BondStateMachine bondStateMachine, RemoteDevices remoteDevices) {
-        mRemoteDevices = remoteDevices;
-        mBondStateMachine = bondStateMachine;
+    fun cleanup() {
+        remoteDevices = null
+        bondStateMachine = null
     }
 
-    void cleanup() {
-        mRemoteDevices = null;
-        mBondStateMachine = null;
+    fun sspRequestCallback(address: ByteArray, pairingVariant: Int, passkey: Int) {
+        bondStateMachine?.sspRequestCallback(address, pairingVariant, passkey)
     }
 
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException();
+    fun devicePropertyChangedCallback(
+        address: ByteArray,
+        addressType: Int,
+        types: IntArray,
+        value: Array<ByteArray>,
+    ) {
+        remoteDevices?.devicePropertyChangedCallback(address, addressType, types, value)
     }
 
-    void sspRequestCallback(byte[] address, int pairingVariant, int passkey) {
-        mBondStateMachine.sspRequestCallback(address, pairingVariant, passkey);
+    fun deviceFoundCallback(address: ByteArray) {
+        remoteDevices?.deviceFoundCallback(address)
     }
 
-    void devicePropertyChangedCallback(byte[] address, int addressType, int[] types, byte[][] val) {
-        mRemoteDevices.devicePropertyChangedCallback(address, addressType, types, val);
+    fun pinRequestCallback(address: ByteArray, name: ByteArray, cod: Int, min16Digits: Boolean) {
+        bondStateMachine?.pinRequestCallback(address, name, cod, min16Digits)
     }
 
-    void deviceFoundCallback(byte[] address) {
-        mRemoteDevices.deviceFoundCallback(address);
+    fun bondStateChangeCallback(status: Int, address: ByteArray, newState: Int, hciReason: Int) {
+        bondStateMachine?.bondStateChangeCallback(status, address, newState, hciReason)
     }
 
-    void pinRequestCallback(byte[] address, byte[] name, int cod, boolean min16Digits) {
-        mBondStateMachine.pinRequestCallback(address, name, cod, min16Digits);
+    fun addressConsolidateCallback(mainAddress: ByteArray, secondaryAddress: ByteArray) {
+        remoteDevices?.addressConsolidateCallback(mainAddress, secondaryAddress)
     }
 
-    void bondStateChangeCallback(int status, byte[] address, int newState, int hciReason) {
-        mBondStateMachine.bondStateChangeCallback(status, address, newState, hciReason);
+    fun leAddressAssociateCallback(
+        mainAddress: ByteArray,
+        secondaryAddress: ByteArray,
+        identityAddressTypeFromNative: Int,
+    ) {
+        remoteDevices?.leAddressAssociateCallback(
+            mainAddress,
+            secondaryAddress,
+            identityAddressTypeFromNative,
+        )
     }
 
-    void addressConsolidateCallback(byte[] mainAddress, byte[] secondaryAddress) {
-        mRemoteDevices.addressConsolidateCallback(mainAddress, secondaryAddress);
+    fun aclStateChangeCallback(
+        status: Int,
+        address: ByteArray,
+        addressType: Int,
+        transport: Int,
+        newState: Int,
+        hciReason: Int,
+        handle: Int,
+    ) {
+        remoteDevices?.aclStateChangeCallback(
+            status,
+            address,
+            addressType,
+            transport,
+            newState,
+            hciReason,
+            handle,
+        )
     }
 
-    void leAddressAssociateCallback(
-            byte[] mainAddress, byte[] secondaryAddress, int identityAddressTypeFromNative) {
-        mRemoteDevices.leAddressAssociateCallback(
-                mainAddress, secondaryAddress, identityAddressTypeFromNative);
+    fun keyMissingCallback(address: ByteArray, reason: Int) {
+        remoteDevices?.keyMissingCallback(address, reason)
     }
 
-    void aclStateChangeCallback(
-            int status,
-            byte[] address,
-            int addressType,
-            int transport,
-            int newState,
-            int hciReason,
-            int handle) {
-        mRemoteDevices.aclStateChangeCallback(
-                status, address, addressType, transport, newState, hciReason, handle);
+    fun encryptionChangeCallback(
+        address: ByteArray,
+        status: Int,
+        encryptionEnable: Boolean,
+        transport: Int,
+        secureConnection: Boolean,
+        keySize: Int,
+    ) {
+        remoteDevices?.encryptionChangeCallback(
+            address,
+            status,
+            encryptionEnable,
+            transport,
+            secureConnection,
+            keySize,
+        )
     }
 
-    void keyMissingCallback(byte[] address, int reason) {
-        mRemoteDevices.keyMissingCallback(address, reason);
-    }
+    fun stateChangeCallback(status: Int) = adapterService.stateChangeCallback(status)
 
-    void encryptionChangeCallback(
-            byte[] address,
-            int status,
-            boolean encryptionEnable,
-            int transport,
-            boolean secureConnection,
-            int keySize) {
-        mRemoteDevices.encryptionChangeCallback(
-                address, status, encryptionEnable, transport, secureConnection, keySize);
-    }
+    fun discoveryStateChangeCallback(state: Int) =
+        adapterProperties.discoveryStateChangeCallback(state)
 
-    void stateChangeCallback(int status) {
-        mAdapterService.stateChangeCallback(status);
-    }
+    fun adapterPropertyChangedCallback(types: IntArray, value: Array<ByteArray>) =
+        adapterProperties.adapterPropertyChangedCallback(types, value)
 
-    void discoveryStateChangeCallback(int state) {
-        mAdapterProperties.discoveryStateChangeCallback(state);
-    }
+    fun oobDataReceivedCallback(transport: Int, oobData: OobData) =
+        adapterService.notifyOobDataCallback(transport, oobData)
 
-    void adapterPropertyChangedCallback(int[] types, byte[][] val) {
-        mAdapterProperties.adapterPropertyChangedCallback(types, val);
-    }
+    fun linkQualityReportCallback(
+        timestamp: Long,
+        reportId: Int,
+        rssi: Int,
+        snr: Int,
+        retransmissionCount: Int,
+        packetsNotReceiveCount: Int,
+        negativeAcknowledgementCount: Int,
+    ) =
+        adapterService.linkQualityReportCallback(
+            timestamp,
+            reportId,
+            rssi,
+            snr,
+            retransmissionCount,
+            packetsNotReceiveCount,
+            negativeAcknowledgementCount,
+        )
 
-    void oobDataReceivedCallback(int transport, OobData oobData) {
-        mAdapterService.notifyOobDataCallback(transport, oobData);
-    }
+    fun switchBufferSizeCallback(isLowLatencyBufferSize: Boolean) =
+        adapterService.switchBufferSizeCallback(isLowLatencyBufferSize)
 
-    void linkQualityReportCallback(
-            long timestamp,
-            int report_id,
-            int rssi,
-            int snr,
-            int retransmission_count,
-            int packets_not_receive_count,
-            int negative_acknowledgement_count) {
-        mAdapterService.linkQualityReportCallback(
-                timestamp,
-                report_id,
-                rssi,
-                snr,
-                retransmission_count,
-                packets_not_receive_count,
-                negative_acknowledgement_count);
-    }
+    fun switchCodecCallback(isLowLatencyBufferSize: Boolean) =
+        adapterService.switchCodecCallback(isLowLatencyBufferSize)
 
-    void switchBufferSizeCallback(boolean is_low_latency_buffer_size) {
-        mAdapterService.switchBufferSizeCallback(is_low_latency_buffer_size);
-    }
+    fun acquireWakeLock(lockName: String) = adapterService.acquireWakeLock(lockName)
 
-    void switchCodecCallback(boolean is_low_latency_buffer_size) {
-        mAdapterService.switchCodecCallback(is_low_latency_buffer_size);
-    }
+    fun releaseWakeLock(lockName: String) = adapterService.releaseWakeLock(lockName)
 
-    boolean acquireWakeLock(String lockName) {
-        return mAdapterService.acquireWakeLock(lockName);
-    }
-
-    boolean releaseWakeLock(String lockName) {
-        return mAdapterService.releaseWakeLock(lockName);
-    }
-
-    void energyInfoCallback(
-            int status,
-            int ctrlState,
-            long txTime,
-            long rxTime,
-            long idleTime,
-            long energyUsed,
-            UidTraffic[] data) {
-        mAdapterService.energyInfoCallback(
-                status, ctrlState, txTime, rxTime, idleTime, energyUsed, data);
-    }
+    fun energyInfoCallback(
+        status: Int,
+        ctrlState: Int,
+        txTime: Long,
+        rxTime: Long,
+        idleTime: Long,
+        energyUsed: Long,
+        data: Array<UidTraffic>,
+    ) =
+        adapterService.energyInfoCallback(
+            status,
+            ctrlState,
+            txTime,
+            rxTime,
+            idleTime,
+            energyUsed,
+            data,
+        )
 }
