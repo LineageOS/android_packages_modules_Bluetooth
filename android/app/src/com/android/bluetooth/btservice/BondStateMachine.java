@@ -60,7 +60,7 @@ import java.util.stream.Stream;
  * bonding / unbonding state. {@link PendingCommandState} : Some device is in bonding / unbonding
  * state. TODO(BT) This class can be removed and this logic moved to the stack.
  */
-final class BondStateMachine extends StateMachine {
+public final class BondStateMachine extends StateMachine {
     private static final String TAG = Utils.BT_PREFIX + BondStateMachine.class.getSimpleName();
 
     static final int CREATE_BOND = 1;

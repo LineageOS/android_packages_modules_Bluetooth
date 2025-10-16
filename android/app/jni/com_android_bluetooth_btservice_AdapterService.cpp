@@ -2228,8 +2228,8 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
 
   jclass jniAdapterNativeInterfaceClass =
           env->FindClass("com/android/bluetooth/btservice/AdapterNativeInterface");
-  sJniCallbacksField = env->GetFieldID(jniAdapterNativeInterfaceClass, "mJniCallbacks",
-                                       "Lcom/android/bluetooth/btservice/JniCallbacks;");
+  sJniCallbacksField = env->GetFieldID(jniAdapterNativeInterfaceClass, "mNativeCallback",
+                                       "Lcom/android/bluetooth/btservice/AdapterNativeCallback;");
   env->DeleteLocalRef(jniAdapterNativeInterfaceClass);
 
   const JNIJavaMethod javaMethods[] = {
@@ -2255,7 +2255,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"keyMissingCallback", "([BI)V", &method_keyMissingCallback},
           {"encryptionChangeCallback", "([BIZIZI)V", &method_encryptionChangeCallback},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/JniCallbacks", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/AdapterNativeCallback", javaMethods);
 
   const JNIJavaMethod javaUuidTrafficMethods[] = {
           {"<init>", "(IJJ)V", &android_bluetooth_UidTraffic.constructor},

@@ -151,7 +151,7 @@ public class AdapterServiceTest {
     @Mock private MetricsLogger mMockMetricsLogger;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
-    @Mock private JniCallbacks mJniCallbacks;
+    @Mock private AdapterNativeCallback mNativeCallback;
 
     private static final String TEST_BT_ADDR_1 = "00:11:22:33:44:55";
     private static final String TEST_BT_ADDR_2 = "00:11:22:33:44:66";
@@ -251,7 +251,7 @@ public class AdapterServiceTest {
         Log.e(TAG, "setUp()");
         IpcDataCache.setCacheTestMode(true);
 
-        doReturn(mJniCallbacks).when(mNativeInterface).getCallbacks();
+        doReturn(mNativeCallback).when(mNativeInterface).getCallbacks();
         doReturn(true).when(mMockLeAudioService).isAvailable();
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
