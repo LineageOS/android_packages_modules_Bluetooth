@@ -165,8 +165,8 @@ static jboolean connectHearingAidNative(JNIEnv* env, jobject /* object */, jbyte
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sHearingAidInterface->Connect(*tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sHearingAidInterface->Connect(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
@@ -184,8 +184,8 @@ static jboolean disconnectHearingAidNative(JNIEnv* env, jobject /* object */, jb
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sHearingAidInterface->Disconnect(*tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sHearingAidInterface->Disconnect(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
@@ -201,8 +201,8 @@ static jboolean addToAcceptlistNative(JNIEnv* env, jobject /* object */, jbyteAr
     return JNI_FALSE;
   }
 
-  RawAddress* tmpraw = (RawAddress*)addr;
-  sHearingAidInterface->AddToAcceptlist(*tmpraw);
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  sHearingAidInterface->AddToAcceptlist(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }

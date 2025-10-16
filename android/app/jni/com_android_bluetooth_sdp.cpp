@@ -102,10 +102,12 @@ static jboolean sdpSearchNative(JNIEnv* env, jobject /* obj */, jbyteArray addre
     env->ReleaseByteArrayElements(address, addr, 0);
     return JNI_FALSE;
   }
+
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
   Uuid uuid = Uuid::From128BitBE((uint8_t*)raw_uuid);
   log::debug("UUID {}", uuid);
 
-  int ret = sBluetoothSdpInterface->sdp_search((RawAddress*)addr, uuid);
+  int ret = sBluetoothSdpInterface->sdp_search(bd_addr, uuid);
   if (ret != BT_STATUS_SUCCESS) {
     log::error("SDP Search initialization failed: {}", ret);
   }
