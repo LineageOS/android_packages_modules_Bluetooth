@@ -694,7 +694,9 @@ bool BtaAvCo::SetActivePeer(const RawAddress& peer_address, const uint8_t t_loca
   reference_state->setActivePeer(p_peer);
   log::info("codec = {}", A2DP_CodecInfoString(p_peer->getCodecConfig()));
   // report the selected codec configuration of this new active peer.
-  ReportSourceCodecState(p_peer);
+  if (!com_android_bluetooth_flags_a2dp_control_codec_state_reports()) {
+    ReportSourceCodecState(p_peer);
+  }
   return true;
 }
 
@@ -965,6 +967,15 @@ bool BtaAvCo::ReportSourceCodecState(BtaAvCoPeer* p_peer) {
   btif_av_report_source_codec_state(p_peer->addr, codec_config, codecs_local_capabilities,
                                     codecs_selectable_capabilities);
   return true;
+}
+
+bool BtaAvCo::ReportSourceCodecState(const RawAddress& peer_address) {
+  BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
+  if (p_peer == nullptr) {
+    log::error("cannot find peer {} to report codec config changed", peer_address);
+    return false;
+  }
+  return ReportSourceCodecState(p_peer);
 }
 
 bool BtaAvCo::ReportSinkCodecState(BtaAvCoPeer* p_peer) {
@@ -1575,6 +1586,10 @@ btav_a2dp_scmst_info_t bta_av_co_get_scmst_info(const RawAddress& peer_address) 
   }
 
   return scmst_info;
+}
+
+bool bta_av_co_report_codec_config_changed(const RawAddress& peer_address) {
+  return bta_av_co_cb.ReportSourceCodecState(peer_address);
 }
 
 void btif_a2dp_codec_debug_dump(int fd) { bta_av_co_cb.DebugDump(fd); }
