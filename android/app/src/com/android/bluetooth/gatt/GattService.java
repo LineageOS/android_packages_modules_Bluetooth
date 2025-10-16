@@ -591,7 +591,7 @@ public class GattService extends ProfileService {
         }
 
         if (status == BluetoothStatusCodes.SUCCESS) {
-            subrateMode = verifyGattSubratingMode(subrateFactor, latency, contNum);
+            subrateMode = verifyGattSubratingMode(device, subrateFactor, latency, contNum);
         } else {
             subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED;
         }
@@ -1888,7 +1888,7 @@ public class GattService extends ProfileService {
         }
 
         if (status == BluetoothStatusCodes.SUCCESS) {
-            subrateMode = verifyGattSubratingMode(subrateFactor, latency, contNum);
+            subrateMode = verifyGattSubratingMode(device, subrateFactor, latency, contNum);
         } else {
             subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED;
         }
@@ -2845,7 +2845,8 @@ public class GattService extends ProfileService {
      * @param contNum Continuation Number for this LE connection.
      * @return the connection subrating priority in integer
      */
-    public int verifyGattSubratingMode(int subrateFactor, int latency, int contNum) {
+    public int verifyGattSubratingMode(
+            BluetoothDevice device, int subrateFactor, int latency, int contNum) {
         int returnSubrateMode = BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE;
         if (mSubrateLowParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] <= subrateFactor
                 && subrateFactor <= mSubrateLowParameters[GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX]
@@ -2868,7 +2869,7 @@ public class GattService extends ProfileService {
         }
         if (mSubrateOffParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] == subrateFactor
                 && subrateFactor == mSubrateOffParameters[GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX]
-                && latency == mSubrateOffParameters[GATT_SUBRATE_LATENCY_INDEX]
+                && latency == mCachedPeripheralLatency.getOrDefault(device, 0)
                 && contNum == mSubrateOffParameters[GATT_SUBRATE_CONT_NUM_INDEX]) {
             returnSubrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
         }
