@@ -64,7 +64,8 @@ public:
   // Register a reactable fd to this reactor. Returns a pointer to a Reactable. Caller must use this
   // object to unregister or modify registration. Ownership of the memory space is NOT transferred
   // to user.
-  Reactable* Register(int fd, common::Closure on_read_ready, common::Closure on_write_ready);
+  Reactable* Register(int fd, base::RepeatingClosure on_read_ready,
+                      base::RepeatingClosure on_write_ready);
 
   // Unregister a reactable from this reactor
   void Unregister(Reactable* reactable);

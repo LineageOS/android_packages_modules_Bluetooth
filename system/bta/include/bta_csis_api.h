@@ -31,7 +31,7 @@ using CsisLockCb = base::OnceCallback<void(int group_id, bool locked, CsisGroupL
 class CsisClient {
 public:
   virtual ~CsisClient() = default;
-  static void Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, base::Closure initCb);
+  static void Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, base::OnceClosure initCb);
   static void AddFromStorage(const RawAddress& addr, const std::vector<uint8_t>& in);
   static bool GetForStorage(const RawAddress& addr, std::vector<uint8_t>& out);
   static void CleanUp();

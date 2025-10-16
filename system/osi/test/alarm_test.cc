@@ -29,7 +29,6 @@
 #include "osi/semaphore.h"
 #include "stack/include/main_thread.h"
 
-using base::Closure;
 using bluetooth::common::MessageLoopThread;
 
 static semaphore_t* semaphore;

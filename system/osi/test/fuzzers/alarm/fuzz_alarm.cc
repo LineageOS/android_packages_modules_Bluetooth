@@ -20,7 +20,6 @@
 #include "common/message_loop_thread.h"
 #include "osi/include/alarm.h"
 
-using base::Closure;
 using bluetooth::common::MessageLoopThread;
 
 #define MAX_CONCURRENT_ALARMS 25

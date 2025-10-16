@@ -41,7 +41,7 @@ bool CsisClient::IsCsisClientRunning() {
   inc_func_call_count(__func__);
   return false;
 }
-void CsisClient::Initialize(CsisClientCallbacks* /* callbacks */, base::Closure /* initCb */) {
+void CsisClient::Initialize(CsisClientCallbacks* /* callbacks */, base::OnceClosure /* initCb */) {
   inc_func_call_count(__func__);
 }
 void CsisClient::DebugDump(int /* fd */) { inc_func_call_count(__func__); }

@@ -857,7 +857,7 @@ public:
     EXPECT_FALSE(registered_);
     registered_ = true;
     handler->Post(common::BindOnce(&MockIQueueEnqueue::handle_register_enqueue,
-                                   common::Unretained(this), callback));
+                                   common::Unretained(this), std::move(callback)));
   }
 
   void handle_register_enqueue(EnqueueCallback callback) {

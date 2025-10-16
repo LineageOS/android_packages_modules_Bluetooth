@@ -64,7 +64,6 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
 
-using base::Closure;
 using bluetooth::Uuid;
 using bluetooth::csis::CsisClient;
 using bluetooth::has::ConnectionState;
@@ -122,7 +121,7 @@ std::mutex instance_mutex;
  */
 class HasClientImpl : public HasClient {
 public:
-  HasClientImpl(bluetooth::has::HasClientCallbacks* callbacks, base::Closure initCb)
+  HasClientImpl(bluetooth::has::HasClientCallbacks* callbacks, base::OnceClosure initCb)
       : gatt_if_(0), callbacks_(callbacks) {
     BTA_GATTC_AppRegister(
             "has",
@@ -131,8 +130,8 @@ public:
                 instance->GattcCallback(event, p_data);
               }
             },
-            base::Bind(
-                    [](base::Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error(
                                 "Can't start Hearing Aid Service client profile - no gatt "
@@ -140,9 +139,9 @@ public:
                         return;
                       }
                       instance->gatt_if_ = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
   }
 
@@ -2209,7 +2208,8 @@ alarm_t* HasCtpGroupOpCoordinator::operation_timeout_timer = nullptr;
 size_t HasCtpGroupOpCoordinator::ref_cnt = 0u;
 alarm_callback_t HasCtpGroupOpCoordinator::cb = [](void*) {};
 
-void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks, base::Closure initCb) {
+void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks,
+                           base::OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     log::error("Already initialized!");
@@ -2221,7 +2221,7 @@ void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks, base::
       instance->OnGroupOpCoordinatorTimeout(p);
     }
   });
-  instance = new HasClientImpl(callbacks, initCb);
+  instance = new HasClientImpl(callbacks, std::move(initCb));
 }
 
 bool HasClient::IsHasClientRunning() { return instance; }

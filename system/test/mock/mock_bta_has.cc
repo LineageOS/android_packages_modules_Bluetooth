@@ -24,7 +24,7 @@
 namespace bluetooth::le_audio {
 namespace has {
 
-void HasClient::Initialize(bluetooth::has::HasClientCallbacks*, base::RepeatingCallback<void()>) {
+void HasClient::Initialize(bluetooth::has::HasClientCallbacks*, base::OnceClosure) {
   inc_func_call_count(__func__);
 }
 void HasClient::CleanUp() { inc_func_call_count(__func__); }

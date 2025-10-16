@@ -43,7 +43,7 @@ constexpr uint8_t CAPABILITY_CSIS = 0x04;
 constexpr uint8_t CAPABILITY_RESERVED = 0xF8;
 
 // Number of retry for phy update. This targets to reduce phy update collision.
-const static uint8_t kPhyUpdateRetryLimit = 5;
+static const uint8_t kPhyUpdateRetryLimit = 5;
 
 /** Implementations of HearingAid will also implement this interface */
 class HearingAidAudioReceiver {
@@ -239,7 +239,7 @@ class HearingAid {
 public:
   virtual ~HearingAid() = default;
 
-  static void Initialize(bluetooth::asha::HearingAidCallbacks* callbacks, base::Closure initCb);
+  static void Initialize(bluetooth::asha::HearingAidCallbacks* callbacks, base::OnceClosure initCb);
   static void CleanUp();
   static bool IsHearingAidRunning();
   static void DebugDump(int fd);

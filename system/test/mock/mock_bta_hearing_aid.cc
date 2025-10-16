@@ -48,7 +48,7 @@ bool HearingAid::IsHearingAidRunning() {
 
 void HearingAid::CleanUp() { inc_func_call_count(__func__); }
 
-void HearingAid::Initialize(HearingAidCallbacks* /* callbacks */, base::Closure /* initCb */) {
+void HearingAid::Initialize(HearingAidCallbacks* /* callbacks */, base::OnceClosure /* initCb */) {
   inc_func_call_count(__func__);
 }
 

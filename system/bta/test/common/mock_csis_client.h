@@ -33,8 +33,8 @@ public:
   MOCK_METHOD((int), GetDesiredSize, (int group_id), (const override));
 
   /* Called from static methods */
-  MOCK_METHOD((void), Initialize,
-              (bluetooth::csis::CsisClientCallbacks * callbacks, base::Closure initCb));
+  MOCK_METHOD(void, Initialize,
+              (bluetooth::csis::CsisClientCallbacks * callbacks, base::OnceClosure initCb));
   MOCK_METHOD((void), CleanUp, ());
   MOCK_METHOD((void), DebugDump, (int fd));
   MOCK_METHOD((bool), IsCsisClientRunning, ());

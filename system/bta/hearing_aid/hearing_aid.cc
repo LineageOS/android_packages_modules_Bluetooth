@@ -83,7 +83,6 @@
 
 namespace bluetooth::asha {
 
-using base::Closure;
 using bluetooth::hci::iso_manager::IsoClientHandle;
 using bluetooth::hci::iso_manager::IsoManagerCallbacks;
 using bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
@@ -309,7 +308,7 @@ public:
     }
   }
 
-  HearingAidImpl(HearingAidCallbacks* callbacks, Closure initCb)
+  HearingAidImpl(HearingAidCallbacks* callbacks, base::OnceClosure initCb)
       : audio_running(false),
         overwrite_min_ce_len(-1),
         overwrite_max_ce_len(-1),
@@ -335,16 +334,16 @@ public:
 
     BTA_GATTC_AppRegister(
             "asha", hearingaid_gattc_callback,
-            base::Bind(
-                    [](Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error("Can't start Hearing Aid profile - no gatt clients left!");
                         return;
                       }
                       instance->gatt_if = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             false);
 
     iso_callbacks_.iso_traffic_active_callback = [](bool is_active) {
@@ -2261,7 +2260,7 @@ HearingAidAudioReceiverImpl audioReceiverImpl;
 
 }  // namespace
 
-void HearingAid::Initialize(HearingAidCallbacks* callbacks, Closure initCb) {
+void HearingAid::Initialize(HearingAidCallbacks* callbacks, base::OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
 
   if (instance) {
@@ -2270,7 +2269,7 @@ void HearingAid::Initialize(HearingAidCallbacks* callbacks, Closure initCb) {
   }
 
   audioReceiver = &audioReceiverImpl;
-  instance = new HearingAidImpl(callbacks, initCb);
+  instance = new HearingAidImpl(callbacks, std::move(initCb));
   HearingAidAudioSource::Initialize();
 }
 
