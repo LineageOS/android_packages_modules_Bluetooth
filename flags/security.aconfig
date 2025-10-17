@@ -70,3 +70,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "use_array_instead_list_in_sec_dev_rec"
+    namespace: "bluetooth"
+    description: "Use array instead of list in security device record"
+    bug: "444620685"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

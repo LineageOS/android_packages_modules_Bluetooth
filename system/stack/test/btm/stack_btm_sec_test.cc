@@ -16,6 +16,7 @@
  */
 
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -191,17 +192,32 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
   tBTM_SEC_DEV_REC* records[kBtmSecMaxDeviceRecords];
 
   // Fill up the records
-  for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
-    ASSERT_EQ(i, list_length(::btm_sec_cb.sec_dev_rec));
-    records[i] = btm_sec_allocate_dev_rec();
-    ASSERT_NE(nullptr, records[i]);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
+      ASSERT_EQ(i, list_length(::btm_sec_cb.sec_dev_rec));
+      records[i] = btm_sec_allocate_dev_rec();
+      ASSERT_NE(nullptr, records[i]);
+    }
+  } else {
+    for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
+      records[i] = btm_sec_allocate_dev_rec();
+    }
   }
 
   // Second pass up the records
-  for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
-    ASSERT_EQ(kBtmSecMaxDeviceRecords, list_length(::btm_sec_cb.sec_dev_rec));
-    records[i] = btm_sec_allocate_dev_rec();
-    ASSERT_NE(nullptr, records[i]);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
+      ASSERT_EQ(kBtmSecMaxDeviceRecords, list_length(::btm_sec_cb.sec_dev_rec));
+      records[i] = btm_sec_allocate_dev_rec();
+      ASSERT_NE(nullptr, records[i]);
+    }
+  } else {
+    for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
+      tBTM_SEC_DEV_REC* dev_rec = btm_sec_allocate_dev_rec();
+      ASSERT_NE(nullptr, dev_rec);     // must be a valid entry
+      ASSERT_NE(dev_rec, records[i]);  // should be a new record
+      records[i] = dev_rec;
+    }
   }
 
   // NOTE: The memory allocated for each record is automatically

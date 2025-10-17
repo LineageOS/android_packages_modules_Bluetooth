@@ -27,6 +27,9 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
+
+#include <algorithm>
 
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
@@ -271,7 +274,11 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
 
     log::verbose("resolving_list_avail_size={}", btm_cb.ble_ctr_cb.resolving_list_avail_size);
 
-    list_foreach(btm_sec_cb.sec_dev_rec, clear_resolving_list_bit, NULL);
+    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+      list_foreach(btm_sec_cb.sec_dev_rec, clear_resolving_list_bit, NULL);
+    } else {
+      btm_sec_cb.for_each_dev_rec(clear_resolving_list_bit, NULL);
+    }
   }
 }
 
@@ -607,7 +614,15 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
   }
 
   uint16_t count = 1; /* we use 1 entry for local controller */
-  list_foreach(btm_sec_cb.sec_dev_rec, count_resolving_list_entries, &count);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_foreach(btm_sec_cb.sec_dev_rec, count_resolving_list_entries, &count);
+  } else {
+    count += std::count_if(btm_sec_cb.device_records.begin(), btm_sec_cb.device_records.end(),
+                           [](const tBTM_SEC_DEV_REC& dev_rec) {
+                             return dev_rec.IsInitialized() &&
+                                    dev_rec.ble.in_controller_list & BTM_RESOLVING_LIST_BIT;
+                           });
+  }
 
   if (count + 1 > resolving_list_size) {
     log::warn("Le Address Resolution list is full! size:{}", count);

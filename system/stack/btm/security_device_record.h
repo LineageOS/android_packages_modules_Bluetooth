@@ -332,6 +332,8 @@ public:
     return HostSupportsSecureConnections() && ControllerSupportsSecureConnections();
   }
 
+  bool IsInitialized() const { return !bd_addr.IsEmpty(); }
+
   std::string ToString() const {
     return std::format(
             "{} {:6s} cod:{} remote_info:{:<14s} sm4:0x{:02x} SecureConn:{:c} "
