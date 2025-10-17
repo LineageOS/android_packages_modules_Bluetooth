@@ -72,6 +72,9 @@ MessageLoopThread::MessageLoopThread(const std::string& thread_name,
 MessageLoopThread::~MessageLoopThread() { ShutDown(); }
 
 void MessageLoopThread::StartUp() {
+  std::promise<void> start_up_promise;
+  std::future<void> start_up_future = start_up_promise.get_future();
+
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
     if (handler_thread_ != nullptr) {
@@ -79,15 +82,10 @@ void MessageLoopThread::StartUp() {
       return;
     }
 
-    handler_thread_ = new os::Thread(thread_name_, handler_thread_priority_);
+    handler_thread_ =
+            new os::Thread(thread_name_, handler_thread_priority_, std::move(start_up_promise));
     handler_ = new os::Handler(handler_thread_);
-    log::info("MessageLoopThread {} started", thread_name_);
-    return;
-  }
-
-  std::promise<void> start_up_promise;
-  std::future<void> start_up_future = start_up_promise.get_future();
-  {
+  } else {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
     if (thread_ != nullptr) {
       log::warn("thread {} is already started", *this);
@@ -96,7 +94,9 @@ void MessageLoopThread::StartUp() {
     }
     thread_ = new std::thread(&MessageLoopThread::RunThread, this, std::move(start_up_promise));
   }
+
   start_up_future.wait();
+  log::info("MessageLoopThread {} started", thread_name_);
 }
 
 bool MessageLoopThread::DoInThread(base::OnceClosure task) {
@@ -281,13 +281,7 @@ bool MessageLoopThread::EnableRealTimeScheduling() {
   }
 
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
-    // If the handler thread is already having the real time scheduling priority,
-    // then we don't need to do anything, else false.
-    // This is a temp log, should be removed before merging.
-    log::debug(
-            "MessageLoopThread priority: {}, while request priority: REAL_TIME",
-            handler_thread_priority_ == os::Thread::Priority::REAL_TIME ? "REAL_TIME" : "NORMAL");
-    return handler_thread_priority_ == os::Thread::Priority::REAL_TIME;
+    return handler_thread_->GetPriority() == os::Thread::Priority::REAL_TIME;
   }
 
   struct sched_param rt_params = {.sched_priority = kRealTimeFifoSchedulingPriority};
