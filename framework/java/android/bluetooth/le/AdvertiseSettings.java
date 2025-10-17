@@ -145,19 +145,12 @@ public final class AdvertiseSettings implements Parcelable {
 
     @Override
     public String toString() {
-        return "Settings [mAdvertiseMode="
-                + mAdvertiseMode
-                + ", mAdvertiseTxPowerLevel="
-                + mAdvertiseTxPowerLevel
-                + ", mAdvertiseConnectable="
-                + mAdvertiseConnectable
-                + ", mAdvertiseDiscoverable="
-                + mAdvertiseDiscoverable
-                + ", mAdvertiseTimeoutMillis="
-                + mAdvertiseTimeoutMillis
-                + ", mOwnAddressType="
-                + mOwnAddressType
-                + "]";
+        return ("Settings [mAdvertiseMode=" + mAdvertiseMode)
+                + (", mAdvertiseTxPowerLevel=" + mAdvertiseTxPowerLevel)
+                + (", mAdvertiseConnectable=" + mAdvertiseConnectable)
+                + (", mAdvertiseDiscoverable=" + mAdvertiseDiscoverable)
+                + (", mAdvertiseTimeoutMillis=" + mAdvertiseTimeoutMillis)
+                + (", mOwnAddressType=" + mOwnAddressType + "]");
     }
 
     @Override

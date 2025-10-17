@@ -253,19 +253,12 @@ public final class TransportBlockFilter implements Parcelable {
     /** Get a human-readable string for this object. */
     @Override
     public String toString() {
-        return "TransportBlockFilter [mOrgId="
-                + mOrgId
-                + ", mTdsFlags="
-                + mTdsFlags
-                + ", mTdsFlagsMask="
-                + mTdsFlagsMask
-                + ", mTransportData="
-                + Arrays.toString(mTransportData)
-                + ", mTransportDataMask="
-                + Arrays.toString(mTransportDataMask)
-                + ", mWifiNanHash="
-                + Arrays.toString(mWifiNanHash)
-                + "]";
+        return ("TransportBlockFilter [mOrgId=" + mOrgId)
+                + (", mTdsFlags=" + mTdsFlags)
+                + (", mTdsFlagsMask=" + mTdsFlagsMask)
+                + (", mTransportData=" + Arrays.toString(mTransportData))
+                + (", mTransportDataMask=" + Arrays.toString(mTransportDataMask))
+                + (", mWifiNanHash=" + Arrays.toString(mWifiNanHash) + "]");
     }
 
     @Override

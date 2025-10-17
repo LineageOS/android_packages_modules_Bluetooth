@@ -158,19 +158,12 @@ public final class PeriodicAdvertisingReport implements Parcelable {
 
     @Override
     public String toString() {
-        return "PeriodicAdvertisingReport{syncHandle="
-                + mSyncHandle
-                + ", txPower="
-                + mTxPower
-                + ", rssi="
-                + mRssi
-                + ", dataStatus="
-                + mDataStatus
-                + ", data="
-                + Objects.toString(mData)
-                + ", timestampNanos="
-                + mTimestampNanos
-                + '}';
+        return ("PeriodicAdvertisingReport [syncHandle=" + mSyncHandle)
+                + (", txPower=" + mTxPower)
+                + (", rssi=" + mRssi)
+                + (", dataStatus=" + mDataStatus)
+                + (", data=" + Objects.toString(mData))
+                + (", timestampNanos=" + mTimestampNanos + "]");
     }
 
     public static final @NonNull Parcelable.Creator<PeriodicAdvertisingReport> CREATOR =

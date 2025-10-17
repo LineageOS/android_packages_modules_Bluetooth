@@ -338,28 +338,16 @@ public final class ScanResult implements Parcelable, Attributable {
 
     @Override
     public String toString() {
-        return "ScanResult{"
-                + "device="
-                + mDevice
-                + ", scanRecord="
-                + Objects.toString(mScanRecord)
-                + ", rssi="
-                + mRssi
-                + ", timestampNanos="
-                + mTimestampNanos
-                + ", eventType="
-                + mEventType
-                + ", primaryPhy="
-                + mPrimaryPhy
-                + ", secondaryPhy="
-                + mSecondaryPhy
-                + ", advertisingSid="
-                + mAdvertisingSid
-                + ", txPower="
-                + mTxPower
-                + ", periodicAdvertisingInterval="
-                + mPeriodicAdvertisingInterval
-                + '}';
+        return ("ScanResult [" + "device=" + mDevice)
+                + (", scanRecord=" + Objects.toString(mScanRecord))
+                + (", rssi=" + mRssi)
+                + (", timestampNanos=" + mTimestampNanos)
+                + (", eventType=" + mEventType)
+                + (", primaryPhy=" + mPrimaryPhy)
+                + (", secondaryPhy=" + mSecondaryPhy)
+                + (", advertisingSid=" + mAdvertisingSid)
+                + (", txPower=" + mTxPower)
+                + (", periodicAdvertisingInterval=" + mPeriodicAdvertisingInterval + "]");
     }
 
     public static final @NonNull Parcelable.Creator<ScanResult> CREATOR =
