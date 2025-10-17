@@ -202,12 +202,12 @@ extern struct btsnd_hcic_ble_periodic_advertising_terminate_sync
         btsnd_hcic_ble_periodic_advertising_terminate_sync;
 
 // Name: btsnd_hcic_ble_rand
-// Params: base::Callback<void(Octet8
+// Params: base::OnceCallback<void(Octet8)>
 // Return: void
 struct btsnd_hcic_ble_rand {
-  std::function<void(base::Callback<void(Octet8)>)> body{
-          [](base::Callback<void(Octet8)> /* cb */) {}};
-  void operator()(base::Callback<void(Octet8)> cb) { body(std::move(cb)); }
+  std::function<void(base::OnceCallback<void(Octet8)>)> body{
+          [](base::OnceCallback<void(Octet8)> /* cb */) {}};
+  void operator()(base::OnceCallback<void(Octet8)> cb) { body(std::move(cb)); }
 };
 extern struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
 

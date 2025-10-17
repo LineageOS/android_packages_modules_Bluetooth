@@ -151,7 +151,7 @@ void btsnd_hcic_ble_periodic_advertising_terminate_sync(
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_terminate_sync(
           sync_handle, std::move(cb));
 }
-void btsnd_hcic_ble_rand(base::Callback<void(Octet8)> cb) {
+void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_rand(std::move(cb));
 }

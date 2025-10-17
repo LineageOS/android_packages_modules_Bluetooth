@@ -1793,16 +1793,16 @@ void btm_ble_reset_id(void) {
   /* In order to reset identity, we need four random numbers. Make four nested
    * calls to generate them first, then proceed to perform the actual reset in
    * btm_ble_reset_id_impl. */
-  btsnd_hcic_ble_rand(base::Bind([](Octet8 rand) {
+  btsnd_hcic_ble_rand(base::BindOnce([](Octet8 rand) {
     reset_id_data tmp;
     memcpy(tmp.rand1.data(), rand.data(), kOctet8Length);
-    btsnd_hcic_ble_rand(base::Bind(
+    btsnd_hcic_ble_rand(base::BindOnce(
             [](reset_id_data tmp, Octet8 rand) {
               memcpy(tmp.rand1.data() + kOctet8Length, rand.data(), kOctet8Length);
-              btsnd_hcic_ble_rand(base::Bind(
+              btsnd_hcic_ble_rand(base::BindOnce(
                       [](reset_id_data tmp, Octet8 rand) {
                         memcpy(tmp.rand2.data(), rand.data(), kOctet8Length);
-                        btsnd_hcic_ble_rand(base::Bind(
+                        btsnd_hcic_ble_rand(base::BindOnce(
                                 [](reset_id_data tmp, Octet8 rand) {
                                   memcpy(tmp.rand2.data() + kOctet8Length, rand.data(),
                                          kOctet8Length);
