@@ -158,21 +158,14 @@ public final class AdvertiseData implements Parcelable {
 
     @Override
     public String toString() {
-        return "AdvertiseData [mServiceUuids="
-                + mServiceUuids
-                + ", mServiceSolicitationUuids="
-                + mServiceSolicitationUuids
-                + ", mTransportDiscoveryData="
-                + mTransportDiscoveryData
-                + ", mManufacturerSpecificData="
-                + BluetoothLeUtils.toString(mManufacturerSpecificData)
-                + ", mServiceData="
-                + BluetoothLeUtils.toString(mServiceData)
-                + ", mIncludeTxPowerLevel="
-                + mIncludeTxPowerLevel
-                + ", mIncludeDeviceName="
-                + mIncludeDeviceName
-                + "]";
+        return ("AdvertiseData [mServiceUuids=" + mServiceUuids)
+                + (", mServiceSolicitationUuids=" + mServiceSolicitationUuids)
+                + (", mTransportDiscoveryData=" + mTransportDiscoveryData)
+                + (", mManufacturerSpecificData="
+                        + BluetoothLeUtils.toString(mManufacturerSpecificData))
+                + (", mServiceData=" + BluetoothLeUtils.toString(mServiceData))
+                + (", mIncludeTxPowerLevel=" + mIncludeTxPowerLevel)
+                + (", mIncludeDeviceName=" + mIncludeDeviceName + "]");
     }
 
     @Override

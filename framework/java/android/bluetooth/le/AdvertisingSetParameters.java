@@ -300,35 +300,20 @@ public final class AdvertisingSetParameters implements Parcelable {
 
     @Override
     public String toString() {
-        return "AdvertisingSetParameters [connectable="
-                + mConnectable
-                + ", discoverable="
-                + mDiscoverable
-                + ", isLegacy="
-                + mIsLegacy
-                + ", isAnonymous="
-                + mIsAnonymous
-                + ", includeTxPower="
-                + mIncludeTxPower
-                + ", primaryPhy="
-                + mPrimaryPhy
-                + ", secondaryPhy="
-                + mSecondaryPhy
-                + ", interval="
-                + mInterval
-                + ", txPowerLevel="
-                + mTxPowerLevel
-                + ", ownAddressType="
-                + mOwnAddressType
-                + ", isDirected="
-                + mIsDirected
-                + ", isHighDutyCycle="
-                + mIsHighDutyCycle
-                + ", peerAddress="
-                + mPeerAddress
-                + ", peerAddressType="
-                + mPeerAddressType
-                + "]";
+        return ("AdvertisingSetParameters [connectable=" + mConnectable)
+                + (", discoverable=" + mDiscoverable)
+                + (", isLegacy=" + mIsLegacy)
+                + (", isAnonymous=" + mIsAnonymous)
+                + (", includeTxPower=" + mIncludeTxPower)
+                + (", primaryPhy=" + mPrimaryPhy)
+                + (", secondaryPhy=" + mSecondaryPhy)
+                + (", interval=" + mInterval)
+                + (", txPowerLevel=" + mTxPowerLevel)
+                + (", ownAddressType=" + mOwnAddressType)
+                + (", isDirected=" + mIsDirected)
+                + (", isHighDutyCycle=" + mIsHighDutyCycle)
+                + (", peerAddress=" + mPeerAddress)
+                + (", peerAddressType=" + mPeerAddressType + "]");
     }
 
     @Override

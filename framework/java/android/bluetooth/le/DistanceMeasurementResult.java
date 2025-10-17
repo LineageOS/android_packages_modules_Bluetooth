@@ -299,30 +299,17 @@ public final class DistanceMeasurementResult implements Parcelable {
 
     @Override
     public String toString() {
-        return "DistanceMeasurement["
-                + "meters: "
-                + mMeters
-                + ", errorMeters: "
-                + mErrorMeters
-                + ", azimuthAngle: "
-                + mAzimuthAngle
-                + ", errorAzimuthAngle: "
-                + mErrorAzimuthAngle
-                + ", altitudeAngle: "
-                + mAltitudeAngle
-                + ", errorAltitudeAngle: "
-                + mErrorAltitudeAngle
-                + ", delaySpreadMeters: "
-                + mDelaySpreadMeters
-                + ", confidenceLevel: "
-                + mConfidenceLevel
-                + ", detectedAttackLevel: "
-                + mDetectedAttackLevel
-                + ", velocityMetersPerSecond: "
-                + mVelocityMetersPerSecond
-                + ", elapsedRealtimeNanos"
-                + mMeasurementTimestampNanos
-                + "]";
+        return ("DistanceMeasurement [" + "meters=" + mMeters)
+                + (", errorMeters=" + mErrorMeters)
+                + (", azimuthAngle=" + mAzimuthAngle)
+                + (", errorAzimuthAngle=" + mErrorAzimuthAngle)
+                + (", altitudeAngle=" + mAltitudeAngle)
+                + (", errorAltitudeAngle=" + mErrorAltitudeAngle)
+                + (", delaySpreadMeters=" + mDelaySpreadMeters)
+                + (", confidenceLevel=" + mConfidenceLevel)
+                + (", detectedAttackLevel=" + mDetectedAttackLevel)
+                + (", velocityMetersPerSecond=" + mVelocityMetersPerSecond)
+                + (", elapsedRealtimeNanos=" + mMeasurementTimestampNanos + "]");
     }
 
     /** A {@link Parcelable.Creator} to create {@link DistanceMeasurementResult} from parcel. */

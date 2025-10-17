@@ -697,23 +697,15 @@ public final class ScanRecord {
 
     @Override
     public String toString() {
-        return "ScanRecord [mAdvertiseFlags="
-                + mAdvertiseFlags
-                + ", mServiceUuids="
-                + mServiceUuids
-                + ", mServiceSolicitationUuids="
-                + mServiceSolicitationUuids
-                + ", mManufacturerSpecificData="
-                + BluetoothLeUtils.toString(mManufacturerSpecificData)
-                + ", mServiceData="
-                + BluetoothLeUtils.toString(mServiceData)
-                + ", mTxPowerLevel="
-                + mTxPowerLevel
-                + ", mDeviceName="
-                + mDeviceName
-                + ", mTransportDiscoveryData="
-                + mTransportDiscoveryData
-                + "]";
+        return ("ScanRecord [mAdvertiseFlags=" + mAdvertiseFlags)
+                + (", mServiceUuids=" + mServiceUuids)
+                + (", mServiceSolicitationUuids=" + mServiceSolicitationUuids)
+                + (", mManufacturerSpecificData="
+                        + BluetoothLeUtils.toString(mManufacturerSpecificData))
+                + (", mServiceData=" + BluetoothLeUtils.toString(mServiceData))
+                + (", mTxPowerLevel=" + mTxPowerLevel)
+                + (", mDeviceName=" + mDeviceName)
+                + (", mTransportDiscoveryData=" + mTransportDiscoveryData + "]");
     }
 
     // Parse service UUIDs.
