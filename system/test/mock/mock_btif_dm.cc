@@ -94,7 +94,6 @@ void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* /* p_key_mask */, Oc
 void btif_dm_get_remote_services(RawAddress /* remote_addr */, tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
 }
-void btif_dm_hh_open_failed(RawAddress* /* bdaddr */) { inc_func_call_count(__func__); }
 void btif_dm_init(uid_set_t* /* set */) { inc_func_call_count(__func__); }
 DEV_CLASS btif_dm_get_local_class_of_device() {
   inc_func_call_count(__func__);

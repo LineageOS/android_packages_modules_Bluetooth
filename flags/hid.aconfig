@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "simpler_hid_connection_policy"
-    namespace: "bluetooth"
-    description: "Simplify native HID host connection policy enforcement"
-    bug: "404590499"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hogp_encryption_collision"
     namespace: "bluetooth"
     description: "HOGP host may not be able to proceed with connection if the link is getting encrypted"
