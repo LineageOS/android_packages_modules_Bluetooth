@@ -191,6 +191,21 @@ struct iso_impl {
     }
   }
 
+  void notify_iso_traffic_active(bool is_active) {
+    const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+    if (com_android_bluetooth_flags_btm_multi_client_support()) {
+      for (const auto& [_, iso_client] : iso_clients_) {
+        if (iso_client.iso_traffic_active_callback) {
+          iso_client.iso_traffic_active_callback(is_active);
+        }
+      }
+    } else {
+      for (const auto& callback : iso_traffic_active_callbacks_list_) {
+        callback(is_active);
+      }
+    }
+  }
+
   void on_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint8_t* stream, uint16_t len) {
     uint8_t cis_cnt;
     uint16_t conn_handle;
@@ -249,25 +264,9 @@ struct iso_impl {
     log::assert_that(iso_client->cig_callbacks != nullptr, "Invalid CIG callbacks");
     iso_client->cig_callbacks->OnCigEvent(evt_code, &evt);
 
-    if (evt_code == kIsoEventCigOnCreateCmpl) {
-      {
-        const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-        if (stream_sz_before_cig_create) {
-          // Only set active for the first stream setup.
-          return;
-        }
-        if (com_android_bluetooth_flags_btm_multi_client_support()) {
-          for (const auto& [_, iso_client] : iso_clients_) {
-            if (iso_client.iso_traffic_active_callback) {
-              iso_client.iso_traffic_active_callback(true);
-            }
-          }
-        } else {
-          for (const auto& callback : iso_traffic_active_callbacks_list_) {
-            callback(true);
-          }
-        }
-      }
+    if (evt_code == kIsoEventCigOnCreateCmpl && !stream_sz_before_cig_create) {
+      // Only set active for the first stream setup.
+      notify_iso_traffic_active(true);
     }
   }
 
@@ -332,23 +331,12 @@ struct iso_impl {
       }
     }
 
-    {
-      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-      if (conn_hdl_to_iso_stream_map_.size()) {
-        return;
-      }
-      if (com_android_bluetooth_flags_btm_multi_client_support()) {
-        for (const auto& [_, iso_client] : iso_clients_) {
-          if (iso_client.iso_traffic_active_callback) {
-            iso_client.iso_traffic_active_callback(false);
-          }
-        }
-      } else {
-        for (const auto& callback : iso_traffic_active_callbacks_list_) {
-          callback(false);
-        }
-      }
+    if (conn_hdl_to_iso_stream_map_.size()) {
+      return;
     }
+
+    // Only set inactive after last stream removal.
+    notify_iso_traffic_active(false);
   }
 
   void remove_cig(uint8_t cig_id, bool force) {
@@ -887,24 +875,12 @@ struct iso_impl {
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
     client_cbs->big_callbacks->OnBigEvent(kIsoEventBigOnCreateCmpl, &evt);
 
-    {
-      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-      if (stream_sz_before_big_create) {
-        // Only set active for the first stream setup.
-        return;
-      }
-      if (com_android_bluetooth_flags_btm_multi_client_support()) {
-        for (const auto& [_, iso_client] : iso_clients_) {
-          if (iso_client.iso_traffic_active_callback) {
-            iso_client.iso_traffic_active_callback(true);
-          }
-        }
-      } else {
-        for (const auto& callback : iso_traffic_active_callbacks_list_) {
-          callback(true);
-        }
-      }
+    if (stream_sz_before_big_create) {
+      return;
     }
+
+    // Only set active for the first stream setup.
+    notify_iso_traffic_active(true);
   }
 
   void process_terminate_big_cmpl_pkt(uint8_t len, uint8_t* data) {
@@ -929,23 +905,12 @@ struct iso_impl {
     }
     big_handle_to_group_map_.erase(group_it);
 
-    {
-      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-      if (conn_hdl_to_iso_stream_map_.size()) {
-        return;
-      }
-      if (com_android_bluetooth_flags_btm_multi_client_support()) {
-        for (const auto& [_, iso_client] : iso_clients_) {
-          if (iso_client.iso_traffic_active_callback) {
-            iso_client.iso_traffic_active_callback(false);
-          }
-        }
-      } else {
-        for (const auto& callback : iso_traffic_active_callbacks_list_) {
-          callback(false);
-        }
-      }
+    if (conn_hdl_to_iso_stream_map_.size()) {
+      return;
     }
+
+    // Only set inactive after last stream removal.
+    notify_iso_traffic_active(false);
   }
 
   void create_big(IsoClientHandle client_handle, uint8_t big_handle,
