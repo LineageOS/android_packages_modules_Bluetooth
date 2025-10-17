@@ -74,20 +74,6 @@ enum tBTM_KEY_MISSING_REASON : uint8_t {
 #define BTM_PAIR_FLAGS_WE_CANCEL_DD 0x40     /* set this bit when cancelling a bonding procedure */
 #define BTM_PAIR_FLAGS_LE_ACTIVE 0x80        /* use this bit when SMP pairing is active */
 
-// Todo(b/405594028): Remove when separate_encryption_queue is released
-typedef struct {
-  bool is_mux;
-  RawAddress bd_addr;
-  uint16_t psm;
-  bool is_orig;
-  tBTM_SEC_CALLBACK* p_callback;
-  tSMP_SIRK_CALLBACK* p_sirk_callback;
-  void* p_ref_data;
-  uint16_t rfcomm_security_requirement;
-  tBT_TRANSPORT transport;
-  tBTM_BLE_SEC_ACT sec_act;
-} tBTM_SEC_QUEUE_ENTRY;
-
 // Pending service access request
 typedef struct {
   RawAddress bd_addr;

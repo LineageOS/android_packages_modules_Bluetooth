@@ -24,7 +24,6 @@
 
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
-#include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
 #include "stack/btm/btm_sec_int_types.h"
 #include "stack/btm/security_device_record.h"
@@ -74,10 +73,6 @@ public:
   tBTM_MKEY_CALLBACK* mkey_cback{nullptr};
 
   RawAddress connecting_bda;
-
-  // Todo(b/405594028): Remove when separate_encryption_queue is released
-  fixed_queue_t* sec_pending_q{
-          nullptr}; /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
 
   // Pending service access requests in tBTM_SERVICE_ACCESS_REQ format
   std::list<tBTM_SERVICE_ACCESS_REQ> service_access_q = {};

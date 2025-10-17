@@ -82,16 +82,6 @@ flag {
 }
 
 flag {
-    name: "separate_encryption_queue"
-    namespace: "bluetooth"
-    description: "Create separate pending encryption queue"
-    bug: "405594028"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ignore_le_smp_conn_when_sm_over_br_progress"
     namespace: "bluetooth"
     description: "Ignore LE SMP connection when smp over br is still in progress"
