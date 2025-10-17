@@ -1329,14 +1329,15 @@ public class AdapterService extends Service {
     @VisibleForTesting
     void setProfileServiceState(int profileId, int state) {
         Instant start = Instant.now();
-        String logHdr = "setProfileServiceState(" + getProfileName(profileId) + ", " + state + "):";
+        var profile = getProfileName(profileId);
+        var header = "setProfileServiceState(" + profile + ", " + nameForState(state) + "): ";
 
         if (state == BluetoothAdapter.STATE_ON) {
             if (mStartedProfiles.containsKey(profileId)) {
-                Log.wtf(TAG, logHdr + " profile is already started");
+                Log.wtf(TAG, header + "Profile is already started");
                 return;
             }
-            Log.i(TAG, logHdr + " starting profile");
+            Log.i(TAG, header + "Starting profile…");
             final var profileService = constructProfile(profileId);
             mStartedProfiles.put(profileId, profileService);
             addProfile(profileService);
@@ -1345,10 +1346,10 @@ public class AdapterService extends Service {
         } else if (state == BluetoothAdapter.STATE_OFF) {
             ProfileService profileService = mStartedProfiles.remove(profileId);
             if (profileService == null) {
-                Log.wtf(TAG, logHdr + " profile is already stopped");
+                Log.wtf(TAG, header + "Profile is already stopped");
                 return;
             }
-            Log.i(TAG, logHdr + " stopping profile");
+            Log.i(TAG, header + "Stopping profile…");
             profileService.setAvailable(false);
             onProfileServiceStateChanged(profileService, BluetoothAdapter.STATE_OFF);
             removeProfile(profileService);
@@ -1356,7 +1357,7 @@ public class AdapterService extends Service {
             profileService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
         }
         Instant end = Instant.now();
-        Log.i(TAG, logHdr + " completed in " + Duration.between(start, end).toMillis() + "ms");
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     /**
