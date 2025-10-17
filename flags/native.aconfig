@@ -64,3 +64,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "add_watchdog_with_timeout"
+    namespace : "bluetooth"
+    description: "Implement a watchdog mechanism with a set timeout to monitor the AIDL backend callback. If the timeout is exceeded, trigger the generation of a tombstone."
+    bug: "452756731"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
