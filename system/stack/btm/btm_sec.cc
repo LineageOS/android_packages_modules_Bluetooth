@@ -1632,9 +1632,7 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_or
     if (rc == tBTM_STATUS::BTM_CMD_STARTED) {
       btm_sec_queue_service_access_request(bd_addr, BT_PSM_RFCOMM, is_originator, security_required,
                                            p_callback, p_ref_data);
-      if (com_android_bluetooth_flags_separate_encryption_queue()) {
-        return tBTM_STATUS::BTM_CMD_STORED;
-      }
+      return tBTM_STATUS::BTM_CMD_STORED;
     } else /* rc == tBTM_STATUS::BTM_SUCCESS */
     {
       if (access_secure_service_from_temp_bond(p_dev_rec, is_originator, security_required)) {
@@ -1858,47 +1856,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-static void btm_sec_check_pending_reqs_(void) {
-  if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
-    /* First, resubmit L2CAP requests */
-    if (btm_sec_cb.l2c_service_access_pending) {
-      btm_sec_cb.l2c_service_access_pending = false;
-      l2cu_resubmit_pending_sec_req(nullptr);
-    }
-
-    /* Now, re-submit anything in the mux queue */
-    fixed_queue_t* bq = btm_sec_cb.sec_pending_q;
-
-    btm_sec_cb.sec_pending_q = fixed_queue_new(SIZE_MAX);
-
-    tBTM_SEC_QUEUE_ENTRY* p_e;
-    while ((p_e = (tBTM_SEC_QUEUE_ENTRY*)fixed_queue_try_dequeue(bq)) != NULL) {
-      /* Check that the ACL is still up before starting security procedures */
-      if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(p_e->bd_addr, p_e->transport)) {
-        if (p_e->psm != 0) {
-          log::verbose("PSM:0x{:04x} Is_Orig:{}", p_e->psm, p_e->is_orig);
-
-          btm_sec_service_access_request(p_e->bd_addr, p_e->is_orig,
-                                         p_e->rfcomm_security_requirement, p_e->p_callback,
-                                         p_e->p_ref_data);
-        } else {
-          BTM_SetEncryption(p_e->bd_addr, p_e->transport, p_e->p_callback, p_e->p_ref_data,
-                            p_e->sec_act);
-        }
-      }
-
-      osi_free(p_e);
-    }
-    fixed_queue_free(bq, NULL);
-  }
-}
-
 static void btm_sec_check_pending_reqs(void) {
-  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
-    btm_sec_check_pending_reqs_();
-    return;
-  }
-
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
     log::warn("Busy state {} device {}", btm_pair_state_descr(btm_sec_cb.pairing_state),
               btm_sec_cb.link_spec);
@@ -4934,37 +4892,9 @@ void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
  * Description      Return state description for tracing
  *
  ******************************************************************************/
-// Todo(b/405594028): Remove when separate_encryption_queue is released
-static bool btm_sec_queue_service_access_request_(const RawAddress& bd_addr, uint16_t psm,
-                                                  bool is_orig, uint16_t security_required,
-                                                  tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
-  tBTM_SEC_QUEUE_ENTRY* p_e = (tBTM_SEC_QUEUE_ENTRY*)osi_malloc(sizeof(tBTM_SEC_QUEUE_ENTRY));
-
-  p_e->psm = psm;
-  p_e->is_orig = is_orig;
-  p_e->p_callback = p_callback;
-  p_e->p_ref_data = p_ref_data;
-  p_e->transport = BT_TRANSPORT_BR_EDR;
-  p_e->sec_act = BTM_BLE_SEC_NONE;
-  p_e->bd_addr = bd_addr;
-  p_e->rfcomm_security_requirement = security_required;
-
-  log::verbose("PSM: 0x{:04x}  Is_Orig: {}  security_required: 0x{:x}", psm, is_orig,
-               security_required);
-
-  fixed_queue_enqueue(btm_sec_cb.sec_pending_q, p_e);
-
-  return true;
-}
-
 static bool btm_sec_queue_service_access_request(const RawAddress& bd_addr, uint16_t psm,
                                                  bool is_orig, uint16_t security_required,
                                                  tBTM_SEC_CALLBACK* callback, void* ref) {
-  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
-    return btm_sec_queue_service_access_request_(bd_addr, psm, is_orig, security_required, callback,
-                                                 ref);
-  }
-
   if (callback == nullptr) {
     log::warn("Callback is null, device: {}, psm: 0x{:04x}", bd_addr, psm);
     return false;
@@ -5037,37 +4967,9 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
   return rv;
 }
 
-/*******************************************************************************
- *
- * Function         btm_sec_queue_encrypt_request
- *
- * Description      Enqueue encryption request when device has active security
- *                  process pending.
- *
- ******************************************************************************/
-// Todo(b/405594028): Remove when separate_encryption_queue is released
-static void btm_sec_queue_encrypt_request_(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                                           tBTM_BLE_SEC_ACT sec_act, tBTM_SEC_CALLBACK* p_callback,
-                                           void* p_ref_data) {
-  tBTM_SEC_QUEUE_ENTRY* p_e = (tBTM_SEC_QUEUE_ENTRY*)osi_malloc(sizeof(tBTM_SEC_QUEUE_ENTRY) + 1);
-
-  p_e->psm = 0; /* if PSM 0, encryption request */
-  p_e->p_callback = p_callback;
-  p_e->p_ref_data = p_ref_data;
-  p_e->transport = transport;
-  p_e->sec_act = sec_act;
-  p_e->bd_addr = bd_addr;
-  fixed_queue_enqueue(btm_sec_cb.sec_pending_q, p_e);
-}
-
 static void btm_sec_queue_encrypt_request(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                           tBTM_BLE_SEC_ACT sec_act, tBTM_SEC_CALLBACK* callback,
                                           void* ref) {
-  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
-    btm_sec_queue_encrypt_request_(bd_addr, transport, sec_act, callback, ref);
-    return;
-  }
-
   if (callback == nullptr) {
     log::warn("Callback is null, device: {}, transport: {}, sec_act: 0x{:x}", bd_addr, transport,
               sec_act);
@@ -5105,42 +5007,8 @@ static void btm_sec_queue_encrypt_request(const RawAddress& bd_addr, tBT_TRANSPO
  * Returns          void
  *
  ******************************************************************************/
-// Todo(b/405594028): Remove when separate_encryption_queue is released
-static void btm_sec_check_pending_enc_req_(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANSPORT transport,
-                                          bool encrypted) {
-  if (fixed_queue_is_empty(btm_sec_cb.sec_pending_q)) {
-    return;
-  }
-
-  const tBTM_STATUS res = encrypted ? tBTM_STATUS::BTM_SUCCESS : tBTM_STATUS::BTM_ERR_PROCESSING;
-  list_t* list = fixed_queue_get_list(btm_sec_cb.sec_pending_q);
-  for (const list_node_t* node = list_begin(list); node != list_end(list);) {
-    tBTM_SEC_QUEUE_ENTRY* p_e = (tBTM_SEC_QUEUE_ENTRY*)list_node(node);
-    node = list_next(node);
-    log::debug("btm_sec_check_pending_enc_req : sec_act=0x{:x}", p_e->sec_act);
-    if (p_e->bd_addr == p_dev_rec->bd_addr && p_e->psm == 0 && p_e->transport == transport) {
-      /*pending LE encryption requests can have sec_act as BTM_BLE_SEC_NONE*/
-      if (!encrypted || transport == BT_TRANSPORT_BR_EDR || p_e->sec_act == BTM_BLE_SEC_NONE ||
-          p_e->sec_act == BTM_BLE_SEC_ENCRYPT || p_e->sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM ||
-          (p_e->sec_act == BTM_BLE_SEC_ENCRYPT_MITM &&
-           p_dev_rec->sec_rec.sec_flags & BTM_SEC_LE_AUTHENTICATED)) {
-        if (p_e->p_callback) {
-          (*p_e->p_callback)(p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
-        }
-        fixed_queue_try_remove_from_queue(btm_sec_cb.sec_pending_q, (void*)p_e);
-        osi_free(p_e);
-      }
-    }
-  }
-}
-
 static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANSPORT transport,
                                           bool encrypted) {
-  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
-    btm_sec_check_pending_enc_req_(p_dev_rec, transport, encrypted);
-    return;
-  }
-
   // Remove all the encryption requests for the given device and transport, and inform the callers.
   // If the link is encrypted but the link key is not authenticated, retry the security procedure.
   auto predicate = [p_dev_rec, transport, encrypted](const tBTM_SEC_REQ& req) {

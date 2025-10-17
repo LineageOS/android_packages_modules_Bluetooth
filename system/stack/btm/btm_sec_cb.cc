@@ -28,7 +28,6 @@
 #include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "osi/include/allocator.h"
-#include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/security_device_record.h"
@@ -46,10 +45,6 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   connecting_bda = RawAddress::kEmpty;
   connecting_dc = kDevClassEmpty;
 
-  if (!com_android_bluetooth_flags_separate_encryption_queue()) {
-    sec_pending_q = fixed_queue_new(SIZE_MAX);
-  }
-
   sec_collision_timer = alarm_new("btm.sec_collision_timer");
   pairing_timer = alarm_new("btm.pairing_timer");
   execution_wait_timer = alarm_new("btm.execution_wait_timer");
@@ -66,13 +61,8 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
 }
 
 void tBTM_SEC_CB::Free() {
-  if (com_android_bluetooth_flags_separate_encryption_queue()) {
-    service_access_q.clear();
-    enc_request_q.clear();
-  } else {
-    fixed_queue_free(sec_pending_q, nullptr);
-    sec_pending_q = nullptr;
-  }
+  service_access_q.clear();
+  enc_request_q.clear();
 
   list_free(sec_dev_rec);
   sec_dev_rec = nullptr;
