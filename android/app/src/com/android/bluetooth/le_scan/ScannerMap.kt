@@ -160,17 +160,56 @@ class ScannerMap {
     /** Logs debug information for registered apps and their scan statistics. */
     fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
         sb.append("LE Scanner:\n")
-        for (app in apps) {
-            sb.append("  uid: ${app.uid}, app: ${app.name}, scannerId: ${app.id}")
 
-            app.attributionTag?.let { tag -> sb.append(", tag: $tag") }
+        if (apps.isNotEmpty()) {
+            val colWidthUid = 5 // "10300"
+            val colWidthId = 2 // Longest: "32"
+            val colWidthPackage = apps.maxOfOrNull { it.name.length } ?: 30
+            val colWidthTag = apps.maxOfOrNull { it.attributionTag?.length ?: 0 } ?: 0
+            val colTagExists = colWidthTag != 0
+            val reportDelayMsColWidth =
+                if (settingsMap.values.any { it.reportDelayMillis > 0 }) 15 else 0
+            val colReportDelayExists = reportDelayMsColWidth != 0
 
-            settingsMap[app.id]?.let { settings ->
-                if (settings.reportDelayMillis > 0) {
-                    sb.append(", reportDelayMillis: ${settings.reportDelayMillis}")
-                }
-            }
+            // Headers
+            val headerUid = "UID".padEnd(colWidthUid)
+            val headerId = "ID".padEnd(colWidthId)
+            val headerPackage = "PACKAGE".padEnd(colWidthPackage)
+            val headerTag = "TAG".padEnd(colWidthTag)
+            val headerReportDelayMs = "REPORT_DELAY_MS" // Last column doesn't need padding
+            sb.append("  $headerUid $headerId $headerPackage")
+            if (colTagExists) sb.append(" $headerTag")
+            if (colReportDelayExists) sb.append(" $headerReportDelayMs")
             sb.append("\n")
+
+            // Separators
+            val separatorUid = "-".repeat(colWidthUid)
+            val separatorId = "-".repeat(colWidthId)
+            val separatorPackage = "-".repeat(colWidthPackage)
+            val separatorTag = "-".repeat(colWidthTag)
+            val separatorReportDelayMs = "-".repeat(reportDelayMsColWidth)
+            sb.append("  $separatorUid $separatorId $separatorPackage")
+            if (colTagExists) sb.append(" $separatorTag")
+            if (colReportDelayExists) sb.append(" $separatorReportDelayMs")
+            sb.append("\n")
+
+            // Values
+            apps.forEach { app ->
+                val uid = app.uid.toString().padEnd(colWidthUid)
+                val id = app.id.toString().padEnd(colWidthId)
+                val name = app.name.padEnd(colWidthPackage)
+                sb.append("  $uid $id $name")
+                if (colTagExists) {
+                    val tag = (app.attributionTag ?: "").padEnd(colWidthTag)
+                    sb.append(" $tag")
+                }
+                if (colReportDelayExists) {
+                    val reportDelayMs = settingsMap[app.id]?.reportDelayMillis ?: 0
+                    val reportDelayString = if (reportDelayMs > 0) reportDelayMs.toString() else ""
+                    sb.append(" ${reportDelayString.padEnd(reportDelayMsColWidth)}")
+                }
+                sb.append("\n")
+            }
         }
 
         sb.append("\nLE Scanner Map:\n")
