@@ -114,13 +114,9 @@ public final class UidTraffic implements Cloneable, Parcelable {
 
     @Override
     public String toString() {
-        return "UidTraffic{mAppUid="
-                + mAppUid
-                + ", mRxBytes="
-                + mRxBytes
-                + ", mTxBytes="
-                + mTxBytes
-                + '}';
+        return ("UidTraffic [mAppUid=" + mAppUid)
+                + (", mRxBytes=" + mRxBytes)
+                + (", mTxBytes=" + mTxBytes + "]");
     }
 
     public static final @NonNull Creator<UidTraffic> CREATOR =

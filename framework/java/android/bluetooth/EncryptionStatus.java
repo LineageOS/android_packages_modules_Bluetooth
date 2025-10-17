@@ -71,11 +71,8 @@ public final class EncryptionStatus {
 
     @Override
     public String toString() {
-        return "EncryptionStatus{keySize="
-                + mParcel.mKeySize
-                + ", algorithm="
-                + mParcel.mAlgorithm
-                + "}";
+        return ("EncryptionStatus{keySize=" + mParcel.mKeySize)
+                + (", algorithm=" + mParcel.mAlgorithm + "]");
     }
 
     @Hide

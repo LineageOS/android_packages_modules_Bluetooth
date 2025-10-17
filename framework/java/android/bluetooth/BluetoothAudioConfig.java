@@ -59,13 +59,9 @@ public final class BluetoothAudioConfig implements Parcelable {
 
     @Override
     public String toString() {
-        return "{mSampleRate:"
-                + mSampleRate
-                + ",mChannelConfig:"
-                + mChannelConfig
-                + ",mAudioFormat:"
-                + mAudioFormat
-                + "}";
+        return ("BluetoothAudioConfig [mSampleRate=" + mSampleRate)
+                + (", mChannelConfig=" + mChannelConfig)
+                + (", mAudioFormat=" + mAudioFormat + "]");
     }
 
     @Override

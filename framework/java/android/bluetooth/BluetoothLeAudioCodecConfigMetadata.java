@@ -132,13 +132,11 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeAudioCodecConfigMetadata{"
-                + ("audioLocation=" + mAudioLocation)
+        return ("BluetoothLeAudioCodecConfigMetadata [audioLocation=" + mAudioLocation)
                 + (", sampleRate=" + mSampleRate)
                 + (", frameDuration=" + mFrameDuration)
                 + (", octetsPerFrame=" + mOctetsPerFrame)
-                + (", rawMetadata=" + Arrays.toString(mRawMetadata))
-                + '}';
+                + (", rawMetadata=" + Arrays.toString(mRawMetadata) + "]");
     }
 
     /**

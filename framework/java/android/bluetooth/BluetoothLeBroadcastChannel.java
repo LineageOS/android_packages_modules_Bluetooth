@@ -68,11 +68,9 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeBroadcastChannel{"
-                + ("isSelected=" + mIsSelected)
+        return ("BluetoothLeBroadcastChannel [isSelected=" + mIsSelected)
                 + (", channelIndex=" + mChannelIndex)
-                + (", codecMetadata=" + mCodecMetadata)
-                + '}';
+                + (", codecMetadata=" + mCodecMetadata + "]");
     }
 
     /**
