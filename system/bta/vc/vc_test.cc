@@ -640,20 +640,13 @@ protected:
   }
 
   void TestReadCharacteristic(const RawAddress& address, uint16_t conn_id,
-                              std::vector<uint16_t> handles) {
+                              std::vector<uint16_t> /*handles*/) {
     SetSampleDatabase(conn_id);
     TestAppRegister();
     TestConnect(address);
     GetConnectedEvent(address, conn_id);
 
-    if (!com_android_bluetooth_flags_le_ase_read_multiple_variable()) {
-      EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, _, _, _)).WillRepeatedly(DoDefault());
-      for (auto const& handle : handles) {
-        EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, handle, _, _)).WillOnce(DoDefault());
-      }
-    } else {
-      EXPECT_CALL(gatt_queue, ReadMultiCharacteristic(_, _, _, _)).Times(testing::AtLeast(1));
-    }
+    EXPECT_CALL(gatt_queue, ReadMultiCharacteristic(_, _, _, _)).Times(testing::AtLeast(1));
 
     GetSearchCompleteEvent(conn_id);
     TestAppUnregister();
@@ -1140,22 +1133,7 @@ TEST_F(VolumeControlTest, test_read_vcs_volume_flags) {
   TestReadCharacteristic(GetTestAddress(0), 1, handles);
 }
 
-TEST_F(VolumeControlTest, test_read_vocs_volume_offset) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(false);
-  const RawAddress test_address = GetTestAddress(0);
-  EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 2, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutLocationChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutLocationChanged(test_address, 2, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 2, _)).Times(1);
-  std::vector<uint16_t> handles({0x0072, 0x0082});
-  TestReadCharacteristic(test_address, 1, handles);
-  Mock::VerifyAndClearExpectations(&callbacks);
-}
-
 TEST_F(VolumeControlTest, test_read_vocs_volume_offset_multi) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
   const RawAddress test_address = GetTestAddress(0);
   EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 1, _)).Times(1);
   EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 2, _)).Times(1);
@@ -1164,28 +1142,11 @@ TEST_F(VolumeControlTest, test_read_vocs_volume_offset_multi) {
   EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 1, _)).Times(1);
   EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 2, _)).Times(1);
   std::vector<uint16_t> handles({0x0072, 0x0082});
-  TestReadCharacteristic(test_address, 1, handles);
-  Mock::VerifyAndClearExpectations(&callbacks);
-}
-
-TEST_F(VolumeControlTest, test_read_vocs_offset_location) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(false);
-  const RawAddress test_address = GetTestAddress(0);
-  // It is called twice because after connect read is done once and second read is coming from the
-  // test.
-  EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 2, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutLocationChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutLocationChanged(test_address, 2, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 2, _)).Times(1);
-  std::vector<uint16_t> handles({0x0075, 0x0085});
   TestReadCharacteristic(test_address, 1, handles);
   Mock::VerifyAndClearExpectations(&callbacks);
 }
 
 TEST_F(VolumeControlTest, test_read_vocs_offset_location_multi) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
   const RawAddress test_address = GetTestAddress(0);
   // It is called twice because after connect read is done once and second read is coming from the
   // test.
@@ -1200,21 +1161,7 @@ TEST_F(VolumeControlTest, test_read_vocs_offset_location_multi) {
   Mock::VerifyAndClearExpectations(&callbacks);
 }
 
-TEST_F(VolumeControlTest, test_read_vocs_output_description) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(false);
-  const RawAddress test_address = GetTestAddress(0);
-  EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 2, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutLocationChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutLocationChanged(test_address, 2, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 1, _)).Times(1);
-  EXPECT_CALL(callbacks, OnExtAudioOutDescriptionChanged(test_address, 2, _)).Times(1);
-  std::vector<uint16_t> handles({0x0079, 0x008a});
-  TestReadCharacteristic(test_address, 1, handles);
-}
-
 TEST_F(VolumeControlTest, test_read_vocs_output_description_multi) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
   const RawAddress test_address = GetTestAddress(0);
   EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 1, _)).Times(1);
   EXPECT_CALL(callbacks, OnExtAudioOutVolumeOffsetChanged(test_address, 2, _)).Times(1);

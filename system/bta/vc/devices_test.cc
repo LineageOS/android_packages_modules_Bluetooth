@@ -777,45 +777,7 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_handles_first) {
   }
 }
 
-TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(false);
-
-  SetSampleDatabase1();
-
-  tGATT_IF gatt_if = 0x0001;
-
-  std::vector<uint16_t> expected_to_read{
-          0x0022 /* audio input state 1 */,        0x0025 /* gain setting properties 1 */,
-          0x0027 /* audio input type 1 */,         0x0029 /* audio input status 1 */,
-          0x002e /* audio input description 1 */,  0x0042 /* audio input state 2 */,
-          0x0045 /* gain setting properties 2 */,  0x0047 /* audio input type 2 */,
-          0x0049 /* audio input status 2 */,       0x004e /* audio input description 2 */,
-          0x0062 /* audio output state 1 */,       0x0065 /* audio output location 1 */,
-          0x0069 /* audio output description 1 */, 0x0082 /* audio output state 1 */,
-          0x0085 /* audio output location 1 */,    0x008a /* audio output description 1 */};
-
-  for (uint16_t handle : expected_to_read) {
-    EXPECT_CALL(gatt_queue, ReadCharacteristic(_, handle, _, _));
-  }
-
-  EXPECT_CALL(gatt_queue, WriteDescriptor(_, _, _, GATT_WRITE, _, _)).Times(0);
-  EXPECT_CALL(gatt_interface, RegisterForNotifications(_, _, _)).Times(0);
-
-  auto chrc_read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
-                         uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
-  auto chrc_multi_read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/,
-                               tBTA_GATTC_MULTI& /*handles*/, uint16_t /*len*/, uint8_t* /*value*/,
-                               void* /*data*/) {};
-  auto cccd_write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
-                          uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
-  device->EnqueueRemainingRequests(gatt_if, chrc_read_cb, chrc_multi_read_cb, cccd_write_cb);
-  Mock::VerifyAndClearExpectations(&gatt_queue);
-  Mock::VerifyAndClearExpectations(&gatt_interface);
-}
-
 TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread_single_read_remaining) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
-
   SetSampleDatabase3();
 
   tGATT_IF gatt_if = 0x0001;
@@ -880,8 +842,6 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread_single
 }
 
 TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread) {
-  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
-
   SetSampleDatabase1();
 
   tGATT_IF gatt_if = 0x0001;
