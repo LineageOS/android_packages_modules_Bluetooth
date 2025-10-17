@@ -80,11 +80,6 @@ object ScanUtil {
     const val DELIVERY_MODE_ON_FOUND_LOST = 1
     const val DELIVERY_MODE_BATCH = 2
 
-    // The default floor value for LE batch scan report delays greater than 0
-    const val DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L
-
-    const val ACTION_REFRESH_BATCHED_SCAN = "com.android.bluetooth.gatt.REFRESH_BATCHED_SCAN"
-
     // Weights representing the duty cycle of each scan mode
     const val WEIGHT_OPPORTUNISTIC = 0
     const val WEIGHT_SCREEN_OFF_LOW_POWER = 5
