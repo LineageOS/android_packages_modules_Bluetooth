@@ -65,6 +65,37 @@ class HFService(HFPServicer):
     def on_connect(self, connection: bumble.device.Connection):
         logging.info(f'ACL connection with peer {connection.peer_address}')
 
+    def on_sco_request(self, connection: bumble.device.Connection, link_type: int,
+                       protocol: HfProtocol):
+        logging.info('SCO request received')
+        if connection == protocol.dlc.multiplexer.l2cap_channel.connection:
+            if link_type == hci.HCI_Connection_Complete_Event.LinkType.SCO:
+                esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.SCO_CVSD_D1]
+            elif protocol.active_codec == hfp.AudioCodec.MSBC:
+                esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_MSBC_T2]
+            elif protocol.active_codec == hfp.AudioCodec.CVSD:
+                esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_CVSD_S4]
+            else:
+                raise RuntimeError("unknown active codec")
+
+            bumble_utils.cancel_on_event(
+                connection,
+                connection.EVENT_DISCONNECTION,
+                connection.device.send_command(
+                    hci.HCI_Enhanced_Accept_Synchronous_Connection_Request_Command(
+                        bd_addr=connection.peer_address, **esco_parameters.asdict())),
+            )
+
+    def register_sco_handler(self, session: rfcomm.DLC, conn: bumble.device.Connection):
+        logging.info('Registering SCO handler')
+        handler = functools.partial(self.on_sco_request, protocol=self.hf_protocol)
+        conn.device.on(self.device.EVENT_SCO_REQUEST, handler)
+        session.multiplexer.l2cap_channel.once(
+            session.multiplexer.l2cap_channel.EVENT_CLOSE,
+            lambda: session.multiplexer.l2cap_channel.connection.device.remove_listener(
+                self.device.EVENT_SCO_REQUEST, handler),
+        )
+
     def on_dlc(self, dlc: rfcomm.DLC):
         logging.info(f'DLC connected {dlc}')
 
@@ -72,35 +103,9 @@ class HFService(HFPServicer):
         self.hf_protocol = HfProtocol(dlc, self.hf_config)
         asyncio.create_task(self.hf_protocol.run())
 
-        def on_sco_request(connection: bumble.device.Connection, link_type: int,
-                           protocol: HfProtocol):
-            logging.info('SCO request received')
-            if connection == protocol.dlc.multiplexer.l2cap_channel.connection:
-                if link_type == hci.HCI_Connection_Complete_Event.LinkType.SCO:
-                    esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.SCO_CVSD_D1]
-                elif protocol.active_codec == hfp.AudioCodec.MSBC:
-                    esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_MSBC_T2]
-                elif protocol.active_codec == hfp.AudioCodec.CVSD:
-                    esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_CVSD_S4]
-                else:
-                    raise RuntimeError("unknown active codec")
-
-                bumble_utils.cancel_on_event(
-                    connection,
-                    connection.EVENT_DISCONNECTION,
-                    connection.device.send_command(
-                        hci.HCI_Enhanced_Accept_Synchronous_Connection_Request_Command(
-                            bd_addr=connection.peer_address, **esco_parameters.asdict())),
-                )
-
-        logging.info('Registering SCO handler')
-        handler = functools.partial(on_sco_request, protocol=self.hf_protocol)
-        dlc.multiplexer.l2cap_channel.connection.device.on(self.device.EVENT_SCO_REQUEST, handler)
-        dlc.multiplexer.l2cap_channel.once(
-            dlc.multiplexer.l2cap_channel.EVENT_CLOSE,
-            lambda: dlc.multiplexer.l2cap_channel.connection.device.remove_listener(
-                self.device.EVENT_SCO_REQUEST, handler),
-        )
+        # Register the SCO handler for incoming connections
+        conn = dlc.multiplexer.l2cap_channel.connection
+        self.register_sco_handler(dlc, conn)
 
     @utils.rpc
     async def EnableSlcAsHandsfree(self, request: EnableSlcAsHandsfreeRequest,
@@ -153,6 +158,9 @@ class HFService(HFPServicer):
 
         self.hf_protocol = HfProtocol(session, self.hf_config)
         asyncio.create_task(self.hf_protocol.run())
+
+        # Register the SCO handler for outgoing connections
+        self.register_sco_handler(session, conn)
 
         return empty_pb2.Empty()
 
