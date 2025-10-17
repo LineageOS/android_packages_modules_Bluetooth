@@ -628,8 +628,7 @@ static void hh_disable_handler(const bthh_status_t& status) {
 
 static void hh_open_handler(tBTA_HH_CONN& conn) {
   if (!hh_connection_allowed(conn.link_spec)) {
-    if (com_android_bluetooth_flags_early_incoming_hid_connection() && conn.status == BTHH_OK &&
-        conn.link_spec.transport == BT_TRANSPORT_BR_EDR) {
+    if (conn.status == BTHH_OK && conn.link_spec.transport == BT_TRANSPORT_BR_EDR) {
       hh_save_incoming_connection(conn);
       return;
     }
@@ -674,8 +673,7 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
 static void hh_close_handler(tBTA_HH_CBDATA& dev_status) {
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_handle(dev_status.handle);
   if (p_dev == nullptr) {
-    if (com_android_bluetooth_flags_early_incoming_hid_connection() &&
-        btif_hh_cb.pending_incoming_connection.handle == dev_status.handle &&
+    if (btif_hh_cb.pending_incoming_connection.handle == dev_status.handle &&
         !btif_hh_cb.pending_incoming_connection.link_spec.addrt.bda.IsEmpty()) {
       log::warn("Pending incoming connection {} closed, handle: {} ",
                 btif_hh_cb.pending_incoming_connection.link_spec, dev_status.handle);
@@ -936,8 +934,7 @@ void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
   link_spec.transport = BT_TRANSPORT_LE;
 
-  if (com_android_bluetooth_flags_early_incoming_hid_connection() &&
-      btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
+  if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
     log::warn("Pending incoming connection {} closed, handle: {} ",
               btif_hh_cb.pending_incoming_connection.link_spec,
               btif_hh_cb.pending_incoming_connection.handle);
@@ -964,8 +961,7 @@ static void btif_hh_remove_device_in_jni_thread(const tAclLinkSpec& link_spec) {
   BTHH_LOG_LINK(link_spec);
   bool announce_vup = false;
 
-  if (com_android_bluetooth_flags_early_incoming_hid_connection() &&
-      btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
+  if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
     log::warn("Pending incoming connection {} closed, handle: {} ",
               btif_hh_cb.pending_incoming_connection.link_spec,
               btif_hh_cb.pending_incoming_connection.handle);
@@ -1220,8 +1216,7 @@ BtStatus btif_hh_connect(const tAclLinkSpec& link_spec) {
             link_spec));
   }
 
-  if (com_android_bluetooth_flags_early_incoming_hid_connection() &&
-      btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
+  if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
     log::info("Resume pending incoming connection {}", link_spec);
     tBTA_HH_CONN conn = btif_hh_cb.pending_incoming_connection;
     alarm_cancel(btif_hh_cb.incoming_connection_timer);
