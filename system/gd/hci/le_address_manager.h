@@ -15,13 +15,13 @@
  */
 #pragma once
 
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/bt_octets.h>
 
 #include <map>
 #include <variant>
 
-#include "common/callback.h"
 #include "hci/address_with_type.h"
 #include "hci/controller.h"
 #include "os/alarm.h"
@@ -47,7 +47,7 @@ struct PrivateAddressIntervalRange {
 
 class LeAddressManager {
 public:
-  LeAddressManager(common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
+  LeAddressManager(base::RepeatingCallback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
                    os::Handler* handler, Address public_address, uint8_t accept_list_size,
                    uint8_t resolving_list_size, Controller* controller);
   virtual ~LeAddressManager();
@@ -170,7 +170,7 @@ private:
   template <class View>
   void on_command_complete(CommandCompleteView view);
 
-  common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command_;
+  base::RepeatingCallback<void(std::unique_ptr<CommandBuilder>)> enqueue_command_;
   os::Handler* handler_;
   std::map<LeAddressManagerCallback*, ClientState> registered_clients_;
 
