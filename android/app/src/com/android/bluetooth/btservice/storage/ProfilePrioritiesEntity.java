@@ -21,7 +21,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import androidx.room.Entity;
 
 @Entity
-class ProfilePrioritiesEntity {
+public class ProfilePrioritiesEntity {
     /* Bluetooth profile priorities*/
     public int a2dp_connection_policy;
     public int a2dp_sink_connection_policy;

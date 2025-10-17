@@ -118,6 +118,7 @@ constructor(
                     Log.wtf(TAG, "Data corrupted. Resetting to default value.", it)
                     UserStorage.getDefaultInstance()
                 },
+            migrations = listOf(MigrationFromRoomDatabase(adapterService)),
             scope = ioScope,
         )
     }

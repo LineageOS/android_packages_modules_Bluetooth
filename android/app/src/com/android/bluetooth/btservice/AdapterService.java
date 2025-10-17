@@ -693,11 +693,6 @@ public class AdapterService extends Service {
         // This is the first method call with a context attached
         if (Flags.mainlineBetaStorage()) {
             factoryResetIfNeeded();
-            try {
-                DataMigration.run(this);
-            } catch (Exception e) {
-                Log.e(TAG, "Migration failure: ", e);
-            }
             mStorage.initialize();
         }
         mUserManager = requireNonNull(getSystemService(UserManager.class));
