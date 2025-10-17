@@ -1006,8 +1006,8 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if);
  *                  service cannot be added.
  *
  ******************************************************************************/
-typedef base::Callback<void(tGATT_STATUS status, int server_if,
-                            std::vector<btgatt_db_element_t> service)>
+typedef base::OnceCallback<void(tGATT_STATUS status, int server_if,
+                                std::vector<btgatt_db_element_t> service)>
         BTA_GATTS_AddServiceCb;
 
 void BTA_GATTS_AddService(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,

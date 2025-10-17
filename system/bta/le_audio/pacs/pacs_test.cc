@@ -264,7 +264,7 @@ protected:
                               }
                               auto status = service.empty() ? tGATT_STATUS::GATT_ERROR
                                                             : tGATT_STATUS::GATT_SUCCESS;
-                              cb.Run(status, server_if, service_db_);
+                              std::move(cb).Run(status, server_if, service_db_);
                             }));
 
     // Register GATT service instance providing the service descriptor
@@ -1478,7 +1478,7 @@ TEST_F(PacsRegistrationFailureTests, AddServiceFailsDeathTest) {
   ON_CALL(gatt_server_interface_, AddService(server_if_, _, _))
           .WillByDefault([](tGATT_IF server_if, std::vector<btgatt_db_element_t> /* service */,
                             BTA_GATTS_AddServiceCb cb) {
-            cb.Run(tGATT_STATUS::GATT_ERROR, server_if, {});
+            std::move(cb).Run(tGATT_STATUS::GATT_ERROR, server_if, {});
           });
 
   // Register GATT service instance providing the service descriptor
@@ -1538,7 +1538,7 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithSourcePacsOnly) {
             for (auto& el : service) {
               el.attribute_handle = handle_idx++;
             }
-            cb.Run(tGATT_STATUS::GATT_SUCCESS, 0xDE, service);
+            std::move(cb).Run(tGATT_STATUS::GATT_SUCCESS, 0xDE, service);
           });
 
   // Register GATT service instance
@@ -1577,7 +1577,7 @@ TEST_F(PacsCustomDescriptorTests, RegisterGattServiceWithSinkPacsOnly) {
             for (auto& el : service) {
               el.attribute_handle = handle_idx++;
             }
-            cb.Run(tGATT_STATUS::GATT_SUCCESS, 0xDE, service);
+            std::move(cb).Run(tGATT_STATUS::GATT_SUCCESS, 0xDE, service);
           });
 
   // Register GATT service instance
