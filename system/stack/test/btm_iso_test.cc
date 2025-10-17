@@ -302,6 +302,17 @@ protected:
 
               std::move(cb).Run(buf.data(), buf.size());
             });
+
+    // Default mock RemoveCig action
+    ON_CALL(hcic_interface_, RemoveCig)
+            .WillByDefault([](auto cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+              uint8_t hci_mock_rsp_buffer[2];
+              uint8_t* p = hci_mock_rsp_buffer;
+              UINT8_TO_STREAM(p, HCI_SUCCESS);
+              UINT8_TO_STREAM(p, cig_id);
+              std::move(cb).Run(hci_mock_rsp_buffer, sizeof(hci_mock_rsp_buffer));
+              return 0;
+            });
   }
 
   virtual void CleanupIsoManager() {
@@ -795,8 +806,9 @@ TEST_F(IsoManagerDeathTest, RemoveCigWithNoSuchCig) {
 }
 
 TEST_F(IsoManagerDeathTest, RemoveCigForceNoSuchCig) {
-  EXPECT_CALL(hcic_interface_, RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id, _)).Times(1);
-  IsoManager::GetInstance()->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id, true);
+  ASSERT_DEATH(
+          IsoManager::GetInstance()->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id, true),
+          "Invalid iso_client for cig");
 }
 
 TEST_F(IsoManagerDeathTest, DeregisterDuringCigCreation) {
@@ -1754,6 +1766,9 @@ TEST_F(IsoManagerDeathTest, CreateSameBigTwice) {
   ASSERT_EQ(evt.status, HCI_SUCCESS);
   ASSERT_EQ(evt.big_handle, 0x01);
   ASSERT_EQ(evt.conn_handles.size(), kDefaultBigParams.num_bis);
+
+  ASSERT_DEATH(IsoManager::GetInstance()->CreateBig(client_handle_, 0x01, kDefaultBigParams),
+               "already exists");
 }
 
 TEST_F(IsoManagerTest, TerminateBigHciCall) {
