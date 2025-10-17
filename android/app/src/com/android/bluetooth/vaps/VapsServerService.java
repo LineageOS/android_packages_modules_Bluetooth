@@ -43,37 +43,12 @@ import com.android.internal.annotations.VisibleForTesting;
 public class VapsServerService extends ProfileService {
     private static final String TAG = VapsServerService.class.getSimpleName();
 
-    private static VapsServerService sVapsServer;
     private final AssistantSettingObserver mAssistantSettingObserver;
     private final Handler mHandler;
     private final VapsServerNativeInterface mNativeInterface;
 
     public static boolean isEnabled() {
         return (Flags.addProfileAsIntentExtra() ? true : false);
-    }
-
-    @VisibleForTesting
-    static synchronized void setVapsServer(VapsServerService instance) {
-        Log.d(TAG, "setVapsServer(): set to: " + instance);
-        sVapsServer = instance;
-    }
-
-    /**
-     * Get the VapsServerService instance
-     *
-     * @return VapsServerService instance
-     */
-    public static synchronized VapsServerService getVapsServerService() {
-        if (sVapsServer == null) {
-            Log.w(TAG, "getVapsServerService(): service is NULL");
-            return null;
-        }
-
-        if (!sVapsServer.isAvailable()) {
-            Log.w(TAG, "getVapsServerService(): service is not available");
-            return null;
-        }
-        return sVapsServer;
     }
 
     public VapsServerService(AdapterService adapterService) {
@@ -103,9 +78,6 @@ public class VapsServerService extends ProfileService {
         // Initialize native interface
         mNativeInterface.init();
 
-        // Mark service as started
-        setVapsServer(this);
-
         mAssistantSettingObserver = new AssistantSettingObserver();
         getContentResolver()
                 .registerContentObserver(
@@ -120,14 +92,6 @@ public class VapsServerService extends ProfileService {
     @Override
     public void cleanup() {
         Log.i(TAG, "Cleanup VapsServer Service");
-
-        if (sVapsServer == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
-        // Marks service as stopped
-        setVapsServer(null);
 
         // Unregister Handler and stop all queued messages.
         mHandler.removeCallbacksAndMessages(null);
@@ -218,7 +182,7 @@ public class VapsServerService extends ProfileService {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         Log.d(TAG, "activateVoiceRecognition: ");
         try {
-            sVapsServer.startActivity(intent);
+            mAdapterService.startActivity(intent);
         } catch (ActivityNotFoundException e) {
             Log.e(TAG, "activateVoiceRecognition, failed due to activity not found for " + intent);
             return false;
@@ -231,7 +195,7 @@ public class VapsServerService extends ProfileService {
         Intent intent = new Intent(Intent.ACTION_STOP_VOICE_COMMAND);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothProfile.EXTRA_PROFILE, BluetoothProfile.LE_AUDIO);
-        sVapsServer.sendBroadcast(intent);
+        mAdapterService.sendBroadcast(intent);
         return true;
     }
 
