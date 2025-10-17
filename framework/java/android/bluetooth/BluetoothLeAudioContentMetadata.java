@@ -70,11 +70,9 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeAudioContentMetadata{"
-                + ("programInfo=" + mProgramInfo)
+        return ("BluetoothLeAudioContentMetadata [programInfo=" + mProgramInfo)
                 + (", language=" + mLanguage)
-                + (", rawMetadata=" + Arrays.toString(mRawMetadata))
-                + '}';
+                + (", rawMetadata=" + Arrays.toString(mRawMetadata) + "]");
     }
 
     /**

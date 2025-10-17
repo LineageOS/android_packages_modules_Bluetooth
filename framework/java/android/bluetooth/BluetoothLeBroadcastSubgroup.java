@@ -72,12 +72,10 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeBroadcastSubgroup{"
-                + ("codecId=" + mCodecId)
+        return ("BluetoothLeBroadcastSubgroup [codecId=" + mCodecId)
                 + (", codecSpecificConfig=" + mCodecSpecificConfig)
                 + (", contentMetadata=" + mContentMetadata)
-                + (", channels=" + mChannels)
-                + '}';
+                + (", channels=" + mChannels + "]");
     }
 
     /**

@@ -91,15 +91,14 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothActivityEnergyInfo{"
+        return "BluetoothActivityEnergyInfo ["
                 + (" mTimestamp=" + mTimestamp)
                 + (" mBluetoothStackState=" + mBluetoothStackState)
                 + (" mControllerTxTimeMs=" + mControllerTxTimeMs)
                 + (" mControllerRxTimeMs=" + mControllerRxTimeMs)
                 + (" mControllerIdleTimeMs=" + mControllerIdleTimeMs)
                 + (" mControllerEnergyUsed=" + mControllerEnergyUsed)
-                + (" mUidTraffic=" + mUidTraffic)
-                + " }";
+                + (" mUidTraffic=" + mUidTraffic + "]");
     }
 
     public static final @NonNull Parcelable.Creator<BluetoothActivityEnergyInfo> CREATOR =
