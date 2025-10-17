@@ -23,7 +23,7 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
+import static com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -504,14 +504,14 @@ public class ScanControllerTest {
         long reportDelayFloorHigher = DEFAULT_REPORT_DELAY_FLOOR_MS + 1;
         ScanSettings scanSettings =
                 new ScanSettings.Builder().setReportDelay(reportDelayFloorHigher).build();
-        ScanSettings newScanSettings = mScanController.enforceReportDelayFloor(scanSettings);
+        ScanSettings newScanSettings = BatchScanUtil.enforceReportDelayFloor(scanSettings);
 
         assertThat(newScanSettings.getReportDelayMillis())
                 .isEqualTo(scanSettings.getReportDelayMillis());
 
         ScanSettings scanSettingsFloor = new ScanSettings.Builder().setReportDelay(1).build();
         ScanSettings newScanSettingsFloor =
-                mScanController.enforceReportDelayFloor(scanSettingsFloor);
+                BatchScanUtil.enforceReportDelayFloor(scanSettingsFloor);
 
         assertThat(newScanSettingsFloor.getReportDelayMillis())
                 .isEqualTo(DEFAULT_REPORT_DELAY_FLOOR_MS);

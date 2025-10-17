@@ -18,7 +18,6 @@ package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
-import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
 import static java.util.Objects.requireNonNull;
@@ -54,7 +53,6 @@ import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
 import android.os.WorkSource;
-import android.provider.DeviceConfig;
 import android.text.format.DateUtils;
 import android.util.Log;
 
@@ -1089,7 +1087,7 @@ public class ScanController {
         enforceScanThread();
         Log.d(TAG, "Start scan with filters");
         String callingPackage = source.getPackageName();
-        settings = enforceReportDelayFloor(settings);
+        settings = BatchScanUtil.enforceReportDelayFloor(settings);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         final ScanClient scanClient =
                 new ScanClient(uid, scannerId, settings, filters, Binder.getCallingUserHandle());
@@ -1177,7 +1175,7 @@ public class ScanController {
             AttributionSource source) {
         enforceScanThread();
         var header = "registerPiAndStartScan(): ";
-        settings = enforceReportDelayFloor(settings);
+        settings = BatchScanUtil.enforceReportDelayFloor(settings);
         UUID uuid = UUID.randomUUID();
         String callingPackage = source.getPackageName();
         int callingUid = source.getUid();
@@ -1391,61 +1389,6 @@ public class ScanController {
                             handleDeadScanClient(client);
                         }
                     });
-        }
-    }
-
-    /**
-     * Ensures the report delay is either 0 or at least the floor value.
-     *
-     * @see ScanUtil#DEFAULT_REPORT_DELAY_FLOOR_MS
-     * @param settings are the scan settings passed into a request to start le scanning
-     * @return the passed in ScanSettings object if the report delay is 0 or above the floor value;
-     *     a new ScanSettings object with the report delay being the floor value if the original
-     *     report delay was between 0 and the floor value (exclusive of both)
-     */
-    @VisibleForTesting
-    ScanSettings enforceReportDelayFloor(ScanSettings settings) {
-        final long originalDelay = settings.getReportDelayMillis();
-        var header = "enforceReportDelayFloor(): ";
-        if (originalDelay == 0) {
-            Log.d(TAG, header + "Report delay is 0, skipping floor enforcement");
-            return settings;
-        }
-
-        // Need to clear identity to pass device config permission check
-        final long callerToken = Binder.clearCallingIdentity();
-        try {
-            final long floor =
-                    DeviceConfig.getLong(
-                            DeviceConfig.NAMESPACE_BLUETOOTH,
-                            "report_delay",
-                            DEFAULT_REPORT_DELAY_FLOOR_MS);
-            if (originalDelay >= floor) {
-                Log.d(
-                        TAG,
-                        header
-                                + ("Report delay=" + originalDelay + "ms is above or equal")
-                                + (" to floor " + floor + "ms, no changes"));
-                return settings;
-            } else {
-                Log.d(
-                        TAG,
-                        header
-                                + ("Enforcing floor as originalDelay=" + originalDelay + "ms is")
-                                + (" below floor, setting to=" + floor + "ms"));
-                return new ScanSettings.Builder()
-                        .setCallbackType(settings.getCallbackType())
-                        .setLegacy(settings.getLegacy())
-                        .setMatchMode(settings.getMatchMode())
-                        .setNumOfMatches(settings.getNumOfMatches())
-                        .setPhy(settings.getPhy())
-                        .setReportDelay(floor)
-                        .setScanMode(settings.getScanMode())
-                        .setScanResultType(settings.getScanResultType())
-                        .build();
-            }
-        } finally {
-            Binder.restoreCallingIdentity(callerToken);
         }
     }
 
