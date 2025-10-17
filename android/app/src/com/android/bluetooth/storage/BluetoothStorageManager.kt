@@ -122,6 +122,7 @@ constructor(
                 listOf(
                     MigrationFromRoomDatabase(adapterService),
                     MigrationFromAccessPermissions(adapterService),
+                    MigrationFromAvrcpVolume(adapterService),
                 ),
             scope = ioScope,
         )
