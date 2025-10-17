@@ -34,14 +34,4 @@ RawAddress addressFromJByteArray(JNIEnv* env, jbyteArray object) {
   return address;
 }
 
-std::optional<RawAddress> addressFromNullableJByteArray(JNIEnv* env, jbyteArray object) {
-  jbyte* address_bytes = env->GetByteArrayElements(object, nullptr);
-  std::optional<RawAddress> address =
-          address_bytes ? std::optional<RawAddress>(RawAddress::FromOctets(
-                                  reinterpret_cast<const uint8_t*>(address_bytes)))
-                        : std::nullopt;
-  env->ReleaseByteArrayElements(object, address_bytes, 0);
-  return address;
-}
-
 }  // namespace android
