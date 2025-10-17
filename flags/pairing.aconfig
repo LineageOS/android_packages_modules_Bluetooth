@@ -122,16 +122,6 @@ flag {
 }
 
 flag {
-    name: "bonding_initiator_state_reset"
-    namespace: "bluetooth"
-    description: "Reset bonding initiator state only if both transports are disconnected"
-    bug: "413483250"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "identity_to_pseudo_addr"
     namespace: "bluetooth"
     description: "Convert identity address to pseudo address during connection"
