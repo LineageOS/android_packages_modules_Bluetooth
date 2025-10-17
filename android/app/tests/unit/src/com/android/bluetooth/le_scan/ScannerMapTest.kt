@@ -65,7 +65,7 @@ class ScannerMapTest {
         val scannerMap = ScannerMap()
         val context = InstrumentationRegistry.getInstrumentation().context
         val intent = PendingIntent.getBroadcast(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-        val info = ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID)
+        val info = ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID, PID)
         val uuid = UUID.randomUUID()
         val app =
             scannerMap.addWithPendingIntent(
@@ -89,9 +89,11 @@ class ScannerMapTest {
         val scannerMap = ScannerMap()
         val uuid = UUID.randomUUID()
         val appUid = Binder.getCallingUid()
+        val appPid = Binder.getCallingPid()
         val app =
             scannerMap.addWithCallback(
                 appUid,
+                appPid,
                 APP_NAME,
                 uuid,
                 attributionSource,
@@ -114,9 +116,11 @@ class ScannerMapTest {
         val scannerMap = ScannerMap()
         val uuid = UUID.randomUUID()
         val appUid = 1234
+        val appPid = Binder.getCallingPid()
         val app =
             scannerMap.addWithCallback(
                 appUid,
+                appPid,
                 APP_NAME,
                 uuid,
                 attributionSource,
@@ -137,8 +141,10 @@ class ScannerMapTest {
         val sb = StringBuilder()
         val scannerMap = ScannerMap()
         val appUid = 1234
+        val appPid = Binder.getCallingPid()
         scannerMap.addWithCallback(
             appUid,
+            appPid,
             APP_NAME,
             UUID.randomUUID(),
             attributionSource,
@@ -152,6 +158,7 @@ class ScannerMapTest {
     companion object {
         private const val APP_NAME = "com.android.what.a.name"
         private const val UID = 12345
+        private const val PID = 19435
         private const val SCANNER_ID = 321
     }
 }

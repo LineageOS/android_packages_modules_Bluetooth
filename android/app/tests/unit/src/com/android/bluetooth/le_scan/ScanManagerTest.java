@@ -249,8 +249,16 @@ public class ScanManagerTest {
 
         mScanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS;
         final int appUid = 1234;
+        final int appPid = 5678;
         mAppScanStats =
-                spy(new AppScanStats(appUid, TEST_APP_NAME, null, mAdapterService, mTimeProvider));
+                spy(
+                        new AppScanStats(
+                                appUid,
+                                appPid,
+                                TEST_APP_NAME,
+                                null,
+                                mAdapterService,
+                                mTimeProvider));
     }
 
     @After
@@ -1302,8 +1310,16 @@ public class ScanManagerTest {
             WorkSource source = new WorkSource(UID, PACKAGE_NAME);
             // Create app scan stats for the app
             final int appUid = 1234;
+            final int appPid = 5678;
             AppScanStats appScanStats =
-                    spy(new AppScanStats(appUid, APP_NAME, source, mAdapterService, mTimeProvider));
+                    spy(
+                            new AppScanStats(
+                                    appUid,
+                                    appPid,
+                                    APP_NAME,
+                                    source,
+                                    mAdapterService,
+                                    mTimeProvider));
             // Set app importance as Foreground Service for the stats
             appScanStats.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
             // Create scan client for the app, which also records scan start
@@ -1372,8 +1388,16 @@ public class ScanManagerTest {
         WorkSource source1 = new WorkSource(UID_1, PACKAGE_NAME_1);
         // Create app scan stats for the first app
         final int appUid1 = 12341;
+        final int appPid1 = 5678;
         AppScanStats appScanStats1 =
-                spy(new AppScanStats(appUid1, APP_NAME_1, source1, mAdapterService, mTimeProvider));
+                spy(
+                        new AppScanStats(
+                                appUid1,
+                                appPid1,
+                                APP_NAME_1,
+                                source1,
+                                mAdapterService,
+                                mTimeProvider));
         // Set app importance as Foreground Service for the stats
         appScanStats1.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the first app
@@ -1390,8 +1414,16 @@ public class ScanManagerTest {
         WorkSource source2 = new WorkSource(UID_2, PACKAGE_NAME_2);
         // Create app scan stats for the second app
         final int appUid2 = 12342;
+        final int appPid2 = 56782;
         AppScanStats appScanStats2 =
-                spy(new AppScanStats(appUid2, APP_NAME_2, source2, mAdapterService, mTimeProvider));
+                spy(
+                        new AppScanStats(
+                                appUid2,
+                                appPid2,
+                                APP_NAME_2,
+                                source2,
+                                mAdapterService,
+                                mTimeProvider));
         // Set app importance as Foreground Service for the stats
         appScanStats2.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the second app
@@ -1424,8 +1456,16 @@ public class ScanManagerTest {
         WorkSource source3 = new WorkSource(UID_3, PACKAGE_NAME_3);
         // Create app scan stats for the third app
         final int appUid3 = 12343;
+        final int appPid3 = 56783;
         AppScanStats appScanStats3 =
-                spy(new AppScanStats(appUid3, APP_NAME_3, source3, mAdapterService, mTimeProvider));
+                spy(
+                        new AppScanStats(
+                                appUid3,
+                                appPid3,
+                                APP_NAME_3,
+                                source3,
+                                mAdapterService,
+                                mTimeProvider));
         // Set app importance as Foreground Service for the stats
         appScanStats3.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the third app
@@ -1459,8 +1499,16 @@ public class ScanManagerTest {
         WorkSource source4 = new WorkSource(UID_4, PACKAGE_NAME_4);
         // Create app scan stats for the fourth app
         final int appUid4 = 12344;
+        final int appPid4 = 56784;
         AppScanStats appScanStats4 =
-                spy(new AppScanStats(appUid4, APP_NAME_4, source4, mAdapterService, mTimeProvider));
+                spy(
+                        new AppScanStats(
+                                appUid4,
+                                appPid4,
+                                APP_NAME_4,
+                                source4,
+                                mAdapterService,
+                                mTimeProvider));
         // Set app importance as Foreground Service for the stats
         appScanStats4.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the fourth app

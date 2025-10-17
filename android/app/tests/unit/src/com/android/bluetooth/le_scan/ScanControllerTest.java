@@ -386,6 +386,7 @@ public class ScanControllerTest {
         verify(mScannerMap)
                 .addWithCallback(
                         anyInt(),
+                        anyInt(),
                         anyString(),
                         any(),
                         eq(mAttributionSource),
@@ -408,7 +409,7 @@ public class ScanControllerTest {
         List<ScanFilter> filters = new ArrayList<>();
         ScanController.PendingIntentInfo pii =
                 new ScanController.PendingIntentInfo(
-                        null, new ScanSettings.Builder().build(), filters, null, 0);
+                        null, new ScanSettings.Builder().build(), filters, null, 0, 0);
         doReturn(pii).when(mApp).getInfo();
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
@@ -425,7 +426,7 @@ public class ScanControllerTest {
         List<ScanFilter> filters = new ArrayList<>();
         ScanController.PendingIntentInfo pii =
                 new ScanController.PendingIntentInfo(
-                        null, new ScanSettings.Builder().build(), filters, null, 123);
+                        null, new ScanSettings.Builder().build(), filters, null, 123, 456);
         doReturn(pii).when(mApp).getInfo();
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);

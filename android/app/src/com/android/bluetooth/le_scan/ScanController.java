@@ -335,7 +335,8 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters,
             String callingPackage,
-            int callingUid) {
+            int callingUid,
+            int callingPid) {
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof PendingIntentInfo)) {
@@ -1034,13 +1035,17 @@ public class ScanController {
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
         enforceScanThread();
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        final int pid = Flags.scanControllerThread() ? source.getPid() : Binder.getCallingPid();
         final var appName =
                 ScanUtil.appNameOrUnknown(
                         mAdapterService.getPackageManager().getNameForUid(uid), uid);
         final var uuid = UUID.randomUUID();
-        Log.d(TAG, "registerScanner(): uid=" + uid + ", app=" + appName + ", UUID=" + uuid);
+        Log.d(
+                TAG,
+                ("registerScanner(): uid=" + uid + ", pid=" + uid + ", ")
+                        + ("app=" + appName + ", UUID=" + uuid));
         mScannerMap.addWithCallback(
-                uid, appName, uuid, source, workSource, callback, mAdapterService);
+                uid, pid, appName, uuid, source, workSource, callback, mAdapterService);
         mScanManager.registerScanner(uuid);
     }
 
@@ -1176,9 +1181,15 @@ public class ScanController {
         UUID uuid = UUID.randomUUID();
         String callingPackage = source.getPackageName();
         int callingUid = source.getUid();
+        int callingPid = source.getPid();
         PendingIntentInfo piInfo =
-                new PendingIntentInfo(pendingIntent, settings, filters, callingPackage, callingUid);
-        Log.d(TAG, header + "UUID=" + uuid + " package=" + callingPackage + " uid=" + callingUid);
+                new PendingIntentInfo(
+                        pendingIntent, settings, filters, callingPackage, callingUid, callingPid);
+        Log.d(
+                TAG,
+                header
+                        + ("UUID=" + uuid + " package=" + callingPackage)
+                        + (" uid=" + callingUid + " pid=" + callingPid));
 
         // Don't start scan if the Pi scan already in mScannerMap.
         if (mScannerMap.getByPendingIntentInfo(pendingIntent) != null) {
