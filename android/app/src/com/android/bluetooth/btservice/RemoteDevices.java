@@ -1604,13 +1604,11 @@ public class RemoteDevices {
             if (getBondState(device) == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
-            } else if (getBondState(device) == BluetoothDevice.BOND_NONE) {
+            } else if (getBondState(device) == BluetoothDevice.BOND_NONE
+                    && deviceProperties.getBondingInitiator()
+                            != DeviceProperties.BONDING_INITIATOR_NONE) {
                 // Don't remove device properties if bonding never attempted
-                if (!Flags.nonBondedDeviceProperties()
-                        || deviceProperties.getBondingInitiator()
-                                != DeviceProperties.BONDING_INITIATOR_NONE) {
-                    removeDeviceProperties(Utils.getAddressStringFromByte(address));
-                }
+                removeDeviceProperties(Utils.getAddressStringFromByte(address));
             }
             if (Flags.fixIntentSelectionForAcl()
                     || state == BluetoothAdapter.STATE_ON
