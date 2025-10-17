@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
 #include <unistd.h>
 
 #include <functional>
@@ -23,8 +25,6 @@
 #include <queue>
 
 #include "common/bidi_queue.h"
-#include "common/bind.h"
-#include "common/callback.h"
 #include "os/handler.h"
 #include "os/queue.h"
 
@@ -34,12 +34,12 @@ namespace os {
 template <typename T>
 class MockIQueueEnqueue : public IQueueEnqueue<T> {
 public:
-  using EnqueueCallback = common::Callback<std::unique_ptr<T>()>;
+  using EnqueueCallback = base::RepeatingCallback<std::unique_ptr<T>()>;
 
   virtual void RegisterEnqueue(Handler* handler, EnqueueCallback callback) {
     log::assert_that(registered_handler == nullptr, "assert failed: registered_handler == nullptr");
     registered_handler = handler;
-    registered_enqueue_callback = callback;
+    registered_enqueue_callback = std::move(callback);
   }
 
   virtual void UnregisterEnqueue() {
@@ -63,12 +63,12 @@ public:
 template <typename T>
 class MockIQueueDequeue : public IQueueDequeue<T> {
 public:
-  using DequeueCallback = common::Callback<void()>;
+  using DequeueCallback = base::RepeatingCallback<void()>;
 
   virtual void RegisterDequeue(Handler* handler, DequeueCallback callback) {
     log::assert_that(registered_handler == nullptr, "assert failed: registered_handler == nullptr");
     registered_handler = handler;
-    registered_dequeue_callback = callback;
+    registered_dequeue_callback = std::move(callback);
   }
 
   virtual void UnregisterDequeue() {
