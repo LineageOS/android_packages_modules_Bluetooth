@@ -1457,7 +1457,7 @@ LeAudioBroadcasterImpl::BroadcastAdvertisingCallbacks
 } /* namespace */
 
 void LeAudioBroadcaster::Initialize(bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks,
-                                    base::Callback<bool()> audio_hal_verifier) {
+                                    base::OnceCallback<bool()> audio_hal_verifier) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   log::info("");
   if (instance) {

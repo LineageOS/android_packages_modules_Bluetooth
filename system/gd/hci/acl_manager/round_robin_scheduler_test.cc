@@ -26,7 +26,6 @@
 #include "packet/raw_builder.h"
 
 using ::bluetooth::common::BidiQueue;
-using ::bluetooth::common::Callback;
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
 
