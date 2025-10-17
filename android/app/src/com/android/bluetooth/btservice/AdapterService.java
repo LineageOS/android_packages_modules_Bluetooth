@@ -2787,6 +2787,11 @@ public class AdapterService extends Service {
                     callingPackage, new DiscoveringPackageInfo(permission, hasDisavowedLocation));
 
             if (Flags.ignoreRedundantDiscoveryIfSameState() && discovering) {
+                // If discovery is already running, broadcast the ACTION_DISCOVERY_STARTED intent.
+                Log.d(TAG, "startDiscovery: discovery is already running");
+                Intent intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+                intent.setPackage(callingPackage);
+                sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
                 return true;
             }
         }
