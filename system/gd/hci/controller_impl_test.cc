@@ -57,6 +57,47 @@ uint16_t feature_spec_version = 55;
 
 namespace {
 
+uint64_t kDefaultLeFeatures =
+        (uint64_t)LLFeaturesBits::LE_ENCRYPTION |
+        (uint64_t)LLFeaturesBits::CONNECTION_PARAMETERS_REQUEST_PROCEDURE |
+        (uint64_t)LLFeaturesBits::EXTENDED_REJECT_INDICATION |
+        (uint64_t)LLFeaturesBits::PERIPHERAL_INITIATED_FEATURES_EXCHANGE |
+        (uint64_t)LLFeaturesBits::LE_PING |
+        (uint64_t)LLFeaturesBits::LE_DATA_PACKET_LENGTH_EXTENSION |
+        (uint64_t)LLFeaturesBits::LL_PRIVACY |
+        (uint64_t)LLFeaturesBits::EXTENDED_SCANNER_FILTER_POLICIES |
+        (uint64_t)LLFeaturesBits::LE_2M_PHY |
+        (uint64_t)LLFeaturesBits::STABLE_MODULATION_INDEX_TRANSMITTER |
+        (uint64_t)LLFeaturesBits::STABLE_MODULATION_INDEX_RECEIVER |
+        (uint64_t)LLFeaturesBits::LE_CODED_PHY | (uint64_t)LLFeaturesBits::LE_EXTENDED_ADVERTISING |
+        (uint64_t)LLFeaturesBits::LE_PERIODIC_ADVERTISING |
+        (uint64_t)LLFeaturesBits::CHANNEL_SELECTION_ALGORITHM_2 |
+        (uint64_t)LLFeaturesBits::LE_POWER_CLASS_1 |
+        (uint64_t)LLFeaturesBits::MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE |
+        (uint64_t)LLFeaturesBits::CONNECTION_CTE_REQUEST |
+        (uint64_t)LLFeaturesBits::CONNECTION_CTE_RESPONSE |
+        (uint64_t)LLFeaturesBits::CONNECTIONLESS_CTE_TRANSMITTER |
+        (uint64_t)LLFeaturesBits::CONNECTIONLESS_CTE_RECEIVER |
+        (uint64_t)LLFeaturesBits::ANTENNA_SWITCHING_DURING_CTE_TRANSMISSION |
+        (uint64_t)LLFeaturesBits::ANTENNA_SWITCHING_DURING_CTE_RECEPTION |
+        (uint64_t)LLFeaturesBits::RECEIVING_CONSTANT_TONE_EXTENSIONS |
+        (uint64_t)LLFeaturesBits::PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER |
+        (uint64_t)LLFeaturesBits::PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT |
+        (uint64_t)LLFeaturesBits::SLEEP_CLOCK_ACCURACY_UPDATES |
+        (uint64_t)LLFeaturesBits::REMOTE_PUBLIC_KEY_VALIDATION |
+        (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_CENTRAL |
+        (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL |
+        (uint64_t)LLFeaturesBits::ISOCHRONOUS_BROADCASTER |
+        (uint64_t)LLFeaturesBits::SYNCHRONIZED_RECEIVER |
+        (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT |
+        (uint64_t)LLFeaturesBits::LE_POWER_CONTROL_REQUEST |
+        (uint64_t)LLFeaturesBits::LE_POWER_CONTROL_REQUEST_BIS |
+        (uint64_t)LLFeaturesBits::LE_PATH_LOSS_MONITORING |
+        (uint64_t)LLFeaturesBits::PERIODIC_ADVERTISING_ADI_SUPPORT |
+        (uint64_t)LLFeaturesBits::CONNECTION_SUBRATING |
+        (uint64_t)LLFeaturesBits::CONNECTION_SUBRATING_HOST_SUPPORT |
+        (uint64_t)LLFeaturesBits::CHANNEL_CLASSIFICATION;
+
 class HciLayerFakeForController : public HciLayerFake {
 public:
   HciLayerFakeForController(os::Handler* handler) : HciLayerFake(handler) {}
@@ -165,71 +206,8 @@ public:
                                                                   le_buffer_size, iso_buffer_size);
       } break;
       case (OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES): {
-        std::vector<LLFeaturesBits> supported_features = {
-                LLFeaturesBits::LE_ENCRYPTION,
-                LLFeaturesBits::CONNECTION_PARAMETERS_REQUEST_PROCEDURE,
-                LLFeaturesBits::EXTENDED_REJECT_INDICATION,
-                LLFeaturesBits::PERIPHERAL_INITIATED_FEATURES_EXCHANGE,
-                LLFeaturesBits::LE_PING,
-                LLFeaturesBits::LE_DATA_PACKET_LENGTH_EXTENSION,
-                LLFeaturesBits::LL_PRIVACY,
-                LLFeaturesBits::EXTENDED_SCANNER_FILTER_POLICIES,
-                LLFeaturesBits::LE_2M_PHY,
-                LLFeaturesBits::STABLE_MODULATION_INDEX_TRANSMITTER,
-                LLFeaturesBits::STABLE_MODULATION_INDEX_RECEIVER,
-                LLFeaturesBits::LE_CODED_PHY,
-                LLFeaturesBits::LE_EXTENDED_ADVERTISING,
-                LLFeaturesBits::LE_PERIODIC_ADVERTISING,
-                LLFeaturesBits::CHANNEL_SELECTION_ALGORITHM_2,
-                LLFeaturesBits::LE_POWER_CLASS_1,
-                LLFeaturesBits::MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE,
-                LLFeaturesBits::CONNECTION_CTE_REQUEST,
-                LLFeaturesBits::CONNECTION_CTE_RESPONSE,
-                LLFeaturesBits::CONNECTIONLESS_CTE_TRANSMITTER,
-                LLFeaturesBits::CONNECTIONLESS_CTE_RECEIVER,
-                LLFeaturesBits::ANTENNA_SWITCHING_DURING_CTE_TRANSMISSION,
-                LLFeaturesBits::ANTENNA_SWITCHING_DURING_CTE_RECEPTION,
-                LLFeaturesBits::RECEIVING_CONSTANT_TONE_EXTENSIONS,
-                LLFeaturesBits::PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER,
-                LLFeaturesBits::PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT,
-                LLFeaturesBits::SLEEP_CLOCK_ACCURACY_UPDATES,
-                LLFeaturesBits::REMOTE_PUBLIC_KEY_VALIDATION,
-                LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_CENTRAL,
-                LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL,
-                LLFeaturesBits::ISOCHRONOUS_BROADCASTER,
-                LLFeaturesBits::SYNCHRONIZED_RECEIVER,
-                LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT,
-                LLFeaturesBits::LE_POWER_CONTROL_REQUEST,
-                LLFeaturesBits::LE_POWER_CONTROL_REQUEST_BIS,
-                LLFeaturesBits::LE_PATH_LOSS_MONITORING,
-                LLFeaturesBits::PERIODIC_ADVERTISING_ADI_SUPPORT,
-                LLFeaturesBits::CONNECTION_SUBRATING,
-                LLFeaturesBits::CONNECTION_SUBRATING_HOST_SUPPORT,
-                LLFeaturesBits::CHANNEL_CLASSIFICATION};
-
-        // Initialize the feature mask to zero before building it.
-        uint64_t le_features_mask = 0;
-
-        // Iterate through the list of supported features and set the corresponding
-        // bit in the mask using a bitwise OR operation.
-        for (const auto& feature : supported_features) {
-          le_features_mask |= static_cast<uint64_t>(feature);
-        }
-
-        // Enable SupportsBleConnectedIsochronousStreamCentral (bit 28)
-        le_features_mask |= (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_CENTRAL;
-
-        // Enable SupportsBleConnectionSubrating (bit 37)
-        le_features_mask |= (uint64_t)LLFeaturesBits::CONNECTION_SUBRATING;
-
-        // Enable LL_PRIVACY (bit 6)
-        le_features_mask |= (uint64_t)LLFeaturesBits::LL_PRIVACY;
-
-        // Enable LE_EXTENDED_ADVERTISING (bit 13)
-        le_features_mask |= (uint64_t)LLFeaturesBits::LE_EXTENDED_ADVERTISING;
-
         event_builder = LeReadLocalSupportedFeaturesCompleteBuilder::Create(
-                num_packets, ErrorCode::SUCCESS, le_features_mask);
+                num_packets, ErrorCode::SUCCESS, le_features_to_return);
       } break;
       case (OpCode::LE_READ_SUPPORTED_STATES): {
         event_builder = LeReadSupportedStatesCompleteBuilder::Create(
@@ -349,6 +327,7 @@ public:
   }
 
   std::unique_ptr<EventBuilder> vendor_capabilities_ = nullptr;
+  uint64_t le_features_to_return = kDefaultLeFeatures;
   constexpr static uint16_t acl_data_packet_length = 1024;
   constexpr static uint8_t synchronous_data_packet_length = 60;
   constexpr static uint16_t total_num_acl_data_packets = 10;
