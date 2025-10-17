@@ -407,100 +407,69 @@ static jobjectArray getSupportedCodecTypesNative(JNIEnv* env) {
 
 static jboolean connectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
   log::info("{}", bd_addr);
+
   BtStatus status = btif_av_source_connect(bd_addr);
   if (!status) {
     log::error("Failed A2DP connection, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean disconnectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
   log::info("{}", bd_addr);
   BtStatus status = btif_av_source_disconnect(bd_addr);
   if (!status) {
     log::error("Failed A2DP disconnection, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean setSilenceDeviceNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                        jboolean silence) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
+  log::info("{} silence={}", bd_addr, silence);
 
-  RawAddress bd_addr = addr ? RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr))
-                            : RawAddress::kEmpty;
-
-  if (bd_addr == RawAddress::kEmpty) {
-    return JNI_FALSE;
-  }
-
-  log::info("{}: silence={}", bd_addr, silence);
   BtStatus status = btif_av_source_set_silence_device(bd_addr, silence);
   if (!status) {
     log::error("Failed A2DP set_silence_device, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-
-  RawAddress bd_addr = addr ? RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr))
-                            : RawAddress::kEmpty;
+  RawAddress bd_addr = addressFromNullableJByteArray(env, address).value_or(RawAddress::kEmpty);
 
   log::info("{}", bd_addr);
+
   BtStatus status = btif_av_source_set_active_device(bd_addr);
   if (!status) {
     log::error("Failed A2DP set_active_device, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean setCodecConfigPreferenceNative(JNIEnv* env, jobject object, jbyteArray address,
                                                jobjectArray codecConfigArray) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   std::vector<btav_a2dp_codec_config_t> codec_preferences =
           prepareCodecPreferences(env, object, codecConfigArray);
 
   log::info("{}: {}", bd_addr, btav_a2dp_codec_config_t::PrintCodecs(codec_preferences));
+
   BtStatus status = btif_av_source_set_codec_config_preference(bd_addr, codec_preferences);
   if (!status) {
     log::error("Failed codec configuration, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
