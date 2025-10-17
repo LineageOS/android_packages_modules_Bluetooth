@@ -438,7 +438,9 @@ struct iso_impl {
                      "Not connected");
 
     if (stream_ptr->state_flags & kStateFlagIsConnecting) {
-      stream_ptr->state_flags &= ~kStateFlagIsConnecting;
+      if (!com_android_bluetooth_flags_btm_iso_improve_canceling_iso()) {
+        stream_ptr->state_flags &= ~kStateFlagIsConnecting;
+      }
       stream_ptr->state_flags |= kStateFlagIsCancelled;
     }
 
@@ -707,6 +709,49 @@ struct iso_impl {
     hci->transmit_downward(packet, iso_buffer_size_);
   }
 
+  void send_disconnect_complete_event(IsoManagerCallbacks* client_cbs, uint8_t cig_id,
+                                      uint16_t handle, uint8_t reason) {
+    cis_disconnected_evt evt = {
+            .reason = reason,
+            .cig_id = cig_id,
+            .cis_conn_hdl = handle,
+    };
+
+    client_cbs->cig_callbacks->OnCisEvent(kIsoEventCisDisconnected, &evt);
+  }
+
+  void handle_race_on_canceling_cis(iso_stream* stream_ptr, uint16_t handle) {
+    /* In case of race when Host being sending HCI Disconnect just in time when Controller already
+     * scheduled CIS Established event, btm_iso should also handled it. We have two cases here:
+     * either CIS managed to be connected or failed to connect*/
+    stream_ptr->state_flags &= ~kStateFlagIsCancelled;
+    if (stream_ptr->state_flags & kStateFlagIsConnected) {
+      /* If CIS managed to connect while user requested to cancel, btm_iso should not notify upper
+       * layer about created CIS but silently wait for this disconnect completed event which will
+       * come soon.
+       */
+      log::warn(
+              "cis: {:#x} got connected just before it was canceled - do not send Established "
+              "event but instead wait for disconnection complete event. Flags: {:#x} ",
+              handle, stream_ptr->state_flags);
+
+      return;
+    }
+    /* In case CIS failed to be established just before host sent HCI DIsconnect. In such a case,
+     * just send Disconnect Complete event*/
+    log::warn(
+            "cis: {:#x} failed to connect just before it was canceled - send disconnect complete "
+            "event. Flags: {:#x}",
+            handle, stream_ptr->state_flags);
+    auto* client_cbs = get_client_callbacks_from_stream(stream_ptr);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for stream {}",
+                     stream_ptr->conn_handle);
+    log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
+
+    send_disconnect_complete_event(client_cbs, stream_ptr->group_id, handle,
+                                   HCI_ERR_CONN_CAUSE_LOCAL_HOST);
+  }
+
   void process_cis_est_pkt(uint8_t len, uint8_t* data) {
     cis_establish_cmpl_evt evt;
 
@@ -743,6 +788,8 @@ struct iso_impl {
     STREAM_TO_UINT16(evt.max_pdu_stom, data);
     STREAM_TO_UINT16(evt.iso_itv, data);
 
+    stream_ptr->state_flags &= ~kStateFlagIsConnecting;
+
     if (evt.status == HCI_SUCCESS) {
       stream_ptr->state_flags |= kStateFlagIsConnected;
     } else {
@@ -751,22 +798,40 @@ struct iso_impl {
          * which shall also arrive during CIS cancel procedure. If flag is
          * cleared it means that Disconnect Complete Event arrived before this
          * CIS established event. This is also fine. In such case clear address
-         * to handle mapping (which is used only for logs). Otherwise, wait with
-         * clearing it when Disconnect Complete event arrives
+         * to handle mapping (which is used only for logs) and send
+         * Disconnect Complete event. Otherwise, wait with clearing it
+         * until Disconnect Complete event arrives
          */
+
         if (!(stream_ptr->state_flags & kStateFlagIsCancelled)) {
           log::info(
                   "Flag kStateFlagIsCancelled already cleared, means Disconnect Complete arrived "
                   "before this event.");
           cis_hdl_to_addr.erase(evt.cis_conn_hdl);
+          if (com_android_bluetooth_flags_btm_iso_improve_canceling_iso()) {
+            log::info("cis: {:#x} cancelation completed, send disconnect complete event",
+                      evt.cis_conn_hdl);
+            send_disconnect_complete_event(client_cbs, stream_ptr->group_id, evt.cis_conn_hdl,
+                                           HCI_ERR_CONN_CAUSE_LOCAL_HOST);
+            return;
+          }
+        } else if (com_android_bluetooth_flags_btm_iso_improve_canceling_iso()) {
+          log::info(
+                  "Skip sending Established event for canceled cis: {:#x} flags: {:#x}, wait for "
+                  "disconnect complete event",
+                  evt.cis_conn_hdl, stream_ptr->state_flags);
+          return;
         }
       } else {
         cis_hdl_to_addr.erase(evt.cis_conn_hdl);
       }
     }
 
-    stream_ptr->state_flags &= ~kStateFlagIsConnecting;
-
+    if (com_android_bluetooth_flags_btm_iso_improve_canceling_iso() &&
+        (stream_ptr->state_flags & kStateFlagIsCancelled)) {
+      handle_race_on_canceling_cis(stream_ptr, evt.cis_conn_hdl);
+      return;
+    }
     evt.cig_id = stream_ptr->group_id;
 
     client_cbs->cig_callbacks->OnCisEvent(kIsoEventCisEstablishCmpl, &evt);
@@ -793,30 +858,44 @@ struct iso_impl {
       cis_hdl_to_addr.erase(handle);
     }
 
-    if (stream_ptr->state_flags & kStateFlagIsConnected ||
-        stream_ptr->state_flags & kStateFlagIsCancelled) {
-      cis_disconnected_evt evt = {
-              .reason = reason,
-              .cig_id = stream_ptr->group_id,
-              .cis_conn_hdl = handle,
-      };
-
-      auto* client_cbs = get_client_callbacks_from_stream(stream_ptr);
-      log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for stream {}",
-                       stream_ptr->conn_handle);
-      log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
-      client_cbs->cig_callbacks->OnCisEvent(kIsoEventCisDisconnected, &evt);
-      stream_ptr->state_flags &= ~kStateFlagIsConnected;
-      stream_ptr->state_flags &= ~kStateFlagIsCancelled;
-
-      /* return used credits */
-      iso_credits_ += stream_ptr->used_credits;
-      stream_ptr->used_credits = 0;
-
-      /* Data path is considered still valid, but can be reconfigured only once
-       * CIS is reestablished.
-       */
+    if (!(stream_ptr->state_flags & kStateFlagIsConnected) &&
+        !(stream_ptr->state_flags & kStateFlagIsCancelled)) {
+      log::warn("Unexpected {} cis: {:#x} disconnected, flags: {:#x}", cis_hdl_to_addr[handle],
+                handle, stream_ptr->state_flags);
+      return;
     }
+
+    stream_ptr->state_flags &= ~kStateFlagIsConnected;
+
+    /* return used credits */
+    iso_credits_ += stream_ptr->used_credits;
+    stream_ptr->used_credits = 0;
+
+    if (com_android_bluetooth_flags_btm_iso_improve_canceling_iso() &&
+        (stream_ptr->state_flags & kStateFlagIsCancelled)) {
+      if (stream_ptr->state_flags & kStateFlagIsConnecting) {
+        stream_ptr->state_flags &= ~kStateFlagIsCancelled;
+        log::info(
+                "Waiting for the CIS Established Event for cancel indication for {}, cis: {:#x}, "
+                "flags: {:#x}",
+                cis_hdl_to_addr[handle], handle, stream_ptr->state_flags);
+        return;
+      }
+      log::info("cis: {:#x} cancelation completed, send disconnect complete event", handle);
+    }
+
+    stream_ptr->state_flags &= ~kStateFlagIsCancelled;
+
+    auto client_cbs = get_client_callbacks_from_stream(stream_ptr);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for stream {}",
+                     stream_ptr->conn_handle);
+    log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
+
+    send_disconnect_complete_event(client_cbs, stream_ptr->group_id, handle, reason);
+
+    /* Note:  Data path is considered still valid, but can be reconfigured only once
+     * CIS is reestablished.
+     */
   }
 
   void handle_gd_num_completed_pkts(uint16_t handle, uint16_t credits) {
