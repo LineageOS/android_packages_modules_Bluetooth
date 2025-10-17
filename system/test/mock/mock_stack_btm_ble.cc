@@ -244,10 +244,10 @@ tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk, Octet16* 
   inc_func_call_count(__func__);
   return test::mock::stack_btm_ble::btm_ble_start_encrypt(bda, use_stk, p_stk);
 }
-tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                                     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble::btm_ble_start_sec_check(bd_addr, psm, is_originator, p_callback,
+  return test::mock::stack_btm_ble::btm_ble_start_sec_check(bd_addr, psm, outgoing, p_callback,
                                                             p_ref_data);
 }
 void btm_ble_test_command_complete(uint8_t* p) {

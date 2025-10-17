@@ -220,12 +220,11 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::BTM_SetPinType(pin_type, pin_code, pin_code_len);
 }
-bool BTM_SetSecurityLevel(bool is_originator, const char* p_name, uint8_t service_id,
-                          uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
-                          uint32_t mx_chan_id) {
+bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
+                          uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::BTM_SetSecurityLevel(is_originator, p_name, service_id,
-                                                         sec_level, psm, mx_proto_id, mx_chan_id);
+  return test::mock::stack_btm_sec::BTM_SetSecurityLevel(outgoing, p_name, service_id, sec_level,
+                                                         psm, mx_proto_id, mx_chan_id);
 }
 void BTM_update_version_info(const RawAddress& bd_addr,
                              const remote_version_info& remote_version_info) {
@@ -319,19 +318,19 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_encryption_change_evt(handle, status, encr_enable, key_size);
 }
-tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                                      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::btm_sec_l2cap_access_req(bd_addr, psm, is_originator,
-                                                             p_callback, p_ref_data);
+  return test::mock::stack_btm_sec::btm_sec_l2cap_access_req(bd_addr, psm, outgoing, p_callback,
+                                                             p_ref_data);
 }
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
-                                                    uint16_t security_required, bool is_originator,
+                                                    uint16_t security_required, bool outgoing,
                                                     tBTM_SEC_CALLBACK* p_callback,
                                                     void* p_ref_data) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_sec_l2cap_access_req_by_requirement(
-          bd_addr, security_required, is_originator, p_callback, p_ref_data);
+          bd_addr, security_required, outgoing, p_callback, p_ref_data);
 }
 void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_key,
                                    uint8_t key_type) {
@@ -346,12 +345,12 @@ void btm_sec_link_key_request(const RawAddress bda) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_link_key_request(bda);
 }
-tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_originator,
+tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool outgoing,
                                            uint16_t security_required,
                                            tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_sec_service_access_request(
-          bd_addr, is_originator, security_required, p_callback, p_ref_data);
+          bd_addr, outgoing, security_required, p_callback, p_ref_data);
 }
 void btm_sec_pin_code_request(const RawAddress bda) {
   inc_func_call_count(__func__);

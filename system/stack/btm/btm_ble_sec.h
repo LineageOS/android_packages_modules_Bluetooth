@@ -64,7 +64,7 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
 void btm_ble_update_sec_key_size(const RawAddress& bd_addr, uint8_t enc_key_size);
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
-tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                                     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
 
 namespace std {
