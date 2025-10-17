@@ -1389,14 +1389,14 @@ static void read_encryption_key_size_complete(ReadEncKeySizeCb cb, uint8_t* retu
 }
 
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
-  constexpr uint8_t len = 2;
-  uint8_t param[len];
-  memset(param, 0, len);
+  constexpr uint8_t kLen = 2;
+  uint8_t param[kLen];
+  memset(param, 0, kLen);
 
   uint8_t* p = param;
   UINT16_TO_STREAM(p, handle);
 
-  btu_hcif_send_cmd_with_cb(HCI_READ_ENCR_KEY_SIZE, param, len,
+  btu_hcif_send_cmd_with_cb(HCI_READ_ENCR_KEY_SIZE, param, kLen,
                             base::Bind(&read_encryption_key_size_complete, base::Passed(&cb)));
 }
 
