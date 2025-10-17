@@ -88,36 +88,31 @@ class ActiveLogs {
 
         writer.println("Enable log:")
 
-        // Timestamps are a fixed width "08-30 12:00:00.000"
-        val timeColWidth = 18
-        // Find the max package name length, capping the column header width at max 50.
-        val packageColWidth =
-            activeLogs.maxOfOrNull { it.packageName.length }?.coerceAtMost(50) ?: 50
-        // Longest action is `DisableBle`
-        val actionColWidth = 10
+        val timeColWidth = 18 // "08-30 12:00:00.000"
+        val actionColWidth = 10 // Longest: "DisableBle"
+        val reasonColWidth = 20 // Longest: "RESTORE_USER_SETTING"
 
         val headerTime = "TIMESTAMP".padEnd(timeColWidth)
-        val headerPackage = "PACKAGE".padEnd(packageColWidth)
         val headerAction = "ACTION".padEnd(actionColWidth)
-        val headerReason = "REASON" // Last column doesn't need padding
+        val headerReason = "REASON".padEnd(reasonColWidth)
+        val headerPackage = "PACKAGE" // Last column doesn't need padding
 
-        writer.println("  $headerTime $headerPackage $headerAction $headerReason")
+        writer.println("  $headerTime $headerAction $headerReason $headerPackage")
 
         val timeSep = "-".repeat(timeColWidth)
-        val packageSep = "-".repeat(packageColWidth)
         val actionSep = "-".repeat(actionColWidth)
-        val reasonSep = "-".repeat(15) // A fixed length for the reason separator is fine
+        val reasonSep = "-".repeat(reasonColWidth)
+        val packageSep = "-".repeat(30) // A fixed length for the package separator is fine
 
-        writer.println("  $timeSep $packageSep $actionSep $reasonSep")
+        writer.println("  $timeSep $actionSep $reasonSep $packageSep")
 
         activeLogs.forEach { log ->
             val time = Log.timeToStringWithZone(log.timestamp).padEnd(timeColWidth)
-            val packageStr = log.packageName.padEnd(packageColWidth)
             val action = (if (log.enable) "Enable" else "Disable") + (if (log.isBle) "Ble" else "")
             val actionStr = action.padEnd(actionColWidth)
-            val reason = getEnableDisableReasonString(log.reason)
+            val reason = getEnableDisableReasonString(log.reason).padEnd(reasonColWidth)
 
-            writer.println("  $time $packageStr $actionStr $reason")
+            writer.println("  $time $actionStr $reason ${log.packageName}")
         }
     }
 
