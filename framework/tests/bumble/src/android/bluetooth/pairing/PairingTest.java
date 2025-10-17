@@ -1158,7 +1158,6 @@ public class PairingTest {
      * <p>Expectation: BluetoothDevice.isBondingInitiatedLocally() should return true
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_BONDING_INITIATOR_STATE_RESET})
     public void test_isBondingInitiatedLocally_whenClassicDisconnection() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(
@@ -1258,7 +1257,6 @@ public class PairingTest {
      * <p>Expectation: BluetoothDevice.isBondingInitiatedLocally() should return true
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_BONDING_INITIATOR_STATE_RESET})
     public void test_isBondingInitiatedLocally_whenLEDisconnection() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(
