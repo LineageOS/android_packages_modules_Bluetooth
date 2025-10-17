@@ -64,6 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class AppScanStats(
     val uid: Int,
+    val pid: Int,
     val name: String,
     source: WorkSource?,
     private val adapterService: AdapterService,

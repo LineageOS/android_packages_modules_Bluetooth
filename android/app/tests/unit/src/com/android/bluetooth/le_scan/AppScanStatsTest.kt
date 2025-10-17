@@ -53,7 +53,8 @@ class AppScanStatsTest {
         val name = "appName"
         val source: WorkSource? = null
         val uid = 1234
-        val appScanStats = AppScanStats(uid, name, source, adapterService, timeProvider)
+        val pid = 5678
+        val appScanStats = AppScanStats(uid, pid, name, source, adapterService, timeProvider)
 
         assertThat(appScanStats.isScanning()).isFalse()
     }
@@ -63,7 +64,8 @@ class AppScanStatsTest {
         val name = "appName"
         val source: WorkSource? = null
         val uid = 1234
-        val appScanStats = AppScanStats(uid, name, source, adapterService, timeProvider)
+        val pid = 5678
+        val appScanStats = AppScanStats(uid, pid, name, source, adapterService, timeProvider)
 
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().setDeviceName("TestName").build())

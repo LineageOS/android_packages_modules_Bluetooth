@@ -43,6 +43,7 @@ class ScannerApp(
     private var deathRecipient: ScanController.ScannerDeathRecipient? = null
 
     val uid = appScanStats.uid
+    val pid = appScanStats.pid
     val name = appScanStats.name
 
     override fun toString() = "ScannerApp(uid=$uid, name=$name)"
