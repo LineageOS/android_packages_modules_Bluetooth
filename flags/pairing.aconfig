@@ -72,16 +72,6 @@ flag {
 }
 
 flag {
-    name: "non_zero_local_irk"
-    namespace: "bluetooth"
-    description: "Ensure that the local IRK is not zero before sending it to the controller"
-    bug: "401126556"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "immediate_encryption_after_pairing"
     namespace: "bluetooth"
     description: "Encrypt BR/EDR link immediately after pairing"
