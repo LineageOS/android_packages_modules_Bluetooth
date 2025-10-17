@@ -167,3 +167,11 @@ flag {
     is_exported: true
     bug: "445909312"
 }
+
+flag {
+    name: "a2dp_create_codec_type_from_id_api"
+    namespace: "bluetooth"
+    description: "API change for BluetoothCodecType - create from codec ID"
+    is_exported: true
+    bug: "445930556"
+}
