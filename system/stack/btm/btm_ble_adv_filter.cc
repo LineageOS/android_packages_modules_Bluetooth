@@ -389,7 +389,7 @@ void BTM_BleAdvFilterParamSetup(tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_I
     }
 
     btu_hcif_send_cmd_with_cb(HCI_BLE_ADV_FILTER, param, len,
-                              base::Bind(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
+                              base::BindOnce(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
   } else if (BTM_BLE_SCAN_COND_DELETE == action) {
     /* select feature based on control block settings */
     UINT8_TO_STREAM(p, BTM_BLE_META_PF_FEAT_SEL);
@@ -399,7 +399,7 @@ void BTM_BleAdvFilterParamSetup(tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_I
 
     btu_hcif_send_cmd_with_cb(HCI_BLE_ADV_FILTER, param,
                               (uint8_t)(BTM_BLE_ADV_FILT_META_HDR_LENGTH),
-                              base::Bind(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
+                              base::BindOnce(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
 
   } else if (BTM_BLE_SCAN_COND_CLEAR == action) {
     /* Deallocate all filters here */
@@ -411,7 +411,7 @@ void BTM_BleAdvFilterParamSetup(tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_I
 
     btu_hcif_send_cmd_with_cb(HCI_BLE_ADV_FILTER, param,
                               (uint8_t)(BTM_BLE_ADV_FILT_META_HDR_LENGTH - 1),
-                              base::Bind(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
+                              base::BindOnce(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
   }
 }
 

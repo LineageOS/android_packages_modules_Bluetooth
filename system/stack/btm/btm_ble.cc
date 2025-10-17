@@ -506,7 +506,8 @@ void BTM_BleReadPhy(const RawAddress& bd_addr,
   uint8_t data[kLen];
   uint8_t* pp = data;
   UINT16_TO_STREAM(pp, handle);
-  btu_hcif_send_cmd_with_cb(HCI_BLE_READ_PHY, data, kLen, base::Bind(&read_phy_cb, std::move(cb)));
+  btu_hcif_send_cmd_with_cb(HCI_BLE_READ_PHY, data, kLen,
+                            base::BindOnce(&read_phy_cb, std::move(cb)));
 }
 
 void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
@@ -552,5 +553,5 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
   UINT8_TO_STREAM(pp, tx_phys);
   UINT8_TO_STREAM(pp, rx_phys);
   UINT16_TO_STREAM(pp, phy_options);
-  btu_hcif_send_cmd_with_cb(HCI_BLE_SET_PHY, data, kLen, base::Bind([](uint8_t*, uint16_t) {}));
+  btu_hcif_send_cmd_with_cb(HCI_BLE_SET_PHY, data, kLen, base::BindOnce([](uint8_t*, uint16_t) {}));
 }
