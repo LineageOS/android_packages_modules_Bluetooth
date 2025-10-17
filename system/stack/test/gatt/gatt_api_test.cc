@@ -16,6 +16,7 @@
 
 #include "gatt_api.h"
 
+#include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
 #include "btm/btm_dev.h"
@@ -51,12 +52,23 @@ protected:
   virtual ~GattApiTest() = default;
 
   void SetUp() override {
-    btm_sec_cb.sec_dev_rec = list_new(osi_free);
+    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+      btm_sec_cb.sec_dev_rec = list_new(osi_free);
+    } else {
+      btm_sec_cb.device_records = {};
+    }
+
     gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
     logging::SetMinLogLevel(-2);
   }
 
-  void TearDown() override { list_free(btm_sec_cb.sec_dev_rec); }
+  void TearDown() override {
+    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+      list_free(btm_sec_cb.sec_dev_rec);
+    } else {
+      btm_sec_cb.device_records = {};
+    }
+  }
 };
 
 static const RawAddress SAMPLE_PUBLIC_BDA = {{0x00, 0x00, 0x11, 0x22, 0x33, 0x44}};

@@ -65,7 +65,15 @@ static void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
   p_dev_rec->sec_rec.link_key.fill(0);
   memset(&p_dev_rec->sec_rec.ble_keys, 0, sizeof(tBTM_SEC_BLE_KEYS));
-  list_remove(btm_sec_cb.sec_dev_rec, p_dev_rec);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_remove(btm_sec_cb.sec_dev_rec, p_dev_rec);
+  } else {
+    // As p_dev_rec is a pointer to element of btm_sec_cb.device_records, we don't need to process
+    // the complete array to find and remove. This is safe.
+    if (p_dev_rec != nullptr) {
+      *p_dev_rec = {};
+    }
+  }
 }
 
 /*******************************************************************************
@@ -333,6 +341,11 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
     return nullptr;
   }
 
+  if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    // Get the security device record with matching handle, and return directly.
+    return btm_sec_cb.for_each_dev_rec(is_handle_equal, &handle);
+  }
+
   if (btm_sec_cb.sec_dev_rec == nullptr) {
     return nullptr;
   }
@@ -379,7 +392,8 @@ static bool is_rpa_unresolvable(void* data, void* context) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr) {
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+static tBTM_SEC_DEV_REC* btm_find_dev_(const RawAddress& bd_addr) {
   if (btm_sec_cb.sec_dev_rec == nullptr) {
     return nullptr;
   }
@@ -403,6 +417,25 @@ tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr) {
   return nullptr;
 }
 
+tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr) {
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    return btm_find_dev_(bd_addr);
+  }
+
+  tBTM_SEC_DEV_REC* p_dev_rec =
+          btm_sec_cb.for_each_dev_rec(is_not_same_identity_or_pseudo_address, (void*)&bd_addr);
+  if (p_dev_rec == nullptr) {
+    // If not found by matching identity address or pseudo address, find by RPA.
+    p_dev_rec = btm_sec_cb.for_each_dev_rec(is_rpa_unresolvable, (void*)&bd_addr);
+    if (p_dev_rec != nullptr) {
+      log::warn("Found via address resolution bd_addr:{}, pseudo_addr:{}, identity_addr:{}",
+                bd_addr, p_dev_rec->ble.pseudo_addr, p_dev_rec->bd_addr);
+    }
+  }
+
+  return p_dev_rec;
+}
+
 static bool has_lenc_and_address_is_equal(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
   if (!(p_dev_rec->sec_rec.ble_keys.key_type & BTM_LE_KEY_LENC)) {
@@ -423,6 +456,10 @@ static bool has_lenc_and_address_is_equal(void* data, void* context) {
  *
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
+  if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    return btm_sec_cb.for_each_dev_rec(has_lenc_and_address_is_equal, (void*)&bd_addr);
+  }
+
   if (btm_sec_cb.sec_dev_rec == nullptr) {
     return nullptr;
   }
@@ -444,10 +481,55 @@ tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
  * Returns          none
  *
  ******************************************************************************/
-void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+static void consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec, tBTM_SEC_DEV_REC* p_dev_rec) {
   tBTM_SEC_DEV_REC temp_rec = *p_target_rec;
 
-  log::verbose("");
+  if (p_dev_rec->bd_addr != p_target_rec->bd_addr) {
+    /* an RPA device entry is a duplicate of the target record */
+    if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
+      if (p_target_rec->ble.pseudo_addr == p_dev_rec->bd_addr) {
+        log::warn("Having a duplicate RPA device entry for {}", p_dev_rec->bd_addr);
+        p_target_rec->ble.SetAddressType(p_dev_rec->ble.AddressType());
+        p_target_rec->device_type |= p_dev_rec->device_type;
+
+        /* remove the combined record */
+        wipe_secrets_and_remove(p_dev_rec);
+      }
+    }
+    return;
+  }
+
+  log::info("Consolidating records for {}", p_dev_rec->bd_addr);
+
+  *p_target_rec = *p_dev_rec;
+  p_target_rec->ble = temp_rec.ble;
+  p_target_rec->sec_rec.ble_keys = temp_rec.sec_rec.ble_keys;
+  p_target_rec->ble_hci_handle = temp_rec.ble_hci_handle;
+  p_target_rec->sec_rec.enc_key_size = temp_rec.sec_rec.enc_key_size;
+  p_target_rec->sec_rec.le_enc_key_size = temp_rec.sec_rec.le_enc_key_size;
+  p_target_rec->conn_params = temp_rec.conn_params;
+  p_target_rec->device_type |= temp_rec.device_type;
+  p_target_rec->sec_rec.sec_flags |= temp_rec.sec_rec.sec_flags;
+
+  p_target_rec->sec_rec.new_encryption_key_is_p256 = temp_rec.sec_rec.new_encryption_key_is_p256;
+  p_target_rec->sec_rec.bond_type = temp_rec.sec_rec.bond_type;
+
+  /* remove the combined record */
+  wipe_secrets_and_remove(p_dev_rec);
+  // p_dev_rec gets freed in list_remove, we should not  access it further
+}
+
+void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
+  if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+      if (dev_rec.IsInitialized() && (p_target_rec != &dev_rec)) {
+        consolidate_dev(p_target_rec, &dev_rec);
+      }
+    }
+
+    return;
+  }
 
   list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
   list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec);
@@ -456,41 +538,8 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
 
     // we do list_remove in some cases, must grab next before removing
     node = list_next(node);
-
-    if (p_target_rec == p_dev_rec) {
-      continue;
-    }
-
-    if (p_dev_rec->bd_addr == p_target_rec->bd_addr) {
-      memcpy(p_target_rec, p_dev_rec, sizeof(tBTM_SEC_DEV_REC));
-      p_target_rec->ble = temp_rec.ble;
-      p_target_rec->sec_rec.ble_keys = temp_rec.sec_rec.ble_keys;
-      p_target_rec->ble_hci_handle = temp_rec.ble_hci_handle;
-      p_target_rec->sec_rec.enc_key_size = temp_rec.sec_rec.enc_key_size;
-      p_target_rec->sec_rec.le_enc_key_size = temp_rec.sec_rec.le_enc_key_size;
-      p_target_rec->conn_params = temp_rec.conn_params;
-      p_target_rec->device_type |= temp_rec.device_type;
-      p_target_rec->sec_rec.sec_flags |= temp_rec.sec_rec.sec_flags;
-
-      p_target_rec->sec_rec.new_encryption_key_is_p256 =
-              temp_rec.sec_rec.new_encryption_key_is_p256;
-      p_target_rec->sec_rec.bond_type = temp_rec.sec_rec.bond_type;
-
-      /* remove the combined record */
-      wipe_secrets_and_remove(p_dev_rec);
-      // p_dev_rec gets freed in list_remove, we should not  access it further
-      continue;
-    }
-
-    /* an RPA device entry is a duplicate of the target record */
-    if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
-      if (p_target_rec->ble.pseudo_addr == p_dev_rec->bd_addr) {
-        p_target_rec->ble.SetAddressType(p_dev_rec->ble.AddressType());
-        p_target_rec->device_type |= p_dev_rec->device_type;
-
-        /* remove the combined record */
-        wipe_secrets_and_remove(p_dev_rec);
-      }
+    if (p_target_rec != p_dev_rec) {
+      consolidate_dev(p_target_rec, p_dev_rec);
     }
   }
 }
@@ -498,6 +547,48 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
 static BTM_CONSOLIDATION_CB* btm_consolidate_cb = nullptr;
 
 void BTM_SetConsolidationCallback(BTM_CONSOLIDATION_CB* cb) { btm_consolidate_cb = cb; }
+
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+static void consolidate_existing_dev(tBTM_SEC_DEV_REC* p_target_rec, tBTM_SEC_DEV_REC* p_dev_rec,
+                                     const RawAddress& bd_addr) {
+  if (p_target_rec == p_dev_rec) {
+    return;
+  }
+
+  /* an RPA device entry is a duplicate of the target record */
+  if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
+    if (p_dev_rec->ble_hci_handle == HCI_INVALID_HANDLE) {
+      log::info("already disconnected - erasing entry {}", p_dev_rec->bd_addr);
+      wipe_secrets_and_remove(p_dev_rec);
+      return;
+    }
+
+    log::info(
+            "Found existing LE connection to just bonded device on {} handle "
+            "0x{:04x}",
+            p_dev_rec->bd_addr, p_dev_rec->ble_hci_handle);
+
+    RawAddress ble_conn_addr = p_dev_rec->bd_addr;
+    p_target_rec->ble_hci_handle = p_dev_rec->ble_hci_handle;
+
+    /* remove the old LE record */
+    wipe_secrets_and_remove(p_dev_rec);
+
+    btm_acl_consolidate(bd_addr, ble_conn_addr);
+    stack::l2cap::get_interface().L2CA_Consolidate(bd_addr, ble_conn_addr);
+    gatt_consolidate(bd_addr, ble_conn_addr);
+    if (btm_consolidate_cb) {
+      btm_consolidate_cb(bd_addr, ble_conn_addr);
+    }
+
+    /* To avoid race conditions between central/peripheral starting encryption
+     * at same time, initiate it just from central. */
+    if (stack::l2cap::get_interface().L2CA_GetBleConnRole(ble_conn_addr) == HCI_ROLE_CENTRAL) {
+      log::info("Will encrypt existing connection");
+      BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
+    }
+  }
+}
 
 /* combine security records of established LE connections after Classic pairing
  * succeeded. */
@@ -515,50 +606,22 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
 
   log::info("{}", bd_addr);
 
-  list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
-  list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec);
-  while (node != end) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
+    list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec);
+    while (node != end) {
+      tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
 
-    // we do list_remove in some cases, must grab next before removing
-    node = list_next(node);
-
-    if (p_target_rec == p_dev_rec) {
-      continue;
+      // we do list_remove in some cases, must grab next before removing
+      node = list_next(node);
+      consolidate_existing_dev(p_target_rec, p_dev_rec, bd_addr);
     }
+    return;
+  }
 
-    /* an RPA device entry is a duplicate of the target record */
-    if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
-      if (p_dev_rec->ble_hci_handle == HCI_INVALID_HANDLE) {
-        log::info("already disconnected - erasing entry {}", p_dev_rec->bd_addr);
-        wipe_secrets_and_remove(p_dev_rec);
-        continue;
-      }
-
-      log::info(
-              "Found existing LE connection to just bonded device on {} handle "
-              "0x{:04x}",
-              p_dev_rec->bd_addr, p_dev_rec->ble_hci_handle);
-
-      RawAddress ble_conn_addr = p_dev_rec->bd_addr;
-      p_target_rec->ble_hci_handle = p_dev_rec->ble_hci_handle;
-
-      /* remove the old LE record */
-      wipe_secrets_and_remove(p_dev_rec);
-
-      btm_acl_consolidate(bd_addr, ble_conn_addr);
-      stack::l2cap::get_interface().L2CA_Consolidate(bd_addr, ble_conn_addr);
-      gatt_consolidate(bd_addr, ble_conn_addr);
-      if (btm_consolidate_cb) {
-        btm_consolidate_cb(bd_addr, ble_conn_addr);
-      }
-
-      /* To avoid race conditions between central/peripheral starting encryption
-       * at same time, initiate it just from central. */
-      if (stack::l2cap::get_interface().L2CA_GetBleConnRole(ble_conn_addr) == HCI_ROLE_CENTRAL) {
-        log::info("Will encrypt existing connection");
-        BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, nullptr, nullptr, BTM_BLE_SEC_ENCRYPT);
-      }
+  for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+    if (dev_rec.IsInitialized()) {
+      consolidate_existing_dev(p_target_rec, &dev_rec, bd_addr);
     }
   }
 }
@@ -591,11 +654,7 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec_(void) {
   tBTM_SEC_DEV_REC* p_oldest_paired = NULL;
   uint32_t ts_oldest_paired = 0xFFFFFFFF;
 
-  list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
-  for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
-       node = list_next(node)) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-
+  auto process_record = [&](tBTM_SEC_DEV_REC* p_dev_rec) {
     if ((p_dev_rec->sec_rec.sec_flags & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN)) ==
         0) {
       // Device is not paired
@@ -608,6 +667,20 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec_(void) {
       if (p_dev_rec->timestamp < ts_oldest_paired) {
         p_oldest_paired = p_dev_rec;
         ts_oldest_paired = p_dev_rec->timestamp;
+      }
+    }
+  };
+
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
+    for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
+        node = list_next(node)) {
+      process_record(static_cast<tBTM_SEC_DEV_REC*>(list_node(node)));
+    }
+  } else {
+    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+      if (dev_rec.IsInitialized()) {
+        process_record(&dev_rec);
       }
     }
   }
@@ -641,11 +714,7 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
   tBTM_SEC_DEV_REC* oldest_connected = nullptr;  // Oldest non-bonded, connected device
   tBTM_SEC_DEV_REC* oldest_bonded = nullptr;     // Oldest bonded device
 
-  list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
-  for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
-       node = list_next(node)) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-
+  auto process_record = [&](tBTM_SEC_DEV_REC* p_dev_rec) {
     if (p_dev_rec->sec_rec.is_bonded()) {  // Device is bonded
       if (oldest_bonded == nullptr || p_dev_rec->timestamp < oldest_bonded->timestamp) {
         oldest_bonded = p_dev_rec;
@@ -658,6 +727,20 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
     } else {  // Device is neither bonded nor connected
       if (oldest == nullptr || p_dev_rec->timestamp < oldest->timestamp) {
         oldest = p_dev_rec;
+      }
+    }
+  };
+
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
+    for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
+        node = list_next(node)) {
+      process_record(static_cast<tBTM_SEC_DEV_REC*>(list_node(node)));
+    }
+  } else {
+    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+      if (dev_rec.IsInitialized()) {
+        process_record(&dev_rec);
       }
     }
   }
@@ -696,21 +779,35 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
   if (!is_main_thread()) {
     log::error("Called from non-main thread");
   }
-  tBTM_SEC_DEV_REC* p_dev_rec = NULL;
+  tBTM_SEC_DEV_REC* p_dev_rec = nullptr;
 
-  if (btm_sec_cb.sec_dev_rec == nullptr) {
-    log::warn("Unable to allocate device record with destructed device record list");
-    return nullptr;
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    if (btm_sec_cb.sec_dev_rec == nullptr) {
+      log::warn("Unable to allocate device record with destructed device record list");
+      return nullptr;
+    }
+
+    if (list_length(btm_sec_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
+      p_dev_rec = btm_find_oldest_dev_rec();
+      wipe_secrets_and_remove(p_dev_rec);
+    }
+
+    p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(osi_calloc(sizeof(tBTM_SEC_DEV_REC)));
+    list_append(btm_sec_cb.sec_dev_rec, p_dev_rec);
+  } else {
+    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+      if (!dev_rec.IsInitialized()) {
+        p_dev_rec = &dev_rec;
+        break;
+      }
+    }
+
+    if (p_dev_rec == nullptr) {
+      // The array is completely allocated, need to clean the oldest one.
+      p_dev_rec = btm_find_oldest_dev_rec();
+      wipe_secrets_and_remove(p_dev_rec);
+    }
   }
-
-  if (list_length(btm_sec_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
-    p_dev_rec = btm_find_oldest_dev_rec();
-    log::warn("Removing oldest device record: {}", p_dev_rec->bd_addr);
-    wipe_secrets_and_remove(p_dev_rec);
-  }
-
-  p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(osi_calloc(sizeof(tBTM_SEC_DEV_REC)));
-  list_append(btm_sec_cb.sec_dev_rec, p_dev_rec);
 
   // Initialize defaults
   p_dev_rec->sec_rec.sec_flags = BTM_SEC_IN_USE;
@@ -781,12 +878,22 @@ bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type) 
 std::vector<tBTM_SEC_DEV_REC*> btm_get_sec_dev_rec() {
   std::vector<tBTM_SEC_DEV_REC*> result{};
 
-  if (btm_sec_cb.sec_dev_rec != nullptr) {
-    list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
-    for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
-         node = list_next(node)) {
-      tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-      result.push_back(p_dev_rec);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    if (btm_sec_cb.sec_dev_rec != nullptr) {
+      list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
+      for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
+           node = list_next(node)) {
+        tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+        result.push_back(p_dev_rec);
+      }
+    }
+
+    return result;
+  }
+
+  for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+    if (dev_rec.IsInitialized()) {
+      result.push_back(&dev_rec);
     }
   }
   return result;
@@ -872,7 +979,8 @@ const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
 }
 
 #define DUMPSYS_TAG "shim::record"
-void DumpsysRecord(int fd) {
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+static void DumpsysRecord_(int fd) {
   LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
 
   if (btm_sec_cb.sec_dev_rec == nullptr) {
@@ -887,6 +995,21 @@ void DumpsysRecord(int fd) {
     tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
     // TODO: handle in tBTM_SEC_DEV_REC.ToString
     LOG_DUMPSYS(fd, "%03u %s", ++cnt, p_dev_rec->ToString().c_str());
+  }
+}
+
+void DumpsysRecord(int fd) {
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    DumpsysRecord_(fd);
+    return;
+  }
+
+  unsigned cnt = 0;
+  for (const tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+    if (dev_rec.IsInitialized()) {
+      // TODO: We should add more details to dump here.
+      LOG_DUMPSYS(fd, "%03u %s", ++cnt, dev_rec.ToString().c_str());
+    }
   }
 }
 #undef DUMPSYS_TAG

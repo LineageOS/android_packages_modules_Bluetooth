@@ -30,6 +30,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include "btm_ble_int.h"
@@ -153,20 +154,43 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
  * matched to.
  */
 tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
-  if (btm_sec_cb.sec_dev_rec == nullptr) {
-    return nullptr;
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    if (btm_sec_cb.sec_dev_rec == nullptr) {
+      return nullptr;
+    }
+
+    list_node_t* n =
+            list_foreach(btm_sec_cb.sec_dev_rec, btm_ble_match_random_bda, (void*)&random_bda);
+    return (n == nullptr) ? (nullptr) : (static_cast<tBTM_SEC_DEV_REC*>(list_node(n)));
   }
-  list_node_t* n =
-          list_foreach(btm_sec_cb.sec_dev_rec, btm_ble_match_random_bda, (void*)&random_bda);
-  return (n == nullptr) ? (nullptr) : (static_cast<tBTM_SEC_DEV_REC*>(list_node(n)));
+
+  return btm_sec_cb.for_each_dev_rec(btm_ble_match_random_bda, (void*)&random_bda);
+}
+
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+static bool match_identity_addr(tBTM_SEC_DEV_REC* p_dev_rec, const RawAddress& bd_addr,
+                                uint8_t addr_type) {
+  if (p_dev_rec->ble.identity_address_with_type.bda != bd_addr) {
+    return false;
+  }
+
+  if ((p_dev_rec->ble.identity_address_with_type.type & (~BLE_ADDR_TYPE_ID_BIT)) !=
+      (addr_type & (~BLE_ADDR_TYPE_ID_BIT))) {
+    log::warn("pseudo->random match with diff addr type: {} vs {}",
+              p_dev_rec->ble.identity_address_with_type.type, addr_type);
+  }
+
+  /* found the match */
+  return true;
 }
 
 /*******************************************************************************
  *  address mapping between pseudo address and real connection address
  ******************************************************************************/
 /** Find the security record whose LE identity address is matching */
-static tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
-                                                       uint8_t addr_type) {
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+static tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr_(const RawAddress& bd_addr,
+                                                        uint8_t addr_type) {
   if (btm_sec_cb.sec_dev_rec == nullptr) {
     return nullptr;
   }
@@ -175,19 +199,27 @@ static tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr
   for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
        node = list_next(node)) {
     tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-    if (p_dev_rec->ble.identity_address_with_type.bda == bd_addr) {
-      if ((p_dev_rec->ble.identity_address_with_type.type & (~BLE_ADDR_TYPE_ID_BIT)) !=
-          (addr_type & (~BLE_ADDR_TYPE_ID_BIT))) {
-        log::warn("pseudo->random match with diff addr type: {} vs {}",
-                  p_dev_rec->ble.identity_address_with_type.type, addr_type);
-      }
-
-      /* found the match */
+    if (match_identity_addr(p_dev_rec, bd_addr, addr_type)) {
       return p_dev_rec;
     }
   }
 
-  return NULL;
+  return nullptr;
+}
+
+static tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
+                                                       uint8_t addr_type) {
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    return btm_find_dev_by_identity_addr_(bd_addr, addr_type);
+  }
+
+  for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
+    // TODO: b/446803190 - Add "const&" in the foreach loop.
+    if (dev_rec.IsInitialized() && match_identity_addr(&dev_rec, bd_addr, addr_type)) {
+      return &dev_rec;
+    }
+  }
+  return nullptr;
 }
 
 /*******************************************************************************

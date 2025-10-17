@@ -31,6 +31,9 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/security_client_callbacks.h"
 
+// TODO: b/446803190 - Fix the arguments by making them const references.
+typedef bool (*sec_dev_rec_iter_cb)(void* dev_rec, void* context);
+
 class tBTM_SEC_CB {
 public:
   tBTM_CFG cfg; /* Device configuration */
@@ -57,8 +60,8 @@ public:
   uint32_t dev_rec_count{0}; /* Counter used for device record timestamp */
   uint8_t security_mode{0};
   bool pairing_disabled{false};
-  bool security_mode_changed{false}; /* mode changed during bonding */
-  bool pin_type_changed{false};      /* pin type changed during bonding */
+  bool security_mode_changed{false};      /* mode changed during bonding */
+  bool pin_type_changed{false};           /* pin type changed during bonding */
   bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
   uint8_t pin_code_len{0};                               /* for legacy devices */
@@ -69,7 +72,9 @@ public:
                                                             Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
   list_t* sec_dev_rec{nullptr};                          /* list of tBTM_SEC_DEV_REC */
+  std::array<tBTM_SEC_DEV_REC, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records = {};
   tBTM_SEC_SERV_REC* p_out_serv{nullptr};
   tBTM_MKEY_CALLBACK* mkey_cback{nullptr};
 
@@ -107,6 +112,7 @@ public:
   uint8_t RemoveServiceByPsm(uint16_t psm);
 
   void change_pairing_state(tBTM_PAIRING_STATE new_state);
+  tBTM_SEC_DEV_REC* for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context);
 };
 
 extern tBTM_SEC_CB btm_sec_cb;

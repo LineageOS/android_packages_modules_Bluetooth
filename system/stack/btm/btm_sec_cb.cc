@@ -57,12 +57,17 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   security_mode = initial_security_mode;
   link_spec = {};
   link_spec.addrt.bda = RawAddress::kAny;
-  sec_dev_rec = list_new([](void* ptr) {
-    // Invoke destructor for all record objects and reset to default
-    // initialized value so memory may be properly freed
-    *((tBTM_SEC_DEV_REC*)ptr) = {};
-    osi_free(ptr);
-  });
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    sec_dev_rec = list_new([](void* ptr) {
+      // Invoke destructor for all record objects and reset to default
+      // initialized value so memory may be properly freed
+      *((tBTM_SEC_DEV_REC*)ptr) = {};
+      osi_free(ptr);
+    });
+    return;
+  }
+
+  device_records = {};
 }
 
 void tBTM_SEC_CB::Free() {
@@ -74,8 +79,12 @@ void tBTM_SEC_CB::Free() {
     sec_pending_q = nullptr;
   }
 
-  list_free(sec_dev_rec);
-  sec_dev_rec = nullptr;
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_free(sec_dev_rec);
+    sec_dev_rec = nullptr;
+  } else {
+    device_records = {};
+  }
 
   alarm_free(sec_collision_timer);
   sec_collision_timer = nullptr;
@@ -365,4 +374,21 @@ bool tBTM_SEC_REC::is_bonded(tBT_TRANSPORT transport) const {
   }
 
   return bonded;
+}
+
+// TODO: b/444620685 - Remove this function once the flag is fully rolled out, and replace all the
+// instances with actual functionality as the callbacks are invoked only from single place so do
+// that inline.
+// This is similar to list_foreach, but for array.
+tBTM_SEC_DEV_REC* tBTM_SEC_CB::for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context) {
+  log::assert_that(com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec(),
+                   "assert failed: flag use_array_instead_list_in_sec_dev_rec is disabled.");
+  log::assert_that(cb != NULL, "assert failed: callback is null.");
+
+  for (tBTM_SEC_DEV_REC& dev_rec : device_records) {
+    if (dev_rec.IsInitialized() && !cb(&dev_rec, context)) {
+      return &dev_rec;
+    }
+  }
+  return nullptr;
 }

@@ -174,12 +174,16 @@ static bool is_sec_state_equal(void* data, void* context) {
  *
  ******************************************************************************/
 static tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(tSECURITY_STATE state) {
-  list_node_t* n = list_foreach(btm_sec_cb.sec_dev_rec, is_sec_state_equal, &state);
-  if (n) {
-    return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_node_t* n = list_foreach(btm_sec_cb.sec_dev_rec, is_sec_state_equal, &state);
+    if (n) {
+      return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+    }
+
+    return nullptr;
   }
 
-  return nullptr;
+  return btm_sec_cb.for_each_dev_rec(is_sec_state_equal, &state);
 }
 
 static tBTM_STATUS btm_sec_report_bond_loss(const tBTM_SEC_DEV_REC* p_dev_rec,

@@ -27,6 +27,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,7 +133,11 @@ void BTM_reset_complete() {
   l2cu_device_reset();
 
   /* Clear current security state */
-  list_foreach(btm_sec_cb.sec_dev_rec, set_sec_state_idle, NULL);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_foreach(btm_sec_cb.sec_dev_rec, set_sec_state_idle, NULL);
+  } else {
+    btm_sec_cb.for_each_dev_rec(set_sec_state_idle, NULL);
+  }
 
   /* After the reset controller should restore all parameters to defaults. */
   btm_cb.btm_inq_vars.inq_counter = 1;
