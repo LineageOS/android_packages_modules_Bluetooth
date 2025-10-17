@@ -72,30 +72,10 @@ flag {
 }
 
 flag {
-    name: "non_zero_local_irk"
-    namespace: "bluetooth"
-    description: "Ensure that the local IRK is not zero before sending it to the controller"
-    bug: "401126556"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "immediate_encryption_after_pairing"
     namespace: "bluetooth"
     description: "Encrypt BR/EDR link immediately after pairing"
     bug: "402510244"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "unrelated_device_smp_cancellation"
-    namespace: "bluetooth"
-    description: "Don't cancel SMP pairing if encryption fails for unrelated device"
-    bug: "404658828"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -126,16 +106,6 @@ flag {
     namespace: "bluetooth"
     description: "Set correct address type in BluetoothDevice objects created by the Android Bluetooth"
     bug: "407277344"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "bond_loss_transport_check"
-    namespace: "bluetooth"
-    description: "Bond loss should not be detected on transport not bonded"
-    bug: "411214547"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

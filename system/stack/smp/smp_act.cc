@@ -1190,18 +1190,16 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description   processing for discard security request
  ******************************************************************************/
 void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  if (com_android_bluetooth_flags_unrelated_device_smp_cancellation()) {
-    if (p_data == nullptr) {
-      log::warn("Invalid data for discard request");
-      return;
-    }
+  if (p_data == nullptr) {
+    log::warn("Invalid data for discard request");
+    return;
+  }
 
-    RawAddress bda = p_data->p_bda;
-    if (bda != RawAddress::kEmpty && bda != p_cb->pairing_bda) {
-      log::warn("Discard requested for wrong device {} while pairing with {}", bda,
-                p_cb->pairing_bda);
-      return;
-    }
+  RawAddress bda = p_data->p_bda;
+  if (bda != RawAddress::kEmpty && bda != p_cb->pairing_bda) {
+    log::warn("Discard requested for wrong device {} while pairing with {}", bda,
+              p_cb->pairing_bda);
+    return;
   }
 
   log::verbose("addr:{}", p_cb->pairing_bda);

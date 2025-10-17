@@ -2413,9 +2413,7 @@ void btm_io_capabilities_req(RawAddress p) {
     return;
   }
 
-  if (p_dev_rec->sec_rec.is_bonded(com_android_bluetooth_flags_bond_loss_transport_check()
-                                           ? BT_TRANSPORT_BR_EDR
-                                           : BT_TRANSPORT_AUTO)) {
+  if (p_dev_rec->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR)) {
     /* Encrypted link means that the device is already authenticated and is trying to upgrade
      * security */
     if (!p_dev_rec->sec_rec.is_device_encrypted()) {
@@ -2604,9 +2602,7 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
    * If it's bonded and not encrypted, it's remote missing keys scenario
    * Do not process this RSP and return, REQ will handle generation of
    * key missing event and disconnect.*/
-  if (p_dev_rec->sec_rec.is_bonded(com_android_bluetooth_flags_bond_loss_transport_check()
-                                           ? BT_TRANSPORT_BR_EDR
-                                           : BT_TRANSPORT_AUTO) &&
+  if (p_dev_rec->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
       !p_dev_rec->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     if (!com_android_bluetooth_flags_gen_key_missing_evt_only_from_iocapreq()) {
@@ -3554,9 +3550,7 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
     }
   }
 
-  if (status == HCI_ERR_CONNECTION_TOUT &&
-      (!com_android_bluetooth_flags_unrelated_device_smp_cancellation() ||
-       BTM_IsBleConnection(handle))) {
+  if (status == HCI_ERR_CONNECTION_TOUT && BTM_IsBleConnection(handle)) {
     smp_cancel_start_encryption_attempt(acl_address_from_handle(handle));
     return;
   }
