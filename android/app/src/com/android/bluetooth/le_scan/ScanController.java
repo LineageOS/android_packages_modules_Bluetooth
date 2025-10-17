@@ -253,6 +253,7 @@ public class ScanController {
     }
 
     ScannerMap getScannerMap() {
+        enforceScanThread();
         return mScannerMap;
     }
 
