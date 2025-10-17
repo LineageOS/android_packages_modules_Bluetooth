@@ -499,15 +499,8 @@ static jboolean connectLeAudioNative(JNIEnv* env, jobject /* object */, jbyteArr
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sLeAudioClientInterface->Connect(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 
@@ -518,58 +511,34 @@ static jboolean disconnectLeAudioNative(JNIEnv* env, jobject /* object */, jbyte
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sLeAudioClientInterface->Disconnect(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 
 static jboolean setEnableStateNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                      jboolean enabled) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-
   if (!sLeAudioClientInterface) {
     log::error("Failed to get the Bluetooth LeAudio Interface");
     return JNI_FALSE;
   }
 
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sLeAudioClientInterface->SetEnableState(bd_addr, enabled);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 
 static jboolean groupAddNodeNative(JNIEnv* env, jobject /* object */, jint group_id,
                                    jbyteArray address) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-
   if (!sLeAudioClientInterface) {
     log::error("Failed to get the Bluetooth LeAudio Interface");
     return JNI_FALSE;
   }
 
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sLeAudioClientInterface->GroupAddNode(group_id, bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
-
   return JNI_TRUE;
 }
 
@@ -581,15 +550,8 @@ static jboolean groupRemoveNodeNative(JNIEnv* env, jobject /* object */, jint gr
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sLeAudioClientInterface->GroupRemoveNode(group_id, bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 

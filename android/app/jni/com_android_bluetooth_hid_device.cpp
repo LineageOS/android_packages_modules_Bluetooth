@@ -435,18 +435,10 @@ static jboolean connectNative(JNIEnv* env, jobject /* thiz */, jbyteArray addres
     return JNI_FALSE;
   }
 
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean result = JNI_FALSE;
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
   BtStatus ret = sHiddIf->connect(bd_addr);
-
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   log::verbose("connect() returned {}", ret);
 

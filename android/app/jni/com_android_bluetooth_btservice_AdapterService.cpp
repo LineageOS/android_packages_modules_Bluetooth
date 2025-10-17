@@ -1735,14 +1735,9 @@ static jbyteArray obfuscateAddressNative(JNIEnv* env, jobject /* obj */, jbyteAr
   if (!sBluetoothInterface) {
     return env->NewByteArray(0);
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return env->NewByteArray(0);
-  }
-  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-  std::string output = sBluetoothInterface->obfuscate_address(addr_obj);
+
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  std::string output = sBluetoothInterface->obfuscate_address(bd_addr);
   jsize output_size = output.size() * sizeof(char);
   jbyteArray output_bytes = env->NewByteArray(output_size);
   env->SetByteArrayRegion(output_bytes, 0, output_size,
@@ -1872,14 +1867,8 @@ static int getMetricIdNative(JNIEnv* env, jobject /* obj */, jbyteArray address)
   if (!sBluetoothInterface) {
     return 0;  // 0 is invalid id
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return 0;
-  }
-  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-  return sBluetoothInterface->get_metric_id(addr_obj);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  return sBluetoothInterface->get_metric_id(bd_addr);
 }
 
 static jboolean allowLowLatencyAudioNative(JNIEnv* env, jobject /* obj */, jboolean allowed,
@@ -1888,15 +1877,9 @@ static jboolean allowLowLatencyAudioNative(JNIEnv* env, jobject /* obj */, jbool
   if (!sBluetoothInterface) {
     return false;
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return false;
-  }
 
-  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-  sBluetoothInterface->allow_low_latency_audio(allowed, addr_obj);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sBluetoothInterface->allow_low_latency_audio(allowed, bd_addr);
   return true;
 }
 
@@ -1906,13 +1889,6 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
   if (!sBluetoothInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   if (value == NULL) {
     log::error("metadataChangedNative() ignoring NULL array");
@@ -1925,11 +1901,12 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
     return;
   }
 
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   std::vector<uint8_t> val_vec(reinterpret_cast<uint8_t*>(p_value),
                                reinterpret_cast<uint8_t*>(p_value + len));
   env->ReleaseByteArrayElements(value, p_value, 0);
 
-  sBluetoothInterface->metadata_changed(addr_obj, key, std::move(val_vec));
+  sBluetoothInterface->metadata_changed(bd_addr, key, std::move(val_vec));
   return;
 }
 
@@ -2121,15 +2098,8 @@ static jboolean disconnectAclNative(JNIEnv* env, jobject /* obj */, jbyteArray a
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-
-  return sBluetoothInterface->disconnect_acl(addr_obj, transport);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  return sBluetoothInterface->disconnect_acl(bd_addr, transport);
 }
 
 static jboolean allowWakeByHidNative(JNIEnv* /* env */, jobject /* obj */) {
