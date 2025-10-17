@@ -163,13 +163,7 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
 }
 
 static jboolean connectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
   log::info("{}", bd_addr);
   BtStatus status = btif_av_sink_connect(bd_addr);
@@ -177,18 +171,11 @@ static jboolean connectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray 
     log::error("Failed HF connection, status: {}", status);
   }
 
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean disconnectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
   log::info("{}", bd_addr);
   BtStatus status = btif_av_sink_disconnect(bd_addr);
@@ -196,7 +183,6 @@ static jboolean disconnectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArr
     log::error("Failed HF disconnection, status: {}", status);
   }
 
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -209,21 +195,14 @@ static void informAudioTrackGainNative(JNIEnv* /* env */, jobject /* object */, 
 }
 
 static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
-  RawAddress rawAddress = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
-
-  log::info("{}", rawAddress);
-  BtStatus status = btif_av_sink_set_active_device(rawAddress);
+  log::info("{}", bd_addr);
+  BtStatus status = btif_av_sink_set_active_device(bd_addr);
   if (!status) {
     log::error("Failed sending passthru command, status: {}", status);
   }
 
-  env->ReleaseByteArrayElements(address, addr, 0);
   return status ? JNI_TRUE : JNI_FALSE;
 }
 

@@ -161,15 +161,8 @@ static jboolean connectHearingAidNative(JNIEnv* env, jobject /* object */, jbyte
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sHearingAidInterface->Connect(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 
@@ -180,15 +173,8 @@ static jboolean disconnectHearingAidNative(JNIEnv* env, jobject /* object */, jb
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sHearingAidInterface->Disconnect(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 
@@ -197,15 +183,9 @@ static jboolean addToAcceptlistNative(JNIEnv* env, jobject /* object */, jbyteAr
   if (!sHearingAidInterface) {
     return JNI_FALSE;
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
 
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sHearingAidInterface->AddToAcceptlist(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 

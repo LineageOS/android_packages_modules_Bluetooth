@@ -278,13 +278,7 @@ static jboolean connectHidNative(JNIEnv* env, jobject /* object */, jbyteArray a
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
   BtStatus status = sBluetoothHidInterface->connect(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                     (tBT_TRANSPORT)transport);
@@ -292,33 +286,24 @@ static jboolean connectHidNative(JNIEnv* env, jobject /* object */, jbyteArray a
     log::error("Failed HID channel connection, status: {}", status);
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
 
 static jboolean disconnectHidNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                     jint address_type, jint transport, jboolean reconnect_allowed) {
-  jbyte* addr;
   jboolean ret = JNI_TRUE;
   if (!sBluetoothHidInterface) {
     return JNI_FALSE;
   }
 
-  addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   BtStatus status = sBluetoothHidInterface->disconnect(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                        (tBT_TRANSPORT)transport, reconnect_allowed);
   if (!status) {
     log::error("Failed disconnect hid channel, status: {}", status);
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -329,13 +314,7 @@ static jboolean getProtocolModeNative(JNIEnv* env, jobject /* object */, jbyteAr
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
   // TODO: protocolMode is unused by the backend: see b/28908173
   bthh_protocol_mode_t protocolMode = BTHH_UNSUPPORTED_MODE;
@@ -346,7 +325,6 @@ static jboolean getProtocolModeNative(JNIEnv* env, jobject /* object */, jbyteAr
     log::error("Failed get protocol mode, status: {}", status);
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -357,13 +335,7 @@ static jboolean virtualUnPlugNative(JNIEnv* env, jobject /* object */, jbyteArra
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
   BtStatus status = sBluetoothHidInterface->virtual_unplug(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                            (tBT_TRANSPORT)transport);
@@ -371,7 +343,7 @@ static jboolean virtualUnPlugNative(JNIEnv* env, jobject /* object */, jbyteArra
     log::error("Failed virtual unplug, status: {}", status);
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
+
   return ret;
 }
 
@@ -382,12 +354,6 @@ static jboolean setProtocolModeNative(JNIEnv* env, jobject /* object */, jbyteAr
   }
 
   log::debug("protocolMode = {}", protocolMode);
-
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
 
   bthh_protocol_mode_t mode;
   switch (protocolMode) {
@@ -402,7 +368,7 @@ static jboolean setProtocolModeNative(JNIEnv* env, jobject /* object */, jbyteAr
       return JNI_FALSE;
   }
 
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
   BtStatus status = sBluetoothHidInterface->set_protocol(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                          (tBT_TRANSPORT)transport, mode);
@@ -410,7 +376,6 @@ static jboolean setProtocolModeNative(JNIEnv* env, jobject /* object */, jbyteAr
     log::error("Failed set protocol mode, status: {}", status);
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -423,16 +388,10 @@ static jboolean getReportNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
   jint rType = reportType;
   jint rId = reportId;
 
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   BtStatus status = sBluetoothHidInterface->get_report(
           bd_addr, (tBLE_ADDR_TYPE)address_type, (tBT_TRANSPORT)transport,
           (bthh_report_type_t)rType, (uint8_t)rId, bufferSize);
@@ -441,7 +400,6 @@ static jboolean getReportNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     log::error("Failed get report, status: {}", status);
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -454,15 +412,10 @@ static jboolean setReportNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
   jint rType = reportType;
   const char* c_report = env->GetStringUTFChars(report, NULL);
 
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
   BtStatus status = sBluetoothHidInterface->set_report(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                        (tBT_TRANSPORT)transport,
@@ -472,7 +425,6 @@ static jboolean setReportNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     ret = JNI_FALSE;
   }
   env->ReleaseStringUTFChars(report, c_report);
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -485,13 +437,7 @@ static jboolean sendDataNative(JNIEnv* env, jobject /* object */, jbyteArray add
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   const char* c_report = env->GetStringUTFChars(report, NULL);
 
   BtStatus status = sBluetoothHidInterface->send_data(bd_addr, (tBLE_ADDR_TYPE)address_type,
@@ -501,7 +447,6 @@ static jboolean sendDataNative(JNIEnv* env, jobject /* object */, jbyteArray add
     ret = JNI_FALSE;
   }
   env->ReleaseStringUTFChars(report, c_report);
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -512,19 +457,12 @@ static jboolean getIdleTimeNative(JNIEnv* env, jobject /* object */, jbyteArray 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   BtStatus status = sBluetoothHidInterface->get_idle_time(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                           (tBT_TRANSPORT)transport);
   if (!status) {
     log::error("Failed get idle time, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return status ? JNI_TRUE : JNI_FALSE;
 }
@@ -535,19 +473,12 @@ static jboolean setIdleTimeNative(JNIEnv* env, jobject /* object */, jbyteArray 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   BtStatus status = sBluetoothHidInterface->set_idle_time(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                           (tBT_TRANSPORT)transport, idle_time);
   if (!status) {
     log::error("Failed set idle time, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return status ? JNI_TRUE : JNI_FALSE;
 }

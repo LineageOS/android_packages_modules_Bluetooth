@@ -225,15 +225,8 @@ static jboolean connectNative(JNIEnv* env, jobject /* object */, jbyteArray addr
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sCsisClientInterface->Connect(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 
@@ -244,15 +237,8 @@ static jboolean disconnectNative(JNIEnv* env, jobject /* object */, jbyteArray a
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   sCsisClientInterface->Disconnect(bd_addr);
-  env->ReleaseByteArrayElements(address, addr, 0);
   return JNI_TRUE;
 }
 

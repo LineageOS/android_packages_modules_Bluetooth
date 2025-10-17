@@ -168,20 +168,14 @@ static jboolean connectPanNative(JNIEnv* env, jobject /* object */, jbyteArray a
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+
   bt_status_t status = sPanIf->connect(bd_addr, src_role, dest_role);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed PAN channel connection, status: {}", bt_status_text(status));
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -192,20 +186,14 @@ static jboolean disconnectPanNative(JNIEnv* env, jobject /* object */, jbyteArra
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
-  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
+
   bt_status_t status = sPanIf->disconnect(bd_addr);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed disconnect pan channel, status: {}", bt_status_text(status));
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
