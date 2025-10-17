@@ -647,8 +647,7 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
     hh_connect_complete(conn, BTHH_CONN_STATE_DISCONNECTED);
 
     // Resume background connection attempt for added HOGP device.
-    if (com_android_bluetooth_flags_reconnect_on_hogp_connection_failure() &&
-        conn.link_spec.transport == BT_TRANSPORT_LE) {
+    if (conn.link_spec.transport == BT_TRANSPORT_LE) {
       btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(conn.link_spec);
       if (added_dev != nullptr && added_dev->reconnect_allowed) {
         log::info("Resuming background connection attempt for {}", conn.link_spec);
