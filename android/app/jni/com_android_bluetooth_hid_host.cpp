@@ -368,7 +368,7 @@ static jboolean virtualUnPlugNative(JNIEnv* env, jobject /* object */, jbyteArra
   BtStatus status = sBluetoothHidInterface->virtual_unplug(bd_addr, (tBLE_ADDR_TYPE)address_type,
                                                            (tBT_TRANSPORT)transport);
   if (!status) {
-    log::error("Failed virual unplug, status: {}", status);
+    log::error("Failed virtual unplug, status: {}", status);
     ret = JNI_FALSE;
   }
   env->ReleaseByteArrayElements(address, addr, 0);
