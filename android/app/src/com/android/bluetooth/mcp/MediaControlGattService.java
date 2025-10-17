@@ -1919,8 +1919,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     private String getTrackTitleChar() {
         if (isFeatureSupported(ServiceFeature.TRACK_TITLE)) {
             BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_TITLE);
-            if (characteristic.getValue() != null) {
-                return characteristic.getStringValue(0);
+            byte[] value = characteristic.getValue();
+            if (value != null && value.length > 0) {
+                return new String(value);
             }
         }
 
@@ -2045,13 +2046,16 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private String getPlayerNameChar() {
+        // If not support then return null, otherwise return gatt char value or default empty string
         if (!isFeatureSupported(ServiceFeature.PLAYER_NAME)) return null;
 
         BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
-        if (characteristic.getValue() != null) {
-            return characteristic.getStringValue(0);
+        byte[] value = characteristic.getValue();
+        if (value != null && value.length > 0) {
+            return new String(value);
         }
-        return null;
+
+        return "";
     }
 
     @VisibleForTesting
