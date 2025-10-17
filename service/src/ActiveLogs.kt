@@ -36,6 +36,8 @@ import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__DISABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__ENABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__UNKNOWN
+import com.android.bluetooth.util.Column
+import com.android.bluetooth.util.toTable
 import java.io.PrintWriter
 
 private const val TAG = "ActiveLogs"
@@ -87,33 +89,18 @@ class ActiveLogs {
         }
 
         writer.println("Enable log:")
-
-        val timeColWidth = 18 // "08-30 12:00:00.000"
-        val actionColWidth = 10 // Longest: "DisableBle"
-        val reasonColWidth = 20 // Longest: "RESTORE_USER_SETTING"
-
-        val headerTime = "TIMESTAMP".padEnd(timeColWidth)
-        val headerAction = "ACTION".padEnd(actionColWidth)
-        val headerReason = "REASON".padEnd(reasonColWidth)
-        val headerPackage = "PACKAGE" // Last column doesn't need padding
-
-        writer.println("  $headerTime $headerAction $headerReason $headerPackage")
-
-        val timeSep = "-".repeat(timeColWidth)
-        val actionSep = "-".repeat(actionColWidth)
-        val reasonSep = "-".repeat(reasonColWidth)
-        val packageSep = "-".repeat(30) // A fixed length for the package separator is fine
-
-        writer.println("  $timeSep $actionSep $reasonSep $packageSep")
-
-        activeLogs.forEach { log ->
-            val time = Log.timeToStringWithZone(log.timestamp).padEnd(timeColWidth)
-            val action = (if (log.enable) "Enable" else "Disable") + (if (log.isBle) "Ble" else "")
-            val actionStr = action.padEnd(actionColWidth)
-            val reason = getEnableDisableReasonString(log.reason).padEnd(reasonColWidth)
-
-            writer.println("  $time $actionStr $reason ${log.packageName}")
-        }
+        val table =
+            activeLogs
+                .toTable(
+                    Column("TIMESTAMP", width = 18) { Log.timeToStringWithZone(it.timestamp) },
+                    Column("ACTION", width = 10) {
+                        (if (it.enable) "Enable" else "Disable") + (if (it.isBle) "Ble" else "")
+                    },
+                    Column("REASON", width = 20) { getEnableDisableReasonString(it.reason) },
+                    Column("PACKAGE") { it.packageName },
+                )
+                .prependIndent("  ")
+        writer.println(table)
     }
 
     companion object {
