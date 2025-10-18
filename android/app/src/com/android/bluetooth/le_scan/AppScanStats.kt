@@ -484,7 +484,7 @@ class AppScanStats(
             ongoingScans.forEach { it.appendDetails(sb, currentTimeMs, elapsedRealtimeMs, true) }
         }
 
-        sb.append("\n\n")
+        sb.appendLine()
     }
 
     private fun LastScan.appendDetails(
