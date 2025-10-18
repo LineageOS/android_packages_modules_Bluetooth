@@ -239,7 +239,7 @@ public class TbsService extends ProfileService {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-        sb.append("TbsService instance:\n");
+        sb.append("  TbsService instance:\n");
 
         mTbsGeneric.dump(sb);
 
@@ -252,7 +252,7 @@ public class TbsService extends ProfileService {
             } else {
                 accessString = "ACCESS_UNKNOWN";
             }
-            sb.append("\n\tDevice: ")
+            sb.append("\n    Device: ")
                     .append(entry.getKey())
                     .append(", access: ")
                     .append(accessString);

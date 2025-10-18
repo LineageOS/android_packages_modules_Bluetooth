@@ -4581,10 +4581,11 @@ public class AdapterService extends Service {
         writer.println();
 
         mAdapterStateMachine.dump(fd, writer, args);
+        writer.println();
 
         final var stringBuilder = new StringBuilder();
-
         mSilenceDeviceManager.dump(stringBuilder);
+
         if (Flags.mainlineBetaStorage()) {
             stringBuilder.append("\n");
             mStorage.dump(stringBuilder);
