@@ -1952,15 +1952,19 @@ class ScanManager {
             new ActivityManager.OnUidImportanceListener() {
                 @Override
                 public void onUidImportance(final int uid, final int importance) {
-                    if (mScanController.getScannerMap().getAppScanStatsByUid(uid) != null) {
-                        final var uidImportance = new UidImportance(uid, importance);
-                        if (Flags.scanControllerThread()) {
-                            mScanController.doOnScanThread(
-                                    () -> handleImportanceChange(uidImportance));
-                        } else {
+                    if (Flags.scanControllerThread()) {
+                        mScanController.doOnScanThread(
+                                () -> {
+                                    if (mScanController.getScannerMap().getAppScanStatsByUid(uid)
+                                            != null) {
+                                        handleImportanceChange(new UidImportance(uid, importance));
+                                    }
+                                });
+                    } else {
+                        if (mScanController.getScannerMap().getAppScanStatsByUid(uid) != null) {
                             Message message = new Message();
                             message.what = MSG_IMPORTANCE_CHANGE;
-                            message.obj = uidImportance;
+                            message.obj = new UidImportance(uid, importance);
                             mClientHandler.sendMessage(message);
                         }
                     }
