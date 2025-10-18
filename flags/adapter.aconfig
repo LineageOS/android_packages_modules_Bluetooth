@@ -49,16 +49,6 @@ flag {
 }
 
 flag {
-    name: "do_not_dump_devices_from_adapter_properties"
-    namespace: "bluetooth"
-    description: "Do not dump the bonded devices from the adapter properties"
-    bug: "406319687"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ref_counted_native_wakelock"
     namespace: "bluetooth"
     description: "Make native wakelock reference counted"

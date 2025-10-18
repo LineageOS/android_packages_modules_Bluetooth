@@ -985,49 +985,6 @@ public class AdapterProperties {
         writer.println("  " + "A2dpOffloadEnabled: " + mA2dpOffloadEnabled);
         writer.println("  " + "Discovering: " + mService.isDiscovering());
         writer.println("  " + "DiscoveryEndMs: " + mDiscoveryEndMs);
-
-        if (Flags.doNotDumpDevicesFromAdapterProperties()) {
-            return;
-        }
-        writer.println("  " + "Bonded devices:");
-        StringBuilder sb = new StringBuilder();
-        for (BluetoothDevice device : mBondedDevices) {
-            String address = device.getAddress();
-            String brEdrAddress = Utils.getBrEdrAddress(device, mService);
-            if (brEdrAddress.equals(address)) {
-                writer.println(
-                        "    "
-                                + BluetoothUtils.toAnonymizedAddress(address)
-                                + " ["
-                                + dumpDeviceType(mRemoteDevices.getType(device))
-                                + "][ 0x"
-                                + String.format("%06X", mRemoteDevices.getBluetoothClass(device))
-                                + " ] ");
-            } else {
-                sb.append("    ")
-                        .append(BluetoothUtils.toAnonymizedAddress(address))
-                        .append(" => ")
-                        .append(BluetoothUtils.toAnonymizedAddress(brEdrAddress))
-                        .append(" [")
-                        .append(dumpDeviceType(mRemoteDevices.getType(device)))
-                        .append("][ 0x")
-                        .append(String.format("%06X", mRemoteDevices.getBluetoothClass(device)))
-                        .append(" ] ")
-                        .append("\n");
-            }
-        }
-        writer.println(sb.toString());
-    }
-
-    // TODO(b/406319687): Remove when do_not_dump_devices_from_adapter_properties is shipped
-    private static String dumpDeviceType(int deviceType) {
-        return switch (deviceType) {
-            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
-            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
-            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
-            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
-            default -> "Invalid device type: " + deviceType;
-        };
     }
 
     private static String dumpConnectionState(int state) {
