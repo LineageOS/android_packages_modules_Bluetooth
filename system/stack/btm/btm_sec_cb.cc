@@ -350,11 +350,7 @@ bool tBTM_SEC_REC::is_bonded(tBT_TRANSPORT transport) const {
   // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
   if (transport != BT_TRANSPORT_LE) {
     log::verbose("BREDR bond status - bond_type: {}, sec_flags: {}", bond_type, sec_flags);
-    if (com_android_bluetooth_flags_temporary_pairing_tracking()) {
-      bonded = is_bond_type_persistent() && is_link_key_known();
-    } else {
-      bonded = is_link_key_known();
-    }
+    bonded = is_bond_type_persistent() && is_link_key_known();
   }
 
   // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO

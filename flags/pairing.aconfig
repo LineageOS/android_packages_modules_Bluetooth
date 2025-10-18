@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "temporary_pairing_tracking"
-    namespace: "bluetooth"
-    description: "Correctly track temporary pairing status"
-    bug: "397705157"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reset_security_flags_on_pairing_failure"
     namespace: "bluetooth"
     description: "Reset security flags on pairing failure"

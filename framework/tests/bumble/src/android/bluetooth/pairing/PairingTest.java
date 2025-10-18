@@ -1012,7 +1012,6 @@ public class PairingTest {
      * <p>Expectation: Pairing should not be autonomously rejected
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_TEMPORARY_PAIRING_TRACKING})
     public void testTemporaryPaired_bondLoss_remoteInitiate() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_ACL_DISCONNECTED)
