@@ -47,10 +47,6 @@ class ScanRadioStats {
         mTimeProvider = timeProvider;
     }
 
-    void initScanRadioState() {
-        mIsRadioStarted = false;
-    }
-
     void setScreenState(boolean isScreenOn) {
         if (mIsScreenOn == isScreenOn) {
             return;
