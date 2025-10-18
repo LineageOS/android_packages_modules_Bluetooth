@@ -150,7 +150,24 @@ object Utils {
                     "$tag/$action: Hid: $device - ${getConnectionStateName(state)} - transport=$transport",
                 )
             }
+            BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED -> {
+                val device = intent.getBluetoothDeviceExtra()
+                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+                Log.d(
+                    "intentLogger",
+                    "$tag/$action: Headset: $device - ${getAudioConnectionStateName(state)} - $state ",
+                )
+            }
             else -> throw IllegalArgumentException("Missing implementation for $action")
+        }
+    }
+
+    fun getAudioConnectionStateName(state: Int): String {
+        return when (state) {
+            BluetoothHeadset.STATE_AUDIO_DISCONNECTED -> "AUDIO_STATE_DISCONNECTED"
+            BluetoothHeadset.STATE_AUDIO_CONNECTING -> "AUDIO_STATE_CONNECTING"
+            BluetoothHeadset.STATE_AUDIO_CONNECTED -> "AUDIO_STATE_CONNECTED"
+            else -> "STATE_UNKNOWN"
         }
     }
 

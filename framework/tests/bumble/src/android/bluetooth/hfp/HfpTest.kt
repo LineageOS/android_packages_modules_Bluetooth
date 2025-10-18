@@ -29,6 +29,9 @@ import android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothHeadset.STATE_AUDIO_CONNECTED
+import android.bluetooth.BluetoothHeadset.STATE_AUDIO_CONNECTING
+import android.bluetooth.BluetoothHeadset.STATE_AUDIO_DISCONNECTED
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
@@ -110,6 +113,7 @@ class HfpTest {
                 addAction(ACTION_BOND_STATE_CHANGED)
                 addAction(ACTION_PAIRING_REQUEST)
                 addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
+                addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)
             }
         targetContext.registerReceiver(receiver, filter)
         Utils.setupIntentLogger(TAG, receiver)
@@ -172,6 +176,99 @@ class HfpTest {
         verifyConnectionState(STATE_DISCONNECTING)
         verifyConnectionState(STATE_DISCONNECTED)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_DISCONNECTED)
+    }
+
+    /**
+     * Test connecting and disconnecting audio (SCO) from the Audio Gateway (AG) side (Android
+     * device).
+     *
+     * <p>Steps:
+     * <ol>
+     * <li>Call `prepareBumbleDeviceAsBondedAndDisconnected()` to ensure the Bumble device is bonded
+     *   and in a disconnected state.
+     * <li>Initiate an HFP connection to the Bumble device using `hfpService.connect(bumbleDevice)`.
+     * <li>Verify that the final HFP connection state is `STATE_CONNECTED` .
+     * <li>Set the Bumble device as the active device for HFP .
+     * <li>Force SCO audio to be used to setup SCO without a call .
+     * <li>Initiate an audio connection (SCO)
+     * <li>Verify that the audio got connected to Bumble
+     * <li>Initiate an audio disconnection (SCO) .
+     * <li>Verify that the audio got disconnected .
+     * </ol>
+     *
+     * <p>Expectation:
+     * <ul>
+     * <li>SCO audio connection is successfully established and subsequently disconnected from the
+     *   AG side.
+     * </ul>
+     */
+    @Test
+    @Throws(Exception::class)
+    fun connectAndDisconnectAudioFromAg() {
+        prepareBumbleDeviceAsBondedAndDisconnected()
+
+        assertThat(hfpService.connect(bumbleDevice)).isTrue()
+        verifyConnectionState(STATE_CONNECTING)
+        verifyConnectionState(STATE_CONNECTED)
+        assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
+        assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
+        hfpService.setForceScoAudio(true)
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
+        verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)
+        assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
+    }
+
+    /**
+     * Test scenario where an SCO (Synchronous Connection-Oriented) audio connection is disconnected
+     * while it's in the connecting state to the Bumble device, and then re-connected successfully.
+     *
+     * <p>Steps:
+     * <ol>
+     * <li>Call `prepareBumbleDeviceAsBondedAndDisconnected()` to ensure the Bumble device is bonded
+     *   and in a disconnected state.
+     * <li>Create HFP connection to the Bumble device .
+     * <li>Force SCO audio to setup SCO without a call.
+     * <li>Set the Bumble device as the active device for HFP .
+     * <li>Initiate an audio connection (SCO) using `hfpService.connectAudio()`.
+     * <li>**Immediately disconnect the SCO audio while it's still in the `STATE_AUDIO_CONNECTING`
+     *   state** using `hfpService.disconnectAudio()`.
+     * <li>Verify that the audio state transitions to `STATE_AUDIO_DISCONNECTED` .
+     * <li> Create Audio connection to bumble
+     * </ol>
+     *
+     * <p>Expectation:
+     * <ul>
+     * <li>The initial SCO audio connection attempt is successfully interrupted during the
+     *   connecting phase.
+     * <li>A subsequent SCO audio connection attempt to the same device succeeds.
+     * </ul>
+     */
+    @Test
+    @Throws(Exception::class)
+    fun disconnectScoWhileConnectingBumble() {
+        prepareBumbleDeviceAsBondedAndDisconnected()
+
+        assertThat(hfpService.connect(bumbleDevice)).isTrue()
+        verifyConnectionState(STATE_CONNECTING)
+        verifyConnectionState(STATE_CONNECTED)
+        assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
+        hfpService.setForceScoAudio(true)
+        assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
+
+        // Disconnect sco to first bumble device while in connecting state
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
+        assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
+
+        // Try to connect SCO to Bumble device
+        assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
+        verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)
+        assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
     }
 
     private fun prepareBumbleDeviceAsBondedAndDisconnected() {
@@ -258,6 +355,14 @@ class HfpTest {
         verifyIntentReceived(
             hasAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED),
             hasExtra(EXTRA_DEVICE, bumbleDevice),
+            hasExtra(EXTRA_STATE, state),
+        )
+    }
+
+    private fun verifyAudioState(state: Int, device: BluetoothDevice) {
+        verifyIntentReceived(
+            hasAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED),
+            hasExtra(EXTRA_DEVICE, device),
             hasExtra(EXTRA_STATE, state),
         )
     }
