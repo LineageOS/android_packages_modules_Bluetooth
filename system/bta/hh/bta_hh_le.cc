@@ -1102,40 +1102,7 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  * Parameters:
  *
  ******************************************************************************/
-static void bta_hh_start_security_(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */) {
-  log::verbose("addr:{}", p_cb->link_spec.addrt.bda);
-
-  /* if link has been encrypted */
-  if (BTM_IsEncrypted(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
-    log::debug("addr:{} already encrypted", p_cb->link_spec.addrt.bda);
-    p_cb->status = BTHH_OK;
-    bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
-  } else if (BTM_IsBonded(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
-    /* if bonded and link not encrypted */
-    log::debug("addr:{} bonded, not encrypted", p_cb->link_spec.addrt.bda);
-    p_cb->status = BTHH_ERR_AUTH_FAILED;
-    BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback, NULL,
-                      BTM_BLE_SEC_ENCRYPT);
-  } else if (BTM_SecIsLeSecurityPending(p_cb->link_spec.addrt.bda)) {
-    /* if security collision happened, wait for encryption done */
-    log::debug("addr:{} security collision", p_cb->link_spec.addrt.bda);
-    p_cb->security_pending = true;
-  } else {
-    /* unbonded device, report security error here */
-    log::debug("addr:{} not bonded", p_cb->link_spec.addrt.bda);
-    p_cb->status = BTHH_ERR_AUTH_FAILED;
-    bta_hh_clear_service_cache(p_cb);
-    BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback, NULL,
-                      BTM_BLE_SEC_ENCRYPT_NO_MITM);
-  }
-}
-
-void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
-  if (!com_android_bluetooth_flags_hogp_encryption_collision()) {
-    bta_hh_start_security_(p_cb, p_buf);
-    return;
-  }
-
+void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */) {
   if (BTM_IsEncrypted(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
     log::debug("{} is already encrypted", p_cb->link_spec);
     p_cb->status = BTHH_OK;
