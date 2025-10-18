@@ -19,6 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <functional>
+
 #include "btm_iso_api.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
@@ -44,9 +46,6 @@ using testing::Return;
 using testing::SaveArg;
 using testing::StrictMock;
 using testing::Test;
-
-// for function pointer testing purpose
-bool IsIsoActive = false;
 
 BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
 void BTM_LogHistory(const std::string& /* tag */, const RawAddress& /* bd_addr */,
@@ -144,7 +143,7 @@ protected:
 
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
-    IsIsoActive = false;
+    is_iso_active_ = false;
 
     iso_sizes_.total_num_le_packets_ = 6;
     iso_sizes_.le_data_packet_length_ = 1024;
@@ -172,7 +171,7 @@ protected:
     iso_callbacks_ = {
             .cig_callbacks = cig_callbacks_.get(),
             .big_callbacks = big_callbacks_.get(),
-            .iso_traffic_active_callback = iso_active_callback,
+            .iso_traffic_active_callback = iso_traffic_active_callback_,
     };
     client_handle_ = manager_instance_->RegisterCallbacks(iso_callbacks_);
 
@@ -342,7 +341,10 @@ protected:
   std::unique_ptr<MockBigCallbacks> big_callbacks_;
   std::unique_ptr<MockCigCallbacks> cig_callbacks_;
   bluetooth::hci::iso_manager::IsoManagerCallbacks iso_callbacks_;
-  void (*iso_active_callback)(bool) = [](bool active) { IsIsoActive = active; };
+  bool is_iso_active_ = false;
+  std::function<void(bool)> iso_traffic_active_callback_ = [this](bool active) {
+    is_iso_active_ = active;
+  };
 };
 
 const bluetooth::hci::iso_manager::cig_create_cmpl_evt IsoManagerTest::kDefaultCigParamsEvt = {
@@ -512,7 +514,7 @@ TEST_F(IsoManagerTest, RegisterCallbacks) {
   bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks = {
           .cig_callbacks = cig_callbacks_.get(),
           .big_callbacks = big_callbacks_.get(),
-          .iso_traffic_active_callback = iso_active_callback,
+          .iso_traffic_active_callback = iso_traffic_active_callback_,
   };
   iso_mgr->RegisterCallbacks(callbacks);
 }
@@ -944,10 +946,10 @@ TEST_F(IsoManagerTest, RemoveCigInvalidStatus) {
 TEST_F(IsoManagerTest, RemoveCigValid) {
   uint8_t hci_mock_rsp_buffer[] = {HCI_SUCCESS, volatile_test_cig_create_cmpl_evt_.cig_id};
 
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
   IsoManager::GetInstance()->CreateCig(client_handle_, volatile_test_cig_create_cmpl_evt_.cig_id,
                                        kDefaultCigParams);
-  ASSERT_EQ(IsIsoActive, true);
+  ASSERT_EQ(is_iso_active_, true);
 
   ON_CALL(hcic_interface_, RemoveCig)
           .WillByDefault(
@@ -966,7 +968,7 @@ TEST_F(IsoManagerTest, RemoveCigValid) {
   IsoManager::GetInstance()->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id);
   ASSERT_EQ(evt.cig_id, volatile_test_cig_create_cmpl_evt_.cig_id);
   ASSERT_EQ(evt.status, HCI_SUCCESS);
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
 }
 
 TEST_F(IsoManagerTest, EstablishCisHciCall) {
@@ -1861,10 +1863,10 @@ TEST_F(IsoManagerTest, TerminateBigValid) {
   const uint8_t big_handle = 0x22;
   const uint8_t reason = 0x16;  // Terminated by local host
   bluetooth::hci::iso_manager::big_terminate_cmpl_evt evt;
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
 
   IsoManager::GetInstance()->CreateBig(client_handle_, big_handle, kDefaultBigParams);
-  ASSERT_EQ(IsIsoActive, true);
+  ASSERT_EQ(is_iso_active_, true);
 
   EXPECT_CALL(*big_callbacks_,
               OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, _))
@@ -1876,7 +1878,7 @@ TEST_F(IsoManagerTest, TerminateBigValid) {
   IsoManager::GetInstance()->TerminateBig(big_handle, reason);
   ASSERT_EQ(evt.big_handle, big_handle);
   ASSERT_EQ(evt.reason, reason);
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
 }
 
 TEST_F(IsoManagerTest, SetupIsoDataPathValid) {
@@ -2854,7 +2856,7 @@ TEST_F(IsoManagerDeathTestNoCleanup, HandleApiCallsWhenStopped) {
   bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks = {
           .cig_callbacks = cig_callbacks_.get(),
           .big_callbacks = big_callbacks_.get(),
-          .iso_traffic_active_callback = iso_active_callback,
+          .iso_traffic_active_callback = iso_traffic_active_callback_,
   };
   auto client_handle = IsoManager::GetInstance()->RegisterCallbacks(callbacks);
 
