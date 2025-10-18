@@ -294,9 +294,11 @@ class ScanManager {
         }
         mDisplayManager.registerDisplayListener(mDisplayListener, null);
         mScreenOn = isScreenOn();
-        AppScanStats.setScreenState(mScreenOn);
-        mScanController.getScanRadioStats().initScanRadioState();
-        mScanController.getScanRadioStats().setScreenState(mScreenOn);
+        mScanController.doOnScanThread(
+                () -> {
+                    AppScanStats.setScreenState(mScreenOn);
+                    mScanController.getScanRadioStats().setScreenState(mScreenOn);
+                });
         if (mActivityManager != null) {
             mActivityManager.addOnUidImportanceListener(
                     mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);

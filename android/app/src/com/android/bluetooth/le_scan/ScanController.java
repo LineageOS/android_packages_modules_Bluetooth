@@ -258,6 +258,7 @@ public class ScanController {
     }
 
     ScanRadioStats getScanRadioStats() {
+        enforceScanThread();
         return mScanRadioStats;
     }
 
