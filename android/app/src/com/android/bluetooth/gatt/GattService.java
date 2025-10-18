@@ -2895,56 +2895,22 @@ public class GattService extends ProfileService {
         };
     }
 
-    void dumpRegisterId(StringBuilder sb) {
-        sb.append("  Client:\n");
-        for (Integer appId : mClientMap.getAllAppsIds()) {
-            final ContextMap.App app = mClientMap.getById(appId);
-            println(
-                    sb,
-                    ("    app_if: " + appId)
-                            + (", appName: " + app.getPackageName())
-                            + (", transport: " + transportToString(app.getTransport()))
-                            + (app.mAttributionTag == null ? "" : ", tag: " + app.mAttributionTag));
-            final List<ContextMap.Connection> clientConnections =
-                    mClientMap.getConnectionByApp(appId);
-            for (ContextMap.Connection connection : clientConnections) {
-                println(sb, "        " + connection);
-            }
-        }
-        sb.append("  Server:\n");
-        for (Integer appId : mServerMap.getAllAppsIds()) {
-            final ContextMap.App app = mServerMap.getById(appId);
-            println(
-                    sb,
-                    ("    app_if: " + appId)
-                            + (", appName: " + app.getPackageName())
-                            + (", transport: " + transportToString(app.getTransport()))
-                            + (app.mAttributionTag == null ? "" : ", tag: " + app.mAttributionTag));
-            final List<ContextMap.Connection> serverConnections =
-                    mServerMap.getConnectionByApp(appId);
-            for (ContextMap.Connection connection : serverConnections) {
-                println(sb, "        " + connection);
-            }
-        }
-        sb.append("\n\n");
-    }
-
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-        sb.append("\nRegistered App\n");
-        dumpRegisterId(sb);
+        sb.append("\nRegistered App:\n");
+        sb.append(GattUtil.dumpRegisterId(mClientMap, mServerMap));
 
-        sb.append("GATT Advertiser Map\n");
+        sb.append("GATT Advertiser Map:\n");
         mAdvertiseManager.dump(sb);
 
-        sb.append("GATT Client Map\n");
+        sb.append("GATT Client Map:\n");
         mClientMap.dump(sb);
 
-        sb.append("GATT Server Map\n");
+        sb.append("GATT Server Map:\n");
         mServerMap.dump(sb);
 
-        sb.append("GATT Handle Map\n");
+        sb.append("GATT Handle Map:\n");
         mHandleMap.dump(sb);
     }
 

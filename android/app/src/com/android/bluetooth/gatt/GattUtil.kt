@@ -18,6 +18,9 @@ package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.IBluetoothGattCallback
+import android.bluetooth.IBluetoothGattServerCallback
+import com.android.bluetooth.Utils.transportToString
 import com.android.bluetooth.hid.HidHostService
 import java.util.UUID
 
@@ -157,5 +160,27 @@ object GattUtil {
             0xFF -> "GATT_OUT_OF_RANGE (0xFF)"
             BluetoothGatt.GATT_FAILURE -> "GATT_FAILURE (0x101)"
             else -> "UNKNOWN STATUS ($status)"
+        }
+
+    @JvmStatic
+    fun dumpRegisterId(
+        clientMap: ContextMap<IBluetoothGattCallback>,
+        serverMap: ContextMap<IBluetoothGattServerCallback>,
+    ) = buildString {
+        append("  Client:\n")
+        dumpMapDetails(clientMap)
+        append("  Server:\n")
+        dumpMapDetails(serverMap)
+        append("\n\n")
+    }
+
+    private fun StringBuilder.dumpMapDetails(map: ContextMap<*>) =
+        map.allApps.forEach { app ->
+            append("    app_if: ${app.id}")
+            append(", appName: ${app.packageName}")
+            append(", transport: ${transportToString(app.transport)}")
+            app.mAttributionTag?.let { tag -> append(", tag: $tag") }
+            appendLine()
+            map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
 }

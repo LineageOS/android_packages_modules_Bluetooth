@@ -52,7 +52,7 @@ import java.util.function.Predicate;
  *
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-class ContextMap<C extends IInterface> {
+public class ContextMap<C extends IInterface> {
     private static final String TAG = GattUtil.TAG_PREFIX + ContextMap.class.getSimpleName();
 
     private static final int MAX_LAST_RECORDS = 5;
@@ -290,14 +290,11 @@ class ContextMap<C extends IInterface> {
         return removedApp;
     }
 
-    List<Integer> getAllAppsIds() {
-        List<Integer> appIds = new ArrayList<>();
+    List<App> getAllApps() {
         synchronized (mAppsLock) {
-            for (App entry : mApps) {
-                appIds.add(entry.id);
-            }
+            // Return a shallow copy list containing all apps from mApps.
+            return new ArrayList<>(mApps);
         }
-        return appIds;
     }
 
     /** Get all registered application callbacks. */

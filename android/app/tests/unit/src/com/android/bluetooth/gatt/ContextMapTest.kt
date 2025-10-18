@@ -73,7 +73,7 @@ class ContextMapTest {
         val contextMapByConn = contextMap.getByConnId(CONN_ID1)
         assertThat(contextMapByConn.packageName).isEqualTo(APP_NAME)
 
-        val ids = contextMap.allAppsIds
+        val ids = contextMap.allApps.map { it.id }
         assertThat(ids).containsExactly(APP_ID1, APP_ID2)
     }
 
@@ -129,22 +129,22 @@ class ContextMapTest {
         val contextMap: ContextMap<IBluetoothGattCallback> = getMapWithAppAndConnection()
         contextMap.clear()
         assertThat(contextMap.connectedMap).isEmpty()
-        assertThat(contextMap.allAppsIds).isEmpty()
+        assertThat(contextMap.allApps).isEmpty()
     }
 
     @Test
     fun removeMethods() {
         var contextMap: ContextMap<IBluetoothGattCallback> = getMapWithAppAndConnection()
         contextMap.remove(APP_ID1, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
-        assertThat(contextMap.allAppsIds).isNotEmpty()
+        assertThat(contextMap.allApps).isNotEmpty()
         contextMap.remove(APP_ID2, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
-        assertThat(contextMap.allAppsIds).isEmpty()
+        assertThat(contextMap.allApps).isEmpty()
 
         contextMap = getMapWithAppAndConnection()
         contextMap.remove(RANDOM_UUID1, ContextMap.RemoveReason.REASON_REGISTER_FAILED)
-        assertThat(contextMap.allAppsIds).isNotEmpty()
+        assertThat(contextMap.allApps).isNotEmpty()
         contextMap.remove(RANDOM_UUID2, ContextMap.RemoveReason.REASON_REGISTER_FAILED)
-        assertThat(contextMap.allAppsIds).isEmpty()
+        assertThat(contextMap.allApps).isEmpty()
 
         contextMap = getMapWithAppAndConnection()
         contextMap.removeConnection(APP_ID1, CONN_ID1)
@@ -212,7 +212,7 @@ class ContextMapTest {
         contextMap.addConnection(APP_ID2, CONN_ID3, TRANSPORT_LE, device2)
 
         assertThat(contextMap.connectedMap).isNotEmpty()
-        assertThat(contextMap.allAppsIds).isNotEmpty()
+        assertThat(contextMap.allApps).isNotEmpty()
         return contextMap
     }
 
