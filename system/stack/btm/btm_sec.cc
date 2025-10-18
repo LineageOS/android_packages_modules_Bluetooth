@@ -3979,8 +3979,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   p_dev_rec->sec_rec.classic_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
-  if (com_android_bluetooth_flags_reset_security_flags_on_pairing_failure() &&
-      !p_dev_rec->sec_rec.is_bonded()) {
+  if (!p_dev_rec->sec_rec.is_bonded()) {
     log::warn("Clearing security flags for unbonded device {}", p_dev_rec->bd_addr);
     p_dev_rec->sec_rec.sec_flags = 0;
   }

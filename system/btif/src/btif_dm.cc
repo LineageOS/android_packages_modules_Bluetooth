@@ -578,8 +578,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
 
   if (pairing_cb.bond_type == BOND_TYPE_TEMPORARY) {
     state = BT_BOND_STATE_NONE;
-  } else if (com_android_bluetooth_flags_reset_security_flags_on_pairing_failure() &&
-             state == BT_BOND_STATE_NONE) {
+  } else if (state == BT_BOND_STATE_NONE) {
     log::warn("Clearing security flags for {} on pairing failure", bd_addr);
     get_security_client_interface().BTM_SecClearSecurityFlags(bd_addr);
   }
