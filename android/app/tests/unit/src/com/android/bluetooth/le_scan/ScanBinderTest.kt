@@ -99,55 +99,52 @@ class ScanBinderTest {
     }
 
     @Test
+    fun unregisterScanner_afterCleanup_doesNothing() {
+        val scannerId = 1
+
+        binder.cleanup()
+        binder.unregisterScanner(scannerId, attributionSource)
+        verify(scanController, never()).unregisterScanner(scannerId)
+    }
+
+    @Test
     fun startScan_withDefaultSettings_doesNotEnforcePrivilegedPermission() {
         val scannerId = 1
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
-
-        // Verify that the scan is started on the controller
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
-        // Verify that privileged permission is not required for default settings
         verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
     }
 
     @Test
     fun startScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
-        // Setup: Bluetooth adapter is STATE_BLE_ON
         whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_BLE_ON)
         val scannerId = 1
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
-
-        // Verify that privileged permission is enforced
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        // Verify that the scan is still started on the controller
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
     }
 
     @Test
     fun startScan_withAmbientDiscoveryMode_enforcesPrivilegedPermission() {
         val scannerId = 1
-        // Setup: ScanSettings with ambient discovery mode
         val settings =
             ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY).build()
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
-
-        // Verify that privileged permission is enforced
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        // Verify that the scan is still started on the controller
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
     }
 
     @Test
     fun startScan_withBatchScanTruncated_enforcesPrivilegedPermission() {
         val scannerId = 1
-        // Setup: ScanSettings for truncated batch scan
         val settings =
             ScanSettings.Builder()
                 .setReportDelay(1000)
@@ -156,17 +153,13 @@ class ScanBinderTest {
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
-
-        // Verify that privileged permission is enforced
         verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        // Verify that the scan is still started on the controller
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
     }
 
     @Test
     fun startScan_withBatchScanFull_doesNotEnforcePrivilegedPermission() {
         val scannerId = 1
-        // Setup: ScanSettings for full batch scan
         val settings =
             ScanSettings.Builder()
                 .setReportDelay(1000)
@@ -175,10 +168,7 @@ class ScanBinderTest {
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
-
-        // Verify that privileged permission is NOT enforced
         verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        // Verify that the scan is started on the controller
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
     }
 
@@ -258,10 +248,5 @@ class ScanBinderTest {
     fun numHwTrackFiltersAvailable() {
         binder.numHwTrackFiltersAvailable(attributionSource)
         verify(scanController).numHwTrackFiltersAvailable()
-    }
-
-    @Test
-    fun cleanup_doesNotCrash() {
-        binder.cleanup()
     }
 }
