@@ -568,17 +568,17 @@ private:
       case HCI_BLE_CREATE_BIG_CPL_EVT: {
         auto* evt = static_cast<big_create_cmpl_evt*>(data);
 
-        if (evt->big_id != GetAdvertisingSid()) {
-          log::error("State={}, Event={}, Unknown big, big_id={}", ToString(GetState()), event,
-                     evt->big_id);
+        if (evt->big_handle != GetAdvertisingSid()) {
+          log::error("State={}, Event={}, Unknown big, big_handle={}", ToString(GetState()), event,
+                     evt->big_handle);
           break;
         }
 
         if (evt->status == 0x00) {
-          log::info("BIG create BIG complete, big_id={}", evt->big_id);
+          log::info("BIG create BIG complete, big_handle={}", evt->big_handle);
           active_config_ = {
                   .status = evt->status,
-                  .big_id = evt->big_id,
+                  .big_handle = evt->big_handle,
                   .big_sync_delay = evt->big_sync_delay,
                   .transport_latency_big = evt->transport_latency_big,
                   .phy = evt->phy,
@@ -593,26 +593,27 @@ private:
 
           if (GetState() == BroadcastStateMachine::State::DISABLING ||
               GetState() == BroadcastStateMachine::State::STOPPING) {
-            log::info("Terminating BIG in state={}, big_id={}", ToString(GetState()), evt->big_id);
+            log::info("Terminating BIG in state={}, big_handle={}", ToString(GetState()),
+                      evt->big_handle);
             TerminateBig();
           } else {
             callbacks_->OnBigCreated(evt->conn_handles);
             TriggerIsoDatapathSetup(evt->conn_handles[0]);
           }
         } else {
-          log::error("State={} Event={}. Unable to create big, big_id={}, status={}",
-                     ToString(GetState()), event, evt->big_id, evt->status);
+          log::error("State={} Event={}. Unable to create big, big_handle={}, status={}",
+                     ToString(GetState()), event, evt->big_handle, evt->status);
         }
       } break;
       case HCI_BLE_TERM_BIG_CPL_EVT: {
         auto* evt = static_cast<big_terminate_cmpl_evt*>(data);
 
-        log::info("BIG terminate BIG cmpl in state={}, reason={} big_id={}", ToString(GetState()),
-                  evt->reason, evt->big_id);
+        log::info("BIG terminate BIG cmpl in state={}, reason={} big_handle={}",
+                  ToString(GetState()), evt->reason, evt->big_handle);
 
-        if (evt->big_id != GetAdvertisingSid()) {
+        if (evt->big_handle != GetAdvertisingSid()) {
           log::error("State={} Event={}, unknown adv.sid={}", ToString(GetState()), event,
-                     evt->big_id);
+                     evt->big_handle);
           break;
         }
 
@@ -689,7 +690,7 @@ std::ostream& operator<<(std::ostream& os,
                          const bluetooth::le_audio::broadcaster::BigConfig& config) {
   os << "\n";
   os << "        Status: 0x" << std::hex << +config.status << std::dec << "\n";
-  os << "        BIG ID: " << +config.big_id << "\n";
+  os << "        BIG ID: " << +config.big_handle << "\n";
   os << "        Sync delay: " << config.big_sync_delay << "\n";
   os << "        Transport Latency: " << config.transport_latency_big << "\n";
   os << "        Phy: " << +config.phy << "\n";

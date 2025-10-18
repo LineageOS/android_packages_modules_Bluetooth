@@ -46,8 +46,8 @@ public:
 class BigCallbacks {
 public:
   virtual ~BigCallbacks() = default;
-  virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_id) = 0;
-  virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_id) = 0;
+  virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_handle) = 0;
+  virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_handle) = 0;
 
   virtual void OnBigEvent(uint8_t event, void* data) = 0;
 };
@@ -168,19 +168,19 @@ public:
    * Creates the Broadcast Isochronous Group
    *
    * @param client_handle client handle
-   * @param big_id host assigned BIG identifier
+   * @param big_handle host assigned BIG identifier
    * @param big_params BIG parameters
    */
-  virtual void CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_id,
+  virtual void CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_handle,
                          struct iso_manager::big_create_params big_params);
 
   /**
    * Terminates the Broadcast Isochronous Group
    *
-   * @param big_id host assigned BIG identifier
+   * @param big_handle host assigned BIG identifier
    * @param reason termination reason data
    */
-  virtual void TerminateBig(uint8_t big_id, uint8_t reason);
+  virtual void TerminateBig(uint8_t big_handle, uint8_t reason);
 
   /* Below are defined handlers called by the legacy code in btu_hcif.cc */
 

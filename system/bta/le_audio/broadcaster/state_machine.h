@@ -89,7 +89,7 @@ class IBroadcastStateMachineCallbacks;
 
 struct BigConfig {
   uint8_t status;
-  uint8_t big_id;
+  uint8_t big_handle;
   uint32_t big_sync_delay;
   uint32_t transport_latency_big;
   uint8_t phy;

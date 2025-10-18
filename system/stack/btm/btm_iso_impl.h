@@ -73,7 +73,7 @@ struct iso_group {
 
 struct iso_stream {
   uint16_t conn_handle;
-  uint8_t group_id;  // cig id or big handle.
+  uint8_t group_id;  // cig id or big handle this stream belongs to.
 
   struct iso_sync_info sync_info;
   std::atomic_uint8_t state_flags;
@@ -119,10 +119,10 @@ struct iso_impl {
     return &client_it->second;
   }
 
-  IsoManagerCallbacks* get_client_callbacks_from_big(uint8_t big_id) {
+  IsoManagerCallbacks* get_client_callbacks_from_big(uint8_t big_handle) {
     const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-    auto group_it = big_id_to_group_map_.find(big_id);
-    if (group_it == big_id_to_group_map_.end()) {
+    auto group_it = big_handle_to_group_map_.find(big_handle);
+    if (group_it == big_handle_to_group_map_.end()) {
       return nullptr;
     }
     auto client_it = iso_clients_.find(group_it->second->client_handle);
@@ -191,6 +191,21 @@ struct iso_impl {
     }
   }
 
+  void notify_iso_traffic_active(bool is_active) {
+    const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+    if (com_android_bluetooth_flags_btm_multi_client_support()) {
+      for (const auto& [_, iso_client] : iso_clients_) {
+        if (iso_client.iso_traffic_active_callback) {
+          iso_client.iso_traffic_active_callback(is_active);
+        }
+      }
+    } else {
+      for (const auto& callback : iso_traffic_active_callbacks_list_) {
+        callback(is_active);
+      }
+    }
+  }
+
   void on_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint8_t* stream, uint16_t len) {
     uint8_t cis_cnt;
     uint16_t conn_handle;
@@ -249,25 +264,9 @@ struct iso_impl {
     log::assert_that(iso_client->cig_callbacks != nullptr, "Invalid CIG callbacks");
     iso_client->cig_callbacks->OnCigEvent(evt_code, &evt);
 
-    if (evt_code == kIsoEventCigOnCreateCmpl) {
-      {
-        const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-        if (stream_sz_before_cig_create) {
-          // Only set active for the first stream setup.
-          return;
-        }
-        if (com_android_bluetooth_flags_btm_multi_client_support()) {
-          for (const auto& [_, iso_client] : iso_clients_) {
-            if (iso_client.iso_traffic_active_callback) {
-              iso_client.iso_traffic_active_callback(true);
-            }
-          }
-        } else {
-          for (const auto& callback : iso_traffic_active_callbacks_list_) {
-            callback(true);
-          }
-        }
-      }
+    if (evt_code == kIsoEventCigOnCreateCmpl && !stream_sz_before_cig_create) {
+      // Only set active for the first stream setup.
+      notify_iso_traffic_active(true);
     }
   }
 
@@ -332,23 +331,12 @@ struct iso_impl {
       }
     }
 
-    {
-      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-      if (conn_hdl_to_iso_stream_map_.size()) {
-        return;
-      }
-      if (com_android_bluetooth_flags_btm_multi_client_support()) {
-        for (const auto& [_, iso_client] : iso_clients_) {
-          if (iso_client.iso_traffic_active_callback) {
-            iso_client.iso_traffic_active_callback(false);
-          }
-        }
-      } else {
-        for (const auto& callback : iso_traffic_active_callbacks_list_) {
-          callback(false);
-        }
-      }
+    if (conn_hdl_to_iso_stream_map_.size()) {
+      return;
     }
+
+    // Only set inactive after last stream removal.
+    notify_iso_traffic_active(false);
   }
 
   void remove_cig(uint8_t cig_id, bool force) {
@@ -912,7 +900,7 @@ struct iso_impl {
     log::assert_that(len >= 18, "Invalid packet length: {}", len);
 
     STREAM_TO_UINT8(evt.status, data);
-    STREAM_TO_UINT8(evt.big_id, data);
+    STREAM_TO_UINT8(evt.big_handle, data);
     STREAM_TO_UINT24(evt.big_sync_delay, data);
     STREAM_TO_UINT24(evt.transport_latency_big, data);
     STREAM_TO_UINT8(evt.phy, data);
@@ -930,9 +918,9 @@ struct iso_impl {
     log::assert_that(len == (18 + num_bis * sizeof(uint16_t)),
                      "Invalid packet length: {}. Number of bis: {}", len, num_bis);
 
-    auto group_it = big_id_to_group_map_.find(evt.big_id);
-    log::assert_that(group_it != big_id_to_group_map_.end(), "Cannot find group for big_id: {}",
-                     evt.big_id);
+    auto group_it = big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != big_handle_to_group_map_.end(),
+                     "Cannot find group for big_handle: {}", evt.big_handle);
 
     size_t stream_sz_before_big_create = conn_hdl_to_iso_stream_map_.size();
 
@@ -946,13 +934,13 @@ struct iso_impl {
       if (evt.status == HCI_SUCCESS) {
         auto stream_ptr = std::make_unique<iso_stream>();
         stream_ptr->conn_handle = conn_handle;
-        stream_ptr->group_id = evt.big_id;
+        stream_ptr->group_id = evt.big_handle;
         stream_ptr->sdu_itv = last_big_create_req_sdu_itv_;
         stream_ptr->sync_info = {.tx_seq_nb = 0, .rx_seq_nb = 0};
         stream_ptr->used_credits = 0;
         stream_ptr->state_flags = kStateFlagIsBroadcast;
 
-        log::verbose("BIG_ID {}, bis_handle: {:#x}, flags: {:#x}, status {}", evt.big_id,
+        log::verbose("BIG_HANDLE {}, bis_handle: {:#x}, flags: {:#x}, status {}", evt.big_handle,
                      conn_handle, stream_ptr->state_flags,
                      hci_status_code_text((tHCI_STATUS)(evt.status)));
 
@@ -960,29 +948,18 @@ struct iso_impl {
       }
     }
 
-    auto* client_cbs = get_client_callbacks_from_big(evt.big_id);
-    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}", evt.big_id);
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
+                     evt.big_handle);
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
     client_cbs->big_callbacks->OnBigEvent(kIsoEventBigOnCreateCmpl, &evt);
 
-    {
-      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-      if (stream_sz_before_big_create) {
-        // Only set active for the first stream setup.
-        return;
-      }
-      if (com_android_bluetooth_flags_btm_multi_client_support()) {
-        for (const auto& [_, iso_client] : iso_clients_) {
-          if (iso_client.iso_traffic_active_callback) {
-            iso_client.iso_traffic_active_callback(true);
-          }
-        }
-      } else {
-        for (const auto& callback : iso_traffic_active_callbacks_list_) {
-          callback(true);
-        }
-      }
+    if (stream_sz_before_big_create) {
+      return;
     }
+
+    // Only set active for the first stream setup.
+    notify_iso_traffic_active(true);
   }
 
   void process_terminate_big_cmpl_pkt(uint8_t len, uint8_t* data) {
@@ -990,51 +967,41 @@ struct iso_impl {
 
     log::assert_that(len == 2, "Invalid packet length: {}", len);
 
-    STREAM_TO_UINT8(evt.big_id, data);
+    STREAM_TO_UINT8(evt.big_handle, data);
     STREAM_TO_UINT8(evt.reason, data);
 
-    auto group_it = big_id_to_group_map_.find(evt.big_id);
-    log::assert_that(group_it != big_id_to_group_map_.end(), "No such big: {}", evt.big_id);
+    auto group_it = big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != big_handle_to_group_map_.end(), "No such big: {}", evt.big_handle);
 
-    auto* client_cbs = get_client_callbacks_from_big(evt.big_id);
-    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}", evt.big_id);
+    auto* client_cbs = get_client_callbacks_from_big(evt.big_handle);
+    log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
+                     evt.big_handle);
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
     client_cbs->big_callbacks->OnBigEvent(kIsoEventBigOnTerminateCmpl, &evt);
 
     for (auto handle : group_it->second->stream_conn_handles) {
       conn_hdl_to_iso_stream_map_.erase(handle);
     }
-    big_id_to_group_map_.erase(group_it);
+    big_handle_to_group_map_.erase(group_it);
 
-    {
-      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-      if (conn_hdl_to_iso_stream_map_.size()) {
-        return;
-      }
-      if (com_android_bluetooth_flags_btm_multi_client_support()) {
-        for (const auto& [_, iso_client] : iso_clients_) {
-          if (iso_client.iso_traffic_active_callback) {
-            iso_client.iso_traffic_active_callback(false);
-          }
-        }
-      } else {
-        for (const auto& callback : iso_traffic_active_callbacks_list_) {
-          callback(false);
-        }
-      }
+    if (conn_hdl_to_iso_stream_map_.size()) {
+      return;
     }
+
+    // Only set inactive after last stream removal.
+    notify_iso_traffic_active(false);
   }
 
-  void create_big(IsoClientHandle client_handle, uint8_t big_id,
+  void create_big(IsoClientHandle client_handle, uint8_t big_handle,
                   struct big_create_params big_params) {
-    log::assert_that(!IsBigKnown(big_id), "Invalid big - already exists: {}", big_id);
+    log::assert_that(!IsBigKnown(big_handle), "Invalid big - already exists: {}", big_handle);
 
     {
       const std::lock_guard<std::mutex> lock(iso_client_mutex_);
       auto group = std::make_unique<iso_group>();
-      group->id = big_id;
+      group->id = big_handle;
       group->client_handle = client_handle;
-      big_id_to_group_map_[big_id] = std::move(group);
+      big_handle_to_group_map_[big_handle] = std::move(group);
     }
 
     if (stack_config_get_interface()->get_pts_unencrypt_broadcast()) {
@@ -1044,16 +1011,17 @@ struct iso_impl {
     }
 
     last_big_create_req_sdu_itv_ = big_params.sdu_itv;
-    btsnd_hcic_ble_create_big(big_id, big_params.adv_handle, big_params.num_bis, big_params.sdu_itv,
-                              big_params.max_sdu_size, big_params.max_transport_latency,
-                              big_params.rtn, big_params.phy, big_params.packing,
-                              big_params.framing, big_params.enc, big_params.enc_code);
+    btsnd_hcic_ble_create_big(big_handle, big_params.adv_handle, big_params.num_bis,
+                              big_params.sdu_itv, big_params.max_sdu_size,
+                              big_params.max_transport_latency, big_params.rtn, big_params.phy,
+                              big_params.packing, big_params.framing, big_params.enc,
+                              big_params.enc_code);
   }
 
-  void terminate_big(uint8_t big_id, uint8_t reason) {
-    log::assert_that(IsBigKnown(big_id), "No such big: {}", big_id);
+  void terminate_big(uint8_t big_handle, uint8_t reason) {
+    log::assert_that(IsBigKnown(big_handle), "No such big: {}", big_handle);
 
-    btsnd_hcic_ble_term_big(big_id, reason);
+    btsnd_hcic_ble_term_big(big_handle, reason);
   }
 
   void on_iso_event(uint8_t code, uint8_t* packet, uint16_t packet_len) {
@@ -1148,11 +1116,11 @@ struct iso_impl {
     return stream_it != conn_hdl_to_iso_stream_map_.cend();
   }
 
-  bool IsBigKnown(uint8_t big_id) const {
+  bool IsBigKnown(uint8_t big_handle) const {
     const auto stream_it =
             std::find_if(conn_hdl_to_iso_stream_map_.cbegin(), conn_hdl_to_iso_stream_map_.cend(),
-                         [big_id](const auto& pair) {
-                           return pair.second->group_id == big_id &&
+                         [big_handle](const auto& pair) {
+                           return pair.second->group_id == big_handle &&
                                   (pair.second->state_flags & kStateFlagIsBroadcast);
                          });
     return stream_it != conn_hdl_to_iso_stream_map_.cend();
@@ -1205,8 +1173,8 @@ struct iso_impl {
       }
     }
     dprintf(fd, "    BIGs:");
-    for (auto const& group_pair : big_id_to_group_map_) {
-      dprintf(fd, "      BIG ID: %d", group_pair.first);
+    for (auto const& group_pair : big_handle_to_group_map_) {
+      dprintf(fd, "      BIG handle: %d", group_pair.first);
       for (auto const& handle : group_pair.second->stream_conn_handles) {
         auto stream_it = conn_hdl_to_iso_stream_map_.find(handle);
         if (stream_it == conn_hdl_to_iso_stream_map_.end()) {
@@ -1249,7 +1217,7 @@ struct iso_impl {
 
   // CIG/BIG Ownership Tracking
   std::unordered_map<uint8_t /* cig_id */, std::unique_ptr<iso_group>> cig_id_to_group_map_;
-  std::unordered_map<uint8_t /* big_id */, std::unique_ptr<iso_group>> big_id_to_group_map_;
+  std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>> big_handle_to_group_map_;
 };
 
 }  // namespace iso_manager

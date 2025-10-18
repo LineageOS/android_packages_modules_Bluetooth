@@ -889,14 +889,14 @@ public:
     switch (event) {
       case bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl: {
         auto* evt = static_cast<big_create_cmpl_evt*>(data);
-        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_id);
+        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_handle);
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
                          "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, evt);
       } break;
       case bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl: {
         auto* evt = static_cast<big_terminate_cmpl_evt*>(data);
-        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_id);
+        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_handle);
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
                          "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT, evt);
