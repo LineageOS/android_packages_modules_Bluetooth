@@ -42,6 +42,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -145,6 +146,21 @@ class PeriodicScanManagerTest {
         )
 
         verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(sid), eq(0), eq(0), eq(0))
+    }
+
+    @Test
+    fun stopSync_notStarted_doesNothing() {
+        periodicScanManager.stopSync(callback)
+        verify(nativeInterface, never()).cancelSync(sid, REMOTE_DEVICE_ADDRESS)
+    }
+
+    @Test
+    fun stopSync_afterStart_invokesNative() {
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
+        verify(nativeInterface).startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+
+        periodicScanManager.stopSync(callback)
+        verify(nativeInterface).cancelSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS))
     }
 
     @Test
