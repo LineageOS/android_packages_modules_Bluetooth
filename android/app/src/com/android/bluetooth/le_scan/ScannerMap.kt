@@ -25,8 +25,10 @@ import android.os.WorkSource
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.appNameOrUnknown
+import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.getLastAttributionTag
+import com.android.bluetooth.util.toTable
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -173,58 +175,29 @@ class ScannerMap {
         sb.append("LE Scanner:\n")
 
         if (apps.isNotEmpty()) {
-            val colWidthUid = 5 // "10300"
-            val colWidthPid = 5 // "10300"
-            val colWidthId = 2 // Longest: "32"
-            val colWidthPackage = apps.maxOfOrNull { it.name.length } ?: 30
-            val colWidthTag = apps.maxOfOrNull { it.attributionTag?.length ?: 0 } ?: 0
-            val colTagExists = colWidthTag != 0
-            val reportDelayMsColWidth =
-                if (settingsMap.values.any { it.reportDelayMillis > 0 }) 15 else 0
-            val colReportDelayExists = reportDelayMsColWidth != 0
+            val columns =
+                mutableListOf<Column<ScannerApp>>(
+                    Column("UID", width = 5) { it.uid.toString() },
+                    Column("PID", width = 5) { it.pid.toString() },
+                    Column("ID", width = 2) { it.id.toString() },
+                    Column("PACKAGE") { it.name },
+                )
 
-            // Headers
-            val headerUid = "UID".padEnd(colWidthUid)
-            val headerPid = "PID".padEnd(colWidthPid)
-            val headerId = "ID".padEnd(colWidthId)
-            val headerPackage = "PACKAGE".padEnd(colWidthPackage)
-            val headerTag = "TAG".padEnd(colWidthTag)
-            val headerReportDelayMs = "REPORT_DELAY_MS" // Last column doesn't need padding
-            sb.append("  $headerUid $headerPid $headerId $headerPackage")
-            if (colTagExists) sb.append(" $headerTag")
-            if (colReportDelayExists) sb.append(" $headerReportDelayMs")
-            sb.append("\n")
-
-            // Separators
-            val separatorUid = "-".repeat(colWidthUid)
-            val separatorPid = "-".repeat(colWidthPid)
-            val separatorId = "-".repeat(colWidthId)
-            val separatorPackage = "-".repeat(colWidthPackage)
-            val separatorTag = "-".repeat(colWidthTag)
-            val separatorReportDelayMs = "-".repeat(reportDelayMsColWidth)
-            sb.append("  $separatorUid $separatorPid $separatorId $separatorPackage")
-            if (colTagExists) sb.append(" $separatorTag")
-            if (colReportDelayExists) sb.append(" $separatorReportDelayMs")
-            sb.append("\n")
-
-            // Values
-            apps.forEach { app ->
-                val uid = app.uid.toString().padEnd(colWidthUid)
-                val pid = app.pid.toString().padEnd(colWidthPid)
-                val id = app.id.toString().padEnd(colWidthId)
-                val name = app.name.padEnd(colWidthPackage)
-                sb.append("  $uid $pid $id $name")
-                if (colTagExists) {
-                    val tag = (app.attributionTag ?: "").padEnd(colWidthTag)
-                    sb.append(" $tag")
-                }
-                if (colReportDelayExists) {
-                    val reportDelayMs = settingsMap[app.id]?.reportDelayMillis ?: 0
-                    val reportDelayString = if (reportDelayMs > 0) reportDelayMs.toString() else ""
-                    sb.append(" ${reportDelayString.padEnd(reportDelayMsColWidth)}")
-                }
-                sb.append("\n")
+            if (apps.any { !it.attributionTag.isNullOrEmpty() }) {
+                columns.add(Column("TAG") { it.attributionTag ?: "" })
             }
+
+            if (settingsMap.values.any { it.reportDelayMillis > 0 }) {
+                columns.add(
+                    Column("REPORT_DELAY_MS", width = 15) { app ->
+                        val delay = settingsMap[app.id]?.reportDelayMillis ?: 0
+                        if (delay > 0) delay.toString() else ""
+                    }
+                )
+            }
+
+            val table = apps.toTable(columns).prependIndent("  ")
+            sb.appendLine(table)
         }
 
         sb.append("\nLE Scanner Map:\n")
