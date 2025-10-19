@@ -30,7 +30,7 @@
 
 #include "hci/class_of_device.h"
 #include "stack/acl/acl.h"
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_status.h"
 

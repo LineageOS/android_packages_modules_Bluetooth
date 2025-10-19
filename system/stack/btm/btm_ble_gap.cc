@@ -1212,9 +1212,9 @@ static void btm_ble_read_remote_appearance_cmpl(bool status, const RawAddress& b
   log::info("Appearance 0x{:04x}, Class of Device {} found for {}", appearance, dev_class_text(cod),
             bda);
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  if (p_dev_rec != nullptr) {
-    p_dev_rec->dev_class = cod;
+  BtmDevice* p_device = btm_find_dev(bda);
+  if (p_device != nullptr) {
+    p_device->dev_class = cod;
   }
 }
 
@@ -1454,17 +1454,17 @@ void btm_ble_process_adv_addr(RawAddress& bda, tBLE_ADDR_TYPE* addr_type) {
   log::verbose("bda={}", bda);
   /* always do RRA resolution on host */
   if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
-    tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
-    if (match_rec) {
-      match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
-      match_rec->ble.cur_rand_addr = bda;
+    BtmDevice* match_dev = btm_ble_resolve_random_addr(bda);
+    if (match_dev) {
+      match_dev->ble.active_addr_type = BTM_BLE_ADDR_RRA;
+      match_dev->ble.cur_rand_addr = bda;
 
-      if (btm_ble_init_pseudo_addr(match_rec, bda)) {
-        bda = match_rec->bd_addr;
+      if (btm_ble_init_pseudo_addr(match_dev, bda)) {
+        bda = match_dev->bd_addr;
       } else {
         // Assign the original address to be the current report address
-        bda = match_rec->ble.pseudo_addr;
-        *addr_type = match_rec->ble.AddressType();
+        bda = match_dev->ble.pseudo_addr;
+        *addr_type = match_dev->ble.AddressType();
       }
     }
   }

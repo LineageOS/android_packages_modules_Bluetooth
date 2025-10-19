@@ -67,16 +67,14 @@ void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_l
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry_complete(p, evt_len);
 }
-bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
+bool btm_ble_read_resolving_list_entry(BtmDevice* p_device) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry(p_dev_rec);
+  return test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry(p_device);
 }
-void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& /* p_dev_rec */) {
+void btm_ble_resolving_list_load_dev(BtmDevice& /* p_device */) { inc_func_call_count(__func__); }
+void btm_ble_resolving_list_remove_dev(BtmDevice* p_device) {
   inc_func_call_count(__func__);
-}
-void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_privacy::btm_ble_resolving_list_remove_dev(p_dev_rec);
+  test::mock::stack_btm_ble_privacy::btm_ble_resolving_list_remove_dev(p_device);
 }
 void btm_ble_resolving_list_init(uint8_t max_irk_list_sz) {
   inc_func_call_count(__func__);

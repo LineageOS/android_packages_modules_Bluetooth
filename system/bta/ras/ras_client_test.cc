@@ -26,7 +26,7 @@
 #include "include/hardware/bluetooth.h"
 #include "internal_include/stack_config.h"
 #include "log/include/bluetooth/log.h"
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/main_thread.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -464,9 +464,9 @@ TEST_F(RasClientTestNoInit, SetFirstSegmentTimeoutInLowPowerMode) {
   EXPECT_CALL(mock_gatt_interface_, GetServices(test_conn_id_))
           .WillOnce(Return(&services_to_return_));
 
-  tBTM_SEC_DEV_REC btm_sec_dev_rec;
-  btm_sec_dev_rec.conn_params.peripheral_latency = 2;
-  EXPECT_CALL(btm_interface_, FindDevice(_)).WillOnce(Return(&btm_sec_dev_rec));
+  BtmDevice btm_device;
+  btm_device.conn_params.peripheral_latency = 2;
+  EXPECT_CALL(btm_interface_, FindDevice(_)).WillOnce(Return(&btm_device));
 
   tBTA_GATTC p_data2;
   tBTA_GATTC_SEARCH_CMPL search_cmpl_event_data;

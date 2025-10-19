@@ -59,19 +59,19 @@ constexpr char kBtmLogTag[] = "BOND";
 
 }
 
-static void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec) {
+static void wipe_secrets_and_remove(BtmDevice* p_device) {
   if (!is_main_thread()) {
     log::error("From non-main thread");
   }
-  p_dev_rec->sec_rec.link_key.fill(0);
-  memset(&p_dev_rec->sec_rec.ble_keys, 0, sizeof(tBTM_SEC_BLE_KEYS));
+  p_device->sec_rec.link_key.fill(0);
+  memset(&p_device->sec_rec.ble_keys, 0, sizeof(tBTM_SEC_BLE_KEYS));
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-    list_remove(btm_sec_cb.sec_dev_rec, p_dev_rec);
+    list_remove(btm_sec_cb.sec_dev_rec, p_device);
   } else {
-    // As p_dev_rec is a pointer to element of btm_sec_cb.device_records, we don't need to process
+    // As p_device is a pointer to element of btm_sec_cb.device_records, we don't need to process
     // the complete array to find and remove. This is safe.
-    if (p_dev_rec != nullptr) {
-      *p_dev_rec = {};
+    if (p_device != nullptr) {
+      *p_device = {};
     }
   }
 }
@@ -93,12 +93,12 @@ static void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey link_key,
                       uint8_t key_type, uint8_t pin_length) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  BtmDevice* p_device = btm_find_dev(bd_addr);
 
-  if (p_dev_rec == nullptr) {
-    p_dev_rec = btm_sec_allocate_dev_rec();
+  if (p_device == nullptr) {
+    p_device = btm_sec_allocate_dev_rec();
 
-    if (p_dev_rec == nullptr) {
+    if (p_device == nullptr) {
       log::warn("device record allocation failed bd_addr:{}", bd_addr);
       return;
     }
@@ -108,17 +108,17 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
             "link_key_type: 0x{:x}",
             bd_addr, dev_class[0], dev_class[1], dev_class[2], key_type);
 
-    p_dev_rec->bd_addr = bd_addr;
-    p_dev_rec->hci_handle =
+    p_device->bd_addr = bd_addr;
+    p_device->hci_handle =
             get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
 
     /* use default value for background connection params */
     /* update conn params, use default value for background connection params */
-    memset(&p_dev_rec->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
+    memset(&p_device->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
 
     if (btif_storage_get_stored_remote_name(bd_addr,
-                                            reinterpret_cast<char*>(&p_dev_rec->sec_bd_name))) {
-      p_dev_rec->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
+                                            reinterpret_cast<char*>(&p_device->sec_bd_name))) {
+      p_device->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
     }
   } else {
     log::info(
@@ -127,51 +127,51 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
             bd_addr, dev_class[0], dev_class[1], dev_class[2], key_type);
 
     /* "Bump" timestamp for existing record */
-    p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
+    p_device->timestamp = btm_sec_cb.dev_rec_count++;
   }
 
   if (dev_class != kDevClassEmpty) {
-    p_dev_rec->dev_class = dev_class;
+    p_device->dev_class = dev_class;
   }
 
-  p_dev_rec->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
-  p_dev_rec->sec_rec.link_key = link_key;
-  p_dev_rec->sec_rec.link_key_type = key_type;
-  p_dev_rec->sec_rec.pin_code_length = pin_length;
+  p_device->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  p_device->sec_rec.link_key = link_key;
+  p_device->sec_rec.link_key_type = key_type;
+  p_device->sec_rec.pin_code_length = pin_length;
 
-  p_dev_rec->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
+  p_device->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
 
   if (pin_length >= 16 || key_type == BTM_LKEY_TYPE_AUTH_COMB ||
       key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
     // Set the flag if the link key was made by using either a 16 digit
     // pin or MITM.
-    p_dev_rec->sec_rec.sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED | BTM_SEC_LINK_KEY_AUTHED;
+    p_device->sec_rec.sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED | BTM_SEC_LINK_KEY_AUTHED;
   }
 
-  p_dev_rec->sec_rec.rmt_io_caps = BtIoCap::DISPLAY_ONLY;
-  p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
+  p_device->sec_rec.rmt_io_caps = BtIoCap::DISPLAY_ONLY;
+  p_device->device_type |= BT_DEVICE_TYPE_BREDR;
 }
 
 /** Free resources associated with the device associated with |bd_addr| address.
  *
  * *** WARNING ***
- * tBTM_SEC_DEV_REC associated with bd_addr becomes invalid after this function
- * is called, also any of it's fields. i.e. if you use p_dev_rec->bd_addr, it is
+ * BtmDevice associated with bd_addr becomes invalid after this function
+ * is called, also any of its fields. i.e. if you use p_device->bd_addr, it is
  * no longer valid!
  * *** WARNING ***
  *
  * Returns true if removed OK, false if not found or ACL link is active.
  */
 bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec == nullptr) {
+  BtmDevice* p_device = btm_find_dev(bd_addr);
+  if (p_device == nullptr) {
     log::warn("Unable to delete link key for unknown device {}", bd_addr);
     return true;
   }
 
   /* Invalidate bonded status */
-  p_dev_rec->sec_rec.sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
-  p_dev_rec->sec_rec.sec_flags &= ~BTM_SEC_LE_LINK_KEY_KNOWN;
+  p_device->sec_rec.sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
+  p_device->sec_rec.sec_flags &= ~BTM_SEC_LE_LINK_KEY_KNOWN;
 
   if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
       get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
@@ -179,17 +179,17 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
     return false;
   }
 
-  RawAddress bda = p_dev_rec->bd_addr;
+  RawAddress bda = p_device->bd_addr;
 
   log::info("Remove device {} from filter accept list before delete record", bd_addr);
   connection_manager::remove_unconditional(bd_addr);
 
-  const auto device_type = p_dev_rec->device_type;
-  const auto bond_type = p_dev_rec->sec_rec.bond_type;
+  const auto device_type = p_device->device_type;
+  const auto bond_type = p_device->sec_rec.bond_type;
 
   /* Clear out any saved BLE keys */
-  btm_sec_clear_ble_keys(p_dev_rec);
-  wipe_secrets_and_remove(p_dev_rec);
+  btm_sec_clear_ble_keys(p_device);
+  wipe_secrets_and_remove(p_device);
   /* Tell controller to get rid of the link key, if it has one stored */
   BTM_DeleteStoredLinkKey(&bda, NULL);
   log::info("{} complete", bd_addr);
@@ -209,16 +209,16 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec == nullptr) {
+  BtmDevice* p_device = btm_find_dev(bd_addr);
+  if (p_device == nullptr) {
     log::warn("Unable to clear security flags for unknown device {}", bd_addr);
     return;
   }
 
-  p_dev_rec->sec_rec.sec_flags = 0;
-  p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
-  p_dev_rec->sec_rec.classic_link = tSECURITY_STATE::IDLE;
-  p_dev_rec->sm4 = BTM_SM4_UNKNOWN;
+  p_device->sec_rec.sec_flags = 0;
+  p_device->sec_rec.le_link = tSECURITY_STATE::IDLE;
+  p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
+  p_device->sm4 = BTM_SM4_UNKNOWN;
 }
 
 /*******************************************************************************
@@ -233,7 +233,7 @@ void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
  ******************************************************************************/
 const char* BTM_SecReadDevName(const RawAddress& bd_addr) {
   const char* p_name = NULL;
-  const tBTM_SEC_DEV_REC* p_srec;
+  const BtmDevice* p_srec;
 
   p_srec = btm_find_dev(bd_addr);
   if (p_srec != NULL) {
@@ -254,7 +254,7 @@ const char* BTM_SecReadDevName(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_srec = btm_find_dev(bd_addr);
+  BtmDevice* p_srec = btm_find_dev(bd_addr);
   if (p_srec != nullptr) {
     return p_srec->dev_class;
   }
@@ -273,12 +273,12 @@ DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
+BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr) {
   tBTM_INQ_INFO* p_inq_info;
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_sec_allocate_dev_rec();
+  BtmDevice* p_device = btm_sec_allocate_dev_rec();
 
-  if (p_dev_rec == nullptr) {
+  if (p_device == nullptr) {
     log::warn("device record allocation failed bd_addr:{}", bd_addr);
     return NULL;
   }
@@ -289,37 +289,37 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
   /* outgoing connection */
   p_inq_info = BTM_InqDbRead(bd_addr);
   if (p_inq_info != NULL) {
-    p_dev_rec->dev_class = p_inq_info->results.dev_class;
+    p_device->dev_class = p_inq_info->results.dev_class;
 
-    p_dev_rec->device_type = p_inq_info->results.device_type;
+    p_device->device_type = p_inq_info->results.device_type;
     if (is_ble_addr_type_known(p_inq_info->results.ble_addr_type)) {
-      p_dev_rec->ble.SetAddressType(p_inq_info->results.ble_addr_type);
+      p_device->ble.SetAddressType(p_inq_info->results.ble_addr_type);
     } else {
       log::warn("Please do not update device record from anonymous le advertisement");
     }
 
   } else if (bd_addr == btm_sec_cb.connecting_bda) {
-    p_dev_rec->dev_class = btm_sec_cb.connecting_dc;
+    p_device->dev_class = btm_sec_cb.connecting_dc;
   }
 
   /* update conn params, use default value for background connection params */
-  memset(&p_dev_rec->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
+  memset(&p_device->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
 
-  p_dev_rec->bd_addr = bd_addr;
+  p_device->bd_addr = bd_addr;
 
-  p_dev_rec->ble_hci_handle =
+  p_device->ble_hci_handle =
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
-  p_dev_rec->hci_handle =
+  p_device->hci_handle =
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
 
-  return p_dev_rec;
+  return p_device;
 }
 
 static bool is_handle_equal(void* data, void* context) {
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
   uint16_t* handle = static_cast<uint16_t*>(context);
 
-  if (p_dev_rec->hci_handle == *handle || p_dev_rec->ble_hci_handle == *handle) {
+  if (p_device->hci_handle == *handle || p_device->ble_hci_handle == *handle) {
     return false;
   }
 
@@ -336,7 +336,7 @@ static bool is_handle_equal(void* data, void* context) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
+BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
   if (handle == HCI_INVALID_HANDLE) {
     return nullptr;
   }
@@ -352,21 +352,21 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
 
   list_node_t* n = list_foreach(btm_sec_cb.sec_dev_rec, is_handle_equal, &handle);
   if (n) {
-    return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+    return static_cast<BtmDevice*>(list_node(n));
   }
 
   return nullptr;
 }
 
 static bool is_not_same_identity_or_pseudo_address(void* data, void* context) {
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
   const RawAddress* bd_addr = ((RawAddress*)context);
 
-  if (p_dev_rec->bd_addr == *bd_addr) {
+  if (p_device->bd_addr == *bd_addr) {
     return false;
   }
   // If a LE random address is looking for device record
-  if (p_dev_rec->ble.pseudo_addr == *bd_addr) {
+  if (p_device->ble.pseudo_addr == *bd_addr) {
     return false;
   }
 
@@ -374,10 +374,10 @@ static bool is_not_same_identity_or_pseudo_address(void* data, void* context) {
 }
 
 static bool is_rpa_unresolvable(void* data, void* context) {
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
   const RawAddress* bd_addr = ((RawAddress*)context);
 
-  if (btm_ble_addr_resolvable(*bd_addr, p_dev_rec)) {
+  if (btm_ble_addr_resolvable(*bd_addr, p_device)) {
     return false;
   }
   return true;
@@ -393,7 +393,7 @@ static bool is_rpa_unresolvable(void* data, void* context) {
  *
  ******************************************************************************/
 // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
-static tBTM_SEC_DEV_REC* btm_find_dev_(const RawAddress& bd_addr) {
+static BtmDevice* btm_find_dev_(const RawAddress& bd_addr) {
   if (btm_sec_cb.sec_dev_rec == nullptr) {
     return nullptr;
   }
@@ -402,43 +402,43 @@ static tBTM_SEC_DEV_REC* btm_find_dev_(const RawAddress& bd_addr) {
   list_node_t* n = list_foreach(btm_sec_cb.sec_dev_rec, is_not_same_identity_or_pseudo_address,
                                 (void*)&bd_addr);
   if (n != nullptr) {
-    return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+    return static_cast<BtmDevice*>(list_node(n));
   }
 
   // If not found by matching identity address or pseudo address, find by RPA
   n = list_foreach(btm_sec_cb.sec_dev_rec, is_rpa_unresolvable, (void*)&bd_addr);
   if (n != nullptr) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+    BtmDevice* p_device = static_cast<BtmDevice*>(list_node(n));
     log::warn("Found via address resolution bd_addr:{}, pseudo_addr:{}, identity_addr:{}", bd_addr,
-              p_dev_rec->ble.pseudo_addr, p_dev_rec->bd_addr);
-    return p_dev_rec;
+              p_device->ble.pseudo_addr, p_device->bd_addr);
+    return p_device;
   }
 
   return nullptr;
 }
 
-tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr) {
+BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     return btm_find_dev_(bd_addr);
   }
 
-  tBTM_SEC_DEV_REC* p_dev_rec =
+  BtmDevice* p_device =
           btm_sec_cb.for_each_dev_rec(is_not_same_identity_or_pseudo_address, (void*)&bd_addr);
-  if (p_dev_rec == nullptr) {
+  if (p_device == nullptr) {
     // If not found by matching identity address or pseudo address, find by RPA.
-    p_dev_rec = btm_sec_cb.for_each_dev_rec(is_rpa_unresolvable, (void*)&bd_addr);
-    if (p_dev_rec != nullptr) {
+    p_device = btm_sec_cb.for_each_dev_rec(is_rpa_unresolvable, (void*)&bd_addr);
+    if (p_device != nullptr) {
       log::warn("Found via address resolution bd_addr:{}, pseudo_addr:{}, identity_addr:{}",
-                bd_addr, p_dev_rec->ble.pseudo_addr, p_dev_rec->bd_addr);
+                bd_addr, p_device->ble.pseudo_addr, p_device->bd_addr);
     }
   }
 
-  return p_dev_rec;
+  return p_device;
 }
 
 static bool has_lenc_and_address_is_equal(void* data, void* context) {
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
-  if (!(p_dev_rec->sec_rec.ble_keys.key_type & BTM_LE_KEY_LENC)) {
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
+  if (!(p_device->sec_rec.ble_keys.key_type & BTM_LE_KEY_LENC)) {
     return true;
   }
 
@@ -455,7 +455,7 @@ static bool has_lenc_and_address_is_equal(void* data, void* context) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
+BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
   if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     return btm_sec_cb.for_each_dev_rec(has_lenc_and_address_is_equal, (void*)&bd_addr);
   }
@@ -467,7 +467,7 @@ tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
   list_node_t* n =
           list_foreach(btm_sec_cb.sec_dev_rec, has_lenc_and_address_is_equal, (void*)&bd_addr);
   if (n) {
-    return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
+    return static_cast<BtmDevice*>(list_node(n));
   }
 
   return NULL;
@@ -482,49 +482,49 @@ tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
-static void consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec, tBTM_SEC_DEV_REC* p_dev_rec) {
-  tBTM_SEC_DEV_REC temp_rec = *p_target_rec;
+static void consolidate_dev(BtmDevice* p_target, BtmDevice* p_device) {
+  BtmDevice temp_dev = *p_target;
 
-  if (p_dev_rec->bd_addr != p_target_rec->bd_addr) {
+  if (p_device->bd_addr != p_target->bd_addr) {
     /* an RPA device entry is a duplicate of the target record */
-    if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
-      if (p_target_rec->ble.pseudo_addr == p_dev_rec->bd_addr) {
-        log::warn("Having a duplicate RPA device entry for {}", p_dev_rec->bd_addr);
-        p_target_rec->ble.SetAddressType(p_dev_rec->ble.AddressType());
-        p_target_rec->device_type |= p_dev_rec->device_type;
+    if (btm_ble_addr_resolvable(p_device->bd_addr, p_target)) {
+      if (p_target->ble.pseudo_addr == p_device->bd_addr) {
+        log::warn("Having a duplicate RPA device entry for {}", p_device->bd_addr);
+        p_target->ble.SetAddressType(p_device->ble.AddressType());
+        p_target->device_type |= p_device->device_type;
 
         /* remove the combined record */
-        wipe_secrets_and_remove(p_dev_rec);
+        wipe_secrets_and_remove(p_device);
       }
     }
     return;
   }
 
-  log::info("Consolidating records for {}", p_dev_rec->bd_addr);
+  log::info("Consolidating records for {}", p_device->bd_addr);
 
-  *p_target_rec = *p_dev_rec;
-  p_target_rec->ble = temp_rec.ble;
-  p_target_rec->sec_rec.ble_keys = temp_rec.sec_rec.ble_keys;
-  p_target_rec->ble_hci_handle = temp_rec.ble_hci_handle;
-  p_target_rec->sec_rec.enc_key_size = temp_rec.sec_rec.enc_key_size;
-  p_target_rec->sec_rec.le_enc_key_size = temp_rec.sec_rec.le_enc_key_size;
-  p_target_rec->conn_params = temp_rec.conn_params;
-  p_target_rec->device_type |= temp_rec.device_type;
-  p_target_rec->sec_rec.sec_flags |= temp_rec.sec_rec.sec_flags;
+  *p_target = *p_device;
+  p_target->ble = temp_dev.ble;
+  p_target->sec_rec.ble_keys = temp_dev.sec_rec.ble_keys;
+  p_target->ble_hci_handle = temp_dev.ble_hci_handle;
+  p_target->sec_rec.enc_key_size = temp_dev.sec_rec.enc_key_size;
+  p_target->sec_rec.le_enc_key_size = temp_dev.sec_rec.le_enc_key_size;
+  p_target->conn_params = temp_dev.conn_params;
+  p_target->device_type |= temp_dev.device_type;
+  p_target->sec_rec.sec_flags |= temp_dev.sec_rec.sec_flags;
 
-  p_target_rec->sec_rec.new_encryption_key_is_p256 = temp_rec.sec_rec.new_encryption_key_is_p256;
-  p_target_rec->sec_rec.bond_type = temp_rec.sec_rec.bond_type;
+  p_target->sec_rec.new_encryption_key_is_p256 = temp_dev.sec_rec.new_encryption_key_is_p256;
+  p_target->sec_rec.bond_type = temp_dev.sec_rec.bond_type;
 
   /* remove the combined record */
-  wipe_secrets_and_remove(p_dev_rec);
-  // p_dev_rec gets freed in list_remove, we should not  access it further
+  wipe_secrets_and_remove(p_device);
+  // p_device gets freed in list_remove, we should not  access it further
 }
 
-void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
+void btm_consolidate_dev(BtmDevice* p_target) {
   if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-      if (dev_rec.IsInitialized() && (p_target_rec != &dev_rec)) {
-        consolidate_dev(p_target_rec, &dev_rec);
+    for (BtmDevice& device : btm_sec_cb.device_records) {
+      if (device.IsInitialized() && (p_target != &device)) {
+        consolidate_dev(p_target, &device);
       }
     }
 
@@ -534,12 +534,12 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
   list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
   list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec);
   while (node != end) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+    BtmDevice* p_device = static_cast<BtmDevice*>(list_node(node));
 
     // we do list_remove in some cases, must grab next before removing
     node = list_next(node);
-    if (p_target_rec != p_dev_rec) {
-      consolidate_dev(p_target_rec, p_dev_rec);
+    if (p_target != p_device) {
+      consolidate_dev(p_target, p_device);
     }
   }
 }
@@ -549,30 +549,30 @@ static BTM_CONSOLIDATION_CB* btm_consolidate_cb = nullptr;
 void BTM_SetConsolidationCallback(BTM_CONSOLIDATION_CB* cb) { btm_consolidate_cb = cb; }
 
 // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
-static void consolidate_existing_dev(tBTM_SEC_DEV_REC* p_target_rec, tBTM_SEC_DEV_REC* p_dev_rec,
+static void consolidate_existing_dev(BtmDevice* p_target, BtmDevice* p_device,
                                      const RawAddress& bd_addr) {
-  if (p_target_rec == p_dev_rec) {
+  if (p_target == p_device) {
     return;
   }
 
   /* an RPA device entry is a duplicate of the target record */
-  if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
-    if (p_dev_rec->ble_hci_handle == HCI_INVALID_HANDLE) {
-      log::info("already disconnected - erasing entry {}", p_dev_rec->bd_addr);
-      wipe_secrets_and_remove(p_dev_rec);
+  if (btm_ble_addr_resolvable(p_device->bd_addr, p_target)) {
+    if (p_device->ble_hci_handle == HCI_INVALID_HANDLE) {
+      log::info("already disconnected - erasing entry {}", p_device->bd_addr);
+      wipe_secrets_and_remove(p_device);
       return;
     }
 
     log::info(
             "Found existing LE connection to just bonded device on {} handle "
             "0x{:04x}",
-            p_dev_rec->bd_addr, p_dev_rec->ble_hci_handle);
+            p_device->bd_addr, p_device->ble_hci_handle);
 
-    RawAddress ble_conn_addr = p_dev_rec->bd_addr;
-    p_target_rec->ble_hci_handle = p_dev_rec->ble_hci_handle;
+    RawAddress ble_conn_addr = p_device->bd_addr;
+    p_target->ble_hci_handle = p_device->ble_hci_handle;
 
     /* remove the old LE record */
-    wipe_secrets_and_remove(p_dev_rec);
+    wipe_secrets_and_remove(p_device);
 
     btm_acl_consolidate(bd_addr, ble_conn_addr);
     stack::l2cap::get_interface().L2CA_Consolidate(bd_addr, ble_conn_addr);
@@ -593,13 +593,13 @@ static void consolidate_existing_dev(tBTM_SEC_DEV_REC* p_target_rec, tBTM_SEC_DE
 /* combine security records of established LE connections after Classic pairing
  * succeeded. */
 void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_target_rec = btm_find_dev(bd_addr);
-  if (!p_target_rec) {
+  BtmDevice* p_target = btm_find_dev(bd_addr);
+  if (!p_target) {
     log::error("No security record for just bonded device!?!?");
     return;
   }
 
-  if (p_target_rec->ble_hci_handle != HCI_INVALID_HANDLE) {
+  if (p_target->ble_hci_handle != HCI_INVALID_HANDLE) {
     log::info("Not consolidating - already have LE connection");
     return;
   }
@@ -610,18 +610,18 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
     list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
     list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec);
     while (node != end) {
-      tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+      BtmDevice* p_device = static_cast<BtmDevice*>(list_node(node));
 
       // we do list_remove in some cases, must grab next before removing
       node = list_next(node);
-      consolidate_existing_dev(p_target_rec, p_dev_rec, bd_addr);
+      consolidate_existing_dev(p_target, p_device, bd_addr);
     }
     return;
   }
 
-  for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-    if (dev_rec.IsInitialized()) {
-      consolidate_existing_dev(p_target_rec, &dev_rec, bd_addr);
+  for (BtmDevice& device : btm_sec_cb.device_records) {
+    if (device.IsInitialized()) {
+      consolidate_existing_dev(p_target, &device, bd_addr);
     }
   }
 }
@@ -637,36 +637,35 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
-  p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec == nullptr) {
+BtmDevice* btm_find_or_alloc_dev(const RawAddress& bd_addr) {
+  BtmDevice* p_device;
+  p_device = btm_find_dev(bd_addr);
+  if (p_device == nullptr) {
     /* Allocate a new device record or reuse the oldest one */
-    p_dev_rec = btm_sec_alloc_dev(bd_addr);
+    p_device = btm_sec_alloc_dev(bd_addr);
   }
-  return p_dev_rec;
+  return p_device;
 }
 
 // TODO(b/315241296): Remove this function once the device_record_wipe_ranking flag is shipped
-static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec_(void) {
-  tBTM_SEC_DEV_REC* p_oldest = NULL;
+static BtmDevice* btm_find_oldest_dev_rec_(void) {
+  BtmDevice* p_oldest = NULL;
   uint32_t ts_oldest = 0xFFFFFFFF;
-  tBTM_SEC_DEV_REC* p_oldest_paired = NULL;
+  BtmDevice* p_oldest_paired = NULL;
   uint32_t ts_oldest_paired = 0xFFFFFFFF;
 
-  auto process_record = [&](tBTM_SEC_DEV_REC* p_dev_rec) {
-    if ((p_dev_rec->sec_rec.sec_flags & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN)) ==
-        0) {
+  auto process_record = [&](BtmDevice* p_device) {
+    if ((p_device->sec_rec.sec_flags & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN)) == 0) {
       // Device is not paired
-      if (p_dev_rec->timestamp < ts_oldest) {
-        p_oldest = p_dev_rec;
-        ts_oldest = p_dev_rec->timestamp;
+      if (p_device->timestamp < ts_oldest) {
+        p_oldest = p_device;
+        ts_oldest = p_device->timestamp;
       }
     } else {
       // Paired device
-      if (p_dev_rec->timestamp < ts_oldest_paired) {
-        p_oldest_paired = p_dev_rec;
-        ts_oldest_paired = p_dev_rec->timestamp;
+      if (p_device->timestamp < ts_oldest_paired) {
+        p_oldest_paired = p_device;
+        ts_oldest_paired = p_device->timestamp;
       }
     }
   };
@@ -675,12 +674,12 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec_(void) {
     list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
     for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
         node = list_next(node)) {
-      process_record(static_cast<tBTM_SEC_DEV_REC*>(list_node(node)));
+      process_record(static_cast<BtmDevice*>(list_node(node)));
     }
   } else {
-    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-      if (dev_rec.IsInitialized()) {
-        process_record(&dev_rec);
+    for (BtmDevice& device : btm_sec_cb.device_records) {
+      if (device.IsInitialized()) {
+        process_record(&device);
       }
     }
   }
@@ -705,28 +704,28 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec_(void) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
+static BtmDevice* btm_find_oldest_dev_rec(void) {
   if (!com_android_bluetooth_flags_device_record_wipe_ranking()) {
     return btm_find_oldest_dev_rec_();
   }
 
-  tBTM_SEC_DEV_REC* oldest = nullptr;            // Oldest non-bonded, non-connected device
-  tBTM_SEC_DEV_REC* oldest_connected = nullptr;  // Oldest non-bonded, connected device
-  tBTM_SEC_DEV_REC* oldest_bonded = nullptr;     // Oldest bonded device
+  BtmDevice* oldest = nullptr;            // Oldest non-bonded, non-connected device
+  BtmDevice* oldest_connected = nullptr;  // Oldest non-bonded, connected device
+  BtmDevice* oldest_bonded = nullptr;     // Oldest bonded device
 
-  auto process_record = [&](tBTM_SEC_DEV_REC* p_dev_rec) {
-    if (p_dev_rec->sec_rec.is_bonded()) {  // Device is bonded
-      if (oldest_bonded == nullptr || p_dev_rec->timestamp < oldest_bonded->timestamp) {
-        oldest_bonded = p_dev_rec;
+  auto process_record = [&](BtmDevice* p_device) {
+    if (p_device->sec_rec.is_bonded()) {  // Device is bonded
+      if (oldest_bonded == nullptr || p_device->timestamp < oldest_bonded->timestamp) {
+        oldest_bonded = p_device;
       }
-    } else if (p_dev_rec->get_br_edr_hci_handle() != HCI_INVALID_HANDLE ||
-               p_dev_rec->get_ble_hci_handle() != HCI_INVALID_HANDLE) {  // Device is connected
-      if (oldest_connected == nullptr || p_dev_rec->timestamp < oldest_connected->timestamp) {
-        oldest_connected = p_dev_rec;
+    } else if (p_device->get_br_edr_hci_handle() != HCI_INVALID_HANDLE ||
+               p_device->get_ble_hci_handle() != HCI_INVALID_HANDLE) {  // Device is connected
+      if (oldest_connected == nullptr || p_device->timestamp < oldest_connected->timestamp) {
+        oldest_connected = p_device;
       }
     } else {  // Device is neither bonded nor connected
-      if (oldest == nullptr || p_dev_rec->timestamp < oldest->timestamp) {
-        oldest = p_dev_rec;
+      if (oldest == nullptr || p_device->timestamp < oldest->timestamp) {
+        oldest = p_device;
       }
     }
   };
@@ -735,12 +734,12 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
     list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
     for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
         node = list_next(node)) {
-      process_record(static_cast<tBTM_SEC_DEV_REC*>(list_node(node)));
+      process_record(static_cast<BtmDevice*>(list_node(node)));
     }
   } else {
-    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-      if (dev_rec.IsInitialized()) {
-        process_record(&dev_rec);
+    for (BtmDevice& device : btm_sec_cb.device_records) {
+      if (device.IsInitialized()) {
+        process_record(&device);
       }
     }
   }
@@ -775,11 +774,11 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
  * Returns          Pointer to the newly allocated record
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
+BtmDevice* btm_sec_allocate_dev_rec(void) {
   if (!is_main_thread()) {
     log::error("Called from non-main thread");
   }
-  tBTM_SEC_DEV_REC* p_dev_rec = nullptr;
+  BtmDevice* p_device = nullptr;
 
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     if (btm_sec_cb.sec_dev_rec == nullptr) {
@@ -788,35 +787,35 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
     }
 
     if (list_length(btm_sec_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
-      p_dev_rec = btm_find_oldest_dev_rec();
-      wipe_secrets_and_remove(p_dev_rec);
+      p_device = btm_find_oldest_dev_rec();
+      wipe_secrets_and_remove(p_device);
     }
 
-    p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(osi_calloc(sizeof(tBTM_SEC_DEV_REC)));
-    list_append(btm_sec_cb.sec_dev_rec, p_dev_rec);
+    p_device = static_cast<BtmDevice*>(osi_calloc(sizeof(BtmDevice)));
+    list_append(btm_sec_cb.sec_dev_rec, p_device);
   } else {
-    for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-      if (!dev_rec.IsInitialized()) {
-        p_dev_rec = &dev_rec;
+    for (BtmDevice& device : btm_sec_cb.device_records) {
+      if (!device.IsInitialized()) {
+        p_device = &device;
         break;
       }
     }
 
-    if (p_dev_rec == nullptr) {
+    if (p_device == nullptr) {
       // The array is completely allocated, need to clean the oldest one.
-      p_dev_rec = btm_find_oldest_dev_rec();
-      wipe_secrets_and_remove(p_dev_rec);
+      p_device = btm_find_oldest_dev_rec();
+      wipe_secrets_and_remove(p_device);
     }
   }
 
   // Initialize defaults
-  p_dev_rec->sec_rec.sec_flags = BTM_SEC_IN_USE;
-  p_dev_rec->sec_rec.bond_type = BOND_TYPE_UNKNOWN;
-  p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
-  p_dev_rec->sec_rec.rmt_io_caps = BtIoCap::IO_CAP_UNKNOWN;
-  p_dev_rec->suggested_tx_octets = 0;
+  p_device->sec_rec.sec_flags = BTM_SEC_IN_USE;
+  p_device->sec_rec.bond_type = BOND_TYPE_UNKNOWN;
+  p_device->timestamp = btm_sec_cb.dev_rec_count++;
+  p_device->sec_rec.rmt_io_caps = BtIoCap::IO_CAP_UNKNOWN;
+  p_device->suggested_tx_octets = 0;
 
-  return p_dev_rec;
+  return p_device;
 }
 
 /*******************************************************************************
@@ -830,13 +829,13 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
  *
  ******************************************************************************/
 tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  BtmDevice* p_device = btm_find_dev(bd_addr);
 
-  if (p_dev_rec == nullptr) {
+  if (p_device == nullptr) {
     return BOND_TYPE_UNKNOWN;
   }
 
-  return p_dev_rec->sec_rec.bond_type;
+  return p_device->sec_rec.bond_type;
 }
 
 /*******************************************************************************
@@ -850,19 +849,19 @@ tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  BtmDevice* p_device = btm_find_dev(bd_addr);
 
-  if (p_dev_rec == nullptr) {
+  if (p_device == nullptr) {
     log::warn("No security record for device {}", bd_addr);
     return false;
   }
 
-  if (p_dev_rec->sec_rec.bond_type != bond_type) {
+  if (p_device->sec_rec.bond_type != bond_type) {
     log::info("{} bond_type changed: {} -> {}", bd_addr,
-              bond_type_text(p_dev_rec->sec_rec.bond_type), bond_type_text(bond_type));
+              bond_type_text(p_device->sec_rec.bond_type), bond_type_text(bond_type));
   }
 
-  p_dev_rec->sec_rec.bond_type = bond_type;
+  p_device->sec_rec.bond_type = bond_type;
   return true;
 }
 
@@ -875,25 +874,25 @@ bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type) 
  * Returns          A vector containing pointers to all security device records
  *
  ******************************************************************************/
-std::vector<tBTM_SEC_DEV_REC*> btm_get_sec_dev_rec() {
-  std::vector<tBTM_SEC_DEV_REC*> result{};
+std::vector<BtmDevice*> btm_get_sec_dev_rec() {
+  std::vector<BtmDevice*> result{};
 
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     if (btm_sec_cb.sec_dev_rec != nullptr) {
       list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
       for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
            node = list_next(node)) {
-        tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-        result.push_back(p_dev_rec);
+        BtmDevice* p_device = static_cast<BtmDevice*>(list_node(node));
+        result.push_back(p_device);
       }
     }
 
     return result;
   }
 
-  for (tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-    if (dev_rec.IsInitialized()) {
-      result.push_back(&dev_rec);
+  for (BtmDevice& device : btm_sec_cb.device_records) {
+    if (device.IsInitialized()) {
+      result.push_back(&device);
     }
   }
   return result;
@@ -916,30 +915,30 @@ std::vector<tBTM_SEC_DEV_REC*> btm_get_sec_dev_rec() {
  *
  ******************************************************************************/
 bool BTM_Sec_AddressKnown(const RawAddress& address) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
+  BtmDevice* p_device = btm_find_dev(address);
 
   // not a known device, we assume public address
-  if (p_dev_rec == nullptr) {
+  if (p_device == nullptr) {
     log::warn("{}, unknown device", address);
     return true;
   }
   // a classic device, we assume public address
-  if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == 0) {
-    log::warn("{}, device type not BLE: 0x{:02x}", address, p_dev_rec->device_type);
+  if ((p_device->device_type & BT_DEVICE_TYPE_BLE) == 0) {
+    log::warn("{}, device type not BLE: 0x{:02x}", address, p_device->device_type);
     return true;
   }
 
   // bonded device with identity address known
-  if (!p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
+  if (!p_device->ble.identity_address_with_type.bda.IsEmpty()) {
     return true;
   }
 
   // Public address, Random Static, or Random Non-Resolvable Address known
-  if (p_dev_rec->ble.AddressType() == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(address)) {
+  if (p_device->ble.AddressType() == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(address)) {
     return true;
   }
 
-  log::warn("{}, the address type is 0x{:02x}", address, p_dev_rec->ble.AddressType());
+  log::warn("{}, the address type is 0x{:02x}", address, p_device->ble.AddressType());
 
   // Only Resolvable Private Address (RPA) is known, we don't allow it into
   // the background connection procedure.
@@ -947,17 +946,17 @@ bool BTM_Sec_AddressKnown(const RawAddress& address) {
 }
 
 const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec == nullptr || !p_dev_rec->is_device_type_has_ble()) {
+  BtmDevice* p_device = btm_find_dev(bd_addr);
+  if (p_device == nullptr || !p_device->is_device_type_has_ble()) {
     return {
             .type = BLE_ADDR_PUBLIC,
             .bda = bd_addr,
     };
   }
 
-  if (p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
+  if (p_device->ble.identity_address_with_type.bda.IsEmpty()) {
     return {
-            .type = p_dev_rec->ble.AddressType(),
+            .type = p_device->ble.AddressType(),
             .bda = bd_addr,
     };
   } else {
@@ -966,15 +965,15 @@ const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
     // not enabled) rather than redesign.
     // TODO(b/235218533): Remove when LL Privacy is implemented.
 #if TARGET_FLOSS
-    if (!p_dev_rec->ble.cur_rand_addr.IsEmpty() &&
+    if (!p_device->ble.cur_rand_addr.IsEmpty() &&
         btm_cb.ble_ctr_cb.privacy_mode < BTM_PRIVACY_1_2) {
       return {
               .type = BLE_ADDR_RANDOM,
-              .bda = p_dev_rec->ble.cur_rand_addr,
+              .bda = p_device->ble.cur_rand_addr,
       };
     }
 #endif
-    return p_dev_rec->ble.identity_address_with_type;
+    return p_device->ble.identity_address_with_type;
   }
 }
 
@@ -992,9 +991,9 @@ static void DumpsysRecord_(int fd) {
   list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
   for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
        node = list_next(node)) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-    // TODO: handle in tBTM_SEC_DEV_REC.ToString
-    LOG_DUMPSYS(fd, "%03u %s", ++cnt, p_dev_rec->ToString().c_str());
+    BtmDevice* p_device = static_cast<BtmDevice*>(list_node(node));
+    // TODO: handle in BtmDevice.ToString
+    LOG_DUMPSYS(fd, "%03u %s", ++cnt, p_device->ToString().c_str());
   }
 }
 
@@ -1005,10 +1004,10 @@ void DumpsysRecord(int fd) {
   }
 
   unsigned cnt = 0;
-  for (const tBTM_SEC_DEV_REC& dev_rec : btm_sec_cb.device_records) {
-    if (dev_rec.IsInitialized()) {
+  for (const BtmDevice& device : btm_sec_cb.device_records) {
+    if (device.IsInitialized()) {
       // TODO: We should add more details to dump here.
-      LOG_DUMPSYS(fd, "%03u %s", ++cnt, dev_rec.ToString().c_str());
+      LOG_DUMPSYS(fd, "%03u %s", ++cnt, device.ToString().c_str());
     }
   }
 }
@@ -1018,7 +1017,7 @@ namespace bluetooth {
 namespace legacy {
 namespace testing {
 
-void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec) { ::wipe_secrets_and_remove(p_dev_rec); }
+void wipe_secrets_and_remove(BtmDevice* p_device) { ::wipe_secrets_and_remove(p_device); }
 
 }  // namespace testing
 }  // namespace legacy

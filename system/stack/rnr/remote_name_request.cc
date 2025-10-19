@@ -22,10 +22,10 @@
 #include "btif/include/btif_config.h"
 #include "main/shim/acl_api.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/internal/btm_api.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
 
@@ -58,8 +58,8 @@ bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
 }
 
 bool BTM_IsRemoteNameKnown(const RawAddress& bd_addr, tBT_TRANSPORT /* transport */) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  return (p_dev_rec == nullptr) ? false : p_dev_rec->sec_rec.is_name_known();
+  BtmDevice* p_device = btm_find_dev(bd_addr);
+  return (p_device == nullptr) ? false : p_device->sec_rec.is_name_known();
 }
 
 /*******************************************************************************

@@ -29,7 +29,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 
 // Mocked compile conditionals, if any
 namespace test {
@@ -37,23 +37,21 @@ namespace mock {
 namespace stack_btm_ble_addr {
 
 // Name: btm_ble_addr_resolvable
-// Params: const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec
+// Params: const RawAddress& rpa, BtmDevice* p_device
 // Returns: bool
 struct btm_ble_addr_resolvable {
-  std::function<bool(const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec)> body{
-          [](const RawAddress& /* rpa */, tBTM_SEC_DEV_REC* /* p_dev_rec */) { return false; }};
-  bool operator()(const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec) {
-    return body(rpa, p_dev_rec);
-  }
+  std::function<bool(const RawAddress& rpa, BtmDevice* p_device)> body{
+          [](const RawAddress& /* rpa */, BtmDevice* /* p_device */) { return false; }};
+  bool operator()(const RawAddress& rpa, BtmDevice* p_device) { return body(rpa, p_device); }
 };
 extern struct btm_ble_addr_resolvable btm_ble_addr_resolvable;
 // Name: btm_ble_resolve_random_addr
 // Params: const RawAddress& random_bda
-// Returns: tBTM_SEC_DEV_REC*
+// Returns: BtmDevice*
 struct btm_ble_resolve_random_addr {
-  std::function<tBTM_SEC_DEV_REC*(const RawAddress& random_bda)> body{
+  std::function<BtmDevice*(const RawAddress& random_bda)> body{
           [](const RawAddress& /* random_bda */) { return nullptr; }};
-  tBTM_SEC_DEV_REC* operator()(const RawAddress& random_bda) { return body(random_bda); }
+  BtmDevice* operator()(const RawAddress& random_bda) { return body(random_bda); }
 };
 extern struct btm_ble_resolve_random_addr btm_ble_resolve_random_addr;
 // Name: btm_identity_addr_to_random_pseudo

@@ -689,13 +689,13 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
 }
 
 void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle, uint8_t tx_phy, uint8_t rx_phy) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
+  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  if (!p_device) {
     log::warn("No Device Found!");
     return;
   }
 
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_device->ble.pseudo_addr, BT_TRANSPORT_LE);
   if (!p_tcb) {
     return;
   }
@@ -730,13 +730,13 @@ void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval, uint16
 
 void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16_t latency,
                                 uint16_t cont_num, uint16_t timeout, uint8_t status) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
+  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  if (!p_device) {
     log::warn("No Device Found!");
     return;
   }
 
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_device->ble.pseudo_addr, BT_TRANSPORT_LE);
   if (!p_tcb) {
     return;
   }

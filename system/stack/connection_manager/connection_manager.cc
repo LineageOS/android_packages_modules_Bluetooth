@@ -505,17 +505,17 @@ static void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& addre
 }
 
 static void find_in_device_record(const RawAddress& bd_addr, tBLE_BD_ADDR* address_with_type) {
-  const tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec == nullptr) {
+  const BtmDevice* p_device = btm_find_dev(bd_addr);
+  if (p_device == nullptr) {
     return;
   }
 
-  if (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
-    if (p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
-      *address_with_type = {.type = p_dev_rec->ble.AddressType(), .bda = bd_addr};
+  if (p_device->device_type & BT_DEVICE_TYPE_BLE) {
+    if (p_device->ble.identity_address_with_type.bda.IsEmpty()) {
+      *address_with_type = {.type = p_device->ble.AddressType(), .bda = bd_addr};
       return;
     }
-    *address_with_type = p_dev_rec->ble.identity_address_with_type;
+    *address_with_type = p_device->ble.identity_address_with_type;
     return;
   }
   *address_with_type = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr};

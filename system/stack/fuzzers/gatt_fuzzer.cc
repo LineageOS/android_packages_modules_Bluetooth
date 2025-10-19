@@ -66,16 +66,14 @@ namespace {
 
 tL2CAP_FIXED_CHNL_REG fixed_chnl_reg;
 tL2CAP_APPL_INFO appl_info;
-tBTM_SEC_DEV_REC btm_sec_dev_rec;
+BtmDevice btm_device;
 
 class FakeBtStack {
   NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_l2cap_interface;
 
 public:
   FakeBtStack() {
-    test::mock::stack_btm_dev::btm_find_dev.body = [](const RawAddress&) {
-      return &btm_sec_dev_rec;
-    };
+    test::mock::stack_btm_dev::btm_find_dev.body = [](const RawAddress&) { return &btm_device; };
 
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole.body = [](const RawAddress&) {
       return HCI_ROLE_CENTRAL;

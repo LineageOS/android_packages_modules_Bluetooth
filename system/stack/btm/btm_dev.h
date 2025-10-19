@@ -21,13 +21,13 @@
 
 #include <vector>
 
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 
 /** Free resources associated with the device associated with |bd_addr| address.
  *
  * *** WARNING ***
- * tBTM_SEC_DEV_REC associated with bd_addr becomes invalid after this function
- * is called, also any of it's fields. i.e. if you use p_dev_rec->bd_addr, it is
+ * BtmDevice associated with bd_addr becomes invalid after this function
+ * is called, also any of its fields. i.e. if you use p_device->bd_addr, it is
  * no longer valid!
  * *** WARNING ***
  *
@@ -79,7 +79,7 @@ DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
+BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -91,7 +91,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
+BtmDevice* btm_find_dev_by_handle(uint16_t handle);
 
 /*******************************************************************************
  *
@@ -103,7 +103,7 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
+BtmDevice* btm_find_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -115,7 +115,7 @@ tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr);
+BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -126,7 +126,7 @@ tBTM_SEC_DEV_REC* btm_find_dev_with_lenc(const RawAddress& bd_addr);
  * Returns          none
  *
  ******************************************************************************/
-void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
+void btm_consolidate_dev(BtmDevice* p_target);
 
 /*******************************************************************************
  *
@@ -152,7 +152,7 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
+BtmDevice* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -166,7 +166,7 @@ tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
  * Returns          Pointer to the newly allocated record
  *
  ******************************************************************************/
-tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void);
+BtmDevice* btm_sec_allocate_dev_rec(void);
 
 /*******************************************************************************
  *
@@ -201,7 +201,7 @@ bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type);
  * Returns          A vector containing pointers of security device records
  *
  ******************************************************************************/
-std::vector<tBTM_SEC_DEV_REC*> btm_get_sec_dev_rec();
+std::vector<BtmDevice*> btm_get_sec_dev_rec();
 
 bool BTM_Sec_AddressKnown(const RawAddress& address);
 const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr);
@@ -218,5 +218,5 @@ const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr);
 void DumpsysRecord(int fd);
 
 namespace bluetooth::legacy::testing {
-void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
+void wipe_secrets_and_remove(BtmDevice* p_device);
 }  // namespace bluetooth::legacy::testing

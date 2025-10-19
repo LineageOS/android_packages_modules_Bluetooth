@@ -1799,14 +1799,14 @@ void gatt_load_bonded(void) {
   if (!load_bonded) {
     return;
   }
-  for (tBTM_SEC_DEV_REC* p_dev_rec : btm_get_sec_dev_rec()) {
-    if (p_dev_rec->sec_rec.is_link_key_known()) {
-      log::verbose("Add bonded BR/EDR transport {}", p_dev_rec->bd_addr);
-      gatt_bonded_check_add_address(p_dev_rec->bd_addr);
+  for (BtmDevice* p_device : btm_get_sec_dev_rec()) {
+    if (p_device->sec_rec.is_link_key_known()) {
+      log::verbose("Add bonded BR/EDR transport {}", p_device->bd_addr);
+      gatt_bonded_check_add_address(p_device->bd_addr);
     }
-    if (p_dev_rec->sec_rec.is_le_link_key_known()) {
-      log::verbose("Add bonded BLE {}", p_dev_rec->ble.pseudo_addr);
-      gatt_bonded_check_add_address(p_dev_rec->ble.pseudo_addr);
+    if (p_device->sec_rec.is_le_link_key_known()) {
+      log::verbose("Add bonded BLE {}", p_device->ble.pseudo_addr);
+      gatt_bonded_check_add_address(p_device->ble.pseudo_addr);
     }
   }
 }
