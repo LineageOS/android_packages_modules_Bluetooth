@@ -965,6 +965,9 @@ class PbapClientStateMachine extends StateMachine {
 
     private void onConnectionStateChanged(int state) {
         int prevState = mCurrentState;
+        if (prevState == state) {
+            return;
+        }
 
         Intent intent = new Intent(BluetoothPbapClient.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);

@@ -522,20 +522,21 @@ public class SapService extends ConnectableProfile
     }
 
     private synchronized void setState(int state, int result) {
-        if (state != mState) {
-            Log.d(TAG, "Sap state " + mState + " -> " + state + ", result = " + result);
-            int prevState = mState;
-            mState = state;
-            mAdapterService.updateProfileConnectionAdapterProperties(
-                    mRemoteDevice, mProfileId, mState, prevState);
-
-            BluetoothSap.invalidateBluetoothGetConnectionStateCache();
-            Intent intent = new Intent(BluetoothSap.ACTION_CONNECTION_STATE_CHANGED);
-            intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
-            intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
-            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        if (state == mState) {
+            return;
         }
+        Log.d(TAG, "Sap state " + mState + " -> " + state + ", result = " + result);
+        int prevState = mState;
+        mState = state;
+        mAdapterService.updateProfileConnectionAdapterProperties(
+                mRemoteDevice, mProfileId, mState, prevState);
+
+        BluetoothSap.invalidateBluetoothGetConnectionStateCache();
+        Intent intent = new Intent(BluetoothSap.ACTION_CONNECTION_STATE_CHANGED);
+        intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
+        intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     public int getState() {

@@ -486,25 +486,22 @@ public class BluetoothMapService extends ConnectableProfile {
         return mRemoteDevice;
     }
 
-    private void setState(int state) {
-        setState(state, BluetoothMap.RESULT_SUCCESS);
-    }
-
-    private synchronized void setState(int state, int result) {
-        if (state != mState) {
-            Log.d(TAG, "Map state " + mState + " -> " + state + ", result = " + result);
-            int prevState = mState;
-            mState = state;
-            mAdapterService.updateProfileConnectionAdapterProperties(
-                    mRemoteDevice, mProfileId, mState, prevState);
-
-            BluetoothMap.invalidateBluetoothGetConnectionStateCache();
-            Intent intent = new Intent(BluetoothMap.ACTION_CONNECTION_STATE_CHANGED);
-            intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
-            intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
-            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+    private synchronized void setState(int state) {
+        if (state == mState) {
+            return;
         }
+        Log.d(TAG, "Map state " + mState + " -> " + state);
+        int prevState = mState;
+        mState = state;
+        mAdapterService.updateProfileConnectionAdapterProperties(
+                mRemoteDevice, mProfileId, mState, prevState);
+
+        BluetoothMap.invalidateBluetoothGetConnectionStateCache();
+        Intent intent = new Intent(BluetoothMap.ACTION_CONNECTION_STATE_CHANGED);
+        intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
+        intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     @Override

@@ -159,8 +159,18 @@ public class PbapStateMachine extends StateMachine {
             mPrevState = this;
         }
 
-        // Should not be called from enter() method
-        private void broadcastConnectionState(BluetoothDevice device, int fromState, int toState) {
+        /** Broadcast connection state change for this state machine */
+        void broadcastStateTransitions() {
+            int prevStateInt = STATE_DISCONNECTED;
+            if (mPrevState != null) {
+                prevStateInt = mPrevState.getConnectionStateInt();
+            }
+            if (getConnectionStateInt() == prevStateInt) {
+                return;
+            }
+            BluetoothDevice device = mRemoteDevice;
+            int fromState = prevStateInt;
+            int toState = getConnectionStateInt();
             stateLogD("broadcastConnectionState " + device + ": " + fromState + "->" + toState);
             mAdapterService.updateProfileConnectionAdapterProperties(
                     device, BluetoothProfile.PBAP, toState, fromState);
@@ -175,24 +185,6 @@ public class PbapStateMachine extends StateMachine {
             } else {
                 mService.sendBroadcastAsUser(
                         intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
-            }
-        }
-
-        /** Broadcast connection state change for this state machine */
-        void broadcastStateTransitions() {
-            int prevStateInt = STATE_DISCONNECTED;
-            if (mPrevState != null) {
-                prevStateInt = mPrevState.getConnectionStateInt();
-            }
-            if (getConnectionStateInt() != prevStateInt) {
-                stateLogD(
-                        "connection state changed: "
-                                + mRemoteDevice
-                                + ": "
-                                + mPrevState
-                                + " -> "
-                                + this);
-                broadcastConnectionState(mRemoteDevice, prevStateInt, getConnectionStateInt());
             }
         }
 

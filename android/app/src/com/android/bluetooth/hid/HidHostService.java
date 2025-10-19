@@ -1026,12 +1026,6 @@ public class HidHostService extends ConnectableProfile {
 
         mInputDevices.put(device, inputDevice);
 
-        broadcastConnectionState(device, transport, prevState, newState);
-    }
-
-    // This method does not check for error condition (newState == prevState)
-    private void broadcastConnectionState(
-            BluetoothDevice device, int transport, int prevState, int newState) {
         // Notifying the connection state change of the profile before sending the intent for
         // connection state change, as it was causing a race condition, with the UI not being
         // updated with the correct connection state.
