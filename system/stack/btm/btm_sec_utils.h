@@ -18,8 +18,8 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/remote_version.h>
 
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_sec_int_types.h"
-#include "stack/btm/security_device_record.h"
 
 bool concurrentPeerAuthIsEnabled();
 bool handleUnexpectedEncryptionChange();
@@ -30,11 +30,11 @@ bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connect
 bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle, uint8_t key_size);
 void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size);
 
-bool btm_dev_authenticated(const tBTM_SEC_DEV_REC* p_dev_rec);
-bool btm_dev_encrypted(const tBTM_SEC_DEV_REC* p_dev_rec);
-bool btm_dev_16_digit_authenticated(const tBTM_SEC_DEV_REC* p_dev_rec);
+bool btm_dev_authenticated(const BtmDevice* p_device);
+bool btm_dev_encrypted(const BtmDevice* p_device);
+bool btm_dev_16_digit_authenticated(const BtmDevice* p_device);
 
-bool access_secure_service_from_temp_bond(const tBTM_SEC_DEV_REC* p_dev_rec, bool locally_initiated,
+bool access_secure_service_from_temp_bond(const BtmDevice* p_device, bool locally_initiated,
                                           uint16_t security_req);
 
 bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr);

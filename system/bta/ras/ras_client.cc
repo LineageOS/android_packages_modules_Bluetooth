@@ -43,7 +43,7 @@
 #include "main/shim/entry.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/gap_api.h"
@@ -813,8 +813,8 @@ public:
         return;
       }
       uint16_t first_segment_timeout_ms = kFirstSegmentRangingDataTimeoutMs;
-      tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(tracker->address_);
-      if (p_dev_rec && (p_dev_rec->conn_params.peripheral_latency >= 2)) {
+      BtmDevice* p_device = btm_find_dev(tracker->address_);
+      if (p_device && (p_device->conn_params.peripheral_latency >= 2)) {
         first_segment_timeout_ms = kLowPowerFirstSegmentRangingDataTimeoutMs;
       }
       SetTimeOutAlarm(tracker, first_segment_timeout_ms, TimeoutType::FIRST_SEGMENT);

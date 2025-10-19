@@ -31,7 +31,7 @@
 #include <cstdint>
 #include <string>
 
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_sec_api.h"
@@ -675,8 +675,7 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset);
  * Parameters:      void
  *
  ******************************************************************************/
-void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS res,
-                                 bool is_le_transport);
+void btm_sec_dev_rec_cback_event(BtmDevice* p_device, tBTM_STATUS res, bool is_le_transport);
 
 /*******************************************************************************
  *
@@ -689,7 +688,7 @@ void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS res,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
+void btm_sec_clear_ble_keys(BtmDevice* p_device);
 
 /*******************************************************************************
  *

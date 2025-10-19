@@ -131,13 +131,13 @@ void acl_ble_update_event_received(tHCI_STATUS status, uint16_t handle, uint16_t
                                    uint16_t latency, uint16_t timeout) {
   l2cble_process_conn_update_evt(handle, status, interval, latency, timeout);
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_find_dev_by_handle(handle);
 
-  if (!p_dev_rec) {
+  if (!p_device) {
     return;
   }
 
-  gatt_notify_conn_update(p_dev_rec->ble.pseudo_addr, interval, latency, timeout, status);
+  gatt_notify_conn_update(p_device->ble.pseudo_addr, interval, latency, timeout, status);
 }
 
 void acl_ble_update_request_event_received(uint16_t handle, uint16_t interval_min,

@@ -24,7 +24,7 @@
 
 #include "bta/include/bta_jv_api.h"
 #include "common/time_util.h"
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/port_api.h"
 #include "stack/rfcomm/port_int.h"

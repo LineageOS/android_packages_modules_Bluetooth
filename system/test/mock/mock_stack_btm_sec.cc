@@ -272,9 +272,9 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_sec_bond_by_transport(bd_addr, addr_type, transport);
 }
-void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec) {
+void btm_sec_clear_ble_keys(BtmDevice* p_device) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_sec::btm_sec_clear_ble_keys(p_dev_rec);
+  test::mock::stack_btm_sec::btm_sec_clear_ble_keys(p_device);
 }
 void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   inc_func_call_count(__func__);
@@ -290,10 +290,10 @@ void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_cr_loc_oob_data_cback_event(address, loc_oob_data);
 }
-void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS btm_status,
+void btm_sec_dev_rec_cback_event(BtmDevice* p_device, tBTM_STATUS btm_status,
                                  bool is_le_transport) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_sec::btm_sec_dev_rec_cback_event(p_dev_rec, btm_status, is_le_transport);
+  test::mock::stack_btm_sec::btm_sec_dev_rec_cback_event(p_device, btm_status, is_le_transport);
 }
 void btm_sec_dev_reset(void) {
   inc_func_call_count(__func__);

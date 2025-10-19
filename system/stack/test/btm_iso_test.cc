@@ -48,7 +48,7 @@ using testing::Test;
 // for function pointer testing purpose
 bool IsIsoActive = false;
 
-tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
+BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
 void BTM_LogHistory(const std::string& /* tag */, const RawAddress& /* bd_addr */,
                     const std::string& /* msg */, const std::string& /* extra */) {}
 

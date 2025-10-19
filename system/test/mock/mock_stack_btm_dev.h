@@ -26,9 +26,9 @@ namespace stack_btm_dev {
 
 // Function state capture and return values, if needed
 struct btm_find_dev {
-  std::function<tBTM_SEC_DEV_REC*(const RawAddress& bd_addr)> body{
+  std::function<BtmDevice*(const RawAddress& bd_addr)> body{
           [](const RawAddress&) { return nullptr; }};
-  tBTM_SEC_DEV_REC* operator()(const RawAddress& bd_addr) { return body(bd_addr); }
+  BtmDevice* operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
 extern struct btm_find_dev btm_find_dev;
 

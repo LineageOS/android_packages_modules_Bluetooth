@@ -32,7 +32,7 @@ using bluetooth::hci::DistanceMeasurementMethod;
 using bluetooth::hci::DistanceMeasurementSightType;
 using namespace bluetooth;
 
-extern tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
+extern BtmDevice* btm_find_dev(const RawAddress& bd_addr);
 extern bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 class DistanceMeasurementInterfaceImpl : public DistanceMeasurementInterface,
@@ -58,12 +58,12 @@ public:
    */
   static uint16_t GetConnectionHandleAndRole(const RawAddress& bd_addr,
                                              hci::Role* hci_role = nullptr) {
-    tBTM_SEC_DEV_REC* p_sec_dev_rec = btm_find_dev(bd_addr);
-    if (p_sec_dev_rec != nullptr) {
+    BtmDevice* p_device = btm_find_dev(bd_addr);
+    if (p_device != nullptr) {
       if (hci_role != nullptr) {
-        *hci_role = p_sec_dev_rec->role_central ? hci::Role::CENTRAL : hci::Role::PERIPHERAL;
+        *hci_role = p_device->role_central ? hci::Role::CENTRAL : hci::Role::PERIPHERAL;
       }
-      return p_sec_dev_rec->get_ble_hci_handle();
+      return p_device->get_ble_hci_handle();
     }
     return kIllegalConnectionHandle;
   }

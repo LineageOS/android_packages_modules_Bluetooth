@@ -54,11 +54,11 @@ struct btm_ble_refresh_peer_resolvable_private_addr btm_ble_refresh_peer_resolva
 }  // namespace test
 
 // Mocked functions, if any
-bool btm_ble_addr_resolvable(const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec) {
+bool btm_ble_addr_resolvable(const RawAddress& rpa, BtmDevice* p_device) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble_addr::btm_ble_addr_resolvable(rpa, p_dev_rec);
+  return test::mock::stack_btm_ble_addr::btm_ble_addr_resolvable(rpa, p_device);
 }
-tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
+BtmDevice* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_ble_addr::btm_ble_resolve_random_addr(random_bda);
 }

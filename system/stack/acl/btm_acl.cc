@@ -61,12 +61,12 @@
 #include "stack/acl/peer_packet_types.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_utils.h"
 #include "stack/btm/internal/btm_api.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/acl_hci_link_interface.h"
@@ -1863,14 +1863,14 @@ bool acl_peer_supports_ble_connection_subrating_host(const RawAddress& remote_bd
  ******************************************************************************/
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda, RawAddress& local_conn_addr,
                             tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
-  tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(remote_bda);
-  if (p_sec_rec == nullptr) {
+  BtmDevice* p_device = btm_find_dev(remote_bda);
+  if (p_device == nullptr) {
     log::warn("No matching known device {} in record", remote_bda);
     return;
   }
 
-  bluetooth::shim::ACL_ReadConnectionAddress(p_sec_rec->ble_hci_handle, local_conn_addr,
-                                             p_addr_type, ota_address);
+  bluetooth::shim::ACL_ReadConnectionAddress(p_device->ble_hci_handle, local_conn_addr, p_addr_type,
+                                             ota_address);
 }
 
 /*******************************************************************************
@@ -1927,13 +1927,13 @@ bool acl_is_switch_role_idle(const RawAddress& bd_addr, tBT_TRANSPORT transport)
  ******************************************************************************/
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr, RawAddress& conn_addr,
                                   tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
-  tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_addr);
-  if (p_sec_rec == nullptr) {
+  BtmDevice* p_device = btm_find_dev(pseudo_addr);
+  if (p_device == nullptr) {
     log::warn("No matching known device {} in record", pseudo_addr);
     return false;
   }
 
-  bluetooth::shim::ACL_ReadPeerConnectionAddress(p_sec_rec->ble_hci_handle, conn_addr, p_addr_type,
+  bluetooth::shim::ACL_ReadPeerConnectionAddress(p_device->ble_hci_handle, conn_addr, p_addr_type,
                                                  ota_address);
   return true;
 }

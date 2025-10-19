@@ -20,7 +20,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 
 /*******************************************************************************
  *
@@ -32,7 +32,7 @@
  * Returns          true is updated; false otherwise.
  *
  ******************************************************************************/
-bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec, const RawAddress& new_pseudo_addr);
+bool btm_ble_init_pseudo_addr(BtmDevice* p_device, const RawAddress& new_pseudo_addr);
 
 /*******************************************************************************
  *

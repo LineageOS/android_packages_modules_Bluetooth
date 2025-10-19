@@ -31,7 +31,7 @@
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/btm_status.h"
@@ -441,11 +441,11 @@ struct btm_sec_bond_by_transport {
 extern struct btm_sec_bond_by_transport btm_sec_bond_by_transport;
 
 // Name: btm_sec_clear_ble_keys
-// Params: tBTM_SEC_DEV_REC* p_dev_rec
+// Params: BtmDevice* p_device
 // Return: void
 struct btm_sec_clear_ble_keys {
-  std::function<void(tBTM_SEC_DEV_REC* p_dev_rec)> body{[](tBTM_SEC_DEV_REC* /* p_dev_rec */) {}};
-  void operator()(tBTM_SEC_DEV_REC* p_dev_rec) { body(p_dev_rec); }
+  std::function<void(BtmDevice* p_device)> body{[](BtmDevice* /* p_device */) {}};
+  void operator()(BtmDevice* p_device) { body(p_device); }
 };
 extern struct btm_sec_clear_ble_keys btm_sec_clear_ble_keys;
 
@@ -487,14 +487,14 @@ struct btm_sec_cr_loc_oob_data_cback_event {
 extern struct btm_sec_cr_loc_oob_data_cback_event btm_sec_cr_loc_oob_data_cback_event;
 
 // Name: btm_sec_dev_rec_cback_event
-// Params: tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS btm_status, bool
+// Params: BtmDevice* p_device, tBTM_STATUS btm_status, bool
 // is_le_transport Return: void
 struct btm_sec_dev_rec_cback_event {
-  std::function<void(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS btm_status, bool is_le_transport)>
-          body{[](tBTM_SEC_DEV_REC* /* p_dev_rec */, tBTM_STATUS /* btm_status */,
-                  bool /* is_le_transport */) {}};
-  void operator()(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS btm_status, bool is_le_transport) {
-    body(p_dev_rec, btm_status, is_le_transport);
+  std::function<void(BtmDevice* p_device, tBTM_STATUS btm_status, bool is_le_transport)> body{
+          [](BtmDevice* /* p_device */, tBTM_STATUS /* btm_status */, bool /* is_le_transport */) {
+          }};
+  void operator()(BtmDevice* p_device, tBTM_STATUS btm_status, bool is_le_transport) {
+    body(p_device, btm_status, is_le_transport);
   }
 };
 extern struct btm_sec_dev_rec_cback_event btm_sec_dev_rec_cback_event;

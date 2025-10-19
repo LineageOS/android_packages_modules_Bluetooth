@@ -61,7 +61,7 @@ tL2CAP_FIXED_CHNL_REG fixed_chnl_br_reg = {
         .pL2CA_FixedData_Cb = [](uint16_t, const RawAddress&, BT_HDR*) {},
 };
 
-tBTM_SEC_DEV_REC dev_rec;
+BtmDevice btm_device;
 bool is_peripheral;
 
 class FakeBtStack {
@@ -82,7 +82,7 @@ public:
               *p_addr_type = BLE_ADDR_PUBLIC;
               return true;
             };
-    test::mock::stack_btm_dev::btm_find_dev.body = [](const RawAddress&) { return &dev_rec; };
+    test::mock::stack_btm_dev::btm_find_dev.body = [](const RawAddress&) { return &btm_device; };
 
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole.body = [](const RawAddress&) {
       return is_peripheral ? HCI_ROLE_PERIPHERAL : HCI_ROLE_CENTRAL;

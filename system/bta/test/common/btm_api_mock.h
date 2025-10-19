@@ -26,8 +26,8 @@
 #include <optional>
 
 #include "bt_octets.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "stack/btm/security_device_record.h"
 
 namespace bluetooth {
 namespace manager {
@@ -41,7 +41,7 @@ public:
   virtual tBTM_STATUS SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
                                     tBTM_BLE_SEC_ACT sec_act) = 0;
-  virtual tBTM_SEC_DEV_REC* FindDevice(const RawAddress& bd_addr) = 0;
+  virtual BtmDevice* FindDevice(const RawAddress& bd_addr) = 0;
   virtual bool IsPhy2mSupported(const RawAddress& remote_bda, tBT_TRANSPORT transport) = 0;
   virtual uint8_t GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) = 0;
   virtual void BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
@@ -82,7 +82,7 @@ public:
               (const RawAddress& bd_addr, tBT_TRANSPORT transport, tBTM_SEC_CALLBACK* p_callback,
                void* p_ref_data, tBTM_BLE_SEC_ACT sec_act),
               (override));
-  MOCK_METHOD((tBTM_SEC_DEV_REC*), FindDevice, (const RawAddress& bd_addr), (override));
+  MOCK_METHOD((BtmDevice*), FindDevice, (const RawAddress& bd_addr), (override));
   MOCK_METHOD((bool), IsPhy2mSupported, (const RawAddress& remote_bda, tBT_TRANSPORT transport),
               (override));
   MOCK_METHOD((uint8_t), GetPeerSCA, (const RawAddress& remote_bda, tBT_TRANSPORT transport),

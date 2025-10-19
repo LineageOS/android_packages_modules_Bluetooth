@@ -465,33 +465,32 @@ void l2cble_process_rc_param_request_evt(uint16_t handle, uint16_t int_min, uint
 
 void l2cble_use_preferred_conn_params(const RawAddress& bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
+  BtmDevice* p_device = btm_find_or_alloc_dev(bda);
 
   /* If there are any preferred connection parameters, set them now */
-  if ((p_lcb != NULL) && (p_dev_rec != NULL) &&
-      (p_dev_rec->conn_params.min_conn_int >= BTM_BLE_CONN_INT_MIN) &&
-      (p_dev_rec->conn_params.min_conn_int <= BTM_BLE_CONN_INT_MAX) &&
-      (p_dev_rec->conn_params.max_conn_int >= BTM_BLE_CONN_INT_MIN) &&
-      (p_dev_rec->conn_params.max_conn_int <= BTM_BLE_CONN_INT_MAX) &&
-      (p_dev_rec->conn_params.peripheral_latency <= BTM_BLE_CONN_LATENCY_MAX) &&
-      (p_dev_rec->conn_params.supervision_tout >= BTM_BLE_CONN_SUP_TOUT_MIN) &&
-      (p_dev_rec->conn_params.supervision_tout <= BTM_BLE_CONN_SUP_TOUT_MAX) &&
-      ((p_lcb->min_interval < p_dev_rec->conn_params.min_conn_int &&
-        p_dev_rec->conn_params.min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ||
-       (p_lcb->min_interval > p_dev_rec->conn_params.max_conn_int) ||
-       (p_lcb->latency > p_dev_rec->conn_params.peripheral_latency) ||
-       (p_lcb->timeout > p_dev_rec->conn_params.supervision_tout))) {
+  if ((p_lcb != NULL) && (p_device != NULL) &&
+      (p_device->conn_params.min_conn_int >= BTM_BLE_CONN_INT_MIN) &&
+      (p_device->conn_params.min_conn_int <= BTM_BLE_CONN_INT_MAX) &&
+      (p_device->conn_params.max_conn_int >= BTM_BLE_CONN_INT_MIN) &&
+      (p_device->conn_params.max_conn_int <= BTM_BLE_CONN_INT_MAX) &&
+      (p_device->conn_params.peripheral_latency <= BTM_BLE_CONN_LATENCY_MAX) &&
+      (p_device->conn_params.supervision_tout >= BTM_BLE_CONN_SUP_TOUT_MIN) &&
+      (p_device->conn_params.supervision_tout <= BTM_BLE_CONN_SUP_TOUT_MAX) &&
+      ((p_lcb->min_interval < p_device->conn_params.min_conn_int &&
+        p_device->conn_params.min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ||
+       (p_lcb->min_interval > p_device->conn_params.max_conn_int) ||
+       (p_lcb->latency > p_device->conn_params.peripheral_latency) ||
+       (p_lcb->timeout > p_device->conn_params.supervision_tout))) {
     log::verbose(
             "HANDLE={} min_conn_int={} max_conn_int={} peripheral_latency={} "
             "supervision_tout={}",
-            p_lcb->Handle(), p_dev_rec->conn_params.min_conn_int,
-            p_dev_rec->conn_params.max_conn_int, p_dev_rec->conn_params.peripheral_latency,
-            p_dev_rec->conn_params.supervision_tout);
+            p_lcb->Handle(), p_device->conn_params.min_conn_int, p_device->conn_params.max_conn_int,
+            p_device->conn_params.peripheral_latency, p_device->conn_params.supervision_tout);
 
-    p_lcb->min_interval = p_dev_rec->conn_params.min_conn_int;
-    p_lcb->max_interval = p_dev_rec->conn_params.max_conn_int;
-    p_lcb->timeout = p_dev_rec->conn_params.supervision_tout;
-    p_lcb->latency = p_dev_rec->conn_params.peripheral_latency;
+    p_lcb->min_interval = p_device->conn_params.min_conn_int;
+    p_lcb->max_interval = p_device->conn_params.max_conn_int;
+    p_lcb->timeout = p_device->conn_params.supervision_tout;
+    p_lcb->latency = p_device->conn_params.peripheral_latency;
     if (com_android_bluetooth_flags_initial_conn_params_p1()) {
       p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
     }
