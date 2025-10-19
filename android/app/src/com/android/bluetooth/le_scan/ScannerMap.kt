@@ -172,7 +172,7 @@ class ScannerMap {
 
     /** Logs debug information for registered apps and their scan statistics. */
     fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
-        sb.append("LE Scanner:\n")
+        sb.appendLine("\nLE Scanner:")
 
         if (apps.isNotEmpty()) {
             val columns =
@@ -200,8 +200,8 @@ class ScannerMap {
             sb.appendLine(table)
         }
 
-        sb.append("\nLE Scanner Map:\n")
-        sb.append("  Entries: ${appScanStatsMap.size}\n\n")
+        sb.appendLine("\nLE Scanner Map:")
+        sb.appendLine("  Entries: ${appScanStatsMap.size}")
         for (appScanStats in appScanStatsMap.values) {
             val scannerApps = apps.filter { it.name == appScanStats.name }
             appScanStats.dump(sb, scannerApps)
