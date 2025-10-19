@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "vcp_skip_redundant_operation_writes"
+    namespace: "bluetooth"
+    description: "Skip redundant volume/mute writes to avoid pending operations"
+    bug: "448577346"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
