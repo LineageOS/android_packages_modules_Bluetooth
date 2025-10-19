@@ -938,7 +938,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
     }
 
     public void dump(StringBuilder sb) {
-        sb.append("Media Control Service instance list:\n");
+        sb.append("  Media Control Service instance list:\n");
         for (MediaControlGattServiceInterface svc : mServiceMap.values()) {
             svc.dump(sb);
             sb.append("\n");

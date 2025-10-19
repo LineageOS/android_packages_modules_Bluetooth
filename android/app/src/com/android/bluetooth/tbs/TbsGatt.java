@@ -1638,13 +1638,13 @@ public class TbsGatt {
             };
 
     public void dump(StringBuilder sb) {
-        sb.append("\n\tSilent mode: ").append(mSilentMode);
+        sb.append("\n    Silent mode: ").append(mSilentMode);
 
         for (Map.Entry<BluetoothDevice, HashMap<UUID, Short>> deviceEntry :
                 mCccDescriptorValues.entrySet()) {
-            sb.append("\n\tCCC states for device: ").append(deviceEntry.getKey());
+            sb.append("\n    CCC states for device: ").append(deviceEntry.getKey());
             for (Map.Entry<UUID, Short> entry : deviceEntry.getValue().entrySet()) {
-                sb.append("\n\t\tCharacteristic: ")
+                sb.append("\n      Characteristic: ")
                         .append(tbsUuidToString(entry.getKey()))
                         .append(", value: ")
                         .append(Utils.cccIntToStr(entry.getValue()));
