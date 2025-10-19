@@ -1140,6 +1140,18 @@ void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
   log::verbose("srv_changed={}, start_handle: {:#x}", p_srv_chg_clt->srv_changed,
                p_srv_chg_clt->start_handle);
 
+  if (com_android_bluetooth_flags_gatt_not_send_service_change_indication() &&
+      p_srv_chg_clt->srv_changed) {
+    char remote_name[BD_NAME_LEN] = "";
+
+    if (btif_storage_get_stored_remote_name(p_srv_chg_clt->bda, remote_name)) {
+      if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND, remote_name)) {
+        log::verbose("discard srv chg - interop matched {}", remote_name);
+        p_srv_chg_clt->srv_changed = false;
+      }
+    }
+  }
+
   if (p_srv_chg_clt->srv_changed) {
     gatt_send_srv_chg_ind(p_srv_chg_clt->bda, p_srv_chg_clt->start_handle);
   }
