@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "reset_security_flags_on_pairing_failure"
-    namespace: "bluetooth"
-    description: "Reset security flags on pairing failure"
-    bug: "400586238"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "smp_connection_status_handling_when_no_acl"
     namespace: "bluetooth"
     description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
