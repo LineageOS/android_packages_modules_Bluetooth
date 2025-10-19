@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "temporary_pairing_tracking"
-    namespace: "bluetooth"
-    description: "Correctly track temporary pairing status"
-    bug: "397705157"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reset_security_flags_on_pairing_failure"
     namespace: "bluetooth"
     description: "Reset security flags on pairing failure"
@@ -66,16 +56,6 @@ flag {
     namespace: "bluetooth"
     description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
     bug: "401073843"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "immediate_encryption_after_pairing"
-    namespace: "bluetooth"
-    description: "Encrypt BR/EDR link immediately after pairing"
-    bug: "402510244"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

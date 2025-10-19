@@ -3068,26 +3068,6 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
                 p_dev_rec, HCI_ERR_PEER_USER, p_dev_rec->hci_handle,
                 "stack::btm::btm_sec::btm_sec_auth_retry Auth fail while bonding");
       }
-    } else if (!com_android_bluetooth_flags_immediate_encryption_after_pairing()) {
-      BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
-                     hci_error_code_text(status));
-
-      if (role == HCI_ROLE_CENTRAL) {
-        // Encryption is required to start SM over BR/EDR
-        // indicate that this is encryption after authentication
-        BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
-      } else if (p_dev_rec->IsLocallyInitiated()) {
-        // Encryption will be set in role_changed callback
-        log::info(
-                "auth completed in role=peripheral, try to switch role and "
-                "encrypt");
-        if (get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
-                    p_dev_rec->RemoteAddress()) != tBTM_STATUS::BTM_CMD_STARTED) {
-          log::warn("Unable to switch role to central peer:{}", p_dev_rec->RemoteAddress());
-        }
-      }
-
-      l2cu_start_post_bond_timer(p_dev_rec->hci_handle);
     } else {
       BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
