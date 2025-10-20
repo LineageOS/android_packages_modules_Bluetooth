@@ -1213,51 +1213,46 @@ uint8_t BTM_GetSecurityMode() { return btm_sec_cb.security_mode; }
  ************************************************************************/
 /*******************************************************************************
  *
- * Function         btm_sec_is_upgrade_possible
+ * Function         security_upgrade_possible
  *
- * Description      This function returns true if the existing link key
- *                  can be upgraded or if the link key does not exist.
+ * Description      This function returns true if the link security can be upgraded.
  *
  * Returns          bool
  *
  ******************************************************************************/
-static bool btm_sec_is_upgrade_possible(BtmDevice* p_device, bool outgoing) {
-  uint16_t mtm_check = outgoing ? BTM_SEC_OUT_MITM : BTM_SEC_IN_MITM;
-  bool is_possible = true;
+static bool security_upgrade_possible(const BtmDevice* p_device, bool outgoing) {
+  const BtmSecurityRecord& sec_rec = p_device->sec_rec;
 
-  if (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN) {
-    is_possible = false;
-    /* Already have a link key to the connected peer. Is the link key secure
-     *enough?
-     ** Is a link key upgrade even possible?
-     */
-    if ((p_device->sec_rec.security_required & mtm_check) /* needs MITM */
-        && (p_device->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB ||
-            p_device->sec_rec.link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256)
-        /* unauthenticated link key */
-        && p_device->sec_rec.rmt_io_caps <= kBtIoCapClassicMax /* a valid peer IO cap */
-        && btm_sec_io_map[p_device->sec_rec.rmt_io_caps][btm_sec_cb.devcb.loc_io_caps])
-    /* authenticated
-    link key is possible */
-    {
-      /* upgrade is possible: check if the application wants the upgrade.
-       * If the application is configured to use a global MITM flag,
-       * it probably would not want to upgrade the link key based on the
-       * security level database */
-      is_possible = true;
-    }
-
-    /*if authentication is requirement & currently on temp bonding
-     * trigger pairing */
-    if (com_android_bluetooth_flags_upgrade_temp_bonding_on_auth_req() &&
-        (p_device->sec_rec.security_required &
-         (outgoing ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE)) &&
-        p_device->sec_rec.is_bond_type_temporary()) {
-      is_possible = true;
-    }
+  if ((sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN) != BTM_SEC_LINK_KEY_KNOWN) {
+    // Not paired yet, so upgrade is possible
+    log::debug("Not paired, upgrade is possible sec_flags: 0x{:04x}", sec_rec.sec_flags);
+    return true;
   }
-  log::verbose("is_possible: {} sec_flags: 0x{:x}", is_possible, p_device->sec_rec.sec_flags);
-  return is_possible;
+
+  uint16_t bond_check = outgoing ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE;
+  bool bonding_required = sec_rec.security_required & bond_check;
+
+  if (com_android_bluetooth_flags_upgrade_temp_bonding_on_auth_req() && bonding_required &&
+      !sec_rec.is_bond_type_persistent()) {
+    log::debug("Not bonded, upgrade is possible sec_flags: 0x{:x}", sec_rec.sec_flags);
+    return true;
+  }
+
+  uint16_t mitm_check = outgoing ? BTM_SEC_OUT_MITM : BTM_SEC_IN_MITM;
+  bool mitm_protection_required = sec_rec.security_required & mitm_check;
+  bool mitm_protected = sec_rec.link_key_type != BTM_LKEY_TYPE_UNAUTH_COMB &&
+                        sec_rec.link_key_type != BTM_LKEY_TYPE_UNAUTH_COMB_P_256;
+  bool mitm_protection_supported =
+          sec_rec.rmt_io_caps <= kBtIoCapClassicMax &&
+          btm_sec_io_map[sec_rec.rmt_io_caps][btm_sec_cb.devcb.loc_io_caps];
+
+  if (mitm_protection_required && !mitm_protected && mitm_protection_supported) {
+    log::debug("Not MITM protected, upgrade is possible sec_flags: 0x{:x}", sec_rec.sec_flags);
+    return true;
+  }
+
+  log::verbose("Security upgrade not possible sec_flags: 0x{:x}", sec_rec.sec_flags);
+  return false;
 }
 
 /*******************************************************************************
@@ -1271,23 +1266,24 @@ static bool btm_sec_is_upgrade_possible(BtmDevice* p_device, bool outgoing) {
  *
  ******************************************************************************/
 static void btm_sec_check_upgrade(BtmDevice* p_device, bool outgoing) {
-  log::verbose("verify whether the link key should be upgraded");
-
-  /* Only check if link key already exists */
-  if (!(p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN)) {
+  if ((p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN) != BTM_SEC_LINK_KEY_KNOWN) {
+    log::verbose("{} not paired at all", p_device->bd_addr);
     return;
   }
 
-  if (btm_sec_is_upgrade_possible(p_device, outgoing)) {
-    log::verbose("need upgrade!! sec_flags:0x{:x}", p_device->sec_rec.sec_flags);
-    /* if the application confirms the upgrade, set the upgrade bit */
-    p_device->sm4 |= BTM_SM4_UPGRADE;
-
-    /* Clear the link key known to go through authentication/pairing again */
-    p_device->sec_rec.sec_flags &= ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED);
-    p_device->sec_rec.sec_flags &= ~BTM_SEC_AUTHENTICATED;
-    log::verbose("sec_flags:0x{:x}", p_device->sec_rec.sec_flags);
+  if (!security_upgrade_possible(p_device, outgoing)) {
+    log::verbose("Upgrade not possible for {}", p_device->bd_addr);
+    return;
   }
+
+  p_device->sm4 |= BTM_SM4_UPGRADE;
+
+  /* Clear the link key known to go through authentication/pairing again */
+  auto sec_flags = p_device->sec_rec.sec_flags;
+  p_device->sec_rec.sec_flags &= ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED);
+  p_device->sec_rec.sec_flags &= ~BTM_SEC_AUTHENTICATED;
+  log::verbose("{} need upgrade! sec_flags:0x{:x} -> 0x{:x}", p_device->bd_addr, sec_flags,
+               p_device->sec_rec.sec_flags);
 }
 
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
@@ -1340,7 +1336,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
                p_device->sec_rec.sec_flags);
     rc = tBTM_STATUS::BTM_CMD_STARTED;
     if ((btm_sec_cb.security_mode == BTM_SEC_MODE_SERVICE) || (BTM_SM4_KNOWN == p_device->sm4) ||
-        (BTM_SEC_IS_SM4(p_device->sm4) && (!btm_sec_is_upgrade_possible(p_device, outgoing)))) {
+        (BTM_SEC_IS_SM4(p_device->sm4) && (!security_upgrade_possible(p_device, outgoing)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
       if (outgoing) {
@@ -1592,7 +1588,7 @@ tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool outgo
     rc = tBTM_STATUS::BTM_CMD_STARTED;
 
     if ((btm_sec_cb.security_mode == BTM_SEC_MODE_SERVICE) || (BTM_SM4_KNOWN == p_device->sm4) ||
-        (BTM_SEC_IS_SM4(p_device->sm4) && (!btm_sec_is_upgrade_possible(p_device, outgoing)))) {
+        (BTM_SEC_IS_SM4(p_device->sm4) && (!security_upgrade_possible(p_device, outgoing)))) {
       /* legacy mode - local is legacy or local is lisbon/peer is legacy
        * or SM4 with no possibility of link key upgrade */
       if (outgoing) {
