@@ -1165,7 +1165,7 @@ class BassClientStateMachine extends StateMachine {
         List<BluetoothGattCharacteristic> allChars = service.getCharacteristics();
         int numOfChars = allChars.size();
         mNumOfBroadcastReceiverStates = numOfChars - 1;
-        Log.d(TAG, "Total number of chars" + numOfChars);
+        Log.d(TAG, "Total number of chars: " + numOfChars);
         for (int i = 0; i < allChars.size(); i++) {
             if (allChars.get(i).getUuid().equals(BassConstants.BASS_BCAST_AUDIO_SCAN_CTRL_POINT)) {
                 int properties = allChars.get(i).getProperties();
