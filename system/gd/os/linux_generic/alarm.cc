@@ -16,13 +16,14 @@
 
 #include "os/alarm.h"
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
 #include <cstring>
 
-#include "common/bind.h"
 #include "os/linux_generic/linux.h"
 #include "os/utils.h"
 
@@ -34,8 +35,6 @@
 
 namespace bluetooth {
 namespace os {
-using common::Closure;
-using common::OnceClosure;
 
 Alarm::Alarm(Thread* thread) : Alarm(thread, true) {}
 
@@ -48,7 +47,8 @@ Alarm::Alarm(Thread* thread, bool isWakeAlarm)
   log::assert_that(fd_ != -1, "cannot create timerfd: {}", strerror(errno));
 
   token_ = thread_->GetReactor()->Register(
-          fd_, common::Bind(&Alarm::on_fire, common::Unretained(this)), Closure());
+          fd_, base::BindRepeating(&Alarm::on_fire, base::Unretained(this)),
+          base::RepeatingClosure());
 }
 
 Alarm::~Alarm() {
@@ -60,10 +60,10 @@ Alarm::~Alarm() {
   log::assert_that(close_status != -1, "assert failed: close_status != -1");
 }
 
-void Alarm::Schedule(OnceClosure task, std::chrono::milliseconds delay) {
+void Alarm::Schedule(base::OnceClosure task, std::chrono::milliseconds delay) {
   std::lock_guard<std::mutex> lock(mutex_);
   long delay_ms = delay.count();
-  armed_time_ = std::chrono::system_clock::now(); // reset the armed time on every schedule
+  armed_time_ = std::chrono::system_clock::now();  // reset the armed time on every schedule
   itimerspec timer_itimerspec{{/* interval for periodic timer */},
                               {delay_ms / 1000, delay_ms % 1000 * 1000000}};
   int result = TIMERFD_SETTIME(fd_, 0, &timer_itimerspec, nullptr);
