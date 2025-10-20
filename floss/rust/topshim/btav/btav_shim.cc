@@ -39,20 +39,24 @@ public:
     rusty::avrcp_send_key_event(key, state == KeyState::PUSHED);
   }
 
-  void GetSongInfo(SongInfoCallback cb) override { cb.Run(songInfo_); }
+  void GetSongInfo(SongInfoCallback cb) override { std::move(cb).Run(songInfo_); }
 
-  void GetPlayStatus(PlayStatusCallback cb) override { cb.Run(playStatus_); }
+  void GetPlayStatus(PlayStatusCallback cb) override { std::move(cb).Run(playStatus_); }
 
   void GetNowPlayingList(NowPlayingCallback cb) override {
-    cb.Run(currentSongId_, nowPlayingList_);
+    std::move(cb).Run(currentSongId_, nowPlayingList_);
   }
 
-  void GetMediaPlayerList(MediaListCallback cb) override { cb.Run(currentPlayer_, playerList_); }
+  void GetMediaPlayerList(MediaListCallback cb) override {
+    std::move(cb).Run(currentPlayer_, playerList_);
+  }
 
   void GetFolderItems([[maybe_unused]] uint16_t player_id, [[maybe_unused]] std::string media_id,
                       [[maybe_unused]] FolderItemsCallback folder_cb) override {}
 
-  void GetAddressedPlayer(GetAddressedPlayerCallback cb) override { cb.Run(currentPlayer_); }
+  void GetAddressedPlayer(GetAddressedPlayerCallback cb) override {
+    std::move(cb).Run(currentPlayer_);
+  }
 
   void SetBrowsedPlayer([[maybe_unused]] uint16_t player_id,
                         [[maybe_unused]] std::string current_path,
