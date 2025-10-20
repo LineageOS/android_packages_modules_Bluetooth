@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_transport.h>
@@ -235,9 +236,9 @@ void btm_acl_notif_conn_collision(const RawAddress& bda);
  ******************************************************************************/
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 
-void btm_acl_created(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role);
+void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role);
 
-void btm_acl_create_failed(const tAclLinkSpec& link_spec, tHCI_STATUS reason);
+void btm_acl_create_failed(const AclLinkSpec& link_spec, tHCI_STATUS reason);
 
 void btm_acl_removed(uint16_t handle);
 

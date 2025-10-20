@@ -26,11 +26,11 @@
 #define BTA_HH_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 
 #include <cstdint>
 
-#include "bta/include/bta_api.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_hh_api.h"
 #include "bta/sys/bta_sys.h"
@@ -91,7 +91,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   tBTA_HH_PROTO_MODE mode;
   bool direct;
 } tBTA_HH_API_CONN;
@@ -99,14 +99,14 @@ typedef struct {
 /* internal event data from BTE HID callback */
 typedef struct {
   BT_HDR_RIGID hdr;
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   uint32_t data;
   BT_HDR* p_data;
 } tBTA_HH_CBACK_DATA;
 
 typedef struct {
   BT_HDR_RIGID hdr;
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   uint16_t attr_mask;
   uint16_t sub_event;
   uint8_t sub_class;
@@ -193,7 +193,7 @@ typedef struct {
 /* device control block */
 typedef struct {
   tBTA_HH_DEV_DSCP_INFO dscp_info; /* report descriptor and DI information */
-  tAclLinkSpec link_spec;          /* ACL link specification of the HID device */
+  AclLinkSpec link_spec;           /* ACL link specification of the HID device */
   uint16_t attr_mask;              /* attribute mask */
   uint16_t w4_evt;                 /* W4_handshake event name */
   uint8_t index;                   /* index number referenced to handle index */
@@ -276,8 +276,8 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 
 /* utility functions */
-tBTA_HH_DEV_CB* bta_hh_find_cb(const tAclLinkSpec& link_spec);
-tBTA_HH_DEV_CB* bta_hh_get_cb(const tAclLinkSpec& link_spec);
+tBTA_HH_DEV_CB* bta_hh_find_cb(const AclLinkSpec& link_spec);
+tBTA_HH_DEV_CB* bta_hh_get_cb(const AclLinkSpec& link_spec);
 tBTA_HH_DEV_CB* bta_hh_find_cb_by_handle(uint8_t hid_handle);
 bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class);
 void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB* p_cb);
@@ -294,7 +294,7 @@ void bta_hh_api_enable(tBTA_HH_CBACK* p_cback, bool enable_hid, bool enable_hogp
 void bta_hh_api_disable(void);
 void bta_hh_disc_cmpl(void);
 
-bthh_status_t bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
+bthh_status_t bta_hh_read_ssr_param(const AclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
                                     uint16_t* p_min_ssr_tout);
 
 /* functions for LE HID */

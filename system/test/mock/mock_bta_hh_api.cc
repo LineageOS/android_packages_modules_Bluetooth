@@ -39,7 +39,7 @@ const Uuid ANDROID_HEADTRACKER_REPORT_CHARAC_UUID =
 void BTA_HhEnable(tBTA_HH_CBACK* /* p_cback */, bool /* enable_hidp */, bool /* enable_hogp */) {
   inc_func_call_count(__func__);
 }
-void BTA_HhAddDev(const tAclLinkSpec& /* link_spec */, tBTA_HH_ATTR_MASK /* attr_mask */,
+void BTA_HhAddDev(const AclLinkSpec& /* link_spec */, tBTA_HH_ATTR_MASK /* attr_mask */,
                   uint8_t /* sub_class */, uint8_t /* app_id */,
                   tBTA_HH_DEV_DSCP_INFO /* dscp_info */) {
   inc_func_call_count(__func__);
@@ -55,14 +55,14 @@ void BTA_HhGetReport(uint8_t /* dev_handle */, tBTA_HH_RPT_TYPE /* r_type */, ui
                      uint16_t /* buf_size */) {
   inc_func_call_count(__func__);
 }
-void BTA_HhOpen(const tAclLinkSpec& /* link_spec */, bool /* direct */) {
+void BTA_HhOpen(const AclLinkSpec& /* link_spec */, bool /* direct */) {
   inc_func_call_count(__func__);
 }
 void BTA_HhRemoveDev(uint8_t /* dev_handle */) { inc_func_call_count(__func__); }
 void BTA_HhSendCtrl(uint8_t /* dev_handle */, tBTA_HH_TRANS_CTRL_TYPE /* c_type */) {
   inc_func_call_count(__func__);
 }
-void BTA_HhSendData(uint8_t /* dev_handle */, const tAclLinkSpec& /* link_spec */,
+void BTA_HhSendData(uint8_t /* dev_handle */, const AclLinkSpec& /* link_spec */,
                     BT_HDR* /* p_data */) {
   inc_func_call_count(__func__);
 }

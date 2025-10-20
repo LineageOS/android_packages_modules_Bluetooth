@@ -19,6 +19,7 @@
 #ifndef SYSTEM_BTIF_INCLUDE_BTIF_STORAGE_H_
 #define SYSTEM_BTIF_INCLUDE_BTIF_STORAGE_H_
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_octets.h>
@@ -211,7 +212,7 @@ bt_status_t btif_storage_load_bonded_devices(void);
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_add_hid_device_info(const tAclLinkSpec& link_spec, uint16_t attr_mask,
+bt_status_t btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
                                              uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
                                              uint16_t product_id, uint16_t version,
                                              uint8_t ctry_code, uint16_t ssr_max_latency,
@@ -241,7 +242,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void);
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec);
+bt_status_t btif_storage_remove_hid_info(const AclLinkSpec& link_spec);
 
 /** Loads information about bonded hearing aid devices */
 void btif_storage_load_bonded_hearing_aids();
@@ -432,7 +433,7 @@ bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod);
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_set_hid_connection_policy(const tAclLinkSpec& link_spec,
+bt_status_t btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
                                                    bool reconnect_allowed);
 
 /*******************************************************************************
@@ -445,7 +446,7 @@ bt_status_t btif_storage_set_hid_connection_policy(const tAclLinkSpec& link_spec
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_get_hid_connection_policy(const tAclLinkSpec& link_spec,
+bt_status_t btif_storage_get_hid_connection_policy(const AclLinkSpec& link_spec,
                                                    bool* reconnect_allowed);
 
 /*******************************************************************************

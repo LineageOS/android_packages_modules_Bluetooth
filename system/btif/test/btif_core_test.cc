@@ -63,8 +63,8 @@ void set_hal_cbacks(bt_callbacks_t* callbacks);
 }  // namespace bluetooth::testing
 
 namespace bluetooth::legacy::testing {
-void bta_dm_acl_down(const tAclLinkSpec& link_spec);
-void bta_dm_acl_up(const tAclLinkSpec& acl_link_spec, uint16_t acl_handle);
+void bta_dm_acl_down(const AclLinkSpec& link_spec);
+void bta_dm_acl_up(const AclLinkSpec& acl_link_spec, uint16_t acl_handle);
 }  // namespace bluetooth::legacy::testing
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
@@ -150,7 +150,7 @@ void address_consolidate_callback(RawAddress* /* main_bd_addr */,
 void le_address_associate_callback(RawAddress* /* main_bd_addr */,
                                    RawAddress* /* secondary_bd_addr */,
                                    uint8_t /* identity_address_type */) {}
-void acl_state_changed_callback(bt_status_t /* status */, tAclLinkSpec& /* link_spec */,
+void acl_state_changed_callback(bt_status_t /* status */, AclLinkSpec& /* link_spec */,
                                 bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */,
                                 bt_conn_direction_t /* direction */, uint16_t /* acl_handle */) {}
 void link_quality_report_callback(uint64_t /* timestamp */, int /* report_id */, int /* rssi */,
@@ -242,14 +242,14 @@ class BtifCoreWithConnectionTest : public BtifCoreWithControllerTest {
 protected:
   void SetUp() override {
     BtifCoreWithControllerTest::SetUp();
-    tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
-                              .transport = BT_TRANSPORT_AUTO};
+    AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
+                             .transport = BT_TRANSPORT_AUTO};
     bluetooth::legacy::testing::bta_dm_acl_up(link_spec, kHciHandle);
   }
 
   void TearDown() override {
-    tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
-                              .transport = BT_TRANSPORT_AUTO};
+    AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
+                             .transport = BT_TRANSPORT_AUTO};
     bluetooth::legacy::testing::bta_dm_acl_down(link_spec);
     BtifCoreWithControllerTest::TearDown();
   }

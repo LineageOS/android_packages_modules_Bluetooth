@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_octets.h>
 
@@ -67,8 +68,8 @@ public:
   PinCode pin_code;                                      /* for legacy devices */
   tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
   uint8_t pairing_flags{0};                              /* The current pairing flags    */
-  tAclLinkSpec link_spec;                                /* The device currently pairing.
-                                                            Address type is ignored currently */
+  AclLinkSpec link_spec;                                 /* The device currently pairing.
+                                                             Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
 // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.

@@ -46,7 +46,7 @@ void invoke_address_consolidate_cb(RawAddress /* main_bd_addr */,
 void invoke_le_address_associate_cb(RawAddress /* main_bd_addr */,
                                     RawAddress /* secondary_bd_addr */,
                                     uint8_t /* identity_address_type */) {}
-void invoke_acl_state_changed_cb(bt_status_t /* status */, tAclLinkSpec& /* link_spec */,
+void invoke_acl_state_changed_cb(bt_status_t /* status */, AclLinkSpec& /* link_spec */,
                                  bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */,
                                  bt_conn_direction_t /* direction */, uint16_t /* acl_handle */) {}
 void invoke_thread_evt_cb(bt_cb_thread_evt /* event */) {}

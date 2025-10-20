@@ -25,6 +25,7 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
@@ -52,34 +53,33 @@ struct BTA_DmSetVisibility {
 extern struct BTA_DmSetVisibility BTA_DmSetVisibility;
 
 // Name: BTA_dm_acl_down
-// Params: const tAclLinkSpec& link_spec
+// Params: const AclLinkSpec& link_spec
 // Return: void
 struct BTA_dm_acl_down {
-  std::function<void(const tAclLinkSpec& link_spec)> body{
-          [](const tAclLinkSpec& /* link_spec */) {}};
-  void operator()(const tAclLinkSpec& link_spec) { body(link_spec); }
+  std::function<void(const AclLinkSpec& link_spec)> body{[](const AclLinkSpec& /* link_spec */) {}};
+  void operator()(const AclLinkSpec& link_spec) { body(link_spec); }
 };
 extern struct BTA_dm_acl_down BTA_dm_acl_down;
 
 // Name: BTA_dm_acl_up
-// Params: const tAclLinkSpec& link_spec, uint16_t acl_handle
+// Params: const AclLinkSpec& link_spec, uint16_t acl_handle
 // Return: void
 struct BTA_dm_acl_up {
-  std::function<void(const tAclLinkSpec& link_spec, uint16_t acl_handle)> body{
-          [](const tAclLinkSpec& /* link_spec */, uint16_t /* acl_handle */) {}};
-  void operator()(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+  std::function<void(const AclLinkSpec& link_spec, uint16_t acl_handle)> body{
+          [](const AclLinkSpec& /* link_spec */, uint16_t /* acl_handle */) {}};
+  void operator()(const AclLinkSpec& link_spec, uint16_t acl_handle) {
     body(link_spec, acl_handle);
   }
 };
 extern struct BTA_dm_acl_up BTA_dm_acl_up;
 
 // Name: BTA_dm_acl_up_failed
-// Params: const tAclLinkSpec& link_spec, tHCI_STATUS
+// Params: const AclLinkSpec& link_spec, tHCI_STATUS
 // hci_status Return: void
 struct BTA_dm_acl_up_failed {
-  std::function<void(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status)> body{
-          [](const tAclLinkSpec& /* link_spec */, tHCI_STATUS /* hci_status */) {}};
-  void operator()(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status) {
+  std::function<void(const AclLinkSpec& link_spec, tHCI_STATUS hci_status)> body{
+          [](const AclLinkSpec& /* link_spec */, tHCI_STATUS /* hci_status */) {}};
+  void operator()(const AclLinkSpec& link_spec, tHCI_STATUS hci_status) {
     body(link_spec, hci_status);
   }
 };

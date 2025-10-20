@@ -317,7 +317,7 @@ static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_conn_id(tCONN_ID conn_id) {
  *                  specification.
  *
  ******************************************************************************/
-static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(const tAclLinkSpec& link_spec) {
+static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(const AclLinkSpec& link_spec) {
   for (uint8_t i = 0; i < BTA_HH_MAX_DEVICE; i++) {
     tBTA_HH_DEV_CB* p_dev_cb = &bta_hh_cb.kdev[i];
     if (p_dev_cb->in_use && p_dev_cb->link_spec.addrt.bda == link_spec.addrt.bda &&
@@ -893,7 +893,7 @@ static void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_hh_le_dis_cback(const RawAddress& addr, tDIS_VALUE* p_dis_value) {
-  tAclLinkSpec link_spec = {
+  AclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = addr},
           .transport = BT_TRANSPORT_LE,
   };
@@ -967,7 +967,7 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 static void bta_hh_le_encrypt_cback(RawAddress bd_addr, tBT_TRANSPORT transport,
                                     void* /* p_ref_data */, tBTM_STATUS result) {
-  tAclLinkSpec link_spec = {
+  AclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr},
           .transport = transport,
   };
@@ -1181,7 +1181,7 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
  *
  ******************************************************************************/
 static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
-  tAclLinkSpec link_spec = {
+  AclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = gattc_data.remote_bda},
           .transport = BT_TRANSPORT_LE,
   };
@@ -2185,7 +2185,7 @@ void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
   bta_hh_le_deregister_input_notif(p_dev_cb);
 }
 
-static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
+static void bta_hh_le_service_changed(AclLinkSpec link_spec) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
     log::warn("Received close event with unknown device:{}", link_spec);
@@ -2217,7 +2217,7 @@ static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
   bta_hh_sm_execute(p_cb, BTA_HH_GATT_CLOSE_EVT, &data);
 }
 
-static void bta_hh_le_service_discovery_done(tAclLinkSpec link_spec) {
+static void bta_hh_le_service_discovery_done(AclLinkSpec link_spec) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
     log::warn("unknown device:{}", link_spec);
@@ -2253,7 +2253,7 @@ static void bta_hh_le_service_discovery_done(tAclLinkSpec link_spec) {
  ******************************************************************************/
 static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   tBTA_HH_DEV_CB* p_dev_cb;
-  tAclLinkSpec link_spec = {.addrt.type = BLE_ADDR_PUBLIC, .transport = BT_TRANSPORT_LE};
+  AclLinkSpec link_spec = {.addrt.type = BLE_ADDR_PUBLIC, .transport = BT_TRANSPORT_LE};
 
   log::verbose("event:{}", gatt_client_event_text(event));
   if (p_data == NULL) {
@@ -2353,7 +2353,7 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_CACHE_ENT
 
 static bool bta_hh_le_iso_data_callback(const RawAddress& addr, uint16_t /*cis_conn_hdl*/,
                                         uint8_t* data, uint16_t size, uint32_t /*timestamp*/) {
-  tAclLinkSpec link_spec = {.addrt.bda = addr, .transport = BT_TRANSPORT_LE};
+  AclLinkSpec link_spec = {.addrt.bda = addr, .transport = BT_TRANSPORT_LE};
 
   tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_dev_cb == nullptr) {

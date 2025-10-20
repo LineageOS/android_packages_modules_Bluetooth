@@ -17,8 +17,6 @@
 #include <bluetooth/types/ble_address_with_type.h>
 #include <gtest/gtest.h>
 
-static constexpr RawAddress RAW_ADDRESS_TEST1({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-
 TEST(BleAddressWithTypeTest, to_ble_addr_type) {
   for (unsigned i = 0; i < 0xff + 1; i++) {
     switch (to_ble_addr_type((uint8_t)i)) {
@@ -95,20 +93,6 @@ TEST(BleAddressWithTypeTest, STREAM_TO_BLE_ADDR_TYPE) {
         break;
     }
   }
-}
-
-TEST(BleAddressWithTypeTest, TYPED_ADDRESS_TRANSPORT) {
-  tAclLinkSpec linkSpecA = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_AUTO};
-  tAclLinkSpec linkSpecB = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_BR_EDR};
-  tAclLinkSpec linkSpecC = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_LE};
-
-  ASSERT_EQ(linkSpecA, linkSpecB);
-  ASSERT_EQ(linkSpecA, linkSpecC);
-  ASSERT_NE(linkSpecB, linkSpecC);
-
-  ASSERT_FALSE(linkSpecA.StrictlyEquals(linkSpecB));
-  ASSERT_FALSE(linkSpecA.StrictlyEquals(linkSpecC));
-  ASSERT_FALSE(linkSpecB.StrictlyEquals(linkSpecC));
 }
 
 TEST(BleAddressWithTypeTest, BLE_ADDR_TYPE_TO_STREAM) {

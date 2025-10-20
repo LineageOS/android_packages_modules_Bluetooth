@@ -47,6 +47,7 @@ cc_test {
     ],
     host_supported: true,
     srcs: [
+        "test/acl_link_spec_unittest.cc",
         "test/address_unittest.cc",
         "test/ble_address_with_type_unittest.cc",
         "test/bt_name_test.cc",

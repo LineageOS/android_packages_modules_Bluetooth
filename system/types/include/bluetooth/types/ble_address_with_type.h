@@ -141,37 +141,6 @@ struct std::hash<tBLE_BD_ADDR> {
   }
 };
 
-struct tAclLinkSpec {
-  tBLE_BD_ADDR addrt;
-  tBT_TRANSPORT transport;
-
-  bool operator==(const tAclLinkSpec rhs) const {
-    if (rhs.addrt != addrt) {
-      return false;
-    }
-
-    if (rhs.transport == BT_TRANSPORT_AUTO || transport == BT_TRANSPORT_AUTO) {
-      return true;
-    }
-
-    return rhs.transport == transport;
-  }
-
-  bool operator!=(const tAclLinkSpec rhs) const { return !(*this == rhs); }
-
-  bool StrictlyEquals(const tAclLinkSpec rhs) const {
-    return rhs.addrt == addrt && rhs.transport == transport;
-  }
-
-  std::string ToString() const {
-    return std::string(addrt.ToString() + "[" + bt_transport_text(transport) + "]");
-  }
-
-  std::string ToRedactedStringForLogging() const {
-    return addrt.ToRedactedStringForLogging() + "[" + bt_transport_text(transport) + "]";
-  }
-};
-
 #if __has_include(<bluetooth/log.h>)
 #include <bluetooth/log.h>
 
@@ -180,14 +149,6 @@ template <>
 struct formatter<tBLE_BD_ADDR> : formatter<std::string> {
   template <class Context>
   typename Context::iterator format(const tBLE_BD_ADDR& address, Context& ctx) const {
-    std::string repr = address.ToRedactedStringForLogging();
-    return std::formatter<std::string>::format(repr, ctx);
-  }
-};
-template <>
-struct formatter<tAclLinkSpec> : formatter<std::string> {
-  template <class Context>
-  typename Context::iterator format(const tAclLinkSpec& address, Context& ctx) const {
     std::string repr = address.ToRedactedStringForLogging();
     return std::formatter<std::string>::format(repr, ctx);
   }

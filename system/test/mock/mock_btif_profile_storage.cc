@@ -121,7 +121,7 @@ void btif_storage_add_hearing_aid(const bluetooth::asha::HearingDevice& dev_info
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_add_hearing_aid(dev_info);
 }
-bt_status_t btif_storage_add_hid_device_info(const tAclLinkSpec& link_spec, uint16_t attr_mask,
+bt_status_t btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
                                              uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
                                              uint16_t product_id, uint16_t version,
                                              uint8_t ctry_code, uint16_t ssr_max_latency,
@@ -233,7 +233,7 @@ void btif_storage_remove_hearing_aid(const RawAddress& address) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_remove_hearing_aid(address);
 }
-bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
+bt_status_t btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_remove_hid_info(link_spec);
 }

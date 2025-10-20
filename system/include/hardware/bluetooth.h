@@ -18,6 +18,7 @@
 #ifndef ANDROID_INCLUDE_BLUETOOTH_H
 #define ANDROID_INCLUDE_BLUETOOTH_H
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 #include <stdbool.h>
@@ -633,7 +634,7 @@ typedef void (*le_address_associate_callback)(RawAddress* main_bd_addr,
                                               uint8_t identity_address_type);
 
 /** Bluetooth ACL connection state changed callback */
-typedef void (*acl_state_changed_callback)(bt_status_t status, tAclLinkSpec& link_spec,
+typedef void (*acl_state_changed_callback)(bt_status_t status, AclLinkSpec& link_spec,
                                            bt_acl_state_t state, bt_hci_error_code_t hci_reason,
                                            bt_conn_direction_t direction, uint16_t acl_handle);
 

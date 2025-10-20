@@ -198,8 +198,8 @@ TEST_F(StackBtmWithQueuesTest, change_packet_type) {
 
   // Create connection
   RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-  tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
-                            .transport = BT_TRANSPORT_BR_EDR};
+  AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
+                           .transport = BT_TRANSPORT_BR_EDR};
   btm_acl_created(link_spec, handle, HCI_ROLE_CENTRAL);
 
   uint64_t features = 0xffffffffffffffff;

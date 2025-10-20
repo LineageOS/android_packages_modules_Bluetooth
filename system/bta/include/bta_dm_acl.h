@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/hci_role.h>
 
@@ -23,9 +24,9 @@
 
 #include "stack/include/hci_error_code.h"
 
-void BTA_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle);
-void BTA_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status);
-void BTA_dm_acl_down(const tAclLinkSpec& link_spec);
+void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle);
+void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS hci_status);
+void BTA_dm_acl_down(const AclLinkSpec& link_spec);
 void BTA_dm_report_role_change(const RawAddress bd_addr, tHCI_ROLE new_role,
                                tHCI_STATUS hci_status);
 void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr);
