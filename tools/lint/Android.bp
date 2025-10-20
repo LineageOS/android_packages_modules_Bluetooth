@@ -19,7 +19,6 @@ package {
 java_library_host {
     name: "BluetoothLintChecker",
     srcs: [
-        "checks/src/**/*.java",
         "checks/src/**/*.kt",
     ],
     plugins: ["auto_service_plugin"],
@@ -33,7 +32,6 @@ java_library_host {
 java_test_host {
     name: "BluetoothLintCheckerTest",
     srcs: [
-        "checks/tests/**/*.java",
         "checks/tests/**/*.kt",
     ],
     static_libs: [

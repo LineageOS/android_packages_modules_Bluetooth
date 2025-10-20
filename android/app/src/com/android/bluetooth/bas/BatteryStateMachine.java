@@ -28,7 +28,6 @@ import static android.bluetooth.BluetoothProfile.getConnectionStateName;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -109,7 +108,6 @@ public class BatteryStateMachine extends StateMachine {
     }
 
     /** Cleans up the resources the state machine held. */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // We should call internal gatt interface
     public void cleanup() {
         log("cleanup for device " + mDevice);
         if (mBluetoothGatt != null) {
@@ -175,7 +173,6 @@ public class BatteryStateMachine extends StateMachine {
 
     // Allow test to abstract the unmockable mBluetoothGatt
     @VisibleForTesting
-    @SuppressLint("AndroidFrameworkRequiresPermission") // We should call internal gatt interface
     boolean connectGatt() {
         mDevice.setAttributionSource(
                 (new AttributionSource.Builder(AttributionSource.myAttributionSource()))
@@ -195,14 +192,12 @@ public class BatteryStateMachine extends StateMachine {
 
     // Allow test to abstract the unmockable BluetoothGatt
     @VisibleForTesting
-    @SuppressLint("AndroidFrameworkRequiresPermission") // We should call internal gatt interface
     void disconnectGatt() {
         mBluetoothGatt.disconnect();
     }
 
     // Allow test to abstract the unmockable BluetoothGatt
     @VisibleForTesting
-    @SuppressLint("AndroidFrameworkRequiresPermission") // We should call internal gatt interface
     void discoverServicesGatt() {
         mBluetoothGatt.discoverServices();
     }
@@ -457,7 +452,6 @@ public class BatteryStateMachine extends StateMachine {
         }
 
         @Override
-        @SuppressLint("AndroidFrameworkRequiresPermission") // We should call internal gatt itf
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "No gatt service");
@@ -491,7 +485,6 @@ public class BatteryStateMachine extends StateMachine {
         }
 
         @Override
-        @SuppressLint("AndroidFrameworkRequiresPermission") // We should call internal gatt itf
         public void onCharacteristicRead(
                 BluetoothGatt gatt,
                 BluetoothGattCharacteristic characteristic,

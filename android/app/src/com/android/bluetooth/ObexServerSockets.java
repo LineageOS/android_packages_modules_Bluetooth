@@ -15,7 +15,6 @@
 
 package com.android.bluetooth;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -112,7 +111,6 @@ public class ObexServerSockets {
      *     <p>TODO: Make public when it becomes possible to determine that the listen-call failed
      *     due to channel-in-use.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
     private static ObexServerSockets create(
             AdapterService adapterService, IObexConnectionHandler validator, boolean isSecure) {
         Log.d(TAG, "create()");

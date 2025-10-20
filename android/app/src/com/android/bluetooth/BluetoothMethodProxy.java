@@ -17,7 +17,6 @@
 package com.android.bluetooth;
 
 import android.annotation.NonNull;
-import android.annotation.SuppressLint;
 import android.app.ComponentCaller;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ContentProviderClient;
@@ -185,7 +184,6 @@ public class BluetoothMethodProxy {
     }
 
     /** Proxies {@link Context#sendBroadcast(Intent)}. */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // only intent is ACTION_OPEN
     public void contextSendBroadcast(Context context, Intent intent) {
         context.sendBroadcast(intent);
     }

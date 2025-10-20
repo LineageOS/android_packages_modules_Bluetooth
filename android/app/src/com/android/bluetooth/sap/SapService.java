@@ -26,7 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -173,7 +172,6 @@ public class SapService extends ConnectableProfile
 
     private static final int CREATE_RETRY_TIME = 10;
 
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private boolean initSocket() {
         Log.v(TAG, "Sap Service initSocket");
 

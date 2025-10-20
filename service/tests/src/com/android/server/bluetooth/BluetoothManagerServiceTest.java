@@ -50,7 +50,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.role.RoleManager;
 import android.bluetooth.IAdapter;
@@ -102,7 +101,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 @RunWith(ParameterizedAndroidJunit4.class)
-@SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothManagerServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
 

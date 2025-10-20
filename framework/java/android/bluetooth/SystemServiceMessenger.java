@@ -68,50 +68,35 @@ public class SystemServiceMessenger {
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     public SystemServiceMessage.Enable.Reply send(SystemServiceMessage.Enable data) {
         return send(data, SystemServiceMessage.Enable.Reply.class);
     }
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     public SystemServiceMessage.Disable.Reply send(SystemServiceMessage.Disable data) {
         return send(data, SystemServiceMessage.Disable.Reply.class);
     }
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     public SystemServiceMessage.FactoryReset.Reply send(SystemServiceMessage.FactoryReset data) {
         return send(data, SystemServiceMessage.FactoryReset.Reply.class);
     }
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS})
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.GetAddress.Reply send(SystemServiceMessage.GetAddress data) {
         return send(data, SystemServiceMessage.GetAddress.Reply.class);
     }
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.GetName.Reply send(SystemServiceMessage.GetName data) {
         return send(data, SystemServiceMessage.GetName.Reply.class);
     }
@@ -129,46 +114,31 @@ public class SystemServiceMessenger {
     }
 
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.SetSnoopLog.Reply send(SystemServiceMessage.SetSnoopLog data) {
         return send(data, SystemServiceMessage.SetSnoopLog.Reply.class);
     }
 
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.GetSnoopLog.Reply send(SystemServiceMessage.GetSnoopLog data) {
         return send(data, SystemServiceMessage.GetSnoopLog.Reply.class);
     }
 
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.IsAutoSupported.Reply send(SystemServiceMessage.IsAutoSupported data) {
         return send(data, SystemServiceMessage.IsAutoSupported.Reply.class);
     }
 
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.IsAutoEnabled.Reply send(SystemServiceMessage.IsAutoEnabled data) {
         return send(data, SystemServiceMessage.IsAutoEnabled.Reply.class);
     }
 
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // Wrong propagation in Messenger
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.SetAutoOnEnabled.Reply send(SystemServiceMessage.SetAutoOnEnabled data) {
         return send(data, SystemServiceMessage.SetAutoOnEnabled.Reply.class);
     }

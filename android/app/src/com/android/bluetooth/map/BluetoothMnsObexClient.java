@@ -17,7 +17,6 @@ package com.android.bluetooth.map;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.SdpMnsRecord;
@@ -291,7 +290,6 @@ public class BluetoothMnsObexClient {
         }
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
     public void connect() {
 
         mConnected = true;

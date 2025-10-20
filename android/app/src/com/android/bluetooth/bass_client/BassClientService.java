@@ -34,7 +34,6 @@ import static com.android.bluetooth.flags.Flags.leaudioReactivateAutonomouslyIna
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
@@ -830,7 +829,6 @@ public class BassClientService extends ConnectableProfile {
     }
 
     @Override
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
@@ -2188,7 +2186,6 @@ public class BassClientService extends ConnectableProfile {
      *
      * @param filters ScanFilters for finding exact Broadcast Source
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     public void startSearchingForSources(List<ScanFilter> filters) {
         startSearchingForSources(filters, /* foreground= */ true);
     }
@@ -3302,7 +3299,6 @@ public class BassClientService extends ConnectableProfile {
         printAllSyncData();
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     private boolean unsyncSource(int syncHandle) {
         Log.d(TAG, "unsyncSource: syncHandle: " + syncHandle);
         synchronized (mSourceSyncRequestsQueue) {
@@ -3518,7 +3514,6 @@ public class BassClientService extends ConnectableProfile {
         handleSelectSourceRequest();
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     private void handleSelectSourceRequest() {
         ScanResult scanRes = null;
         ScanRecord scanRecord = null;

@@ -64,7 +64,6 @@ import com.android.obex.ObexTransport;
 import java.io.IOException;
 
 /** This class run an actual Opp transfer session (from connect target device to disconnect) */
-@SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatchListener {
     private static final String TAG = BluetoothOppTransfer.class.getSimpleName();
 

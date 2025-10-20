@@ -45,7 +45,6 @@ import android.annotation.Nullable;
 import android.annotation.PermissionMethod;
 import android.annotation.PermissionName;
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
@@ -552,7 +551,6 @@ public final class Utils {
      *
      * <p>Should be used in situations where the app op should not be noted.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public static boolean checkConnectPermissionForPreflight(
             Context context, AttributionSource source) {
@@ -567,14 +565,12 @@ public final class Utils {
      * <p>Should be used in situations where data will be delivered and hence the app op should be
      * noted.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public static boolean checkConnectPermissionForDataDelivery(
             Context context, AttributionSource source, String message) {
         return checkPermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message);
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public static boolean checkConnectPermissionForDataDelivery(
             Context context, AttributionSource source, String tag, String method) {
@@ -588,7 +584,6 @@ public final class Utils {
      * <p>Should be used in situations where data will be delivered and hence the app op should be
      * noted.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_SCAN)
     public static boolean checkScanPermissionForDataDelivery(
             Context context, AttributionSource source, String tag, String method) {
@@ -604,7 +599,6 @@ public final class Utils {
      * <p>Should be used in situations where data will be delivered and hence the app op should be
      * noted.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_ADVERTISE)
     public static boolean checkAdvertisePermissionForDataDelivery(
             Context context, AttributionSource source, String message) {
@@ -616,8 +610,6 @@ public final class Utils {
      * that is, if they have specified the {@code neverForLocation} flag on the BLUETOOTH_SCAN
      * permission.
      */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean hasDisavowedLocationForScan(
             Context context, AttributionSource source, boolean inTestMode) {
 
@@ -770,8 +762,6 @@ public final class Utils {
     }
 
     /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasCoarseLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
         if (blockedByLocationOff(context, userHandle)) {
@@ -802,8 +792,6 @@ public final class Utils {
      * Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed or
      * ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed
      */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasCoarseOrFineLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
         if (blockedByLocationOff(context, userHandle)) {
@@ -841,8 +829,6 @@ public final class Utils {
     }
 
     /** Checks that calling process has ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasFineLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
         if (blockedByLocationOff(context, userHandle)) {
@@ -871,35 +857,25 @@ public final class Utils {
     }
 
     /** Returns true if the caller holds NETWORK_SETTINGS */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasNetworkSettingsPermission(Context context) {
         return context.checkCallingOrSelfPermission(NETWORK_SETTINGS) == PERMISSION_GRANTED;
     }
 
     /** Returns true if the caller holds NETWORK_SETUP_WIZARD */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasNetworkSetupWizardPermission(Context context) {
         return context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED;
     }
 
     /** Returns true if the caller holds RADIO_SCAN_WITHOUT_LOCATION */
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasScanWithoutLocationPermission(Context context) {
         return context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION)
                 == PERMISSION_GRANTED;
     }
 
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasPrivilegedPermission(Context context) {
         return context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED;
     }
 
-    // Suppressed since we're not actually enforcing here
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     public static boolean checkCallerHasWriteSmsPermission(Context context) {
         return context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED;
     }
