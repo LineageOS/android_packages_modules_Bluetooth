@@ -574,7 +574,7 @@ public class ScanController {
             }
 
             try {
-                app.getAppScanStats().addResult(client.getScannerId());
+                app.getAppScanStats().addResults(client.getScannerId());
                 if (app.getCallback() != null) {
                     app.getCallback().onScanResult(result);
                 } else {

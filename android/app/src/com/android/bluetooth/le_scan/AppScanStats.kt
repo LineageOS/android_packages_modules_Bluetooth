@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - Recording scan starts ([recordScanStart]) and stops ([recordScanStop])
  * - Tracking scan suspensions ([recordScanSuspend]) and resumes ([recordScanResume])
  * - Aggregating total scan time, active time, and time spent in each scan mode (e.g. `oppScanTime`)
- * - Counting scan results received while the screen is on vs. off ([addResult], [addResults])
+ * - Counting scan results received while the screen is on vs. off ([addResults])
  * - Enforcing scan quotas by checking [isScanningTooFrequently] and [isScanningTooLong]
  * - Reporting scan activity and results to [ScanMetricsReporter]
  * - Storing application state like [appImportance] and [isRegistered]
@@ -140,30 +140,9 @@ class AppScanStats(
 
     @Synchronized fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
 
+    @JvmOverloads
     @Synchronized
-    fun addResult(scannerId: Int) {
-        val isScreenOn = sIsScreenOn.get()
-        if (isScreenOn) {
-            resultsScreenOn++
-        } else {
-            resultsScreenOff++
-        }
-
-        val scan = getScanFromScannerId(scannerId) ?: return
-        if (isScreenOn) {
-            scan.resultsScreenOn++
-        } else {
-            scan.resultsScreenOff++
-        }
-
-        // Only update battery stats every 100 results to lower the high-cost of binder transactions
-        if ((scan.resultsScreenOn + scan.resultsScreenOff) % 100 == 0) {
-            scanMetricsReporter.reportScanResults(100)
-        }
-    }
-
-    @Synchronized
-    fun addResults(scannerId: Int, numberOfNewResults: Int) {
+    fun addResults(scannerId: Int, numberOfNewResults: Int = 1) {
         val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
             resultsScreenOn += numberOfNewResults
@@ -172,7 +151,6 @@ class AppScanStats(
         }
 
         val scan = getScanFromScannerId(scannerId) ?: return
-
         val resultsBeforeUpdate = scan.resultsScreenOn + scan.resultsScreenOff
         if (isScreenOn) {
             scan.resultsScreenOn += numberOfNewResults
