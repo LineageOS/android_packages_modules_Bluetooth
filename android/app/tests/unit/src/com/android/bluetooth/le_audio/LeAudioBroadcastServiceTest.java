@@ -1379,7 +1379,7 @@ public class LeAudioBroadcastServiceTest {
         verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
 
         mLooper.dispatchAll();
-        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId2);
+        assertThat(mService.mBroadcastToUnicastFallbackGroup).isEqualTo(groupId2);
 
         verify(mLeAudioCallbacks).onBroadcastToUnicastFallbackGroupChanged(groupId2);
 
@@ -1433,7 +1433,7 @@ public class LeAudioBroadcastServiceTest {
         tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice2));
         tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice1));
 
-        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId);
+        assertThat(mService.mBroadcastToUnicastFallbackGroup).isEqualTo(groupId);
         tbsOrder.verify(mTbsService, times(1)).setInbandRingtoneSupport(eq(mDevice1));
 
         reset(mAudioManager);
