@@ -36,6 +36,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
+import android.provider.Settings;
 import android.provider.Telephony;
 import android.util.Log;
 
@@ -248,5 +249,10 @@ public class BluetoothMethodProxy {
     /** Proxies {@link Context#getContentResolver()}. */
     public ContentResolver getContentResolver(Context context) {
         return context.getContentResolver();
+    }
+
+    /** Proxies {@link Settings.Secure#getString}. */
+    public String settingsSecureGetString(ContentResolver contentResolver, String name) {
+        return Settings.Secure.getString(contentResolver, name);
     }
 }
