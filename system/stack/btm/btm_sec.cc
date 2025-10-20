@@ -4126,7 +4126,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
   /* save LTK derived LK no matter what */
   if (ltk_derived_lk) {
     if (btm_sec_cb.api.p_link_key_callback) {
-      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SC; // for CTKD
+      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SC;  // for CTKD
       log::verbose("Save LTK derived LK (key_type = {})", p_device->sec_rec.link_key_type);
       (*btm_sec_cb.api.p_link_key_callback)(p_bda, p_device->dev_class, p_device->sec_bd_name,
                                             link_key, p_device->sec_rec.link_key_type,
@@ -4719,7 +4719,7 @@ static void btm_sec_wait_and_start_authentication(BtmDevice* p_device) {
     delay_auth = BTM_SEC_START_AUTH_DELAY;
   }
 
-  bt_status_t status = do_in_main_thread_delayed(base::Bind(&btm_sec_auth_timer_timeout, addr),
+  bt_status_t status = do_in_main_thread_delayed(base::BindOnce(&btm_sec_auth_timer_timeout, addr),
                                                  std::chrono::milliseconds(delay_auth));
   if (status != BT_STATUS_SUCCESS) {
     log::error("do_in_main_thread_delayed failed. directly calling");

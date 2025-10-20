@@ -71,7 +71,7 @@
 // Default user ID to use when real user ID is not available
 #define BTIF_STORAGE_RESTRICTED_USER_ID_DEFAULT 1
 
-using base::Bind;
+using base::BindOnce;
 using bluetooth::Uuid;
 using namespace bluetooth;
 
@@ -1340,7 +1340,7 @@ bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
 
 /** Stores information about GATT server supported features */
 void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat) {
-  do_in_jni_thread(Bind(
+  do_in_jni_thread(BindOnce(
           [](const RawAddress& addr, uint8_t feat) {
             std::string bdstr = addr.ToString();
             log::verbose(
@@ -1434,7 +1434,7 @@ bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod) {
 
 /** Stores information about GATT Client supported features support */
 void btif_storage_set_gatt_cl_supp_feat(const RawAddress& bd_addr, uint8_t feat) {
-  do_in_jni_thread(Bind(
+  do_in_jni_thread(BindOnce(
           [](const RawAddress& bd_addr, uint8_t feat) {
             std::string bdstr = bd_addr.ToString();
             log::verbose("saving gatt client supported feat: {}", bd_addr);
@@ -1456,7 +1456,7 @@ uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr) {
 
 /** Remove client supported features */
 void btif_storage_remove_gatt_cl_supp_feat(const RawAddress& bd_addr) {
-  do_in_jni_thread(Bind(
+  do_in_jni_thread(BindOnce(
           [](const RawAddress& bd_addr) {
             auto bdstr = bd_addr.ToString();
             if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED)) {
@@ -1468,7 +1468,7 @@ void btif_storage_remove_gatt_cl_supp_feat(const RawAddress& bd_addr) {
 
 /** Store last server database hash for remote client */
 void btif_storage_set_gatt_cl_db_hash(const RawAddress& bd_addr, Octet16 hash) {
-  do_in_jni_thread(Bind(
+  do_in_jni_thread(BindOnce(
           [](const RawAddress& bd_addr, Octet16 hash) {
             auto bdstr = bd_addr.ToString();
             btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH, hash.data(),
@@ -1490,7 +1490,7 @@ Octet16 btif_storage_get_gatt_cl_db_hash(const RawAddress& bd_addr) {
 
 /** Remove las server database hash for remote client */
 void btif_storage_remove_gatt_cl_db_hash(const RawAddress& bd_addr) {
-  do_in_jni_thread(Bind(
+  do_in_jni_thread(BindOnce(
           [](const RawAddress& bd_addr) {
             auto bdstr = bd_addr.ToString();
             if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH)) {
