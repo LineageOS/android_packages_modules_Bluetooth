@@ -60,6 +60,8 @@ static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint8_t kConnInterval = 24;
 static constexpr uint16_t kMinProcedureInterval = 0x01;
+static constexpr uint8_t kMaxRetryCounterForReadRemoteCapability = 0x03;
+static constexpr uint16_t kCommandRetryIntervalMs = 300;
 }  // namespace
 
 namespace bluetooth {
@@ -765,7 +767,7 @@ TEST_F(DistanceMeasurementManagerTest, error_read_remote_cs_caps_command) {
   cs_requester_.sync_client_handler();
 }
 
-TEST_F(DistanceMeasurementManagerTest, fail_read_remote_cs_caps_complete) {
+TEST_F(DistanceMeasurementManagerTest, fail_read_remote_cs_caps_complete_with_retry) {
   auto dm_session_future = cs_requester_.GetDmSessionFuture();
   StartMeasurementParameters params;
   cs_requester_.StartMeasurementTillRasConnectedEvent(params);
@@ -781,12 +783,19 @@ TEST_F(DistanceMeasurementManagerTest, fail_read_remote_cs_caps_complete) {
             cs_requester_.dm_session_promise_.reset();
           });
 
-  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES);
   CsReadCapabilitiesCompleteEvent read_cs_complete_event;
   read_cs_complete_event.error_code = ErrorCode::COMMAND_DISALLOWED;
-  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
-          CsModule::GetRemoteSupportedCapabilitiesCompleteEvent(params.connection_handle,
-                                                                read_cs_complete_event));
+  for (int i = 0; i <= kMaxRetryCounterForReadRemoteCapability; i++) {
+    cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES);
+    cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
+            CsModule::GetRemoteSupportedCapabilitiesCompleteEvent(params.connection_handle,
+                                                                  read_cs_complete_event));
+    if (i < kMaxRetryCounterForReadRemoteCapability) {
+      auto future = cs_requester_.fake_timer_advance(kCommandRetryIntervalMs);
+      future.wait_for(kTimeout);
+    }
+  }
+  dm_session_future.wait_for(kTimeout);
   cs_requester_.sync_client_handler();
 }
 
@@ -835,6 +844,10 @@ TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete) {
     cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_CREATE_CONFIG);
     cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
             CsModule::GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
+    if (i < kMaxRetryCounterForCreateConfig) {
+      auto future = cs_requester_.fake_timer_advance(kCommandRetryIntervalMs);
+      future.wait_for(kTimeout);
+    }
   }
   dm_session_future.wait_for(kTimeout);
   cs_requester_.sync_client_handler();
