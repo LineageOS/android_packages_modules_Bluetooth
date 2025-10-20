@@ -632,6 +632,25 @@ public class RemoteDevicesTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_CONSISTENT_BATTERY_LEVEL)
+    public void testResetBasBatteryLevel_withNoHfpLevel_resetsInstantly() {
+        int batteryLevelBas = 50;
+
+        // Set an initial battery level from BAS.
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelBas, /* fromBas= */ true);
+        verifyBatteryLevelUpdate(batteryLevelBas);
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice);
+        assertThat(deviceProp).isNotNull();
+        assertThat(deviceProp.getBatteryLevel()).isEqualTo(batteryLevelBas);
+
+        // Reset the battery level from BAS (e.g., device disconnected).
+        // Since HFP level is unknown, the overall level should reset to UNKNOWN.
+        mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ true);
+        verifyBatteryLevelUpdate(BATTERY_LEVEL_UNKNOWN);
+        assertThat(deviceProp.getBatteryLevel()).isEqualTo(BATTERY_LEVEL_UNKNOWN);
+    }
+
+    @Test
     public void testUpdateBatteryLevelWithSameValue_notSendBroadcast() {
         int batteryLevel = 10;
 
