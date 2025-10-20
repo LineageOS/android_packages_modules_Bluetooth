@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.IBluetoothGattCallback
 import android.bluetooth.IBluetoothGattServerCallback
+import android.os.IInterface
 import com.android.bluetooth.Utils.transportToString
 import com.android.bluetooth.hid.HidHostService
 import java.util.UUID
@@ -167,14 +168,14 @@ object GattUtil {
         clientMap: ContextMap<IBluetoothGattCallback>,
         serverMap: ContextMap<IBluetoothGattServerCallback>,
     ) = buildString {
-        append("  Client:\n")
+        appendLine("  Client:")
         dumpMapDetails(clientMap)
-        append("  Server:\n")
+        appendLine("  Server:")
         dumpMapDetails(serverMap)
-        append("\n\n")
+        appendLine()
     }
 
-    private fun StringBuilder.dumpMapDetails(map: ContextMap<*>) =
+    private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
         map.allApps.forEach { app ->
             append("    app_if: ${app.id}")
             append(", appName: ${app.packageName}")
@@ -183,4 +184,12 @@ object GattUtil {
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
+
+    @JvmStatic
+    fun <C : IInterface> ContextMap<C>.dump() = buildString {
+        appendLine("  Entries: ${allApps.size}")
+        appendLine("  Last apps: ")
+        mLastRecords.forEach { appendLine("       $it") }
+        appendLine()
+    }
 }

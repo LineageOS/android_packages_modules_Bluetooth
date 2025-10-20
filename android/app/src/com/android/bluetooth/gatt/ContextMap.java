@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,7 +68,7 @@ public class ContextMap<C extends IInterface> {
     private final List<AppRecord> mOngoingRecords = new ArrayList<>();
 
     @GuardedBy("mAppsLock")
-    private final List<AppRecord> mLastRecords = new ArrayList<>();
+    final List<AppRecord> mLastRecords = new ArrayList<>();
 
     private final Object mConnectionsLock = new Object();
 
@@ -292,8 +293,7 @@ public class ContextMap<C extends IInterface> {
 
     List<App> getAllApps() {
         synchronized (mAppsLock) {
-            // Return a shallow copy list containing all apps from mApps.
-            return new ArrayList<>(mApps);
+            return Collections.unmodifiableList(mApps);
         }
     }
 
@@ -485,15 +485,9 @@ public class ContextMap<C extends IInterface> {
         return connectedMap;
     }
 
-    /** Logs debug information. */
     protected void dump(StringBuilder sb) {
         synchronized (mAppsLock) {
-            sb.append("  Entries: ").append(mApps.size()).append("\n");
-            sb.append("  Last apps: ").append("\n");
-            for (AppRecord record : mLastRecords) {
-                sb.append("       ").append(record.toString()).append("\n");
-            }
-            sb.append("\n");
+            sb.append(GattUtil.dump(this));
         }
     }
 
