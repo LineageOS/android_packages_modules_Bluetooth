@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class HandleMap {
+public class HandleMap {
     private static final String TAG = GattUtil.TAG_PREFIX + HandleMap.class.getSimpleName();
 
     // Prepared writes can be requested by a client, requesting that a server implementation hold
@@ -48,12 +48,12 @@ class HandleMap {
         DESCRIPTOR,
     }
 
-    private final List<Entry> mEntries = new CopyOnWriteArrayList<>();
+    final List<Entry> mEntries = new CopyOnWriteArrayList<>();
     private int mLastCharacteristic = 0;
 
-    private final Map<Integer, RequestData> mRequestMap = new ConcurrentHashMap<>();
+    final Map<Integer, RequestData> mRequestMap = new ConcurrentHashMap<>();
     private final AtomicInteger mNextRequestId = new AtomicInteger(0);
-    private final Map<Integer, RequestContext> mRequestContextMap = new ConcurrentHashMap<>();
+    final Map<Integer, RequestContext> mRequestContextMap = new ConcurrentHashMap<>();
 
     void clear() {
         mEntries.clear();
@@ -364,43 +364,7 @@ class HandleMap {
         mRequestContextMap.remove(requestId);
     }
 
-    /** Logs debug information. */
     void dump(StringBuilder sb) {
-        sb.append("  Entries: ").append(mEntries.size()).append("\n");
-        for (Entry entry : mEntries) {
-            sb.append("      ")
-                    .append(entry.mServerIf)
-                    .append(": [")
-                    .append(entry.mHandle)
-                    .append("] ");
-            switch (entry.mType) {
-                case Type.SERVICE -> {
-                    sb.append("Service ").append(entry.mUuid);
-                    sb.append(", started ").append(entry.mStarted);
-                }
-                case Type.CHARACTERISTIC -> sb.append("  Characteristic ").append(entry.mUuid);
-                case Type.DESCRIPTOR -> sb.append("    Descriptor ").append(entry.mUuid);
-            }
-            sb.append("\n");
-        }
-
-        sb.append("  Requests: ").append(mRequestMap.size()).append("\n");
-        if (Flags.gattMultiBearerTransactions()) {
-            for (RequestContext context : mRequestContextMap.values()) {
-                sb.append("      ").append(context).append("\n");
-            }
-        } else {
-            for (Integer key : mRequestMap.keySet()) {
-                RequestData request = mRequestMap.get(key);
-                sb.append("RequestData<")
-                        .append("request_id/transaction_id: ")
-                        .append(key)
-                        .append(", conn_id: ")
-                        .append(request.connId())
-                        .append(", handle: ")
-                        .append(request.handle())
-                        .append(">\n");
-            }
-        }
+        sb.append(GattUtil.dump(this));
     }
 }

@@ -22,13 +22,15 @@ import android.bluetooth.IBluetoothGattCallback
 import android.bluetooth.IBluetoothGattServerCallback
 import android.os.IInterface
 import com.android.bluetooth.Utils.transportToString
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.gatt.HandleMap.Type
 import com.android.bluetooth.hid.HidHostService
 import java.util.UUID
 
 private const val TAG = "GattUtil"
 
 object GattUtil {
-    @JvmField val TAG_PREFIX = "BtGatt."
+    const val TAG_PREFIX = "BtGatt."
 
     private val HID_SERVICE_UUID = UUID.fromString("00001812-0000-1000-8000-00805F9B34FB")
 
@@ -191,5 +193,33 @@ object GattUtil {
         appendLine("  Last apps: ")
         mLastRecords.forEach { appendLine("       $it") }
         appendLine()
+    }
+
+    @JvmStatic
+    fun HandleMap.dump() = buildString {
+        appendLine("  Entries: ${mEntries.size}")
+        for (entry in mEntries) {
+            append("      ${entry.mServerIf}: [${entry.mHandle}] ")
+            when (entry.mType) {
+                Type.SERVICE -> appendLine("Service ${entry.mUuid}, started ${entry.mStarted}")
+                Type.CHARACTERISTIC -> appendLine("  Characteristic ${entry.mUuid}")
+                Type.DESCRIPTOR -> appendLine("    Descriptor ${entry.mUuid}")
+            }
+        }
+        appendLine("  Requests: ${mRequestMap.size}")
+        if (Flags.gattMultiBearerTransactions()) {
+            for (context in mRequestContextMap.values) {
+                appendLine("      $context")
+            }
+        } else {
+            for ((key, request) in mRequestMap) {
+                appendLine(
+                    "RequestData<" +
+                        "request_id/transaction_id: $key" +
+                        ", conn_id: ${request.connId()}" +
+                        ", handle: ${request.handle()}>"
+                )
+            }
+        }
     }
 }
