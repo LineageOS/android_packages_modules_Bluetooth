@@ -1552,7 +1552,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
       }
     }
     // Use a busy CLCB to start discovery if no CLCB is available, this will be queued.
-    if (com_android_bluetooth_flags_start_discover_service_changed() && p_clcb == NULL) {
+    if (p_clcb == NULL) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb) {
           log::info("will use busy client to {}", p_srcb->server_bda);

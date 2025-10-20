@@ -63,16 +63,6 @@ flag {
 }
 
 flag {
-    name: "start_discover_service_changed"
-    namespace: "bluetooth"
-    description: "Start discovery again when service change indication arrives."
-    bug: "400828637"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "rssi_scan_filter"
     namespace: "bluetooth"
     is_exported: true
