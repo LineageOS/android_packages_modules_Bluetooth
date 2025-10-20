@@ -204,7 +204,7 @@ class ScannerMap {
         sb.appendLine("  Entries: ${appScanStatsMap.size}")
         for (appScanStats in appScanStatsMap.values) {
             val scannerApps = apps.filter { it.name == appScanStats.name }
-            appScanStats.dump(sb, scannerApps)
+            sb.appendLine(appScanStats.dump(scannerApps).prependIndent("  "))
         }
     }
 }

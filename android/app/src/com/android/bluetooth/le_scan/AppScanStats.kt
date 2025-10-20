@@ -366,7 +366,7 @@ class AppScanStats(
         getScanFromScannerId(scannerId)?.attributionTag ?: ""
 
     @Synchronized
-    fun dump(sb: StringBuilder, apps: List<ScannerApp>) {
+    fun dump(apps: List<ScannerApp>) = buildString {
         val currentTime = System.currentTimeMillis()
         val elapsedTime = timeProvider.elapsedRealtime()
         val opportunisticScan = oppScan
@@ -412,61 +412,55 @@ class AppScanStats(
                 lowLatencyScanTime * WEIGHT_LOW_LATENCY +
                 ambientDiscoveryScanTime * WEIGHT_AMBIENT_DISCOVERY) / 100
 
-        sb.append("  $name")
-        sb.append(if (isRegistered) " (Registered):" else ":")
+        appendLine("$name ${if (isRegistered) " (Registered):" else ":"}")
 
         if (isRegistered) {
             for (app in apps) {
-                sb.append("\n    Application ID: ${app.id}, UUID: ${app.uuid}")
-                app.attributionTag?.let { sb.append(", Tag: $it") }
+                fun tag() = app.attributionTag?.let { ", Tag: $it" } ?: ""
+                appendLine("  Application ID: ${app.id}, UUID: ${app.uuid}${tag()}")
             }
         }
 
-        sb.append("\n    LE scans               ")
-            .append("(Started/Stopped)                                   : ")
-        sb.append("$scansStarted / $scansStopped")
+        append("  LE scans               (Started/Stopped)                                   : ")
+        appendLine("$scansStarted / $scansStopped")
 
-        sb.append("\n    Scan time(ms)          ")
-            .append("(Active/Suspend/Total)                              : ")
-        sb.append("$totalActiveTime / $totalSuspendTime / $totalScanTime")
+        append("  Scan time(ms)          (Active/Suspend/Total)                              : ")
+        appendLine("$totalActiveTime / $totalSuspendTime / $totalScanTime")
 
-        sb.append("\n    Scan time per mode(ms) ")
-            .append("(Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
-        sb.append("$opportunisticScanTime / $lowPowerScanTime / $balancedScanTime / ")
-            .append("$lowLatencyScanTime / $ambientDiscoveryScanTime")
+        append("  Scan time per mode(ms) (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
+        append("$opportunisticScanTime / $lowPowerScanTime / $balancedScanTime / ")
+            .appendLine("$lowLatencyScanTime / $ambientDiscoveryScanTime")
 
-        sb.append("\n    Scan mode counter ")
-            .append("     (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
-        sb.append("$opportunisticScan / $lowPowerScan / $balancedScan / ")
-            .append("$lowLatencyScan / $ambientDiscoveryScan")
+        append("  Scan mode counter      (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
+        append("$opportunisticScan / $lowPowerScan / $balancedScan / ")
+            .appendLine("$lowLatencyScan / $ambientDiscoveryScan")
 
-        sb.append("\n    Score ")
-            .append("                                                                     : $score")
+        appendLine(
+            "  Score                                                                      : $score"
+        )
 
         val results = resultsScreenOff + resultsScreenOn
-        sb.append("\n    Number of results      (ScreenOff/ScreenOn/Total)")
-            .append("                          : $resultsScreenOff / $resultsScreenOn / $results")
+        append("  Number of results      (ScreenOff/ScreenOn/Total)                          : ")
+            .appendLine("$resultsScreenOff / $resultsScreenOn / $results")
 
         if (scheduledBatchAlarmCount > 0) {
-            sb.append("\n    Number of batch alarms scheduled")
-                .append("                                           : $scheduledBatchAlarmCount")
+            append("  Number of batch alarms scheduled                                         ")
+                .appendLine("  : $scheduledBatchAlarmCount")
         }
 
         if (lastScans.isNotEmpty()) {
-            sb.appendLine("\n    Last ${lastScans.size} scans:")
+            appendLine("  Last ${lastScans.size} scans:")
             lastScans.forEach {
-                sb.appendLine(it.details(currentTime, elapsedTime, false).prependIndent("      "))
+                appendLine(it.details(currentTime, elapsedTime, false).prependIndent("    "))
             }
         }
 
         if (ongoingScans.isNotEmpty()) {
-            sb.appendLine("\n    Ongoing ${ongoingScans.size} scans:")
+            appendLine("  Ongoing ${ongoingScans.size} scans:")
             ongoingScans.forEach {
-                sb.appendLine(it.details(currentTime, elapsedTime, true).prependIndent("      "))
+                appendLine(it.details(currentTime, elapsedTime, true).prependIndent("    "))
             }
         }
-
-        sb.appendLine()
     }
 
     private fun LastScan.details(currTime: Long, elapsedTime: Long, active: Boolean) = buildString {
