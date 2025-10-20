@@ -84,7 +84,7 @@ class ModeListenerTest(private val flags: FlagsWrapper) {
 
     @Before
     fun setup() {
-        Log.i("AirplaneModeListenerTest", "\t--> setup of " + testName.getMethodName())
+        Log.i("AirplaneModeListenerTest", "\t--> setup of ${testName.methodName}")
 
         // Most test will expect the system to be sensitive + off
         enableSensitive()

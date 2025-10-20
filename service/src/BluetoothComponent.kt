@@ -49,10 +49,9 @@ class BluetoothComponent(context: Context) {
             intent.setPackage(bluetoothPackages[0])
         }
 
-        val result = pm.resolveService(intent, PackageManager.MATCH_SYSTEM_ONLY)
-        if (result == null) {
-            throw IllegalStateException("No service can handle intent $intent")
-        }
+        val result =
+            pm.resolveService(intent, PackageManager.MATCH_SYSTEM_ONLY)
+                ?: throw IllegalStateException("No service can handle intent $intent")
 
         val serviceInfo = result.serviceInfo
         packageName = serviceInfo.packageName
@@ -61,6 +60,6 @@ class BluetoothComponent(context: Context) {
     }
 
     companion object {
-        val ADAPTER_CLASS = "com.android.bluetooth.btservice.AdapterService"
+        const val ADAPTER_CLASS = "com.android.bluetooth.btservice.AdapterService"
     }
 }

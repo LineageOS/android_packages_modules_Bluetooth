@@ -45,7 +45,7 @@ class BluetoothAdapterStateTest {
     @Before
     fun setUp() {
         IpcDataCache.setCacheTestMode(true)
-        Log.i("BluetoothAdapterStateTest", "\t--> setup of " + testName.getMethodName())
+        Log.i("BluetoothAdapterStateTest", "\t--> setup of ${testName.methodName}")
         mState = BluetoothAdapterState()
     }
 
@@ -56,7 +56,7 @@ class BluetoothAdapterStateTest {
 
     @Test
     fun init_isStateOff() {
-        Log.d("BluetoothAdapterStateTest", "Initial state is " + mState)
+        Log.d("BluetoothAdapterStateTest", "Initial state is $mState")
         assertThat(mState.get()).isEqualTo(State.OFF)
     }
 

@@ -37,7 +37,7 @@ private const val MODE_KEY = "is_awesome_radio_enabled"
 private const val RADIO_BLUETOOTH = Settings.Global.RADIO_BLUETOOTH
 
 internal fun enableSensitive(resolver: ContentResolver, looper: Looper, radio: String) {
-    Settings.Global.putString(resolver, radio, "foo," + RADIO_BLUETOOTH + ",bar")
+    Settings.Global.putString(resolver, radio, "foo,$RADIO_BLUETOOTH,bar")
     shadowOf(looper).idle()
 }
 
@@ -60,7 +60,7 @@ internal fun enableMode(resolver: ContentResolver, looper: Looper, modeKey: Stri
 class RadioModeListenerTest {
     @get:Rule val testName = TestName()
     private val resolver: ContentResolver =
-        ApplicationProvider.getApplicationContext<Context>().getContentResolver()
+        ApplicationProvider.getApplicationContext<Context>().contentResolver
 
     private val looper: Looper = Looper.getMainLooper()
 
@@ -68,7 +68,7 @@ class RadioModeListenerTest {
 
     @Before
     fun setup() {
-        Log.i("RadioModeListenerTest", "\t--> setup of " + testName.getMethodName())
+        Log.i("RadioModeListenerTest", "\t--> setup of ${testName.methodName}")
         mode = ArrayList()
     }
 

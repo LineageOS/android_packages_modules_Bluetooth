@@ -44,7 +44,7 @@ class ModeListenerTest {
     @get:Rule val testName = TestName()
 
     private val resolver: ContentResolver =
-        ApplicationProvider.getApplicationContext<Context>().getContentResolver()
+        ApplicationProvider.getApplicationContext<Context>().contentResolver
 
     private val looper: Looper = Looper.getMainLooper()
 
@@ -52,7 +52,7 @@ class ModeListenerTest {
 
     @Before
     fun setup() {
-        Log.i("SatelliteModeListener", "\t--> setup of " + testName.getMethodName())
+        Log.i("SatelliteModeListener", "\t--> setup of ${testName.methodName}")
         mode = ArrayList()
     }
 

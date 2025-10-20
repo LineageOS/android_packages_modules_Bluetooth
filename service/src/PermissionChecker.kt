@@ -98,10 +98,9 @@ class PermissionChecker(
             return
         }
 
-        val packageName = source.packageName
-        if (packageName == null) {
-            throw BluetoothPermissionException("Null package name from ${source.uid}")
-        }
+        val packageName =
+            source.packageName
+                ?: throw BluetoothPermissionException("Null package name from ${source.uid}")
         checkPackageName(callingAppId, packageName)
 
         if (foregroundRequired) {
@@ -219,7 +218,7 @@ class PermissionChecker(
         val deviceOwnerComponent = devicePolicyManager.deviceOwnerComponentOnAnyUser ?: return false
 
         return deviceOwnerUser.equals(UserHandle.getUserHandleForUid(source.uid)) &&
-            deviceOwnerComponent.getPackageName().equals(source.packageName)
+            deviceOwnerComponent.packageName.equals(source.packageName)
     }
 
     private fun isProfileOwner(source: AttributionSource): Boolean {
