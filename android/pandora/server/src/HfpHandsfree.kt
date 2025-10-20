@@ -77,6 +77,32 @@ class HfpHandsfree(val context: Context) : HFPImplBase(), Closeable {
         }
     }
 
+    override fun releaseActiveAcceptOtherAsHandsfree(
+        request: ReleaseActiveAcceptOtherAsHandsfreeRequest,
+        responseObserver: StreamObserver<ReleaseActiveAcceptOtherAsHandsfreeResponse>,
+    ) {
+        grpcUnary(scope, responseObserver) {
+            bluetoothHfpClient.acceptCall(
+                request.connection.toBluetoothDevice(bluetoothAdapter),
+                BluetoothHeadsetClient.CALL_ACCEPT_TERMINATE,
+            )
+            ReleaseActiveAcceptOtherAsHandsfreeResponse.getDefaultInstance()
+        }
+    }
+
+    override fun swapActiveCallAsHandsfree(
+        request: SwapActiveCallAsHandsfreeRequest,
+        responseObserver: StreamObserver<SwapActiveCallAsHandsfreeResponse>,
+    ) {
+        grpcUnary(scope, responseObserver) {
+            bluetoothHfpClient.acceptCall(
+                request.connection.toBluetoothDevice(bluetoothAdapter),
+                BluetoothHeadsetClient.CALL_ACCEPT_HOLD,
+            )
+            SwapActiveCallAsHandsfreeResponse.getDefaultInstance()
+        }
+    }
+
     override fun endCallAsHandsfree(
         request: EndCallAsHandsfreeRequest,
         responseObserver: StreamObserver<EndCallAsHandsfreeResponse>,
@@ -92,6 +118,20 @@ class HfpHandsfree(val context: Context) : HFPImplBase(), Closeable {
                 )
             }
             EndCallAsHandsfreeResponse.getDefaultInstance()
+        }
+    }
+
+    override fun consultCallByIndexAsHandsfree(
+        request: ConsultCallByIndexAsHandsfreeRequest,
+        responseObserver: StreamObserver<ConsultCallByIndexAsHandsfreeResponse>,
+    ) {
+        grpcUnary(scope, responseObserver) {
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+            bluetoothHfpClient
+                .getCurrentCalls(device)
+                .firstOrNull { it.id == request.index }
+                ?.let { bluetoothHfpClient.enterPrivateMode(device, it.id) } // AT+CHLD=2<idx>
+            ConsultCallByIndexAsHandsfreeResponse.getDefaultInstance()
         }
     }
 
