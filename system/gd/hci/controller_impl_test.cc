@@ -52,11 +52,51 @@ constexpr uint64_t kRandomNumber = 0x123456789abcdef0;
 /*sbc_supported= 1, aac_supported= 1, aptx_supported= 0, aptx_hd_supported= 0, ldac_supported= 1 */
 constexpr uint32_t kDynamicAudioBufferSupport = 0x13;
 uint16_t feature_spec_version = 55;
-constexpr char title[] = "hci_controller_test";
 
 }  // namespace
 
 namespace {
+
+uint64_t kDefaultLeFeatures =
+        (uint64_t)LLFeaturesBits::LE_ENCRYPTION |
+        (uint64_t)LLFeaturesBits::CONNECTION_PARAMETERS_REQUEST_PROCEDURE |
+        (uint64_t)LLFeaturesBits::EXTENDED_REJECT_INDICATION |
+        (uint64_t)LLFeaturesBits::PERIPHERAL_INITIATED_FEATURES_EXCHANGE |
+        (uint64_t)LLFeaturesBits::LE_PING |
+        (uint64_t)LLFeaturesBits::LE_DATA_PACKET_LENGTH_EXTENSION |
+        (uint64_t)LLFeaturesBits::LL_PRIVACY |
+        (uint64_t)LLFeaturesBits::EXTENDED_SCANNER_FILTER_POLICIES |
+        (uint64_t)LLFeaturesBits::LE_2M_PHY |
+        (uint64_t)LLFeaturesBits::STABLE_MODULATION_INDEX_TRANSMITTER |
+        (uint64_t)LLFeaturesBits::STABLE_MODULATION_INDEX_RECEIVER |
+        (uint64_t)LLFeaturesBits::LE_CODED_PHY | (uint64_t)LLFeaturesBits::LE_EXTENDED_ADVERTISING |
+        (uint64_t)LLFeaturesBits::LE_PERIODIC_ADVERTISING |
+        (uint64_t)LLFeaturesBits::CHANNEL_SELECTION_ALGORITHM_2 |
+        (uint64_t)LLFeaturesBits::LE_POWER_CLASS_1 |
+        (uint64_t)LLFeaturesBits::MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE |
+        (uint64_t)LLFeaturesBits::CONNECTION_CTE_REQUEST |
+        (uint64_t)LLFeaturesBits::CONNECTION_CTE_RESPONSE |
+        (uint64_t)LLFeaturesBits::CONNECTIONLESS_CTE_TRANSMITTER |
+        (uint64_t)LLFeaturesBits::CONNECTIONLESS_CTE_RECEIVER |
+        (uint64_t)LLFeaturesBits::ANTENNA_SWITCHING_DURING_CTE_TRANSMISSION |
+        (uint64_t)LLFeaturesBits::ANTENNA_SWITCHING_DURING_CTE_RECEPTION |
+        (uint64_t)LLFeaturesBits::RECEIVING_CONSTANT_TONE_EXTENSIONS |
+        (uint64_t)LLFeaturesBits::PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER |
+        (uint64_t)LLFeaturesBits::PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT |
+        (uint64_t)LLFeaturesBits::SLEEP_CLOCK_ACCURACY_UPDATES |
+        (uint64_t)LLFeaturesBits::REMOTE_PUBLIC_KEY_VALIDATION |
+        (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_CENTRAL |
+        (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL |
+        (uint64_t)LLFeaturesBits::ISOCHRONOUS_BROADCASTER |
+        (uint64_t)LLFeaturesBits::SYNCHRONIZED_RECEIVER |
+        (uint64_t)LLFeaturesBits::CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT |
+        (uint64_t)LLFeaturesBits::LE_POWER_CONTROL_REQUEST |
+        (uint64_t)LLFeaturesBits::LE_POWER_CONTROL_REQUEST_BIS |
+        (uint64_t)LLFeaturesBits::LE_PATH_LOSS_MONITORING |
+        (uint64_t)LLFeaturesBits::PERIODIC_ADVERTISING_ADI_SUPPORT |
+        (uint64_t)LLFeaturesBits::CONNECTION_SUBRATING |
+        (uint64_t)LLFeaturesBits::CONNECTION_SUBRATING_HOST_SUPPORT |
+        (uint64_t)LLFeaturesBits::CHANNEL_CLASSIFICATION;
 
 class HciLayerFakeForController : public HciLayerFake {
 public:
@@ -100,6 +140,10 @@ public:
         event_builder =
                 ReadLocalNameCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, local_name);
       } break;
+      case (OpCode::SET_MIN_ENCRYPTION_KEY_SIZE): {
+        event_builder =
+                SetMinEncryptionKeySizeCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS);
+      } break;
       case (OpCode::READ_LOCAL_VERSION_INFORMATION): {
         LocalVersionInformation local_version_information;
         local_version_information.hci_version_ = HciVersion::V_5_0;
@@ -112,12 +156,10 @@ public:
       } break;
       case (OpCode::READ_LOCAL_SUPPORTED_COMMANDS): {
         std::array<uint8_t, 64> supported_commands;
-        for (int i = 0; i < 37; i++) {
+        for (int i = 0; i < 64; i++) {
           supported_commands[i] = 0xff;
         }
-        for (int i = 37; i < 64; i++) {
-          supported_commands[i] = 0x00;
-        }
+        supported_commands[37] = 0xf9;
         event_builder = ReadLocalSupportedCommandsCompleteBuilder::Create(
                 num_packets, ErrorCode::SUCCESS, supported_commands);
       } break;
@@ -153,9 +195,19 @@ public:
         event_builder = LeReadBufferSizeV1CompleteBuilder::Create(num_packets, ErrorCode::SUCCESS,
                                                                   le_buffer_size);
       } break;
+      case (OpCode::LE_READ_BUFFER_SIZE_V2): {
+        LeBufferSize le_buffer_size;
+        le_buffer_size.le_data_packet_length_ = le_data_packet_length_v2;
+        le_buffer_size.total_num_le_packets_ = le_total_num_packets_v2;
+        LeBufferSize iso_buffer_size;
+        iso_buffer_size.le_data_packet_length_ = iso_data_packet_length_v2;
+        iso_buffer_size.total_num_le_packets_ = iso_total_num_packets_v2;
+        event_builder = LeReadBufferSizeV2CompleteBuilder::Create(num_packets, ErrorCode::SUCCESS,
+                                                                  le_buffer_size, iso_buffer_size);
+      } break;
       case (OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES): {
         event_builder = LeReadLocalSupportedFeaturesCompleteBuilder::Create(
-                num_packets, ErrorCode::SUCCESS, 0x001f123456789abc);
+                num_packets, ErrorCode::SUCCESS, le_features_to_return);
       } break;
       case (OpCode::LE_READ_SUPPORTED_STATES): {
         event_builder = LeReadSupportedStatesCompleteBuilder::Create(
@@ -275,10 +327,15 @@ public:
   }
 
   std::unique_ptr<EventBuilder> vendor_capabilities_ = nullptr;
+  uint64_t le_features_to_return = kDefaultLeFeatures;
   constexpr static uint16_t acl_data_packet_length = 1024;
   constexpr static uint8_t synchronous_data_packet_length = 60;
   constexpr static uint16_t total_num_acl_data_packets = 10;
   constexpr static uint16_t total_num_synchronous_data_packets = 12;
+  constexpr static uint16_t le_data_packet_length_v2 = 0x016;
+  constexpr static uint8_t le_total_num_packets_v2 = 8;
+  constexpr static uint16_t iso_data_packet_length_v2 = 0x80;
+  constexpr static uint8_t iso_total_num_packets_v2 = 0x10;
   uint64_t event_mask = 0;
   uint64_t le_event_mask = 0;
   uint16_t dynamic_audio_buffer_time = 0;
@@ -409,6 +466,7 @@ protected:
             /*a2dp_source_offload_capability_mask=*/0x4,
             /*bluetooth_quality_report_support=*/1, kDynamicAudioBufferSupport,
             /*a2dp_offload_v2_support=*/1,
+            /*iso_link_feedback_support=*/1,
             /*sniff_offload_support=*/1, std::make_unique<RawBuilder>());
     ControllerTest::SetUp();
   }
@@ -522,7 +580,7 @@ TEST_F(ControllerTest, is_supported_test) {
   ASSERT_TRUE(controller_->IsSupported(OpCode::INQUIRY));
   ASSERT_TRUE(controller_->IsSupported(OpCode::REJECT_CONNECTION_REQUEST));
   ASSERT_TRUE(controller_->IsSupported(OpCode::ACCEPT_CONNECTION_REQUEST));
-  ASSERT_FALSE(controller_->IsSupported(OpCode::LE_REMOVE_ADVERTISING_SET));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::LE_REMOVE_ADVERTISING_SET));
   ASSERT_FALSE(controller_->IsSupported(OpCode::LE_CLEAR_ADVERTISING_SETS));
   ASSERT_FALSE(controller_->IsSupported(OpCode::LE_SET_PERIODIC_ADVERTISING_PARAMETERS));
 }
@@ -690,5 +748,473 @@ TEST_F(ControllerTest, leRandTest) {
   ASSERT_EQ(kRandomNumber, le_rand_set_future.get());
 }
 
+TEST_F(ControllerTest, le_read_buffer_size_v2_supported) {
+  // Assert the LE buffer sizes
+  ASSERT_EQ(controller_->GetLeBufferSize().le_data_packet_length_,
+            test_hci_layer_->le_data_packet_length_v2);
+  ASSERT_EQ(controller_->GetLeBufferSize().total_num_le_packets_,
+            test_hci_layer_->le_total_num_packets_v2);
+
+  // Assert the ISO buffer sizes
+  ASSERT_EQ(controller_->GetControllerIsoBufferSize().le_data_packet_length_,
+            test_hci_layer_->iso_data_packet_length_v2);
+  ASSERT_EQ(controller_->GetControllerIsoBufferSize().total_num_le_packets_,
+            test_hci_layer_->iso_total_num_packets_v2);
+}
+
+TEST_F(ControllerTest, testLeEventMask) {
+  LocalVersionInformation version;
+  version.hci_version_ = HciVersion::V_5_3;
+
+  // Update the function and this test when adding new bits.
+  ASSERT_TRUE(ControllerImpl::kLeEventMask53 > ControllerImpl::kDefaultLeEventMask);
+
+  ASSERT_EQ(ControllerImpl::MaskLeEventMask(version.hci_version_,
+                                            ControllerImpl::kDefaultLeEventMask),
+            ControllerImpl::kDefaultLeEventMask);
+  ASSERT_LE(ControllerImpl::MaskLeEventMask(version.hci_version_,
+                                            ControllerImpl::kDefaultLeEventMask),
+            ControllerImpl::kLeEventMask53);
+  version.hci_version_ = HciVersion::V_5_2;
+  ASSERT_LE(ControllerImpl::MaskLeEventMask(version.hci_version_,
+                                            ControllerImpl::kDefaultLeEventMask),
+            ControllerImpl::kLeEventMask52);
+  version.hci_version_ = HciVersion::V_5_1;
+  ASSERT_LE(ControllerImpl::MaskLeEventMask(version.hci_version_,
+                                            ControllerImpl::kDefaultLeEventMask),
+            ControllerImpl::kLeEventMask51);
+  version.hci_version_ = HciVersion::V_4_2;
+  ASSERT_LE(ControllerImpl::MaskLeEventMask(version.hci_version_,
+                                            ControllerImpl::kDefaultLeEventMask),
+            ControllerImpl::kLeEventMask42);
+  version.hci_version_ = HciVersion::V_4_1;
+  ASSERT_LE(ControllerImpl::MaskLeEventMask(version.hci_version_,
+                                            ControllerImpl::kDefaultLeEventMask),
+            ControllerImpl::kLeEventMask41);
+}
+
+TEST_F(ControllerTest, GetLePeriodicAdvertiserListSize) {
+  ASSERT_EQ(controller_->GetLePeriodicAdvertiserListSize(), 0);
+}
+
+TEST_F(ControllerTest, GetLeSuggestedDefaultDataLength) {
+  ASSERT_EQ(controller_->GetLeSuggestedDefaultDataLength(), 0);
+}
+TEST_F(ControllerTest, GetLeFilterAcceptListSize) {
+  ASSERT_EQ(controller_->GetLeFilterAcceptListSize(), 0);
+}
+TEST_F(ControllerTest, GetLeResolvingListSize) {
+  ASSERT_EQ(controller_->GetLeResolvingListSize(), 0);
+}
+
+TEST_F(ControllerTest, SetEventFilterCommands) {
+  // Test SetEventFilterClearAll
+  controller_->SetEventFilterClearAll();
+  auto clear_all_packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_FILTER);
+  auto clear_all_view =
+          SetEventFilterClearAllView::Create(SetEventFilterView::Create(clear_all_packet));
+  ASSERT_TRUE(clear_all_view.IsValid());
+
+  // Test SetEventFilterInquiryResultAddress
+  Address address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  controller_->SetEventFilterInquiryResultAddress(address);
+  auto address_packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_FILTER);
+  auto address_view = SetEventFilterInquiryResultAddressView::Create(
+          SetEventFilterInquiryResultView::Create(SetEventFilterView::Create(address_packet)));
+  ASSERT_TRUE(address_view.IsValid());
+  ASSERT_EQ(address_view.GetAddress(), address);
+
+  // Test SetEventFilterConnectionSetupAllDevices
+  AutoAcceptFlag flag = AutoAcceptFlag::AUTO_ACCEPT_ON_ROLE_SWITCH_DISABLED;
+  controller_->SetEventFilterConnectionSetupAllDevices(flag);
+  auto all_devices_packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_FILTER);
+  auto all_devices_view = SetEventFilterConnectionSetupAllDevicesView::Create(
+          SetEventFilterConnectionSetupView::Create(
+                  SetEventFilterView::Create(all_devices_packet)));
+  ASSERT_TRUE(all_devices_view.IsValid());
+  ASSERT_EQ(all_devices_view.GetAutoAcceptFlag(), flag);
+}
+TEST_F(ControllerTest, AllOpCodeMappings) {
+  // Use a map to define the expected support status for each OpCode.
+  // By default, the mock HCI layer supports many commands. We'll explicitly
+  // list the ones that are not supported by the default mock setup.
+  std::map<OpCode, bool> expected_support;
+
+  expected_support[OpCode::INQUIRY] = true;
+  expected_support[OpCode::INQUIRY_CANCEL] = true;
+  expected_support[OpCode::PERIODIC_INQUIRY_MODE] = true;
+  expected_support[OpCode::EXIT_PERIODIC_INQUIRY_MODE] = true;
+  expected_support[OpCode::CREATE_CONNECTION] = true;
+  expected_support[OpCode::DISCONNECT] = true;
+  expected_support[OpCode::CREATE_CONNECTION_CANCEL] = true;
+  expected_support[OpCode::ACCEPT_CONNECTION_REQUEST] = true;
+  expected_support[OpCode::REJECT_CONNECTION_REQUEST] = true;
+  expected_support[OpCode::LINK_KEY_REQUEST_REPLY] = true;
+  expected_support[OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::PIN_CODE_REQUEST_REPLY] = true;
+  expected_support[OpCode::PIN_CODE_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::CHANGE_CONNECTION_PACKET_TYPE] = true;
+  expected_support[OpCode::AUTHENTICATION_REQUESTED] = true;
+  expected_support[OpCode::SET_CONNECTION_ENCRYPTION] = true;
+  expected_support[OpCode::CHANGE_CONNECTION_LINK_KEY] = true;
+  expected_support[OpCode::CENTRAL_LINK_KEY] = true;
+  expected_support[OpCode::REMOTE_NAME_REQUEST] = true;
+  expected_support[OpCode::REMOTE_NAME_REQUEST_CANCEL] = true;
+  expected_support[OpCode::READ_REMOTE_SUPPORTED_FEATURES] = true;
+  expected_support[OpCode::READ_REMOTE_EXTENDED_FEATURES] = true;
+  expected_support[OpCode::READ_REMOTE_VERSION_INFORMATION] = true;
+  expected_support[OpCode::READ_CLOCK_OFFSET] = true;
+  expected_support[OpCode::READ_LMP_HANDLE] = true;
+  expected_support[OpCode::SETUP_SYNCHRONOUS_CONNECTION] = true;
+  expected_support[OpCode::ACCEPT_SYNCHRONOUS_CONNECTION] = true;
+  expected_support[OpCode::REJECT_SYNCHRONOUS_CONNECTION] = true;
+  expected_support[OpCode::IO_CAPABILITY_REQUEST_REPLY] = true;
+  expected_support[OpCode::USER_CONFIRMATION_REQUEST_REPLY] = true;
+  expected_support[OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::USER_PASSKEY_REQUEST_REPLY] = true;
+  expected_support[OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::REMOTE_OOB_DATA_REQUEST_REPLY] = true;
+  expected_support[OpCode::REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION] = true;
+  expected_support[OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION] = true;
+  expected_support[OpCode::TRUNCATED_PAGE] = true;
+  expected_support[OpCode::TRUNCATED_PAGE_CANCEL] = true;
+  expected_support[OpCode::SET_CONNECTIONLESS_PERIPHERAL_BROADCAST] = true;
+  expected_support[OpCode::SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_RECEIVE] = true;
+  expected_support[OpCode::START_SYNCHRONIZATION_TRAIN] = true;
+  expected_support[OpCode::RECEIVE_SYNCHRONIZATION_TRAIN] = true;
+  expected_support[OpCode::REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY] = true;
+  expected_support[OpCode::HOLD_MODE] = true;
+  expected_support[OpCode::SNIFF_MODE] = true;
+  expected_support[OpCode::EXIT_SNIFF_MODE] = true;
+  expected_support[OpCode::PARK_STATE] = true;
+  expected_support[OpCode::EXIT_PARK_STATE] = true;
+  expected_support[OpCode::QOS_SETUP] = true;
+  expected_support[OpCode::ROLE_DISCOVERY] = true;
+  expected_support[OpCode::SWITCH_ROLE] = true;
+  expected_support[OpCode::READ_LINK_POLICY_SETTINGS] = true;
+  expected_support[OpCode::WRITE_LINK_POLICY_SETTINGS] = true;
+  expected_support[OpCode::READ_DEFAULT_LINK_POLICY_SETTINGS] = true;
+  expected_support[OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS] = true;
+  expected_support[OpCode::FLOW_SPECIFICATION] = true;
+  expected_support[OpCode::SNIFF_SUBRATING] = true;
+  expected_support[OpCode::SET_EVENT_MASK] = true;
+  expected_support[OpCode::RESET] = true;
+  expected_support[OpCode::SET_EVENT_FILTER] = true;
+  expected_support[OpCode::FLUSH] = true;
+  expected_support[OpCode::READ_PIN_TYPE] = true;
+  expected_support[OpCode::WRITE_PIN_TYPE] = true;
+  expected_support[OpCode::READ_STORED_LINK_KEY] = true;
+  expected_support[OpCode::WRITE_STORED_LINK_KEY] = true;
+  expected_support[OpCode::DELETE_STORED_LINK_KEY] = true;
+  expected_support[OpCode::WRITE_LOCAL_NAME] = true;
+  expected_support[OpCode::READ_LOCAL_NAME] = true;
+  expected_support[OpCode::READ_CONNECTION_ACCEPT_TIMEOUT] = true;
+  expected_support[OpCode::WRITE_CONNECTION_ACCEPT_TIMEOUT] = true;
+  expected_support[OpCode::READ_PAGE_TIMEOUT] = true;
+  expected_support[OpCode::WRITE_PAGE_TIMEOUT] = true;
+  expected_support[OpCode::READ_SCAN_ENABLE] = true;
+  expected_support[OpCode::WRITE_SCAN_ENABLE] = true;
+  expected_support[OpCode::READ_PAGE_SCAN_ACTIVITY] = true;
+  expected_support[OpCode::WRITE_PAGE_SCAN_ACTIVITY] = true;
+  expected_support[OpCode::READ_INQUIRY_SCAN_ACTIVITY] = true;
+  expected_support[OpCode::WRITE_INQUIRY_SCAN_ACTIVITY] = true;
+  expected_support[OpCode::READ_AUTHENTICATION_ENABLE] = true;
+  expected_support[OpCode::WRITE_AUTHENTICATION_ENABLE] = true;
+  expected_support[OpCode::READ_CLASS_OF_DEVICE] = true;
+  expected_support[OpCode::WRITE_CLASS_OF_DEVICE] = true;
+  expected_support[OpCode::READ_VOICE_SETTING] = true;
+  expected_support[OpCode::WRITE_VOICE_SETTING] = true;
+  expected_support[OpCode::READ_AUTOMATIC_FLUSH_TIMEOUT] = true;
+  expected_support[OpCode::WRITE_AUTOMATIC_FLUSH_TIMEOUT] = true;
+  expected_support[OpCode::READ_NUM_BROADCAST_RETRANSMITS] = true;
+  expected_support[OpCode::WRITE_NUM_BROADCAST_RETRANSMITS] = true;
+  expected_support[OpCode::READ_HOLD_MODE_ACTIVITY] = true;
+  expected_support[OpCode::WRITE_HOLD_MODE_ACTIVITY] = true;
+  expected_support[OpCode::READ_TRANSMIT_POWER_LEVEL] = true;
+  expected_support[OpCode::READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE] = true;
+  expected_support[OpCode::WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE] = true;
+  expected_support[OpCode::SET_CONTROLLER_TO_HOST_FLOW_CONTROL] = true;
+  expected_support[OpCode::HOST_BUFFER_SIZE] = true;
+  expected_support[OpCode::HOST_NUMBER_OF_COMPLETED_PACKETS] = true;
+  expected_support[OpCode::READ_LINK_SUPERVISION_TIMEOUT] = true;
+  expected_support[OpCode::WRITE_LINK_SUPERVISION_TIMEOUT] = true;
+  expected_support[OpCode::READ_NUMBER_OF_SUPPORTED_IAC] = true;
+  expected_support[OpCode::READ_CURRENT_IAC_LAP] = true;
+  expected_support[OpCode::WRITE_CURRENT_IAC_LAP] = true;
+  expected_support[OpCode::SET_AFH_HOST_CHANNEL_CLASSIFICATION] = true;
+  expected_support[OpCode::READ_INQUIRY_SCAN_TYPE] = true;
+  expected_support[OpCode::WRITE_INQUIRY_SCAN_TYPE] = true;
+  expected_support[OpCode::READ_INQUIRY_MODE] = true;
+  expected_support[OpCode::WRITE_INQUIRY_MODE] = true;
+  expected_support[OpCode::READ_PAGE_SCAN_TYPE] = true;
+  expected_support[OpCode::WRITE_PAGE_SCAN_TYPE] = true;
+  expected_support[OpCode::READ_AFH_CHANNEL_ASSESSMENT_MODE] = true;
+  expected_support[OpCode::WRITE_AFH_CHANNEL_ASSESSMENT_MODE] = true;
+  expected_support[OpCode::READ_EXTENDED_INQUIRY_RESPONSE] = true;
+  expected_support[OpCode::WRITE_EXTENDED_INQUIRY_RESPONSE] = true;
+  expected_support[OpCode::REFRESH_ENCRYPTION_KEY] = true;
+  expected_support[OpCode::READ_SIMPLE_PAIRING_MODE] = true;
+  expected_support[OpCode::WRITE_SIMPLE_PAIRING_MODE] = true;
+  expected_support[OpCode::READ_LOCAL_OOB_DATA] = true;
+  expected_support[OpCode::READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL] = true;
+  expected_support[OpCode::WRITE_INQUIRY_TRANSMIT_POWER_LEVEL] = true;
+  expected_support[OpCode::READ_DEFAULT_ERRONEOUS_DATA_REPORTING] = true;
+  expected_support[OpCode::WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING] = true;
+  expected_support[OpCode::ENHANCED_FLUSH] = true;
+  expected_support[OpCode::SEND_KEYPRESS_NOTIFICATION] = true;
+  expected_support[OpCode::SET_EVENT_MASK_PAGE_2] = true;
+  expected_support[OpCode::READ_FLOW_CONTROL_MODE] = true;
+  expected_support[OpCode::WRITE_FLOW_CONTROL_MODE] = true;
+  expected_support[OpCode::READ_ENHANCED_TRANSMIT_POWER_LEVEL] = true;
+  expected_support[OpCode::READ_LE_HOST_SUPPORT] = true;
+  expected_support[OpCode::WRITE_LE_HOST_SUPPORT] = true;
+  expected_support[OpCode::SET_MWS_CHANNEL_PARAMETERS] = true;
+  expected_support[OpCode::SET_EXTERNAL_FRAME_CONFIGURATION] = true;
+  expected_support[OpCode::SET_MWS_SIGNALING] = true;
+  expected_support[OpCode::SET_MWS_TRANSPORT_LAYER] = true;
+  expected_support[OpCode::SET_MWS_SCAN_FREQUENCY_TABLE] = true;
+  expected_support[OpCode::SET_MWS_PATTERN_CONFIGURATION] = true;
+  expected_support[OpCode::SET_RESERVED_LT_ADDR] = true;
+  expected_support[OpCode::DELETE_RESERVED_LT_ADDR] = true;
+  expected_support[OpCode::SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_DATA] = true;
+  expected_support[OpCode::READ_SYNCHRONIZATION_TRAIN_PARAMETERS] = true;
+  expected_support[OpCode::WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS] = true;
+  expected_support[OpCode::READ_SECURE_CONNECTIONS_HOST_SUPPORT] = true;
+  expected_support[OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT] = true;
+  expected_support[OpCode::READ_AUTHENTICATED_PAYLOAD_TIMEOUT] = true;
+  expected_support[OpCode::WRITE_AUTHENTICATED_PAYLOAD_TIMEOUT] = true;
+  expected_support[OpCode::READ_LOCAL_OOB_EXTENDED_DATA] = true;
+  expected_support[OpCode::READ_EXTENDED_PAGE_TIMEOUT] = true;
+  expected_support[OpCode::WRITE_EXTENDED_PAGE_TIMEOUT] = true;
+  expected_support[OpCode::READ_EXTENDED_INQUIRY_LENGTH] = true;
+  expected_support[OpCode::WRITE_EXTENDED_INQUIRY_LENGTH] = true;
+  expected_support[OpCode::SET_ECOSYSTEM_BASE_INTERVAL] = true;
+  expected_support[OpCode::CONFIGURE_DATA_PATH] = true;
+  expected_support[OpCode::SET_MIN_ENCRYPTION_KEY_SIZE] = true;
+  expected_support[OpCode::READ_LOCAL_VERSION_INFORMATION] = true;
+  expected_support[OpCode::READ_LOCAL_SUPPORTED_FEATURES] = true;
+  expected_support[OpCode::READ_LOCAL_EXTENDED_FEATURES] = true;
+  expected_support[OpCode::READ_BUFFER_SIZE] = true;
+  expected_support[OpCode::READ_BD_ADDR] = true;
+  expected_support[OpCode::READ_DATA_BLOCK_SIZE] = true;
+  expected_support[OpCode::READ_LOCAL_SUPPORTED_CODECS_V1] = true;
+  expected_support[OpCode::READ_LOCAL_SIMPLE_PAIRING_OPTIONS] = true;
+  expected_support[OpCode::READ_LOCAL_SUPPORTED_CODECS_V2] = true;
+  expected_support[OpCode::READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES] = true;
+  expected_support[OpCode::READ_LOCAL_SUPPORTED_CONTROLLER_DELAY] = true;
+  expected_support[OpCode::READ_FAILED_CONTACT_COUNTER] = true;
+  expected_support[OpCode::RESET_FAILED_CONTACT_COUNTER] = true;
+  expected_support[OpCode::READ_LINK_QUALITY] = true;
+  expected_support[OpCode::READ_RSSI] = true;
+  expected_support[OpCode::READ_AFH_CHANNEL_MAP] = true;
+  expected_support[OpCode::READ_CLOCK] = true;
+  expected_support[OpCode::READ_ENCRYPTION_KEY_SIZE] = true;
+  expected_support[OpCode::GET_MWS_TRANSPORT_LAYER_CONFIGURATION] = true;
+  expected_support[OpCode::SET_TRIGGERED_CLOCK_CAPTURE] = true;
+  expected_support[OpCode::READ_LOOPBACK_MODE] = true;
+  expected_support[OpCode::WRITE_LOOPBACK_MODE] = true;
+  expected_support[OpCode::ENABLE_DEVICE_UNDER_TEST_MODE] = true;
+  expected_support[OpCode::WRITE_SIMPLE_PAIRING_DEBUG_MODE] = true;
+  expected_support[OpCode::WRITE_SECURE_CONNECTIONS_TEST_MODE] = true;
+  expected_support[OpCode::LE_SET_EVENT_MASK] = true;
+  expected_support[OpCode::LE_READ_BUFFER_SIZE_V1] = true;
+  expected_support[OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES] = true;
+  expected_support[OpCode::LE_SET_RANDOM_ADDRESS] = true;
+  expected_support[OpCode::LE_SET_ADVERTISING_PARAMETERS] = true;
+  expected_support[OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER] = true;
+  expected_support[OpCode::LE_SET_ADVERTISING_DATA] = true;
+  expected_support[OpCode::LE_SET_SCAN_RESPONSE_DATA] = true;
+  expected_support[OpCode::LE_SET_ADVERTISING_ENABLE] = true;
+  expected_support[OpCode::LE_SET_SCAN_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_SCAN_ENABLE] = true;
+  expected_support[OpCode::LE_CREATE_CONNECTION] = true;
+  expected_support[OpCode::LE_CREATE_CONNECTION_CANCEL] = true;
+  expected_support[OpCode::LE_READ_FILTER_ACCEPT_LIST_SIZE] = true;
+  expected_support[OpCode::LE_CLEAR_FILTER_ACCEPT_LIST] = true;
+  expected_support[OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST] = true;
+  expected_support[OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST] = true;
+  expected_support[OpCode::LE_CONNECTION_UPDATE] = true;
+  expected_support[OpCode::LE_SET_HOST_CHANNEL_CLASSIFICATION] = true;
+  expected_support[OpCode::LE_READ_CHANNEL_MAP] = true;
+  expected_support[OpCode::LE_READ_REMOTE_FEATURES] = true;
+  expected_support[OpCode::LE_ENCRYPT] = true;
+  expected_support[OpCode::LE_RAND] = true;
+  expected_support[OpCode::LE_START_ENCRYPTION] = true;
+  expected_support[OpCode::LE_LONG_TERM_KEY_REQUEST_REPLY] = true;
+  expected_support[OpCode::LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::LE_READ_SUPPORTED_STATES] = true;
+  expected_support[OpCode::LE_RECEIVER_TEST_V1] = true;
+  expected_support[OpCode::LE_TRANSMITTER_TEST_V1] = true;
+  expected_support[OpCode::LE_TEST_END] = true;
+  expected_support[OpCode::LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY] = true;
+  expected_support[OpCode::LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY] = true;
+  expected_support[OpCode::LE_SET_DATA_LENGTH] = true;
+  expected_support[OpCode::LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH] = true;
+  expected_support[OpCode::LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH] = true;
+  expected_support[OpCode::LE_READ_LOCAL_P_256_PUBLIC_KEY] = true;
+  expected_support[OpCode::LE_GENERATE_DHKEY_V1] = true;
+  expected_support[OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST] = true;
+  expected_support[OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST] = true;
+  expected_support[OpCode::LE_CLEAR_RESOLVING_LIST] = true;
+  expected_support[OpCode::LE_READ_RESOLVING_LIST_SIZE] = true;
+  expected_support[OpCode::LE_READ_PEER_RESOLVABLE_ADDRESS] = true;
+  expected_support[OpCode::LE_READ_LOCAL_RESOLVABLE_ADDRESS] = true;
+  expected_support[OpCode::LE_SET_ADDRESS_RESOLUTION_ENABLE] = true;
+  expected_support[OpCode::LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT] = true;
+  expected_support[OpCode::LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT_V2] = true;
+  expected_support[OpCode::LE_READ_MAXIMUM_DATA_LENGTH] = true;
+  expected_support[OpCode::LE_READ_PHY] = true;
+  expected_support[OpCode::LE_SET_DEFAULT_PHY] = true;
+  expected_support[OpCode::LE_SET_PHY] = true;
+  expected_support[OpCode::LE_RECEIVER_TEST_V2] = true;
+  expected_support[OpCode::LE_TRANSMITTER_TEST_V2] = true;
+  expected_support[OpCode::LE_SET_ADVERTISING_SET_RANDOM_ADDRESS] = true;
+  expected_support[OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_EXTENDED_ADVERTISING_DATA] = true;
+  expected_support[OpCode::LE_SET_EXTENDED_SCAN_RESPONSE_DATA] = true;
+  expected_support[OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE] = true;
+  expected_support[OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH] = true;
+  expected_support[OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS] = true;
+  expected_support[OpCode::LE_REMOVE_ADVERTISING_SET] = true;
+  expected_support[OpCode::LE_CLEAR_ADVERTISING_SETS] = false;
+  expected_support[OpCode::LE_SET_PERIODIC_ADVERTISING_PARAMETERS] = false;
+  expected_support[OpCode::LE_SET_PERIODIC_ADVERTISING_DATA] = true;
+  expected_support[OpCode::LE_SET_PERIODIC_ADVERTISING_ENABLE] = true;
+  expected_support[OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_EXTENDED_SCAN_ENABLE] = true;
+  expected_support[OpCode::LE_EXTENDED_CREATE_CONNECTION] = true;
+  expected_support[OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC] = true;
+  expected_support[OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL] = true;
+  expected_support[OpCode::LE_PERIODIC_ADVERTISING_TERMINATE_SYNC] = true;
+  expected_support[OpCode::LE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST] = true;
+  expected_support[OpCode::LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST] = true;
+  expected_support[OpCode::LE_CLEAR_PERIODIC_ADVERTISER_LIST] = true;
+  expected_support[OpCode::LE_READ_PERIODIC_ADVERTISER_LIST_SIZE] = true;
+  expected_support[OpCode::LE_READ_TRANSMIT_POWER] = true;
+  expected_support[OpCode::LE_READ_RF_PATH_COMPENSATION_POWER] = true;
+  expected_support[OpCode::LE_WRITE_RF_PATH_COMPENSATION_POWER] = true;
+  expected_support[OpCode::LE_SET_PRIVACY_MODE] = true;
+  expected_support[OpCode::LE_RECEIVER_TEST_V3] = true;
+  expected_support[OpCode::LE_TRANSMITTER_TEST_V3] = true;
+  expected_support[OpCode::LE_SET_CONNECTIONLESS_CTE_TRANSMIT_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_CONNECTIONLESS_CTE_TRANSMIT_ENABLE] = true;
+  expected_support[OpCode::LE_SET_CONNECTIONLESS_IQ_SAMPLING_ENABLE] = true;
+  expected_support[OpCode::LE_SET_CONNECTION_CTE_RECEIVE_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_CONNECTION_CTE_TRANSMIT_PARAMETERS] = true;
+  expected_support[OpCode::LE_CONNECTION_CTE_REQUEST_ENABLE] = true;
+  expected_support[OpCode::LE_CONNECTION_CTE_RESPONSE_ENABLE] = true;
+  expected_support[OpCode::LE_READ_ANTENNA_INFORMATION] = true;
+  expected_support[OpCode::LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE] = true;
+  expected_support[OpCode::LE_PERIODIC_ADVERTISING_SYNC_TRANSFER] = true;
+  expected_support[OpCode::LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER] = true;
+  expected_support[OpCode::LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS] = true;
+  expected_support[OpCode::LE_GENERATE_DHKEY_V2] = true;
+  expected_support[OpCode::LE_MODIFY_SLEEP_CLOCK_ACCURACY] = true;
+  expected_support[OpCode::LE_READ_BUFFER_SIZE_V2] = true;
+  expected_support[OpCode::LE_READ_ISO_TX_SYNC] = true;
+  expected_support[OpCode::LE_SET_CIG_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_CIG_PARAMETERS_TEST] = true;
+  expected_support[OpCode::LE_CREATE_CIS] = true;
+  expected_support[OpCode::LE_REMOVE_CIG] = true;
+  expected_support[OpCode::LE_ACCEPT_CIS_REQUEST] = true;
+  expected_support[OpCode::LE_REJECT_CIS_REQUEST] = true;
+  expected_support[OpCode::LE_CREATE_BIG] = true;
+  expected_support[OpCode::LE_CREATE_BIG_TEST] = true;
+  expected_support[OpCode::LE_TERMINATE_BIG] = true;
+  expected_support[OpCode::LE_BIG_CREATE_SYNC] = true;
+  expected_support[OpCode::LE_BIG_TERMINATE_SYNC] = true;
+  expected_support[OpCode::LE_REQUEST_PEER_SCA] = true;
+  expected_support[OpCode::LE_SETUP_ISO_DATA_PATH] = true;
+  expected_support[OpCode::LE_REMOVE_ISO_DATA_PATH] = true;
+  expected_support[OpCode::LE_ISO_TRANSMIT_TEST] = true;
+  expected_support[OpCode::LE_ISO_RECEIVE_TEST] = true;
+  expected_support[OpCode::LE_ISO_READ_TEST_COUNTERS] = true;
+  expected_support[OpCode::LE_ISO_TEST_END] = true;
+  expected_support[OpCode::LE_SET_HOST_FEATURE] = true;
+  expected_support[OpCode::LE_READ_ISO_LINK_QUALITY] = true;
+  expected_support[OpCode::LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL] = true;
+  expected_support[OpCode::LE_READ_REMOTE_TRANSMIT_POWER_LEVEL] = true;
+  expected_support[OpCode::LE_SET_PATH_LOSS_REPORTING_PARAMETERS] = true;
+  expected_support[OpCode::LE_SET_PATH_LOSS_REPORTING_ENABLE] = true;
+  expected_support[OpCode::LE_SET_TRANSMIT_POWER_REPORTING_ENABLE] = true;
+  expected_support[OpCode::LE_TRANSMITTER_TEST_V4] = true;
+  expected_support[OpCode::LE_SET_DATA_RELATED_ADDRESS_CHANGES] = true;
+  expected_support[OpCode::LE_SET_DEFAULT_SUBRATE] = true;
+  expected_support[OpCode::LE_SUBRATE_REQUEST] = true;
+  // Mark specific opcodes as not supported based on the default mock setup.
+  expected_support[OpCode::ADD_SCO_CONNECTION] = false;
+  expected_support[OpCode::READ_LOCAL_SUPPORTED_COMMANDS] = true;
+  expected_support[OpCode::NONE] = false;
+
+  // Mark MSFT opcodes as not supported.
+  expected_support[OpCode::MSFT_OPCODE_INTEL] = false;
+  expected_support[OpCode::MSFT_OPCODE_MEDIATEK] = false;
+  expected_support[OpCode::MSFT_OPCODE_QUALCOMM] = false;
+
+  // The is_supported() method has logic for vendor-specific OpCodes.
+  // We need to test these separately.
+
+  // Iterate through all OpCode values to ensure full coverage.
+  // Note: This requires a mechanism to iterate through all OpCode enum values.
+  // Assuming a helper function exists for this purpose.
+  for (const auto& pair : expected_support) {
+    OpCode op_code = pair.first;
+    bool expected = pair.second;
+    ASSERT_EQ(controller_->IsSupported(op_code), expected)
+            << "Opcode " << OpCodeText(op_code) << " failed";
+  }
+}
+
+TEST_F(ControllerTest, LeChannelSoundingOpCodesNotSupported) {
+  std::vector<OpCode> cs_opcodes = {
+          OpCode::LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES,
+          OpCode::LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES,
+          OpCode::LE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPABILITIES,
+          OpCode::LE_CS_SECURITY_ENABLE,
+          OpCode::LE_CS_SET_DEFAULT_SETTINGS,
+          OpCode::LE_CS_READ_REMOTE_FAE_TABLE,
+          OpCode::LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE,
+          OpCode::LE_CS_CREATE_CONFIG,
+          OpCode::LE_CS_REMOVE_CONFIG,
+          OpCode::LE_CS_SET_CHANNEL_CLASSIFICATION,
+          OpCode::LE_CS_PROCEDURE_ENABLE,
+          OpCode::LE_CS_TEST,
+          OpCode::LE_CS_TEST_END,
+          OpCode::LE_CS_SET_PROCEDURE_PARAMETERS,
+  };
+
+  for (OpCode opcode : cs_opcodes) {
+    ASSERT_FALSE(controller_->IsSupported(opcode))
+            << "Opcode " << OpCodeText(opcode) << " should not be supported";
+  }
+}
+
+TEST_F(ControllerTest, Dump) {
+  // Use a pipe to capture the output of the dump function.
+  int pipefd[2];
+  ASSERT_EQ(pipe(pipefd), 0);
+  int read_fd = pipefd[0];
+  int write_fd = pipefd[1];
+
+  // Call the dump function with the write end of the pipe.
+  controller_->Dump(write_fd);
+  close(write_fd);
+
+  // Read the output from the pipe.
+  char buffer[1024];
+  ssize_t bytes_read = read(read_fd, buffer, sizeof(buffer) - 1);
+  close(read_fd);
+
+  // Assert that some data was written to the pipe.
+  ASSERT_GT(bytes_read, 0);
+  buffer[bytes_read] = '\0';
+
+  // Optionally, you can assert that the output contains expected strings.
+  // For example, checking for a key phrase in the dump output.
+  ASSERT_NE(std::string(buffer).find("HCI ControllerImpl Dumpsys:"), std::string::npos);
+}
 }  // namespace hci
 }  // namespace bluetooth

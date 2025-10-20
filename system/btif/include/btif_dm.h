@@ -77,7 +77,7 @@ void btif_dm_proc_io_req(tBTM_AUTH_REQ* p_auth_req, bool is_orig);
 /**
  * Callout for handling io_capabilities response
  */
-void btif_dm_proc_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap, tBTM_OOB_DATA oob_data,
+void btif_dm_proc_io_rsp(const RawAddress& bd_addr, BtIoCap io_cap, tBTM_OOB_DATA oob_data,
                          tBTM_AUTH_REQ auth_req);
 
 /**
@@ -116,8 +116,6 @@ void btif_dm_set_default_event_mask_except(uint64_t mask, uint64_t le_mask);
 void btif_dm_set_event_filter_inquiry_result_all_devices();
 void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
                               std::vector<uint8_t> value);
-
-void btif_dm_hh_open_failed(RawAddress* bdaddr);
 
 bool btif_dm_is_pairing(const RawAddress& bdaddr);
 

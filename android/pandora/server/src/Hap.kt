@@ -144,7 +144,9 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
                             presetInfoList: List<BluetoothHapPresetInfo>,
                             reason: Int,
                         ) {
-                            Log.i(TAG, "onPresetInfoChanged($device, $presetInfoList, $reason)")
+                            val presetsFormatted =
+                                presetInfoList.joinToString(separator = "\n\t", prefix = "\n\t")
+                            Log.i(TAG, "onPresetInfoChanged($device, $reason): $presetsFormatted")
                             trySend(
                                 HapCallbackEvent.PresetInfoChanged(device, presetInfoList, reason)
                             )

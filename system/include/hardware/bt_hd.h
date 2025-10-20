@@ -20,6 +20,8 @@
 #include <bluetooth/types/address.h>
 #include <stdint.h>
 
+#include "bt_status.h"
+
 __BEGIN_DECLS
 
 typedef enum {
@@ -86,32 +88,32 @@ typedef struct {
   size_t size;
 
   /** init interface and register callbacks */
-  bt_status_t (*init)(bthd_callbacks_t* callbacks);
+  BtStatus (*init)(bthd_callbacks_t* callbacks);
 
   /** close interface */
   void (*cleanup)(void);
 
   /** register application */
-  bt_status_t (*register_app)(bthd_app_param_t* app_param, bthd_qos_param_t* in_qos,
-                              bthd_qos_param_t* out_qos);
+  BtStatus (*register_app)(bthd_app_param_t* app_param, bthd_qos_param_t* in_qos,
+                           bthd_qos_param_t* out_qos);
 
   /** unregister application */
-  bt_status_t (*unregister_app)(void);
+  BtStatus (*unregister_app)(void);
 
   /** connects to host with virtual cable */
-  bt_status_t (*connect)(RawAddress* bd_addr);
+  BtStatus (*connect)(RawAddress bd_addr);
 
   /** disconnects from currently connected host */
-  bt_status_t (*disconnect)(void);
+  BtStatus (*disconnect)(void);
 
   /** send report */
-  bt_status_t (*send_report)(bthd_report_type_t type, uint8_t id, uint16_t len, uint8_t* p_data);
+  BtStatus (*send_report)(bthd_report_type_t type, uint8_t id, uint16_t len, uint8_t* p_data);
 
   /** notifies error for invalid SET_REPORT */
-  bt_status_t (*report_error)(uint8_t error);
+  BtStatus (*report_error)(uint8_t error);
 
   /** send Virtual Cable Unplug  */
-  bt_status_t (*virtual_cable_unplug)(void);
+  BtStatus (*virtual_cable_unplug)(void);
 } bthd_interface_t;
 
 __END_DECLS

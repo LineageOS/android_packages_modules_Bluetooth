@@ -33,7 +33,7 @@ import java.util.List;
 /** MetadataDatabase is a Room database stores Bluetooth persistence data */
 @Database(
         entities = {Metadata.class},
-        version = 125)
+        version = 125) // Deprecated. See the user_data.proto instead
 public abstract class MetadataDatabase extends RoomDatabase {
     /** The metadata database file name */
     public static final String DATABASE_NAME = "bluetooth_db";

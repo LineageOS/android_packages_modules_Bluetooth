@@ -76,6 +76,7 @@ java_library {
         "PlatformProperties",
         "androidx.annotation_annotation",
         "androidx.appcompat_appcompat",
+        "bluetooth-common-java",
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
         "bluetooth_flags_java_lib",
@@ -88,6 +89,10 @@ java_library {
     min_sdk_version: "36",
     apex_available: ["com.android.bt"],
     visibility: [":__subpackages__"],
+
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 // Apply jarjaring before using library in the apex
@@ -171,6 +176,7 @@ android_robolectric_test {
         "androidx.test.core",
         "androidx.test.ext.truth",
         "bluetooth-common-flagwrapper-tests",
+        "bluetooth-common-java-tests",
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
         "bluetooth_flags_java_lib",

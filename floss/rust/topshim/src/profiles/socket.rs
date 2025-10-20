@@ -302,8 +302,6 @@ mod tests {
             status: 5_i32,
             max_tx_packet_size: 16_u16,
             max_rx_packet_size: 17_u16,
-            conn_uuid_lsb: 0x0000113500001135_u64,
-            conn_uuid_msb: 0x1135000011350000_u64,
             socket_id: 0x1135113511351135_u64,
         };
         // SAFETY: The sock_connect_signal_t type has size CONNECT_COMPLETE_SIZE,

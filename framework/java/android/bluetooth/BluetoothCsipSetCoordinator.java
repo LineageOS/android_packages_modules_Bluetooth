@@ -19,7 +19,6 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
@@ -27,6 +26,7 @@ import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -69,10 +69,10 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
 
     private final CloseGuard mCloseGuard;
 
-    /** @hide */
+    @Hide
     @SystemApi
     public interface ClientLockCallback {
-        /** @hide */
+        @Hide
         @IntDef(
                 value = {
                     BluetoothStatusCodes.SUCCESS,
@@ -91,8 +91,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
          * @param groupId group identifier
          * @param opStatus status of lock operation
          * @param isLocked indicates if group is locked
-         * @hide
          */
+        @Hide
         @SystemApi
         void onGroupLockSet(int groupId, @Status int opStatus, boolean isLocked);
     }
@@ -147,9 +147,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      *   <li>{@link #EXTRA_CSIS_GROUP_SIZE} - Group size.
      *   <li>{@link #EXTRA_CSIS_GROUP_TYPE_UUID} - Group type UUID.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -162,24 +161,16 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      *
      * <p>Possible Values: {@link GROUP_ID_INVALID} Invalid group identifier 0x01 - 0xEF Valid group
      * identifier
-     *
-     * @hide
      */
-    @SystemApi
+    @Hide @SystemApi
     public static final String EXTRA_CSIS_GROUP_ID = "android.bluetooth.extra.CSIS_GROUP_ID";
 
-    /**
-     * Group size as int extra field in {@link #ACTION_CSIS_DEVICE_AVAILABLE} intent.
-     *
-     * @hide
-     */
+    /** Group size as int extra field in {@link #ACTION_CSIS_DEVICE_AVAILABLE} intent. */
+    @Hide
     public static final String EXTRA_CSIS_GROUP_SIZE = "android.bluetooth.extra.CSIS_GROUP_SIZE";
 
-    /**
-     * Group type uuid extra field in {@link #ACTION_CSIS_DEVICE_AVAILABLE} intent.
-     *
-     * @hide
-     */
+    /** Group type uuid extra field in {@link #ACTION_CSIS_DEVICE_AVAILABLE} intent. */
+    @Hide
     public static final String EXTRA_CSIS_GROUP_TYPE_UUID =
             "android.bluetooth.extra.CSIS_GROUP_TYPE_UUID";
 
@@ -193,21 +184,16 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      *       is active.
      *   <li>{@link #EXTRA_CSIS_GROUP_ID} - Group identifier.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_CSIS_SET_MEMBER_AVAILABLE =
             "android.bluetooth.action.CSIS_SET_MEMBER_AVAILABLE";
 
-    /**
-     * This represents an invalid group ID.
-     *
-     * @hide
-     */
-    @SystemApi
+    /** This represents an invalid group ID. */
+    @Hide @SystemApi
     public static final int GROUP_ID_INVALID = IBluetoothCsipSetCoordinator.CSIS_GROUP_ID_INVALID;
 
     private final BluetoothAdapter mAdapter;
@@ -227,7 +213,7 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         if (mCloseGuard != null) {
@@ -236,20 +222,20 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
         close();
     }
 
-    /** @hide */
+    @Hide
     @Override
     public void close() {
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothCsipSetCoordinator.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -260,7 +246,7 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -277,8 +263,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      *     specification,
      * @return unique lock identifier used for unlocking or null if lock has failed.
      * @throws IllegalArgumentException when executor or callback is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -312,8 +298,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      * @param lockUuid unique lock identifier
      * @return true if unlocked, false on error
      * @throws IllegalArgumentException when lockUuid is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -340,8 +326,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      *
      * @param device the active device
      * @return Map of groups ids and related UUIDs
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -366,8 +352,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      * Get group id for the given UUID
      *
      * @return list of group IDs
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -459,8 +445,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -473,8 +459,7 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -492,8 +477,8 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

@@ -82,11 +82,11 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
@@ -137,11 +137,12 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Mock private HeadsetNativeInterface mNativeInterface;
     @Mock private LeAudioService mLeAudioService;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorageFlag;
+    private BluetoothStorageManager mStorage; // Merge when cleaning flag
     @Mock private HeadsetSystemInterface mSystemInterface;
     @Mock private AudioManager mAudioManager;
     @Mock private AudioDeviceVolumeManager mAudioDeviceVolumeManager;
@@ -168,6 +169,11 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Before
     public void setUp() {
+        if (!Flags.mainlineBetaStorage()) {
+            mStorage = null; // force mock to null when flag is off to be compliant with code
+        } else {
+            mStorage = mStorageFlag;
+        }
         mInOrder = inOrder(mAdapterService);
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
@@ -232,12 +238,13 @@ public class HeadsetServiceAndStateMachineTest {
         // Use real state machines here
         doCallRealMethod()
                 .when(mObjectsFactory)
-                .makeStateMachine(any(), any(), any(), any(), any(), any());
+                .makeStateMachine(any(), any(), any(), any(), any(), any(), any());
         mTestLooper = new TestLooper();
 
         mHeadsetService =
                 new HeadsetService(
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface,
                         mTestLooper.getLooper());
@@ -265,8 +272,6 @@ public class HeadsetServiceAndStateMachineTest {
     public void tearDown() {
         mTestLooper.dispatchAll();
         mHeadsetService.cleanup();
-        mHeadsetService = HeadsetService.getHeadsetService();
-        assertThat(mHeadsetService).isNull();
         // Clear classes that is spied on and has static life time
         HeadsetObjectsFactory.setInstanceForTesting(null);
         mBondedDevices.clear();
@@ -275,7 +280,6 @@ public class HeadsetServiceAndStateMachineTest {
     /** Test to verify that HeadsetService can be successfully started */
     @Test
     public void testGetHeadsetService() {
-        assertThat(HeadsetService.getHeadsetService()).isEqualTo(mHeadsetService);
         // Verify default connection and audio states
         BluetoothDevice device = getTestDevice(0);
         assertThat(mHeadsetService.getConnectionState(device)).isEqualTo(STATE_DISCONNECTED);
@@ -302,6 +306,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mTestLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
         verifyConnectionStateIntent(device, STATE_CONNECTING, STATE_DISCONNECTED);
@@ -343,6 +348,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mTestLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
         verifyConnectionStateIntent(device, STATE_CONNECTING, STATE_DISCONNECTED);
@@ -387,6 +393,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mTestLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
         verify(mNativeInterface).connectHfp(device);
@@ -1804,13 +1811,7 @@ public class HeadsetServiceAndStateMachineTest {
     public void testHfpOnlyHandoverToLeAudioAfterScoDisconnect() {
         BluetoothDevice device = getTestDevice(0);
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            assertThat(mHeadsetService.mFactory).isNotNull();
-            mHeadsetService.mFactory = mServiceFactory;
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
         List<BluetoothDevice> activeDeviceList = new ArrayList<>();
@@ -1896,13 +1897,7 @@ public class HeadsetServiceAndStateMachineTest {
     public void testStopVoiceRecognitionBeforeStop_returnsFalse() {
         BluetoothDevice device = getTestDevice(0);
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            assertThat(mHeadsetService.mFactory).isNotNull();
-            mHeadsetService.mFactory = mServiceFactory;
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
         List<BluetoothDevice> activeDeviceList = new ArrayList<>();
@@ -1931,13 +1926,7 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice device = getTestDevice(0);
         doReturn(false).when(mNativeInterface).isVoiceRecognitionSupported(device);
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            assertThat(mHeadsetService.mFactory).isNotNull();
-            mHeadsetService.mFactory = mServiceFactory;
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
         List<BluetoothDevice> activeDeviceList = new ArrayList<>();
@@ -2330,6 +2319,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mTestLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
         verify(mActiveDeviceManager)
@@ -2386,6 +2376,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mTestLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
         verify(mActiveDeviceManager)
@@ -2448,6 +2439,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mTestLooper.getLooper(),
                         mHeadsetService,
                         mAdapterService,
+                        mStorage,
                         mNativeInterface,
                         mSystemInterface);
         verify(mActiveDeviceManager)

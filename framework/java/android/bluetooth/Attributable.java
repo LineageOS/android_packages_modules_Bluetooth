@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.AttributionSource;
@@ -26,15 +27,12 @@ import java.util.List;
  * Marker interface for a class which can have an {@link AttributionSource} assigned to it; these
  * are typically {@link android.os.Parcelable} classes which need to be updated after crossing
  * Binder transaction boundaries.
- *
- * @hide
  */
+@Hide
 public interface Attributable {
-    /** @hide */
     @SuppressWarnings("AmbiguousMethodReference")
     void setAttributionSource(@NonNull AttributionSource source);
 
-    /** @hide */
     @SuppressWarnings("AmbiguousMethodReference")
     static @Nullable <T extends Attributable> T setAttributionSource(
             @Nullable T attributable, @NonNull AttributionSource source) {
@@ -44,7 +42,6 @@ public interface Attributable {
         return attributable;
     }
 
-    /** @hide */
     static @Nullable <T extends Attributable> List<T> setAttributionSource(
             @Nullable List<T> attributableList, @NonNull AttributionSource source) {
         if (attributableList != null) {

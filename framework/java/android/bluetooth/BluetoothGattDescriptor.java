@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -67,40 +68,20 @@ public class BluetoothGattDescriptor implements Parcelable {
     /** Descriptor permission: Allow signed write operations with person-in-the-middle protection */
     public static final int PERMISSION_WRITE_SIGNED_MITM = 0x100;
 
-    /**
-     * The UUID of this descriptor.
-     *
-     * @hide
-     */
-    protected UUID mUuid;
+    /** The UUID of this descriptor. */
+    @Hide protected UUID mUuid;
 
-    /**
-     * Instance ID for this descriptor.
-     *
-     * @hide
-     */
-    @UnsupportedAppUsage protected int mInstance;
+    /** Instance ID for this descriptor. */
+    @Hide @UnsupportedAppUsage protected int mInstance;
 
-    /**
-     * Permissions for this descriptor
-     *
-     * @hide
-     */
-    protected int mPermissions;
+    /** Permissions for this descriptor */
+    @Hide protected int mPermissions;
 
-    /**
-     * Back-reference to the characteristic this descriptor belongs to.
-     *
-     * @hide
-     */
-    @UnsupportedAppUsage protected BluetoothGattCharacteristic mCharacteristic;
+    /** Back-reference to the characteristic this descriptor belongs to. */
+    @Hide @UnsupportedAppUsage protected BluetoothGattCharacteristic mCharacteristic;
 
-    /**
-     * The value for this descriptor.
-     *
-     * @hide
-     */
-    protected byte[] mValue;
+    /** The value for this descriptor. */
+    @Hide protected byte[] mValue;
 
     /**
      * Create a new BluetoothGattDescriptor.
@@ -124,7 +105,7 @@ public class BluetoothGattDescriptor implements Parcelable {
         initDescriptor(characteristic, uuid, instance, permissions);
     }
 
-    /** @hide */
+    @Hide
     public BluetoothGattDescriptor(UUID uuid, int instance, int permissions) {
         initDescriptor(null, uuid, instance, permissions);
     }
@@ -176,11 +157,8 @@ public class BluetoothGattDescriptor implements Parcelable {
         return mCharacteristic;
     }
 
-    /**
-     * Set the back-reference to the associated characteristic
-     *
-     * @hide
-     */
+    /** Set the back-reference to the associated characteristic */
+    @Hide
     @UnsupportedAppUsage
     /*package*/ void setCharacteristic(BluetoothGattCharacteristic characteristic) {
         mCharacteristic = characteristic;
@@ -203,18 +181,15 @@ public class BluetoothGattDescriptor implements Parcelable {
      * to distinguish between descriptors.
      *
      * @return Instance ID of this descriptor
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public int getInstanceId() {
         return mInstance;
     }
 
-    /**
-     * Force the instance ID.
-     *
-     * @hide
-     */
+    /** Force the instance ID. */
+    @Hide
     @RequiresNoPermission
     public void setInstanceId(int instanceId) {
         mInstance = instanceId;

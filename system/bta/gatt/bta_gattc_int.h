@@ -437,6 +437,7 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda);
 tBTA_GATTC_SERV* bta_gattc_find_scb_by_cid(tCONN_ID conn_id);
 tBTA_GATTC_CLCB* bta_gattc_find_int_conn_clcb(tBTA_GATTC_DATA* p_msg);
 tBTA_GATTC_CLCB* bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA* p_msg);
+tBTA_GATTC_RCB* bta_gattc_get_regcb_by_notification_handle(uint16_t handle, const RawAddress& bda);
 
 enum BtaEnqueuedResult_t {
   ENQUEUED_READY_TO_SEND,

@@ -44,9 +44,9 @@ bool IsDuringVoiceRecognition(RawAddress bd_addr);
  * Start up or shutdown the service
  *
  * @param b_enable true to enable, false to disable
- * @return BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+ * @return BtifStatus() on success, BtifStatus(FAIL) otherwise
  */
-bt_status_t ExecuteService(bool b_enable);
+BtStatus ExecuteService(bool b_enable);
 
 }  // namespace headset
 }  // namespace bluetooth

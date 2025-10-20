@@ -16,7 +16,9 @@
 
 package com.android.bluetooth.le_scan;
 
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.le.ScanFilter;
+import android.os.ParcelUuid;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -26,19 +28,19 @@ import java.util.UUID;
 
 /** Helper class used to manage MSFT Advertisement Monitors. */
 class MsftAdvMonitor {
-    /* Only pattern and address filtering are supported currently */
-    // private static final int MSFT_CONDITION_TYPE_ALL = 0x00;
-    private static final int MSFT_CONDITION_TYPE_PATTERNS = 0x01;
-    // private static final int MSFT_CONDITION_TYPE_UUID = 0x02;
-    // private static final int MSFT_CONDITION_TYPE_IRK = 0x03;
-    private static final int MSFT_CONDITION_TYPE_ADDRESS = 0x04;
+    /* IRK filtering is not yet supported */
+    public static final int MSFT_CONDITION_TYPE_INVALID = 0x00;
+    public static final int MSFT_CONDITION_TYPE_PATTERNS = 0x01;
+    public static final int MSFT_CONDITION_TYPE_UUID = 0x02;
+    // public static final int MSFT_CONDITION_TYPE_IRK = 0x03;
+    public static final int MSFT_CONDITION_TYPE_ADDRESS = 0x04;
 
     // Hardcoded values taken from CrOS defaults
     private static final byte RSSI_THRESHOLD_HIGH = (byte) 0xBF; // 191
     private static final byte RSSI_THRESHOLD_LOW = (byte) 0xB0; // 176
     private static final byte RSSI_THRESHOLD_LOW_TIME_INTERVAL = (byte) 0x28; // 40s
     private static final byte RSSI_SAMPLING_PERIOD = (byte) 0x05; // 500ms
-    private static final int FILTER_PATTERN_START_POSITION = (byte) 0x00;
+    private static final byte FILTER_PATTERN_START_POSITION = (byte) 0x00;
 
     static class Monitor {
         public byte rssi_threshold_high;
@@ -73,6 +75,10 @@ class MsftAdvMonitor {
         }
     }
 
+    static class Uuid {
+        public byte[] uuid;
+    }
+
     static class Address {
         byte addr_type;
         String bd_addr;
@@ -80,21 +86,32 @@ class MsftAdvMonitor {
 
     private final Monitor mMonitor = new Monitor();
     private final ArrayList<Pattern> mPatterns = new ArrayList<>();
+    private final Uuid mUuid = new Uuid();
     private final Address mAddress = new Address();
 
     // Constructor that converts an APCF-friendly filter to an MSFT-friendly format
     MsftAdvMonitor(ScanFilter filter) {
+        mMonitor.condition_type = MSFT_CONDITION_TYPE_INVALID;
+
         // Hardcoded values taken from CrOS defaults
         mMonitor.rssi_threshold_high = RSSI_THRESHOLD_HIGH;
         mMonitor.rssi_threshold_low = RSSI_THRESHOLD_LOW;
         mMonitor.rssi_threshold_low_time_interval = RSSI_THRESHOLD_LOW_TIME_INTERVAL;
         mMonitor.rssi_sampling_period = RSSI_SAMPLING_PERIOD;
-        mMonitor.condition_type = MSFT_CONDITION_TYPE_PATTERNS;
 
         if (filter.getDeviceAddress() != null) {
             mMonitor.condition_type = MSFT_CONDITION_TYPE_ADDRESS;
+
             mAddress.addr_type = (byte) filter.getAddressType();
             mAddress.bd_addr = filter.getDeviceAddress();
+            return;
+        }
+
+        if (filter.getServiceUuid() != null) {
+            mMonitor.condition_type = MSFT_CONDITION_TYPE_UUID;
+
+            mUuid.uuid =
+                    BluetoothUuid.uuidToBytes(new ParcelUuid(filter.getServiceUuid().getUuid()));
             return;
         }
 
@@ -102,14 +119,7 @@ class MsftAdvMonitor {
             Pattern pattern = new Pattern();
             pattern.ad_type = (byte) 0x16; // Bluetooth Core Spec Part A, Section 1
             pattern.start_byte = FILTER_PATTERN_START_POSITION;
-
-            // Extract the 16-bit UUID (third and fourth bytes) from the 128-bit
-            // UUID in reverse endianness
-            UUID uuid = filter.getServiceDataUuid().getUuid();
-            ByteBuffer bb = ByteBuffer.allocate(16); // 16 byte (128 bit) UUID
-            bb.putLong(uuid.getMostSignificantBits());
-            bb.putLong(uuid.getLeastSignificantBits());
-            pattern.pattern = new byte[] {bb.get(3), bb.get(2)};
+            pattern.pattern = getUuid16Bit(filter.getServiceDataUuid().getUuid());
 
             mPatterns.add(pattern);
         }
@@ -121,6 +131,7 @@ class MsftAdvMonitor {
             pattern.ad_type = (byte) filter.getAdvertisingDataType();
             pattern.start_byte = FILTER_PATTERN_START_POSITION;
             pattern.pattern = filter.getAdvertisingData();
+
             mPatterns.add(pattern);
         }
 
@@ -129,7 +140,12 @@ class MsftAdvMonitor {
             pattern.ad_type = (byte) 0x09; // Assigned Numbers Document, Section 2.3
             pattern.start_byte = FILTER_PATTERN_START_POSITION;
             pattern.pattern = filter.getDeviceName().getBytes();
+
             mPatterns.add(pattern);
+        }
+
+        if (mPatterns.size() > 0) {
+            mMonitor.condition_type = MSFT_CONDITION_TYPE_PATTERNS;
         }
     }
 
@@ -141,8 +157,21 @@ class MsftAdvMonitor {
         return mPatterns.toArray(new Pattern[mPatterns.size()]);
     }
 
+    Uuid getUuid() {
+        return mUuid;
+    }
+
     Address getAddress() {
         return mAddress;
+    }
+
+    private static byte[] getUuid16Bit(UUID uuid) {
+        // Extract the 16-bit UUID (third and fourth bytes) from the 128-bit
+        // UUID in reverse endianness
+        ByteBuffer bb = ByteBuffer.allocate(16); // 16 byte (128 bit) UUID
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        return new byte[] {bb.get(3), bb.get(2)};
     }
 
     private static boolean dataMaskIsEmpty(byte[] mask) {

@@ -16,7 +16,7 @@ then
     exit 1;
 fi
 
-if ! hash btsnooz.py 2>/dev/null;
+if ! hash "${BTSNOOZ}" 2>/dev/null;
 then
     echo "Please make sure btsnooz.py is in your path before running."
     exit 2;

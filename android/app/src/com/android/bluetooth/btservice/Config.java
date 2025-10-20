@@ -30,6 +30,7 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
@@ -37,6 +38,7 @@ import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.le_audio.LeAudioBroadcast;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
@@ -47,6 +49,7 @@ import com.android.bluetooth.pbap.BluetoothPbapService;
 import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.tbs.TbsService;
+import com.android.bluetooth.vaps.VapsServerService;
 import com.android.bluetooth.vc.VolumeControlService;
 
 import java.util.Arrays;
@@ -82,6 +85,7 @@ public class Config {
         BluetoothProfile.CSIP_SET_COORDINATOR,
         BluetoothProfile.MCP_SERVER,
         BluetoothProfile.LE_CALL_CONTROL,
+        BluetoothProfile.VAPS_SERVER,
     };
 
     /**
@@ -135,7 +139,8 @@ public class Config {
                         VolumeControlService.isEnabled(), BluetoothProfile.VOLUME_CONTROL),
                 new ProfileConfig(LeAudioService.isEnabled(), BluetoothProfile.LE_AUDIO),
                 new ProfileConfig(
-                        LeAudioService.isBroadcastEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
+                        LeAudioBroadcast.isEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
+                new ProfileConfig(VapsServerService.isEnabled(), BluetoothProfile.VAPS_SERVER),
             };
 
     private Config() {}
@@ -153,8 +158,18 @@ public class Config {
         }
     }
 
+    public static boolean isProfileSupported(int profileId) {
+        for (ProfileConfig profile : PROFILE_SERVICES_AND_FLAGS) {
+            if (profileId == profile.mProfileId) {
+                return profile.mSupported;
+            }
+        }
+        Log.e(TAG, "isProfileSupported for unknown " + BluetoothProfile.getProfileName(profileId));
+        return false;
+    }
+
     static void init(Context ctx) {
-        if (LeAudioService.isBroadcastEnabled()) {
+        if (LeAudioBroadcast.isEnabled()) {
             final String leAudioSwitcherMode =
                     SystemProperties.get(LE_AUDIO_DYNAMIC_SWITCHER_MODE_PROPERTY, "none");
             if (leAudioSwitcherMode.equals("disabled")) {
@@ -207,16 +222,19 @@ public class Config {
         }
     }
 
-    static void setLeAudioProfileStatus(Boolean enable) {
+    private static void setLeAudioProfileStatus(Boolean enable) {
         setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, enable);
         setProfileEnabled(BluetoothProfile.HAP_CLIENT, enable);
         setProfileEnabled(BluetoothProfile.LE_AUDIO, enable);
         setProfileEnabled(BluetoothProfile.LE_CALL_CONTROL, enable);
         setProfileEnabled(BluetoothProfile.MCP_SERVER, enable);
         setProfileEnabled(BluetoothProfile.VOLUME_CONTROL, enable);
+        if (Flags.addProfileAsIntentExtra()) {
+            setProfileEnabled(BluetoothProfile.VAPS_SERVER, enable);
+        }
     }
 
-    static void setLeAudioBroadcastProfileStatus(Boolean enable) {
+    private static void setLeAudioBroadcastProfileStatus(Boolean enable) {
         setProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, enable);
         setProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST, enable);
     }
@@ -229,18 +247,6 @@ public class Config {
         return Arrays.stream(PROFILE_SERVICES_AND_FLAGS)
                 .filter(config -> config.mSupported)
                 .mapToInt(config -> config.mProfileId)
-                // LE_AUDIO_BROADCAST don't have an associated class
-                .filter(profileId -> profileId != BluetoothProfile.LE_AUDIO_BROADCAST)
                 .toArray();
-    }
-
-    static long getSupportedProfilesBitMask() {
-        long mask = 0;
-        for (ProfileConfig config : PROFILE_SERVICES_AND_FLAGS) {
-            if (config.mSupported) {
-                mask |= (1L << config.mProfileId);
-            }
-        }
-        return mask;
     }
 }

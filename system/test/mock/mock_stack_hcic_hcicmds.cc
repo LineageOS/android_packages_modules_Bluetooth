@@ -39,7 +39,6 @@ struct btsnd_hcic_add_SCO_conn btsnd_hcic_add_SCO_conn;
 struct btsnd_hcic_auth_request btsnd_hcic_auth_request;
 struct btsnd_hcic_create_conn_cancel btsnd_hcic_create_conn_cancel;
 struct btsnd_hcic_delete_stored_key btsnd_hcic_delete_stored_key;
-struct btsnd_hcic_enable_test_mode btsnd_hcic_enable_test_mode;
 struct btsnd_hcic_enhanced_accept_synchronous_connection
         btsnd_hcic_enhanced_accept_synchronous_connection;
 struct btsnd_hcic_enhanced_set_up_synchronous_connection
@@ -66,7 +65,6 @@ struct btsnd_hcic_rem_oob_reply btsnd_hcic_rem_oob_reply;
 struct btsnd_hcic_rmt_ext_features btsnd_hcic_rmt_ext_features;
 struct btsnd_hcic_rmt_ver_req btsnd_hcic_rmt_ver_req;
 struct btsnd_hcic_set_conn_encrypt btsnd_hcic_set_conn_encrypt;
-struct btsnd_hcic_set_event_filter btsnd_hcic_set_event_filter;
 struct btsnd_hcic_setup_esco_conn btsnd_hcic_setup_esco_conn;
 struct btsnd_hcic_sniff_mode btsnd_hcic_sniff_mode;
 struct btsnd_hcic_sniff_sub_rate btsnd_hcic_sniff_sub_rate;
@@ -121,10 +119,6 @@ void btsnd_hcic_create_conn_cancel(const RawAddress& dest) {
 void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr, bool delete_all_flag) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_delete_stored_key(bd_addr, delete_all_flag);
-}
-void btsnd_hcic_enable_test_mode(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_enable_test_mode();
 }
 void btsnd_hcic_enhanced_accept_synchronous_connection(const RawAddress& bd_addr,
                                                        enh_esco_params_t* p_params) {
@@ -230,12 +224,6 @@ void btsnd_hcic_rmt_ver_req(uint16_t handle) {
 void btsnd_hcic_set_conn_encrypt(uint16_t handle, bool enable) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_set_conn_encrypt(handle, enable);
-}
-void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type, uint8_t* filt_cond,
-                                 uint8_t filt_cond_len) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_set_event_filter(filt_type, filt_cond_type, filt_cond,
-                                                              filt_cond_len);
 }
 void btsnd_hcic_setup_esco_conn(uint16_t handle, uint32_t transmit_bandwidth,
                                 uint32_t receive_bandwidth, uint16_t max_latency, uint16_t voice,

@@ -36,8 +36,6 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -49,11 +47,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -65,7 +61,6 @@ import java.util.List;
  * Also it handles some Opp application level variables. It's a singleton got from
  * BluetoothOppManager.getInstance(context);
  */
-// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppManager {
     private static final String TAG = BluetoothOppManager.class.getSimpleName();
 
@@ -288,11 +283,6 @@ public class BluetoothOppManager {
         synchronized (BluetoothOppManager.this) {
             if (mInsertShareThreadNum > ALLOWED_INSERT_SHARE_THREAD_NUMBER) {
                 Log.e(TAG, "Too many shares user triggered concurrently!");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.OPP,
-                        BluetoothProtoEnums.BLUETOOTH_OPP_MANAGER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        0);
 
                 // Notice user
                 Intent in = new Intent(mContext, BluetoothOppBtErrorActivity.class);
@@ -371,11 +361,6 @@ public class BluetoothOppManager {
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             if (mRemoteDevice == null) {
                 Log.e(TAG, "Target bt device is null!");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.OPP,
-                        BluetoothProtoEnums.BLUETOOTH_OPP_MANAGER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        1);
                 return;
             }
             final var adapterService = AdapterService.deprecatedGetAdapterService();

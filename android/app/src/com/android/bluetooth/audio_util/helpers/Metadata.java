@@ -23,7 +23,7 @@ import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
 import android.os.Bundle;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.util.Text;
 
 import java.util.Objects;
 
@@ -78,12 +78,7 @@ public class Metadata implements Cloneable {
         if (!Objects.equals(numTracks, m.numTracks)) return false;
         if (!Objects.equals(genre, m.genre)) return false;
         if (!Objects.equals(duration, m.duration)) return false;
-        // Actual image comparisons have shown to be very expensive. Since it's rare that
-        // an application changes the cover artwork between multiple images once it's not
-        // null anymore, we just look for changes between "something" and "nothing".
-        if ((image == null && m.image != null) || (image != null && m.image == null)) {
-            return false;
-        }
+        if (!Image.sameAs(image, m.image)) return false;
         return true;
     }
 
@@ -322,6 +317,6 @@ public class Metadata implements Cloneable {
         if (val == null) {
             return "";
         }
-        return Utils.truncateStringForUtf8Storage(val, MAX_ELEMENT_LEN);
+        return Text.truncateUtf8String(val, MAX_ELEMENT_LEN);
     }
 }

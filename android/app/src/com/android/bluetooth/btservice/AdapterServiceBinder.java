@@ -34,6 +34,7 @@ import static com.android.bluetooth.Utils.getUidPidString;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.PendingIntent;
 import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothAdapter;
@@ -46,6 +47,7 @@ import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.EncryptionStatus;
+import android.bluetooth.GattOffloadCapabilities;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothConnectionCallback;
@@ -53,6 +55,7 @@ import android.bluetooth.IBluetoothHciVendorSpecificCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.bluetooth.IBluetoothPreferredAudioProfilesCallback;
+import android.bluetooth.IBluetoothProfileCallback;
 import android.bluetooth.IBluetoothQualityReportReadyCallback;
 import android.bluetooth.IBluetoothSocketManager;
 import android.bluetooth.IncomingRfcommSocketInfo;
@@ -61,7 +64,6 @@ import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
@@ -288,7 +290,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         Log.i(TAG, "cancelDiscovery: from " + getUidPidString());
-        return service.getNative().cancelDiscovery();
+        return service.cancelDiscovery(source);
     }
 
     @Override
@@ -330,7 +332,10 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
 
-        return service.getDatabaseManager().getMostRecentlyConnectedDevices();
+        if (Flags.mainlineBetaStorage()) {
+            return service.getMostRecentlyConnectedDevices();
+        }
+        return service.getDatabaseManager().getMostRecentlyConnectedDevices(); // Migrating
     }
 
     @Override
@@ -385,6 +390,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean createBond(BluetoothDevice device, int transport, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "createBond")
@@ -408,6 +414,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             OobData remoteP192Data,
             OobData remoteP256Data,
             AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "createBondOutOfBand")
@@ -430,6 +437,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean cancelBondProcess(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "cancelBondProcess")
@@ -453,6 +461,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean removeBond(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "removeBond")
@@ -461,31 +470,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         Log.i(TAG, "removeBond: device=" + device + ", from " + getUidPidString());
-
-        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
-        if (deviceProp == null || deviceProp.getBondState() != BluetoothDevice.BOND_BONDED) {
-            Log.w(
-                    TAG,
-                    device
-                            + " cannot be removed since "
-                            + ((deviceProp == null)
-                                    ? "properties are empty"
-                                    : "bond state is " + deviceProp.getBondState()));
-            return false;
-        }
         service.logUserBondResponse(device, false, source);
-        service.getBondAttemptCallerInfo().remove(device.getAddress());
-        service.getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(device));
-        deviceProp.setBondingInitiatedLocally(false);
-
-        Message msg = service.getBondStateMachine().obtainMessage(BondStateMachine.REMOVE_BOND);
-        msg.obj = device;
-        service.getBondStateMachine().sendMessage(msg);
-        return true;
+        if (Flags.mainlineBetaStorage()) {
+            return service.syncPost(() -> service.removeBond(device), false);
+        }
+        return service.removeBond(device);
     }
 
     @Override
     public int getBondState(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         // don't check caller, may be called from system UI
         AdapterService service = getService();
         if (service == null
@@ -498,6 +492,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean isBondingInitiatedLocally(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         // don't check caller, may be called from system UI
         AdapterService service = getService();
         if (service == null
@@ -525,20 +520,21 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public long getSupportedProfiles(AttributionSource source) {
+    public int[] getSupportedProfiles(AttributionSource source) {
         AdapterService service = getService();
         if (service == null
                 || !checkConnectPermissionForDataDelivery(
                         service, source, TAG, "getSupportedProfiles")) {
-            return 0;
+            return new int[0];
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return Config.getSupportedProfilesBitMask();
+        return Config.getSupportedProfiles();
     }
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !checkConnectPermissionForDataDelivery(
@@ -552,6 +548,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public int getConnectionHandle(
             BluetoothDevice device, int transport, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getConnectionHandle")
@@ -566,6 +563,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean canBondWithoutDialog(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !checkConnectPermissionForDataDelivery(
@@ -580,6 +578,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public String getPackageNameOfBondingApplication(
             BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
 
         if (service == null
@@ -612,6 +611,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean setActiveDevice(
             BluetoothDevice device, @ActiveDeviceUse int profiles, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setActiveDevice")
@@ -652,18 +652,13 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int connectAllEnabledProfiles(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null || !service.isEnabled()) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "connectAllEnabledProfiles")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
-        }
-        if (device == null) {
-            throw new IllegalArgumentException("device cannot be null");
-        }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
         }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "connectAllEnabledProfiles")) {
@@ -682,11 +677,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                         BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__START,
                         source.getUid());
 
-        if (Flags.vcpOnMainLooper() || Flags.hapOnMainLooper()) {
+        if (Flags.hapOnMainLooper()) {
             return service.syncPost(
-                    () -> {
-                        return service.connectAllEnabledProfiles(device);
-                    },
+                    () -> service.connectAllEnabledProfiles(device),
                     BluetoothStatusCodes.ERROR_TIMEOUT);
         }
 
@@ -701,18 +694,13 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int disconnectAllEnabledProfiles(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "disconnectAllEnabledProfiles")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
-        }
-        if (device == null) {
-            throw new IllegalArgumentException("device cannot be null");
-        }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
         }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "disconnectAllEnabledProfiles")) {
@@ -725,11 +713,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 TAG,
                 "disconnectAllEnabledProfiles: device=" + device + ", from " + getUidPidString());
 
-        if (Flags.vcpOnMainLooper() || Flags.hapOnMainLooper()) {
+        if (Flags.hapOnMainLooper()) {
             return service.syncPost(
-                    () -> {
-                        return service.disconnectAllEnabledProfiles(device);
-                    },
+                    () -> service.disconnectAllEnabledProfiles(device),
                     BluetoothStatusCodes.ERROR_TIMEOUT);
         }
         try {
@@ -743,6 +729,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public String getRemoteName(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getRemoteName")
@@ -755,6 +742,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getRemoteType(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getRemoteType")
@@ -767,6 +755,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public String getRemoteAlias(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getRemoteAlias")
@@ -780,6 +769,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int setRemoteAlias(BluetoothDevice device, String name, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -808,6 +798,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getRemoteClass(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getRemoteClass")
@@ -820,6 +811,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public List<ParcelUuid> getRemoteUuids(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getRemoteUuids")
@@ -837,6 +829,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean fetchRemoteUuids(
             BluetoothDevice device, int transport, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "fetchRemoteUuids")
@@ -870,6 +863,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             int len,
             byte[] pinCode,
             AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setPin")
@@ -898,50 +892,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public boolean setPasskey(
-            BluetoothDevice device,
-            boolean accept,
-            int len,
-            byte[] passkey,
-            AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setPasskey")
-                || !checkConnectPermissionForDataDelivery(service, source, TAG, "setPasskey")) {
-            return false;
-        }
-
-        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
-        if (deviceProp == null || !deviceProp.isBonding()) {
-            Log.e(TAG, "setPasskey: device=" + device + ", not bonding");
-            return false;
-        }
-        if (passkey.length != len) {
-            android.util.EventLog.writeEvent(
-                    0x534e4554, "139287605", -1, "Passkey length mismatch");
-            return false;
-        }
-        service.logUserBondResponse(device, accept, source);
-        Log.i(
-                TAG,
-                "setPasskey: device="
-                        + device
-                        + ", accept="
-                        + accept
-                        + ", from "
-                        + getUidPidString());
-
-        return service.getNative()
-                .sspReply(
-                        getBytesFromAddress(device.getAddress()),
-                        AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY,
-                        accept,
-                        Utils.byteArrayToInt(passkey));
-    }
-
-    @Override
     public boolean setPairingConfirmation(
             BluetoothDevice device, boolean accept, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setPairingConfirmation")
@@ -977,6 +930,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean getSilenceMode(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getSilenceMode")
@@ -991,6 +945,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean setSilenceMode(
             BluetoothDevice device, boolean silence, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setSilenceMode")
@@ -1005,6 +960,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getPhonebookAccessPermission(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(
@@ -1020,6 +976,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean setPhonebookAccessPermission(
             BluetoothDevice device, int value, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(
@@ -1036,6 +993,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getMessageAccessPermission(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getMessageAccessPermission")
@@ -1050,6 +1008,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean setMessageAccessPermission(
             BluetoothDevice device, int value, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setMessageAccessPermission")
@@ -1065,6 +1024,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getSimAccessPermission(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getSimAccessPermission")
@@ -1079,6 +1039,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean setSimAccessPermission(
             BluetoothDevice device, int value, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setSimAccessPermission")
@@ -1094,7 +1055,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public void logL2capcocServerConnection(
-            BluetoothDevice device,
+            @Nullable BluetoothDevice device,
             int port,
             boolean isSecured,
             int result,
@@ -1137,6 +1098,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             long socketCreationTimeNanos,
             long socketCreationLatencyNanos,
             long socketConnectionTimeNanos) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return;
@@ -1154,6 +1116,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean sdpSearch(BluetoothDevice device, ParcelUuid uuid, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "sdpSearch")
@@ -1166,6 +1129,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getBatteryLevel(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getBatteryLevel")
@@ -1302,54 +1266,22 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public int isLeAudioSupported() {
-        AdapterService service = getService();
-        if (service == null) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
-        }
-
+    public boolean isLeAudioSupported() {
         Set<Integer> supportedProfileServices =
                 Arrays.stream(Config.getSupportedProfiles()).boxed().collect(Collectors.toSet());
         int[] leAudioUnicastProfiles = Config.getLeAudioUnicastProfiles();
 
-        if (Arrays.stream(leAudioUnicastProfiles).allMatch(supportedProfileServices::contains)) {
-            return BluetoothStatusCodes.FEATURE_SUPPORTED;
-        }
-
-        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+        return Arrays.stream(leAudioUnicastProfiles).allMatch(supportedProfileServices::contains);
     }
 
     @Override
-    public int isLeAudioBroadcastSourceSupported() {
-        AdapterService service = getService();
-        if (service == null) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
-        }
-
-        long supportBitMask = Config.getSupportedProfilesBitMask();
-        if ((supportBitMask & (1 << BluetoothProfile.LE_AUDIO_BROADCAST)) != 0) {
-            return BluetoothStatusCodes.FEATURE_SUPPORTED;
-        }
-
-        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    public boolean isLeAudioBroadcastSourceSupported() {
+        return Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST);
     }
 
     @Override
-    public int isLeAudioBroadcastAssistantSupported() {
-        AdapterService service = getService();
-        if (service == null) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
-        }
-
-        int[] supportedProfileServices = Config.getSupportedProfiles();
-
-        if (Arrays.stream(supportedProfileServices)
-                .anyMatch(
-                        profileId -> profileId == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)) {
-            return BluetoothStatusCodes.FEATURE_SUPPORTED;
-        }
-
-        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    public boolean isLeAudioBroadcastAssistantSupported() {
+        return Config.isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
     }
 
     @Override
@@ -1406,7 +1338,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 .post(
                         () ->
                                 service.getMetadataListeners()
-                                        .computeIfAbsent(device, k -> new RemoteCallbackList())
+                                        .computeIfAbsent(device, k -> new RemoteCallbackList<>())
                                         .register(listener));
         return true;
     }
@@ -1444,6 +1376,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public boolean setMetadata(
             BluetoothDevice device, int key, byte[] value, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setMetadata")
@@ -1457,6 +1390,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public byte[] getMetadata(BluetoothDevice device, int key, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getMetadata")
@@ -1471,6 +1405,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public int isRequestAudioPolicyAsSinkSupported(
             BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(
@@ -1487,6 +1422,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public int requestAudioPolicyAsSink(
             BluetoothDevice device, BluetoothSinkAudioPolicy policies, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -1504,6 +1440,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public BluetoothSinkAudioPolicy getRequestedAudioPolicyAsSink(
             BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(
@@ -1551,6 +1488,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "allowLowLatencyAudio")
@@ -1614,6 +1552,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public int setPreferredAudioProfiles(
             BluetoothDevice device, Bundle modeToProfileBundle, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -1621,37 +1560,27 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setPreferredAudioProfiles")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        requireNonNull(device);
         requireNonNull(modeToProfileBundle);
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
-        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
-            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "setPreferredAudioProfiles")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
         return service.setPreferredAudioProfiles(device, modeToProfileBundle);
     }
 
     @Override
     public Bundle getPreferredAudioProfiles(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return Bundle.EMPTY;
         }
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "getPreferredAudioProfiles")) {
-            return Bundle.EMPTY;
-        }
-        requireNonNull(device);
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
-        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
             return Bundle.EMPTY;
         }
         if (!checkConnectPermissionForDataDelivery(
@@ -1660,11 +1589,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+
+        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            return Bundle.EMPTY;
+        }
         return service.getPreferredAudioProfiles(device);
     }
 
     @Override
     public int notifyActiveDeviceChangeApplied(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -1672,19 +1606,15 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystem(TAG, "notifyActiveDeviceChangeApplied")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        requireNonNull(device);
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
-        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
-            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "notifyActiveDeviceChangeApplied")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
         return service.notifyActiveDeviceChangeApplied(device);
     }
 
@@ -1924,8 +1854,19 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
+    public void getProfileOneway(int profileId, IBluetoothProfileCallback callback) {
+        AdapterService service = getService();
+        if (service == null) {
+            return;
+        }
+
+        service.getProfile(profileId, callback);
+    }
+
+    @Override
     public int setActiveAudioDevicePolicy(
-            BluetoothDevice device, int activeAudioDevicePolicy, AttributionSource source) {
+            BluetoothDevice device, int policy, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -1933,21 +1874,26 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setActiveAudioDevicePolicy")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "setActiveAudioDevicePolicy")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager()
-                .setActiveAudioDevicePolicy(device, activeAudioDevicePolicy);
+
+        if (Flags.mainlineBetaStorage()) {
+            if (!Utils.arrayContains(service.getBondedDevices(), device)) {
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+            service.setActiveAudioPolicy(device, policy);
+            return BluetoothStatusCodes.SUCCESS;
+        }
+        return service.getDatabaseManager().setActiveAudioDevicePolicy(device, policy); // Migrating
     }
 
     @Override
     public int getActiveAudioDevicePolicy(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
@@ -1956,16 +1902,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             throw new IllegalStateException(
                     "Caller is not the system or part of the active/managed user");
         }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "getActiveAudioDevicePolicy")) {
             return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().getActiveAudioDevicePolicy(device);
+        if (Flags.mainlineBetaStorage()) {
+            return service.getActiveAudioPolicy(device);
+        }
+        return service.getDatabaseManager().getActiveAudioDevicePolicy(device); // Migrating
     }
 
     @Override
@@ -1979,16 +1925,45 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setMicrophonePreferredForCalls")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
         if (!checkConnectPermissionForDataDelivery(
                 service, source, TAG, "setMicrophonePreferredForCalls")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().setMicrophonePreferredForCalls(device, enabled);
+
+        if (Flags.mainlineBetaStorage()) {
+            if (!Utils.arrayContains(service.getBondedDevices(), device)) {
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+            service.setMicrophonePreferredForCalls(device, enabled);
+            return BluetoothStatusCodes.SUCCESS;
+        }
+        return service.getDatabaseManager() // Migrating
+                .setMicrophonePreferredForCalls(device, enabled);
+    }
+
+    @Override
+    public boolean isMicrophonePreferredForCalls(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
+        AdapterService service = getService();
+        if (service == null) {
+            return true;
+        }
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "isMicrophonePreferredForCalls")) {
+            throw new IllegalStateException(
+                    "Caller is not the system or part of the active/managed user");
+        }
+        if (!checkConnectPermissionForDataDelivery(
+                service, source, TAG, "isMicrophonePreferredForCalls")) {
+            return true;
+        }
+
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        if (Flags.mainlineBetaStorage()) {
+            return service.isMicrophonePreferredForCalls(device);
+        }
+        return service.getDatabaseManager().isMicrophonePreferredForCalls(device); // Migrating
     }
 
     @Override
@@ -2052,29 +2027,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public boolean isMicrophonePreferredForCalls(BluetoothDevice device, AttributionSource source) {
-        requireNonNull(device);
-        AdapterService service = getService();
-        if (service == null) {
-            return true;
-        }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "isMicrophonePreferredForCalls")) {
-            throw new IllegalStateException(
-                    "Caller is not the system or part of the active/managed user");
-        }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
-        if (!checkConnectPermissionForDataDelivery(
-                service, source, TAG, "isMicrophonePreferredForCalls")) {
-            return true;
-        }
-
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getDatabaseManager().isMicrophonePreferredForCalls(device);
-    }
-
-    @Override
     public boolean isLeCocSocketOffloadSupported(AttributionSource source) {
         AdapterService service = getService();
         if (service == null) {
@@ -2108,6 +2060,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getKeyMissingCount(BluetoothDevice device, AttributionSource source) {
+        requireNonNull(device);
         AdapterService service = getService();
         if (service == null) {
             return -1;
@@ -2115,9 +2068,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "getKeyMissingCount")) {
             throw new IllegalStateException(
                     "Caller is not the system or part of the active/managed user");
-        }
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
         }
         if (!checkConnectPermissionForDataDelivery(service, source, TAG, "getKeyMissingCount")) {
             return -1;
@@ -2129,10 +2079,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public EncryptionStatus.InnerParcel getEncryptionStatus(
             BluetoothDevice device, AttributionSource source, int transport) {
+        requireNonNull(device);
         AdapterService service = getService();
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
 
         if (service == null) {
             return null;
@@ -2150,10 +2098,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean isConnected(BluetoothDevice device, AttributionSource source, int transport) {
+        requireNonNull(device);
         AdapterService service = getService();
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("device cannot have an invalid address");
-        }
         if (service == null) {
             return false;
         }
@@ -2162,5 +2108,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         return service.isConnected(device, transport);
+    }
+
+    @Override
+    public GattOffloadCapabilities.InnerParcel getSupportedGattOffloadCapabilities(
+            AttributionSource source) {
+        AdapterService service = getService();
+        if (service == null) {
+            return null;
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        return service.getSupportedGattOffloadCapabilities();
     }
 }

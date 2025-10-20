@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package android.bluetooth
 
 import android.Manifest
@@ -22,7 +21,6 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -37,6 +35,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import io.grpc.Context as GrpcContext
 import io.grpc.Deadline
 import java.io.Closeable
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.UUID
@@ -53,7 +52,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,7 +77,7 @@ import pandora.l2cap.L2CAPProto.WaitDisconnectionRequest
 public class DckL2capTest() : Closeable {
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
     private val bluetoothAdapter = bluetoothManager.adapter
     private val openedGatts: MutableList<BluetoothGatt> = mutableListOf()
@@ -88,15 +89,12 @@ public class DckL2capTest() : Closeable {
     private lateinit var advertiseContext: GrpcContext.CancellableContext
     private lateinit var connectionResponse: WaitConnectionResponse
     private lateinit var host: Host
+    private var FIXED_PSM = 0xFD
 
-    @Rule(order = 0)
-    @JvmField
-    val mCheckFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    // Gives shell permissions during the test.
-    @Rule(order = 1)
-    @JvmField
-    val mPermissionRule =
+    @get:Rule(order = 1)
+    val permissionRule =
         AdoptShellPermissionsRule(
             InstrumentationRegistry.getInstrumentation().getUiAutomation(),
             Manifest.permission.BLUETOOTH_CONNECT,
@@ -104,11 +102,9 @@ public class DckL2capTest() : Closeable {
             Manifest.permission.BLUETOOTH_ADVERTISE,
         )
 
-    // Setup a Bumble Pandora device for the duration of the test.
-    @Rule(order = 2) @JvmField val mBumble = PandoraDevice()
+    @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    // Toggles Bluetooth.
-    @Rule(order = 3) @JvmField val EnableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     /** Wrapper for [BluetoothGatt] along with its [state] and [status] */
     data class GattState(val gatt: BluetoothGatt, val status: Int, val state: Int)
@@ -128,13 +124,13 @@ public class DckL2capTest() : Closeable {
 
         host = Host(context)
 
-        mBumble
+        bumble
             .dckBlocking()
             .withDeadline(Deadline.after(GRPC_TIMEOUT.inWholeMilliseconds, TimeUnit.MILLISECONDS))
             .register(Empty.getDefaultInstance())
 
         // Advertise the Bumble
-        advertiseContext = mBumble.advertise()
+        advertiseContext = bumble.advertise()
 
         // Connect to GATT (Generic Attribute Profile) on Bumble.
         val remoteDevice =
@@ -547,6 +543,125 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
+    @Ignore
+    @RequiresFlagsEnabled(Flags.FLAG_LECOC_WITH_FIXED_PSM)
+    /**
+     * Test:
+     * - Create insecure L2CAP Socket server on Phone with given Fixed PSM (0xFD)
+     * - Use Bumble as client and trigger connection to L2cap server on Phone
+     * - Ensure connection is established
+     * - Start reading on phone side
+     * - Trigger disconnect from Bumble side
+     * - close the socket connection from phone
+     * - Ensure L2cap connection is disconnected and Socket state is disconnected
+     */
+    fun testSendOverInsecureSocketAsServerWithFixedPsm() {
+        Log.d(TAG, "testSendOverInsecureSocketAsServerWithFixedPsm")
+
+        setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "8")
+        val remoteDevice =
+            bluetoothAdapter.getRemoteLeDevice(
+                Utils.BUMBLE_RANDOM_ADDRESS,
+                BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            )
+
+        val (l2capServer, bluetoothSocket, channel) =
+            l2capServerOnPhoneAndConnectionFromBumbleUsingSocketSettingsUtil(
+                false,
+                false,
+                FIXED_PSM,
+            )
+
+        Log.d(TAG, "testSendOverInsecureSocketAsServerWithFixedPsm: psm " + l2capServer.psm)
+        assertThat(l2capServer.psm).isEqualTo(FIXED_PSM)
+        Log.d(TAG, "testSendOverEncryptedOnlySocketAsServer: send data from Bumble to Phone")
+        sendDataFromPhoneToBumbleAndVerifyUtil(bluetoothSocket, channel)
+        // disconnect from local
+        disconnectSocketAndWaitForDisconnectUtil(bluetoothSocket, channel)
+        assertThat((bluetoothSocket).isConnected()).isFalse()
+
+        l2capServer.close()
+
+        setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "0")
+        Log.d(TAG, "testSendOverInsecureSocketAsServerWithFixedPsm: done")
+    }
+
+    @Test
+    @Ignore
+    @RequiresFlagsEnabled(Flags.FLAG_LECOC_WITH_FIXED_PSM)
+    /**
+     * Test:
+     * - Create insecure L2CAP Socket server on Phone with given Fixed PSM (0xFD)
+     * - Use Bumble as client and trigger connection to L2cap server on Phone
+     * - Ensure connection is established
+     * - Try to host another L2CAP socket server on Phone on the same PSM(0xFD) again
+     * - Ensure Socket server creation fails with exception
+     * - Close the socket server created
+     */
+    fun testServerWithFixedPsmWhenAlreadyReserved() {
+        Log.d(TAG, "testServerWithFixedPsmWhenAlreadyReserved")
+
+        setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "8")
+        val remoteDevice =
+            bluetoothAdapter.getRemoteLeDevice(
+                Utils.BUMBLE_RANDOM_ADDRESS,
+                BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            )
+
+        val (l2capServer, bluetoothSocket, channel) =
+            l2capServerOnPhoneAndConnectionFromBumbleUsingSocketSettingsUtil(
+                false,
+                false,
+                FIXED_PSM,
+            )
+
+        Log.d(TAG, "testServerWithFixedPsmWhenAlreadyReserved: psm " + l2capServer.psm)
+        assertThat(l2capServer.psm).isEqualTo(FIXED_PSM)
+        // Create another Server with Same L2cap Fixed PSM
+        assertThrows(IOException::class.java) {
+            val (l2capServer1, bluetoothSocket1, channel1) =
+                l2capServerOnPhoneAndConnectionFromBumbleUsingSocketSettingsUtil(
+                    false,
+                    false,
+                    FIXED_PSM,
+                )
+        }
+
+        l2capServer.close()
+        setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "0")
+        Log.d(TAG, "testServerWithFixedPsmWhenAlreadyReserved: done")
+    }
+
+    @Test
+    @Ignore
+    @RequiresFlagsEnabled(Flags.FLAG_LECOC_WITH_FIXED_PSM)
+    /**
+     * Test:
+     * - Create insecure L2CAP Socket server on Phone with given Fixed invalid PSM (0x88, which is
+     *   not in the valid fixed PSM range)
+     * - Ensure SOcket server creation fails with exception
+     * - Close the socket server created
+     */
+    fun testServerWithInvalidFixedPsm() {
+        Log.d(TAG, "testServerWithInvalidFixedPsm")
+        setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "8")
+        val remoteDevice =
+            bluetoothAdapter.getRemoteLeDevice(
+                Utils.BUMBLE_RANDOM_ADDRESS,
+                BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            )
+        val (l2capServer, bluetoothSocket, channel) =
+            l2capServerOnPhoneAndConnectionFromBumbleUsingSocketSettingsUtil(false, false, 0x88)
+
+        Log.d(TAG, "testServerWithInvalidFixedPsm: psm " + l2capServer.psm)
+        assertThat(l2capServer.psm).isNotEqualTo(FIXED_PSM)
+
+        l2capServer.close()
+        setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "0")
+        Log.d(TAG, "testServerWithInvalidFixedPsm: done")
+    }
+
+    @Test
     @RequiresFlagsEnabled(Flags.FLAG_DONOT_MANDATE_AUTH_ALONG_WITH_ENCRYPTION)
     /**
      * Test:
@@ -811,14 +926,14 @@ public class DckL2capTest() : Closeable {
             bluetoothSocket.close()
         } else {
             val disconnectRequest = DisconnectRequest.newBuilder().setChannel(channel).build()
-            val disconnectResponse = mBumble.l2capBlocking().disconnect(disconnectRequest)
+            val disconnectResponse = bumble.l2capBlocking().disconnect(disconnectRequest)
             assertThat(disconnectResponse.hasSuccess()).isTrue()
         }
         Log.d(TAG, "disconnectSocketAndWaitForDisconnectUtil: waitDisconnection")
         val waitDisconnectionRequest =
             WaitDisconnectionRequest.newBuilder().setChannel(channel).build()
         val disconnectionResponse =
-            mBumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
+            bumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
         assertThat(disconnectionResponse.hasSuccess()).isTrue()
     }
 
@@ -831,7 +946,7 @@ public class DckL2capTest() : Closeable {
         val waitDisconnectionRequest =
             WaitDisconnectionRequest.newBuilder().setChannel(channel).build()
         val disconnectionResponse =
-            mBumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
+            bumble.l2capBlocking().waitDisconnection(waitDisconnectionRequest)
         assertThat(disconnectionResponse.hasSuccess()).isTrue()
     }
 
@@ -854,10 +969,12 @@ public class DckL2capTest() : Closeable {
     private fun l2capServerOnPhoneAndConnectionFromBumbleUsingSocketSettingsUtil(
         isAuthenticated: Boolean = false,
         isEncrypted: Boolean = false,
+        psm: Int = -1,
     ): SocketServerDetails {
         var bluetoothSocket: BluetoothSocket
         val channel: Channel
-        val l2capServer = createListeningChannelUsingSocketSettings(isEncrypted, isAuthenticated)
+        val l2capServer =
+            createListeningChannelUsingSocketSettings(isEncrypted, isAuthenticated, psm)
         val socketFlow = flow { emit(l2capServer.accept()) }
         val connectResponse = createAndConnectL2capChannelWithBumble(l2capServer.psm)
         runBlocking {
@@ -875,7 +992,7 @@ public class DckL2capTest() : Closeable {
         val sampleData = "cafe-baguette".toByteArray()
 
         val receiveObserver = StreamObserverSpliterator<ReceiveRequest, ReceiveResponse>()
-        mBumble
+        bumble
             .l2cap()
             .receive(ReceiveRequest.newBuilder().setChannel(channel).build(), receiveObserver)
 
@@ -898,7 +1015,7 @@ public class DckL2capTest() : Closeable {
     ) {
         val sendRequest = SendRequest.newBuilder().setChannel(channel).setData(data).build()
         Log.d(TAG, "sendDataFromBumbleToPhoneUtil: Send data from Bumble to Android")
-        mBumble.l2capBlocking().send(sendRequest)
+        bumble.l2capBlocking().send(sendRequest)
 
         // delay ensures data is arrived at the server side
         Thread.sleep(waitTime)
@@ -915,7 +1032,7 @@ public class DckL2capTest() : Closeable {
 
         val sendRequest = SendRequest.newBuilder().setChannel(channel).setData(sampleData).build()
         Log.d(TAG, "sendDataFromBumbleToPhoneAndVerifyUtil: Send data from Bumble to Android")
-        mBumble.l2capBlocking().send(sendRequest)
+        bumble.l2capBlocking().send(sendRequest)
 
         // delay ensures data is arrived at the server side
         Thread.sleep(waitTime)
@@ -948,7 +1065,7 @@ public class DckL2capTest() : Closeable {
                 .setConnection(connection)
                 .setLeCreditBased(leCreditBased)
                 .build()
-        return mBumble.l2capBlocking().connect(connectRequest)
+        return bumble.l2capBlocking().connect(connectRequest)
     }
 
     private fun readDckSpsm(gatt: BluetoothGatt) = runBlocking {
@@ -991,24 +1108,36 @@ public class DckL2capTest() : Closeable {
                 .setLeCreditBased(leCreditBased)
                 .build()
         Log.i(TAG, "Sending request to Bumble to create server and wait for connection")
-        return mBumble.l2capBlocking().waitConnection(waitConnectionRequest)
+        return bumble.l2capBlocking().waitConnection(waitConnectionRequest)
     }
 
     private fun createListeningChannelUsingSocketSettings(
         isEncrypted: Boolean = false,
         isAuthenticated: Boolean = false,
+        psm: Int = -1,
     ): BluetoothServerSocket {
+        Log.i(TAG, "psm: " + psm)
         var socket: BluetoothServerSocket
+        var socketSettings: BluetoothSocketSettings
 
-        socket =
-            bluetoothAdapter.listenUsingSocketSettings(
+        if (psm != -1) {
+            socketSettings =
+                BluetoothSocketSettings.Builder()
+                    .setSocketType(BluetoothSocket.TYPE_LE)
+                    .setEncryptionRequired(isEncrypted)
+                    .setAuthenticationRequired(isAuthenticated)
+                    .setL2capPsm(psm)
+                    .build()
+        } else {
+            socketSettings =
                 BluetoothSocketSettings.Builder()
                     .setSocketType(BluetoothSocket.TYPE_LE)
                     .setEncryptionRequired(isEncrypted)
                     .setAuthenticationRequired(isAuthenticated)
                     .build()
-            )
+        }
 
+        socket = bluetoothAdapter.listenUsingSocketSettings(socketSettings)
         return socket
     }
 
@@ -1049,6 +1178,19 @@ public class DckL2capTest() : Closeable {
         }
         assertThat(socket.getConnectionType()).isEqualTo(expectedType)
         return socket
+    }
+
+    private fun setSystemProperty(key: String, value: String) {
+        /* Setting system property is not possible from Bumble as It doesn't have
+         * all permissions. This property needed only for 'Fixed PSM' testcases
+         * (testSendOverInsecureSocketAsServerWithFixedPsm,
+         *  testServerWithFixedPsmWhenAlreadyReserved & testServerWithInvalidFixedPsm).
+         * Currently these testcases are marked as Ignore & It will need to be run manually
+         * by setting the property from command prompt.
+         * TODO: find an alternative to set this property so that fixed PSM tests
+         * can be enabled as part of pre-submit.
+         */
+        // SystemProperties.set(key, value)
     }
 
     private fun connectGatt(remoteDevice: BluetoothDevice): BluetoothGatt {
@@ -1110,6 +1252,7 @@ public class DckL2capTest() : Closeable {
         private const val INITIAL_CREDITS = 256
         private const val MTU = 2048 // Default Maximum Transmission Unit.
         private const val MPS = 2048 // Default Maximum payload size.
+        private const val PROPERTY_FIXED_PSM_SLOTS = "bluetooth.ble.lecoc.fixed_psm_slots.config"
 
         private val GRPC_TIMEOUT = 10.seconds
         private val CHANNEL_READ_TIMEOUT = 30.seconds

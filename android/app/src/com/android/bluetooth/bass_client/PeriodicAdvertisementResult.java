@@ -24,33 +24,38 @@ public class PeriodicAdvertisementResult {
     private static final String TAG = PeriodicAdvertisementResult.class.getSimpleName();
 
     private final BluetoothDevice mDevice;
-    private int mAddressType;
     private int mAdvSid;
     private int mSyncHandle;
     private int mPAInterval;
     private int mBroadcastId;
+    private int mRssi;
     private boolean mIsNotified;
     private PublicBroadcastData mPbData;
     private String mBroadcastName;
 
     PeriodicAdvertisementResult(
             BluetoothDevice device,
-            int addressType,
             int syncHandle,
             int advSid,
             int paInterval,
             int broadcastId,
+            int rssi,
             PublicBroadcastData pbData,
             String broadcastName) {
         mDevice = device;
-        mAddressType = addressType;
         mAdvSid = advSid;
         mSyncHandle = syncHandle;
         mPAInterval = paInterval;
         mBroadcastId = broadcastId;
+        mRssi = rssi;
         mIsNotified = false;
         mPbData = pbData;
         mBroadcastName = broadcastName;
+    }
+
+    /** Get Device */
+    public BluetoothDevice getDevice() {
+        return mDevice;
     }
 
     /** Update Sync handle */
@@ -86,16 +91,6 @@ public class PeriodicAdvertisementResult {
         return mAdvSid;
     }
 
-    /** Update address type */
-    public void updateAddressType(int addressType) {
-        mAddressType = addressType;
-    }
-
-    /** Get address type */
-    public int getAddressType() {
-        return mAddressType;
-    }
-
     /** Update Adv interval */
     public void updateAdvInterval(int advInterval) {
         mPAInterval = advInterval;
@@ -114,6 +109,16 @@ public class PeriodicAdvertisementResult {
     /** Get broadcast ID */
     public int getBroadcastId() {
         return mBroadcastId;
+    }
+
+    /** Update rssi */
+    public void updateRssi(int rssi) {
+        mRssi = rssi;
+    }
+
+    /** Get rssi */
+    public int getRssi() {
+        return mRssi;
     }
 
     /** Update public broadcast data */
@@ -140,11 +145,11 @@ public class PeriodicAdvertisementResult {
     public void print() {
         log("-- PeriodicAdvertisementResult --");
         log("mDevice:" + mDevice);
-        log("mAddressType:" + mAddressType);
         log("mAdvSid:" + mAdvSid);
         log("mSyncHandle:" + mSyncHandle);
         log("mPAInterval:" + mPAInterval);
         log("mBroadcastId:" + mBroadcastId);
+        log("mRssi:" + mRssi);
         log("mIsNotified: " + mIsNotified);
         log("mBroadcastName: " + mBroadcastName);
         log("-- END: PeriodicAdvertisementResult --");

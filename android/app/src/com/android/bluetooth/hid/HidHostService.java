@@ -48,9 +48,9 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ConnectableProfile;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,9 +98,6 @@ public class HidHostService extends ConnectableProfile {
         }
     }
 
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static HidHostService sHidHostService;
-
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
@@ -126,6 +123,8 @@ public class HidHostService extends ConnectableProfile {
 
     public static final int STATE_ACCEPTING = STATE_DISCONNECTING + 1;
 
+    private static final int BTHH_ERR_TOD_UNSPT = 10; // Remote device not supported
+
     public HidHostService(AdapterService adapterService) {
         this(adapterService, null);
     }
@@ -133,10 +132,11 @@ public class HidHostService extends ConnectableProfile {
     @VisibleForTesting
     HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
         super(BluetoothProfile.HID_HOST, requireNonNull(adapterService));
+        var nativeCallback = new HidHostNativeCallback(this);
         mNativeInterface =
-                requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
+                requireNonNullElseGet(
+                        nativeInterface, () -> new HidHostNativeInterface(nativeCallback));
         mNativeInterface.init();
-        setHidHostService(this);
     }
 
     public static boolean isEnabled() {
@@ -144,7 +144,7 @@ public class HidHostService extends ConnectableProfile {
     }
 
     @Override
-    public IProfileServiceBinder initBinder() {
+    protected IProfileServiceBinder initBinder() {
         return new HidHostServiceBinder(this);
     }
 
@@ -162,8 +162,6 @@ public class HidHostService extends ConnectableProfile {
             }
             mInputDevices.clear();
         }
-        // TODO(b/72948646): this should be moved to stop()
-        setHidHostService(null);
     }
 
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
@@ -254,25 +252,6 @@ public class HidHostService extends ConnectableProfile {
         }
 
         return STATE_DISCONNECTED;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized HidHostService getHidHostService() {
-        if (sHidHostService == null) {
-            Log.w(TAG, "getHidHostService(): service is null");
-            return null;
-        }
-        if (!sHidHostService.isAvailable()) {
-            Log.w(TAG, "getHidHostService(): service is not available ");
-            return null;
-        }
-        return sHidHostService;
-    }
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static synchronized void setHidHostService(HidHostService instance) {
-        Log.d(TAG, "setHidHostService(): set to: " + instance);
-        sHidHostService = instance;
     }
 
     /**
@@ -541,6 +520,8 @@ public class HidHostService extends ConnectableProfile {
         BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
         int transport = msg.arg1;
         int state = msg.arg2;
+        Bundle data = msg.getData();
+        int status = data.getInt(BluetoothHidHost.EXTRA_STATUS);
         int prevState = getState(device, transport);
 
         InputDevice inputDevice = mInputDevices.get(device);
@@ -566,6 +547,17 @@ public class HidHostService extends ConnectableProfile {
             }
         }
 
+        if (Flags.hidDontReconnectOnUhidTimeout()
+                && state == STATE_DISCONNECTED
+                && status == BTHH_ERR_TOD_UNSPT) {
+            Log.w(
+                    TAG,
+                    "handleMessageConnectStateChanged: Disabling HID connection for unsupported"
+                            + " device "
+                            + device);
+            setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN);
+        }
+
         if (transport != getTransport(device)) {
             Log.w(
                     TAG,
@@ -583,7 +575,8 @@ public class HidHostService extends ConnectableProfile {
                         + (" device=" + device)
                         + (" transport=" + transport)
                         + (" newState=" + state)
-                        + (" prevState=" + prevState));
+                        + (" prevState=" + prevState)
+                        + (" status=" + status));
 
         // Process connection
         if (prevState == STATE_DISCONNECTED && state == STATE_CONNECTED) {
@@ -977,11 +970,15 @@ public class HidHostService extends ConnectableProfile {
         mHandler.sendMessage(msg);
     }
 
-    void onConnectStateChanged(byte[] address, int addressType, int transport, int state) {
+    void onConnectStateChanged(
+            byte[] address, int addressType, int transport, int state, int status) {
         Log.d(TAG, "onConnectStateChanged: state=" + state);
         Message msg = mHandler.obtainMessage(MESSAGE_CONNECT_STATE_CHANGED, address);
         msg.arg1 = transport;
         msg.arg2 = state;
+        Bundle data = new Bundle();
+        data.putInt(BluetoothHidHost.EXTRA_STATUS, status);
+        msg.setData(data);
         mHandler.sendMessage(msg);
     }
 
@@ -1029,12 +1026,6 @@ public class HidHostService extends ConnectableProfile {
 
         mInputDevices.put(device, inputDevice);
 
-        broadcastConnectionState(device, transport, prevState, newState);
-    }
-
-    // This method does not check for error condition (newState == prevState)
-    private void broadcastConnectionState(
-            BluetoothDevice device, int transport, int prevState, int newState) {
         // Notifying the connection state change of the profile before sending the intent for
         // connection state change, as it was causing a race condition, with the UI not being
         // updated with the correct connection state.

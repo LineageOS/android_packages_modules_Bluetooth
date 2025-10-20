@@ -45,8 +45,6 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
-import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
@@ -127,7 +125,7 @@ public class BondStateMachineTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+        return FlagsWrapper.progressionOf();
     }
 
     public BondStateMachineTest(FlagsWrapper flags) {
@@ -586,8 +584,7 @@ public class BondStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADAPTER_SERVICE_PROFILES_USE_OPTIONAL)
-    public void clearProfilePriority_whenAdapterServiceProfilesUseOptionalFlagOn_callsOptional() {
+    public void clearProfilePriority() {
         doReturn(Optional.of(mHidHostService)).when(mAdapterService).getHidHostService();
         doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
         // Random profile intentionally left out to test empty case
@@ -640,44 +637,6 @@ public class BondStateMachineTest {
         verify(mHapClientService, never()).setConnectionPolicy(any(), anyInt());
     }
 
-    @Test
-    @DisableFlags(Flags.FLAG_ADAPTER_SERVICE_PROFILES_USE_OPTIONAL)
-    public void clearProfilePriority_whenAdapterServiceProfilesUseOptionalFlagOff_callsStatic() {
-        // The following random profiles intentionally left out to test empty case: HidHostService
-        // A2dpService PbapClientService LeAudioService CsipSetCoordinatorService
-        // VolumeControlService HapClientService
-        // Additionally, their public static setters don't exist / are private.
-        doReturn(true).when(mHeadsetService).isAvailable();
-        doReturn(true).when(mHeadsetClientService).isAvailable();
-        doReturn(true).when(mA2dpSinkService).isAvailable();
-        HeadsetService.setHeadsetService(mHeadsetService);
-        HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
-        A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
-
-        mStateMachine.clearProfilePriority(mDevice);
-
-        InOrder inOrder = inOrder(mHeadsetService, mHeadsetClientService, mA2dpSinkService);
-
-        inOrder.verify(mHeadsetService)
-                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
-        inOrder.verify(mHeadsetClientService)
-                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
-        inOrder.verify(mA2dpSinkService)
-                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
-
-        verify(mHidHostService, never()).setConnectionPolicy(any(), anyInt());
-        verify(mA2dpService, never()).setConnectionPolicy(any(), anyInt());
-        verify(mPbapClientService, never()).setConnectionPolicy(any(), anyInt());
-        verify(mLeAudioService, never()).setConnectionPolicy(any(), anyInt());
-        verify(mCsipSetCoordinatorService, never()).setConnectionPolicy(any(), anyInt());
-        verify(mVolumeControlService, never()).setConnectionPolicy(any(), anyInt());
-        verify(mHapClientService, never()).setConnectionPolicy(any(), anyInt());
-
-        HeadsetService.setHeadsetService(null);
-        HeadsetClientService.setHeadsetClientService(null);
-        A2dpSinkService.setA2dpSinkService(null);
-    }
-
     private void testSendIntentCase(
             int oldState,
             int newState,
@@ -719,12 +678,17 @@ public class BondStateMachineTest {
             verifyBondStateChangeIntent(
                     broadcastOldState, broadcastNewState, intentArgument.getValue());
         } else {
-            verify(mAdapterService, times(mVerifyCount))
-                    .sendBroadcastAsUser(
-                            any(Intent.class),
-                            any(UserHandle.class),
-                            anyString(),
-                            any(Bundle.class));
+            if (Flags.onlyBroadcastToLocalUser()) {
+                verify(mAdapterService, times(mVerifyCount))
+                        .sendBroadcast(any(Intent.class), anyString(), any(Bundle.class));
+            } else {
+                verify(mAdapterService, times(mVerifyCount))
+                        .sendBroadcastAsUser(
+                                any(Intent.class),
+                                any(UserHandle.class),
+                                anyString(),
+                                any(Bundle.class));
+            }
         }
 
         if (shouldDelayMessageExist) {

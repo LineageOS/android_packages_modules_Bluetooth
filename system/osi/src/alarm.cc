@@ -249,7 +249,7 @@ void alarm_cancel(alarm_t* alarm) {
   {
     std::lock_guard<std::mutex> lock(alarms_mutex);
     local_mutex_ref = alarm->callback_mutex;
-    if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+    if (com_android_bluetooth_flags_set_ptr_null_after_free()) {
       log::assert_that(local_mutex_ref != nullptr, "assert failed: local_mutex_ref != nullptr");
     }
     alarm_cancel_internal(alarm);
@@ -324,7 +324,7 @@ static bool lazy_initialize(void) {
   // on those platforms, if we go to sleep with a timer armed, it will
   // continue counting during sleep. to prevent unwanted timer fires on
   // those platforms, use CLOCK_MONOTONIC and don't count up during sleep.
-  bool wakeup_supported = android::sysprop::bluetooth::hardware::wakeup_supported().value_or(true);
+  bool wakeup_supported = android::sysprop::bluetooth::Hardware::wakeup_supported().value_or(true);
   clockid_t alarm_clockid = wakeup_supported ? CLOCK_BOOTTIME_ALARM : CLOCK_MONOTONIC;
 
   std::lock_guard<std::mutex> lock(alarms_mutex);

@@ -436,8 +436,7 @@ static void initNative(JNIEnv* env, jobject object) {
 
   if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
       nullptr) {
-    log::error("Failed to allocate Global Ref for Volume control Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for Volume control Callbacks");
   }
 
   sVolumeControlInterface =
@@ -915,6 +914,7 @@ static jboolean setExtAudioInMuteNative(JNIEnv* env, jobject /* object */, jbyte
   return ret ? JNI_TRUE : JNI_FALSE;
 }
 
+// JNI functions defined in VolumeControlNativeInterface
 int register_com_android_bluetooth_vc(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "()V", reinterpret_cast<void*>(initNative)},
@@ -957,18 +957,15 @@ int register_com_android_bluetooth_vc(JNIEnv* env) {
            reinterpret_cast<void*>(setExtAudioInGainModeNative)},
           {"setExtAudioInMuteNative", "([BII)Z", reinterpret_cast<void*>(setExtAudioInMuteNative)},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/vc/VolumeControlNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/vc/VolumeControlNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  jclass jniVolumeControlNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/vc/VolumeControlNativeInterface");
-  sCallbacksField = env->GetFieldID(jniVolumeControlNativeInterfaceClass, "mNativeCallback",
-                                    "Lcom/android/bluetooth/vc/VolumeControlNativeCallback;");
-  env->DeleteLocalRef(jniVolumeControlNativeInterfaceClass);
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
+  // Client callback functions defined in VolumeControlNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
           {"onVolumeStateChanged", "(IZI[BZ)V", &method_onVolumeStateChanged},

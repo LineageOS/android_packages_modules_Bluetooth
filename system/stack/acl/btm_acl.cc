@@ -61,12 +61,12 @@
 #include "stack/acl/peer_packet_types.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_utils.h"
 #include "stack/btm/internal/btm_api.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/acl_hci_link_interface.h"
@@ -828,13 +828,17 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_numbe
   }
 
   bool ssp_supported = HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  bool secure_connections_supported = HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
+  bool host_secure_connections_supported =
+          HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
+  bool controller_secure_connections_supported =
+          HCI_SC_CTRLR_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[2]);
   bool role_switch_supported = HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
   bool br_edr_supported = !HCI_BREDR_NOT_SPT_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
   bool le_supported = HCI_LE_SPT_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]) &&
                       HCI_LE_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported, secure_connections_supported,
-                            role_switch_supported, br_edr_supported, le_supported);
+  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported, host_secure_connections_supported,
+                            controller_secure_connections_supported, role_switch_supported,
+                            br_edr_supported, le_supported);
 }
 
 /*******************************************************************************
@@ -1166,7 +1170,7 @@ void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
     return;
   }
 
-  btsnd_hcic_req_peer_sca(p->hci_handle);
+  btsnd_hcic_ble_req_peer_sca(p->hci_handle);
 }
 
 /*******************************************************************************
@@ -1859,14 +1863,14 @@ bool acl_peer_supports_ble_connection_subrating_host(const RawAddress& remote_bd
  ******************************************************************************/
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda, RawAddress& local_conn_addr,
                             tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
-  tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(remote_bda);
-  if (p_sec_rec == nullptr) {
+  BtmDevice* p_device = btm_find_dev(remote_bda);
+  if (p_device == nullptr) {
     log::warn("No matching known device {} in record", remote_bda);
     return;
   }
 
-  bluetooth::shim::ACL_ReadConnectionAddress(p_sec_rec->ble_hci_handle, local_conn_addr,
-                                             p_addr_type, ota_address);
+  bluetooth::shim::ACL_ReadConnectionAddress(p_device->ble_hci_handle, local_conn_addr, p_addr_type,
+                                             ota_address);
 }
 
 /*******************************************************************************
@@ -1923,13 +1927,13 @@ bool acl_is_switch_role_idle(const RawAddress& bd_addr, tBT_TRANSPORT transport)
  ******************************************************************************/
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr, RawAddress& conn_addr,
                                   tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
-  tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_addr);
-  if (p_sec_rec == nullptr) {
+  BtmDevice* p_device = btm_find_dev(pseudo_addr);
+  if (p_device == nullptr) {
     log::warn("No matching known device {} in record", pseudo_addr);
     return false;
   }
 
-  bluetooth::shim::ACL_ReadPeerConnectionAddress(p_sec_rec->ble_hci_handle, conn_addr, p_addr_type,
+  bluetooth::shim::ACL_ReadPeerConnectionAddress(p_device->ble_hci_handle, conn_addr, p_addr_type,
                                                  ota_address);
   return true;
 }

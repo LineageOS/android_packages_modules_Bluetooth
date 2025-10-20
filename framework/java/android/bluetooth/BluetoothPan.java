@@ -20,14 +20,13 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.TETHER_PRIVILEGED;
 import static android.annotation.SystemApi.Client.MODULE_LIBRARIES;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -62,9 +61,8 @@ import java.util.concurrent.Executor;
  * BluetoothAdapter#getProfileProxy} to get the BluetoothPan proxy object.
  *
  * <p>Each method is protected with its appropriate permission.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothPan implements BluetoothProfile {
     private static final String TAG = BluetoothPan.class.getSimpleName();
@@ -129,7 +127,7 @@ public final class BluetoothPan implements BluetoothProfile {
      */
     public static final String EXTRA_TETHERING_STATE = "android.bluetooth.extra.TETHERING_STATE";
 
-    /** @hide */
+    @Hide
     @IntDef({PAN_ROLE_NONE, LOCAL_NAP_ROLE, LOCAL_PANU_ROLE})
     @Retention(RetentionPolicy.SOURCE)
     public @interface LocalPanRole {}
@@ -142,7 +140,7 @@ public final class BluetoothPan implements BluetoothProfile {
     /** The local device is acting as a PAN User. */
     public static final int LOCAL_PANU_ROLE = 2;
 
-    /** @hide */
+    @Hide
     @IntDef({PAN_ROLE_NONE, REMOTE_NAP_ROLE, REMOTE_PANU_ROLE})
     @Retention(RetentionPolicy.SOURCE)
     public @interface RemotePanRole {}
@@ -151,9 +149,7 @@ public final class BluetoothPan implements BluetoothProfile {
 
     public static final int REMOTE_PANU_ROLE = 2;
 
-    /**
-     * @hide *
-     */
+    @Hide
     @IntDef({TETHERING_STATE_OFF, TETHERING_STATE_ON})
     @Retention(RetentionPolicy.SOURCE)
     public @interface TetheringState {}
@@ -162,31 +158,23 @@ public final class BluetoothPan implements BluetoothProfile {
 
     public static final int TETHERING_STATE_ON = 2;
 
-    /**
-     * Return codes for the connect and disconnect Bluez / Dbus calls.
-     *
-     * @hide
-     */
-    public static final int PAN_DISCONNECT_FAILED_NOT_CONNECTED = 1000;
+    /** Return codes for the connect and disconnect Bluez / Dbus calls. */
+    @Hide public static final int PAN_DISCONNECT_FAILED_NOT_CONNECTED = 1000;
 
-    /** @hide */
-    public static final int PAN_CONNECT_FAILED_ALREADY_CONNECTED = 1001;
+    @Hide public static final int PAN_CONNECT_FAILED_ALREADY_CONNECTED = 1001;
 
-    /** @hide */
-    public static final int PAN_CONNECT_FAILED_ATTEMPT_FAILED = 1002;
+    @Hide public static final int PAN_CONNECT_FAILED_ATTEMPT_FAILED = 1002;
 
-    /** @hide */
-    public static final int PAN_OPERATION_GENERIC_FAILURE = 1003;
+    @Hide public static final int PAN_OPERATION_GENERIC_FAILURE = 1003;
 
-    /** @hide */
-    public static final int PAN_OPERATION_SUCCESS = 1004;
+    @Hide public static final int PAN_OPERATION_SUCCESS = 1004;
 
     /**
      * Request class used by Tethering to notify that the interface is closed.
      *
      * @see #requestTetheredInterface
-     * @hide
      */
+    @Hide
     public class BluetoothTetheredInterfaceRequest implements TetheredInterfaceRequest {
         private IBluetoothPan mService;
         private final IBluetoothPanCallback mPanCallback;
@@ -230,9 +218,8 @@ public final class BluetoothPan implements BluetoothProfile {
     /**
      * Create a BluetoothPan proxy object for interacting with the local Bluetooth Service which
      * handles the Pan profile
-     *
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage
     /* package */ BluetoothPan(Context context, BluetoothAdapter adapter) {
         mAdapter = adapter;
@@ -241,25 +228,22 @@ public final class BluetoothPan implements BluetoothProfile {
         mService = null;
     }
 
-    /**
-     * Closes the connection to the service and unregisters callbacks
-     *
-     * @hide
-     */
+    /** Closes the connection to the service and unregisters callbacks */
+    @Hide
     @UnsupportedAppUsage
     public void close() {
         if (VDBG) log("close()");
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothPan.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -270,14 +254,14 @@ public final class BluetoothPan implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
         return mAdapter;
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         close();
@@ -293,8 +277,8 @@ public final class BluetoothPan implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -334,8 +318,8 @@ public final class BluetoothPan implements BluetoothProfile {
      *
      * @param device Remote Bluetooth Device
      * @return false on immediate error, true otherwise
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -365,8 +349,8 @@ public final class BluetoothPan implements BluetoothProfile {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -383,8 +367,7 @@ public final class BluetoothPan implements BluetoothProfile {
             log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -394,11 +377,8 @@ public final class BluetoothPan implements BluetoothProfile {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -424,11 +404,8 @@ public final class BluetoothPan implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -455,11 +432,8 @@ public final class BluetoothPan implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -490,8 +464,8 @@ public final class BluetoothPan implements BluetoothProfile {
      * @param value is whether to enable or disable bluetooth tethering
      * @deprecated Use {@link #requestTetheredInterface} with {@link TetheredInterfaceCallback}
      *     instead.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -533,8 +507,8 @@ public final class BluetoothPan implements BluetoothProfile {
      *     to one or more devices
      * @return new instance of {@link TetheredInterfaceRequest} which can be used to turn off
      *     Bluetooth tethering or {@code null} if service is not enabled
-     * @hide
      */
+    @Hide
     @SystemApi(client = MODULE_LIBRARIES)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -583,8 +557,8 @@ public final class BluetoothPan implements BluetoothProfile {
      * Determines whether tethering is enabled
      *
      * @return true if tethering is on, false if not or some error occurred
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)

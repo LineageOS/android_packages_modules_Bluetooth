@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -53,9 +54,8 @@ import java.util.function.Consumer;
  * <p>BluetoothLeBroadcast is a proxy object for controlling the Bluetooth LE Broadcast Source
  * Service via IPC. Use {@link BluetoothAdapter#getProfileProxy} to get the BluetoothLeBroadcast
  * proxy object.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfile {
     private static final String TAG = BluetoothLeBroadcast.class.getSimpleName();
@@ -146,14 +146,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         }
     }
 
-    /**
-     * Interface for receiving events related to Broadcast Source
-     *
-     * @hide
-     */
+    /** Interface for receiving events related to Broadcast Source */
+    @Hide
     @SystemApi
     public interface Callback {
-        /** @hide */
+        @Hide
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
                 value = {
@@ -180,8 +177,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          *
          * @param reason for broadcast start
          * @param broadcastId as defined by the Basic Audio Profile
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastStarted(@Reason int reason, int broadcastId);
 
@@ -189,8 +186,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          * Callback invoked when broadcast failed to start
          *
          * @param reason for broadcast start failure
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastStartFailed(@Reason int reason);
 
@@ -198,8 +195,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          * Callback invoked when broadcast is stopped
          *
          * @param reason for broadcast stop
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastStopped(@Reason int reason, int broadcastId);
 
@@ -207,8 +204,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          * Callback invoked when broadcast failed to stop
          *
          * @param reason for broadcast stop failure
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastStopFailed(@Reason int reason);
 
@@ -217,8 +214,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          *
          * @param reason for playback start
          * @param broadcastId as defined by the Basic Audio Profile
-         * @hide
          */
+        @Hide
         @SystemApi
         void onPlaybackStarted(@Reason int reason, int broadcastId);
 
@@ -227,8 +224,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          *
          * @param reason for playback stop
          * @param broadcastId as defined by the Basic Audio Profile
-         * @hide
          */
+        @Hide
         @SystemApi
         void onPlaybackStopped(@Reason int reason, int broadcastId);
 
@@ -237,8 +234,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          *
          * @param reason for encryption enable
          * @param broadcastId as defined by the Basic Audio Profile
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastUpdated(@Reason int reason, int broadcastId);
 
@@ -247,8 +244,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          *
          * @param reason for update failure
          * @param broadcastId as defined by the Basic Audio Profile
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastUpdateFailed(int reason, int broadcastId);
 
@@ -257,8 +254,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
          *
          * @param metadata updated Broadcast Source metadata
          * @param broadcastId as defined by the Basic Audio Profile
-         * @hide
          */
+        @Hide
         @SystemApi
         void onBroadcastMetadataChanged(
                 int broadcastId, @NonNull BluetoothLeBroadcastMetadata metadata);
@@ -269,8 +266,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * Source service.
      *
      * @param context for to operate this API class
-     * @hide
      */
+    @Hide
     /*package*/ BluetoothLeBroadcast(Context context, BluetoothAdapter adapter) {
         mAdapter = adapter;
         mAttributionSource = mAdapter.getAttributionSource();
@@ -280,7 +277,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         if (mCloseGuard != null) {
@@ -289,22 +286,16 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         close();
     }
 
-    /**
-     * Not supported since LE Audio Broadcasts do not establish a connection.
-     *
-     * @hide
-     */
+    /** Not supported since LE Audio Broadcasts do not establish a connection. */
+    @Hide
     @Override
     @RequiresNoPermission
     public int getConnectionState(@NonNull BluetoothDevice device) {
         throw new UnsupportedOperationException("LE Audio Broadcasts are not connection-oriented.");
     }
 
-    /**
-     * Not supported since LE Audio Broadcasts do not establish a connection.
-     *
-     * @hide
-     */
+    /** Not supported since LE Audio Broadcasts do not establish a connection. */
+    @Hide
     @Override
     @RequiresNoPermission
     @NonNull
@@ -312,11 +303,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         throw new UnsupportedOperationException("LE Audio Broadcasts are not connection-oriented.");
     }
 
-    /**
-     * Not supported since LE Audio Broadcasts do not establish a connection.
-     *
-     * @hide
-     */
+    /** Not supported since LE Audio Broadcasts do not establish a connection. */
+    @Hide
     @Override
     @RequiresNoPermission
     public @NonNull List<BluetoothDevice> getConnectedDevices() {
@@ -335,8 +323,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException if a null executor, or callback is given, or
      *     IllegalArgumentException if the same <var>callback<var> is already registered.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -386,8 +374,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param callback user implementation of the {@link Callback}
      * @throws NullPointerException when callback is null or IllegalArgumentException when no
      *     callback is registered
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -452,8 +440,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param broadcastCode Encryption will be enabled when <var>broadcastCode</var> is not null
      * @throws IllegalStateException if callback was not registered
      * @throws NullPointerException if <var>contentMetadata</var> is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -487,8 +475,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param broadcastSettings broadcast settings for this broadcast group
      * @throws IllegalStateException if callback was not registered
      * @throws NullPointerException if <var>broadcastSettings</var> is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -523,8 +511,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param contentMetadata updated metadata for the default Broadcast subgroup
      * @throws IllegalStateException if callback was not registered
      * @throws NullPointerException if <var>contentMetadata</var> is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -563,8 +551,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param broadcastSettings broadcast settings for this broadcast group
      * @throws IllegalStateException if callback was not registered
      * @throws NullPointerException if <var>broadcastSettings</var> is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -598,8 +586,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      *
      * @param broadcastId as defined by the Basic Audio Profile
      * @throws IllegalStateException if callback was not registered
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -628,8 +616,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      *
      * @param broadcastId as defined in the Basic Audio Profile
      * @return true if audio is being broadcasted
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -653,8 +641,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * device
      *
      * @return list of {@link BluetoothLeBroadcastMetadata}
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -677,8 +665,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * Get the maximum number of Broadcast Isochronous Group supported on this device
      *
      * @return maximum number of Broadcast Isochronous Group supported on this device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public int getMaximumNumberOfBroadcasts() {
@@ -700,8 +688,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * Get the maximum number of streams per broadcast Single stream means single Audio PCM stream
      *
      * @return maximum number of broadcast streams per broadcast group
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public int getMaximumStreamsPerBroadcast() {
@@ -726,8 +714,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * with English, Stream 3 -> 2 subgroups with hearing Aids Standard and High Quality
      *
      * @return maximum number of broadcast subgroups per broadcast group
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public int getMaximumSubgroupsPerBroadcast() {
@@ -745,11 +733,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         return 1;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     public void close() {
         if (VDBG) Log.d(TAG, "close()");
@@ -777,7 +762,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         return false;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @SuppressLint("AndroidFrameworkRequiresPermission") // Unexposed re-entrant callback
     @RequiresNoPermission
@@ -798,7 +783,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         }
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -809,7 +794,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {

@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_SCAN;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -86,8 +87,7 @@ public final class ScanFilter implements Parcelable {
 
     @Nullable private final TransportBlockFilter mTransportBlockFilter;
 
-    /** @hide */
-    public static final ScanFilter EMPTY = new ScanFilter.Builder().build();
+    @Hide public static final ScanFilter EMPTY = new ScanFilter.Builder().build();
 
     private ScanFilter(
             String name,
@@ -360,14 +360,14 @@ public final class ScanFilter implements Parcelable {
         return mDeviceAddress;
     }
 
-    /** @hide */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @AddressType int getAddressType() {
         return mAddressType;
     }
 
-    /** @hide */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getIrk() {
@@ -407,9 +407,8 @@ public final class ScanFilter implements Parcelable {
 
     /**
      * Return filter information for a transport block in Transport Discovery Service advertisement.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable TransportBlockFilter getTransportBlockFilter() {
@@ -463,11 +462,8 @@ public final class ScanFilter implements Parcelable {
         return true;
     }
 
-    /**
-     * Check if the uuid pattern is contained in a list of parcel uuids.
-     *
-     * @hide
-     */
+    /** Check if the uuid pattern is contained in a list of parcel uuids. */
+    @Hide
     @RequiresNoPermission
     public static boolean matchesServiceUuids(
             ParcelUuid uuid, ParcelUuid parcelUuidMask, List<ParcelUuid> uuids) {
@@ -543,9 +539,8 @@ public final class ScanFilter implements Parcelable {
     /**
      * Check if the scan filter matches a {@code scanResult}. A scan result is considered as a match
      * if it matches all the field filters except address filter.
-     *
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public boolean matchesWithoutAddress(ScanResult scanResult) {
         if (scanResult == null) {
@@ -625,39 +620,22 @@ public final class ScanFilter implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeScanFilter [mDeviceName="
-                + mDeviceName
-                + ", mDeviceAddress="
-                + mDeviceAddress
-                + ", mUuid="
-                + mServiceUuid
-                + ", mUuidMask="
-                + mServiceUuidMask
-                + ", mServiceSolicitationUuid="
-                + mServiceSolicitationUuid
-                + ", mServiceSolicitationUuidMask="
-                + mServiceSolicitationUuidMask
-                + ", mServiceDataUuid="
-                + Objects.toString(mServiceDataUuid)
-                + ", mServiceData="
-                + Arrays.toString(mServiceData)
-                + ", mServiceDataMask="
-                + Arrays.toString(mServiceDataMask)
-                + ", mManufacturerId="
-                + mManufacturerId
-                + ", mManufacturerData="
-                + Arrays.toString(mManufacturerData)
-                + ", mManufacturerDataMask="
-                + Arrays.toString(mManufacturerDataMask)
-                + ", mAdvertisingDataType="
-                + mAdvertisingDataType
-                + ", mAdvertisingData="
-                + Arrays.toString(mAdvertisingData)
-                + ", mAdvertisingDataMask="
-                + Arrays.toString(mAdvertisingDataMask)
-                + ", mTransportBlockFilter="
-                + mTransportBlockFilter
-                + "]";
+        return ("BluetoothLeScanFilter [mDeviceName=" + mDeviceName)
+                + (", mDeviceAddress=" + mDeviceAddress)
+                + (", mUuid=" + mServiceUuid)
+                + (", mUuidMask=" + mServiceUuidMask)
+                + (", mServiceSolicitationUuid=" + mServiceSolicitationUuid)
+                + (", mServiceSolicitationUuidMask=" + mServiceSolicitationUuidMask)
+                + (", mServiceDataUuid=" + Objects.toString(mServiceDataUuid))
+                + (", mServiceData=" + Arrays.toString(mServiceData))
+                + (", mServiceDataMask=" + Arrays.toString(mServiceDataMask))
+                + (", mManufacturerId=" + mManufacturerId)
+                + (", mManufacturerData=" + Arrays.toString(mManufacturerData))
+                + (", mManufacturerDataMask=" + Arrays.toString(mManufacturerDataMask))
+                + (", mAdvertisingDataType=" + mAdvertisingDataType)
+                + (", mAdvertisingData=" + Arrays.toString(mAdvertisingData))
+                + (", mAdvertisingDataMask=" + Arrays.toString(mAdvertisingDataMask))
+                + (", mTransportBlockFilter=" + mTransportBlockFilter + "]");
     }
 
     @Override
@@ -708,11 +686,8 @@ public final class ScanFilter implements Parcelable {
                 && Objects.equals(mTransportBlockFilter, other.getTransportBlockFilter());
     }
 
-    /**
-     * Checks if the scanfilter is empty
-     *
-     * @hide
-     */
+    /** Checks if the scanfilter is empty */
+    @Hide
     @RequiresNoPermission
     public boolean isAllFieldsEmpty() {
         return EMPTY.equals(this);
@@ -721,8 +696,7 @@ public final class ScanFilter implements Parcelable {
     /** Builder class for {@link ScanFilter}. */
     public static final class Builder {
 
-        /** @hide */
-        @SystemApi public static final int LEN_IRK_OCTETS = 16;
+        @Hide @SystemApi public static final int LEN_IRK_OCTETS = 16;
 
         private String mDeviceName;
         private String mDeviceAddress;
@@ -790,8 +764,8 @@ public final class ScanFilter implements Parcelable {
          *     either {@link BluetoothDevice#ADDRESS_TYPE_PUBLIC} or {@link
          *     BluetoothDevice#ADDRESS_TYPE_RANDOM}
          * @throws NullPointerException if {@code deviceAddress} is null
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setDeviceAddress(
@@ -832,8 +806,8 @@ public final class ScanFilter implements Parcelable {
          * @throws IllegalArgumentException If the {@code addressType} is an invalid length or is
          *     not PUBLIC or RANDOM STATIC
          * @throws NullPointerException if {@code deviceAddress} or {@code irk} is null
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setDeviceAddress(
@@ -1072,8 +1046,8 @@ public final class ScanFilter implements Parcelable {
          *     Service advertisement
          * @throws IllegalArgumentException if Transport Discovery Data filter is not supported.
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresBluetoothScanPermission
         @RequiresPermission(allOf = {BLUETOOTH_SCAN, BLUETOOTH_PRIVILEGED})

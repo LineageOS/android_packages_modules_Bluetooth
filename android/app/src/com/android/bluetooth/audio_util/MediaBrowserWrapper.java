@@ -331,10 +331,7 @@ class MediaBrowserWrapper {
         private boolean mCallbacksExecuted = false;
 
         BrowserSubscriptionCallback(String mediaId) {
-            mTimeoutRunnable =
-                    () -> {
-                        executeCallbacks(mediaId, new ArrayList<>());
-                    };
+            mTimeoutRunnable = () -> executeCallbacks(mediaId, new ArrayList<>());
             mRunHandler.postDelayed(mTimeoutRunnable, BROWSER_DISCONNECT_TIMEOUT.toMillis());
         }
 

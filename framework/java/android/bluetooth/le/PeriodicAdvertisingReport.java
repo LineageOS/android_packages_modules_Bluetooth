@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -24,11 +25,8 @@ import android.os.Parcelable;
 
 import java.util.Objects;
 
-/**
- * PeriodicAdvertisingReport for Bluetooth LE synchronized advertising.
- *
- * @hide
- */
+/** PeriodicAdvertisingReport for Bluetooth LE synchronized advertising. */
+@Hide
 public final class PeriodicAdvertisingReport implements Parcelable {
 
     /** The data returned is complete */
@@ -160,19 +158,12 @@ public final class PeriodicAdvertisingReport implements Parcelable {
 
     @Override
     public String toString() {
-        return "PeriodicAdvertisingReport{syncHandle="
-                + mSyncHandle
-                + ", txPower="
-                + mTxPower
-                + ", rssi="
-                + mRssi
-                + ", dataStatus="
-                + mDataStatus
-                + ", data="
-                + Objects.toString(mData)
-                + ", timestampNanos="
-                + mTimestampNanos
-                + '}';
+        return ("PeriodicAdvertisingReport [syncHandle=" + mSyncHandle)
+                + (", txPower=" + mTxPower)
+                + (", rssi=" + mRssi)
+                + (", dataStatus=" + mDataStatus)
+                + (", data=" + Objects.toString(mData))
+                + (", timestampNanos=" + mTimestampNanos + "]");
     }
 
     public static final @NonNull Parcelable.Creator<PeriodicAdvertisingReport> CREATOR =

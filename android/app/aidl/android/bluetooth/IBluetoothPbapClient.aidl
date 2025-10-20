@@ -19,11 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 
-/**
- * API for Bluetooth Phone Book Access Provile Client Side
- *
- * {@hide}
- */
+/** Binder method for PBAP client side interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothPbapClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean connect(in BluetoothDevice device, in AttributionSource attributionSource);

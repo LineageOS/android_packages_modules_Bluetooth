@@ -125,14 +125,6 @@ prop {
 }
 
 prop {
-    api_name: "subrate_mode_low_latency"
-    type: Integer
-    scope: Internal
-    access: Readonly
-    prop_name: "bluetooth.ble.client.subrate_mode_low_latency.config"
-}
-
-prop {
     api_name: "subrate_mode_low_cont_number"
     type: Integer
     scope: Internal
@@ -155,14 +147,6 @@ prop {
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.client.subrate_mode_balanced_max_subrate.config"
-}
-
-prop {
-    api_name: "subrate_mode_balanced_latency"
-    type: Integer
-    scope: Internal
-    access: Readonly
-    prop_name: "bluetooth.ble.client.subrate_mode_balanced_latency.config"
 }
 
 prop {
@@ -189,14 +173,6 @@ prop {
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.client.subrate_mode_high_max_subrate.config"
-}
-
-prop {
-    api_name: "subrate_mode_high_latency"
-    type: Integer
-    scope: Internal
-    access: Readonly
-    prop_name: "bluetooth.ble.client.subrate_mode_high_latency.config"
 }
 
 prop {
@@ -229,4 +205,12 @@ prop {
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.ble.client.subrate_le_audio_mode_cont_number.config"
+}
+
+prop {
+    api_name: "lecoc_fixed_psm_slots"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.lecoc.fixed_psm_slots.config"
 }

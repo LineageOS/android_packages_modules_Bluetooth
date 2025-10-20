@@ -40,8 +40,8 @@ public:
   virtual ~LeAudioClient(void) = default;
 
   static void Initialize(
-          bluetooth::le_audio::LeAudioClientCallbacks* callbacks, base::Closure initCb,
-          base::Callback<bool()> hal_2_1_verifier,
+          bluetooth::le_audio::LeAudioClientCallbacks* callbacks, base::OnceClosure initCb,
+          base::OnceCallback<bool()> hal_2_1_verifier,
           const std::vector<bluetooth::le_audio::btle_audio_codec_config_t>& offloading_preference);
   static void Cleanup(void);
   static LeAudioClient* Get(void);
@@ -73,6 +73,7 @@ public:
                                            bool is_duplex_preference_le_audio) = 0;
   virtual void SetGroupAllowedContextMask(int group_id, int sink_context_types,
                                           int source_context_types) = 0;
+  virtual void GroupConfirmActive(int group_id) = 0;
 
   virtual bool isOutputPreferenceLeAudio(const RawAddress& address) = 0;
   virtual bool isDuplexPreferenceLeAudio(const RawAddress& address) = 0;

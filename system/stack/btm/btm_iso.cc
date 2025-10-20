@@ -55,27 +55,24 @@ struct IsoManager::impl {
 
 IsoManager::IsoManager() : pimpl_(std::make_unique<impl>(*this)) {}
 
-void IsoManager::RegisterCigCallbacks(CigCallbacks* callbacks) const {
+iso_manager::IsoClientHandle IsoManager::RegisterCallbacks(
+        iso_manager::IsoManagerCallbacks callbacks) const {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->handle_register_cis_callbacks(callbacks);
+    return pimpl_->iso_impl_->register_callbacks(callbacks);
+  }
+  return iso_manager::kInvalidIsoClientHandle;
+}
+
+void IsoManager::DeregisterCallbacks(iso_manager::IsoClientHandle client_handle) const {
+  if (pimpl_->IsRunning()) {
+    pimpl_->iso_impl_->deregister_callbacks(client_handle);
   }
 }
 
-void IsoManager::RegisterBigCallbacks(BigCallbacks* callbacks) const {
+void IsoManager::CreateCig(iso_manager::IsoClientHandle client_handle, uint8_t cig_id,
+                           struct iso_manager::cig_create_params cig_params) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->handle_register_big_callbacks(callbacks);
-  }
-}
-
-void IsoManager::RegisterOnIsoTrafficActiveCallback(void callback(bool)) const {
-  if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->handle_register_on_iso_traffic_active_callback(callback);
-  }
-}
-
-void IsoManager::CreateCig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
-  if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->create_cig(cig_id, std::move(cig_params));
+    pimpl_->iso_impl_->create_cig(client_handle, cig_id, std::move(cig_params));
   }
 }
 
@@ -110,40 +107,41 @@ int IsoManager::GetNumberOfActiveIso() {
   return 0;
 }
 
-void IsoManager::SetupIsoDataPath(uint16_t iso_handle,
+void IsoManager::SetupIsoDataPath(uint16_t conn_handle,
                                   struct iso_manager::iso_data_path_params path_params) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->setup_iso_data_path(iso_handle, std::move(path_params));
+    pimpl_->iso_impl_->setup_iso_data_path(conn_handle, std::move(path_params));
   }
 }
 
-void IsoManager::RemoveIsoDataPath(uint16_t iso_handle, uint8_t data_path_dir) {
+void IsoManager::RemoveIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->remove_iso_data_path(iso_handle, data_path_dir);
+    pimpl_->iso_impl_->remove_iso_data_path(conn_handle, data_path_dir);
   }
 }
 
-void IsoManager::ReadIsoLinkQuality(uint16_t iso_handle) {
+void IsoManager::ReadIsoLinkQuality(uint16_t conn_handle) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->read_iso_link_quality(iso_handle);
+    pimpl_->iso_impl_->read_iso_link_quality(conn_handle);
   }
 }
 
-void IsoManager::SendIsoData(uint16_t iso_handle, const uint8_t* data, uint16_t data_len) {
+void IsoManager::SendIsoData(uint16_t conn_handle, const uint8_t* data, uint16_t data_len) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->send_iso_data(iso_handle, data, data_len);
+    pimpl_->iso_impl_->send_iso_data(conn_handle, data, data_len);
   }
 }
 
-void IsoManager::CreateBig(uint8_t big_id, struct iso_manager::big_create_params big_params) {
+void IsoManager::CreateBig(iso_manager::IsoClientHandle client_handle, uint8_t big_handle,
+                           struct iso_manager::big_create_params big_params) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->create_big(big_id, std::move(big_params));
+    pimpl_->iso_impl_->create_big(client_handle, big_handle, std::move(big_params));
   }
 }
 
-void IsoManager::TerminateBig(uint8_t big_id, uint8_t reason) {
+void IsoManager::TerminateBig(uint8_t big_handle, uint8_t reason) {
   if (pimpl_->IsRunning()) {
-    pimpl_->iso_impl_->terminate_big(big_id, reason);
+    pimpl_->iso_impl_->terminate_big(big_handle, reason);
   }
 }
 

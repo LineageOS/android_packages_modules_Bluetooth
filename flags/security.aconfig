@@ -50,3 +50,33 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "passkey_entry_pairing_approval"
+    namespace: "bluetooth"
+    description: "Don't auto approve passkey entry pairing"
+    bug: "446268763"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_sec_dev_rec_access"
+    namespace: "bluetooth"
+    description: "Fix the issue where the security device record is accessed after cleanup"
+    bug: "440217039"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "use_array_instead_list_in_sec_dev_rec"
+    namespace: "bluetooth"
+    description: "Use array instead of list in security device record"
+    bug: "444620685"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

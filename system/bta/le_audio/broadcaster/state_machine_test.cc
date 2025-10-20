@@ -27,6 +27,7 @@
 #include "../le_audio_types.h"
 #include "broadcast_configuration_provider.h"
 #include "btm_iso_api.h"
+#include "btm_iso_api_types.h"
 #include "mock_codec_manager.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "test/common/mock_functions.h"
@@ -123,7 +124,8 @@ protected:
 
     sm_callbacks_.reset(new MockBroadcastStatMachineCallbacks());
     adv_callbacks_.reset(new MockBroadcastAdvertisingCallbacks());
-    BroadcastStateMachine::Initialize(sm_callbacks_.get(), adv_callbacks_.get());
+    constexpr bluetooth::hci::iso_manager::IsoClientHandle kClientHandle = 1;
+    BroadcastStateMachine::Initialize(sm_callbacks_.get(), adv_callbacks_.get(), kClientHandle);
 
     ON_CALL(*mock_ble_advertising_manager_, StartAdvertisingSet)
             .WillByDefault([this](uint8_t /*client_id*/, int /*reg_id*/,
@@ -156,9 +158,7 @@ protected:
             .WillByDefault(
                     [](uint8_t /*inst_id*/, ::BleAdvertiserInterface::GetAddressCallback cb) {
                       uint8_t address_type = 0x02;
-                      RawAddress address;
-                      const uint8_t addr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
-                      address.FromOctets(addr);
+                      RawAddress address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
                       cb.Run(address_type, address);
                     });
 
@@ -249,23 +249,24 @@ protected:
     ASSERT_NE(mock_iso_manager_, nullptr);
 
     ON_CALL(*mock_iso_manager_, CreateBig)
-            .WillByDefault([this](uint8_t big_id, big_create_params p) {
+            .WillByDefault([this](bluetooth::hci::iso_manager::IsoClientHandle /*client_handle*/,
+                                  uint8_t big_handle, big_create_params p) {
               auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                      [big_id](auto const& entry) {
-                                        return entry.second->GetAdvertisingSid() == big_id;
+                                      [big_handle](auto const& entry) {
+                                        return entry.second->GetAdvertisingSid() == big_handle;
                                       });
               if (bit == broadcasts_.end()) {
                 return;
               }
 
               big_create_cmpl_evt evt;
-              evt.big_id = big_id;
+              evt.big_handle = big_handle;
 
-              // For test convenience lets encode big_id into conn_hdl MSB.
-              // NOTE: In current implementation big_id is equal to advertising SID.
+              // For test convenience lets encode big_handle into conn_hdl MSB.
+              // NOTE: In current implementation big_handle is equal to advertising SID.
               //       This is an important detail exploited by the IsoManager mock
               static uint8_t conn_lsb = 1;
-              uint16_t conn_msb = ((uint16_t)big_id) << 8;
+              uint16_t conn_msb = ((uint16_t)big_handle) << 8;
               for (auto i = 0; i < p.num_bis; ++i) {
                 evt.conn_handles.push_back(conn_msb | conn_lsb++);
               }
@@ -275,11 +276,11 @@ protected:
 
     ON_CALL(*mock_iso_manager_, SetupIsoDataPath)
             .WillByDefault([this](uint16_t conn_handle, iso_data_path_params /*p*/) {
-              // Get the big_id encoded in conn_handle's MSB
-              uint8_t big_id = conn_handle >> 8;
+              // Get the big_handle encoded in conn_handle's MSB
+              uint8_t big_handle = conn_handle >> 8;
               auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                      [big_id](auto const& entry) {
-                                        return entry.second->GetAdvertisingSid() == big_id;
+                                      [big_handle](auto const& entry) {
+                                        return entry.second->GetAdvertisingSid() == big_handle;
                                       });
               if (bit == broadcasts_.end()) {
                 return;
@@ -289,11 +290,11 @@ protected:
 
     ON_CALL(*mock_iso_manager_, RemoveIsoDataPath)
             .WillByDefault([this](uint16_t conn_handle, uint8_t /*iso_direction*/) {
-              // Get the big_id encoded in conn_handle's MSB
-              uint8_t big_id = conn_handle >> 8;
+              // Get the big_handle encoded in conn_handle's MSB
+              uint8_t big_handle = conn_handle >> 8;
               auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                      [big_id](auto const& entry) {
-                                        return entry.second->GetAdvertisingSid() == big_id;
+                                      [big_handle](auto const& entry) {
+                                        return entry.second->GetAdvertisingSid() == big_handle;
                                       });
               if (bit == broadcasts_.end()) {
                 return;
@@ -301,21 +302,23 @@ protected:
               bit->second->OnRemoveIsoDataPath(0, conn_handle);
             });
 
-    ON_CALL(*mock_iso_manager_, TerminateBig).WillByDefault([this](uint8_t big_id, uint8_t reason) {
-      // Get the big_id encoded in conn_handle's MSB
-      auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(), [big_id](auto const& entry) {
-        return entry.second->GetAdvertisingSid() == big_id;
-      });
-      if (bit == broadcasts_.end()) {
-        return;
-      }
+    ON_CALL(*mock_iso_manager_, TerminateBig)
+            .WillByDefault([this](uint8_t big_handle, uint8_t reason) {
+              // Get the big_handle encoded in conn_handle's MSB
+              auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
+                                      [big_handle](auto const& entry) {
+                                        return entry.second->GetAdvertisingSid() == big_handle;
+                                      });
+              if (bit == broadcasts_.end()) {
+                return;
+              }
 
-      big_terminate_cmpl_evt evt;
-      evt.big_id = big_id;
-      evt.reason = reason;
+              big_terminate_cmpl_evt evt;
+              evt.big_handle = big_handle;
+              evt.reason = reason;
 
-      bit->second->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT, &evt);
-    });
+              bit->second->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT, &evt);
+            });
   }
 
   void TearDown() override {
@@ -586,10 +589,12 @@ TEST_F(StateMachineTest, ProcessMessageStartWhenConfigured) {
 
   uint8_t num_bises = 0;
   EXPECT_CALL(*mock_iso_manager_, CreateBig)
-          .WillOnce([this, &num_bises](uint8_t big_id, big_create_params p) {
+          .WillOnce([this, &num_bises](
+                            bluetooth::hci::iso_manager::IsoClientHandle /*client_handle*/,
+                            uint8_t big_handle, big_create_params p) {
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -598,12 +603,12 @@ TEST_F(StateMachineTest, ProcessMessageStartWhenConfigured) {
             num_bises = p.num_bis;
 
             big_create_cmpl_evt evt;
-            evt.big_id = big_id;
+            evt.big_handle = big_handle;
 
-            // For test convenience lets encode big_id into conn_hdl's
+            // For test convenience lets encode big_handle into conn_hdl's
             // MSB
             static uint8_t conn_lsb = 1;
-            uint16_t conn_msb = ((uint16_t)big_id) << 8;
+            uint16_t conn_msb = ((uint16_t)big_handle) << 8;
             for (auto i = 0; i < p.num_bis; ++i) {
               evt.conn_handles.push_back(conn_msb | conn_lsb++);
             }
@@ -666,7 +671,7 @@ TEST_F(StateMachineTest, ProcessMessageSuspendWhenConfiguredLateBigCreateComplet
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
 
   /* Hold start process on BIG create */
-  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _)).WillOnce(Return());
+  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::ENABLING);
@@ -676,7 +681,7 @@ TEST_F(StateMachineTest, ProcessMessageSuspendWhenConfiguredLateBigCreateComplet
 
   /* Inject late BIG create complete event */
   big_create_cmpl_evt evt;
-  evt.big_id = broadcasts_[broadcast_id]->GetAdvertisingSid();
+  evt.big_handle = broadcasts_[broadcast_id]->GetAdvertisingSid();
   broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, &evt);
 
   EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath).Times(0);
@@ -694,7 +699,7 @@ TEST_F(StateMachineTest, ProcessMessageStopWhenEnablingLateBigCreateCompleteEven
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
 
   /* Hold start process on BIG create */
-  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _)).WillOnce(Return());
+  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::ENABLING);
@@ -706,7 +711,7 @@ TEST_F(StateMachineTest, ProcessMessageStopWhenEnablingLateBigCreateCompleteEven
 
   /* Inject late BIG create complete event */
   big_create_cmpl_evt evt;
-  evt.big_id = broadcasts_[broadcast_id]->GetAdvertisingSid();
+  evt.big_handle = broadcasts_[broadcast_id]->GetAdvertisingSid();
   EXPECT_CALL(*mock_iso_manager_, TerminateBig(_, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, &evt);
 
@@ -772,7 +777,7 @@ TEST_F(StateMachineTest, ProcessMessageDoubleResumeWhenConfiguredLateBigCreateCo
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
 
   /* Hold start process on BIG create */
-  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _)).WillOnce(Return());
+  EXPECT_CALL(*mock_iso_manager_, CreateBig(_, _, _)).WillOnce(Return());
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::ENABLING);
@@ -787,14 +792,14 @@ TEST_F(StateMachineTest, ProcessMessageDoubleResumeWhenConfiguredLateBigCreateCo
   broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
 
   /* Inject late BIG create complete event */
-  // For test convenience lets encode big_id into conn_hdl MSB.
-  // NOTE: In current implementation big_id is equal to advertising SID.
+  // For test convenience lets encode big_handle into conn_hdl MSB.
+  // NOTE: In current implementation big_handle is equal to advertising SID.
   //       This is an important detail exploited by the IsoManager mock
   static uint8_t conn_lsb = 1;
   uint16_t conn_msb = ((uint16_t)broadcasts_[broadcast_id]->GetAdvertisingSid()) << 8;
 
   big_create_cmpl_evt evt;
-  evt.big_id = broadcasts_[broadcast_id]->GetAdvertisingSid();
+  evt.big_handle = broadcasts_[broadcast_id]->GetAdvertisingSid();
   evt.conn_handles.push_back(conn_msb | conn_lsb++);
   broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, &evt);
 
@@ -919,11 +924,11 @@ TEST_F(StateMachineTest, OnSetupIsoDataPathError) {
 
   EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath)
           .WillOnce([this](uint16_t conn_handle, iso_data_path_params /*p*/) {
-            // Get the big_id encoded in conn_handle's MSB
-            uint8_t big_id = conn_handle >> 8;
+            // Get the big_handle encoded in conn_handle's MSB
+            uint8_t big_handle = conn_handle >> 8;
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -931,11 +936,11 @@ TEST_F(StateMachineTest, OnSetupIsoDataPathError) {
             bit->second->OnSetupIsoDataPath(0, conn_handle);
           })
           .WillOnce([this](uint16_t conn_handle, iso_data_path_params /*p*/) {
-            // Get the big_id encoded in conn_handle's MSB
-            uint8_t big_id = conn_handle >> 8;
+            // Get the big_handle encoded in conn_handle's MSB
+            uint8_t big_handle = conn_handle >> 8;
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -952,11 +957,11 @@ TEST_F(StateMachineTest, OnSetupIsoDataPathError) {
   // And still be able to start again
   ON_CALL(*mock_iso_manager_, SetupIsoDataPath)
           .WillByDefault([this](uint16_t conn_handle, iso_data_path_params /*p*/) {
-            // Get the big_id encoded in conn_handle's MSB
-            uint8_t big_id = conn_handle >> 8;
+            // Get the big_handle encoded in conn_handle's MSB
+            uint8_t big_handle = conn_handle >> 8;
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -978,11 +983,11 @@ TEST_F(StateMachineTest, OnRemoveIsoDataPathError) {
 
   EXPECT_CALL(*mock_iso_manager_, RemoveIsoDataPath)
           .WillOnce([this](uint16_t conn_handle, uint8_t /*iso_direction*/) {
-            // Get the big_id encoded in conn_handle's MSB
-            uint8_t big_id = conn_handle >> 8;
+            // Get the big_handle encoded in conn_handle's MSB
+            uint8_t big_handle = conn_handle >> 8;
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -990,11 +995,11 @@ TEST_F(StateMachineTest, OnRemoveIsoDataPathError) {
             bit->second->OnRemoveIsoDataPath(0, conn_handle);
           })
           .WillOnce([this](uint16_t conn_handle, uint8_t /*iso_direction*/) {
-            // Get the big_id encoded in conn_handle's MSB
-            uint8_t big_id = conn_handle >> 8;
+            // Get the big_handle encoded in conn_handle's MSB
+            uint8_t big_handle = conn_handle >> 8;
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -1031,7 +1036,7 @@ TEST_F(StateMachineTest, GetConfig) {
   ASSERT_TRUE(big_cfg.has_value());
   ASSERT_EQ(big_cfg->status, 0);
   // This is an implementation specific thing
-  ASSERT_EQ(big_cfg->big_id, broadcasts_[broadcast_id]->GetAdvertisingSid());
+  ASSERT_EQ(big_cfg->big_handle, broadcasts_[broadcast_id]->GetAdvertisingSid());
   ASSERT_EQ(big_cfg->connection_handles.size(), num_channels);
 }
 
@@ -1178,10 +1183,12 @@ TEST_F(StateMachineTest, ConfigureDataPathBeforeSetIsoDataPath) {
 
   uint8_t num_bises = 0;
   EXPECT_CALL(*mock_iso_manager_, CreateBig)
-          .WillOnce([this, &num_bises](uint8_t big_id, big_create_params p) {
+          .WillOnce([this, &num_bises](
+                            bluetooth::hci::iso_manager::IsoClientHandle /*client_handle*/,
+                            uint8_t big_handle, big_create_params p) {
             auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
-                                    [big_id](auto const& entry) {
-                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    [big_handle](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_handle;
                                     });
             if (bit == broadcasts_.end()) {
               return;
@@ -1190,12 +1197,12 @@ TEST_F(StateMachineTest, ConfigureDataPathBeforeSetIsoDataPath) {
             num_bises = p.num_bis;
 
             big_create_cmpl_evt evt;
-            evt.big_id = big_id;
+            evt.big_handle = big_handle;
 
-            // For test convenience lets encode big_id into conn_hdl's
+            // For test convenience lets encode big_handle into conn_hdl's
             // MSB
             static uint8_t conn_lsb = 1;
-            uint16_t conn_msb = ((uint16_t)big_id) << 8;
+            uint16_t conn_msb = ((uint16_t)big_handle) << 8;
             for (auto i = 0; i < p.num_bis; ++i) {
               evt.conn_handles.push_back(conn_msb | conn_lsb++);
             }

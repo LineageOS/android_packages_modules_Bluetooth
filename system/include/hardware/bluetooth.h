@@ -37,27 +37,27 @@
 #define BT_STACK_MODULE_ID "bluetooth"
 
 /** Bluetooth profile interface IDs */
-#define BT_PROFILE_HANDSFREE_ID "handsfree"
-#define BT_PROFILE_HANDSFREE_CLIENT_ID "handsfree_client"
+#define BT_BQR_ID "bqr"
+#define BT_KEYSTORE_ID "bluetooth_keystore"
 #define BT_PROFILE_ADVANCED_AUDIO_ID "a2dp"
 #define BT_PROFILE_ADVANCED_AUDIO_SINK_ID "a2dp_sink"
-#define BT_PROFILE_SOCKETS_ID "socket"
-#define BT_PROFILE_HIDHOST_ID "hidhost"
-#define BT_PROFILE_HIDDEV_ID "hiddev"
-#define BT_PROFILE_PAN_ID "pan"
-#define BT_PROFILE_MAP_CLIENT_ID "map_client"
-#define BT_PROFILE_SDP_CLIENT_ID "sdp"
-#define BT_PROFILE_GATT_ID "gatt"
 #define BT_PROFILE_AV_RC_CTRL_ID "avrcp_ctrl"
-#define BT_PROFILE_HEARING_AID_ID "hearing_aid"
-#define BT_PROFILE_HAP_CLIENT_ID "has_client"
-#define BT_PROFILE_LE_AUDIO_ID "le_audio"
-#define BT_KEYSTORE_ID "bluetooth_keystore"
-#define BT_PROFILE_VC_ID "volume_control"
 #define BT_PROFILE_CSIS_CLIENT_ID "csis_client"
-#define BT_PROFILE_LE_AUDIO_ID "le_audio"
+#define BT_PROFILE_GATT_ID "gatt"
+#define BT_PROFILE_HANDSFREE_CLIENT_ID "handsfree_client"
+#define BT_PROFILE_HANDSFREE_ID "handsfree"
+#define BT_PROFILE_HAP_CLIENT_ID "has_client"
+#define BT_PROFILE_HEARING_AID_ID "hearing_aid"
+#define BT_PROFILE_HIDDEV_ID "hiddev"
+#define BT_PROFILE_HIDHOST_ID "hidhost"
 #define BT_PROFILE_LE_AUDIO_BROADCASTER_ID "le_audio_broadcaster"
-#define BT_BQR_ID "bqr"
+#define BT_PROFILE_LE_AUDIO_ID "le_audio"
+#define BT_PROFILE_MAP_CLIENT_ID "map_client"
+#define BT_PROFILE_PAN_ID "pan"
+#define BT_PROFILE_SDP_CLIENT_ID "sdp"
+#define BT_PROFILE_SOCKETS_ID "socket"
+#define BT_PROFILE_VAPS_SERVER_ID "vaps_server"
+#define BT_PROFILE_VC_ID "volume_control"
 
 /** Bluetooth Device Name */
 typedef struct {
@@ -75,17 +75,34 @@ typedef enum {
 /** Bluetooth Adapter State */
 typedef enum { BT_STATE_OFF, BT_STATE_ON } bt_state_t;
 
-/** Bluetooth Adapter Input Output Capabilities which determine Pairing/Security
- */
-typedef enum {
-  BT_IO_CAP_OUT,    /* DisplayOnly */
-  BT_IO_CAP_IO,     /* DisplayYesNo */
-  BT_IO_CAP_IN,     /* KeyboardOnly */
-  BT_IO_CAP_NONE,   /* NoInputNoOutput */
-  BT_IO_CAP_KBDISP, /* Keyboard display */
-  BT_IO_CAP_MAX,
-  BT_IO_CAP_UNKNOWN = 0xFF /* Unknown value */
-} bt_io_cap_t;
+/** Bluetooth Adapter Input Output Capabilities which determine pairing association model */
+enum BtIoCap : uint8_t {
+  DISPLAY_ONLY = 0,
+  DISPLAY_YES_NO = 1,
+  KEYBOARD_ONLY = 2,
+  NO_INPUT_NO_OUTPUT = 3,
+  KEYBOARD_DISPLAY = 4,  // Not applicable for BR/EDR
+  IO_CAP_UNKNOWN = 0xFF,
+};
+constexpr BtIoCap kBtIoCapClassicMax = BtIoCap::NO_INPUT_NO_OUTPUT;
+constexpr BtIoCap kBtIoCapLeMax = BtIoCap::KEYBOARD_DISPLAY;
+
+inline std::string BtIoCapText(const BtIoCap& io_cap) {
+  switch (io_cap) {
+    case BtIoCap::DISPLAY_ONLY:
+      return std::string("DisplayOnly");
+    case BtIoCap::DISPLAY_YES_NO:
+      return std::string("DisplayYesNo");
+    case BtIoCap::KEYBOARD_ONLY:
+      return std::string("KeyboardOnly");
+    case BtIoCap::NO_INPUT_NO_OUTPUT:
+      return std::string("NoInputNoOutput");
+    case BtIoCap::KEYBOARD_DISPLAY:
+      return std::string("KeyboardDisplay");
+    default:
+      return std::format("Unknown IO capability[{}]", static_cast<uint8_t>(io_cap));
+  }
+}
 
 /** Bluetooth Error Status */
 /** We need to build on this */
@@ -244,6 +261,8 @@ typedef struct {
 typedef struct {
   uint8_t number_of_supported_offloaded_le_coc_sockets;
   uint8_t number_of_supported_offloaded_rfcomm_sockets;
+  uint8_t supported_offloaded_gatt_client_properties;
+  uint8_t supported_offloaded_gatt_server_properties;
 } bt_lpp_offload_features_t;
 
 /** Bluetooth Vendor and Product ID info */
@@ -410,11 +429,12 @@ typedef enum {
   BT_PROPERTY_REMOTE_ADDR_TYPE,
 
   /**
-   * Description - Whether remote device supports Secure Connections mode
+   * Description - Whether remote device supports Secure Connections mode on
+   * host
    * Access mode - GET and SET.
    * Data Type - uint8_t.
    */
-  BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+  BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED,
 
   /**
    * Description - Maximum observed session key for remote device
@@ -466,6 +486,14 @@ typedef enum {
    *   - Otherwise, Array of bluetooth::Uuid (Array size inferred from property length).
    */
   BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+
+  /**
+   * Description - Whether remote device supports Secure Connections mode on
+   * controller
+   * Access mode - GET and SET.
+   * Data Type - uint8_t.
+   */
+  BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
 
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
@@ -526,7 +554,8 @@ typedef enum {
   BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
   BT_SSP_VARIANT_PASSKEY_ENTRY,
   BT_SSP_VARIANT_CONSENT,
-  BT_SSP_VARIANT_PASSKEY_NOTIFICATION
+  BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
+  BT_SSP_VARIANT_PARTICIPATION  // Incoming LE pairing request
 } bt_ssp_variant_t;
 
 typedef struct {
@@ -831,13 +860,6 @@ typedef struct {
   /** Get Bluetooth profile interface */
   const void* (*get_profile_interface)(const char* profile_id);
 
-  /** Bluetooth Test Mode APIs - Bluetooth must be enabled for these APIs */
-  /* Configure DUT Mode - Use this mode to enter/exit DUT mode */
-  int (*dut_mode_configure)(uint8_t enable);
-
-  /* Send any test HCI (vendor-specific) command to the controller. Must be in
-   * DUT Mode */
-  int (*dut_mode_send)(uint16_t opcode, uint8_t* buf, uint8_t len);
   /** BLE Test Mode APIs */
   /* opcode MUST be one of: LE_Receiver_Test, LE_Transmitter_Test, LE_Test_End
    */
@@ -1055,6 +1077,13 @@ template <>
 struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
 template <>
 struct formatter<bt_ssp_variant_t> : enum_formatter<bt_ssp_variant_t> {};
+template <>
+struct formatter<BtIoCap> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const BtIoCap& io_cap, Context& ctx) const {
+    return std::formatter<std::string>::format(BtIoCapText(io_cap), ctx);
+  }
+};
 }  // namespace std
 
 #endif  // __has_include(<bluetooth/log.h>)

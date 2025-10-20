@@ -31,10 +31,10 @@ from mobly import test_runner
 from typing_extensions import override
 
 from navi.tests import navi_test_base
-from navi.tests.smoke import pairing_utils
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
+from navi.utils import pairing as pairing_utils
 from navi.utils import pyee_extensions
 
 _TERMINATED_BOND_STATES = (
@@ -306,7 +306,6 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
             address=self.ref.address,
             secure=secure_connection,
             psm=ref_l2cap_server.psm,
-            transport=android_constants.Transport.LE,
             address_type=android_constants.AddressTypeStatus.PUBLIC,
         )
 

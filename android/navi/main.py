@@ -17,6 +17,7 @@ import sys
 from mobly import suite_runner
 from navi.tests.smoke import a2dp_test
 from navi.tests.smoke import asha_test
+from navi.tests.smoke import bluetooth_service_test
 from navi.tests.smoke import classic_host_test
 from navi.tests.smoke import classic_pairing_test
 from navi.tests.smoke import gatt_client_test
@@ -34,6 +35,7 @@ from navi.tests.smoke import pan_test
 from navi.tests.smoke import pbap_test
 from navi.tests.smoke import rfcomm_test
 from navi.tests.functionality import a2dp_sink_test
+from navi.tests.functionality import hap_test
 from navi.tests.functionality import le_pairing_test
 
 if __name__ == "__main__":
@@ -62,4 +64,6 @@ if __name__ == "__main__":
         rfcomm_test.RfcommTest,
         le_audio_unicast_client_test.LeAudioUnicastClientTest,
         le_pairing_test.LePairingTest,
+        hap_test.HapTest,
+        bluetooth_service_test.BluetoothServiceTest,
     ])

@@ -17,11 +17,8 @@
 
 package android.bluetooth;
 
-/**
- * Callback definitions for interacting with CSIP Set Coordinator group locking method
- *
- * @hide
- */
+/** Callback definitions for interacting with CSIP Set Coordinator group locking method */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothCsipSetCoordinatorLockCallback {
     void onGroupLockSet(in int groupId, in int opStatus, in boolean isLocked);
 }

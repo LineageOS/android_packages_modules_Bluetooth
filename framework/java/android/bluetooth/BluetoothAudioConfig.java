@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -26,8 +27,8 @@ import android.os.Parcelable;
  * Represents the audio configuration for a Bluetooth A2DP source device.
  *
  * @see BluetoothA2dpSink
- * @hide
  */
+@Hide
 public final class BluetoothAudioConfig implements Parcelable {
 
     private final int mSampleRate;
@@ -58,13 +59,9 @@ public final class BluetoothAudioConfig implements Parcelable {
 
     @Override
     public String toString() {
-        return "{mSampleRate:"
-                + mSampleRate
-                + ",mChannelConfig:"
-                + mChannelConfig
-                + ",mAudioFormat:"
-                + mAudioFormat
-                + "}";
+        return ("BluetoothAudioConfig [mSampleRate=" + mSampleRate)
+                + (", mChannelConfig=" + mChannelConfig)
+                + (", mAudioFormat=" + mAudioFormat + "]");
     }
 
     @Override

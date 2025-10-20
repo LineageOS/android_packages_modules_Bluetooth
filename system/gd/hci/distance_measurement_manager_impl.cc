@@ -20,6 +20,7 @@
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <math.h>
+#include <utils/SystemClock.h>
 
 #include <chrono>
 #include <complex>
@@ -207,6 +208,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     bool remote_support_phase_based_ranging = false;
     uint8_t remote_num_antennas_supported_ = 0x01;
     uint8_t remote_supported_sw_time_ = 0;
+    uint8_t remote_max_antenna_paths_supported_ = 0x01;
     // sending from host to controller with CS config command, request the controller to use it.
     uint8_t requesting_config_id = kInvalidConfigId;
     // received from controller to host with CS config complete event, it will be used
@@ -322,9 +324,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     }
     log::debug("address {}, resultMeters {}", cs_requester_trackers_[connection_handle].address,
                ranging_result.result_meters_);
-    using namespace std::chrono;
-    uint64_t elapsedRealtimeNanos =
-            duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+    uint64_t elapsedRealtimeNanos = ::android::elapsedRealtimeNano();
     if (is_hal_v2()) {
       elapsedRealtimeNanos = ranging_result.elapsed_timestamp_nanos_;
     }
@@ -364,15 +364,10 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
   ~impl() {
     stop();
-    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
-      handler_->Clear();
-      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
-      delete handler_;
-    }
   }
 
   void stop() {
-    if (com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
       hci_layer_->ReleaseDistanceMeasurementInterface();
     }
 
@@ -519,7 +514,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   void start_distance_measurement_with_cs(const Address& cs_remote_address,
                                           uint16_t connection_handle,
                                           bool has_updated_procedure_params) {
-    log::info("connection_handle: {}, address: {}", connection_handle, cs_remote_address);
+    log::info("connection_handle: {}, address: {}, is_hal_v2: {}", connection_handle,
+              cs_remote_address, is_hal_v2());
     if (!is_local_cs_ready_) {
       log::error("Channel Sounding is not enabled");
       distance_measurement_callbacks_->OnDistanceMeasurementStopped(
@@ -548,7 +544,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     if (has_updated_procedure_params) {
       send_le_cs_set_procedure_parameters(
               connection_handle, cs_requester_trackers_[connection_handle].used_config_id,
-              cs_requester_trackers_[connection_handle].remote_num_antennas_supported_);
+              cs_requester_trackers_[connection_handle].remote_num_antennas_supported_,
+              cs_requester_trackers_[connection_handle].remote_max_antenna_paths_supported_);
     } else {
       send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
     }
@@ -640,10 +637,6 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
   void handle_conn_interval_updated(const Address& address, uint16_t connection_handle,
                                     uint16_t conn_interval) {
-    if (!com::android::bluetooth::flags::channel_sounding_25q2_apis()) {
-      log::debug("connection interval is not required.");
-      return;
-    }
     auto it = cs_requester_trackers_.find(connection_handle);
     if (it == cs_requester_trackers_.end()) {
       log::warn("can't find tracker for 0x{:04x}, address - {} ", connection_handle, address);
@@ -911,18 +904,76 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
                     ChannelSoundingStopReason::REASON_CREATE_CONFIG_COMMAND_STATUS_ERROR));
   }
 
+  /**
+   * Selects the best Antenna Configuration Index (ACI) based on the mutually
+   * supported maximum number of antenna paths and the number of antennas
+   * available on the local and remote devices.
+   *
+   * The logic prioritizes configurations that use more paths. It uses fallthrough
+   * to check for less capable configurations if a more capable one isn't supported
+   * by the available antennas.
+   */
+  uint8_t get_tone_antenna_config_selection(uint8_t remote_num_antennas_supported,
+                                            uint8_t max_antenna_paths_supported) {
+    if (com::android::bluetooth::flags::channel_sounding_26q1_fix()) {
+      return cs_tone_antenna_config_mapping_table_[num_antennas_supported_ - 1]
+                                                  [remote_num_antennas_supported - 1];
+    }
+    switch (max_antenna_paths_supported) {
+      case 4:
+        // Check for 4-path configurations first.
+        if (num_antennas_supported_ >= 2 && remote_num_antennas_supported >= 2) {
+          // Prefer the symmetric 2x2 configuration if both devices have at least 2 antennas.
+          return 7;  // ACI 7: 2x2 configuration
+        } else if (num_antennas_supported_ >= 4) {
+          // Check for 4x1 if the local device has 4+ antennas.
+          return 3;  // ACI 3: 4x1 configuration
+        } else if (remote_num_antennas_supported >= 4) {
+          // Check for 1x4 if the remote device has 4+ antennas.
+          return 6;  // ACI 6: 1x4 configuration
+        }
+        // If no 4-path configuration is possible with the available antennas,
+        // fall through to check for 3-path configurations.
+        ABSL_FALLTHROUGH_INTENDED;
+      case 3:
+        // Check for 3-path configurations.
+        if (num_antennas_supported_ >= 3) {
+          return 2;  // ACI 2: 3x1 configuration
+        } else if (remote_num_antennas_supported >= 3) {
+          return 5;  // ACI 5: 1x3 configuration
+        }
+        // Fall through to check for 2-path configurations.
+        ABSL_FALLTHROUGH_INTENDED;
+      case 2:
+        // Check for 2-path configurations.
+        if (num_antennas_supported_ >= 2) {
+          return 1;  // ACI 1: 2x1 configuration
+        } else if (remote_num_antennas_supported >= 2) {
+          return 4;  // ACI 4: 1x2 configuration
+        }
+        // Fall through to the default 1-path configuration.
+        ABSL_FALLTHROUGH_INTENDED;
+      default:
+        // This is the baseline 1-path configuration (1x1).
+        return 0;  // ACI 0: 1x1 configuration
+    }
+  }
+
   void send_le_cs_set_procedure_parameters(uint16_t connection_handle, uint8_t config_id,
-                                           uint8_t remote_num_antennas_supported) {
-    uint8_t tone_antenna_config_selection =
-            cs_tone_antenna_config_mapping_table_[num_antennas_supported_ - 1]
-                                                 [remote_num_antennas_supported - 1];
+                                           uint8_t remote_num_antennas_supported,
+                                           uint8_t remote_max_antenna_paths_supported) {
+    uint8_t max_antenna_paths_supported =
+            std::min(local_max_antenna_paths_supported_, remote_max_antenna_paths_supported);
+    uint8_t tone_antenna_config_selection = get_tone_antenna_config_selection(
+            remote_num_antennas_supported, max_antenna_paths_supported);
     uint8_t preferred_peer_antenna_value =
             cs_preferred_peer_antenna_mapping_table_[tone_antenna_config_selection];
     log::info(
             "num_antennas_supported:{}, remote_num_antennas_supported:{}, "
+            "max_antenna_paths_supported:{},"
             "tone_antenna_config_selection:{}, preferred_peer_antenna:{}",
-            num_antennas_supported_, remote_num_antennas_supported, tone_antenna_config_selection,
-            preferred_peer_antenna_value);
+            num_antennas_supported_, remote_num_antennas_supported, max_antenna_paths_supported,
+            tone_antenna_config_selection, preferred_peer_antenna_value);
     CsPreferredPeerAntenna preferred_peer_antenna;
     preferred_peer_antenna.use_first_ordered_antenna_element_ = preferred_peer_antenna_value & 0x01;
     preferred_peer_antenna.use_second_ordered_antenna_element_ =
@@ -1074,6 +1125,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     num_antennas_supported_ = complete_view.GetNumAntennasSupported();
     local_support_phase_based_ranging_ = cs_subfeature_supported_.phase_based_ranging_ == 0x01;
     local_supported_sw_time_ = complete_view.GetTSwTimeSupported();
+    local_max_antenna_paths_supported_ = complete_view.GetMaxAntennaPathsSupported();
     is_local_cs_ready_ = true;
   }
 
@@ -1106,6 +1158,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       req_it->second.remote_num_antennas_supported_ = event_view.GetNumAntennasSupported();
       req_it->second.retry_counter_for_create_config = 0;
       req_it->second.remote_supported_sw_time_ = event_view.GetTSwTimeSupported();
+      req_it->second.remote_max_antenna_paths_supported_ = event_view.GetMaxAntennaPathsSupported();
 
       if (event_view.GetOptionalSubfeaturesSupported().no_frequency_actuation_error_ == 0) {
         log::debug("read remote fae as the no_fae is false.");
@@ -1182,7 +1235,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     if (is_expected_by_requester) {
       send_le_cs_set_procedure_parameters(event_view.GetConnectionHandle(),
                                           req_it->second.used_config_id,
-                                          req_it->second.remote_num_antennas_supported_);
+                                          req_it->second.remote_num_antennas_supported_,
+                                          req_it->second.remote_max_antenna_paths_supported_);
     }
     auto res_it = cs_responder_trackers_.find(connection_handle);
     if (res_it != cs_responder_trackers_.end() &&
@@ -1543,10 +1597,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     }
   }
 
-  bool is_hal_v2() const {
-    return com::android::bluetooth::flags::channel_sounding_25q2_apis() &&
-           ranging_hal_->GetRangingHalVersion() == hal::V_2;
-  }
+  bool is_hal_v2() const { return ranging_hal_->GetRangingHalVersion() == hal::V_2; }
 
   void on_cs_subevent(LeMetaEventView event) {
     if (!event.IsValid()) {
@@ -2927,9 +2978,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     double pow_value = (remote_tx_power - rssi - kRSSIDropOffAt1M) / 20.0;
     double distance = pow(10.0, pow_value);
 
-    using namespace std::chrono;
-    uint64_t elapsedRealtimeNanos =
-            duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+    uint64_t elapsedRealtimeNanos = ::android::elapsedRealtimeNano();
     distance_measurement_callbacks_->OnDistanceMeasurementResult(
             address, distance * 100, distance * 100, kInvalidAzimuthAngleDegree,
             kInvalidAzimuthAngleDegree, kInvalidAltitudeAngleDegree, kInvalidAltitudeAngleDegree,
@@ -2965,6 +3014,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   uint8_t num_antennas_supported_ = 0x01;
   bool local_support_phase_based_ranging_ = false;
   uint8_t local_supported_sw_time_ = 0;
+  uint8_t local_max_antenna_paths_supported_ = 0x01;
   bool is_local_cs_ready_ = false;
   // A table that maps num_antennas_supported and remote_num_antennas_supported to Antenna
   // Configuration Index.

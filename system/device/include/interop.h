@@ -347,11 +347,17 @@ typedef enum {
   // collision.
   INTEROP_DELAY_AUTH,
 
+  // Add remote device into INTEROP_A2DP_DELAY_DISCONNECT blacklist
+  INTEROP_A2DP_DELAY_DISCONNECT,
+
   // Some LE HID devices contain more than one HOGP service.
   INTEROP_MULTIPLE_HOGP_SERVICE_CHOOSE_THIRD,
 
   // Som A2DP sink devices don't respond SDP request during A2DP reconnection
   INTEROP_A2DP_SKIP_SDP_DURING_RECONNECTION,
+
+  // After receiving the service changed ind, ignore the subsequent operation.
+  INTEROP_IGNORE_SERVICE_CHANGED_IND,
 
   // Some devices response slowly after setting non zero latency.
   // To avoid slowing down profile connection set latency to 0.
@@ -369,7 +375,6 @@ typedef enum {
   // Some devices claim to support HFP in EIR but does not actually support it.
   INTEROP_DISABLE_HF_PROFILE,
 
-  // Some devices don't respond to LE appearance read request.
   INTEROP_DISABLE_READ_LE_APPEARANCE,
 
   // Some devices need inband ringing disabled
@@ -381,6 +386,8 @@ typedef enum {
 
   // Some devices do not work well with incoming SMP over BR/EDR pairing requests
   INTEROP_DISABLE_OUTGOING_BR_SMP,
+
+  INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
 
   END_OF_INTEROP_LIST
 } interop_feature_t;

@@ -62,8 +62,8 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -209,16 +209,7 @@ final class A2dpStateMachine extends StateMachine {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
                         break;
                     }
-                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-                        transitionTo(mConnecting);
-                        break;
-                    }
-                    if (mA2dpService.okToConnect(mDevice, true)) {
-                        transitionTo(mConnecting);
-                    } else {
-                        // Reject the request and stay in Disconnected state
-                        Log.w(TAG, "Outgoing A2DP Connecting request rejected: " + mDevice);
-                    }
+                    transitionTo(mConnecting);
                 }
                 case MESSAGE_DISCONNECT ->
                         Log.w(TAG, "Disconnected: DISCONNECT ignored: " + mDevice);
@@ -573,6 +564,7 @@ final class A2dpStateMachine extends StateMachine {
                                 processAudioStateEvent(event.valueInt);
                         case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
                                 processCodecConfigEvent(event.codecStatus);
+                        case A2dpStackEvent.EVENT_TYPE_AUDIO_DELAY_REPORTED -> {}
                         default -> Log.e(TAG, "Connected: ignoring stack event: " + event);
                     }
                 }
@@ -731,12 +723,21 @@ final class A2dpStateMachine extends StateMachine {
             if (update) {
                 mA2dpService.codecConfigUpdated(mDevice, mCodecStatus, false);
             }
-            return;
+        } else {
+            boolean sameAudioFeedingParameters =
+                    newCodecStatus.getCodecConfig().sameAudioFeedingParameters(prevCodecConfig);
+            mA2dpService.codecConfigUpdated(mDevice, mCodecStatus, sameAudioFeedingParameters);
         }
 
-        boolean sameAudioFeedingParameters =
-                newCodecStatus.getCodecConfig().sameAudioFeedingParameters(prevCodecConfig);
-        mA2dpService.codecConfigUpdated(mDevice, mCodecStatus, sameAudioFeedingParameters);
+        if (Flags.synchronizeCodecPreferencesAndPriority()
+                // Disable the optional codec to ensure that the mandatory codec priority aligns
+                // with the optional codec preference
+                && (mA2dpService.getSupportsOptionalCodecs(mDevice)
+                        == BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED)
+                && (mA2dpService.getOptionalCodecsEnabled(mDevice)
+                        == BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED)) {
+            mA2dpService.disableOptionalCodecs(mDevice);
+        }
     }
 
     // This method does not check for error condition (newState == prevState)
@@ -782,9 +783,6 @@ final class A2dpStateMachine extends StateMachine {
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         mA2dpService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
-
-        // Log the A2DP stream state change to the metrics logger.
-        logA2dpStateMetric(mDevice, newState);
     }
 
     @Override
@@ -916,12 +914,6 @@ final class A2dpStateMachine extends StateMachine {
             case BluetoothProfile.STATE_DISCONNECTING ->
                     BluetoothStatsLog
                             .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__A2DP_STATE_DISCONNECTING;
-            case BluetoothA2dp.STATE_NOT_PLAYING ->
-                    BluetoothStatsLog
-                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__A2DP_STATE_NOT_PLAYING;
-            case BluetoothA2dp.STATE_PLAYING ->
-                    BluetoothStatsLog
-                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__A2DP_STATE_PLAYING;
             default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_UNKNOWN;
         };
     }

@@ -71,7 +71,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 
-using base::Closure;
+using base::OnceClosure;
 using bluetooth::Uuid;
 using bluetooth::csis::ConnectionState;
 using bluetooth::csis::CsisClient;
@@ -113,7 +113,7 @@ DeviceGroupsCallbacks* device_group_callbacks;
  * Flow:
  * If connected device contains CSIS services, and it is included into CAP
  * service or is not included at all, implementation reads all its
- * characteristisc. The only mandatory characteristic is Set Identity Resolving
+ * characteristic. The only mandatory characteristic is Set Identity Resolving
  * Key (SIRK) and once this is read implementation assumes there is at least 2
  * devices in the set and start to search for other members by looking for new
  * Advertising Type (RSI Type) and Resolvable Set Identifier (RSI) in it.
@@ -135,7 +135,7 @@ class CsisClientImpl : public CsisClient {
                                                   sizeof(uint8_t) /* rank */ + Octet16().size();
 
 public:
-  CsisClientImpl(bluetooth::csis::CsisClientCallbacks* callbacks, Closure initCb)
+  CsisClientImpl(bluetooth::csis::CsisClientCallbacks* callbacks, OnceClosure initCb)
       : gatt_if_(0), callbacks_(callbacks) {
     BTA_GATTC_AppRegister(
             "csis",
@@ -144,8 +144,8 @@ public:
                 instance->GattcCallback(event, p_data);
               }
             },
-            base::Bind(
-                    [](Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error(
                                 "Can't start Coordinated Set Service client profile - no "
@@ -153,12 +153,12 @@ public:
                         return;
                       }
                       instance->gatt_if_ = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
 
                       DeviceGroups::Initialize(device_group_callbacks);
                       instance->dev_groups_ = DeviceGroups::Get();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
 
     BTA_DmSirkSecCbRegister([](tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
@@ -296,7 +296,7 @@ public:
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
-    bool use_opportunstic_connect = false;
+    bool use_opportunistic_connect = false;
 
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
@@ -307,15 +307,15 @@ public:
       }
       devices_.emplace_back(std::make_shared<CsisDevice>(address, true));
     } else {
-      /* When this is already known device, we should use opportinistic connect for this profile.
+      /* When this is already known device, we should use opportunistic connect for this profile.
        * Non opportunistic one is needed only after bonding to make sure the device is not
        * disconnected in case leAudio is not enabled by default.
        */
-      use_opportunstic_connect = true;
+      use_opportunistic_connect = true;
       device->connecting_actively = true;
     }
 
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunstic_connect);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunistic_connect);
   }
 
   void Disconnect(const RawAddress& addr) override {
@@ -465,7 +465,7 @@ public:
 
       if (next_dev) {
         auto next_csis_inst = next_dev->GetCsisInstanceByGroupId(group_id);
-        log::assert_that(csis_instance != nullptr, "csis_instance does not exist!");
+        log::assert_that(next_csis_inst != nullptr, "next_csis_inst does not exist!");
 #if CSIP_UPPER_TESTER_FORCE_TO_SEND_LOCK == FALSE
         if (next_csis_inst->GetLockState() == CsisLockState::CSIS_STATE_LOCKED) {
           /* Somebody else managed to lock it.
@@ -590,7 +590,7 @@ public:
       SetLock(csis_device, csis_instance, new_lock_state);
     } else {
       /* For unlocking, we don't have to monitor status of unlocking device,
-       * therefore, we can just send unlock to all of them, in oposite rank
+       * therefore, we can just send unlock to all of them, in opposite rank
        * order and check if we get new state notification.
        */
       auto csis_device = csis_group->GetLastDevice();
@@ -713,7 +713,7 @@ public:
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
-    /* Oportunistic works only for direct connect,
+    /* Opportunistic works only for direct connect,
      * but in fact this is background connect
      */
     log::info(": {}", address);
@@ -1463,7 +1463,7 @@ private:
     });
     BTA_DmBleScan(enable, bluetooth::csis::kDefaultScanDurationS);
 
-    /* Need to call it by ourselfs */
+    /* Need to call these ourselves */
     if (!enable) {
       OnCsisObserveCompleted();
       CsisObserverSetBackground(true);
@@ -2292,7 +2292,7 @@ private:
        * that its SIRK is different. Device connection was triggered by RSI
        * match for group.
        */
-      log::error("Joining device {}, does not match any existig group", address);
+      log::error("Joining device {}, does not match any existing group", address);
       BTA_DmSirkConfirmDeviceReply(address, false);
       return;
     }
@@ -2387,7 +2387,7 @@ DeviceGroupsCallbacksImpl deviceGroupsCallbacksImpl;
 
 }  // namespace
 
-void CsisClient::Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, Closure initCb) {
+void CsisClient::Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     log::info("Already initialized!");
@@ -2395,7 +2395,7 @@ void CsisClient::Initialize(bluetooth::csis::CsisClientCallbacks* callbacks, Clo
   }
 
   device_group_callbacks = &deviceGroupsCallbacksImpl;
-  instance = new CsisClientImpl(callbacks, initCb);
+  instance = new CsisClientImpl(callbacks, std::move(initCb));
 }
 
 bool CsisClient::IsCsisClientRunning() { return instance; }

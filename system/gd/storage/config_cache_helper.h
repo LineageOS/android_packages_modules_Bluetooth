@@ -104,16 +104,6 @@ public:
     return GetBool(section, property);
   }
 
-  template <typename T,
-            typename std::enable_if<std::is_base_of_v<Serializable<T>, T>, int>::type = 0>
-  std::optional<T> Get(const std::string& section, const std::string& property) {
-    auto value = config_cache_.GetProperty(section, property);
-    if (!value) {
-      return std::nullopt;
-    }
-    return T::FromLegacyConfigString(*value);
-  }
-
   template <typename T, typename std::enable_if<std::is_enum_v<T>, int>::type = 0>
   std::optional<T> Get(const std::string& section, const std::string& property) {
     auto value = config_cache_.GetProperty(section, property);

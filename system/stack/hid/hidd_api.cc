@@ -30,6 +30,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdlib.h>
 #include <string.h>
@@ -214,7 +215,8 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
   // Bluetooth Profile Descriptor List
   if (result) {
     const uint16_t profile_uuid = UUID_SERVCLASS_HUMAN_INTERFACE;
-    const uint16_t version = 0x0100;
+    const uint16_t version =
+            com_android_bluetooth_flags_hidd_bump_version_to_111() ? 0x0101 : 0x0100;
 
     result &= get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(handle, profile_uuid,
                                                                               version);
@@ -225,7 +227,8 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
     uint8_t* p;
     const uint16_t rel_num = 0x0100;
     const uint16_t parser_version = 0x0111;
-    const uint16_t prof_ver = 0x0100;
+    const uint16_t prof_ver =
+            com_android_bluetooth_flags_hidd_bump_version_to_111() ? 0x0101 : 0x0100;
     const uint8_t dev_subclass = subclass;
     const uint8_t country_code = 0x21;
     const uint8_t bool_false = 0x00;

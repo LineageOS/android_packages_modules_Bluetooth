@@ -36,6 +36,7 @@ import static android.bluetooth.BluetoothLeAudioCodecConfig.SAMPLE_RATE_96000;
 import static android.bluetooth.BluetoothLeAudioCodecConfig.SAMPLE_RATE_NONE;
 import static android.bluetooth.BluetoothLeAudioCodecConfig.SampleRate;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -55,9 +56,8 @@ import java.util.Objects;
 /**
  * A class representing the codec specific config metadata information defined in the Basic Audio
  * Profile.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
     private static final int SAMPLING_FREQUENCY_TYPE = 0x01;
@@ -132,13 +132,11 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeAudioCodecConfigMetadata{"
-                + ("audioLocation=" + mAudioLocation)
+        return ("BluetoothLeAudioCodecConfigMetadata [audioLocation=" + mAudioLocation)
                 + (", sampleRate=" + mSampleRate)
                 + (", frameDuration=" + mFrameDuration)
                 + (", octetsPerFrame=" + mOctetsPerFrame)
-                + (", rawMetadata=" + Arrays.toString(mRawMetadata))
-                + '}';
+                + (", rawMetadata=" + Arrays.toString(mRawMetadata) + "]");
     }
 
     /**
@@ -146,8 +144,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * Assigned numbers.
      *
      * @return configured audio location, -1 if this metadata does not exist
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getAudioLocation() {
@@ -162,8 +160,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      *
      * @return configured sample rate from meta data, {@link
      *     BluetoothLeAudioCodecConfig#SAMPLE_RATE_NONE} if this metadata does not exist
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @SampleRate int getSampleRate() {
@@ -178,8 +176,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      *
      * @return configured frame duration from meta data, {@link
      *     BluetoothLeAudioCodecConfig#FRAME_DURATION_NONE} if this metadata does not exist
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @FrameDuration int getFrameDuration() {
@@ -191,8 +189,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * Bluetooth Assigned numbers.
      *
      * @return configured octets per frame from meta data 0 if this metadata does not exist
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getOctetsPerFrame() {
@@ -207,29 +205,19 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * Numbers</a>, including metadata that was not covered by the getter methods in this class.
      *
      * @return raw bytes of stream metadata in Bluetooth LTV format
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull byte[] getRawMetadata() {
         return mRawMetadata;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeLong(mAudioLocation);
@@ -242,10 +230,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
     /**
      * A {@link Parcelable.Creator} to create {@link BluetoothLeAudioCodecConfigMetadata} from
      * parcel.
-     *
-     * @hide
      */
-    @SystemApi @NonNull
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeAudioCodecConfigMetadata> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeAudioCodecConfigMetadata createFromParcel(
@@ -279,8 +265,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * @return parsed {@link BluetoothLeAudioCodecConfigMetadata} object
      * @throws IllegalArgumentException if <var>rawBytes</var> is null or when the raw bytes cannot
      *     be parsed to build the object
-     * @hide
      */
+    @Hide
     @SystemApi
     @NonNull
     @RequiresNoPermission
@@ -328,11 +314,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
                 rawBytes);
     }
 
-    /**
-     * Builder for {@link BluetoothLeAudioCodecConfigMetadata}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeAudioCodecConfigMetadata}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private long mAudioLocation = 0;
@@ -341,11 +324,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
         private int mOctetsPerFrame = 0;
         private byte[] mRawMetadata = null;
 
-        /**
-         * Create an empty builder.
-         *
-         * @hide
-         */
+        /** Create an empty builder. */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -353,8 +333,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeAudioCodecConfigMetadata original) {
             mAudioLocation = original.getAudioLocation();
@@ -370,8 +350,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          *
          * @param audioLocation configured audio location, -1 if does not exist
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setAudioLocation(long audioLocation) {
@@ -388,8 +368,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @param sampleRate configured sample rate in meta data
          * @return this builder
          * @throws IllegalArgumentException if sample rate is invalid value
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setSampleRate(@SampleRate int sampleRate) {
@@ -422,8 +402,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @param frameDuration configured frame duration in meta data
          * @return this builder
          * @throws IllegalArgumentException if frameDuration is invalid value
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setFrameDuration(@FrameDuration int frameDuration) {
@@ -443,8 +423,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @param octetsPerFrame configured octets per frame in meta data
          * @return this builder
          * @throws IllegalArgumentException if octetsPerFrame is invalid value
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setOctetsPerFrame(int octetsPerFrame) {
@@ -460,8 +440,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          *
          * @return constructed {@link BluetoothLeAudioCodecConfigMetadata}
          * @throws IllegalArgumentException if the object cannot be built
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeAudioCodecConfigMetadata build() {

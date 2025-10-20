@@ -17,12 +17,14 @@
 java_library {
     name: "bluetooth-common-java-tests",
     srcs: [
+        "FakeTimeProvider.kt",
         "MockitoRule.kt",
         "StaticMockitoRule.kt",
     ],
 
     static_libs: [
         "bluetooth-common-flagwrapper-tests",
+        "bluetooth-common-java",
         "flag-junit",
         "mockito-kotlin2",
         "mockito-target-extended",

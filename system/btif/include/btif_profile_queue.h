@@ -30,9 +30,11 @@
 #include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
-typedef bt_status_t (*btif_connect_cb_t)(RawAddress bda, uint16_t uuid);
+#include "bt_status.h"
 
-bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb);
+typedef BtStatus (*btif_connect_cb_t)(RawAddress bda, uint16_t uuid);
+
+BtStatus btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb);
 void btif_queue_cleanup(uint16_t uuid);
 void btif_queue_advance();
 
@@ -40,10 +42,10 @@ void btif_queue_advance();
  * Dispatch the next pending connect request.
  * NOTE: Must be called on the JNI thread.
  *
- * @return BT_STATUS_SUCCESS on success, otherwise the corresponding error
+ * @return BtifStatus() on success, otherwise the corresponding error
  * code
  */
-bt_status_t btif_queue_connect_next(void);
+BtStatus btif_queue_connect_next(void);
 
 void btif_queue_release();
 

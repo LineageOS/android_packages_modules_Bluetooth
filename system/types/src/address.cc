@@ -84,9 +84,10 @@ std::optional<RawAddress> RawAddress::FromString(const std::string& from) {
   return RawAddress(address);
 }
 
-size_t RawAddress::FromOctets(const uint8_t* from) {
-  std::copy(from, from + kLength, address.begin());
-  return kLength;
+RawAddress RawAddress::FromOctets(const uint8_t* from) {
+  std::array<uint8_t, 6> address;
+  std::copy(from, from + kLength, address.data());
+  return RawAddress(address);
 }
 
 bool RawAddress::IsValidAddress(const std::string& address) {

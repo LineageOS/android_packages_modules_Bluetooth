@@ -50,7 +50,7 @@ class ActiveLogTest {
 
     @Before
     fun setUp() {
-        Log.i("ActiveLogTest", "\t--> setup of " + testName.getMethodName())
+        Log.i("ActiveLogTest", "\t--> setup of ${testName.methodName}")
         activeLogs = ActiveLogs()
     }
 
@@ -60,7 +60,6 @@ class ActiveLogTest {
         val writer = PrintWriter(stringWriter)
 
         activeLogs.dump(writer)
-
         assertThat(stringWriter.toString()).isEqualTo("Bluetooth never enabled!\n")
     }
 
@@ -74,8 +73,13 @@ class ActiveLogTest {
         val writer = PrintWriter(stringWriter)
 
         activeLogs.dump(writer)
-
-        assertThat(stringWriter.toString()).matches("Enable log:\n(.*\n){$numberOfLogEntry}")
+        assertThat(stringWriter.toString())
+            .matches(
+                "Enable log:\n" +
+                    ".*\n" + // Header
+                    ".*\n" + // Separator
+                    "(.*\n){$numberOfLogEntry}"
+            )
     }
 
     @Test
@@ -87,9 +91,13 @@ class ActiveLogTest {
         val writer = PrintWriter(stringWriter)
 
         activeLogs.dump(writer)
-
         assertThat(stringWriter.toString())
-            .matches("Enable log:\n(.*\n){${ActiveLogs.MAX_ENTRIES_STORED}}")
+            .matches(
+                "Enable log:\n" +
+                    ".*\n" + // Header
+                    ".*\n" + // Separator
+                    "(.*\n){${ActiveLogs.MAX_ENTRIES_STORED}}"
+            )
     }
 
     @Test
@@ -101,9 +109,15 @@ class ActiveLogTest {
         val writer = PrintWriter(stringWriter)
 
         activeLogs.dump(writer)
-
         assertThat(stringWriter.toString())
-            .matches("Enable log:\n.*Disable.*\n.*EnableBle.*\n.*Enable.*\n")
+            .matches(
+                "Enable log:\n" +
+                    ".*\n" + // Header
+                    ".*\n" + // Separator
+                    ".*Disable.*\n" +
+                    ".*EnableBle.*\n" +
+                    ".*Enable.*\n"
+            )
     }
 
     @Test
@@ -129,20 +143,22 @@ class ActiveLogTest {
         assertThat(stringWriter.toString())
             .matches(
                 "Enable log:\n" +
-                    ".*AIRPLANE_MODE\n" +
-                    ".*APPLICATION_DIED\n" +
-                    ".*APPLICATION_REQUEST\n" +
-                    ".*AUTO_ON\n" +
-                    ".*CRASH\n" +
-                    ".*DISALLOWED\n" +
-                    ".*FACTORY_RESET\n" +
-                    ".*RESTARTED\n" +
-                    ".*RESTORE_USER_SETTING\n" +
-                    ".*SATELLITE MODE\n" +
-                    ".*START_ERROR\n" +
-                    ".*SYSTEM_BOOT\n" +
-                    ".*USER_SWITCH\n" +
-                    ".*UNKNOWN\\[\\d+\\]\n"
+                    ".*\n" + // Header
+                    ".*\n" + // Separator
+                    ".*AIRPLANE_MODE.*\n" +
+                    ".*APPLICATION_DIED.*\n" +
+                    ".*APPLICATION_REQUEST.*\n" +
+                    ".*AUTO_ON.*\n" +
+                    ".*CRASH.*\n" +
+                    ".*DISALLOWED.*\n" +
+                    ".*FACTORY_RESET.*\n" +
+                    ".*RESTARTED.*\n" +
+                    ".*RESTORE_USER_SETTING.*\n" +
+                    ".*SATELLITE MODE.*\n" +
+                    ".*START_ERROR.*\n" +
+                    ".*SYSTEM_BOOT.*\n" +
+                    ".*USER_SWITCH.*\n" +
+                    ".*UNKNOWN\\[\\d+\\].*\n"
             )
     }
 }

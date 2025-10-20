@@ -431,18 +431,18 @@ struct btm_ble_start_encrypt {
 extern struct btm_ble_start_encrypt btm_ble_start_encrypt;
 
 // Name: btm_ble_start_sec_check
-// Params: const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+// Params: const RawAddress& bd_addr, uint16_t psm, bool outgoing,
 // tBTM_SEC_CALLBACK* p_callback, void* p_ref_data Return: tL2CAP_LE_RESULT_CODE
 struct btm_ble_start_sec_check {
   static tBTM_STATUS return_value;
-  std::function<tBTM_STATUS(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+  std::function<tBTM_STATUS(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                             tBTM_SEC_CALLBACK* p_callback, void* p_ref_data)>
-          body{[](const RawAddress& /* bd_addr */, uint16_t /* psm */, bool /* is_originator */,
+          body{[](const RawAddress& /* bd_addr */, uint16_t /* psm */, bool /* outgoing */,
                   tBTM_SEC_CALLBACK* /* p_callback */,
                   void* /* p_ref_data */) { return return_value; }};
-  tBTM_STATUS operator()(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+  tBTM_STATUS operator()(const RawAddress& bd_addr, uint16_t psm, bool outgoing,
                          tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
-    return body(bd_addr, psm, is_originator, p_callback, p_ref_data);
+    return body(bd_addr, psm, outgoing, p_callback, p_ref_data);
   }
 };
 extern struct btm_ble_start_sec_check btm_ble_start_sec_check;

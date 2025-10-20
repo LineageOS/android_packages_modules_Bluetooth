@@ -70,7 +70,7 @@ constexpr char kBtmLogTag[] = "HIDH";
  ****************************************************************************/
 static void bta_hh_cback(uint8_t dev_handle, const RawAddress& addr, uint8_t event, uint32_t data,
                          BT_HDR* pdata);
-static tBTA_HH_STATUS bta_hh_get_trans_status(uint32_t result);
+static bthh_status_t bta_hh_get_trans_status(uint32_t result);
 
 static const char* bta_hh_hid_event_name(uint16_t event);
 
@@ -88,7 +88,7 @@ static const char* bta_hh_hid_event_name(uint16_t event);
  *
  ******************************************************************************/
 void bta_hh_api_enable(tBTA_HH_CBACK* p_cback, bool enable_hid, bool enable_hogp) {
-  tBTA_HH_STATUS status = BTA_HH_OK;
+  bthh_status_t status = BTHH_OK;
   uint8_t xx;
 
   /* initialize BTE HID */
@@ -113,17 +113,17 @@ void bta_hh_api_enable(tBTA_HH_CBACK* p_cback, bool enable_hid, bool enable_hogp
   if (enable_hid) {
     /* Register with L2CAP */
     if (HID_HostRegister(bta_hh_cback) != HID_SUCCESS) {
-      status = BTA_HH_ERR;
+      status = BTHH_ERR;
     }
   }
 
-  if (status == BTA_HH_OK && enable_hogp) {
+  if (status == BTHH_OK && enable_hogp) {
     bta_hh_le_enable();
   } else {
     /* signal BTA call back event */
     tBTA_HH bta_hh;
     bta_hh.status = status;
-    if (status != BTA_HH_OK) {
+    if (status != BTHH_OK) {
       log::error("Failed to register, status:{}", status);
     }
     if (bta_hh_cb.p_cback) {
@@ -180,11 +180,11 @@ void bta_hh_api_disable(void) {
  ******************************************************************************/
 void bta_hh_disc_cmpl(void) {
   log::debug("Disconnect complete");
-  tBTA_HH_STATUS status = BTA_HH_OK;
+  bthh_status_t status = BTHH_OK;
 
   /* Deregister with lower layer */
   if (HID_HostDeregister() != HID_SUCCESS) {
-    status = BTA_HH_ERR;
+    status = BTHH_ERR;
   }
 
   if (bta_hh_cb.gatt_if != BTA_GATTS_INVALID_IF) {
@@ -206,7 +206,7 @@ void bta_hh_disc_cmpl(void) {
  ******************************************************************************/
 static void bta_hh_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS result, uint16_t attr_mask,
                              tHID_DEV_SDP_INFO* sdp_rec) {
-  tBTA_HH_STATUS status = BTA_HH_ERR_SDP;
+  bthh_status_t status = BTHH_ERR_SDP;
   tAclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr},
           .transport = BT_TRANSPORT_BR_EDR,
@@ -232,7 +232,7 @@ static void bta_hh_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS result, uint
       if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) {
         /*  add device/update attr_mask information */
         if (HID_HostAddDev(p_cb->link_spec.addrt.bda, attr_mask, &hdl) == HID_SUCCESS) {
-          status = BTA_HH_OK;
+          status = BTHH_OK;
           /* update cb_index[] map */
           bta_hh_cb.cb_index[hdl] = p_cb->index;
         } else {
@@ -251,11 +251,11 @@ static void bta_hh_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS result, uint
 
         p_cb->dscp_info.ctry_code = sdp_rec->ctry_code;
 
-        status = BTA_HH_OK;
+        status = BTHH_OK;
       }
 
     } else { /* type of device is not supported */
-      status = BTA_HH_ERR_TOD_UNSPT;
+      status = BTHH_ERR_TOD_UNSPT;
     }
   }
 
@@ -277,7 +277,7 @@ static void bta_hh_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS result, uint
  *
  ******************************************************************************/
 static void bta_hh_di_sdp_cback(const RawAddress& bd_addr, tSDP_RESULT result) {
-  tBTA_HH_STATUS status = BTA_HH_ERR_SDP;
+  bthh_status_t status = BTHH_ERR_SDP;
   tAclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr},
           .transport = BT_TRANSPORT_BR_EDR,
@@ -315,13 +315,13 @@ static void bta_hh_di_sdp_cback(const RawAddress& bd_addr, tSDP_RESULT result) {
     tHID_STATUS ret = HID_HostGetSDPRecord(p_cb->link_spec.addrt.bda, p_cb->p_disc_db,
                                            p_bta_hh_cfg->sdp_db_size, bta_hh_sdp_cback);
     if (ret == HID_SUCCESS) {
-      status = BTA_HH_OK;
+      status = BTHH_OK;
     } else {
       log::warn("failure Status 0x{:2x}", ret);
     }
   }
 
-  if (status != BTA_HH_OK) {
+  if (status != BTHH_OK) {
     osi_free_and_reset((void**)&p_cb->p_disc_db);
     /* send SDP_CMPL_EVT into state machine */
     tBTA_HH_DATA bta_hh_data;
@@ -368,7 +368,7 @@ static void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb) {
     osi_free_and_reset((void**)&p_cb->p_disc_db);
 
     tBTA_HH_DATA bta_hh_data;
-    bta_hh_data.status = BTA_HH_ERR_SDP;
+    bta_hh_data.status = BTHH_ERR_SDP;
     bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
   }
 }
@@ -386,17 +386,17 @@ static void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   log::assert_that(p_data != nullptr, "assert failed: p_data != nullptr");
-  tBTA_HH_STATUS status = p_data->status;
+  bthh_status_t status = p_data->status;
 
   /* if SDP compl success */
-  if (status == BTA_HH_OK) {
+  if (status == BTHH_OK) {
     /* not incoming connection doing SDP, initiate a HID connection */
     if (!p_cb->incoming_conn) {
       /* open HID connection */
       tHID_STATUS ret = HID_HostOpenDev(p_cb->hid_handle);
       if (ret == HID_SUCCESS || ret == HID_ERR_ALREADY_CONN) {
         log::verbose("HID_HostOpenDev returned={}", hid_status_text(ret));
-        status = BTA_HH_OK;
+        status = BTHH_OK;
       } else if (ret == HID_ERR_CONN_IN_PROCESS) {
         /* Connection already in progress, return from here, SDP will be performed after connection
          * is completed */
@@ -406,23 +406,22 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         log::warn("HID_HostOpenDev failed: Status {}", hid_status_text(ret));
         /* open fail, remove device from management device list */
         HID_HostRemoveDev(p_cb->hid_handle);
-        status = BTA_HH_ERR;
+        status = BTHH_ERR;
       }
     } else { // incoming connection SDP finished
       bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
     }
   } else {
-    log::warn("{} status {}", p_cb->link_spec, bta_hh_status_text(p_data->status));
+    log::warn("{} status {}", p_cb->link_spec, p_data->status);
   }
 
-  if (status != BTA_HH_OK) {
+  if (status != BTHH_OK) {
     log::warn("SDP failed for {} status:{} incoming:{}, conn hndl:{}, app_id:{}", p_cb->link_spec,
-              bta_hh_status_text(status), p_cb->incoming_conn, p_cb->incoming_hid_handle,
-              p_cb->app_id);
+              status, p_cb->incoming_conn, p_cb->incoming_hid_handle, p_cb->app_id);
     /* Check if this was incoming connection request from an unknown device and connection failed
      * due to missing HID Device SDP UUID. In such condition, disconnect the link as well as remove
      * the device from list of HID devices */
-    if (status == BTA_HH_ERR_SDP && p_cb->incoming_conn && p_cb->app_id == 0) {
+    if (status == BTHH_ERR_SDP && p_cb->incoming_conn && p_cb->app_id == 0) {
       HID_HostRemoveDev(p_cb->incoming_hid_handle);
     }
 
@@ -462,7 +461,7 @@ static void bta_hh_bredr_conn(tBTA_HH_DEV_CB* p_cb) {
     return;
   }
 
-  tBTA_HH_DATA bta_hh_data = {.status = BTA_HH_OK};
+  tBTA_HH_DATA bta_hh_data = {.status = BTHH_OK};
   if (p_cb->hid_handle != BTA_HH_INVALID_HANDLE) {
     log::warn("Already connected to {}, handle: {}", p_cb->link_spec, p_cb->hid_handle);
     bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
@@ -478,7 +477,7 @@ static void bta_hh_bredr_conn(tBTA_HH_DEV_CB* p_cb) {
                               p_cb->app_id);
     bta_hh_cb.cb_index[hdl] = p_cb->index;
   } else {
-    bta_hh_data.status = BTA_HH_ERR_NO_RES;
+    bta_hh_data.status = BTHH_ERR_NO_RES;
     log::warn("Failed to initiated connection to {}", p_cb->link_spec);
   }
 
@@ -543,26 +542,34 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
   if (p_cb->link_spec.transport == BT_TRANSPORT_LE) {
     log::debug("Host initiating close to le device:{}", p_cb->link_spec);
-
-    bta_hh_le_api_disc_act(p_cb);
-
-  } else {
-    const uint8_t hid_handle = (p_data != nullptr)
-                                       ? static_cast<uint8_t>(p_data->hdr.layer_specific)
-                                       : p_cb->hid_handle;
-    tHID_STATUS status = HID_HostCloseDev(hid_handle);
-    if (status != HID_SUCCESS) {
-      log::warn("Failed closing classic device:{} status:{}", p_cb->link_spec,
-                hid_status_text(status));
-    } else {
-      log::debug("Host initiated close to classic device:{}", p_cb->link_spec);
+    if (p_data != nullptr) {
+      p_cb->status = p_data->api_close.status;
     }
-    tBTA_HH bta_hh = {
-            .dev_status = {.status = (status == HID_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR,
-                           .handle = hid_handle},
-    };
-    (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
+    bta_hh_le_api_disc_act(p_cb);
+    return;
   }
+
+  bthh_status_t status = p_data != nullptr ? p_data->api_close.status : BTHH_OK;
+  uint8_t hid_handle = (p_data != nullptr)
+                               ? static_cast<uint8_t>(p_data->api_close.hdr.layer_specific)
+                               : p_cb->hid_handle;
+  tHID_STATUS result = HID_HostCloseDev(hid_handle);
+
+  if (result != HID_SUCCESS) {
+    log::warn("Failed closing classic device:{} status:{}", p_cb->link_spec,
+              hid_status_text(result));
+    if (status == BTHH_OK) {
+      status = BTHH_ERR;
+    }
+  } else {
+    log::debug("Host initiated close to classic device:{}", p_cb->link_spec);
+  }
+
+  tBTA_HH bta_hh = {
+          .dev_status = {.status = status, .handle = hid_handle},
+  };
+
+  (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
 }
 
 /*******************************************************************************
@@ -576,21 +583,19 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  tBTA_HH_CONN conn;
   uint8_t dev_handle = p_data ? (uint8_t)p_data->hid_cback.hdr.layer_specific : p_cb->hid_handle;
+  tBTA_HH_CONN conn = {
+          .link_spec = p_cb->link_spec,
+          .status = p_cb->status,
+          .handle = dev_handle,
+          .scps_supported = p_cb->scps_supported,
+          .sub_class = p_cb->sub_class,
+          .attr_mask = p_cb->attr_mask,
+          .app_id = p_cb->app_id,
+  };
 
-  memset((void*)&conn, 0, sizeof(tBTA_HH_CONN));
-  conn.handle = dev_handle;
-  conn.link_spec = p_cb->link_spec;
-
-  /* increase connection number */
-  bta_hh_cb.cnt_num++;
-
-  conn.status = p_cb->status;
-  conn.scps_supported = p_cb->scps_supported;
-  conn.sub_class = p_cb->sub_class;
-  conn.attr_mask = p_cb->attr_mask;
-  conn.app_id = p_cb->app_id;
+  p_cb->status = BTHH_OK;  // Reset status since it has been used now
+  bta_hh_cb.cnt_num++;     // Increment connection count
 
   BTM_LogHistory(kBtmLogTag, p_cb->link_spec.addrt.bda, "Opened",
                  std::format("{} initiator:{}", bt_transport_text(p_cb->link_spec.transport),
@@ -609,7 +614,7 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         p_cb->w4_evt = BTA_HH_SET_PROTO_EVT;
       } else {
         /* HID connection is up, while SET_PROTO fail */
-        conn.status = BTA_HH_ERR_PROTO;
+        conn.status = BTHH_ERR_PROTO;
       }
     }
   }
@@ -695,8 +700,8 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       bta_hh.hs_data.handle = p_cb->hid_handle;
       /* if handshake gives an OK code for these transaction, fill in UNSUPT */
       bta_hh.hs_data.status = bta_hh_get_trans_status(p_data->hid_cback.data);
-      if (bta_hh.hs_data.status == BTA_HH_OK) {
-        bta_hh.hs_data.status = BTA_HH_HS_TRANS_NOT_SPT;
+      if (bta_hh.hs_data.status == BTHH_OK) {
+        bta_hh.hs_data.status = BTHH_HS_TRANS_NOT_SPT;
       }
       (*bta_hh_cb.p_cback)(p_cb->w4_evt, &bta_hh);
       p_cb->w4_evt = BTA_HH_EMPTY_EVT;
@@ -714,7 +719,7 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
     /* SET_PROTOCOL when open connection */
     case BTA_HH_OPEN_EVT:
-      bta_hh.conn.status = p_data->hid_cback.data ? BTA_HH_ERR_PROTO : BTA_HH_OK;
+      bta_hh.conn.status = p_data->hid_cback.data ? BTHH_ERR_PROTO : BTHH_OK;
       bta_hh.conn.handle = p_cb->hid_handle;
       bta_hh.conn.link_spec = p_cb->link_spec;
       (*bta_hh_cb.p_cback)(p_cb->w4_evt, &bta_hh);
@@ -753,7 +758,7 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
     osi_free_and_reset((void**)&pdata);
     return;
   }
-  hs_data.status = BTA_HH_OK;
+  hs_data.status = BTHH_OK;
   hs_data.handle = p_cb->hid_handle;
 
   switch (p_cb->w4_evt) {
@@ -810,7 +815,7 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
   memset(&conn_dat, 0, sizeof(tBTA_HH_CONN));
   conn_dat.handle = p_cb->hid_handle;
-  conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ? BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
+  conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ? BTHH_ERR_AUTH_FAILED : BTHH_ERR;
   conn_dat.link_spec = p_cb->link_spec;
   HID_HostCloseDev(p_cb->hid_handle);
 
@@ -843,8 +848,6 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  tBTA_HH_CBDATA disc_dat = {BTA_HH_OK, 0};
-
   uint32_t reason = p_data->hid_cback.data; /* Reason for closing (32-bit) */
   const bool l2cap_conn_fail = reason & HID_L2CAP_CONN_FAIL;
   const bool l2cap_req_fail = reason & HID_L2CAP_REQ_FAIL;
@@ -853,9 +856,6 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
   /* if HID_HDEV_EVT_VC_UNPLUG was received, report BTA_HH_VC_UNPLUG_EVT */
   uint16_t event = p_cb->vp ? BTA_HH_VC_UNPLUG_EVT : BTA_HH_CLOSE_EVT;
-
-  disc_dat.handle = p_cb->hid_handle;
-  disc_dat.status = to_bta_hh_status(p_data->hid_cback.data);
 
   BTM_LogHistory(kBtmLogTag, p_cb->link_spec.addrt.bda, "Closed",
                  std::format("{} reason {} {} {} {}",
@@ -869,9 +869,11 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   /* update total conn number */
   bta_hh_cb.cnt_num--;
 
-  if (disc_dat.status) {
-    disc_dat.status = BTA_HH_ERR;
+  tBTA_HH_CBDATA disc_dat = {.status = p_cb->status, .handle = p_cb->hid_handle};
+  if (disc_dat.status == BTHH_OK && reason != 0) {
+    disc_dat.status = BTHH_ERR;
   }
+  p_cb->status = BTHH_OK;  // Reset status since it has been used now
 
   (*bta_hh_cb.p_cback)(event, (tBTA_HH*)&disc_dat);
 
@@ -932,7 +934,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   tBTA_HH_DEV_INFO dev_info;
   uint8_t dev_handle;
 
-  dev_info.status = BTA_HH_ERR;
+  dev_info.status = BTHH_ERR;
   dev_info.handle = BTA_HH_INVALID_HANDLE;
 
   switch (p_dev_info->sub_event) {
@@ -945,13 +947,13 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
           p_cb->link_spec.transport = BT_TRANSPORT_LE;
           dev_info.handle = bta_hh_le_add_device(p_cb, p_dev_info);
           if (dev_info.handle != BTA_HH_INVALID_HANDLE) {
-            dev_info.status = BTA_HH_OK;
+            dev_info.status = BTHH_OK;
           }
         } else if (transport == BT_TRANSPORT_BR_EDR) {
           if (HID_HostAddDev(p_dev_info->link_spec.addrt.bda, p_dev_info->attr_mask, &dev_handle) ==
               HID_SUCCESS) {
             dev_info.handle = dev_handle;
-            dev_info.status = BTA_HH_OK;
+            dev_info.status = BTHH_OK;
             p_cb->link_spec.transport = BT_TRANSPORT_BR_EDR;
 
             /* update DI information */
@@ -974,7 +976,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       } else /* device already been added */
       {
         dev_info.handle = p_cb->hid_handle;
-        dev_info.status = BTA_HH_OK;
+        dev_info.status = BTHH_OK;
       }
       bta_hh_trace_dev_db();
 
@@ -989,7 +991,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         bta_hh_clean_up_kdev(p_cb);
       } else {
         if (HID_HostRemoveDev(dev_info.handle) == HID_SUCCESS) {
-          dev_info.status = BTA_HH_OK;
+          dev_info.status = BTHH_OK;
 
           /* remove from known device list in BTA */
           bta_hh_clean_up_kdev(p_cb);
@@ -1001,7 +1003,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       break;
 
     default:
-      log::verbose("invalid command");
+      log::warn("Invalid command {} for device {}", p_dev_info->sub_event, p_dev_info->link_spec);
       break;
   }
 
@@ -1051,7 +1053,7 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         tBTA_HH cbdata = {
                 .hs_data =
                         {
-                                .status = BTA_HH_ERR,
+                                .status = BTHH_ERR,
                                 .handle = p_cb->hid_handle,
                                 .rsp_data =
                                         {
@@ -1064,7 +1066,7 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         tBTA_HH cbdata = {
                 .dev_status =
                         {
-                                .status = BTA_HH_ERR,
+                                .status = BTHH_ERR,
                                 .handle = p_cb->hid_handle,
                         },
         };
@@ -1199,19 +1201,19 @@ static void bta_hh_cback(uint8_t dev_handle, const RawAddress& addr, uint8_t eve
  *                  status code
  *
  ******************************************************************************/
-static tBTA_HH_STATUS bta_hh_get_trans_status(uint32_t result) {
+static bthh_status_t bta_hh_get_trans_status(uint32_t result) {
   switch (result) {
     case HID_PAR_HANDSHAKE_RSP_SUCCESS: /*   (0) */
-      return BTA_HH_OK;
+      return BTHH_OK;
     case HID_PAR_HANDSHAKE_RSP_NOT_READY:           /*   (1) */
     case HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID:  /*   (2) */
     case HID_PAR_HANDSHAKE_RSP_ERR_UNSUPPORTED_REQ: /*   (3) */
     case HID_PAR_HANDSHAKE_RSP_ERR_INVALID_PARAM:   /*   (4) */
-      return (tBTA_HH_STATUS)result;
+      return static_cast<bthh_status_t>(result);
     case HID_PAR_HANDSHAKE_RSP_ERR_UNKNOWN: /*   (14) */
     case HID_PAR_HANDSHAKE_RSP_ERR_FATAL:   /*   (15) */
     default:
-      return BTA_HH_HS_ERROR;
+      return BTHH_HS_ERROR;
       break;
   }
 }

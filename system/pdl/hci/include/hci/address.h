@@ -32,7 +32,7 @@ class RawAddress;
 namespace bluetooth {
 namespace hci {
 
-class Address final : public storage::Serializable<Address> {
+class Address final {
 public:
   static constexpr size_t kLength = 6;
 
@@ -50,13 +50,10 @@ public:
   uint8_t* data() { return address.data(); }
   const uint8_t* data() const { return address.data(); }
 
-  // storage::Serializable methods
-  std::string ToString() const override;
+  std::string ToString() const;
   std::string ToColonSepHexString() const;
   std::string ToRedactedStringForLogging() const;
-  std::string ToLegacyConfigString() const override;
   static std::optional<Address> FromString(const std::string& from);
-  static std::optional<Address> FromLegacyConfigString(const std::string& str);
 
   bool operator<(const Address& rhs) const { return address < rhs.address; }
   bool operator==(const Address& rhs) const { return address == rhs.address; }

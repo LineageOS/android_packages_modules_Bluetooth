@@ -101,6 +101,8 @@ typedef uint8_t tBTM_BLE_AFP;
 /* 0: accept adv packet from all, directed adv pkt not directed */
 /*    to local device is ignored */
 #define SP_ADV_ALL 0x00
+/* 1. only accept adv packet from devices in accept list */
+#define SP_ACCEPT_LIST_ONLY 0x01
 
 typedef uint8_t tBTM_BLE_SFP;
 

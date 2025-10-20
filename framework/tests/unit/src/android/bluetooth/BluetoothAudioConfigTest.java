@@ -79,23 +79,4 @@ public class BluetoothAudioConfigTest {
         assertThat(audioConfig.hashCode()).isEqualTo(hashCode);
         assertThat(audioConfig.describeContents()).isEqualTo(describeContents);
     }
-
-    @Test
-    public void bluetoothAudioConfigToString() {
-        BluetoothAudioConfig audioConfig =
-                new BluetoothAudioConfig(
-                        TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT, AudioFormat.ENCODING_PCM_16BIT);
-
-        String audioConfigString = audioConfig.toString();
-        String expectedToString =
-                "{mSampleRate:"
-                        + audioConfig.getSampleRate()
-                        + ",mChannelConfig:"
-                        + audioConfig.getChannelConfig()
-                        + ",mAudioFormat:"
-                        + audioConfig.getAudioFormat()
-                        + "}";
-
-        assertThat(audioConfigString).isEqualTo(expectedToString);
-    }
 }

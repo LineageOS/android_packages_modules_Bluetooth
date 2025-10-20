@@ -19,10 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothQualityReport;
 
-/**
- * Callback definitions for Bluetooth Quality Report.
- * @hide
- */
+/** Callback definitions for Bluetooth Quality Report. */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothQualityReportReadyCallback {
     void onBluetoothQualityReportReady(in BluetoothDevice device, in BluetoothQualityReport bluetoothQualityReport, in int status);
 }

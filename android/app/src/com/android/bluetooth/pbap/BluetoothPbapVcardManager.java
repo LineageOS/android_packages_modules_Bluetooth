@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -37,9 +35,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.Operation;
@@ -54,7 +50,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 22
 public class BluetoothPbapVcardManager {
     private static final String TAG = BluetoothPbapVcardManager.class.getSimpleName();
 
@@ -179,11 +174,6 @@ public class BluetoothPbapVcardManager {
             }
             return contactsSize;
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    0);
             Log.e(TAG, "CursorWindowAllocationException while getting Contacts size");
         } finally {
             if (contactCursor != null) {
@@ -212,11 +202,6 @@ public class BluetoothPbapVcardManager {
                 size = callCursor.getCount();
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    1);
             Log.e(TAG, "CursorWindowAllocationException while getting CallHistory size");
         } finally {
             if (callCursor != null) {
@@ -266,11 +251,6 @@ public class BluetoothPbapVcardManager {
                 }
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    2);
             Log.e(TAG, "CursorWindowAllocationException while loading CallHistory");
         } finally {
             if (callCursor != null) {
@@ -318,18 +298,8 @@ public class BluetoothPbapVcardManager {
                         nameList, mContext.getString(android.R.string.unknownName), contactCursor);
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    3);
             Log.e(TAG, "CursorWindowAllocationException while getting phonebook name list");
         } catch (Exception e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    4);
             Log.e(TAG, "Exception while getting phonebook name list", e);
         } finally {
             if (contactCursor != null) {
@@ -416,12 +386,6 @@ public class BluetoothPbapVcardManager {
                     }
                     if (vcard == null) {
                         Log.e(TAG, "Failed to read a contact.");
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
-                                BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                                5);
                         return nameList;
                     } else if (vcard.isEmpty()) {
                         Log.i(TAG, "Contact may have been deleted during operation");
@@ -431,12 +395,6 @@ public class BluetoothPbapVcardManager {
 
                     if (!vcardselector.checkVCardSelector(vcard, vCardSelectorOperator)) {
                         Log.e(TAG, "vcard selector check fail");
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
-                                BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                                6);
                         vcard = null;
                         pbSize--;
                         continue;
@@ -458,11 +416,6 @@ public class BluetoothPbapVcardManager {
                 }
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    7);
             Log.e(TAG, "CursorWindowAllocationException while getting Phonebook name list");
         } finally {
             if (contactCursor != null) {
@@ -502,11 +455,6 @@ public class BluetoothPbapVcardManager {
                 }
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    8);
             Log.e(TAG, "CursorWindowAllocationException while getting contact names");
         } finally {
             if (contactCursor != null) {
@@ -535,11 +483,6 @@ public class BluetoothPbapVcardManager {
                 count = count + 1;
             }
         } catch (Exception e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    9);
             Log.e(TAG, "exception while fetching callHistory pvc");
         } finally {
             if (callCursor != null) {
@@ -578,11 +521,6 @@ public class BluetoothPbapVcardManager {
             boolean vcardselect) {
         if (startPoint < 1 || startPoint > endPoint) {
             Log.e(TAG, "internal error: startPoint or endPoint is not correct.");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    10);
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
         String typeSelection = BluetoothPbapObexServer.createSelectionPara(type);
@@ -615,11 +553,6 @@ public class BluetoothPbapVcardManager {
                 Log.v(TAG, "Call log query endPointId = " + endPointId);
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    11);
             Log.e(TAG, "CursorWindowAllocationException while composing calllog vcards");
         } finally {
             if (callsCursor != null) {
@@ -677,11 +610,6 @@ public class BluetoothPbapVcardManager {
             boolean favorites) {
         if (startPoint < 1 || startPoint > endPoint) {
             Log.e(TAG, "internal error: startPoint or endPoint is not correct.");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    12);
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
 
@@ -709,11 +637,6 @@ public class BluetoothPbapVcardManager {
                         ContactCursorFilter.filterByRange(contactCursor, startPoint, endPoint);
             }
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    13);
             Log.e(TAG, "CursorWindowAllocationException while composing phonebook vcards");
         } finally {
             if (contactCursor != null) {
@@ -749,11 +672,6 @@ public class BluetoothPbapVcardManager {
             byte[] filter) {
         if (offset < 1) {
             Log.e(TAG, "Internal error: offset is not correct.");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    14);
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
         final Uri myUri = DevicePolicyUtils.getEnterprisePhoneUri(mContext);
@@ -776,11 +694,6 @@ public class BluetoothPbapVcardManager {
                                     null,
                                     orderBy);
         } catch (CursorWindowAllocationException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    15);
             Log.e(TAG, "CursorWindowAllocationException while composing phonebook one vcard");
         } finally {
             if (contactCursor != null) {
@@ -898,12 +811,6 @@ public class BluetoothPbapVcardManager {
                 }
                 if (vcard == null) {
                     Log.e(TAG, "Failed to read a contact.");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                            16);
                     return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
                 } else if (vcard.isEmpty()) {
                     Log.i(TAG, "Contact may have been deleted during operation");
@@ -1009,12 +916,6 @@ public class BluetoothPbapVcardManager {
                 }
                 if (vcard == null) {
                     Log.e(TAG, "Failed to read a contact.");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                            17);
                     return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
                 } else if (vcard.isEmpty()) {
                     Log.i(TAG, "Contact may have been deleted during operation");
@@ -1024,12 +925,6 @@ public class BluetoothPbapVcardManager {
 
                 if (!vcardselector.checkVCardSelector(vcard, vcardselectorop)) {
                     Log.e(TAG, "vcard selector check fail");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                            18);
                     vcard = null;
                     pbSize--;
                     continue;
@@ -1106,12 +1001,6 @@ public class BluetoothPbapVcardManager {
                 if (vCardSelect) {
                     if (!vcardselector.checkVCardSelector(vcard, vcardselectorop)) {
                         Log.e(TAG, "Checking vcard selector for call log");
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
-                                BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                                19);
                         vcard = null;
                         pbSize--;
                         continue;
@@ -1122,12 +1011,6 @@ public class BluetoothPbapVcardManager {
                                     TAG,
                                     "Failed to read a contact. Error reason: "
                                             + composer.getErrorReason());
-                            ContentProfileErrorReportUtils.report(
-                                    BluetoothProfile.PBAP,
-                                    BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                                    BluetoothStatsLog
-                                            .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                                    20);
                             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
                         } else if (vcard.isEmpty()) {
                             Log.i(TAG, "Call Log may have been deleted during operation");
@@ -1145,12 +1028,6 @@ public class BluetoothPbapVcardManager {
                                 TAG,
                                 "Failed to read a contact. Error reason: "
                                         + composer.getErrorReason());
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
-                                BluetoothProtoEnums.BLUETOOTH_PBAP_VCARD_MANAGER,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                                21);
                         return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
                     }
                     Log.v(TAG, "Vcard Entry:");

@@ -47,33 +47,6 @@ tPAN_CB pan_cb;
 
 /*******************************************************************************
  *
- * Function         pan_register_with_bnep
- *
- * Description      This function registers PAN profile with BNEP
- *
- * Parameters:      none
- *
- * Returns          none
- *
- ******************************************************************************/
-void pan_register_with_bnep(void) {
-  tBNEP_REGISTER reg_info;
-
-  memset(&reg_info, 0, sizeof(tBNEP_REGISTER));
-
-  reg_info.p_conn_ind_cb = pan_conn_ind_cb;
-  reg_info.p_conn_state_cb = pan_connect_state_cb;
-  reg_info.p_data_buf_cb = pan_data_buf_ind_cb;
-  reg_info.p_data_ind_cb = NULL;
-  reg_info.p_tx_data_flow_cb = pan_tx_data_flow_cb;
-  reg_info.p_filter_ind_cb = pan_proto_filt_ind_cb;
-  reg_info.p_mfilter_ind_cb = pan_mcast_filt_ind_cb;
-
-  BNEP_Register(&reg_info);
-}
-
-/*******************************************************************************
- *
  * Function         pan_conn_ind_cb
  *
  * Description      This function is registered with BNEP as connection
@@ -92,8 +65,8 @@ void pan_register_with_bnep(void) {
  * Returns          none
  *
  ******************************************************************************/
-void pan_conn_ind_cb(uint16_t handle, const RawAddress& p_bda, const Uuid& remote_uuid,
-                     const Uuid& local_uuid, bool is_role_change) {
+static void pan_conn_ind_cb(uint16_t handle, const RawAddress& p_bda, const Uuid& remote_uuid,
+                            const Uuid& local_uuid, bool is_role_change) {
   /* If we are in GN or NAP role and have one or more active connections and the
    * received connection is for user role reject it. If we are in user role with
    * one connection active reject the connection. Allocate PCB and store the
@@ -272,12 +245,13 @@ void pan_conn_ind_cb(uint16_t handle, const RawAddress& p_bda, const Uuid& remot
  * Returns          none
  *
  ******************************************************************************/
-void pan_connect_state_cb(uint16_t handle, const RawAddress& /* rem_bda */, tBNEP_RESULT result,
-                          bool is_role_change) {
+static void pan_connect_state_cb(uint16_t handle, const RawAddress& /* rem_bda */,
+                                 tBNEP_RESULT result, bool is_role_change) {
   tPAN_CONN* pcb;
   uint8_t peer_role;
 
-  log::verbose("pan_connect_state_cb - for handle {}, result {}", handle, result);
+  log::verbose("handle={} result={}", handle, result);
+
   pcb = pan_get_pcb_by_handle(handle);
   if (!pcb) {
     log::error("PAN State change indication for wrong handle {}", handle);
@@ -370,8 +344,8 @@ void pan_connect_state_cb(uint16_t handle, const RawAddress& /* rem_bda */, tBNE
  * Returns          none
  *
  ******************************************************************************/
-void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src, const RawAddress& dst,
-                         uint16_t protocol, BT_HDR* p_buf, bool ext) {
+static void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src, const RawAddress& dst,
+                                uint16_t protocol, BT_HDR* p_buf, bool ext) {
   tPAN_CONN *pcb, *dst_pcb;
   tBNEP_RESULT result;
   uint16_t i, len;
@@ -458,7 +432,7 @@ void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src, const RawAddres
 
 /*******************************************************************************
  *
- * Function         pan_proto_filt_ind_cb
+ * Function         pan_tx_data_flow_cb
  *
  * Description      This function is registered with BNEP to receive tx data
  *          flow status
@@ -469,7 +443,7 @@ void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src, const RawAddres
  * Returns          none
  *
  ******************************************************************************/
-void pan_tx_data_flow_cb(uint16_t handle, tBNEP_RESULT result) {
+static void pan_tx_data_flow_cb(uint16_t handle, tBNEP_RESULT result) {
   if (pan_cb.pan_tx_data_flow_cb) {
     (*pan_cb.pan_tx_data_flow_cb)(handle, (tPAN_RESULT)result);
   }
@@ -498,10 +472,9 @@ void pan_tx_data_flow_cb(uint16_t handle, tBNEP_RESULT result) {
  * Returns          none
  *
  ******************************************************************************/
-void pan_proto_filt_ind_cb(uint16_t handle, bool indication, tBNEP_RESULT result,
-                           uint16_t num_filters, uint8_t* p_filters) {
-  log::verbose("pan_proto_filt_ind_cb - called for handle {} with ind {}, result {}, num {}",
-               handle, indication, result, num_filters);
+static void pan_proto_filt_ind_cb(uint16_t handle, bool indication, tBNEP_RESULT result,
+                                  uint16_t num_filters, uint8_t* p_filters) {
+  log::verbose("handle={} ind={} result={} num={}", handle, indication, result, num_filters);
 
   if (pan_cb.pan_pfilt_ind_cb) {
     (*pan_cb.pan_pfilt_ind_cb)(handle, indication, (tPAN_RESULT)result, num_filters, p_filters);
@@ -529,12 +502,38 @@ void pan_proto_filt_ind_cb(uint16_t handle, bool indication, tBNEP_RESULT result
  * Returns          none
  *
  ******************************************************************************/
-void pan_mcast_filt_ind_cb(uint16_t handle, bool indication, tBNEP_RESULT result,
-                           uint16_t num_filters, uint8_t* p_filters) {
-  log::verbose("pan_mcast_filt_ind_cb - called for handle {} with ind {}, result {}, num {}",
-               handle, indication, result, num_filters);
+static void pan_mcast_filt_ind_cb(uint16_t handle, bool indication, tBNEP_RESULT result,
+                                  uint16_t num_filters, uint8_t* p_filters) {
+  log::verbose("handle={} ind={} result={} num={}", handle, indication, result, num_filters);
 
   if (pan_cb.pan_mfilt_ind_cb) {
     (*pan_cb.pan_mfilt_ind_cb)(handle, indication, (tPAN_RESULT)result, num_filters, p_filters);
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         pan_register_with_bnep
+ *
+ * Description      This function registers PAN profile with BNEP
+ *
+ * Parameters:      none
+ *
+ * Returns          none
+ *
+ ******************************************************************************/
+void pan_register_with_bnep(void) {
+  tBNEP_REGISTER reg_info;
+
+  memset(&reg_info, 0, sizeof(tBNEP_REGISTER));
+
+  reg_info.p_conn_ind_cb = pan_conn_ind_cb;
+  reg_info.p_conn_state_cb = pan_connect_state_cb;
+  reg_info.p_data_buf_cb = pan_data_buf_ind_cb;
+  reg_info.p_data_ind_cb = NULL;
+  reg_info.p_tx_data_flow_cb = pan_tx_data_flow_cb;
+  reg_info.p_filter_ind_cb = pan_proto_filt_ind_cb;
+  reg_info.p_mfilter_ind_cb = pan_mcast_filt_ind_cb;
+
+  BNEP_Register(&reg_info);
 }

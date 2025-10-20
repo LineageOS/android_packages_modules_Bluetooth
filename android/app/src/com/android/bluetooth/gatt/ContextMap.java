@@ -52,7 +52,7 @@ import java.util.function.Predicate;
  *
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-class ContextMap<C extends IInterface> {
+public class ContextMap<C extends IInterface> {
     private static final String TAG = GattUtil.TAG_PREFIX + ContextMap.class.getSimpleName();
 
     private static final int MAX_LAST_RECORDS = 5;
@@ -122,8 +122,7 @@ class ContextMap<C extends IInterface> {
             return mTransport;
         }
 
-        /** Link death recipient */
-        public void linkToDeath(IBinder.DeathRecipient deathRecipient) {
+        void linkToDeath(IBinder.DeathRecipient deathRecipient) {
             // It might not be a binder object
             if (mCallback == null) {
                 return;
@@ -136,8 +135,7 @@ class ContextMap<C extends IInterface> {
             }
         }
 
-        /** Unlink death recipient */
-        public void unlinkToDeath() {
+        void unlinkToDeath() {
             if (mDeathRecipient != null) {
                 try {
                     mCallback.asBinder().unlinkToDeath(mDeathRecipient, 0);
@@ -226,7 +224,7 @@ class ContextMap<C extends IInterface> {
         }
     }
 
-    public enum RemoveReason {
+    enum RemoveReason {
         REASON_UNREGISTER_ALL,
         REASON_UNREGISTER_CLIENT,
         REASON_UNREGISTER_SERVER,
@@ -237,8 +235,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Add an entry to the application context list. */
-    public App add(
-            UUID uuid, C callback, int transport, Context context, AttributionSource source) {
+    App add(UUID uuid, C callback, int transport, Context context, AttributionSource source) {
         int appUid = Binder.getCallingUid();
         String appName = context.getPackageManager().getNameForUid(appUid);
         if (appName == null) {
@@ -255,7 +252,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Remove the context for a given UUID */
-    public void remove(UUID uuid, RemoveReason reason) {
+    App remove(UUID uuid, RemoveReason reason) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -264,21 +261,22 @@ class ContextMap<C extends IInterface> {
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
-                    break;
+                    return entry;
                 }
             }
         }
+        return null;
     }
 
     /** Remove the context for a given application ID. */
-    public void remove(int id, RemoveReason reason) {
-        boolean find = false;
+    App remove(int id, RemoveReason reason) {
+        App removedApp = null;
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
                 App entry = i.next();
                 if (entry.id == id) {
-                    find = true;
+                    removedApp = entry;
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
@@ -286,23 +284,21 @@ class ContextMap<C extends IInterface> {
                 }
             }
         }
-        if (find) {
+        if (removedApp != null) {
             removeConnectionsByAppId(id);
         }
+        return removedApp;
     }
 
-    public List<Integer> getAllAppsIds() {
-        List<Integer> appIds = new ArrayList<>();
+    List<App> getAllApps() {
         synchronized (mAppsLock) {
-            for (App entry : mApps) {
-                appIds.add(entry.id);
-            }
+            // Return a shallow copy list containing all apps from mApps.
+            return new ArrayList<>(mApps);
         }
-        return appIds;
     }
 
     /** Get all registered application callbacks. */
-    public List<C> getAllAppsCallbackId() {
+    List<C> getAllAppsCallbackId() {
         List<C> appIds = new ArrayList<>();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
@@ -349,7 +345,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Get an application context by ID. */
-    public App getById(int id) {
+    App getById(int id) {
         App app = getAppByPredicate(entry -> entry.id == id);
         if (app == null) {
             Log.e(TAG, "Context not found for ID " + id);
@@ -358,7 +354,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Get an application context by its callback object. */
-    public App getByCallbackId(C callbackId) {
+    App getByCallbackId(C callbackId) {
         App app =
                 getAppByPredicate(entry -> entry.getCallback().asBinder() == callbackId.asBinder());
         if (app == null) {
@@ -368,7 +364,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Get an application context by UUID. */
-    public App getByUuid(UUID uuid) {
+    App getByUuid(UUID uuid) {
         App app = getAppByPredicate(entry -> entry.mUuid.equals(uuid));
         if (app == null) {
             Log.e(TAG, "Context not found for UUID " + uuid);
@@ -444,7 +440,7 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Returns all Connections that have a given app UID. */
-    public List<Connection> getConnectionByApp(int appId) {
+    List<Connection> getConnectionByApp(int appId) {
         List<Connection> currentConnections = new ArrayList<>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
@@ -457,14 +453,14 @@ class ContextMap<C extends IInterface> {
     }
 
     /** Counts the number of applications that have a given app UID. */
-    public int countByAppUid(int appUid) {
+    int countByAppUid(int appUid) {
         synchronized (mAppsLock) {
             return (int) (mApps.stream().filter(app -> app.mUid == appUid).count());
         }
     }
 
     /** Erases all application context entries. */
-    public void clear() {
+    void clear() {
         synchronized (mAppsLock) {
             for (App entry : mApps) {
                 entry.unlinkToDeath();

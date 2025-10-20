@@ -317,7 +317,7 @@ void rfc_mx_sm_state_configure(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_dat
 
       PORT_StartCnf(p_mcb, RFCOMM_ERROR);
 
-      if (com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling() &&
+      if (com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling() &&
           p_mcb->collision_outgoing_lcid) {
         log::info("Collision case: Incoming conn timeout, restarting outgoing connection");
         rfc_mx_retry_with_cached_lcid(p_mcb);
@@ -451,7 +451,7 @@ void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_da
 
         p_mcb->state = RFC_MX_STATE_CONNECTED;
         p_mcb->peer_ready = true;
-        if (com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+        if (com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling()) {
           // If this was a collision case, cached lcid no longer needed
           p_mcb->collision_outgoing_lcid = 0;
           p_mcb->collision_outgoing_conn_cnf = false;
@@ -467,7 +467,7 @@ void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_da
     case RFC_MX_EVENT_TIMEOUT:
       p_mcb->state = RFC_MX_STATE_IDLE;
 
-      if (com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling() &&
+      if (com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling() &&
           p_mcb->collision_outgoing_lcid) {
         log::info("Collision case: Incoming conn timeout, restarting outgoing connection");
         rfc_mx_retry_with_cached_lcid(p_mcb);
@@ -632,7 +632,7 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_
 void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
   if (p_mcb == nullptr) {
-    if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+    if (!com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling()) {
       return;
     }
     for (auto& [cid, mcb] : rfc_lcid_mcb) {

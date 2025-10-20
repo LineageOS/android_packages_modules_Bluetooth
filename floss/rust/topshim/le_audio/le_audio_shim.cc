@@ -145,7 +145,7 @@ static BtLeAudioUnicastMonitorModeStatus to_rust_btle_audio_unicast_monitor_mode
       return BtLeAudioUnicastMonitorModeStatus::StreamingRequested;
     case le_audio::UnicastMonitorModeStatus::STREAMING:
       return BtLeAudioUnicastMonitorModeStatus::Streaming;
-    case le_audio::UnicastMonitorModeStatus::STREAMING_SUSPENDED:
+    case le_audio::UnicastMonitorModeStatus::SUSPENDED:
       return BtLeAudioUnicastMonitorModeStatus::StreamingSuspended;
     default:
       log::assert_that(false, "Unhandled enum value from C++");
@@ -414,8 +414,9 @@ void LeAudioClientIntf::send_audio_profile_preferences(int group_id,
                                             is_duplex_preference_le_audio);
 }
 
-void LeAudioClientIntf::set_unicast_monitor_mode(BtLeAudioDirection direction, bool enable) {
-  return intf_->SetUnicastMonitorMode(internal::from_rust_btle_audio_direction(direction), enable);
+void LeAudioClientIntf::set_unicast_monitor_mode(BtLeAudioDirection local_directions, bool enable) {
+  return intf_->SetUnicastMonitorMode(internal::from_rust_btle_audio_direction(local_directions),
+                                      enable);
 }
 
 std::unique_ptr<LeAudioClientIntf> GetLeAudioClientProfile(const unsigned char* btif) {

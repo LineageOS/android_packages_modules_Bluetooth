@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.util.Log;
@@ -26,8 +27,8 @@ import java.util.List;
  * A special scan filter that lets the client decide how the scan record should be stored.
  *
  * @deprecated this is not used anywhere
- * @hide
  */
+@Hide
 @Deprecated
 @SystemApi
 public final class TruncatedFilter {

@@ -27,6 +27,7 @@
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -442,16 +443,22 @@ void smp_generate_compare(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
 /** This function is called when STK is generated proceed to send the encrypt
  * the link using STK. */
 static void smp_process_stk(tSMP_CB* p_cb, Octet16* p) {
-  tSMP_KEY key;
-
-  log::verbose("addr:{}", p_cb->pairing_bda);
   smp_mask_enc_key(p_cb->loc_enc_size, p);
 
-  key.key_type = SMP_KEY_TYPE_STK;
-  key.p_data = p->data();
+  if (com_android_bluetooth_flags_passkey_entry_pairing_approval() &&
+      (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
+       p_cb->selected_association_model == SMP_MODEL_KEY_NOTIF)) {
+    p_cb->passkey_display_state.confirmed = true;
+    p_cb->tk = *p;
+    if (!p_cb->passkey_display_state.approved) {
+      log::info("Waiting for user to approve pairing {}", p_cb->pairing_bda);
+      return;
+    }
+  }
 
-  tSMP_INT_DATA smp_int_data;
-  smp_int_data.key = key;
+  log::verbose("addr:{}", p_cb->pairing_bda);
+
+  tSMP_INT_DATA smp_int_data = {.key = {.key_type = SMP_KEY_TYPE_STK, .p_data = p->data()}};
   smp_sm_event(p_cb, SMP_KEY_READY_EVT, &smp_int_data);
 }
 
@@ -924,7 +931,7 @@ void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) 
  *
  ******************************************************************************/
 bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
+  BtmDevice* p_device;
   RawAddress bda_for_lk;
   tBLE_ADDR_TYPE conn_addr_type;
 
@@ -941,8 +948,8 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
     return false;
   }
 
-  p_dev_rec = btm_find_dev(p_cb->pairing_bda);
-  if (p_dev_rec == NULL) {
+  p_device = btm_find_dev(p_cb->pairing_bda);
+  if (p_device == NULL) {
     log::error("failed to find Security Record");
     return false;
   }
@@ -969,7 +976,7 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
     }
   } else {
     log::error("failed to update link_key. Sec Mode={}, sm4=0x{:02x}", p_cb->init_security_mode,
-               p_dev_rec->sm4);
+               p_device->sm4);
     return false;
   }
 
@@ -984,12 +991,12 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
 
 /** The function calculates and saves SC LTK derived from BR/EDR link key. */
 bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
+  BtmDevice* p_device;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
 
-  p_dev_rec = btm_find_dev(p_cb->pairing_bda);
-  if (p_dev_rec == NULL) {
+  p_device = btm_find_dev(p_cb->pairing_bda);
+  if (p_device == NULL) {
     log::error("ailed to find Security Record");
     return false;
   }
@@ -1008,7 +1015,7 @@ bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
   }
 
   Octet16 rev_link_key;
-  std::reverse_copy(p_dev_rec->sec_rec.link_key.begin(), p_dev_rec->sec_rec.link_key.end(),
+  std::reverse_copy(p_device->sec_rec.link_key.begin(), p_device->sec_rec.link_key.end(),
                     rev_link_key.begin());
   p_cb->ltk = crypto_toolbox::link_key_to_ltk(rev_link_key, p_cb->key_derivation_h7_used);
 

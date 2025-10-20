@@ -41,7 +41,8 @@ public:
 
   // name: thread name for POSIX systems
   // priority: priority for kernel scheduler
-  Thread(const std::string& name, Priority priority);
+  Thread(const std::string& name, Priority priority,
+         std::promise<void> start_promise = std::promise<void>());
 
   Thread(const Thread&) = delete;
   Thread& operator=(const Thread&) = delete;
@@ -69,12 +70,18 @@ public:
 
   std::thread::id GetThreadId() const { return running_thread_.get_id(); }
 
+  pid_t GetLinuxTid() const { return linux_tid_; }
+
+  Priority GetPriority() const { return priority_; }
+
 private:
-  void run(Priority priority);
+  void run(std::promise<void> start_promise);
   mutable std::mutex mutex_;
   const std::string name_;
   mutable Reactor reactor_;
   std::thread running_thread_;
+  pid_t linux_tid_;
+  Priority priority_;
 };
 
 }  // namespace os

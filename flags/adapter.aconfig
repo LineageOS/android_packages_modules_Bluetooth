@@ -2,10 +2,23 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "use_data_store_storage"
+    name: "mainline_beta_storage"
     namespace: "bluetooth"
     description: "Implement a robust storage to handle rollback"
     bug: "430166215"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "unify_timeout_property"
+    namespace: "bluetooth"
+    description: "Unify the various timeout in the stack to allow slower hardware to still boot"
+    bug: "441576259"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
 
 flag {
@@ -36,30 +49,20 @@ flag {
 }
 
 flag {
-    name: "do_not_dump_devices_from_adapter_properties"
-    namespace: "bluetooth"
-    description: "Do not dump the bonded devices from the adapter properties"
-    bug: "406319687"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "validate_connection_policy_before_accepting_connection"
-    namespace: "bluetooth"
-    description: "Make native wakelock reference counted"
-    bug: "428276547"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ref_counted_native_wakelock"
     namespace: "bluetooth"
     description: "Make native wakelock reference counted"
     bug: "409059723"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "get_profile_oneway"
+    namespace: "bluetooth"
+    description: "do not block calling thread when fetching profiles"
+    bug: "438829357"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -94,13 +97,6 @@ flag {
 }
 
 flag {
-    name: "adapter_service_profiles_use_optional"
-    namespace: "bluetooth"
-    description: "Add optional getters for all profiles in [Bluetooth]AdapterService"
-    bug: "422543753"
-}
-
-flag {
     name: "ignore_multiple_connect_request_in_bt_services"
     namespace: "bluetooth"
     description: "Ignore multiple connect request in BT Services"
@@ -110,3 +106,12 @@ flag {
     }
 }
 
+flag {
+    name: "consistent_battery_level"
+    namespace: "bluetooth"
+    description: "Do not reset battey level from BAS to prevent battey level fluctuation"
+    bug: "442696675"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

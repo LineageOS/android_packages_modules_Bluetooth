@@ -396,7 +396,7 @@ bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid
     return BT_STATUS_NOMEM;
   }
   log::info("Adding listening socket service_name: {} - channel: {}", service_name, channel);
-  BTA_JvGetChannelId(tBTA_JV_CONN_TYPE::RFCOMM, slot->id, channel);
+  BTA_JvGetChannelId(tBTA_JV_CONN_TYPE::RFCOMM, slot->id, channel, 0);
   *sock_fd = slot->app_fd;  // Transfer ownership of fd to caller.
   /*TODO:
    * We are leaking one of the app_fd's - either the listen socket, or the
@@ -598,8 +598,6 @@ static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
   cs.status = status;
   cs.max_rx_packet_size = 0;  // not used for RFCOMM
   cs.max_tx_packet_size = 0;  // not used for RFCOMM
-  cs.conn_uuid_lsb = 0;       // not used for RFCOMM
-  cs.conn_uuid_msb = 0;       // not used for RFCOMM
   cs.socket_id = socket_id;
   if (send_fd == INVALID_FD) {
     return sock_send_all(fd, (const uint8_t*)&cs, sizeof(cs)) == sizeof(cs);
@@ -685,7 +683,7 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
     cleanup_rfc_slot(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("RFCOMM socket opened successful. Will send connect signal in async callback.");
-    if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+    if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
       btsock_thread_add_fd(pth, accept_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, accept_rs->id);
     }
   }

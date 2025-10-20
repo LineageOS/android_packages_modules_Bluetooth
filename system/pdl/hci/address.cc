@@ -72,12 +72,6 @@ std::string Address::ToColonSepHexString() const { return _ToMaskedColonSepHexSt
 
 std::string Address::ToRedactedStringForLogging() const { return _ToMaskedColonSepHexString(4); }
 
-std::string Address::ToLegacyConfigString() const { return ToString(); }
-
-std::optional<Address> Address::FromLegacyConfigString(const std::string& str) {
-  return FromString(str);
-}
-
 std::optional<Address> Address::FromString(const std::string& from) {
   if (from.length() != 17) {
     return std::nullopt;

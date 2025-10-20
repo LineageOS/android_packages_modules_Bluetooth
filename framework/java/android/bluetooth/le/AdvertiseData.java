@@ -125,7 +125,6 @@ public final class AdvertiseData implements Parcelable {
         return mIncludeDeviceName;
     }
 
-    /** @hide */
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -138,7 +137,6 @@ public final class AdvertiseData implements Parcelable {
                 mIncludeTxPowerLevel);
     }
 
-    /** @hide */
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) {
@@ -160,21 +158,14 @@ public final class AdvertiseData implements Parcelable {
 
     @Override
     public String toString() {
-        return "AdvertiseData [mServiceUuids="
-                + mServiceUuids
-                + ", mServiceSolicitationUuids="
-                + mServiceSolicitationUuids
-                + ", mTransportDiscoveryData="
-                + mTransportDiscoveryData
-                + ", mManufacturerSpecificData="
-                + BluetoothLeUtils.toString(mManufacturerSpecificData)
-                + ", mServiceData="
-                + BluetoothLeUtils.toString(mServiceData)
-                + ", mIncludeTxPowerLevel="
-                + mIncludeTxPowerLevel
-                + ", mIncludeDeviceName="
-                + mIncludeDeviceName
-                + "]";
+        return ("AdvertiseData [mServiceUuids=" + mServiceUuids)
+                + (", mServiceSolicitationUuids=" + mServiceSolicitationUuids)
+                + (", mTransportDiscoveryData=" + mTransportDiscoveryData)
+                + (", mManufacturerSpecificData="
+                        + BluetoothLeUtils.toString(mManufacturerSpecificData))
+                + (", mServiceData=" + BluetoothLeUtils.toString(mServiceData))
+                + (", mIncludeTxPowerLevel=" + mIncludeTxPowerLevel)
+                + (", mIncludeDeviceName=" + mIncludeDeviceName + "]");
     }
 
     @Override

@@ -41,6 +41,7 @@ flag {
     namespace: "bluetooth"
     description: "New gatt API to offload characteristics"
     bug: "427099808"
+    is_exported: true
 }
 
 flag {
@@ -62,6 +63,56 @@ flag {
     namespace: "bluetooth"
     description: "Do GATT service discovery over GATT rather than SDP"
     bug: "426086352"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "disconnect_acl_on_gatt_timeout"
+    namespace: "bluetooth"
+    description: "Disconnect ACL when a gatt response or confirmation timeout occurs"
+    bug: "438985552"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "gatt_use_better_start_handle_in_service_changed"
+    namespace: "bluetooth"
+    description: "Don't use 0x0001 in all the use cases when application adds or remove a service"
+    bug: "444655559"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "gatt_thread"
+    namespace: "bluetooth"
+    description: "Run all gatt functions on a single thread"
+    bug: "449681465"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "gatt_add_cccd_on_service_changed"
+    namespace: "bluetooth"
+    description: "Add CCCD to the service changed"
+    bug: "450918251"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "gatt_not_send_service_change_indication"
+    namespace: "bluetooth"
+    description: "Do not send service change indication to devices in the interop db"
+    bug: "4447013679"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

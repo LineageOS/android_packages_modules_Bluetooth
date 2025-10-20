@@ -76,7 +76,7 @@ enum class SubrateState : uint8_t {
 };
 
 static constexpr uint16_t kDefaultSubrateLeAudioModeMaxSubrate = 2;
-static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 2;
+static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 1;
 static constexpr uint16_t kDefaultSubrateLeAudioModeContNumber = 1;
 
 std::ostream& operator<<(std::ostream& os, const DeviceConnectState& state);
@@ -171,6 +171,7 @@ public:
 
   void SetConnectionState(DeviceConnectState state);
   DeviceConnectState GetConnectionState(void);
+  void SetSubrateState(SubrateState state);
   SubrateState GetSubrateState(void);
   void ClearPACs(void);
   void RegisterPACs(std::vector<struct types::acs_ac_record>* apr_db,
@@ -301,7 +302,6 @@ private:
 
   void DumpPacsDebugState(std::stringstream& stream, types::PublishedAudioCapabilities pacs);
   void ParseHeadtrackingCodec(const struct types::acs_ac_record& pac);
-  void SetSubrateState(SubrateState state);
 };
 
 /* LeAudioDevices class represents a wraper helper over all devices in le audio

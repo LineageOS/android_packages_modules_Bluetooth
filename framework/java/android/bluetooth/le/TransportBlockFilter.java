@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -34,8 +35,8 @@ import java.util.Objects;
  * filter for a Transport Block from a Transport Discovery Data advertisement data.
  *
  * @see ScanFilter
- * @hide
  */
+@Hide
 @SystemApi
 public final class TransportBlockFilter implements Parcelable {
 
@@ -46,12 +47,8 @@ public final class TransportBlockFilter implements Parcelable {
     private final byte[] mTransportDataMask;
     private final byte[] mWifiNanHash;
 
-    /**
-     * Length of a Wi-FI NAN hash in bytes/
-     *
-     * @hide
-     */
-    @SystemApi public static final int WIFI_NAN_HASH_LENGTH_BYTES = 8;
+    /** Length of a Wi-FI NAN hash in bytes/ */
+    @Hide @SystemApi public static final int WIFI_NAN_HASH_LENGTH_BYTES = 8;
 
     private TransportBlockFilter(
             int orgId,
@@ -102,20 +99,16 @@ public final class TransportBlockFilter implements Parcelable {
      * Service Organization IDs in <a
      * href="https://www.bluetooth.com/specifications/assigned-numbers/">Bluetooth Assigned
      * Numbers</a>
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getOrgId() {
         return mOrgId;
     }
 
-    /**
-     * Get Transport Discovery Service (TDS) flags to filter Transport Discovery Blocks
-     *
-     * @hide
-     */
+    /** Get Transport Discovery Service (TDS) flags to filter Transport Discovery Blocks */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getTdsFlags() {
@@ -127,8 +120,8 @@ public final class TransportBlockFilter implements Parcelable {
      *
      * @return a bitmask to select which bits in {@code tdsFlag} to match. 0 means no bit in
      *     tdsFlags will be used for matching
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public int getTdsFlagsMask() {
@@ -142,8 +135,8 @@ public final class TransportBlockFilter implements Parcelable {
      * #WIFI_ALLIANCE_NEIGHBOR_AWARENESS_NETWORKING}
      *
      * @return Data to filter Transport Discovery Blocks, null if not used
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getTransportData() {
@@ -158,8 +151,8 @@ public final class TransportBlockFilter implements Parcelable {
      *
      * @return a byte array with matching length to {@code transportData} to select which bit to use
      *     in filter, null is not used
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getTransportDataMask() {
@@ -175,8 +168,8 @@ public final class TransportBlockFilter implements Parcelable {
      * OrganizationId#WIFI_ALLIANCE_NEIGHBOR_AWARENESS_NETWORKING}.
      *
      * @return 8 octets Wi-Fi NAN defined bloom filter hash, null if not used
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getWifiNanHash() {
@@ -188,8 +181,8 @@ public final class TransportBlockFilter implements Parcelable {
      *
      * @param scanResult scan result to match
      * @return true if matches
-     * @hide
      */
+    @Hide
     boolean matches(ScanResult scanResult) {
         ScanRecord scanRecord = scanResult.getScanRecord();
         // Transport Discovery data match
@@ -227,17 +220,13 @@ public final class TransportBlockFilter implements Parcelable {
         return false;
     }
 
-    /** @hide */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
@@ -264,19 +253,12 @@ public final class TransportBlockFilter implements Parcelable {
     /** Get a human-readable string for this object. */
     @Override
     public String toString() {
-        return "TransportBlockFilter [mOrgId="
-                + mOrgId
-                + ", mTdsFlags="
-                + mTdsFlags
-                + ", mTdsFlagsMask="
-                + mTdsFlagsMask
-                + ", mTransportData="
-                + Arrays.toString(mTransportData)
-                + ", mTransportDataMask="
-                + Arrays.toString(mTransportDataMask)
-                + ", mWifiNanHash="
-                + Arrays.toString(mWifiNanHash)
-                + "]";
+        return ("TransportBlockFilter [mOrgId=" + mOrgId)
+                + (", mTdsFlags=" + mTdsFlags)
+                + (", mTdsFlagsMask=" + mTdsFlagsMask)
+                + (", mTransportData=" + Arrays.toString(mTransportData))
+                + (", mTransportDataMask=" + Arrays.toString(mTransportDataMask))
+                + (", mWifiNanHash=" + Arrays.toString(mWifiNanHash) + "]");
     }
 
     @Override
@@ -307,12 +289,8 @@ public final class TransportBlockFilter implements Parcelable {
                 && Arrays.equals(mWifiNanHash, other.getWifiNanHash());
     }
 
-    /**
-     * Creator for {@link TransportBlockFilter} so that we can create it from {@link Parcel}.
-     *
-     * @hide
-     */
-    @SystemApi @NonNull
+    /** Creator for {@link TransportBlockFilter} so that we can create it from {@link Parcel}. */
+    @Hide @SystemApi @NonNull
     public static final Creator<TransportBlockFilter> CREATOR =
             new Creator<>() {
                 @Override
@@ -347,11 +325,8 @@ public final class TransportBlockFilter implements Parcelable {
                 }
             };
 
-    /**
-     * Builder class for {@link TransportBlockFilter}.
-     *
-     * @hide
-     */
+    /** Builder class for {@link TransportBlockFilter}. */
+    @Hide
     @SystemApi
     public static final class Builder {
 
@@ -371,8 +346,8 @@ public final class TransportBlockFilter implements Parcelable {
          *     Numbers</a>.
          * @throws IllegalArgumentException If the {@code orgId} is invalid
          * @see OrganizationId
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public Builder(int orgId) {
@@ -394,8 +369,8 @@ public final class TransportBlockFilter implements Parcelable {
          * @throws IllegalArgumentException if either {@code tdsFlags} or {@code tdsFlagsMask} is
          *     invalid.
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setTdsFlags(int tdsFlags, int tdsFlagsMask) {
@@ -429,8 +404,8 @@ public final class TransportBlockFilter implements Parcelable {
          * @throws IllegalArgumentException if length of {@code transportData} and {@code
          *     transportDataMask} do not match
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setTransportData(
@@ -473,8 +448,8 @@ public final class TransportBlockFilter implements Parcelable {
          *     TransportBlockFilter#WIFI_NAN_HASH_LENGTH_BYTES} long
          * @throws NullPointerException when {@code wifiNanHash} is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setWifiNanHash(@NonNull byte[] wifiNanHash) {
@@ -495,9 +470,9 @@ public final class TransportBlockFilter implements Parcelable {
          * Build {@link TransportBlockFilter}.
          *
          * @return {@link TransportBlockFilter}
-         * @throws IllegalStateException if the filter cannot be built
-         * @hide
+         * @throws IllegalStateException if the filter cannot be built @Hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull TransportBlockFilter build() {

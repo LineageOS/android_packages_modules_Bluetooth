@@ -47,12 +47,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
@@ -73,6 +72,7 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.eq
 import org.mockito.Mockito.inOrder
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
@@ -85,7 +85,19 @@ import pandora.HidProto.ServiceRequest
 /** Test cases for [BluetoothHidDevice]. */
 @RunWith(AndroidJUnit4::class)
 class HidDeviceTest {
-    private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+
+    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
+
+    @get:Rule(order = 2) val bumble = PandoraDevice()
+
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
+
+    @Mock private lateinit var callback: BluetoothHidDevice.Callback
+    @Mock private lateinit var receiver: BroadcastReceiver
+    @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
+
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter: BluetoothAdapter =
         context.getSystemService(BluetoothManager::class.java).adapter
 
@@ -125,20 +137,6 @@ class HidDeviceTest {
             QOS_LATENCY,
             BluetoothHidDeviceAppQosSettings.MAX,
         )
-
-    @Mock private lateinit var callback: BluetoothHidDevice.Callback
-    @Mock private lateinit var receiver: BroadcastReceiver
-    @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
-
-    @get:Rule(order = 0)
-    val checkFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
-    @get:Rule(order = 1) val permissionRule: AdoptShellPermissionsRule = AdoptShellPermissionsRule()
-
-    @get:Rule(order = 2) val bumble: PandoraDevice = PandoraDevice()
-
-    @get:Rule(order = 3)
-    val enableBluetoothRule: EnableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Before
     fun setUp() {
@@ -228,6 +226,8 @@ class HidDeviceTest {
 
         verifyRemoteDeviceConnectToHidHostService()
 
+        callback = mock(BluetoothHidDevice.Callback::class.java)
+        inOrder = inOrder(receiver, callback)
         assertThat(hidDeviceService.registerApp(sdpSettings, null, outQos, executor, callback))
             .isTrue()
         verifyAppStatusChanged(null, true)
@@ -236,13 +236,18 @@ class HidDeviceTest {
     /**
      * Test disable HID Device role and connect a remote device to HID Host service.
      * 1. Unregister the app.
-     * 2. Register the app with a bad descriptor.
+     * 2. Bond and remove a remote device.
+     * 3. Register the app with a bad descriptor.
      */
     @Test
     fun badDescriptorHidDeviceTest() {
         assertThat(hidDeviceService.unregisterApp()).isTrue()
         verifyAppStatusChanged(null, false)
 
+        verifyRemoteDeviceBondToHidHostService()
+
+        callback = mock(BluetoothHidDevice.Callback::class.java)
+        inOrder = inOrder(receiver, callback)
         assertThat(
                 hidDeviceService.registerApp(
                     sdpSettingsBadDescriptor,
@@ -300,6 +305,11 @@ class HidDeviceTest {
             .isEqualTo(BluetoothHidDevice.STATE_DISCONNECTED)
     }
 
+    private fun verifyRemoteDeviceBondToHidHostService() {
+        createBond(device)
+        removeBond(device)
+    }
+
     private fun verifyRemoteDeviceConnectToHidHostService() {
         createBond(device)
         assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)).isTrue()
@@ -310,9 +320,7 @@ class HidDeviceTest {
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
         verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED))
         assertThat(hidService.getPreferredTransport(device)).isEqualTo(TRANSPORT_BREDR)
-        if (device.bondState == BOND_BONDED) {
-            removeBond(device)
-        }
+        removeBond(device)
     }
 
     private fun verifyConnectionState(

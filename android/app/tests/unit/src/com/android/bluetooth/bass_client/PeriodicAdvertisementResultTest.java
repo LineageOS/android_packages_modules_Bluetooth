@@ -39,56 +39,53 @@ public class PeriodicAdvertisementResultTest {
 
     @Test
     public void constructor() {
-        int addressType = 1;
         int syncHandle = 2;
         int advSid = 3;
         int paInterval = 4;
         int broadcastId = 5;
+        int rssi = 6;
         PublicBroadcastData pbData = generatePublicBroadcastData();
         String broadcastName = TEST_BROADCAST_NAME;
         PeriodicAdvertisementResult result =
                 new PeriodicAdvertisementResult(
                         mDevice,
-                        addressType,
                         syncHandle,
                         advSid,
                         paInterval,
                         broadcastId,
+                        rssi,
                         pbData,
                         broadcastName);
 
-        assertThat(result.getAddressType()).isEqualTo(addressType);
+        assertThat(result.getDevice()).isEqualTo(mDevice);
         assertThat(result.getSyncHandle()).isEqualTo(syncHandle);
         assertThat(result.getAdvSid()).isEqualTo(advSid);
         assertThat(result.getAdvInterval()).isEqualTo(paInterval);
         assertThat(result.getBroadcastId()).isEqualTo(broadcastId);
+        assertThat(result.getRssi()).isEqualTo(rssi);
         assertThat(result.getPublicBroadcastData()).isEqualTo(pbData);
         assertThat(result.getBroadcastName()).isEqualTo(broadcastName);
     }
 
     @Test
     public void updateMethods() {
-        int addressType = 1;
         int syncHandle = 2;
         int advSid = 3;
         int paInterval = 4;
         int broadcastId = 5;
+        int rssi = 6;
         PublicBroadcastData pbData = null;
         String broadcastName = null;
         PeriodicAdvertisementResult result =
                 new PeriodicAdvertisementResult(
                         mDevice,
-                        addressType,
                         syncHandle,
                         advSid,
                         paInterval,
                         broadcastId,
+                        rssi,
                         pbData,
                         broadcastName);
-
-        int newAddressType = 6;
-        result.updateAddressType(newAddressType);
-        assertThat(result.getAddressType()).isEqualTo(newAddressType);
 
         int newSyncHandle = 7;
         result.updateSyncHandle(newSyncHandle);
@@ -106,6 +103,10 @@ public class PeriodicAdvertisementResultTest {
         result.updateBroadcastId(newBroadcastId);
         assertThat(result.getBroadcastId()).isEqualTo(newBroadcastId);
 
+        int newRssi = 11;
+        result.updateRssi(newRssi);
+        assertThat(result.getRssi()).isEqualTo(newRssi);
+
         PublicBroadcastData newPbData = generatePublicBroadcastData();
         result.updatePublicBroadcastData(newPbData);
         assertThat(result.getPublicBroadcastData()).isEqualTo(newPbData);
@@ -117,21 +118,21 @@ public class PeriodicAdvertisementResultTest {
 
     @Test
     public void print_doesNotCrash() {
-        int addressType = 1;
         int syncHandle = 2;
         int advSid = 3;
         int paInterval = 4;
         int broadcastId = 5;
+        int rssi = 6;
         PublicBroadcastData pbData = generatePublicBroadcastData();
         String broadcastName = TEST_BROADCAST_NAME;
         PeriodicAdvertisementResult result =
                 new PeriodicAdvertisementResult(
                         mDevice,
-                        addressType,
                         syncHandle,
                         advSid,
                         paInterval,
                         broadcastId,
+                        rssi,
                         pbData,
                         broadcastName);
 
@@ -146,7 +147,6 @@ public class PeriodicAdvertisementResultTest {
         info.audioConfigQuality =
                 (BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD
                         | BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH);
-        info.metaDataLength = 3;
         info.metaData = new byte[] {0x06, 0x07, 0x08};
         return new PublicBroadcastData(info);
     }

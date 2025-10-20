@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.le_scan;
 
-import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
+import static com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static java.util.Objects.requireNonNull;
 
@@ -24,7 +24,7 @@ import android.os.SystemProperties;
 import android.provider.DeviceConfig;
 import android.util.Log;
 
-import com.android.bluetooth.Utils.TimeProvider;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Set;

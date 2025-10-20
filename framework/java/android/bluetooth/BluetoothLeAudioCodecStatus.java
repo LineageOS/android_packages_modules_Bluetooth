@@ -218,19 +218,13 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      */
     @Override
     public String toString() {
-        return "{mInputCodecConfig:"
-                + mInputCodecConfig
-                + ",mOutputCodecConfig:"
-                + mOutputCodecConfig
-                + ",mInputCodecsLocalCapabilities:"
-                + mInputCodecsLocalCapabilities
-                + ",mOutputCodecsLocalCapabilities:"
-                + mOutputCodecsLocalCapabilities
-                + ",mInputCodecsSelectableCapabilities:"
-                + mInputCodecsSelectableCapabilities
-                + ",mOutputCodecsSelectableCapabilities:"
-                + mOutputCodecsSelectableCapabilities
-                + "}";
+        return ("BluetoothLeAudioCodecStatus [mInputCodecConfig=" + mInputCodecConfig)
+                + (", mOutputCodecConfig=" + mOutputCodecConfig)
+                + (", mInputCodecsLocalCapabilities=" + mInputCodecsLocalCapabilities)
+                + (", mOutputCodecsLocalCapabilities=" + mOutputCodecsLocalCapabilities)
+                + (", mInputCodecsSelectableCapabilities=" + mInputCodecsSelectableCapabilities)
+                + (", mOutputCodecsSelectableCapabilities=" + mOutputCodecsSelectableCapabilities)
+                + "]";
     }
 
     /**

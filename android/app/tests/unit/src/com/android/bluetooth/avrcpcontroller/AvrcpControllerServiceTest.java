@@ -50,7 +50,6 @@ import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -100,11 +99,7 @@ public class AvrcpControllerServiceTest {
         mockGetSystemService(mAdapterService, AudioManager.class);
 
         mService = new AvrcpControllerService(mAdapterService, mNativeInterface);
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
-        } else {
-            A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
-        }
+        doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
 
         mService.mDeviceStateMap.put(mDevice1, mStateMachine);
         final Intent bluetoothBrowserMediaServiceStartIntent =
@@ -120,31 +115,6 @@ public class AvrcpControllerServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            A2dpSinkService.setA2dpSinkService(null);
-        }
-        mService = AvrcpControllerService.getAvrcpControllerService();
-        assertThat(mService).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(AvrcpControllerService.getAvrcpControllerService()).isNotNull();
-    }
-
-    @Test
-    public void disconnect_whenDisconnected_returnsFalse() {
-        when(mStateMachine.getState()).thenReturn(STATE_DISCONNECTED);
-
-        assertThat(mService.disconnect(mDevice1)).isFalse();
-    }
-
-    @Test
-    public void disconnect_whenDisconnected_returnsTrue() {
-        when(mStateMachine.getState()).thenReturn(STATE_CONNECTED);
-
-        assertThat(mService.disconnect(mDevice1)).isTrue();
-        verify(mStateMachine).disconnect();
     }
 
     @Test
@@ -166,11 +136,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void setActiveDevice_whenA2dpSinkServiceIsNotInitialized_returnsFalse() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.empty()).when(mAdapterService).getA2dpSinkService();
-        } else {
-            A2dpSinkService.setA2dpSinkService(null);
-        }
+        doReturn(Optional.empty()).when(mAdapterService).getA2dpSinkService();
         assertThat(mService.setActiveDevice(mDevice1)).isFalse();
         assertThat(mService.getActiveDevice()).isNull();
     }
@@ -284,7 +250,7 @@ public class AvrcpControllerServiceTest {
         String parentMediaId = "test_parent_media_id";
         BrowseTree.BrowseNode node = mock(BrowseTree.BrowseNode.class);
         when(mStateMachine.findNode(parentMediaId)).thenReturn(node);
-        when(node.getContents()).thenReturn(new ArrayList(0));
+        when(node.getContents()).thenReturn(new ArrayList<>(0));
         when(node.isCached()).thenReturn(true);
 
         BrowseResult result = mService.getContents(parentMediaId);
@@ -351,12 +317,7 @@ public class AvrcpControllerServiceTest {
 
         mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice1);
 
-        ArgumentCaptor<StackEvent> captor = ArgumentCaptor.forClass(StackEvent.class);
-        verify(mStateMachine).connect(captor.capture());
-        StackEvent event = captor.getValue();
-        assertThat(event.mType).isEqualTo(StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        assertThat(event.mRemoteControlConnected).isEqualTo(remoteControlConnected);
-        assertThat(event.mBrowsingConnected).isEqualTo(browsingConnected);
+        verify(mStateMachine).connect(eq(remoteControlConnected), eq(browsingConnected));
         assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 

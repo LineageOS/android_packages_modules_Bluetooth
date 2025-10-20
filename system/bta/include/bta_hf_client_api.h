@@ -31,6 +31,7 @@
 
 #include "bta_api.h"
 #include "bta_hfp_api.h"
+#include "include/bt_status.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -314,10 +315,10 @@ void BTA_HfClientDisable(void);
  *                  calls to do any AT operations
  *
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle);
+BtStatus BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle);
 
 /*******************************************************************************
  *

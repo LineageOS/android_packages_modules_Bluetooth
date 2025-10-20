@@ -18,11 +18,10 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -34,6 +33,7 @@ import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.IBinder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -415,24 +415,26 @@ public final class BluetoothHidDevice implements BluetoothProfile {
     }
 
     private final BluetoothAdapter mAdapter;
+    private final Context mContext;
     private final AttributionSource mAttributionSource;
 
     private IBluetoothHidDevice mService;
 
     BluetoothHidDevice(Context context, BluetoothAdapter adapter) {
+        mContext = context;
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothHidDevice.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -443,7 +445,7 @@ public final class BluetoothHidDevice implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -674,8 +676,8 @@ public final class BluetoothHidDevice implements BluetoothProfile {
      * Gets the application name of the current HidDeviceService user.
      *
      * @return the current user name, or empty string if cannot get the name
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public String getUserAppName() {
@@ -743,45 +745,32 @@ public final class BluetoothHidDevice implements BluetoothProfile {
     }
 
     /**
-     * Connects Hid Device if connectionPolicy is {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED}
-     * and disconnects Hid device if connectionPolicy is {@link
-     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}.
+     * This method is non-functional. For managing connections, use {@link #connect} and {@link
+     * #disconnect}.
      *
-     * <p>The device should already be paired. Connection policy can be one of: {@link
-     * BluetoothProfile#CONNECTION_POLICY_ALLOWED}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Paired bluetooth device
-     * @param connectionPolicy determines whether hid device should be connected or disconnected
-     * @return true if hid device is connected or disconnected, false otherwise
-     * @hide
+     * <p>By design, the HID device profile requires an active application to request a connection
+     * every time. It is not possible to store a persistent connection policy that would be set
+     * automatically. Because of this limitation, this API has never worked and will always return
+     * {@code false}
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(
-            allOf = {
-                BLUETOOTH_CONNECT,
-                BLUETOOTH_PRIVILEGED,
-            })
+    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
         if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         final IBluetoothHidDevice service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled()
-                && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
-            try {
-                return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
+        if (service == null
+                || !isEnabled()
+                || !isValidDevice(device)
+                || !BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
+            return false;
         }
-        return false;
+
+        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, Process.myPid(), Process.myUid(), null);
+        mContext.enforcePermission(BLUETOOTH_CONNECT, Process.myPid(), Process.myUid(), null);
+        throw new IllegalArgumentException(TAG + " cannot set the connection policy");
     }
 
     private boolean isEnabled() {

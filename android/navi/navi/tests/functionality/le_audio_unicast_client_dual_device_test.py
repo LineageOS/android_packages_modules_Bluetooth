@@ -407,6 +407,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
     async def async_setup_test(self) -> None:
         # Make sure BT is enabled before removing bonding devices.
         self.assertTrue(self.dut.bt.enable())
+        self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
         # Due to b/396352434, Settings might crash and freeze after restaring BT if
         # there are still some bonding devices.
         # So we need to remove all bonding/bonded devices before BT to avoid the

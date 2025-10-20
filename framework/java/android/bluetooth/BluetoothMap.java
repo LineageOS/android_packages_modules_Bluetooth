@@ -18,11 +18,11 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -45,11 +45,8 @@ import android.util.Pair;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * This class provides the APIs to control the Bluetooth MAP Profile.
- *
- * @hide
- */
+/** This class provides the APIs to control the Bluetooth MAP Profile. */
+@Hide
 @SystemApi
 public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothMap.class.getSimpleName();
@@ -58,7 +55,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
 
     private final CloseGuard mCloseGuard;
 
-    /** @hide */
+    @Hide
     @SuppressLint("ActionValue")
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -67,25 +64,15 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     public static final String ACTION_CONNECTION_STATE_CHANGED =
             "android.bluetooth.map.profile.action.CONNECTION_STATE_CHANGED";
 
-    /**
-     * There was an error trying to obtain the state
-     *
-     * @hide
-     */
-    public static final int STATE_ERROR = -1;
+    /** There was an error trying to obtain the state */
+    @Hide public static final int STATE_ERROR = -1;
 
-    /** @hide */
-    public static final int RESULT_FAILURE = 0;
+    @Hide public static final int RESULT_FAILURE = 0;
 
-    /** @hide */
-    public static final int RESULT_SUCCESS = 1;
+    @Hide public static final int RESULT_SUCCESS = 1;
 
-    /**
-     * Connection canceled before completion.
-     *
-     * @hide
-     */
-    public static final int RESULT_CANCELED = 2;
+    /** Connection canceled before completion. */
+    @Hide public static final int RESULT_CANCELED = 2;
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
@@ -115,9 +102,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      * Close the connection to the backing service. Other public functions of BluetoothMap will
      * return default error results once close() has been called. Multiple invocations of close()
      * are ok.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @Override
     public void close() {
@@ -125,14 +111,14 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothMap.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -143,7 +129,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -155,8 +141,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      *
      * @return One of the STATE_ return codes, or STATE_ERROR if this proxy object is currently not
      *     connected to the Map service.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getState() {
@@ -180,8 +166,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      *
      * @return The remote Bluetooth device, or null if not in connected or connecting state, or if
      *     this proxy object is not connected to the Map service.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothDevice getClient() {
@@ -204,9 +190,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     /**
      * Returns true if the specified Bluetooth device is connected. Returns false if not connected,
      * or if this proxy object is not currently connected to the Map service.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean isConnected(BluetoothDevice device) {
@@ -225,11 +210,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         return false;
     }
 
-    /**
-     * Initiate connection. Initiation of outgoing connections is not supported for MAP server.
-     *
-     * @hide
-     */
+    /** Initiate connection. Initiation of outgoing connections is not supported for MAP server. */
+    @Hide
     @RequiresNoPermission
     public boolean connect(BluetoothDevice device) {
         log("connect(" + device + ") not supported for MAPS");
@@ -241,8 +223,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      *
      * @param device Remote Bluetooth Device
      * @return false on error, true otherwise
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -268,8 +250,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      * tries to err on the side of false positives.
      *
      * @return True if this device might support Map.
-     * @hide
      */
+    @Hide
     public static boolean doesClassMatchSink(BluetoothClass btClass) {
         // TODO optimize the rule
         return switch (btClass.getDeviceClass()) {
@@ -286,8 +268,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      * Get the list of connected devices. Currently at most one.
      *
      * @return list of connected devices
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -316,8 +298,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      * Get the list of devices matching specified states. Currently at most one.
      *
      * @return list of matching devices
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
@@ -350,13 +332,13 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     }
     ;
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void disableBluetoothGetConnectionStateCache() {
         sBluetoothConnectionCache.disableForCurrentProcess();
     }
 
-    /** @hide */
+    @Hide
     public static void invalidateBluetoothGetConnectionStateCache() {
         invalidateCache(GET_CONNECTION_STATE_API);
     }
@@ -404,8 +386,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      * Get connection state of device
      *
      * @return device connection state
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SuppressLint("AndroidFrameworkRequiresPermission") // IpcDataCache prevent lint enforcement
@@ -439,8 +421,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -457,8 +439,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
             log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -476,8 +457,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(

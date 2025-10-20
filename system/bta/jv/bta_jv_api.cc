@@ -110,14 +110,19 @@ void BTA_JvDisable(void) {
  *   user_data      Any uservalue - will be returned in the resulting event.
  *   channel        Only used for RFCOMM - to try to allocate a specific RFCOMM
  *                  channel.
+ *   lecoc_fixed_psm_slots Fixed PSM range in valid LE CoC PSM channels which are
+ *                         reserved for privileged apps
  *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id, int32_t channel) {
-  log::verbose("conn_type:{}, id:{}, channel:{}", bta_jv_conn_type_text(conn_type), id, channel);
+void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id, int32_t channel,
+                        int32_t lecoc_fixed_psm_slots) {
+  log::verbose("conn_type:{}, id:{}, channel:{}, lecoc_fixed_psm_slots:{}",
+               bta_jv_conn_type_text(conn_type), id, channel, lecoc_fixed_psm_slots);
 
-  do_in_main_thread(Bind(&bta_jv_get_channel_id, conn_type, channel, id, id));
+  do_in_main_thread(
+          Bind(&bta_jv_get_channel_id, conn_type, channel, id, id, lecoc_fixed_psm_slots));
 }
 
 /*******************************************************************************

@@ -35,8 +35,6 @@ package com.android.bluetooth.opp;
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 
 import android.app.NotificationManager;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.ContentObserver;
@@ -50,9 +48,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.util.AlertActivity;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -64,7 +60,6 @@ import com.android.internal.annotations.VisibleForTesting;
  * DIALOG_RECEIVE_COMPLETE_FAIL DIALOG_SEND_ONGOING will transition to DIALOG_SEND_COMPLETE_SUCCESS
  * or DIALOG_SEND_COMPLETE_FAIL
  */
-// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppTransferActivity extends AlertActivity
         implements DialogInterface.OnClickListener {
     private static final String TAG = BluetoothOppTransferActivity.class.getSimpleName();
@@ -137,11 +132,6 @@ public class BluetoothOppTransferActivity extends AlertActivity
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
             Log.e(TAG, "Error: Can not get data from db");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_ACTIVITY,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    0);
             finish();
             return;
         }
@@ -407,11 +397,6 @@ public class BluetoothOppTransferActivity extends AlertActivity
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
             Log.e(TAG, "Error: Can not get data from db");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_ACTIVITY,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    1);
             return;
         }
 

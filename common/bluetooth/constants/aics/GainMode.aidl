@@ -24,7 +24,7 @@ package bluetooth.constants.aics;
  * - Automatic Only, the server allows only automatic gain.
  *
  * For all other Gain_Mode field values, the server allows switchable automatic/manual gain.
- * {@hide}
+ * @hide
  */
 @JavaDerive(toString = true)
 @Backing(type="byte")

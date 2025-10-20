@@ -16,7 +16,9 @@
 
 package com.android.bluetooth.le_scan
 
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.app.PendingIntent
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanFilter
@@ -40,6 +42,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 
@@ -72,15 +75,18 @@ class ScanBinderTest {
             }
             .whenever(scanController)
             .fetchOnScanThread<Any>(any(), any())
+        whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_ON)
         binder = ScanBinder(adapterService, scanController)
     }
 
     @Test
     fun registerScanner() {
         val callback = mock(IScannerCallback::class.java)
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
         val workSource = mock(WorkSource::class.java)
 
-        binder.registerScanner(callback, workSource, attributionSource)
+        binder.registerScanner(callback, settings, filters, workSource, attributionSource)
         verify(scanController).registerScanner(callback, workSource, attributionSource)
     }
 
@@ -93,12 +99,76 @@ class ScanBinderTest {
     }
 
     @Test
-    fun startScan() {
+    fun unregisterScanner_afterCleanup_doesNothing() {
+        val scannerId = 1
+
+        binder.cleanup()
+        binder.unregisterScanner(scannerId, attributionSource)
+        verify(scanController, never()).unregisterScanner(scannerId)
+    }
+
+    @Test
+    fun startScan_withDefaultSettings_doesNotEnforcePrivilegedPermission() {
         val scannerId = 1
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
 
         binder.startScan(scannerId, settings, filters, attributionSource)
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+        verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+    }
+
+    @Test
+    fun startScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
+        whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_BLE_ON)
+        val scannerId = 1
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+        verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+    }
+
+    @Test
+    fun startScan_withAmbientDiscoveryMode_enforcesPrivilegedPermission() {
+        val scannerId = 1
+        val settings =
+            ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY).build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+        verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+    }
+
+    @Test
+    fun startScan_withBatchScanTruncated_enforcesPrivilegedPermission() {
+        val scannerId = 1
+        val settings =
+            ScanSettings.Builder()
+                .setReportDelay(1000)
+                .setScanResultType(ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED)
+                .build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+        verify(adapterService).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        verify(scanController).startScan(scannerId, settings, filters, attributionSource)
+    }
+
+    @Test
+    fun startScan_withBatchScanFull_doesNotEnforcePrivilegedPermission() {
+        val scannerId = 1
+        val settings =
+            ScanSettings.Builder()
+                .setReportDelay(1000)
+                .setScanResultType(ScanSettings.SCAN_RESULT_TYPE_FULL)
+                .build()
+        val filters = listOf<ScanFilter>()
+
+        binder.startScan(scannerId, settings, filters, attributionSource)
+        verify(adapterService, never()).enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         verify(scanController).startScan(scannerId, settings, filters, attributionSource)
     }
 
@@ -178,10 +248,5 @@ class ScanBinderTest {
     fun numHwTrackFiltersAvailable() {
         binder.numHwTrackFiltersAvailable(attributionSource)
         verify(scanController).numHwTrackFiltersAvailable()
-    }
-
-    @Test
-    fun cleanup_doesNotCrash() {
-        binder.cleanup()
     }
 }

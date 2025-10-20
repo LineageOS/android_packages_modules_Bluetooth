@@ -35,7 +35,6 @@ import android.util.Pair;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 
@@ -136,19 +135,9 @@ public class NotificationHelperService extends Service {
         NotificationManager notificationManager =
                 requireNonNull(getSystemService(NotificationManager.class));
         String tag = NOTIFICATION_TAG + "/" + notificationReason;
-        if (Flags.watchDeviceOverrideAirplaneMode()) {
-            for (StatusBarNotification notification :
-                    notificationManager.getActiveNotifications()) {
-                if (notification.getId() == SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE) {
-                    notificationManager.cancel(notification.getTag(), notification.getId());
-                }
-            }
-        } else {
-            for (StatusBarNotification notification :
-                    notificationManager.getActiveNotifications()) {
-                if (tag.equals(notification.getTag())) {
-                    notificationManager.cancel(tag, notification.getId());
-                }
+        for (StatusBarNotification notification : notificationManager.getActiveNotifications()) {
+            if (notification.getId() == SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE) {
+                notificationManager.cancel(notification.getTag(), notification.getId());
             }
         }
 
@@ -179,7 +168,7 @@ public class NotificationHelperService extends Service {
                             PendingIntent.FLAG_UPDATE_CURRENT,
                             new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
                             PendingIntent.FLAG_IMMUTABLE));
-        } else if (Flags.watchDeviceOverrideAirplaneMode() && !Utils.isWatch(this)) {
+        } else if (!Utils.isWatch(this)) {
             // Do not display url link on watch, as they cannot show webpage
             String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
             builder.setContentIntent(

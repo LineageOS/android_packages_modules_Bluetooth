@@ -29,6 +29,7 @@
 
 #include <list>
 
+#include "bt_status.h"
 #include "bta/include/bta_hh_api.h"
 #include "macros.h"
 #include "osi/include/alarm.h"
@@ -97,7 +98,7 @@ typedef struct {
 
 /* Control block to maintain properties of devices */
 typedef struct {
-  bthh_connection_state_t dev_status;
+  bthh_connection_state_t state;
   uint8_t dev_handle;
   tAclLinkSpec link_spec;
   tBTA_HH_ATTR_MASK attr_mask;
@@ -141,13 +142,13 @@ typedef struct {
 extern btif_hh_cb_t btif_hh_cb;
 
 const bthh_interface_t* btif_hh_get_interface();
-bt_status_t btif_hh_execute_service(bool b_enable);
+BtStatus btif_hh_execute_service(bool b_enable);
 btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
 btif_hh_device_t* btif_hh_find_dev_by_handle(uint8_t handle);
 btif_hh_device_t* btif_hh_find_empty_dev(void);
-bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
-bt_status_t btif_hh_virtual_unplug_from_main(const tAclLinkSpec& link_spec);
-bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec);
+BtStatus btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
+BtStatus btif_hh_virtual_unplug_from_main(const tAclLinkSpec& link_spec);
+BtStatus btif_hh_connect(const tAclLinkSpec& link_spec);
 void btif_hh_remove_device(const tAclLinkSpec& link_spec);
 void btif_hh_setreport(btif_hh_uhid_t* p_uhid, bthh_report_type_t r_type, uint16_t size,
                        uint8_t* report);

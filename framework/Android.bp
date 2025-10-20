@@ -85,13 +85,12 @@ java_sdk_library {
     hostdex: true, // for hiddenapi check
 
     impl_library_visibility: [
-        "//external/sl4a/Common",
         "//packages/modules/Bluetooth/android/app:__subpackages__",
         "//packages/modules/Bluetooth/android/pandora/server",
         "//packages/modules/Bluetooth/framework/tests/bumble",
         "//packages/modules/Bluetooth/service",
         "//packages/services/Car/car-builtin-lib",
-        // TODO(240720385)
+        // TODO(b/431798751)
         "//packages/services/Car/tests/CarBuiltinLibUnitTest",
         ":__subpackages__",
     ],
@@ -147,14 +146,14 @@ java_sdk_library {
     },
 }
 
-// defaults for tests that need to build against framework-bluetooths's @hide APIs
+// defaults for tests that need to build against framework-bluetooth's @Hide APIs
 java_defaults {
     name: "framework-bluetooth-tests-defaults",
     defaults: ["bluetooth_errorprone_rules"],
     sdk_version: "core_platform",
     libs: [
         // order matters: classes in framework-bluetooth are resolved before framework, meaning
-        // @hide APIs in framework-bluetooth are resolved before @SystemApi stubs in framework
+        // @Hide APIs in framework-bluetooth are resolved before @SystemApi stubs in framework
         "framework-bluetooth.impl",
 
         "framework",

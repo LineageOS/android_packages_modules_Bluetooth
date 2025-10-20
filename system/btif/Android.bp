@@ -10,11 +10,13 @@ package {
 
 btifCommonIncludes = [
     "packages/modules/Bluetooth/system",
+    "packages/modules/Bluetooth/system/bta",
     "packages/modules/Bluetooth/system/bta/include",
     "packages/modules/Bluetooth/system/btif/include",
     "packages/modules/Bluetooth/system/gd",
     "packages/modules/Bluetooth/system/include",
     "packages/modules/Bluetooth/system/stack/include",
+    "packages/modules/Bluetooth/system/types/include",
 ]
 
 cc_library_static {
@@ -100,6 +102,7 @@ cc_library_static {
         "src/btif_storage.cc",
         "src/btif_uid.cc",
         "src/btif_util.cc",
+        "src/btif_vaps_server.cc",
         "src/btif_vc.cc",
         "src/stack_manager.cc",
     ],
@@ -341,7 +344,7 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libaconfig_storage_read_api_cc",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -437,6 +440,7 @@ cc_test {
         ":TestMockBtaScn",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
+        ":TestMockBtaVaps",
         ":TestMockBtaVc",
         ":TestMockBtcore",
         ":TestMockBtu",
@@ -465,7 +469,7 @@ cc_test {
         "android.hardware.bluetooth.audio@2.1",
         "avrcp-target-service",
         "bluetooth_constants-cpp",
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "lib-bt-packets",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
@@ -552,6 +556,7 @@ cc_test {
         ":TestMockBtaScn",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
+        ":TestMockBtaVaps",
         ":TestMockBtaVc",
         ":TestMockBtcore",
         ":TestMockBtu",
@@ -583,7 +588,7 @@ cc_test {
         "android.hardware.bluetooth.audio@2.1",
         "avrcp-target-service",
         "bluetooth_constants-cpp",
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "lib-bt-packets",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",

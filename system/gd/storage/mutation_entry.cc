@@ -19,31 +19,14 @@
 namespace bluetooth {
 namespace storage {
 
-MutationEntry::MutationEntry(EntryType entry_type_param, PropertyType property_type_param,
-                             std::string section_param, std::string property_param,
+MutationEntry::MutationEntry(std::string section_param, std::string property_param,
                              std::string value_param)
-    : entry_type(entry_type_param),
-      property_type(property_type_param),
-      section(std::move(section_param)),
+    : section(std::move(section_param)),
       property(std::move(property_param)),
       value(std::move(value_param)) {
-  switch (entry_type) {
-    case EntryType::SET:
-      log::assert_that(!section.empty(), "section cannot be empty for EntryType::SET");
-      log::assert_that(!property.empty(), "property cannot be empty for EntryType::SET");
-      log::assert_that(!value.empty(), "value cannot be empty for EntryType::SET");
-      break;
-    case EntryType::REMOVE_PROPERTY:
-      log::assert_that(!section.empty(), "section cannot be empty for EntryType::REMOVE_PROPERTY");
-      log::assert_that(!property.empty(),
-                       "property cannot be empty for EntryType::REMOVE_PROPERTY");
-      break;
-    case EntryType::REMOVE_SECTION:
-      log::assert_that(!section.empty(), "section cannot be empty for EntryType::REMOVE_SECTION");
-      break;
-      // do not write a default case so that when a new enum is defined, compilation would fail
-      // automatically
-  }
+  log::assert_that(!section.empty(), "section cannot be empty for EntryType::SET");
+  log::assert_that(!property.empty(), "property cannot be empty for EntryType::SET");
+  log::assert_that(!value.empty(), "value cannot be empty for EntryType::SET");
 }
 
 }  // namespace storage

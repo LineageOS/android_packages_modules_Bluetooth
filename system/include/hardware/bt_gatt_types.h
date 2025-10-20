@@ -51,6 +51,15 @@ typedef struct {
 /** Preferred physical Transport for GATT connection */
 typedef enum { GATT_TRANSPORT_AUTO, GATT_TRANSPORT_BREDR, GATT_TRANSPORT_LE } btgatt_transport_t;
 
+/** Invalid GATT offload session ID */
+#define BTGATT_OFFLOAD_SESSION_ID_UNKNOWN 0
+
+/** GATT offload request result */
+typedef struct {
+  uint16_t session_id;
+  uint8_t status;
+} btgatt_offload_result_t;
+
 __END_DECLS
 
 #endif /* ANDROID_INCLUDE_BT_GATT_TYPES_H */

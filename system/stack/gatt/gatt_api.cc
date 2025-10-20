@@ -357,7 +357,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service, in
                elem.e_hdl, elem.type, elem.sdp_handle);
 
   gatt_update_for_database_change();
-  gatt_proc_srv_chg();
+  gatt_proc_srv_chg(s_hdl);
 
   return GATT_SERVICE_STARTED;
 }
@@ -409,7 +409,7 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, Uuid* p_svc_uuid, uint16_t svc_inst) 
   }
 
   gatt_update_for_database_change();
-  gatt_proc_srv_chg();
+  gatt_proc_srv_chg(svc_inst);
 
   log::verbose("released handles s_hdl=0x{:x}, e_hdl=0x{:x}", it->asgn_range.s_handle,
                it->asgn_range.e_handle);
@@ -686,6 +686,42 @@ tGATT_STATUS GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS sta
   /* Process App response */
   return gatt_sr_process_app_rsp(*p_tcb, gatt_if, trans_id, sr_res_p->op_code, status, p_msg,
                                  sr_res_p);
+}
+
+/*******************************************************************************
+ *
+ * Function         GATTS_OffloadCharacteristics
+ *
+ * Description      This function is called to offload characteristics for GATT server.
+ *
+ * Parameter        conn_id         : connection ID.
+ *                  service         : pointer array describing service and characteristics.
+ *                  elements_count  : number of elements in the array.
+ *                  endpoint_id     : ID of the hub end point.
+ *                  hub_id          : ID of the hub to which the end point belongs.
+ *                  promise         : object used to signal the completion status.
+ *
+ ******************************************************************************/
+void GATTS_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
+                                  size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  std::promise<btgatt_offload_result_t> promise) {
+  gatt_offload_characteristics(conn_id, /* is_server */ true, service, elements_count, endpoint_id,
+                               hub_id, std::move(promise));
+}
+
+/*******************************************************************************
+ *
+ * Function         GATTS_UnoffloadCharacteristics
+ *
+ * Description      This function is called to unoffload a session for GATT server.
+ *
+ * Parameter        conn_id         : connection ID.
+ *                  session_id      : session ID.
+ *
+ ******************************************************************************/
+void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
+  log::info("conn_id: {}, session_id: {}", conn_id, session_id);
+  gatt_unoffload_session(conn_id, session_id);
 }
 
 /******************************************************************************/
@@ -1169,6 +1205,81 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(tCONN_ID conn_id, uint16_t cid) {
 
   /* send confirmation now */
   return attp_send_cl_confirmation_msg(*p_tcb, cid);
+}
+
+/*******************************************************************************
+ *
+ * Function         GATTC_OffloadCharacteristics
+ *
+ * Description      This function is called to offload characteristics for GATT client.
+ *
+ * Parameter        conn_id         : connection ID.
+ *                  service         : pointer array describing service and characteristics.
+ *                  elements_count  : number of elements in the service array.
+ *                  endpoint_id     : ID of the hub end point.
+ *                  hub_id          : ID of the hub to which the end point belongs.
+ *                  promise         : object used to signal the completion status.
+ *
+ ******************************************************************************/
+void GATTC_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
+                                  size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  std::promise<btgatt_offload_result_t> promise) {
+  gatt_offload_characteristics(conn_id, /* is_server */ false, service, elements_count, endpoint_id,
+                               hub_id, std::move(promise));
+}
+
+/*******************************************************************************
+ *
+ * Function         GATTC_UnoffloadCharacteristics
+ *
+ * Description      This function is called to unoffload characteristics for GATT client.
+ *
+ * Parameter        conn_id         : connection ID.
+ *                  session_id      : session ID.
+ *
+ ******************************************************************************/
+void GATTC_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
+  log::info("conn_id: {}, session_id: {}", conn_id, session_id);
+  gatt_unoffload_session(conn_id, session_id);
+}
+
+/*******************************************************************************
+ *
+ * Function         GATTC_InformNotificationHandle
+ *
+ * Description      This function is called to inform the registered notification handle for GATT
+ *client.
+ *
+ * Parameter        remote_bda    : peer device address. (input)
+ *                  handle        : notification handle
+ *
+ ******************************************************************************/
+void GATTC_InformNotificationHandle(const RawAddress& remote_bda, uint16_t handle) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, BT_TRANSPORT_LE);
+  if (!p_tcb) {
+    log::info("Unknown remote_bda: {}", remote_bda);
+    return;
+  }
+  gattc_inform_notification_handle(p_tcb, handle);
+}
+
+/*******************************************************************************
+ *
+ * Function         GATTC_InformServiceChangedIndication
+ *
+ * Description      This function is called to inform the service changed indication for GATT
+ *client.
+ *
+ * Parameter        remote_bda    : peer device address. (input)
+ *
+ ******************************************************************************/
+void GATTC_InformServiceChangedIndication(const RawAddress& remote_bda) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, BT_TRANSPORT_LE);
+  if (!p_tcb) {
+    log::info("Unknown remote_bda: {}", remote_bda);
+    return;
+  }
+  gattc_offload_handle_service_changed_indication(p_tcb);
 }
 
 /******************************************************************************/
@@ -1688,14 +1799,14 @@ void gatt_load_bonded(void) {
   if (!load_bonded) {
     return;
   }
-  for (tBTM_SEC_DEV_REC* p_dev_rec : btm_get_sec_dev_rec()) {
-    if (p_dev_rec->sec_rec.is_link_key_known()) {
-      log::verbose("Add bonded BR/EDR transport {}", p_dev_rec->bd_addr);
-      gatt_bonded_check_add_address(p_dev_rec->bd_addr);
+  for (BtmDevice* p_device : btm_get_sec_dev_rec()) {
+    if (p_device->sec_rec.is_link_key_known()) {
+      log::verbose("Add bonded BR/EDR transport {}", p_device->bd_addr);
+      gatt_bonded_check_add_address(p_device->bd_addr);
     }
-    if (p_dev_rec->sec_rec.is_le_link_key_known()) {
-      log::verbose("Add bonded BLE {}", p_dev_rec->ble.pseudo_addr);
-      gatt_bonded_check_add_address(p_dev_rec->ble.pseudo_addr);
+    if (p_device->sec_rec.is_le_link_key_known()) {
+      log::verbose("Add bonded BLE {}", p_device->ble.pseudo_addr);
+      gatt_bonded_check_add_address(p_device->ble.pseudo_addr);
     }
   }
 }

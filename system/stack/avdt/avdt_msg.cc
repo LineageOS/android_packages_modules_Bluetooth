@@ -692,7 +692,7 @@ static uint8_t avdt_msg_prs_single(tAVDT_MSG* p_msg, uint8_t* p, uint16_t len) {
   } else {
     AVDT_MSG_PRS_SEID(p, p_msg->single.seid);
 
-    if (avdt_scb_by_hdl(p_msg->single.seid) == NULL) {
+    if (avdt_connected_scb_by_hdl(p_msg->single.seid) == NULL) {
       err = AVDT_ERR_SEID;
     }
   }
@@ -721,7 +721,7 @@ static uint8_t avdt_msg_prs_setconfig_cmd(tAVDT_MSG* p_msg, uint8_t* p, uint16_t
   } else {
     /* get seids */
     AVDT_MSG_PRS_SEID(p, p_msg->config_cmd.hdr.seid);
-    if (avdt_scb_by_hdl(p_msg->config_cmd.hdr.seid) == NULL) {
+    if (avdt_connected_scb_by_hdl(p_msg->config_cmd.hdr.seid) == NULL) {
       err = AVDT_ERR_SEID;
     }
 
@@ -772,7 +772,7 @@ static uint8_t avdt_msg_prs_reconfig_cmd(tAVDT_MSG* p_msg, uint8_t* p, uint16_t 
   } else {
     /* get seid */
     AVDT_MSG_PRS_SEID(p, p_msg->reconfig_cmd.hdr.seid);
-    if (avdt_scb_by_hdl(p_msg->reconfig_cmd.hdr.seid) == NULL) {
+    if (avdt_connected_scb_by_hdl(p_msg->reconfig_cmd.hdr.seid) == NULL) {
       err = AVDT_ERR_SEID;
     } else {
       /* parse config parameters */
@@ -819,7 +819,7 @@ static uint8_t avdt_msg_prs_multi(tAVDT_MSG* p_msg, uint8_t* p, uint16_t len) {
     /* get and verify all seps */
     for (i = 0; i < len; i++) {
       AVDT_MSG_PRS_SEID(p, p_msg->multi.seid_list[i]);
-      if (avdt_scb_by_hdl(p_msg->multi.seid_list[i]) == NULL) {
+      if (avdt_connected_scb_by_hdl(p_msg->multi.seid_list[i]) == NULL) {
         err = AVDT_ERR_SEID;
         p_msg->hdr.err_param = p_msg->multi.seid_list[i];
         break;
@@ -851,7 +851,7 @@ static uint8_t avdt_msg_prs_security_cmd(tAVDT_MSG* p_msg, uint8_t* p, uint16_t 
   } else {
     /* get seid */
     AVDT_MSG_PRS_SEID(p, p_msg->security_cmd.hdr.seid);
-    if (avdt_scb_by_hdl(p_msg->security_cmd.hdr.seid) == NULL) {
+    if (avdt_connected_scb_by_hdl(p_msg->security_cmd.hdr.seid) == NULL) {
       err = AVDT_ERR_SEID;
     } else {
       p_msg->security_cmd.p_data = p;
@@ -1015,7 +1015,7 @@ static uint8_t avdt_msg_prs_delay_rpt(tAVDT_MSG* p_msg, uint8_t* p, uint16_t len
     /* get seid */
     AVDT_MSG_PRS_SEID(p, p_msg->delay_rpt_cmd.hdr.seid);
 
-    if (avdt_scb_by_hdl(p_msg->delay_rpt_cmd.hdr.seid) == NULL) {
+    if (avdt_connected_scb_by_hdl(p_msg->delay_rpt_cmd.hdr.seid) == NULL) {
       err = AVDT_ERR_SEID;
     } else {
       BE_STREAM_TO_UINT16(p_msg->delay_rpt_cmd.delay, p);

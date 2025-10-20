@@ -63,9 +63,7 @@ TEST(RawAddressUnittest, test_to_from_str) {
 TEST(RawAddressUnittest, test_from_octets) {
   static const uint8_t test_addr_array[] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
 
-  RawAddress bdaddr;
-  size_t expected_result = RawAddress::kLength;
-  ASSERT_EQ(expected_result, bdaddr.FromOctets(test_addr_array));
+  RawAddress bdaddr = RawAddress::FromOctets(test_addr_array);
 
   ASSERT_EQ(0x12, bdaddr.address[0]);
   ASSERT_EQ(0x34, bdaddr.address[1]);

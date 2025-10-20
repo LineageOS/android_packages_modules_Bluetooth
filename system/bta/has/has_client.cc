@@ -64,7 +64,6 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
 
-using base::Closure;
 using bluetooth::Uuid;
 using bluetooth::csis::CsisClient;
 using bluetooth::has::ConnectionState;
@@ -122,7 +121,7 @@ std::mutex instance_mutex;
  */
 class HasClientImpl : public HasClient {
 public:
-  HasClientImpl(bluetooth::has::HasClientCallbacks* callbacks, base::Closure initCb)
+  HasClientImpl(bluetooth::has::HasClientCallbacks* callbacks, base::OnceClosure initCb)
       : gatt_if_(0), callbacks_(callbacks) {
     BTA_GATTC_AppRegister(
             "has",
@@ -131,8 +130,8 @@ public:
                 instance->GattcCallback(event, p_data);
               }
             },
-            base::Bind(
-                    [](base::Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error(
                                 "Can't start Hearing Aid Service client profile - no gatt "
@@ -140,9 +139,9 @@ public:
                         return;
                       }
                       instance->gatt_if_ = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             true);
   }
 
@@ -975,11 +974,8 @@ public:
   void OnGroupOpCoordinatorTimeout(void* /*p*/) {
     log::error("Not all the devices notified their state change on time.");
 
-    if (com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
-      for (auto op : pending_group_operation_timeouts_) {
-        callbacks_->OnActivePresetSelectError(op.second.operation.addr_or_group,
-                                              ErrorCode::TIMEOUT);
-      }
+    for (auto op : pending_group_operation_timeouts_) {
+      callbacks_->OnActivePresetSelectError(op.second.operation.addr_or_group, ErrorCode::TIMEOUT);
     }
     pending_group_operation_timeouts_.clear();
     HasCtpGroupOpCoordinator::Cleanup();
@@ -1594,17 +1590,12 @@ private:
     }
     // Always report the current active preset to upper layer to reflect the remote state.
     // Android may not always be aware of the origin of the changes and shouldn't delay the event
-    if (com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
-      callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
-    }
+    callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
     if (pending_group_operation_timeouts_.empty()) {
-      if (!com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
-        callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
-      }
       return;
     }
 
-    if (com::android::bluetooth::flags::hap_safely_erase_pending_operation_timeout()) {
+    if (com_android_bluetooth_flags_hap_safely_erase_pending_operation_timeout()) {
       for (auto it = pending_group_operation_timeouts_.rbegin();
            it != pending_group_operation_timeouts_.rend();) {
         auto& group_op_coordinator = it->second;
@@ -1627,10 +1618,6 @@ private:
             break;
         }
         if (group_op_coordinator.IsFullyCompleted()) {
-          if (!com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
-            callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
-                                                       device->currently_active_preset);
-          }
           it = decltype(it)(pending_group_operation_timeouts_.erase(std::next(it).base()));
         } else {
           ++it;
@@ -1663,10 +1650,6 @@ private:
           break;
       }
       if (group_op_coordinator.IsFullyCompleted()) {
-        if (!com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
-          callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
-                                                     device->currently_active_preset);
-        }
         pending_group_operation_timeouts_.erase(it->first);
       }
       if (matches) {
@@ -1905,7 +1888,7 @@ private:
       return false;
     }
 
-    /* If deatails are loaded from storage we are done here */
+    /* If details are loaded from storage we are done here */
     if (LoadHasDetailsFromStorage(device)) {
       return true;
     }
@@ -2225,7 +2208,8 @@ alarm_t* HasCtpGroupOpCoordinator::operation_timeout_timer = nullptr;
 size_t HasCtpGroupOpCoordinator::ref_cnt = 0u;
 alarm_callback_t HasCtpGroupOpCoordinator::cb = [](void*) {};
 
-void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks, base::Closure initCb) {
+void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks,
+                           base::OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     log::error("Already initialized!");
@@ -2237,7 +2221,7 @@ void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks, base::
       instance->OnGroupOpCoordinatorTimeout(p);
     }
   });
-  instance = new HasClientImpl(callbacks, initCb);
+  instance = new HasClientImpl(callbacks, std::move(initCb));
 }
 
 bool HasClient::IsHasClientRunning() { return instance; }

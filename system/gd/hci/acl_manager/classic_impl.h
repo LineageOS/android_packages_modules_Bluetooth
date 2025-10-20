@@ -393,9 +393,11 @@ public:
                         ErrorCode status, std::string valid_incoming_addresses) {
                       log::warn("No matching connection to {} ({})", address,
                                 ErrorCodeText(status));
-                      log::assert_that(status != ErrorCode::SUCCESS,
-                                       "No prior connection request for {} expecting:{}", address,
-                                       valid_incoming_addresses.c_str());
+                      if (status == ErrorCode::SUCCESS) {
+                        /* This state is considered unexpected in this fallback path.*/
+                        log::error("No prior connection request for {} expecting:{}", address,
+                                   valid_incoming_addresses.c_str());
+                      }
                       remote_name_request_module->ReportRemoteNameRequestCancellation(address);
                     },
                     base::Unretained(&remote_name_request_module_), address, status));
@@ -724,8 +726,7 @@ public:
 
     // Some devices would not respond when local  accept connection as central.
     RawAddress raw_address = ToRawAddress(address);
-    if (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST,
-                             &raw_address)) {
+    if (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, &raw_address)) {
       log::info("IOP workaround for {}, accept connection as peripheral", raw_address);
       role = AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
     }

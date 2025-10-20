@@ -16,6 +16,7 @@
 
 #include "gatt_api.h"
 
+#include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
 #include "btm/btm_dev.h"
@@ -27,8 +28,8 @@ extern tBTM_SEC_CB btm_sec_cb;
 
 static const size_t QUEUE_SIZE_MAX = 10;
 
-static tBTM_SEC_DEV_REC* make_bonded_ble_device(const RawAddress& bda, const RawAddress& rra) {
-  tBTM_SEC_DEV_REC* dev = btm_sec_allocate_dev_rec();
+static BtmDevice* make_bonded_ble_device(const RawAddress& bda, const RawAddress& rra) {
+  BtmDevice* dev = btm_sec_allocate_dev_rec();
   dev->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
   dev->bd_addr = bda;
   dev->ble.pseudo_addr = rra;
@@ -36,8 +37,8 @@ static tBTM_SEC_DEV_REC* make_bonded_ble_device(const RawAddress& bda, const Raw
   return dev;
 }
 
-static tBTM_SEC_DEV_REC* make_bonded_dual_device(const RawAddress& bda, const RawAddress& rra) {
-  tBTM_SEC_DEV_REC* dev = make_bonded_ble_device(bda, rra);
+static BtmDevice* make_bonded_dual_device(const RawAddress& bda, const RawAddress& rra) {
+  BtmDevice* dev = make_bonded_ble_device(bda, rra);
   dev->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
   return dev;
 }
@@ -51,12 +52,23 @@ protected:
   virtual ~GattApiTest() = default;
 
   void SetUp() override {
-    btm_sec_cb.sec_dev_rec = list_new(osi_free);
+    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+      btm_sec_cb.sec_dev_rec = list_new(osi_free);
+    } else {
+      btm_sec_cb.device_records = {};
+    }
+
     gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
     logging::SetMinLogLevel(-2);
   }
 
-  void TearDown() override { list_free(btm_sec_cb.sec_dev_rec); }
+  void TearDown() override {
+    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+      list_free(btm_sec_cb.sec_dev_rec);
+    } else {
+      btm_sec_cb.device_records = {};
+    }
+  }
 };
 
 static const RawAddress SAMPLE_PUBLIC_BDA = {{0x00, 0x00, 0x11, 0x22, 0x33, 0x44}};

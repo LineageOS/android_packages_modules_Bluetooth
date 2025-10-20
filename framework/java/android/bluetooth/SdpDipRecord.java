@@ -15,12 +15,13 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 /** Data representation of a Object Push Profile Server side SDP record. */
-/** @hide */
+@Hide
 public class SdpDipRecord implements Parcelable {
     private final int mSpecificationId;
     private final int mVendorId;

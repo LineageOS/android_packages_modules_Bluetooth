@@ -24,12 +24,14 @@
 
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
-#include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_sec_int_types.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/security_client_callbacks.h"
+
+// TODO: b/446803190 - Fix the arguments by making them const references.
+typedef bool (*sec_dev_rec_iter_cb)(void* dev_rec, void* context);
 
 class tBTM_SEC_CB {
 public:
@@ -51,14 +53,14 @@ public:
   *****************************************************/
   tBTM_APPL_INFO api;
 
-  tBTM_SEC_DEV_REC* p_collided_dev_rec{nullptr};
+  BtmDevice* p_collided_dev{nullptr};
   alarm_t* sec_collision_timer{nullptr};
   uint64_t collision_start_time{0};
   uint32_t dev_rec_count{0}; /* Counter used for device record timestamp */
   uint8_t security_mode{0};
   bool pairing_disabled{false};
-  bool security_mode_changed{false}; /* mode changed during bonding */
-  bool pin_type_changed{false};      /* pin type changed during bonding */
+  bool security_mode_changed{false};      /* mode changed during bonding */
+  bool pin_type_changed{false};           /* pin type changed during bonding */
   bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
   uint8_t pin_code_len{0};                               /* for legacy devices */
@@ -69,15 +71,13 @@ public:
                                                             Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
-  list_t* sec_dev_rec{nullptr};                          /* list of tBTM_SEC_DEV_REC */
+// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+  list_t* sec_dev_rec{nullptr}; /* list of BtmDevice */
+  std::array<BtmDevice, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records = {};
   tBTM_SEC_SERV_REC* p_out_serv{nullptr};
   tBTM_MKEY_CALLBACK* mkey_cback{nullptr};
 
   RawAddress connecting_bda;
-
-  // Todo(b/405594028): Remove when separate_encryption_queue is released
-  fixed_queue_t* sec_pending_q{
-          nullptr}; /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
 
   // Pending service access requests in tBTM_SERVICE_ACCESS_REQ format
   std::list<tBTM_SERVICE_ACCESS_REQ> service_access_q = {};
@@ -92,21 +92,22 @@ public:
   void Init(uint8_t initial_security_mode);
   void Free();
 
-  tBTM_SEC_SERV_REC* find_first_serv_rec(bool is_originator, uint16_t psm);
+  tBTM_SEC_SERV_REC* find_first_serv_rec(bool outgoing, uint16_t psm);
 
   bool IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transport = BT_TRANSPORT_AUTO);
   bool IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
 
-  tBTM_SEC_REC* getSecRec(const RawAddress bd_addr);
+  BtmSecurityRecord* getSecRec(const RawAddress bd_addr);
 
-  bool AddService(bool is_originator, const char* p_name, uint8_t service_id, uint16_t sec_level,
+  bool AddService(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
                   uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id);
   uint8_t RemoveServiceById(uint8_t service_id);
   uint8_t RemoveServiceByPsm(uint16_t psm);
 
   void change_pairing_state(tBTM_PAIRING_STATE new_state);
+  BtmDevice* for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context);
 };
 
 extern tBTM_SEC_CB btm_sec_cb;

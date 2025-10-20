@@ -314,15 +314,15 @@ bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class) {
  *
  * Description      Read the SSR Parameter for the remote device
  *
- * Returns          tBTA_HH_STATUS  operation status
+ * Returns          bthh_status_t  operation status
  *
  ******************************************************************************/
-tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
-                                     uint16_t* p_min_ssr_tout) {
+bthh_status_t bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
+                                    uint16_t* p_min_ssr_tout) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_find_cb(link_spec);
   if (p_cb == nullptr) {
     log::warn("Unable to find device:{}", link_spec);
-    return BTA_HH_ERR;
+    return BTHH_ERR;
   }
 
   /* if remote device does not have HIDSSRHostMaxLatency attribute in SDP,
@@ -334,7 +334,7 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_
     if (get_btm_client_interface().link_controller.BTM_GetLinkSuperTout(
                 p_cb->link_spec.addrt.bda, &ssr_max_latency) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get supervision timeout for peer:{}", p_cb->link_spec);
-      return BTA_HH_ERR;
+      return BTHH_ERR;
     }
     ssr_max_latency = BTA_HH_GET_DEF_SSR_MAX_LAT(ssr_max_latency);
 
@@ -365,7 +365,7 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_
     *p_min_ssr_tout = p_cb->dscp_info.ssr_min_tout;
   }
 
-  return BTA_HH_OK;
+  return BTHH_OK;
 }
 
 /*******************************************************************************
@@ -379,7 +379,7 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_
  * Returns          void
  *
  ******************************************************************************/
-void bta_hh_cleanup_disable(tBTA_HH_STATUS status) {
+void bta_hh_cleanup_disable(bthh_status_t status) {
   /* free buffer in CB holding report descriptors */
   for (uint8_t i = 0; i < BTA_HH_MAX_DEVICE; i++) {
     bta_hh_reset_cb(&bta_hh_cb.kdev[i]);
@@ -389,7 +389,7 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status) {
     tBTA_HH bta_hh;
     bta_hh.status = status;
     (*bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, &bta_hh);
-    /* all connections are down, no waiting for diconnect */
+    /* all connections are down, no waiting for disconnect */
     memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
   }
 }

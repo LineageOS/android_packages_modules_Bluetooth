@@ -43,11 +43,6 @@ namespace {
 
 constexpr auto kTimeout = std::chrono::seconds(2);
 constexpr auto kShortTimeout = std::chrono::milliseconds(100);
-constexpr uint16_t kHciHandle = 123;
-constexpr uint16_t kScanIntervalFast = 0x0060;
-constexpr uint16_t kScanWindowFast = 0x0030;
-constexpr uint16_t kScanIntervalSlow = 0x0800;
-constexpr uint16_t kScanWindowSlow = 0x00C0;
 const bluetooth::hci::AddressWithType empty_address_with_type = bluetooth::hci::AddressWithType();
 
 }  // namespace
@@ -127,10 +122,9 @@ protected:
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, acl_count_provider_mock);
 
-    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+    remote = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
-    hci::Address address;
-    Address::FromString("D0:05:04:03:02:01", address);
+    hci::Address address = Address::FromString("D0:05:04:03:02:01").value();
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
@@ -628,10 +622,9 @@ protected:
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, acl_count_provider_mock);
 
-    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+    remote = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
-    hci::Address address;
-    Address::FromString("D0:05:04:03:02:01", address);
+    hci::Address address = Address::FromString("D0:05:04:03:02:01").value();
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
@@ -662,8 +655,7 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   client_handler_->Synchronize(std::chrono::milliseconds(20));
   client_handler_->Synchronize(std::chrono::milliseconds(20));
 
-  Address remote2;
-  Address::FromString("A1:A2:A3:A4:A5:A7", remote2);
+  Address remote2 = Address::FromString("A1:A2:A3:A4:A5:A7").value();
   auto remote_with_type2 = AddressWithType(remote2, AddressType::PUBLIC_DEVICE_ADDRESS);
 
   // create another connection

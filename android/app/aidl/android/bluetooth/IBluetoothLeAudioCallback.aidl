@@ -21,11 +21,8 @@ import android.bluetooth.BluetoothLeAudioCodecStatus;
 
 import java.util.List;
 
-/**
- * Callback definitions for interacting with LE Audio service
- *
- * @hide
- */
+/** Callback definitions for interacting with LE Audio service */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothLeAudioCallback {
     void onCodecConfigChanged(in int groupId, in BluetoothLeAudioCodecStatus status);
     void onGroupNodeAdded(in BluetoothDevice device, int groupId);

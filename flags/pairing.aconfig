@@ -42,80 +42,10 @@ flag {
 }
 
 flag {
-    name: "temporary_pairing_tracking"
-    namespace: "bluetooth"
-    description: "Correctly track temporary pairing status"
-    bug: "397705157"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "auto_transport_pairing"
-    namespace: "bluetooth"
-    description: "Fix transport selection for auto transport pairing"
-    bug: "398329326"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "reset_security_flags_on_pairing_failure"
-    namespace: "bluetooth"
-    description: "Reset security flags on pairing failure"
-    bug: "400586238"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "smp_connection_status_handling_when_no_acl"
     namespace: "bluetooth"
     description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
     bug: "401073843"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "non_zero_local_irk"
-    namespace: "bluetooth"
-    description: "Ensure that the local IRK is not zero before sending it to the controller"
-    bug: "401126556"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "immediate_encryption_after_pairing"
-    namespace: "bluetooth"
-    description: "Encrypt BR/EDR link immediately after pairing"
-    bug: "402510244"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "unrelated_device_smp_cancellation"
-    namespace: "bluetooth"
-    description: "Don't cancel SMP pairing if encryption fails for unrelated device"
-    bug: "404658828"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "separate_encryption_queue"
-    namespace: "bluetooth"
-    description: "Create separate pending encryption queue"
-    bug: "405594028"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -132,26 +62,6 @@ flag {
 }
 
 flag {
-    name: "non_bonded_device_properties"
-    namespace: "bluetooth"
-    description: "ACL disconnection should not remove device properties for devices which were never bonded"
-    bug: "406602074"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "reset_collision_state_on_encryption"
-    namespace: "bluetooth"
-    description: "Reset encryption collision state if peer successfully encrypts the link before collision timer expires"
-    bug: "410105844"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "retain_address_type"
     namespace: "bluetooth"
     description: "Set correct address type in BluetoothDevice objects created by the Android Bluetooth"
@@ -162,30 +72,10 @@ flag {
 }
 
 flag {
-    name: "bond_loss_transport_check"
-    namespace: "bluetooth"
-    description: "Bond loss should not be detected on transport not bonded"
-    bug: "411214547"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "bond_state_machine_looper"
     namespace: "bluetooth"
     description: "Use main looper in BondStateMachine"
     bug: "412423957"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "bonding_initiator_state_reset"
-    namespace: "bluetooth"
-    description: "Reset bonding initiator state only if both transports are disconnected"
-    bug: "413483250"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -297,4 +187,58 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "reject_bond_request_during_bonding"
+    namespace: "bluetooth"
+    description: "Don't accept new bond request when bonding"
+    bug: "439861848"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "modify_dev_rec_in_main_thread"
+    namespace: "bluetooth"
+    description: "Modify BTM device record list only in main thread"
+    bug: "444243832"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "device_record_wipe_ranking"
+    namespace: "bluetooth"
+    description: "New ranking for wiping oldest device record"
+    bug: "444268274"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "btm_le_pairing_state_reset"
+    namespace: "bluetooth"
+    description: "Reset BTM pairing state when LE pairing concludes"
+    bug: "444741056"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "btm_iocaps_sysprop_override"
+    namespace: "bluetooth"
+    description: "Override IO capabilities using system properties"
+    bug: "446939944"
+}
+
+flag {
+    name: "apairing_26q2_permission_improvements"
+    namespace: "bluetooth"
+    description: "Permission improvements for pairing in 26Q2"
+    bug: "449010608"
 }

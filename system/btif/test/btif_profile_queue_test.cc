@@ -26,6 +26,7 @@
 
 #include "btif/include/btif_common.h"
 #include "btif/include/stack_manager_t.h"
+#include "btif_status.h"
 
 typedef void(tBTIF_CBACK)(uint16_t event, char* p_param);
 typedef void(tBTIF_COPY_CBACK)(uint16_t event, char* p_dest, const char* p_src);
@@ -63,7 +64,7 @@ protected:
 const RawAddress BtifProfileQueueTest::kTestAddr1{{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
 const RawAddress BtifProfileQueueTest::kTestAddr2{{0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56}};
 
-static bt_status_t test_connect_cb(RawAddress bda, uint16_t uuid) {
+static BtStatus test_connect_cb(RawAddress bda, uint16_t uuid) {
   sResult = UNKNOWN;
   if (bda == BtifProfileQueueTest::kTestAddr1) {
     if (uuid == BtifProfileQueueTest::kTestUuid1) {
@@ -78,7 +79,7 @@ static bt_status_t test_connect_cb(RawAddress bda, uint16_t uuid) {
       sResult = UUID2_ADDR2;
     }
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 TEST_F(BtifProfileQueueTest, test_connect) {
@@ -87,7 +88,7 @@ TEST_F(BtifProfileQueueTest, test_connect) {
   EXPECT_EQ(sResult, UUID1_ADDR1);
 }
 
-static bt_status_t test_connect_cb_fail(RawAddress bda, uint16_t uuid) {
+static BtStatus test_connect_cb_fail(RawAddress bda, uint16_t uuid) {
   sResult = UNKNOWN;
   if (bda == BtifProfileQueueTest::kTestAddr1) {
     if (uuid == BtifProfileQueueTest::kTestUuid1) {
@@ -102,7 +103,7 @@ static bt_status_t test_connect_cb_fail(RawAddress bda, uint16_t uuid) {
       sResult = UUID2_ADDR2;
     }
   }
-  return BT_STATUS_BUSY;
+  return BtifStatus(BUSY);
 }
 
 TEST_F(BtifProfileQueueTest, test_connect_fail_still_can_advance_the_queue) {

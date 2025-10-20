@@ -43,7 +43,7 @@ void DumpsysBtaDm(int fd) {
   DumpsysBtaDmDisc(fd);
   DumpsysBtaDmSearch(fd);
   DumpsysBtaDmGattClient(fd);
-  if (com::android::bluetooth::flags::sniff_offload_with_vsc_based_control()) {
+  if (com_android_bluetooth_flags_sniff_offload_with_vsc_based_control()) {
     DumpsysBtaDmPmOffload(fd);
   }
 }

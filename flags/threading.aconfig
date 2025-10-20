@@ -11,12 +11,3 @@ flag {
     }
 }
 
-flag {
-    name: "vcp_on_main_looper"
-    namespace: "bluetooth"
-    description: "Run on the main looper instead of yet another thread"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "381275568"
-}

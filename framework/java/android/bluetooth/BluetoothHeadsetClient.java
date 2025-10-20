@@ -18,13 +18,13 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -58,9 +58,8 @@ import java.util.List;
  *
  * <p>BluetoothHeadsetClient is a proxy object for controlling the Bluetooth HFP Client Service via
  * IPC. Use {@link BluetoothAdapter#getProfileProxy} to get the BluetoothHeadsetClient proxy object.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothHeadsetClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothHeadsetClient.class.getSimpleName();
@@ -83,9 +82,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SuppressLint("ActionValue")
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -103,9 +101,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * <p>When <code>EXTRA_STATE</code> is set to </code>STATE_AUDIO_CONNECTED</code>, it also
      * includes {@link #EXTRA_AUDIO_WBS} indicating wide band speech support.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -121,9 +118,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * #EXTRA_NETWORK_SIGNAL_STRENGTH}, {@link #EXTRA_NETWORK_ROAMING}, {@link
      * #EXTRA_BATTERY_LEVEL}, {@link #EXTRA_OPERATOR_NAME}, {@link #EXTRA_VOICE_RECOGNITION}, {@link
      * #EXTRA_IN_BAND_RING}
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -135,9 +131,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * <p>It includes: {@link #EXTRA_CALL}, with value of {@link BluetoothHeadsetClientCall}
      * instance, representing actual call state.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -150,9 +145,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * new Audio Gateway state might be sent, like <code>ACTION_AG_EVENT</code> with <code>
      * EXTRA_VOICE_RECOGNITION</code> value when for example user started voice recognition from HF
      * unit.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -165,9 +159,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Supported vendor events are of format of "+eventCode" or "+eventCode=xxxx" or
      * "+eventCode:=xxxx". Vendor event can be a response to a vendor specific command or
      * unsolicited.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -179,40 +172,34 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * <p>It contains: {@link #EXTRA_NUMBER}, with a <code>String</code> value representing phone
      * number.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_LAST_VTAG =
             "android.bluetooth.headsetclient.profile.action.LAST_VTAG";
 
-    /** @hide */
-    public static final int STATE_AUDIO_DISCONNECTED = 0;
+    @Hide public static final int STATE_AUDIO_DISCONNECTED = 0;
 
-    /** @hide */
-    public static final int STATE_AUDIO_CONNECTING = 1;
+    @Hide public static final int STATE_AUDIO_CONNECTING = 1;
 
-    /** @hide */
-    public static final int STATE_AUDIO_CONNECTED = 2;
+    @Hide public static final int STATE_AUDIO_CONNECTED = 2;
 
     /**
      * Extra with information if connected audio is WBS.
      *
      * <p>Possible values: <code>true</code>, <code>false</code>.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_AUDIO_WBS = "android.bluetooth.headsetclient.extra.AUDIO_WBS";
 
     /**
      * Extra for AG_EVENT indicates network status.
      *
      * <p>Value: 0 - network unavailable, 1 - network available
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_NETWORK_STATUS =
             "android.bluetooth.headsetclient.extra.NETWORK_STATUS";
 
@@ -220,9 +207,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates network signal strength.
      *
      * <p>Value: <code>Integer</code> representing signal strength.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_NETWORK_SIGNAL_STRENGTH =
             "android.bluetooth.headsetclient.extra.NETWORK_SIGNAL_STRENGTH";
 
@@ -230,9 +216,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates roaming state.
      *
      * <p>Value: 0 - no roaming 1 - active roaming
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_NETWORK_ROAMING =
             "android.bluetooth.headsetclient.extra.NETWORK_ROAMING";
 
@@ -240,9 +225,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates the battery level.
      *
      * <p>Value: <code>Integer</code> representing signal strength.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_BATTERY_LEVEL =
             "android.bluetooth.headsetclient.extra.BATTERY_LEVEL";
 
@@ -250,9 +234,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates operator name.
      *
      * <p>Value: <code>String</code> representing operator name.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_OPERATOR_NAME =
             "android.bluetooth.headsetclient.extra.OPERATOR_NAME";
 
@@ -260,9 +243,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates voice recognition state.
      *
      * <p>Value: 0 - voice recognition stopped, 1 - voice recognition started.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_VOICE_RECOGNITION =
             "android.bluetooth.headsetclient.extra.VOICE_RECOGNITION";
 
@@ -270,9 +252,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates in band ring state.
      *
      * <p>Value: 0 - in band ring tone not supported, or 1 - in band ring tone supported.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_IN_BAND_RING =
             "android.bluetooth.headsetclient.extra.IN_BAND_RING";
 
@@ -280,29 +261,24 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for AG_EVENT intent indicates subscriber info.
      *
      * <p>Value: <code>String</code> containing subscriber information.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_SUBSCRIBER_INFO =
             "android.bluetooth.headsetclient.extra.SUBSCRIBER_INFO";
 
     /**
      * Extra for AG_CALL_CHANGED intent indicates the {@link BluetoothHeadsetClientCall} object that
      * has changed.
-     *
-     * @hide
      */
-    public static final String EXTRA_CALL = "android.bluetooth.headsetclient.extra.CALL";
+    @Hide public static final String EXTRA_CALL = "android.bluetooth.headsetclient.extra.CALL";
 
     /**
      * Extra for ACTION_LAST_VTAG intent.
      *
      * <p>Value: <code>String</code> representing phone number corresponding to last voice tag
      * recorded on AG
-     *
-     * @hide
      */
-    public static final String EXTRA_NUMBER = "android.bluetooth.headsetclient.extra.NUMBER";
+    @Hide public static final String EXTRA_NUMBER = "android.bluetooth.headsetclient.extra.NUMBER";
 
     /**
      * Extra for ACTION_RESULT intent that shows the result code of last issued action.
@@ -311,9 +287,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * #ACTION_RESULT_ERROR_NO_CARRIER}, {@link #ACTION_RESULT_ERROR_BUSY}, {@link
      * #ACTION_RESULT_ERROR_NO_ANSWER}, {@link #ACTION_RESULT_ERROR_DELAYED}, {@link
      * #ACTION_RESULT_ERROR_BLACKLISTED}, {@link #ACTION_RESULT_ERROR_CME}
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_RESULT_CODE =
             "android.bluetooth.headsetclient.extra.RESULT_CODE";
 
@@ -321,115 +296,79 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for ACTION_RESULT intent that shows the extended result code of last issued action.
      *
      * <p>Value: <code>Integer</code> - error code.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_CME_CODE = "android.bluetooth.headsetclient.extra.CME_CODE";
 
-    /**
-     * Extra for VENDOR_SPECIFIC_HEADSETCLIENT_EVENT intent that indicates vendor ID.
-     *
-     * @hide
-     */
+    /** Extra for VENDOR_SPECIFIC_HEADSETCLIENT_EVENT intent that indicates vendor ID. */
+    @Hide
     public static final String EXTRA_VENDOR_ID = "android.bluetooth.headsetclient.extra.VENDOR_ID";
 
-    /**
-     * Extra for VENDOR_SPECIFIC_HEADSETCLIENT_EVENT intent that indicates vendor event code.
-     *
-     * @hide
-     */
+    /** Extra for VENDOR_SPECIFIC_HEADSETCLIENT_EVENT intent that indicates vendor event code. */
+    @Hide
     public static final String EXTRA_VENDOR_EVENT_CODE =
             "android.bluetooth.headsetclient.extra.VENDOR_EVENT_CODE";
 
     /**
      * Extra for VENDOR_SPECIFIC_HEADSETCLIENT_EVENT intent that contains full vendor event
      * including event code and full arguments.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_VENDOR_EVENT_FULL_ARGS =
             "android.bluetooth.headsetclient.extra.VENDOR_EVENT_FULL_ARGS";
 
     /* Extras for AG_FEATURES, extras type is boolean */
     // TODO verify if all of those are actually useful
-    /**
-     * AG feature: three way calling.
-     *
-     * @hide
-     */
+    /** AG feature: three way calling. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_3WAY_CALLING =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_3WAY_CALLING";
 
-    /**
-     * AG feature: voice recognition.
-     *
-     * @hide
-     */
+    /** AG feature: voice recognition. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_VOICE_RECOGNITION =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_VOICE_RECOGNITION";
 
-    /**
-     * AG feature: fetching phone number for voice tagging procedure.
-     *
-     * @hide
-     */
+    /** AG feature: fetching phone number for voice tagging procedure. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_ATTACH_NUMBER_TO_VT =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_ATTACH_NUMBER_TO_VT";
 
-    /**
-     * AG feature: ability to reject incoming call.
-     *
-     * @hide
-     */
+    /** AG feature: ability to reject incoming call. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_REJECT_CALL =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_REJECT_CALL";
 
-    /**
-     * AG feature: enhanced call handling (terminate specific call, private consultation).
-     *
-     * @hide
-     */
+    /** AG feature: enhanced call handling (terminate specific call, private consultation). */
+    @Hide
     public static final String EXTRA_AG_FEATURE_ECC =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_ECC";
 
-    /**
-     * AG feature: response and hold.
-     *
-     * @hide
-     */
+    /** AG feature: response and hold. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_RESPONSE_AND_HOLD =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_RESPONSE_AND_HOLD";
 
-    /**
-     * AG call handling feature: accept held or waiting call in three way calling scenarios.
-     *
-     * @hide
-     */
+    /** AG call handling feature: accept held or waiting call in three way calling scenarios. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_ACCEPT_HELD_OR_WAITING_CALL =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_ACCEPT_HELD_OR_WAITING_CALL";
 
-    /**
-     * AG call handling feature: release held or waiting call in three way calling scenarios.
-     *
-     * @hide
-     */
+    /** AG call handling feature: release held or waiting call in three way calling scenarios. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_RELEASE_HELD_OR_WAITING_CALL =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_RELEASE_HELD_OR_WAITING_CALL";
 
     /**
      * AG call handling feature: release active call and accept held or waiting call in three way
      * calling scenarios.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_AG_FEATURE_RELEASE_AND_ACCEPT =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_RELEASE_AND_ACCEPT";
 
-    /**
-     * AG call handling feature: merge two calls, held and active - multi party conference mode.
-     *
-     * @hide
-     */
+    /** AG call handling feature: merge two calls, held and active - multi party conference mode. */
+    @Hide
     public static final String EXTRA_AG_FEATURE_MERGE =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_MERGE";
 
@@ -437,170 +376,117 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * AG call handling feature: merge calls and disconnect from multi party conversation leaving
      * peers connected to each other. Note that this feature needs to be supported by mobile network
      * operator as it requires connection and billing transfer.
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_AG_FEATURE_MERGE_AND_DETACH =
             "android.bluetooth.headsetclient.extra.EXTRA_AG_FEATURE_MERGE_AND_DETACH";
 
     /* Action result codes */
-    /** @hide */
-    public static final int ACTION_RESULT_OK = 0;
+    @Hide public static final int ACTION_RESULT_OK = 0;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR = 1;
+    @Hide public static final int ACTION_RESULT_ERROR = 1;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR_NO_CARRIER = 2;
+    @Hide public static final int ACTION_RESULT_ERROR_NO_CARRIER = 2;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR_BUSY = 3;
+    @Hide public static final int ACTION_RESULT_ERROR_BUSY = 3;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR_NO_ANSWER = 4;
+    @Hide public static final int ACTION_RESULT_ERROR_NO_ANSWER = 4;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR_DELAYED = 5;
+    @Hide public static final int ACTION_RESULT_ERROR_DELAYED = 5;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR_BLACKLISTED = 6;
+    @Hide public static final int ACTION_RESULT_ERROR_BLACKLISTED = 6;
 
-    /** @hide */
-    public static final int ACTION_RESULT_ERROR_CME = 7;
+    @Hide public static final int ACTION_RESULT_ERROR_CME = 7;
 
     /* Detailed CME error codes */
-    /** @hide */
-    public static final int CME_PHONE_FAILURE = 0;
+    @Hide public static final int CME_PHONE_FAILURE = 0;
 
-    /** @hide */
-    public static final int CME_NO_CONNECTION_TO_PHONE = 1;
+    @Hide public static final int CME_NO_CONNECTION_TO_PHONE = 1;
 
-    /** @hide */
-    public static final int CME_OPERATION_NOT_ALLOWED = 3;
+    @Hide public static final int CME_OPERATION_NOT_ALLOWED = 3;
 
-    /** @hide */
-    public static final int CME_OPERATION_NOT_SUPPORTED = 4;
+    @Hide public static final int CME_OPERATION_NOT_SUPPORTED = 4;
 
-    /** @hide */
-    public static final int CME_PHSIM_PIN_REQUIRED = 5;
+    @Hide public static final int CME_PHSIM_PIN_REQUIRED = 5;
 
-    /** @hide */
-    public static final int CME_PHFSIM_PIN_REQUIRED = 6;
+    @Hide public static final int CME_PHFSIM_PIN_REQUIRED = 6;
 
-    /** @hide */
-    public static final int CME_PHFSIM_PUK_REQUIRED = 7;
+    @Hide public static final int CME_PHFSIM_PUK_REQUIRED = 7;
 
-    /** @hide */
-    public static final int CME_SIM_NOT_INSERTED = 10;
+    @Hide public static final int CME_SIM_NOT_INSERTED = 10;
 
-    /** @hide */
-    public static final int CME_SIM_PIN_REQUIRED = 11;
+    @Hide public static final int CME_SIM_PIN_REQUIRED = 11;
 
-    /** @hide */
-    public static final int CME_SIM_PUK_REQUIRED = 12;
+    @Hide public static final int CME_SIM_PUK_REQUIRED = 12;
 
-    /** @hide */
-    public static final int CME_SIM_FAILURE = 13;
+    @Hide public static final int CME_SIM_FAILURE = 13;
 
-    /** @hide */
-    public static final int CME_SIM_BUSY = 14;
+    @Hide public static final int CME_SIM_BUSY = 14;
 
-    /** @hide */
-    public static final int CME_SIM_WRONG = 15;
+    @Hide public static final int CME_SIM_WRONG = 15;
 
-    /** @hide */
-    public static final int CME_INCORRECT_PASSWORD = 16;
+    @Hide public static final int CME_INCORRECT_PASSWORD = 16;
 
-    /** @hide */
-    public static final int CME_SIM_PIN2_REQUIRED = 17;
+    @Hide public static final int CME_SIM_PIN2_REQUIRED = 17;
 
-    /** @hide */
-    public static final int CME_SIM_PUK2_REQUIRED = 18;
+    @Hide public static final int CME_SIM_PUK2_REQUIRED = 18;
 
-    /** @hide */
-    public static final int CME_MEMORY_FULL = 20;
+    @Hide public static final int CME_MEMORY_FULL = 20;
 
-    /** @hide */
-    public static final int CME_INVALID_INDEX = 21;
+    @Hide public static final int CME_INVALID_INDEX = 21;
 
-    /** @hide */
-    public static final int CME_NOT_FOUND = 22;
+    @Hide public static final int CME_NOT_FOUND = 22;
 
-    /** @hide */
-    public static final int CME_MEMORY_FAILURE = 23;
+    @Hide public static final int CME_MEMORY_FAILURE = 23;
 
-    /** @hide */
-    public static final int CME_TEXT_STRING_TOO_LONG = 24;
+    @Hide public static final int CME_TEXT_STRING_TOO_LONG = 24;
 
-    /** @hide */
-    public static final int CME_INVALID_CHARACTER_IN_TEXT_STRING = 25;
+    @Hide public static final int CME_INVALID_CHARACTER_IN_TEXT_STRING = 25;
 
-    /** @hide */
-    public static final int CME_DIAL_STRING_TOO_LONG = 26;
+    @Hide public static final int CME_DIAL_STRING_TOO_LONG = 26;
 
-    /** @hide */
-    public static final int CME_INVALID_CHARACTER_IN_DIAL_STRING = 27;
+    @Hide public static final int CME_INVALID_CHARACTER_IN_DIAL_STRING = 27;
 
-    /** @hide */
-    public static final int CME_NO_NETWORK_SERVICE = 30;
+    @Hide public static final int CME_NO_NETWORK_SERVICE = 30;
 
-    /** @hide */
-    public static final int CME_NETWORK_TIMEOUT = 31;
+    @Hide public static final int CME_NETWORK_TIMEOUT = 31;
 
-    /** @hide */
-    public static final int CME_EMERGENCY_SERVICE_ONLY = 32;
+    @Hide public static final int CME_EMERGENCY_SERVICE_ONLY = 32;
 
-    /** @hide */
-    public static final int CME_NO_SIMULTANEOUS_VOIP_CS_CALLS = 33;
+    @Hide public static final int CME_NO_SIMULTANEOUS_VOIP_CS_CALLS = 33;
 
-    /** @hide */
-    public static final int CME_NOT_SUPPORTED_FOR_VOIP = 34;
+    @Hide public static final int CME_NOT_SUPPORTED_FOR_VOIP = 34;
 
-    /** @hide */
-    public static final int CME_SIP_RESPONSE_CODE = 35;
+    @Hide public static final int CME_SIP_RESPONSE_CODE = 35;
 
-    /** @hide */
-    public static final int CME_NETWORK_PERSONALIZATION_PIN_REQUIRED = 40;
+    @Hide public static final int CME_NETWORK_PERSONALIZATION_PIN_REQUIRED = 40;
 
-    /** @hide */
-    public static final int CME_NETWORK_PERSONALIZATION_PUK_REQUIRED = 41;
+    @Hide public static final int CME_NETWORK_PERSONALIZATION_PUK_REQUIRED = 41;
 
-    /** @hide */
-    public static final int CME_NETWORK_SUBSET_PERSONALIZATION_PIN_REQUIRED = 42;
+    @Hide public static final int CME_NETWORK_SUBSET_PERSONALIZATION_PIN_REQUIRED = 42;
 
-    /** @hide */
-    public static final int CME_NETWORK_SUBSET_PERSONALIZATION_PUK_REQUIRED = 43;
+    @Hide public static final int CME_NETWORK_SUBSET_PERSONALIZATION_PUK_REQUIRED = 43;
 
-    /** @hide */
-    public static final int CME_SERVICE_PROVIDER_PERSONALIZATION_PIN_REQUIRED = 44;
+    @Hide public static final int CME_SERVICE_PROVIDER_PERSONALIZATION_PIN_REQUIRED = 44;
 
-    /** @hide */
-    public static final int CME_SERVICE_PROVIDER_PERSONALIZATION_PUK_REQUIRED = 45;
+    @Hide public static final int CME_SERVICE_PROVIDER_PERSONALIZATION_PUK_REQUIRED = 45;
 
-    /** @hide */
-    public static final int CME_CORPORATE_PERSONALIZATION_PIN_REQUIRED = 46;
+    @Hide public static final int CME_CORPORATE_PERSONALIZATION_PIN_REQUIRED = 46;
 
-    /** @hide */
-    public static final int CME_CORPORATE_PERSONALIZATION_PUK_REQUIRED = 47;
+    @Hide public static final int CME_CORPORATE_PERSONALIZATION_PUK_REQUIRED = 47;
 
-    /** @hide */
-    public static final int CME_HIDDEN_KEY_REQUIRED = 48;
+    @Hide public static final int CME_HIDDEN_KEY_REQUIRED = 48;
 
-    /** @hide */
-    public static final int CME_EAP_NOT_SUPPORTED = 49;
+    @Hide public static final int CME_EAP_NOT_SUPPORTED = 49;
 
-    /** @hide */
-    public static final int CME_INCORRECT_PARAMETERS = 50;
+    @Hide public static final int CME_INCORRECT_PARAMETERS = 50;
 
     /* Action policy for other calls when accepting call */
-    /** @hide */
-    public static final int CALL_ACCEPT_NONE = 0;
+    @Hide public static final int CALL_ACCEPT_NONE = 0;
 
-    /** @hide */
-    public static final int CALL_ACCEPT_HOLD = 1;
+    @Hide public static final int CALL_ACCEPT_HOLD = 1;
 
-    /** @hide */
-    public static final int CALL_ACCEPT_TERMINATE = 2;
+    @Hide public static final int CALL_ACCEPT_TERMINATE = 2;
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
@@ -620,9 +506,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Close the connection to the backing service. Other public functions of BluetoothHeadsetClient
      * will return default error results once close() has been called. Multiple invocations of
      * close() are ok.
-     *
-     * @hide
      */
+    @Hide
     @Override
     public void close() {
         if (VDBG) log("close()");
@@ -632,14 +517,14 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         }
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothHeadsetClient.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -650,14 +535,14 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
         return mAdapter;
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         if (mCloseGuard != null) {
@@ -676,8 +561,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device a remote device we want connect to
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_CONNECTION_STATE_CHANGED} intent.
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -703,8 +588,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device a remote device we want disconnect
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_CONNECTION_STATE_CHANGED} intent.
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -724,11 +609,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -750,11 +632,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -778,11 +657,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -813,8 +689,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -827,8 +703,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
             log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -846,8 +721,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -877,8 +752,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     <p>Feature required for successful execution is being reported by: {@link
      *     #EXTRA_AG_FEATURE_VOICE_RECOGNITION}. This method invocation will fail silently when
      *     feature is not supported.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean startVoiceRecognition(BluetoothDevice device) {
@@ -905,8 +780,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param atCommand command to be sent. It start with + prefix and only one command at one time.
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean sendVendorAtCommand(BluetoothDevice device, int vendorId, String atCommand) {
@@ -934,8 +809,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     <p>Feature required for successful execution is being reported by: {@link
      *     #EXTRA_AG_FEATURE_VOICE_RECOGNITION}. This method invocation will fail silently when
      *     feature is not supported.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean stopVoiceRecognition(BluetoothDevice device) {
@@ -959,8 +834,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * @param device remote device
      * @return list of calls; empty list if none call exists
-     * @hide
      */
+    @Hide
     @VisibleForTesting
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -986,8 +861,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * @param device remote device
      * @return bundle of AG indicators; null if device is not in CONNECTED state
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public Bundle getCurrentAgEvents(BluetoothDevice device) {
@@ -1014,8 +889,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     {@link #CALL_ACCEPT_HOLD}, {@link #CALL_ACCEPT_TERMINATE}
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_CALL_CHANGED} intent.
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1041,8 +916,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device remote device
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_CALL_CHANGED} intent.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean holdCall(BluetoothDevice device) {
@@ -1070,8 +945,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     <p>Feature required for successful execution is being reported by: {@link
      *     #EXTRA_AG_FEATURE_REJECT_CALL}. This method invocation will fail silently when feature is
      *     not supported.
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1105,8 +980,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     <p>Feature required for successful execution is being reported by: {@link
      *     #EXTRA_AG_FEATURE_ECC}. This method invocation will fail silently when feature is not
      *     supported.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean terminateCall(BluetoothDevice device, BluetoothHeadsetClientCall call) {
@@ -1137,8 +1012,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     <p>Feature required for successful execution is being reported by: {@link
      *     #EXTRA_AG_FEATURE_ECC}. This method invocation will fail silently when feature is not
      *     supported.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean enterPrivateMode(BluetoothDevice device, int index) {
@@ -1168,8 +1043,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *     <p>Feature required for successful execution is being reported by: {@link
      *     #EXTRA_AG_FEATURE_MERGE_AND_DETACH}. This method invocation will fail silently when
      *     feature is not supported.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean explicitCallTransfer(BluetoothDevice device) {
@@ -1192,13 +1067,14 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Places a call with specified number.
      *
      * @param device remote device
-     * @param number valid phone number
+     * @param number The phone number to dial. If {@code null} or an empty string, this method will
+     *     attempt to redial the last dialed number.
      * @return <code>{@link BluetoothHeadsetClientCall} call</code> if command has been issued
      *     successfully; <code>{@code null}</code> otherwise; upon completion HFP sends {@link
      *     #ACTION_CALL_CHANGED} intent in case of success; {@link #ACTION_RESULT} is sent
      *     otherwise;
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothHeadsetClientCall dial(BluetoothDevice device, String number) {
@@ -1227,8 +1103,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param code ASCII code
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_RESULT} intent;
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean sendDTMF(BluetoothDevice device, byte code) {
@@ -1248,42 +1124,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     }
 
     /**
-     * Get a number corresponding to last voice tag recorded on AG.
-     *
-     * @param device remote device
-     * @return <code>true</code> if command has been issued successfully; <code>false</code>
-     *     otherwise; upon completion HFP sends {@link #ACTION_LAST_VTAG} or {@link #ACTION_RESULT}
-     *     intent;
-     *     <p>Feature required for successful execution is being reported by: {@link
-     *     #EXTRA_AG_FEATURE_ATTACH_NUMBER_TO_VT}. This method invocation will fail silently when
-     *     feature is not supported.
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public boolean getLastVoiceTagNumber(BluetoothDevice device) {
-        log("getLastVoiceTagNumber()");
-        final IBluetoothHeadsetClient service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled() && isValidDevice(device)) {
-            try {
-                return service.getLastVoiceTagNumber(device, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return false;
-    }
-
-    /**
      * Returns current audio state of Audio Gateway.
      *
      * <p>Note: This is an internal function and shouldn't be exposed
-     *
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1309,8 +1154,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device remote device
      * @param allowed if routing is allowed to the device Note: This is an internal function and
      *     shouldn't be exposed
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void setAudioRouteAllowed(BluetoothDevice device, boolean allowed) {
@@ -1334,8 +1179,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device remote device
      * @return whether the command succeeded Note: This is an internal function and shouldn't be
      *     exposed
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean getAudioRouteAllowed(BluetoothDevice device) {
@@ -1362,8 +1207,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device remote device
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_AUDIO_STATE_CHANGED} intent;
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean connectAudio(BluetoothDevice device) {
@@ -1390,8 +1235,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device remote device
      * @return <code>true</code> if command has been issued successfully; <code>false</code>
      *     otherwise; upon completion HFP sends {@link #ACTION_AUDIO_STATE_CHANGED} intent;
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disconnectAudio(BluetoothDevice device) {
@@ -1415,8 +1260,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *
      * @param device remote device
      * @return bundle of AG features; null if no service or AG not connected
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public Bundle getCurrentAgFeatures(BluetoothDevice device) {
@@ -1435,11 +1280,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         return null;
     }
 
-    /**
-     * A class that contains the network service info provided by the HFP Client profile
-     *
-     * @hide
-     */
+    /** A class that contains the network service info provided by the HFP Client profile */
+    @Hide
     @SystemApi
     public static final class NetworkServiceState implements Parcelable {
         /** The device associated with this service state */
@@ -1466,8 +1308,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          *     network. Use Null if the value is unknown
          * @param signalStrength The general signal strength
          * @param isRoaming True if we are network roaming, False otherwise
-         * @hide
          */
+        @Hide
         public NetworkServiceState(
                 BluetoothDevice device,
                 boolean isServiceAvailable,
@@ -1485,8 +1327,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * Get the device associated with this network service state
          *
          * @return a BluetoothDevice associated with this state
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothDevice getDevice() {
@@ -1497,8 +1339,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * Get the network service availability state
          *
          * @return True if there is service available, False otherwise
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public boolean isServiceAvailable() {
@@ -1510,8 +1352,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          *
          * @return A string representing the name of the operator the remote device is on, or null
          *     if unknown.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @Nullable String getNetworkOperatorName() {
@@ -1531,8 +1373,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * Good - Level 5: Great
          *
          * @return the HFP Client defined signal strength, range [0, 5]
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @IntRange(from = 0, to = 5) int getSignalStrength() {
@@ -1543,9 +1385,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * Get the network service roaming status
          *
          * <p>* @return True if we are network roaming, False otherwise
-         *
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public boolean isRoaming() {
@@ -1569,7 +1410,6 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
                     }
                 };
 
-        /** @hide */
         @Override
         public void writeToParcel(@NonNull Parcel out, int flags) {
             mDevice.writeToParcel(out, flags);
@@ -1579,7 +1419,6 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
             out.writeInt(mIsRoaming ? 1 : 0);
         }
 
-        /** @hide */
         @Override
         public int describeContents() {
             return 0;
@@ -1595,9 +1434,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device.
      *   <li>{@link EXTRA_NETWORK_SERVICE_STATE} - A {@link NetworkServiceState} object.
      * </ul>
-     *
-     * @hide
      */
+    @Hide
     @SuppressLint("ActionValue")
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -1610,9 +1448,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Extra for the network service state changed intent.
      *
      * <p>This extra represents the current network service state of a connected Bluetooth device.
-     *
-     * @hide
      */
+    @Hide
     @SuppressLint("ActionValue")
     @SystemApi
     public static final String EXTRA_NETWORK_SERVICE_STATE =
@@ -1624,8 +1461,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * @param device The {@link BluetoothDevice} you want the network service state for
      * @return A {@link NetworkServiceState} representing the network service state of the device,
      *     or null if the device is not connected
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

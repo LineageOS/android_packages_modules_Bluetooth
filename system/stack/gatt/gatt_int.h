@@ -33,11 +33,13 @@
 #include "common/circular_buffer.h"
 #include "common/strings.h"
 #include "gatt_api.h"
+#include "hal/gatt_hal.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 
+#define GATT_TRANS_ID_INVALID 0x0
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
 #define GATT_CL_RCB_MAX 255          /* Maximum number of cl_rcb */
 
@@ -402,6 +404,15 @@ typedef struct {
 } tGATT_PROFILE_CLCB;
 
 typedef struct {
+  bluetooth::hal::GattSession hal_session;
+  tCONN_ID conn_id;
+  std::optional<std::promise<btgatt_offload_result_t>> promise_opt;
+  tGATT_STATUS status{tGATT_STATUS::GATT_SUCCESS};
+  bool in_unregistering_service{false};
+  bool in_clearing_services{false};
+} tGATT_OFFLOAD_SESSION;
+
+typedef struct {
   tGATT_TCB tcb[GATT_MAX_PHY_CHANNEL];
   fixed_queue_t* sign_op_queue;
 
@@ -452,6 +463,8 @@ typedef struct {
 
   tGATT_HDL_CFG hdl_cfg;
   bool over_br_enabled;
+
+  std::unordered_map<uint16_t, tGATT_OFFLOAD_SESSION> offload_sessions;
 } tGATT_CB;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
@@ -490,6 +503,7 @@ struct tTCB_STATE_HISTORY {
 extern bluetooth::common::TimestampedCircularBuffer<tTCB_STATE_HISTORY> tcb_state_history_;
 
 /* from gatt_main.cc */
+void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment);
 bool gatt_disconnect(tGATT_TCB* p_tcb);
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport,
                       int8_t initiating_phys);
@@ -503,8 +517,8 @@ void gatt_profile_db_init(void);
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state);
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb);
 void gatt_init_srv_chg(void);
-void gatt_proc_srv_chg(void);
-void gatt_send_srv_chg_ind(const RawAddress& peer_bda);
+void gatt_proc_srv_chg(uint16_t start_handle);
+void gatt_send_srv_chg_ind(const RawAddress& peer_bda, uint16_t start_handle);
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt);
 void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda);
 
@@ -561,7 +575,7 @@ tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const RawAddress& bda);
 
 bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda, uint8_t* p_found_idx,
                                  tBT_TRANSPORT* p_transport);
-void gatt_set_srv_chg(void);
+void gatt_set_srv_chg(uint16_t start_handle);
 void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
 void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
 void gatt_free_srvc_db_buffer_app_id(const bluetooth::Uuid& app_id);
@@ -569,6 +583,8 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 tCONN_ID gatt_create_conn_id(tTCB_IDX tcb_idx, tGATT_IF gatt_if);
 tTCB_IDX gatt_get_tcb_idx(tCONN_ID conn_id);
 tGATT_IF gatt_get_gatt_if(tCONN_ID conn_id);
+uint16_t gatt_get_acl_handle_by_tcb(tGATT_TCB* p_tcb);
+tGATT_TCB* gatt_find_tcb_by_acl_handle(uint16_t acl_handle);
 
 /* reserved handle list */
 std::list<tGATT_HDL_LIST_ELEM>::iterator gatt_find_hdl_buffer_by_app_id(
@@ -688,6 +704,18 @@ void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb);
 
 /* gatt_sr_hash.cc */
 Octet16 gatts_calculate_database_hash(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> lst_ptr);
+
+/* gatt_offload.cc */
+bool gatt_offload_init();
+void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_element_t* service,
+                                  size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  std::promise<btgatt_offload_result_t> promise);
+bool gatt_offload_clear_sessions_by_acl_handle(uint16_t acl_connection_handle);
+void gatt_offload_clear_sessions_by_conn_id(tCONN_ID conn_id);
+void gatt_unoffload_session(tCONN_ID conn_id, uint16_t session_id,
+                            tGATT_STATUS status = tGATT_STATUS::GATT_SUCCESS);
+void gattc_inform_notification_handle(tGATT_TCB* p_tcb, uint16_t handle);
+void gattc_offload_handle_service_changed_indication(tGATT_TCB* p_tcb);
 
 namespace bluetooth {
 namespace legacy {

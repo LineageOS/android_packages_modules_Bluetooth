@@ -18,11 +18,8 @@
 package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 
-/**
- * Callback definitions for interacting with CSIP Set Coordinator
- *
- * @hide
- */
+/** Callback definitions for interacting with CSIP Set Coordinator */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothCsipSetCoordinatorCallback {
     void onCsisSetMemberAvailable(in BluetoothDevice device, in int groupId);
 }

@@ -116,7 +116,7 @@ public class BluetoothServiceBinderTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_USER_RESTRICTION_REFACTOR);
+        return FlagsWrapper.progressionOf();
     }
 
     public BluetoothServiceBinderTest(FlagsWrapper flagsWrapper) {
@@ -216,10 +216,6 @@ public class BluetoothServiceBinderTest {
         // enableNoAutoConnect is only available for Nfc and will fail otherwise
         assertThrows(SecurityException.class, () -> mBinder.enableNoAutoConnect(mSource));
 
-        if (!Flags.userRestrictionRefactor()) {
-            mInOrder.verify(mUserManager)
-                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        }
         verify(mAppOpsManager).checkPackage(anyInt(), eq(TAG));
         verifyMock();
 
@@ -417,10 +413,6 @@ public class BluetoothServiceBinderTest {
 
         assertThat(binderCall.getAsBoolean()).isFalse();
 
-        if (!Flags.userRestrictionRefactor()) {
-            mInOrder.verify(mUserManager)
-                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        }
         verifyMock();
     }
 
@@ -430,10 +422,6 @@ public class BluetoothServiceBinderTest {
 
         assertThrows(SecurityException.class, binderCall);
 
-        if (!Flags.userRestrictionRefactor()) {
-            mInOrder.verify(mUserManager)
-                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        }
         if (requireForeground) {
             verify(mUserManager).getProfileParent(any());
         }
@@ -449,10 +437,6 @@ public class BluetoothServiceBinderTest {
 
         assertThat(binderCall.getAsBoolean()).isEqualTo(expectedResult);
 
-        if (!Flags.userRestrictionRefactor()) {
-            mInOrder.verify(mUserManager)
-                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        }
         verify(mAppOpsManager).checkPackage(anyInt(), eq(TAG));
         if (!expectedResult) {
             verify(mDevicePolicyManager).getDeviceOwnerUser();
@@ -461,23 +445,13 @@ public class BluetoothServiceBinderTest {
     }
 
     private void setUserRestriction(boolean isBluetoothAllowed) {
-        if (Flags.userRestrictionRefactor()) {
-            doReturn(!isBluetoothAllowed)
-                    .when(mUserManager)
-                    .hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
-            InstrumentationRegistry.getInstrumentation()
-                    .getUiAutomation()
-                    .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
-            BluetoothRestriction.handleRestrictionChange(
-                    mContext,
-                    () -> {
-                        return Unit.INSTANCE;
-                    });
-            mInOrder.verify(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
-        } else {
-            doReturn(!isBluetoothAllowed)
-                    .when(mUserManager)
-                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        }
+        doReturn(!isBluetoothAllowed)
+                .when(mUserManager)
+                .hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+        InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation()
+                .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
+        BluetoothRestriction.handleRestrictionChange(mContext, () -> Unit.INSTANCE);
+        mInOrder.verify(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
     }
 }

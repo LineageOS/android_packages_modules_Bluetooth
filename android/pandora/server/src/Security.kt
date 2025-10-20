@@ -86,6 +86,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
                         intArrayOf(
                             BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION,
                             BluetoothDevice.PAIRING_VARIANT_CONSENT,
+                            BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY,
                             BluetoothDevice.PAIRING_VARIANT_PIN,
                         )
                     if (pairingVariant in confirmationCases) {

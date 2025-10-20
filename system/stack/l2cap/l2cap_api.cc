@@ -41,8 +41,8 @@ bluetooth::stack::l2cap::Interface& bluetooth::stack::l2cap::get_interface() { r
 
 void bluetooth::stack::l2cap::Impl::L2CA_Deregister(uint16_t psm) { ::L2CA_Deregister(psm); }
 
-[[nodiscard]] uint16_t bluetooth::stack::l2cap::Impl::L2CA_AllocateLePSM(void) {
-  return ::L2CA_AllocateLePSM();
+uint16_t bluetooth::stack::l2cap::Impl::L2CA_AllocateLePSM(int fixed_psm_slots) {
+  return ::L2CA_AllocateLePSM(fixed_psm_slots);
 }
 
 void bluetooth::stack::l2cap::Impl::L2CA_FreeLePSM(uint16_t psm) { return ::L2CA_FreeLePSM(psm); }

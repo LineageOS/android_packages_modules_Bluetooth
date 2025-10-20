@@ -42,7 +42,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +55,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /** Manages distance measurement operations and interacts with Gabeldorsche stack. */
-@VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
     private static final String TAG =
             GattUtil.TAG_PREFIX + DistanceMeasurementManager.class.getSimpleName();
@@ -109,19 +107,17 @@ public class DistanceMeasurementManager {
             mHandler = new Handler(mHandlerThread.getLooper());
         }
 
+        var nativeCallback = new DistanceMeasurementNativeCallback(this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new DistanceMeasurementNativeInterface(this));
+                        nativeInterface,
+                        () -> new DistanceMeasurementNativeInterface(nativeCallback));
         mNativeInterface.init();
         mDistanceMeasurementBinder = new DistanceMeasurementBinder(adapterService, this);
-        if (Flags.channelSounding25q2Apis()) {
-            mHasChannelSoundingFeature =
-                    adapterService
-                            .getPackageManager()
-                            .hasSystemFeature(FEATURE_BLUETOOTH_LE_CHANNEL_SOUNDING);
-        } else {
-            mHasChannelSoundingFeature = true;
-        }
+        mHasChannelSoundingFeature =
+                adapterService
+                        .getPackageManager()
+                        .hasSystemFeature(FEATURE_BLUETOOTH_LE_CHANNEL_SOUNDING);
         postOnDistanceMeasurementThread(
                 () -> {
                     int[] csTypes = {

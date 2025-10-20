@@ -44,6 +44,7 @@
 #include "bta_le_audio_api.h"
 #include "btm_iso_api_types.h"
 #include "common/strings.h"
+#include "gd/common/utils.h"
 #include "hardware/ble_advertiser.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/controller.h"
@@ -70,6 +71,9 @@ using bluetooth::hci::IsoManager;
 using bluetooth::hci::iso_manager::big_create_cmpl_evt;
 using bluetooth::hci::iso_manager::big_terminate_cmpl_evt;
 using bluetooth::hci::iso_manager::BigCallbacks;
+using bluetooth::hci::iso_manager::IsoClientHandle;
+using bluetooth::hci::iso_manager::IsoManagerCallbacks;
+using bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
 using bluetooth::le_audio::BasicAudioAnnouncementData;
 using bluetooth::le_audio::BasicAudioAnnouncementSubgroup;
 using bluetooth::le_audio::BroadcastId;
@@ -118,13 +122,26 @@ public:
         broadcast_stop_timer_(alarm_new("BroadcastStopTimer")) {
     log::info("");
 
+    iso_callbacks_.big_callbacks = this;
+    iso_callbacks_.iso_traffic_active_callback = [this](bool is_active) {
+      this->IsoTrafficEventCb(is_active);
+    };
+
+    IsoManager::GetInstance()->Start();
+    iso_client_handle_ = IsoManager::GetInstance()->RegisterCallbacks(iso_callbacks_);
+
     /* Register State machine callbacks */
-    BroadcastStateMachine::Initialize(&state_machine_callbacks_, &state_machine_adv_callbacks_);
+    BroadcastStateMachine::Initialize(&state_machine_callbacks_, &state_machine_adv_callbacks_,
+                                      iso_client_handle_);
 
     GenerateBroadcastIds();
   }
 
   ~LeAudioBroadcasterImpl() override {
+    if (iso_client_handle_ != kInvalidIsoClientHandle) {
+      IsoManager::GetInstance()->DeregisterCallbacks(iso_client_handle_);
+    }
+
     alarm_free(big_terminate_timer_);
     alarm_free(broadcast_stop_timer_);
   }
@@ -573,6 +590,12 @@ public:
       }
     }
 
+    if (bluetooth::common::IsPtsTestMode()) {
+      // Mark the reserved bits to 1 if we are running PTS test mode.
+      log::warn("PTS test mode, updating the reserved bits to 1");
+      public_features |= 0xF8;
+    }
+
     for (const std::vector<uint8_t>& metadata : subgroup_metadata) {
       /* Prepare the announcement format */
       bool is_metadata_valid;
@@ -866,14 +889,14 @@ public:
     switch (event) {
       case bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl: {
         auto* evt = static_cast<big_create_cmpl_evt*>(data);
-        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_id);
+        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_handle);
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
                          "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, evt);
       } break;
       case bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl: {
         auto* evt = static_cast<big_terminate_cmpl_evt*>(data);
-        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_id);
+        auto broadcast_id = BroadcastIdFromBigHandle(evt->big_handle);
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
                          "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT, evt);
@@ -1383,6 +1406,9 @@ private:
   static constexpr uint64_t kBroadcastStopTimeoutMs = 30 * 60 * 1000;
   alarm_t* big_terminate_timer_;
   alarm_t* broadcast_stop_timer_;
+
+  IsoClientHandle iso_client_handle_;
+  IsoManagerCallbacks iso_callbacks_;
 };
 
 /* Static members definitions */
@@ -1411,17 +1437,7 @@ void LeAudioBroadcaster::Initialize(bluetooth::le_audio::LeAudioBroadcasterCallb
     log::fatal("HAL requirements not met. Init aborted.");
   }
 
-  IsoManager::GetInstance()->Start();
-
   instance = new LeAudioBroadcasterImpl(callbacks);
-  /* Register HCI event handlers */
-  IsoManager::GetInstance()->RegisterBigCallbacks(instance);
-  /* Register for active traffic */
-  IsoManager::GetInstance()->RegisterOnIsoTrafficActiveCallback([](bool is_active) {
-    if (instance) {
-      instance->IsoTrafficEventCb(is_active);
-    }
-  });
 }
 
 bool LeAudioBroadcaster::IsLeAudioBroadcasterRunning() { return instance; }

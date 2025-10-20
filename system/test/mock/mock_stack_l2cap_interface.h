@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include <cstdint>
 #include <vector>
 
 #include "stack/include/l2cap_interface.h"
@@ -41,7 +42,7 @@ public:
                uint16_t sec_level));
   MOCK_METHOD(void, L2CA_Deregister, (uint16_t psm));
 
-  MOCK_METHOD(uint16_t, L2CA_AllocateLePSM, ());
+  MOCK_METHOD(uint16_t, L2CA_AllocateLePSM, (int fixed_psm_slots));
   MOCK_METHOD(void, L2CA_FreeLePSM, (uint16_t psm));
 
   MOCK_METHOD(uint16_t, L2CA_RegisterLECoc,
@@ -129,7 +130,7 @@ public:
 };
 
 void reset_interface();
-void set_interface(bluetooth::stack::l2cap::Interface* interface_);
+void set_interface(Mock* mock_interface);
 
 }  // namespace l2cap
 }  // namespace stack

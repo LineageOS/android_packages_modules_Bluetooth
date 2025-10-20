@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -32,9 +30,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
@@ -47,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 
 /** VCard composer especially for Call Log used in Bluetooth. */
-// Next tag value for ContentProfileErrorReportUtils.report(): 6
 public class BluetoothPbapSimVcardManager implements AutoCloseable {
     private static final String TAG = BluetoothPbapSimVcardManager.class.getSimpleName();
 
@@ -125,11 +120,6 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        0);
                 Log.e(TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
             } finally {
                 mErrorReason = FAILURE_REASON_NO_ENTRY;
@@ -199,11 +189,6 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        1);
                 Log.e(TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
             }
             mCursor = null;
@@ -380,11 +365,6 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
             String ownerVCard) {
         if (startPoint < 1 || startPoint > endPoint) {
             Log.e(TAG, "internal error: startPoint or endPoint is not correct.");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    2);
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
         HandlerForStringBuffer buffer = null;
@@ -409,12 +389,6 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
                                     + composer.getErrorReason()
                                     + ", count:"
                                     + count);
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                            3);
                     return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
                 }
                 buffer.writeVCard(vcard);
@@ -436,11 +410,6 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
             int orderByWhat) {
         if (offset < 1) {
             Log.e(TAG, "Internal error: offset is not correct.");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
-                    BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    4);
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
         Log.v(TAG, "composeAndSendSIMPhonebookOneVcard orderByWhat " + orderByWhat);
@@ -462,11 +431,6 @@ public class BluetoothPbapSimVcardManager implements AutoCloseable {
             String vcard = composer.createOneEntry(vcardType21);
             if (vcard == null) {
                 Log.e(TAG, "Failed to read a contact. Error reason: " + composer.getErrorReason());
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                        5);
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
             buffer.writeVCard(vcard);

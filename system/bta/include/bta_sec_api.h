@@ -180,8 +180,8 @@ typedef struct {
   bool just_works;            /* true, if "Just Works" association model */
   tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
   tBTM_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
-  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTM_IO_CAP rmt_io_caps;    // IO Capabilities of remote device
+  BtIoCap loc_io_caps;        /* IO Capabilities of local device */
+  BtIoCap rmt_io_caps;        // IO Capabilities of remote device
 } tBTA_DM_SP_CFM_REQ;
 
 /* Structure associated with BTA_DM_SP_KEY_NOTIF_EVT */

@@ -16,7 +16,6 @@
 
 package com.google.android.bluetooth.snippet
 
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
@@ -49,29 +48,6 @@ class BluetoothRfcommSnippet : Snippet {
             } else {
                 device.createInsecureRfcommSocketToServiceRecord(UUID.fromString(uuid))
             }
-        socket.connect()
-        val cookie = UUID.randomUUID().toString()
-        sockets[cookie] = socket
-        return cookie
-    }
-
-    /** Connects an RFCOMM channel with an RFCOMM channel, and returns the cookie of channel. */
-    @Rpc(description = "Connect an RFCOMM channel with an RFCOMM channel")
-    fun rfcommConnectWithChannel(address: String, secure: Boolean, channel: Int): String {
-        val device = bluetoothAdapter.getRemoteDevice(address)
-        val socket =
-            if (secure) {
-                BluetoothDevice::class
-                    .java
-                    .getMethod("createRfcommSocket", Int::class.java)
-                    .invoke(device, channel)
-            } else {
-                BluetoothDevice::class
-                    .java
-                    .getMethod("createInsecureRfcommSocket", Int::class.java)
-                    .invoke(device, channel)
-            }
-                as BluetoothSocket
         socket.connect()
         val cookie = UUID.randomUUID().toString()
         sockets[cookie] = socket

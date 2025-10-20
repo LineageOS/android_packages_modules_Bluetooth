@@ -28,7 +28,6 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -170,15 +169,9 @@ public class AvrcpCoverArtProvider extends ContentProvider {
     }
 
     private static Bitmap getImage(BluetoothDevice device, String imageUuid) {
-        final Optional<AvrcpControllerService> avrcpController;
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            avrcpController =
-                    Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
-                            .flatMap(AdapterService::getAvrcpControllerService);
-        } else {
-            avrcpController =
-                    Optional.ofNullable(AvrcpControllerService.getAvrcpControllerService());
-        }
+        final var avrcpController =
+                Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                        .flatMap(AdapterService::getAvrcpControllerService);
         if (avrcpController.isEmpty()) {
             debug("Failed to get service, cover art not available");
             return null;

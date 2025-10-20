@@ -15,8 +15,6 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -28,9 +26,6 @@ import android.database.ContentObserver;
 import android.net.Uri;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Class to construct content observers for email applications on the system. */
-// Next tag value for ContentProfileErrorReportUtils.report(): 6
 public class BluetoothMapAppObserver {
     private static final String TAG = BluetoothMapAppObserver.class.getSimpleName();
 
@@ -148,11 +142,6 @@ public class BluetoothMapAppObserver {
 
         } else {
             Log.e(TAG, "Received change notification on package not registered for notifications!");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_APP_OBSERVER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    0);
         }
     }
 
@@ -186,12 +175,6 @@ public class BluetoothMapAppObserver {
                             handleAccountChanges(uri.getHost());
                         } else {
                             Log.e(TAG, "Unable to handle change as the URI is NULL!");
-                            ContentProfileErrorReportUtils.report(
-                                    BluetoothProfile.MAP,
-                                    BluetoothProtoEnums.BLUETOOTH_MAP_APP_OBSERVER,
-                                    BluetoothStatsLog
-                                            .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                                    1);
                         }
                     }
                 };
@@ -322,11 +305,6 @@ public class BluetoothMapAppObserver {
                 mContext.registerReceiver(mReceiver, intentFilter);
                 mRegisteredReceiver = true;
             } catch (Exception e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_APP_OBSERVER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        2);
                 Log.e(TAG, "Unable to register MapAppObserver receiver", e);
             }
         }
@@ -339,11 +317,6 @@ public class BluetoothMapAppObserver {
                 mRegisteredReceiver = false;
                 mContext.unregisterReceiver(mReceiver);
             } catch (Exception e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_APP_OBSERVER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        3);
                 Log.e(TAG, "Unable to unregister mapAppObserver receiver", e);
             }
         }
@@ -368,20 +341,9 @@ public class BluetoothMapAppObserver {
                     }
                 } else {
                     Log.w(TAG, "getEnabledAccountItems() - No AccountList enabled\n");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.MAP,
-                            BluetoothProtoEnums.BLUETOOTH_MAP_APP_OBSERVER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                            4);
                 }
             } else {
                 Log.w(TAG, "getEnabledAccountItems() - No Account in App enabled\n");
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_APP_OBSERVER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                        5);
             }
         }
         return list;

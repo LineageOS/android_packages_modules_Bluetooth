@@ -322,7 +322,7 @@ TEST_F(AvrcpDeviceTest, trackChangedBeforeInterimTest) {
   MediaInterface::NowPlayingCallback changed_cb;
 
   EXPECT_CALL(interface, GetNowPlayingList(_))
-          .Times(2)
+          .Times(3)
           .WillOnce(SaveArg<0>(&interim_cb))
           .WillOnce(SaveArg<0>(&changed_cb));
 

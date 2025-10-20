@@ -340,7 +340,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
 
     case L2CEVT_LP_CONNECT_CFM_NEG: /* Link failed          */
       if (p_ci->hci_status == HCI_ERR_CONNECTION_EXISTS ||
-          (com::android::bluetooth::flags::flag_handle_hci_error_controller_busy() &&
+          (com_android_bluetooth_flags_flag_handle_hci_error_controller_busy() &&
            p_ci->hci_status == HCI_ERR_CONTROLLER_BUSY)) {
         btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr);
       } else {
@@ -638,8 +638,7 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
             bool is_offload = (p_ccb->local_conn_cfg.credits == 0);
             /* Check the offloaded channel to delay connection indication until connection response
              * is sent to remote device. */
-            if (com::android::bluetooth::flags::delay_offload_le_coc_connection_ind() &&
-                is_offload) {
+            if (com_android_bluetooth_flags_delay_offload_le_coc_connection_ind() && is_offload) {
               log::debug("Delaying Connect_Ind_Cb() for offloaded channel, CID: 0x{:04x}",
                          p_ccb->local_cid);
               register_connection_rsp_tx_packet_complete_callback(p_ccb);
@@ -1080,8 +1079,10 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
        */
       log::debug("Calling LeReconfigCompleted_Cb(), CID: 0x{:04x}", p_ccb->local_cid);
 
-      (*p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb)(p_lcb->remote_bd_addr,
-                                                                 p_ccb->local_cid, false, p_le_cfg);
+      if (p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb) {
+        (*p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb)(
+            p_lcb->remote_bd_addr, p_ccb->local_cid, false, p_le_cfg);
+      }
       break;
     case L2CEVT_L2CAP_CONFIG_REQ: /* Peer config request   */
       cfg_result = l2cu_process_peer_cfg_req(p_ccb, p_cfg);
@@ -1120,8 +1121,10 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
 
       log::debug("Calling Config_Rsp_Cb(), CID: 0x{:04x}", p_ccb->local_cid);
 
-      p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb(p_lcb->remote_bd_addr,
-                                                              p_ccb->local_cid, true, p_le_cfg);
+      if (p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb) {
+        p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb(
+            p_lcb->remote_bd_addr, p_ccb->local_cid, true, p_le_cfg);
+      }
 
       break;
     case L2CEVT_L2CAP_CONFIG_RSP: /* Peer config response  */
@@ -1374,8 +1377,10 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
        */
       if (p_le_cfg) {
         log::debug("Calling LeReconfigCompleted_Cb(), CID: 0x{:04x}", p_ccb->local_cid);
-        (*p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb)(
-                p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, false, p_le_cfg);
+        if (p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb) {
+          (*p_ccb->p_rcb->api.pL2CA_CreditBasedReconfigCompleted_Cb)(
+              p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, false, p_le_cfg);
+        }
       }
       break;
 

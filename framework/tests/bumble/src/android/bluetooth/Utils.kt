@@ -16,6 +16,7 @@
 
 package android.bluetooth
 
+import android.bluetooth.BluetoothAdapter.STATE_OFF
 import android.bluetooth.BluetoothProfile.getConnectionStateName
 import android.content.BroadcastReceiver
 import android.content.Intent
@@ -36,8 +37,10 @@ object Utils {
     const val TAG = "Utils"
 
     @JvmField val BUMBLE_DEVICE_NAME = "Bumble"
+    @JvmField val BUMBLE_DEVICE_NAME_2 = "Bumble_2"
 
     @JvmField val BUMBLE_RANDOM_ADDRESS = "51:F7:A8:75:AC:5E"
+    @JvmField val BUMBLE_RANDOM_ADDRESS_2 = "51:F7:A8:75:AC:5F"
 
     @JvmField val BUMBLE_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213")
 
@@ -48,6 +51,12 @@ object Utils {
     @JvmStatic
     fun addressBytesFromString(address: String): ByteArray {
         return base16().upperCase().withSeparator(":", 2).decode(address.uppercase(Locale.US))
+    }
+
+    @JvmStatic
+    fun addresStringFromBytes(b: ByteArray): String {
+        val reversedBytes = b.reversedArray()
+        return reversedBytes.joinToString(separator = ":") { byte -> String.format("%02X", byte) }
     }
 
     @JvmStatic
@@ -73,6 +82,18 @@ object Utils {
     fun intentLogger(tag: String, intent: Intent) {
         val action = intent.getAction()
         when (action) {
+            BluetoothAdapter.ACTION_BLE_STATE_CHANGED,
+            BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                val fromState =
+                    BluetoothAdapter.nameForState(
+                        intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, STATE_OFF)
+                    )
+                val toState =
+                    BluetoothAdapter.nameForState(
+                        intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, STATE_OFF)
+                    )
+                Log.d("intentLogger", "$tag/$action $fromState -> $toState")
+            }
             BluetoothAdapter.ACTION_DISCOVERY_STARTED,
             BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> Log.d("intentLogger", "$tag/$action")
             BluetoothDevice.ACTION_ACL_CONNECTED,
@@ -129,7 +150,24 @@ object Utils {
                     "$tag/$action: Hid: $device - ${getConnectionStateName(state)} - transport=$transport",
                 )
             }
+            BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED -> {
+                val device = intent.getBluetoothDeviceExtra()
+                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+                Log.d(
+                    "intentLogger",
+                    "$tag/$action: Headset: $device - ${getAudioConnectionStateName(state)} - $state ",
+                )
+            }
             else -> throw IllegalArgumentException("Missing implementation for $action")
+        }
+    }
+
+    fun getAudioConnectionStateName(state: Int): String {
+        return when (state) {
+            BluetoothHeadset.STATE_AUDIO_DISCONNECTED -> "AUDIO_STATE_DISCONNECTED"
+            BluetoothHeadset.STATE_AUDIO_CONNECTING -> "AUDIO_STATE_CONNECTING"
+            BluetoothHeadset.STATE_AUDIO_CONNECTED -> "AUDIO_STATE_CONNECTED"
+            else -> "STATE_UNKNOWN"
         }
     }
 

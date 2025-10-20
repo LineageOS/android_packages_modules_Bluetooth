@@ -62,6 +62,23 @@ typedef enum : uint8_t {
   SMP_MODEL_OUT_OF_RANGE = 9,
 } tSMP_ASSO_MODEL;
 
+inline const std::string smp_association_model_text(const tSMP_ASSO_MODEL model) {
+  switch (model) {
+    CASE_RETURN_TEXT(SMP_MODEL_ENCRYPTION_ONLY);
+    CASE_RETURN_TEXT(SMP_MODEL_PASSKEY);
+    CASE_RETURN_TEXT(SMP_MODEL_OOB);
+    CASE_RETURN_TEXT(SMP_MODEL_KEY_NOTIF);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_JUSTWORKS);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_NUM_COMP);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_PASSKEY_ENT);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_PASSKEY_DISP);
+    CASE_RETURN_TEXT(SMP_MODEL_SEC_CONN_OOB);
+    CASE_RETURN_TEXT(SMP_MODEL_OUT_OF_RANGE);
+    default:
+      return std::format("UNKNOWN_ASSOCIATION_MODEL[{}]", static_cast<uint8_t>(model));
+  }
+}
+
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
 
 /* TODO(b/436319185): Remove when the flag conclude_le_pairing_immediately is shipped */
@@ -312,8 +329,8 @@ public:
   tSMP_PUBLIC_KEY peer_publ_key;
   tSMP_OOB_DATA_TYPE req_oob_type;
   tSMP_SC_OOB_DATA sc_oob_data;
-  tSMP_IO_CAP peer_io_caps;
-  tSMP_IO_CAP local_io_capability;
+  BtIoCap peer_io_caps;
+  BtIoCap local_io_capability;
   tSMP_OOB_FLAG peer_oob_flag;
   tSMP_OOB_FLAG loc_oob_flag;
   tSMP_AUTH_REQ peer_auth_req;
@@ -357,6 +374,11 @@ public:
   tSMP_STATUS cert_failure; /*failure case for certification */
   alarm_t* delayed_auth_timer_ent;
   tBLE_BD_ADDR pairing_ble_bd_addr;
+
+  struct {
+    bool approved;   // User has approved the pairing
+    bool confirmed;  // Remote device has confirmed the passkey
+  } passkey_display_state;
 };
 
 /* Server Action functions are of this type */
@@ -511,7 +533,12 @@ struct formatter<tSMP_EVENT> : enum_formatter<tSMP_EVENT> {};
 template <>
 struct formatter<tSMP_OPCODE> : enum_formatter<tSMP_OPCODE> {};
 template <>
-struct formatter<tSMP_ASSO_MODEL> : enum_formatter<tSMP_ASSO_MODEL> {};
+struct formatter<tSMP_ASSO_MODEL> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const tSMP_ASSO_MODEL& association_model, Context& ctx) const {
+    return std::formatter<std::string>::format(smp_association_model_text(association_model), ctx);
+  }
+};
 }  // namespace std
 
 #endif /* SMP_INT_H */

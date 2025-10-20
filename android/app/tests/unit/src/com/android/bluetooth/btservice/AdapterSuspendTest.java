@@ -21,11 +21,14 @@ import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL;
+import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
@@ -46,6 +49,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.gatt.AdvertiseManager;
+import com.android.bluetooth.gatt.GattService;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.Before;
@@ -57,6 +62,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link AdapterSuspend}. */
 @SmallTest
@@ -69,7 +75,9 @@ public class AdapterSuspendTest {
 
     @Mock private AdapterNativeInterface mAdapterNativeInterface;
     @Mock private AdapterService mAdapterService;
+    @Mock private AdvertiseManager mAdvertiseManager;
     @Mock private BluetoothDevice mBluetoothDevice;
+    @Mock private GattService mGattService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final DeviceStateManager mDeviceStateManager =
@@ -83,11 +91,14 @@ public class AdapterSuspendTest {
     @Before
     public void setUp() {
         doReturn(mAdapterNativeInterface).when(mAdapterService).getNative();
+        doReturn(Optional.of(mGattService)).when(mAdapterService).getGattService();
+        doReturn(mAdvertiseManager).when(mGattService).getAdvertiseManager();
 
         mTestLooper = new TestLooper();
 
         mockSystemPropertyGet(BLUETOOTH_SUSPEND_DISCONNECT_ACL, true);
         mockSystemPropertyGet(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, true);
+        mockSystemPropertyGet(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, true);
         mAdapterSuspend =
                 spy(
                         new AdapterSuspend(
@@ -166,5 +177,62 @@ public class AdapterSuspendTest {
         // Verify we initiate reconnection attempt on resume.
         mAdapterSuspend.handleResume();
         verify(mAdapterService).connectAllEnabledProfiles(mBluetoothDevice);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
+    public void testAdvertisementPauseAndResume() throws Exception {
+        mAdapterSuspend.handleSuspend(true);
+        verify(mAdvertiseManager).enterSuspend();
+        mAdapterSuspend.handleResume();
+        verify(mAdvertiseManager).exitSuspend();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
+    public void testTwoTasksDisconnectionThenAdvertisement() throws Exception {
+        List<BluetoothDevice> audioDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
+        doReturn(audioDevices)
+                .when(mAdapterService)
+                .getConnectedMediaDevices(BluetoothProfile.HEARING_AID);
+
+        mAdapterSuspend.handleSuspend(true);
+        verify(mAdapterService).acquireWakeLock(any());
+
+        // When disconnection task is done, wakelock is not yet released.
+        mAdapterSuspend.profileConnectionStateChanged(
+                BluetoothProfile.HEARING_AID,
+                mBluetoothDevice,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
+        verify(mAdapterService, never()).releaseWakeLock(any());
+
+        // Wakelock is released when both tasks are done.
+        mAdapterSuspend.advertiseSuspendReady();
+        verify(mAdapterService).releaseWakeLock(any());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
+    public void testTwoTasksAdvertisementThenDisconnection() throws Exception {
+        List<BluetoothDevice> audioDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
+        doReturn(audioDevices)
+                .when(mAdapterService)
+                .getConnectedMediaDevices(BluetoothProfile.HEARING_AID);
+
+        mAdapterSuspend.handleSuspend(true);
+        verify(mAdapterService).acquireWakeLock(any());
+
+        // When advertisement task is done, wakelock is not yet released.
+        mAdapterSuspend.advertiseSuspendReady();
+        verify(mAdapterService, never()).releaseWakeLock(any());
+
+        // Wakelock is released when both tasks are done.
+        mAdapterSuspend.profileConnectionStateChanged(
+                BluetoothProfile.HEARING_AID,
+                mBluetoothDevice,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
+        verify(mAdapterService).releaseWakeLock(any());
     }
 }

@@ -20,11 +20,11 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.RECEIVE_SMS;
 import static android.Manifest.permission.SEND_SMS;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -50,11 +50,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * This class provides the APIs to control the Bluetooth MAP MCE Profile.
- *
- * @hide
- */
+/** This class provides the APIs to control the Bluetooth MAP MCE Profile. */
+@Hide
 @SystemApi
 public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothMapClient.class.getSimpleName();
@@ -78,9 +75,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @SuppressLint("ActionValue")
     @RequiresBluetoothConnectPermission
@@ -89,43 +85,37 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
     public static final String ACTION_CONNECTION_STATE_CHANGED =
             "android.bluetooth.mapmce.profile.action.CONNECTION_STATE_CHANGED";
 
-    /** @hide */
+    @Hide
     @RequiresPermission(RECEIVE_SMS)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_MESSAGE_RECEIVED =
             "android.bluetooth.mapmce.profile.action.MESSAGE_RECEIVED";
 
     /* Actions to be used for pending intents */
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_MESSAGE_SENT_SUCCESSFULLY =
             "android.bluetooth.mapmce.profile.action.MESSAGE_SENT_SUCCESSFULLY";
 
-    /** @hide */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_MESSAGE_DELIVERED_SUCCESSFULLY =
             "android.bluetooth.mapmce.profile.action.MESSAGE_DELIVERED_SUCCESSFULLY";
 
-    /**
-     * Action to notify read status changed
-     *
-     * @hide
-     */
+    /** Action to notify read status changed */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_MESSAGE_READ_STATUS_CHANGED =
             "android.bluetooth.mapmce.profile.action.MESSAGE_READ_STATUS_CHANGED";
 
-    /**
-     * Action to notify deleted status changed
-     *
-     * @hide
-     */
+    /** Action to notify deleted status changed */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
@@ -136,79 +126,63 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      * Extras used in ACTION_MESSAGE_RECEIVED intent. NOTE: HANDLE is only valid for a single
      * session with the device.
      */
-    /** @hide */
+    @Hide
     public static final String EXTRA_MESSAGE_HANDLE =
             "android.bluetooth.mapmce.profile.extra.MESSAGE_HANDLE";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_MESSAGE_TIMESTAMP =
             "android.bluetooth.mapmce.profile.extra.MESSAGE_TIMESTAMP";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_MESSAGE_READ_STATUS =
             "android.bluetooth.mapmce.profile.extra.MESSAGE_READ_STATUS";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_SENDER_CONTACT_URI =
             "android.bluetooth.mapmce.profile.extra.SENDER_CONTACT_URI";
 
-    /** @hide */
+    @Hide
     public static final String EXTRA_SENDER_CONTACT_NAME =
             "android.bluetooth.mapmce.profile.extra.SENDER_CONTACT_NAME";
 
     /**
      * Used as a boolean extra in ACTION_MESSAGE_DELETED_STATUS_CHANGED Contains the MAP message
      * deleted status Possible values are: true: deleted false: undeleted
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_MESSAGE_DELETED_STATUS =
             "android.bluetooth.mapmce.profile.extra.MESSAGE_DELETED_STATUS";
 
     /**
      * Extra used in ACTION_MESSAGE_READ_STATUS_CHANGED or ACTION_MESSAGE_DELETED_STATUS_CHANGED
      * Possible values are: 0: failure 1: success
-     *
-     * @hide
      */
+    @Hide
     public static final String EXTRA_RESULT_CODE = "android.bluetooth.device.extra.RESULT_CODE";
 
-    /**
-     * There was an error trying to obtain the state
-     *
-     * @hide
-     */
-    public static final int STATE_ERROR = -1;
+    /** There was an error trying to obtain the state */
+    @Hide public static final int STATE_ERROR = -1;
 
-    /** @hide */
-    public static final int RESULT_FAILURE = 0;
+    @Hide public static final int RESULT_FAILURE = 0;
 
-    /** @hide */
-    public static final int RESULT_SUCCESS = 1;
+    @Hide public static final int RESULT_SUCCESS = 1;
 
-    /**
-     * Connection canceled before completion.
-     *
-     * @hide
-     */
-    public static final int RESULT_CANCELED = 2;
+    /** Connection canceled before completion. */
+    @Hide public static final int RESULT_CANCELED = 2;
 
     /*
      * UNREAD, READ, UNDELETED, DELETED are passed as parameters
      * to setMessageStatus to indicate the messages new state.
      */
 
-    /** @hide */
-    public static final int UNREAD = 0;
+    @Hide public static final int UNREAD = 0;
 
-    /** @hide */
-    public static final int READ = 1;
+    @Hide public static final int READ = 1;
 
-    /** @hide */
-    public static final int UNDELETED = 2;
+    @Hide public static final int UNDELETED = 2;
 
-    /** @hide */
-    public static final int DELETED = 3;
+    @Hide public static final int DELETED = 3;
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
@@ -225,7 +199,7 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @Override
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
@@ -239,9 +213,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      * Close the connection to the backing service. Other public functions of BluetoothMap will
      * return default error results once close() has been called. Multiple invocations of close()
      * are ok.
-     *
-     * @hide
      */
+    @Hide
     @Override
     public void close() {
         mAdapter.closeProfileProxy(this);
@@ -250,14 +223,14 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
         }
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothMapClient.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -268,18 +241,15 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
         return mAdapter;
     }
 
-    /**
-     * Initiate connection. Initiation of outgoing connections is not supported for MAP server.
-     *
-     * @hide
-     */
+    /** Initiate connection. Initiation of outgoing connections is not supported for MAP server. */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean connect(BluetoothDevice device) {
@@ -303,8 +273,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device Remote Bluetooth Device
      * @return false on error, true otherwise
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean disconnect(BluetoothDevice device) {
@@ -323,11 +293,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -349,11 +316,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -377,11 +341,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -412,8 +373,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -426,8 +387,7 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
             if (DBG) Log.d(TAG, Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -445,8 +405,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -478,8 +438,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      * @param sentIntent intent issued when message is sent
      * @param deliveredIntent intent issued when message is delivered
      * @return true if the message is enqueued, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, SEND_SMS})
@@ -509,8 +469,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
      * @param sentIntent intent issued when message is sent
      * @param deliveredIntent intent issued when message is delivered
      * @return true if the message is enqueued, false on error
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, SEND_SMS})

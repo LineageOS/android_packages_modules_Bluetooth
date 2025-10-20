@@ -99,13 +99,11 @@ struct ControllerImpl::impl {
                     std::move(features_promise)));
     features_future.wait();
 
+    auto le_event_mask = kDefaultLeEventMask;
     if (module_.SupportsBleChannelSounding()) {
-      le_set_event_mask(MaskLeEventMask(local_version_information_.hci_version_,
-                                        kDefaultLeEventMask | kLeCSEventMask));
-    } else {
-      le_set_event_mask(
-              MaskLeEventMask(local_version_information_.hci_version_, kDefaultLeEventMask));
+      le_event_mask |= kLeCSEventMask;
     }
+    le_set_event_mask(MaskLeEventMask(local_version_information_.hci_version_, le_event_mask));
 
     hci_->EnqueueCommand(
             ReadBufferSizeBuilder::Create(),

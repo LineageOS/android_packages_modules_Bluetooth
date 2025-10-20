@@ -9,26 +9,6 @@ flag {
 }
 
 flag {
-    name: "fix_hfp_qual_1_9"
-    namespace: "bluetooth"
-    description: "Fix multiple issues in CVSD fallback logics, which are blocking PTS HFP Qualification 1.9"
-    bug: "332650199"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "maintain_call_index_after_conference"
-    namespace: "bluetooth"
-    description: "Avoid change of clcc call index after call disconnects from conference"
-    bug: "345380335"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "sco_state_machine_cleanup"
     namespace: "bluetooth"
     description: "Cleanup SCO SM if headset disconnected during opening."
@@ -63,26 +43,6 @@ flag {
     namespace: "bluetooth"
     description: "Flag to ignore vendor specific battery level update when HF indicator support is enabled."
     bug: "385870861"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "qc_prioritize_lc3_codec"
-    namespace: "bluetooth"
-    description: "QC patch to prioritize lc3 codec over aptx"
-    bug: "409604300"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "qc_send_error_at_bcc_ibr_disabled"
-    namespace: "bluetooth"
-    description: "QC patch to send an error when HF sends AT+BCC when IBR is disabled"
-    bug: "409845355"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -211,6 +171,16 @@ flag {
     namespace: "bluetooth"
     description: "End outgoing call on CHLD"
     bug: "426374659"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "check_call_state_atd"
+    namespace: "bluetooth"
+    description: "End outgoing call on CHLD"
+    bug: "441983109"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -513,15 +513,6 @@ struct BTA_DmSirkSecCbRegister {
 };
 extern struct BTA_DmSirkSecCbRegister BTA_DmSirkSecCbRegister;
 
-// Name: BTA_EnableTestMode
-// Params: void
-// Return: void
-struct BTA_EnableTestMode {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct BTA_EnableTestMode BTA_EnableTestMode;
-
 // Name: BTA_dm_init
 // Params:
 // Return: void

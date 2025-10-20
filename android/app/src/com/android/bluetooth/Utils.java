@@ -66,6 +66,7 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
 import android.os.Process;
+import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
@@ -75,7 +76,7 @@ import android.provider.Telephony;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.profile.ProfileService;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -1008,7 +1009,7 @@ public final class Utils {
      * @return A formatted string representing the given time ("MM-dd HH:mm:ss.SSS").
      */
     public static String formatElapsedRealtime(long elapsedRealtimeMillis) {
-        final long timeDeltaMillis = elapsedRealtimeMillis - sSystemClock.elapsedRealtime();
+        final long timeDeltaMillis = elapsedRealtimeMillis - SystemClock.elapsedRealtime();
         final long eventTimeEpochMillis = System.currentTimeMillis() + timeDeltaMillis;
         return formatInstant(Instant.ofEpochMilli(eventTimeEpochMillis));
     }
@@ -1197,72 +1198,10 @@ public final class Utils {
     }
 
     /**
-     * Returns the longest prefix of a string for which the UTF-8 encoding fits into the given
-     * number of bytes, with the additional guarantee that the string is not truncated in the middle
-     * of a valid surrogate pair.
-     *
-     * <p>Unpaired surrogates are counted as taking 3 bytes of storage. However, a subsequent
-     * attempt to actually encode a string containing unpaired surrogates is likely to be rejected
-     * by the UTF-8 implementation.
-     *
-     * <p>(copied from framework/base/core/java/android/text/TextUtils.java)
-     *
-     * <p>(See {@code android.text.TextUtils.truncateStringForUtf8Storage}
-     *
-     * @param str a string
-     * @param maxbytes the maximum number of UTF-8 encoded bytes
-     * @return the beginning of the string, so that it uses at most maxbytes bytes in UTF-8
-     * @throws IndexOutOfBoundsException if maxbytes is negative
-     */
-    public static String truncateStringForUtf8Storage(String str, int maxbytes) {
-        if (maxbytes < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-
-        int bytes = 0;
-        for (int i = 0, len = str.length(); i < len; i++) {
-            char c = str.charAt(i);
-            if (c < 0x80) {
-                bytes += 1;
-            } else if (c < 0x800) {
-                bytes += 2;
-            } else if (c < Character.MIN_SURROGATE
-                    || c > Character.MAX_SURROGATE
-                    || str.codePointAt(i) < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-                bytes += 3;
-            } else {
-                bytes += 4;
-                i += (bytes > maxbytes) ? 0 : 1;
-            }
-            if (bytes > maxbytes) {
-                return str.substring(0, i);
-            }
-        }
-        return str;
-    }
-
-    /**
      * @see android.bluetooth.BluetoothUtils.formatSimple
      */
     public static @NonNull String formatSimple(@NonNull String format, Object... args) {
         return android.bluetooth.BluetoothUtils.formatSimple(format, args);
-    }
-
-    public interface TimeProvider {
-        long elapsedRealtime();
-    }
-
-    private static final TimeProvider sSystemClock = new SystemClockTimeProvider();
-
-    public static TimeProvider getSystemClock() {
-        return sSystemClock;
-    }
-
-    private static final class SystemClockTimeProvider implements TimeProvider {
-        @Override
-        public long elapsedRealtime() {
-            return android.os.SystemClock.elapsedRealtime();
-        }
     }
 
     /** Execute a remote callback without propagating the RemoteException of a dead app */

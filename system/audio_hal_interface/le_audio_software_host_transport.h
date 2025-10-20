@@ -30,9 +30,10 @@ namespace le_audio {
 using ::bluetooth::le_audio::types::AudioSetConfiguration;
 using ::bluetooth::le_audio::types::CodecConfigSetting;
 
+using ::bluetooth::audio::le_audio::BluetoothRequest;
+using ::bluetooth::audio::le_audio::BluetoothRequestState;
 using ::bluetooth::audio::le_audio::btle_stream_started_status;
 using ::bluetooth::audio::le_audio::LeAudioClientInterface;
-using ::bluetooth::audio::le_audio::StartRequestState;
 using ::bluetooth::audio::le_audio::StreamCallbacks;
 
 typedef LeAudioClientInterface::PcmParameters PcmParameters;
@@ -66,9 +67,9 @@ public:
   void LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, uint8_t bit_rate,
                                       uint8_t channels_count, uint32_t data_interval);
 
-  StartRequestState GetStartRequestState(void);
-  void ClearStartRequestState(void);
-  void SetStartRequestState(StartRequestState state);
+  BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestState(BluetoothRequest request);
+  void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
 
 private:
   std::function<void()> flush_;
@@ -77,7 +78,7 @@ private:
   uint64_t total_bytes_processed_;
   timespec data_position_;
   PcmParameters pcm_config_;
-  std::atomic<StartRequestState> start_request_state_;
+  std::atomic<BluetoothRequestState> start_request_state_;
 };
 
 // Sink transport implementation for Le Audio
@@ -111,9 +112,9 @@ public:
   void LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, uint8_t bit_rate,
                                       uint8_t channels_count, uint32_t data_interval);
 
-  StartRequestState GetStartRequestState(void);
-  void ClearStartRequestState(void);
-  void SetStartRequestState(StartRequestState state);
+  BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestState(BluetoothRequest request);
+  void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSinkTransport* instance = nullptr;
   static inline btle_stream_started_status stream_started = btle_stream_started_status::IDLE;
@@ -152,9 +153,9 @@ public:
   void LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, uint8_t bit_rate,
                                       uint8_t channels_count, uint32_t data_interval);
 
-  StartRequestState GetStartRequestState(void);
-  void ClearStartRequestState(void);
-  void SetStartRequestState(StartRequestState state);
+  BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestState(BluetoothRequest request);
+  void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSourceTransport* instance = nullptr;
   static inline btle_stream_started_status stream_started = btle_stream_started_status::IDLE;

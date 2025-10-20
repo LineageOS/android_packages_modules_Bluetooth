@@ -215,7 +215,6 @@ protected:
 
   void SetUp() override {
     bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
-    tL2CAP_APPL_INFO l2cap_callbacks{};
 
     le_buffer_size_.le_data_packet_length_ = 128;
     le_buffer_size_.total_num_le_packets_ = 24;

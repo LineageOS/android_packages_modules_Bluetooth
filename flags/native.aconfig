@@ -76,16 +76,6 @@ flag {
 }
 
 flag {
-    name: "prevent_storage_access_without_gd_running"
-    namespace: "bluetooth"
-    description: "Prevent read and write to storage when gd is not running"
-    bug: "434749707"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_use_after_object_destroyed"
     namespace: "bluetooth"
     description: "Fix use of object passed to handler bind after the object is destroyed."

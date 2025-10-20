@@ -65,6 +65,7 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -104,16 +105,18 @@ public class A2dpServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
+
+    private final CompanionDeviceManager mCompanionDeviceManager =
+            InstrumentationRegistry.getInstrumentation()
+                    .getContext()
+                    .getSystemService(CompanionDeviceManager.class);
 
     private InOrder mInOrder = null;
 
     private TestLooper mLooper;
     private A2dpService mA2dpService;
-    private final CompanionDeviceManager mCompanionDeviceManager =
-            InstrumentationRegistry.getInstrumentation()
-                    .getContext()
-                    .getSystemService(CompanionDeviceManager.class);
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
@@ -130,8 +133,6 @@ public class A2dpServiceTest {
         mLooper = new TestLooper();
 
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
-        TestUtils.mockGetSystemService(
-                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
         doReturn(InstrumentationRegistry.getInstrumentation().getContext().getResources())
                 .when(mAdapterService)
                 .getResources();
@@ -147,7 +148,13 @@ public class A2dpServiceTest {
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
-        mA2dpService = new A2dpService(mAdapterService, mMockNativeInterface, mLooper.getLooper());
+        mA2dpService =
+                new A2dpService(
+                        mAdapterService,
+                        mStorage,
+                        mMockNativeInterface,
+                        mCompanionDeviceManager,
+                        mLooper.getLooper());
         mA2dpService.setAvailable(true);
 
         // Get a device for testing
@@ -177,11 +184,6 @@ public class A2dpServiceTest {
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
                 hasExtra(BluetoothProfile.EXTRA_STATE, newState),
                 hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
-    }
-
-    @Test
-    public void testGetA2dpService() {
-        assertThat(A2dpService.getA2dpService()).isEqualTo(mA2dpService);
     }
 
     @Test

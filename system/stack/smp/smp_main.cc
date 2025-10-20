@@ -103,70 +103,79 @@ static const char* smp_get_state_name(tSMP_STATE state);
 
 typedef const uint8_t (*tSMP_SM_TBL)[SMP_SM_NUM_COLS];
 
-enum {
-  SMP_PROC_SEC_REQ,
-  SMP_SEND_PAIR_REQ,
-  SMP_SEND_PAIR_RSP,
-  SMP_SEND_CONFIRM,
-  SMP_SEND_PAIR_FAIL,
-  SMP_SEND_RAND,
-  SMP_SEND_ENC_INFO,
-  SMP_SEND_ID_INFO,
-  SMP_SEND_LTK_REPLY,
-  SMP_PROC_PAIR_CMD,
-  SMP_PROC_PAIR_FAIL,
-  SMP_PROC_CONFIRM,
-  SMP_PROC_RAND,
-  SMP_PROC_ENC_INFO,
-  SMP_PROC_CENTRAL_ID,
-  SMP_PROC_ID_INFO,
-  SMP_PROC_ID_ADDR,
-  SMP_PROC_SRK_INFO,
-  SMP_PROC_SEC_GRANT,
-  SMP_PROC_SL_KEY,
-  SMP_PROC_COMPARE,
-  SMP_PROC_IO_RSP,
-  SMP_GENERATE_COMPARE,
-  SMP_GENERATE_CONFIRM,
-  SMP_GENERATE_STK,
-  SMP_KEY_DISTRIBUTE,
-  SMP_START_ENC,
-  SMP_PAIRING_CMPL,
-  SMP_DECIDE_ASSO_MODEL,
-  SMP_SEND_APP_CBACK,
-  SMP_CHECK_AUTH_REQ,
-  SMP_PAIR_TERMINATE,
-  SMP_ENC_CMPL,
-  SMP_SIRK_VERIFY,
-  SMP_PROC_DISCARD,
-  SMP_CREATE_PRIVATE_KEY,
-  SMP_USE_OOB_PRIVATE_KEY,
-  SMP_SEND_PAIR_PUBLIC_KEY,
-  SMP_PROCESS_PAIR_PUBLIC_KEY,
-  SMP_HAVE_BOTH_PUBLIC_KEYS,
-  SMP_START_SEC_CONN_PHASE1,
-  SMP_PROCESS_LOCAL_NONCE,
-  SMP_SEND_COMMITMENT,
-  SMP_PROCESS_PAIRING_COMMITMENT,
-  SMP_PROCESS_PEER_NONCE,
-  SMP_CALCULATE_LOCAL_DHKEY_CHECK,
-  SMP_SEND_DHKEY_CHECK,
-  SMP_PROCESS_DHKEY_CHECK,
-  SMP_CALCULATE_PEER_DHKEY_CHECK,
-  SMP_MATCH_DHKEY_CHECKS,
-  SMP_CALCULATE_NUMERIC_COMPARISON_DISPLAY_NUMBER,
-  SMP_MOVE_TO_SEC_CONN_PHASE2,
-  SMP_PH2_DHKEY_CHECKS_ARE_PRESENT,
-  SMP_WAIT_FOR_BOTH_PUBLIC_KEYS,
-  SMP_START_PASSKEY_VERIFICATION,
-  SMP_SEND_KEYPRESS_NOTIFICATION,
-  SMP_PROCESS_KEYPRESS_NOTIFICATION,
-  SMP_PROCESS_SECURE_CONNECTION_OOB_DATA,
-  SMP_SET_LOCAL_OOB_KEYS,
-  SMP_SET_LOCAL_OOB_RAND_COMMITMENT,
-  SMP_IDLE_TERMINATE,
-  SMP_SM_NO_ACTION
-};
+#define SMP_SM_ACTIONS(X)                            \
+  X(SMP_PROC_SEC_REQ)                                \
+  X(SMP_SEND_PAIR_REQ)                               \
+  X(SMP_SEND_PAIR_RSP)                               \
+  X(SMP_SEND_CONFIRM)                                \
+  X(SMP_SEND_PAIR_FAIL)                              \
+  X(SMP_SEND_RAND)                                   \
+  X(SMP_SEND_ENC_INFO)                               \
+  X(SMP_SEND_ID_INFO)                                \
+  X(SMP_SEND_LTK_REPLY)                              \
+  X(SMP_PROC_PAIR_CMD)                               \
+  X(SMP_PROC_PAIR_FAIL)                              \
+  X(SMP_PROC_CONFIRM)                                \
+  X(SMP_PROC_RAND)                                   \
+  X(SMP_PROC_ENC_INFO)                               \
+  X(SMP_PROC_CENTRAL_ID)                             \
+  X(SMP_PROC_ID_INFO)                                \
+  X(SMP_PROC_ID_ADDR)                                \
+  X(SMP_PROC_SRK_INFO)                               \
+  X(SMP_PROC_SEC_GRANT)                              \
+  X(SMP_PROC_SL_KEY)                                 \
+  X(SMP_PROC_COMPARE)                                \
+  X(SMP_PROC_IO_RSP)                                 \
+  X(SMP_GENERATE_COMPARE)                            \
+  X(SMP_GENERATE_CONFIRM)                            \
+  X(SMP_GENERATE_STK)                                \
+  X(SMP_KEY_DISTRIBUTE)                              \
+  X(SMP_START_ENC)                                   \
+  X(SMP_PAIRING_CMPL)                                \
+  X(SMP_DECIDE_ASSO_MODEL)                           \
+  X(SMP_SEND_APP_CBACK)                              \
+  X(SMP_CHECK_AUTH_REQ)                              \
+  X(SMP_PAIR_TERMINATE)                              \
+  X(SMP_ENC_CMPL)                                    \
+  X(SMP_SIRK_VERIFY)                                 \
+  X(SMP_PROC_DISCARD)                                \
+  X(SMP_CREATE_PRIVATE_KEY)                          \
+  X(SMP_USE_OOB_PRIVATE_KEY)                         \
+  X(SMP_SEND_PAIR_PUBLIC_KEY)                        \
+  X(SMP_PROCESS_PAIR_PUBLIC_KEY)                     \
+  X(SMP_HAVE_BOTH_PUBLIC_KEYS)                       \
+  X(SMP_START_SEC_CONN_PHASE1)                       \
+  X(SMP_PROCESS_LOCAL_NONCE)                         \
+  X(SMP_SEND_COMMITMENT)                             \
+  X(SMP_PROCESS_PAIRING_COMMITMENT)                  \
+  X(SMP_PROCESS_PEER_NONCE)                          \
+  X(SMP_CALCULATE_LOCAL_DHKEY_CHECK)                 \
+  X(SMP_SEND_DHKEY_CHECK)                            \
+  X(SMP_PROCESS_DHKEY_CHECK)                         \
+  X(SMP_CALCULATE_PEER_DHKEY_CHECK)                  \
+  X(SMP_MATCH_DHKEY_CHECKS)                          \
+  X(SMP_CALCULATE_NUMERIC_COMPARISON_DISPLAY_NUMBER) \
+  X(SMP_MOVE_TO_SEC_CONN_PHASE2)                     \
+  X(SMP_PH2_DHKEY_CHECKS_ARE_PRESENT)                \
+  X(SMP_WAIT_FOR_BOTH_PUBLIC_KEYS)                   \
+  X(SMP_START_PASSKEY_VERIFICATION)                  \
+  X(SMP_SEND_KEYPRESS_NOTIFICATION)                  \
+  X(SMP_PROCESS_KEYPRESS_NOTIFICATION)               \
+  X(SMP_PROCESS_SECURE_CONNECTION_OOB_DATA)          \
+  X(SMP_SET_LOCAL_OOB_KEYS)                          \
+  X(SMP_SET_LOCAL_OOB_RAND_COMMITMENT)               \
+  X(SMP_IDLE_TERMINATE)                              \
+  X(SMP_SM_NO_ACTION)
+
+enum { SMP_SM_ACTIONS(AS_ENUM) };
+
+static const std::string smp_sm_action_name(int action) {
+  switch (action) {
+    SMP_SM_ACTIONS(AS_STRING);
+    default:
+      return std::format("Unknown SMP action: {:02x}", static_cast<uint8_t>(action));
+  }
+}
 
 static const tSMP_ACT smp_sm_action[] = {smp_proc_sec_req,
                                          smp_send_pair_req,
@@ -950,41 +959,44 @@ tSMP_STATE smp_get_state(void) { return smp_cb.state; }
  *
  ******************************************************************************/
 bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
-  uint8_t curr_state = p_cb->state;
-  tSMP_SM_TBL state_table;
-  uint8_t action, entry, i;
+  if (event > SMP_MAX_EVT) {
+    log::error("Invalid event:{} device:{}, state: {}", smp_get_event_name(event),
+               p_cb->pairing_bda, smp_get_state_name(p_cb->state));
+    return false;
+  }
 
-  log::debug("addr:{}", p_cb->pairing_bda);
   if (p_cb->role >= 2) {
-    log::error("Invalid role:{}", p_cb->role);
+    log::error("Invalid role:{} device:{} event:{} state:{}", p_cb->role, p_cb->pairing_bda,
+               smp_get_event_name(event), smp_get_state_name(p_cb->state));
     return false;
   }
 
-  tSMP_ENTRY_TBL entry_table = smp_entry_table[p_cb->role];
-
+  const uint8_t curr_state = p_cb->state;
   if (curr_state >= SMP_STATE_MAX) {
-    log::error("Invalid state:{}", curr_state);
+    log::error("Invalid state:[{}({})] device:{} event:{}", smp_get_state_name(curr_state),
+               curr_state, p_cb->pairing_bda, smp_get_event_name(event));
     return false;
   }
-
-  log::debug("Role:{}, State:[{}({})], Event:[{}({})]", hci_role_text(p_cb->role),
-             smp_get_state_name(p_cb->state), p_cb->state, smp_get_event_name(event), event);
 
   /* look up the state table for the current state */
   /* lookup entry /w event & curr_state */
   /* If entry is ignore, return.
    * Otherwise, get state table (according to curr_state or all_state) */
-  if ((event <= SMP_MAX_EVT) && ((entry = entry_table[event - 1][curr_state]) != SMP_SM_IGNORE)) {
-    if (entry & SMP_ALL_TBL_MASK) {
-      entry &= ~SMP_ALL_TBL_MASK;
-      state_table = smp_all_table;
-    } else {
-      state_table = smp_state_table[curr_state][p_cb->role];
-    }
-  } else {
+  const tSMP_ENTRY_TBL& entry_table = smp_entry_table[p_cb->role];
+  uint8_t entry = entry_table[event - 1][curr_state];
+
+  if (entry == SMP_SM_IGNORE) {
     log::warn("Ignore event[{}({})] in state[{}({})]", smp_get_event_name(event), event,
               smp_get_state_name(curr_state), curr_state);
     return false;
+  }
+
+  tSMP_SM_TBL state_table;
+  if (entry & SMP_ALL_TBL_MASK) {
+    entry &= ~SMP_ALL_TBL_MASK;
+    state_table = smp_all_table;
+  } else {
+    state_table = smp_state_table[curr_state][p_cb->role];
   }
 
   /* Get possible next state from state table. */
@@ -995,15 +1007,24 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
    * Depending on param, call cback or free buffer. */
   /* execute action */
   /* execute action functions */
-  for (i = 0; i < SMP_NUM_ACTIONS; i++) {
-    action = state_table[entry - 1][i];
-    if (action != SMP_SM_NO_ACTION) {
-      (*smp_sm_action[action])(p_cb, p_data);
-    } else {
+  std::stringstream action_log;
+  log::debug("{} Handling Event:[{}({})]", p_cb->pairing_bda, smp_get_event_name(event), event);
+  for (uint8_t i = 0; i < SMP_NUM_ACTIONS; i++) {
+    uint8_t action = state_table[entry - 1][i];
+    action_log << smp_sm_action_name(action);
+    if (action == SMP_SM_NO_ACTION) {
       break;
     }
+    (*smp_sm_action[action])(p_cb, p_data);
+    action_log << " -> ";
   }
-  log::debug("result state={}", smp_get_state_name(p_cb->state));
+
+  log::debug(
+          "{}[{}], Event:[{}({})], Prev State:[{}({})], New State:[{}({})], "
+          "Actions: {}",
+          p_cb->pairing_bda, hci_role_text(p_cb->role), smp_get_event_name(event), event,
+          smp_get_state_name(curr_state), curr_state, smp_get_state_name(p_cb->state), p_cb->state,
+          action_log.str());
   return true;
 }
 

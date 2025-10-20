@@ -151,7 +151,6 @@ public class TbsCall {
      * @return safe Friendly Name
      */
     public String getSafeFriendlyName() {
-        ;
         if (mFriendlyName == null) {
             return null;
         }

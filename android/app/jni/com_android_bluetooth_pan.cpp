@@ -34,6 +34,7 @@ static jmethodID method_onControlStateChanged;
 
 static const btpan_interface_t* sPanIf = NULL;
 static jobject mCallbacksObj = NULL;
+static jfieldID sCallbacksField;
 
 static jbyteArray marshall_bda(const RawAddress* bd_addr) {
   CallbackEnv sCallbackEnv(__func__);
@@ -122,7 +123,10 @@ static void initializeNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for Pan Callbacks");
+  }
 
   bt_status_t status = sPanIf->init(&sBluetoothPanCallbacks);
   if (status != BT_STATUS_SUCCESS) {
@@ -164,19 +168,14 @@ static jboolean connectPanNative(JNIEnv* env, jobject /* object */, jbyteArray a
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
-  bt_status_t status = sPanIf->connect((RawAddress*)addr, src_role, dest_role);
+
+  bt_status_t status = sPanIf->connect(bd_addr, src_role, dest_role);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed PAN channel connection, status: {}", bt_status_text(status));
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
@@ -187,23 +186,19 @@ static jboolean disconnectPanNative(JNIEnv* env, jobject /* object */, jbyteArra
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    log::error("Bluetooth device address null");
-    return JNI_FALSE;
-  }
-
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
-  bt_status_t status = sPanIf->disconnect((RawAddress*)addr);
+
+  bt_status_t status = sPanIf->disconnect(bd_addr);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed disconnect pan channel, status: {}", bt_status_text(status));
     ret = JNI_FALSE;
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   return ret;
 }
 
+// JNI functions defined in PanNativeInterface
 int register_com_android_bluetooth_pan(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)initializeNative},
@@ -211,17 +206,20 @@ int register_com_android_bluetooth_pan(JNIEnv* env) {
           {"connectPanNative", "([BII)Z", (void*)connectPanNative},
           {"disconnectPanNative", "([B)Z", (void*)disconnectPanNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/pan/PanNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/pan/PanNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
+
+  // Client callback functions defined in PanNativeCallback
   const JNIJavaMethod javaMethods[]{
           {"onConnectStateChanged", "([BIIII)V", &method_onConnectStateChanged},
           {"onControlStateChanged", "(IIILjava/lang/String;)V", &method_onControlStateChanged},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/pan/PanNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/pan/PanNativeCallback", javaMethods);
 
   return 0;
 }

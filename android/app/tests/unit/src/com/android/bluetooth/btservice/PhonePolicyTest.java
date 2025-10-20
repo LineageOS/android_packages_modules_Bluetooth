@@ -61,11 +61,11 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
@@ -92,11 +92,11 @@ public class PhonePolicyTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private HeadsetService mHeadsetService;
     @Mock private A2dpService mA2dpService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private BluetoothStorageManager mStorage;
     @Mock private CsipSetCoordinatorService mCsipSetCoordinatorService;
     @Mock private HearingAidService mHearingAidService;
     @Mock private HapClientService mHapClientService;
@@ -126,26 +126,14 @@ public class PhonePolicyTest {
         doReturn(BluetoothAdapter.STATE_ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
-            doReturn(Optional.of(mCsipSetCoordinatorService))
-                    .when(mAdapterService)
-                    .getCsipSetCoordinatorService();
-            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
-            doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
-            doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            // Setup the mocked factory to return mocked services
-            doReturn(mA2dpService).when(mServiceFactory).getA2dpService();
-            doReturn(mCsipSetCoordinatorService)
-                    .when(mServiceFactory)
-                    .getCsipSetCoordinatorService();
-            doReturn(mHeadsetService).when(mServiceFactory).getHeadsetService();
-            doReturn(mHearingAidService).when(mServiceFactory).getHearingAidService();
-            doReturn(mHapClientService).when(mServiceFactory).getHapClientService();
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        }
+        doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+        doReturn(Optional.of(mCsipSetCoordinatorService))
+                .when(mAdapterService)
+                .getCsipSetCoordinatorService();
+        doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+        doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
+        doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         // Most common default
         doReturn(CONNECTION_POLICY_UNKNOWN).when(mHeadsetService).getConnectionPolicy(any());
@@ -158,7 +146,7 @@ public class PhonePolicyTest {
 
         mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3, mDevice4);
 
-        mPhonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
+        mPhonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
         mOriginalDualModeState = Utils.isDualModeAudioEnabled();
     }
 
@@ -906,8 +894,7 @@ public class PhonePolicyTest {
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
         doReturn(db).when(mAdapterService).getDatabaseManager();
-        PhonePolicy phonePolicy =
-                new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
+        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
 
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
@@ -937,8 +924,7 @@ public class PhonePolicyTest {
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
         doReturn(db).when(mAdapterService).getDatabaseManager();
-        PhonePolicy phonePolicy =
-                new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
+        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
 
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
@@ -973,8 +959,7 @@ public class PhonePolicyTest {
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
         doReturn(db).when(mAdapterService).getDatabaseManager();
-        PhonePolicy phonePolicy =
-                new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
+        PhonePolicy phonePolicy = new PhonePolicy(mAdapterService, mLooper.getLooper(), mStorage);
 
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());

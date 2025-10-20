@@ -41,11 +41,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /** Test cases for {@link MediaControlGattService}. */
 @MediumTest
@@ -96,23 +95,11 @@ public class MediaControlGattServiceTest {
         doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
         doReturn(BluetoothDevice.ACCESS_ALLOWED).when(mMcpService).getDeviceAuthorization(any());
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        } else {
-            when(mLeAudioService.isAvailable()).thenReturn(true);
-            LeAudioService.setLeAudioService(mLeAudioService);
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         mMediaControlGattService =
                 new MediaControlGattService(mAdapterService, mMcpService, mCallback, TEST_CCID);
         mMediaControlGattService.setBluetoothGattServerForTesting(mGattServer);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            LeAudioService.setLeAudioService(null);
-        }
     }
 
     private void prepareConnectedDevice() {
@@ -1564,5 +1551,42 @@ public class MediaControlGattServiceTest {
         mMediaControlGattService.dump(new StringBuilder());
         initAllFeaturesGattService();
         mMediaControlGattService.dump(new StringBuilder());
+    }
+
+    @Test
+    public void testUpdatePlayerState_longStrings_areTruncated() {
+        BluetoothGattService service = initAllFeaturesGattService();
+        Map<PlayerStateField, Object> state_map = new HashMap<>();
+        int max_gatt_attr_len = bluetooth.constants.Core.GATT_MAX_ATTR_LEN;
+
+        String longString =
+                java.util.stream.Stream.generate(() -> "a")
+                        .limit(max_gatt_attr_len + 10)
+                        .collect(Collectors.joining());
+        String truncatedString = longString.substring(0, max_gatt_attr_len);
+
+        state_map.put(PlayerStateField.PLAYER_NAME, longString);
+        state_map.put(PlayerStateField.TRACK_TITLE, longString);
+        state_map.put(PlayerStateField.ICON_URL, longString);
+
+        mMediaControlGattService.updatePlayerState(state_map);
+
+        BluetoothGattCharacteristic playerNameChar =
+                service.getCharacteristic(MediaControlGattService.UUID_PLAYER_NAME);
+        assertThat(playerNameChar).isNotNull();
+        assertThat(playerNameChar.getStringValue(0)).isEqualTo(truncatedString);
+        assertThat(playerNameChar.getStringValue(0).length()).isEqualTo(max_gatt_attr_len);
+
+        BluetoothGattCharacteristic trackTitleChar =
+                service.getCharacteristic(MediaControlGattService.UUID_TRACK_TITLE);
+        assertThat(trackTitleChar).isNotNull();
+        assertThat(trackTitleChar.getStringValue(0)).isEqualTo(truncatedString);
+        assertThat(trackTitleChar.getStringValue(0).length()).isEqualTo(max_gatt_attr_len);
+
+        BluetoothGattCharacteristic iconUrlChar =
+                service.getCharacteristic(MediaControlGattService.UUID_PLAYER_ICON_URL);
+        assertThat(iconUrlChar).isNotNull();
+        assertThat(iconUrlChar.getStringValue(0)).isEqualTo(truncatedString);
+        assertThat(iconUrlChar.getStringValue(0).length()).isEqualTo(max_gatt_attr_len);
     }
 }

@@ -30,19 +30,6 @@ flag {
     namespace: "bluetooth"
     description: "Support MSFT HCI extension for LE Scanning. go/bt-msft-aosp-dd"
     bug: "365787977"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "gatt_clear_cache_on_factory_reset"
-    namespace: "bluetooth"
-    description: "Clear GATT cache/hash on factory reset"
-    bug: "373284699"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -53,14 +40,6 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "directed_advertising_api"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add new API for directed advertising"
-    bug: "378230500"
 }
 
 flag {
@@ -126,16 +105,6 @@ flag {
     namespace: "bluetooth"
     description: "Update bond state check in IRK scan to cover all identity address types."
     bug: "406905829"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "gatt_reuse_discovering_client"
-    namespace: "bluetooth"
-    description: "Reuse discovering GATT client on service change indication"
-    bug: "407060739"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -311,6 +280,63 @@ flag {
     namespace: "bluetooth"
     description: "Do not cancel timeout alarm if l2cap is connecting"
     bug: "436736160"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reset_service_change_ind_counter"
+    namespace: "bluetooth"
+    description: "Resets service change indication counter when fail to start discover"
+    bug: "438099407"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "ensure_acl_connection_is_removed_from_pending_list"
+    namespace: "bluetooth"
+    description: "Fix that ACL connection is left in the pending list when advertiser is removed right before connection is established."
+    bug: "441211531"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "l2cap_improve_segmented_sdu"
+    namespace: "bluetooth"
+    description: "Improve sending segmented sdu"
+    bug: "437272601"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "delay_jv_pm_idle"
+    namespace: "bluetooth"
+    description: "Delay the transition to the idle state for JV PM connection"
+    bug: "440618134"
+}
+
+flag {
+    name: "ignore_service_change_indication"
+    namespace: "bluetooth"
+    description: "Do not handle service change indication for specific devices"
+    bug: "448557918"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "migrate_btm_scan_to_gd"
+    namespace: "bluetooth"
+    description: "Migrate btm scan logic to gd le scanning manager"
+    bug: "452239954"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

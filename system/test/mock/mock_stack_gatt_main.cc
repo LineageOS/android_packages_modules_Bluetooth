@@ -34,6 +34,9 @@ bool gatt_act_connect(tGATT_REG* /* p_reg */, const RawAddress& /* bd_addr */,
   inc_func_call_count(__func__);
   return false;
 }
+void gatt_force_disconnect(tGATT_TCB* /* p_tcb */, std::string /* comment */) {
+  inc_func_call_count(__func__);
+}
 bool gatt_disconnect(tGATT_TCB* /* p_tcb */) {
   inc_func_call_count(__func__);
   return false;
@@ -68,8 +71,10 @@ void gatt_notify_subrate_change(uint16_t /* handle */, uint16_t /* subrate_facto
                                 uint16_t /* timeout */, uint8_t /* status */) {
   inc_func_call_count(__func__);
 }
-void gatt_proc_srv_chg(void) { inc_func_call_count(__func__); }
-void gatt_send_srv_chg_ind(const RawAddress& /* peer_bda */) { inc_func_call_count(__func__); }
+void gatt_proc_srv_chg(uint16_t /*start_handle*/) { inc_func_call_count(__func__); }
+void gatt_send_srv_chg_ind(const RawAddress& /* peer_bda */, uint16_t /*start_handle*/) {
+  inc_func_call_count(__func__);
+}
 void gatt_set_ch_state(tGATT_TCB* /* p_tcb */, tGATT_CH_STATE /* ch_state */) {
   inc_func_call_count(__func__);
 }
@@ -79,3 +84,5 @@ void gatt_update_app_use_link_flag(tGATT_IF /* gatt_if */, tGATT_TCB* /* p_tcb *
 }
 
 void gatt_tcb_dump(int /* fd */) { inc_func_call_count(__func__); }
+
+void gatt_offload_sessions_dump(int /* fd */) { inc_func_call_count(__func__); }

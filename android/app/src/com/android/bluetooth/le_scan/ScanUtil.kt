@@ -17,15 +17,35 @@
 package com.android.bluetooth.le_scan
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY
+import android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED
+import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY
+import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_POWER
+import android.bluetooth.le.ScanSettings.SCAN_MODE_OPPORTUNISTIC
+import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF
+import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED
+import android.provider.Settings
 import android.util.Log
+import com.android.bluetooth.Utils
+import com.android.bluetooth.Utils.millsToUnit
+import com.android.bluetooth.btservice.AdapterService
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
 private const val TAG = "ScanUtil"
 
 object ScanUtil {
+
+    const val DEFAULT_SCAN_QUOTA_COUNT = 5
+    @JvmField val DEFAULT_SCAN_QUOTA_WINDOW = 30.seconds.toJavaDuration()
+    @JvmField val DEFAULT_SCAN_TIMEOUT = 10.minutes.toJavaDuration()
+    @JvmField val DEFAULT_SCAN_UPGRADE_DURATION = 6.seconds.toJavaDuration()
+    @JvmField val DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING = 6.seconds.toJavaDuration()
 
     // Scan params corresponding to regular scan setting
     const val SCAN_MODE_LOW_POWER_WINDOW_MS = 140
@@ -45,10 +65,20 @@ object ScanUtil {
     const val SCAN_RESULT_TYPE_FULL = 2
     const val SCAN_RESULT_TYPE_BOTH = 3
 
-    // The default floor value for LE batch scan report delays greater than 0
-    const val DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L
+    private const val ONFOUND_SIGHTINGS_AGGRESSIVE = 1
+    private const val ONFOUND_SIGHTINGS_STICKY = 4
 
-    const val ACTION_REFRESH_BATCHED_SCAN = "com.android.bluetooth.gatt.REFRESH_BATCHED_SCAN"
+    // Onfound/onlost for scan settings
+    private const val MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR = 1
+
+    private const val MATCH_MODE_STICKY_TIMEOUT_FACTOR = 3
+    private const val ONLOST_FACTOR = 2
+    private const val ONLOST_ONFOUND_BASE_TIMEOUT_MS = 500
+
+    // Delivery mode defined in bt stack.
+    private const val DELIVERY_MODE_IMMEDIATE = 0
+    const val DELIVERY_MODE_ON_FOUND_LOST = 1
+    const val DELIVERY_MODE_BATCH = 2
 
     // Weights representing the duty cycle of each scan mode
     const val WEIGHT_OPPORTUNISTIC = 0
@@ -57,6 +87,167 @@ object ScanUtil {
     const val WEIGHT_AMBIENT_DISCOVERY = 25
     const val WEIGHT_BALANCED = 25
     const val WEIGHT_LOW_LATENCY = 100
+
+    @JvmStatic fun findById(clients: Set<ScanClient>, id: Int) = clients.find { it.scannerId == id }
+
+    @JvmStatic
+    fun appNameOrUnknown(appName: String?, uid: Int) = appName ?: "Unknown App (UID: $uid)"
+
+    @JvmStatic
+    fun hasScanResultPermission(adapterService: AdapterService, client: ScanClient) =
+        when {
+            // Bypass permission check for internal clients
+            client.isInternalClient ||
+                client.hasNetworkSettingsPermission ||
+                client.hasNetworkSetupWizardPermission ||
+                client.hasScanWithoutLocationPermission ||
+                client.hasDisavowedLocation -> true
+            else ->
+                client.hasLocationPermission &&
+                    !Utils.blockedByLocationOff(adapterService, client.userHandle)
+        }
+
+    // Convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
+    @JvmStatic
+    fun scanWindow(adapterService: AdapterService, client: ScanClient?) =
+        if (client == null) 0 else millsToUnit(windowMillis(adapterService, client.settings))
+
+    @JvmStatic
+    fun scanInterval(adapterService: AdapterService, client: ScanClient?) =
+        if (client == null) 0 else millsToUnit(intervalMillis(adapterService, client.settings))
+
+    @JvmStatic
+    fun windowMillis(adapterService: AdapterService, settings: ScanSettings) =
+        when (settings.scanMode) {
+            SCAN_MODE_LOW_LATENCY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_LATENCY_WINDOW_MS,
+                    SCAN_MODE_LOW_LATENCY_WINDOW_MS,
+                )
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
+                    SCAN_MODE_BALANCED_WINDOW_MS,
+                )
+            SCAN_MODE_LOW_POWER ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                    SCAN_MODE_LOW_POWER_WINDOW_MS,
+                )
+            SCAN_MODE_SCREEN_OFF -> adapterService.screenOffLowPowerWindow.toMillis().toInt()
+            SCAN_MODE_SCREEN_OFF_BALANCED ->
+                adapterService.screenOffBalancedWindow.toMillis().toInt()
+            else ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                    SCAN_MODE_LOW_POWER_WINDOW_MS,
+                )
+        }
+
+    @JvmStatic
+    fun intervalMillis(adapterService: AdapterService, settings: ScanSettings) =
+        when (settings.scanMode) {
+            SCAN_MODE_LOW_LATENCY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_LATENCY_INTERVAL_MS,
+                    SCAN_MODE_LOW_LATENCY_INTERVAL_MS,
+                )
+
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
+                    SCAN_MODE_BALANCED_INTERVAL_MS,
+                )
+            SCAN_MODE_LOW_POWER ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                    SCAN_MODE_LOW_POWER_INTERVAL_MS,
+                )
+            SCAN_MODE_SCREEN_OFF -> adapterService.screenOffLowPowerInterval.toMillis().toInt()
+            SCAN_MODE_SCREEN_OFF_BALANCED ->
+                adapterService.screenOffBalancedInterval.toMillis().toInt()
+            else ->
+                Settings.Global.getInt(
+                    adapterService.contentResolver,
+                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                    SCAN_MODE_LOW_POWER_INTERVAL_MS,
+                )
+        }
+
+    @JvmStatic
+    fun scanPhyMask(usePhy1m: Boolean, usePhyCoded: Boolean): Int {
+        var phy = 0
+        if (usePhy1m) {
+            phy = phy or BluetoothDevice.PHY_LE_1M_MASK
+        }
+        if (usePhyCoded) {
+            phy = phy or BluetoothDevice.PHY_LE_CODED_MASK
+        }
+        return phy
+    }
+
+    @JvmStatic
+    fun onFoundOnLostTimeoutMillis(settings: ScanSettings, onFound: Boolean): Int {
+        val timeout = ONLOST_ONFOUND_BASE_TIMEOUT_MS
+
+        var factor =
+            if (settings.matchMode == ScanSettings.MATCH_MODE_AGGRESSIVE) {
+                MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR
+            } else {
+                MATCH_MODE_STICKY_TIMEOUT_FACTOR
+            }
+
+        if (!onFound) {
+            factor *= ONLOST_FACTOR
+        }
+
+        return timeout * factor
+    }
+
+    @JvmStatic
+    fun onFoundOnLostSightings(settings: ScanSettings) =
+        when (settings.matchMode) {
+            ScanSettings.MATCH_MODE_AGGRESSIVE -> ONFOUND_SIGHTINGS_AGGRESSIVE
+            else -> ONFOUND_SIGHTINGS_STICKY
+        }
+
+    @JvmStatic
+    fun deliveryMode(client: ScanClient?): Int {
+        val header = "deliveryMode($client):"
+        return when {
+            client == null -> {
+                Log.d(TAG, "$header Client is null, defaulting to DELIVERY_MODE_IMMEDIATE")
+                DELIVERY_MODE_IMMEDIATE
+            }
+            (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0 ||
+                (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_MATCH_LOST) != 0 -> {
+                val types = "CALLBACK_TYPE_FIRST_MATCH OR CALLBACK_TYPE_MATCH_LOST"
+                Log.d(TAG, "$header Callback type is $types, using DELIVERY_MODE_ON_FOUND_LOST")
+                DELIVERY_MODE_ON_FOUND_LOST
+            }
+            isAllMatchesAutoBatchScanClient(client) -> {
+                val enabled = isAutoBatchScanClientEnabled(client)
+                val mode = if (enabled) "DELIVERY_MODE_BATCH" else "DELIVERY_MODE_IMMEDIATE"
+                Log.d(TAG, "$header Client is auto-batch (enabled=$enabled), using $mode")
+                if (enabled) DELIVERY_MODE_BATCH else DELIVERY_MODE_IMMEDIATE
+            }
+            else -> {
+                val delay = client.settings.reportDelayMillis
+                val mode = if (delay == 0L) "DELIVERY_MODE_IMMEDIATE" else "DELIVERY_MODE_BATCH"
+                Log.d(TAG, "$header Using report delay=${delay}ms to set delivery mode to $mode")
+                if (delay == 0L) DELIVERY_MODE_IMMEDIATE else DELIVERY_MODE_BATCH
+            }
+        }
+    }
 
     @JvmStatic
     fun minScanMode(oldScanMode: Int, newScanMode: Int) =
@@ -69,38 +260,53 @@ object ScanUtil {
     @JvmStatic
     fun priorityForScanMode(scanMode: Int) =
         when (scanMode) {
-            ScanSettings.SCAN_MODE_OPPORTUNISTIC -> 0
-            ScanSettings.SCAN_MODE_SCREEN_OFF -> 1
-            ScanSettings.SCAN_MODE_LOW_POWER -> 2
-            ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED -> 3
+            SCAN_MODE_OPPORTUNISTIC -> 0
+            SCAN_MODE_SCREEN_OFF -> 1
+            SCAN_MODE_LOW_POWER -> 2
+            SCAN_MODE_SCREEN_OFF_BALANCED -> 3
             // BALANCED and AMBIENT_DISCOVERY have the same settings and priority
-            ScanSettings.SCAN_MODE_BALANCED,
-            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> 4
-            ScanSettings.SCAN_MODE_LOW_LATENCY -> 5
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY -> 4
+            SCAN_MODE_LOW_LATENCY -> 5
             else -> -1
         }
 
     @JvmStatic
     fun weightForScanMode(scanMode: Int) =
         when (scanMode) {
-            ScanSettings.SCAN_MODE_OPPORTUNISTIC -> WEIGHT_OPPORTUNISTIC
-            ScanSettings.SCAN_MODE_SCREEN_OFF -> WEIGHT_SCREEN_OFF_LOW_POWER
-            ScanSettings.SCAN_MODE_LOW_POWER -> WEIGHT_LOW_POWER
-            ScanSettings.SCAN_MODE_LOW_LATENCY -> WEIGHT_LOW_LATENCY
-            ScanSettings.SCAN_MODE_BALANCED,
-            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
-            ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED -> WEIGHT_BALANCED
+            SCAN_MODE_OPPORTUNISTIC -> WEIGHT_OPPORTUNISTIC
+            SCAN_MODE_SCREEN_OFF -> WEIGHT_SCREEN_OFF_LOW_POWER
+            SCAN_MODE_LOW_POWER -> WEIGHT_LOW_POWER
+            SCAN_MODE_LOW_LATENCY -> WEIGHT_LOW_LATENCY
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY,
+            SCAN_MODE_SCREEN_OFF_BALANCED -> WEIGHT_BALANCED
             else -> WEIGHT_LOW_POWER
+        }
+
+    @JvmStatic
+    fun statusToString(status: Int) =
+        when (status) {
+            ScanCallback.NO_ERROR -> "SUCCESS"
+            ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "ALREADY_STARTED"
+            ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "APP_REGISTRATION_FAILED"
+            ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "INTERNAL_ERROR"
+            ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "FEATURE_UNSUPPORTED"
+            ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> "OUT_OF_HARDWARE_RESOURCES"
+            ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> "SCANNING_TOO_FREQUENTLY"
+            else -> "UNKNOWN($status)"
         }
 
     @JvmStatic
     fun scanModeToString(scanMode: Int) =
         when (scanMode) {
-            ScanSettings.SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
-            ScanSettings.SCAN_MODE_LOW_POWER -> "LOW_POWER"
-            ScanSettings.SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
-            ScanSettings.SCAN_MODE_BALANCED -> "BALANCED"
-            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
+            SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
+            SCAN_MODE_LOW_POWER -> "LOW_POWER"
+            SCAN_MODE_BALANCED -> "BALANCED"
+            SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
+            SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
+            SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
+            SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
             else -> "UNKNOWN($scanMode)"
         }
 
@@ -137,8 +343,7 @@ object ScanUtil {
             settings.reportDelayMillis != 0L
 
     @JvmStatic
-    fun isOpportunisticScan(settings: ScanSettings) =
-        settings.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC
+    fun isOpportunisticScan(settings: ScanSettings) = settings.scanMode == SCAN_MODE_OPPORTUNISTIC
 
     @JvmStatic
     fun isExemptFromScanTimeout(client: ScanClient) =
@@ -185,17 +390,15 @@ object ScanUtil {
     @JvmStatic
     fun shouldUpdateScan(newScanSetting: Int, oldScanSetting: Int) =
         newScanSetting != Int.MIN_VALUE &&
-            newScanSetting != ScanSettings.SCAN_MODE_OPPORTUNISTIC &&
+            newScanSetting != SCAN_MODE_OPPORTUNISTIC &&
             newScanSetting != oldScanSetting
 
     @JvmStatic
     fun upgradeScanModeByOneLevel(client: ScanClient) =
         when (client.scanModeApp) {
-            ScanSettings.SCAN_MODE_LOW_POWER ->
-                client.updateScanMode(ScanSettings.SCAN_MODE_BALANCED)
-            ScanSettings.SCAN_MODE_BALANCED,
-            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
-                client.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            SCAN_MODE_LOW_POWER -> client.updateScanMode(SCAN_MODE_BALANCED)
+            SCAN_MODE_BALANCED,
+            SCAN_MODE_AMBIENT_DISCOVERY -> client.updateScanMode(SCAN_MODE_LOW_LATENCY)
             else -> false
         }
 
@@ -204,7 +407,7 @@ object ScanUtil {
         val existingSettings = client.settings
         client.settings =
             ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
+                .setScanMode(SCAN_MODE_OPPORTUNISTIC)
                 .setCallbackType(existingSettings.callbackType)
                 .setScanResultType(existingSettings.scanResultType)
                 .setReportDelay(existingSettings.reportDelayMillis)
@@ -217,8 +420,8 @@ object ScanUtil {
         if (isAutoBatchScanClientEnabled(client)) {
             return
         }
-        client.updateScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF)
-        val scanModeString = ScanSettings.getScanModeString(client.scanModeApp)
+        client.updateScanMode(SCAN_MODE_SCREEN_OFF)
+        val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during setAutoBatchScanClient() to $scanModeString")
         client.appScanStats.ifPresent { appScanStats ->
             appScanStats.setAutoBatchScan(client.scannerId, true)
@@ -231,7 +434,7 @@ object ScanUtil {
             return
         }
         client.updateScanMode(client.scanModeApp)
-        val scanModeString = ScanSettings.getScanModeString(client.scanModeApp)
+        val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
         client.appScanStats.ifPresent { appScanStats ->
             appScanStats.setAutoBatchScan(client.scannerId, false)
@@ -241,7 +444,7 @@ object ScanUtil {
     @JvmStatic
     fun scanFilterToStringWithoutNullParam(filter: ScanFilter): String {
         return buildString {
-            append("BluetoothLeScanFilter [")
+            append("Filter: [")
             filter.deviceName?.let { append(" DeviceName=").append(it) }
             filter.deviceAddress?.let { append(" DeviceAddress=").append(it) }
             filter.serviceUuid?.let { append(" ServiceUuid=").append(it) }

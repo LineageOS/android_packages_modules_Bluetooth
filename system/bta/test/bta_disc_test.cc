@@ -90,6 +90,7 @@ TEST_F(BtaInitializedTest, bta_dm_discover_next_device) {
 }
 
 TEST_F(BtaInitializedTest, bta_dm_sdp_find_services) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_ConnectReqWithSecurity(_, _, _));
   std::unique_ptr<tBTA_DM_SDP_STATE> state = std::make_unique<tBTA_DM_SDP_STATE>(tBTA_DM_SDP_STATE{
           .bd_addr = kRawAddress,
           .services_to_search = BTA_ALL_SERVICE_MASK,

@@ -2,46 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "support_metadata_device_types_apis"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Support more device types in bt device metadata"
-    bug: "289584302"
-}
-
-flag {
-    name: "support_bluetooth_quality_report_v6"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Enhanced Bluetooth Framework Support for Accessing Bluetooth Quality Report v6 Information"
-    bug: "364517559"
-}
-
-flag {
-    name: "identity_address_type_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add a new API to BluetoothDevice to retrieve Identity Address Type"
-    bug: "377171798"
-}
-
-flag {
-    name: "encryption_change_broadcast"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Broadcast when remote device encryption changes"
-    bug: "369753860"
-}
-
-flag {
-    name: "key_missing_public"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Make BluetoothDevice.ACTION_KEY_MISSING into public API"
-    bug: "379729762"
-}
-
-flag {
     name: "set_component_available_fix"
     namespace: "bluetooth"
     description: "Ensure the state in PackageManager has DISABLED to ENABLED to trigger PACKAGE_CHANGED"
@@ -53,7 +13,6 @@ flag {
 
 flag {
     name: "fix_started_module_race"
-    is_exported: true
     namespace: "bluetooth"
     description: "Fix race in modifying and accessing started modules"
     bug: "394488590"
@@ -67,16 +26,6 @@ flag {
     namespace: "bluetooth"
     description: "Fix Unhandled BQR subevent on bqr report"
     bug: "397854116"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "same_handler_for_all_modules"
-    namespace: "bluetooth"
-    description: "Update all modules to use the same handler"
-    bug: "398195386"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -110,4 +59,14 @@ flag {
     namespace: "bluetooth"
     description: "Promote getKeyMissingCount as public API"
     bug: "421357557"
+}
+
+flag {
+    name: "coalesce_acl_connection_broadcasts"
+    namespace: "bluetooth"
+    description: "Set delivery group policy to coalesce ACL connection state change broadcasts."
+    bug: "448673677"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }

@@ -729,11 +729,12 @@ protected:
   void TestAppRegister(void) {
     BtaAppRegisterCallback app_register_callback;
     EXPECT_CALL(gatt_interface, AppRegister(_, _, _, _))
-            .WillOnce(DoAll(SaveArg<1>(&gatt_callback), SaveArg<2>(&app_register_callback)));
+            .WillOnce(DoAll(SaveArg<1>(&gatt_callback),
+                            WithArg<2>([&](auto arg) { app_register_callback = std::move(arg); })));
     HasClient::Initialize(&callbacks, base::DoNothing());
     ASSERT_TRUE(gatt_callback);
     ASSERT_TRUE(app_register_callback);
-    app_register_callback.Run(gatt_if, GATT_SUCCESS);
+    std::move(app_register_callback).Run(gatt_if, GATT_SUCCESS);
     ASSERT_TRUE(HasClient::IsHasClientRunning());
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }
@@ -1124,7 +1125,6 @@ protected:
 class HasClientTest : public HasClientTestBase {
   void SetUp(void) override {
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->synchronize_preset_can_timeout(true);
     HasClientTestBase::SetUp();
     TestAppRegister();
   }
@@ -2243,7 +2243,6 @@ TEST_F(HasClientTest, test_select_preset_not_available) {
    * 5. Preset b is not selected, operation aborts, event with error code is received
    */
   const RawAddress test_address = GetTestAddress(1);
-  uint16_t test_conn_id = GetTestConnId(test_address);
 
   std::set<HasPreset, HasPreset::ComparatorDesc> presets = {{
           HasPreset(1, HasPreset::kPropertyAvailable, "Universal"),

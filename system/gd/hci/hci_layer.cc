@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "com_android_bluetooth_flags.h"
 #include "common/bind.h"
 #include "common/stop_watch.h"
 #include "hal/hci_hal.h"
@@ -39,7 +40,6 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "packet/raw_builder.h"
 #include "storage/storage_module.h"
-#include "com_android_bluetooth_flags.h"
 
 namespace bluetooth {
 namespace hci {
@@ -310,15 +310,16 @@ struct HciLayer::impl {
 #endif
 
     common::StopWatch::DumpStopWatchLog();
-    log::error("Timed out waiting for {} for {}ms", OpCodeText(op_code), getHciTimeoutMs().count());
+    log::error("Timed out waiting for {} for {}ms, which was armed at: {}", OpCodeText(op_code),
+               getHciTimeoutMs().count(), hci_timeout_alarm_->GetArmedTime());
 
     bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
     log::error("Flushing #{} waiting commands", command_queue_.size());
     for (auto& command : command_queue_) {
       log::debug("Flushing command: opcode:{}, waiting for: {}",
-                 OpCodeText(command.command_view->GetOpCode()),
-                 std::to_string(static_cast<uint8_t>(command.waiting_for_)));
+                 command.command_view ? OpCodeText(command.command_view->GetOpCode()) : "??",
+                 static_cast<int>(command.waiting_for_));
     }
 
     // Clear any waiting commands (there is an abort coming anyway)
@@ -400,7 +401,12 @@ struct HciLayer::impl {
   }
 
   void unregister_le_event(SubeventCode event) {
-    le_event_handlers_.erase(le_event_handlers_.find(event));
+    auto it = le_event_handlers_.find(event);
+    if (it == le_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}", SubeventCodeText(event));
+      return;
+    }
+    le_event_handlers_.erase(it);
   }
 
   void register_vs_event(VseSubeventCode event,
@@ -411,7 +417,12 @@ struct HciLayer::impl {
   }
 
   void unregister_vs_event(VseSubeventCode event) {
-    vs_event_handlers_.erase(vs_event_handlers_.find(event));
+    auto it = vs_event_handlers_.find(event);
+    if (it == vs_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}", VseSubeventCodeText(event));
+      return;
+    }
+    vs_event_handlers_.erase(it);
   }
 
   void register_vs_event_default(ContextualCallback<void(VendorSpecificEventView)> handler) {
@@ -1015,7 +1026,7 @@ HciLayer::~HciLayer() {
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
-  if(com::android::bluetooth::flags::fix_event_handler_reg_and_dereg()) {
+  if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
     StopWithNoHalDependencies();
   }
 

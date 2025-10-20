@@ -53,7 +53,8 @@ class Gatt(private val context: Context) : GATTImplBase(), Closeable {
     private val mBluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
     private val mBluetoothAdapter = mBluetoothManager.adapter
 
-    private val serverManager by lazy { GattServerManager(mBluetoothManager, context, mScope) }
+    private val _serverManager = lazy { GattServerManager(mBluetoothManager, context, mScope) }
+    private val serverManager: GattServerManager by _serverManager
 
     private val flow: Flow<Intent>
 
@@ -65,7 +66,9 @@ class Gatt(private val context: Context) : GATTImplBase(), Closeable {
     }
 
     override fun close() {
-        serverManager.server.close()
+        if (_serverManager.isInitialized()) {
+            serverManager.server.close()
+        }
         mScope.cancel()
         // Clear existing Gatt instances to fix flakiness: b/279599889
         GattInstance.clearAllInstances()

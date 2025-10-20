@@ -24,7 +24,6 @@ import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.Context
 import android.os.SystemProperties
 import android.platform.test.annotations.RequiresFlagsEnabled
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -53,11 +52,9 @@ import pandora.HostProto.OwnAddressType
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
 class ConnParamTest {
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-    @get:Rule(order = 0)
-    val mCheckFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
-    @get:Rule(order = 1) val mBumble = PandoraDevice()
+    @get:Rule(order = 1) val bumble = PandoraDevice()
 
     @get:Rule(order = 2) val mEnableBluetoothRule = EnableBluetoothRule(false, true)
 
@@ -187,7 +184,7 @@ class ConnParamTest {
 
         val responseObserver = StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse>()
 
-        mBumble.host().advertise(request, responseObserver)
+        bumble.host().advertise(request, responseObserver)
 
         return responseObserver
     }

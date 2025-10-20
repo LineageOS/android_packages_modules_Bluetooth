@@ -60,8 +60,6 @@ std::string EpochMillisToString(uint64_t time_ms) {
   return std::format("{}.{:03}", s, time_ms % MillisPerSecond);
 }
 
-}  // namespace
-
 struct SniffOffloadStartedState {
   bool is_started;
   tHCI_STATUS status_code;
@@ -69,10 +67,13 @@ struct SniffOffloadStartedState {
     return std::format("is_started:{} status_code:{}", is_started, status_code);
   }
 };
+
 SniffOffloadStartedState sniff_offload_started_state_ = {
         .is_started = false,
         .status_code = HCI_SUCCESS,
 };
+
+}  // namespace
 
 struct SniffOffloadParametersUpdateEntry {
   tHCI_STATUS status_code;
@@ -122,7 +123,11 @@ private:
                                        uint8_t app_id, const RawAddress& peer_addr) {
     uint16_t acl_handle =
             get_btm_client_interface().peer.BTM_GetHCIConnHandle(peer_addr, BT_TRANSPORT_BR_EDR);
-    sniff_offload_instance_->OnProfileStateChanged(acl_handle, id, app_id, status);
+    if (acl_handle != HCI_INVALID_HANDLE) {
+      sniff_offload_instance_->OnProfileStateChanged(acl_handle, id, app_id, status);
+    } else {
+      log::verbose("Not forwarding status update for BTA_SYS_ID = {} over BLE", id);
+    }
   }
 
   static bool IsSniffOffloadSupported() {

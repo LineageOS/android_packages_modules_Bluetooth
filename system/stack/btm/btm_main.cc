@@ -22,9 +22,12 @@
  *
  ******************************************************************************/
 
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
+#include <future>
 #include <memory>
 #include <string>
 
@@ -34,6 +37,7 @@
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/security_client_callbacks.h"
 
 using namespace bluetooth;
@@ -59,10 +63,18 @@ void btm_init(void) {
   get_security_client_interface().BTM_Sec_Init();
 }
 
-/** This function is called to free dynamic memory and system resource allocated by btm_init */
-void btm_free(void) {
+static void btm_free_internal() {
   get_security_client_interface().BTM_Sec_Free();
   btm_cb.Free();
+}
+
+void btm_free() {
+  if (com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+    get_main_thread()->DoInThreadSynchronously(&btm_free_internal);
+    return;
+  }
+
+  btm_free_internal();  // no need to wait
 }
 
 constexpr size_t kMaxLogHistoryTagLength = 6;

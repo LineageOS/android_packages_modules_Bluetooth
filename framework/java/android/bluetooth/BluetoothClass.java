@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -50,16 +51,12 @@ import android.os.Parcelable;
  * -->
  */
 public final class BluetoothClass implements Parcelable {
-    /**
-     * Legacy error value. Applications should use null instead.
-     *
-     * @hide
-     */
-    public static final int ERROR = 0xFF000000;
+    /** Legacy error value. Applications should use null instead. */
+    @Hide public static final int ERROR = 0xFF000000;
 
     private final int mClass;
 
-    /** @hide */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.P, trackingBug = 115609023)
     public BluetoothClass(int classInt) {
         mClass = classInt;
@@ -283,8 +280,8 @@ public final class BluetoothClass implements Parcelable {
      *
      * @see <a href="Bluetooth
      *     CoD">https://www.bluetooth.com/specifications/assigned-numbers/baseband</a>
-     * @hide
      */
+    @Hide
     @RequiresNoPermission
     public int getClassOfDevice() {
         return mClass;
@@ -294,19 +291,15 @@ public final class BluetoothClass implements Parcelable {
 
     public static final int PROFILE_A2DP = 1;
 
-    /** @hide */
-    @SystemApi public static final int PROFILE_OPP = 2;
+    @Hide @SystemApi public static final int PROFILE_OPP = 2;
 
     public static final int PROFILE_HID = 3;
 
-    /** @hide */
-    @SystemApi public static final int PROFILE_PANU = 4;
+    @Hide @SystemApi public static final int PROFILE_PANU = 4;
 
-    /** @hide */
-    @SystemApi public static final int PROFILE_NAP = 5;
+    @Hide @SystemApi public static final int PROFILE_NAP = 5;
 
-    /** @hide */
-    @SystemApi public static final int PROFILE_A2DP_SINK = 6;
+    @Hide @SystemApi public static final int PROFILE_A2DP_SINK = 6;
 
     /**
      * Check class bits for possible bluetooth profile support. This is a simple heuristic that

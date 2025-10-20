@@ -26,10 +26,9 @@ void bluetooth::manager::SetMockBtmApiInterface(MockBtmApiInterface* mock_btm_ap
   btm_api_interface = mock_btm_api_interface;
 }
 
-bool BTM_SetSecurityLevel(bool is_originator, const char* p_name, uint8_t service_id,
-                          uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
-                          uint32_t mx_chan_id) {
-  return btm_api_interface->SetSecurityLevel(is_originator, p_name, service_id, sec_level, psm,
+bool BTM_SetSecurityLevel(bool outgoing, const char* p_name, uint8_t service_id, uint16_t sec_level,
+                          uint16_t psm, uint32_t mx_proto_id, uint32_t mx_chan_id) {
+  return btm_api_interface->SetSecurityLevel(outgoing, p_name, service_id, sec_level, psm,
                                              mx_proto_id, mx_chan_id);
 }
 

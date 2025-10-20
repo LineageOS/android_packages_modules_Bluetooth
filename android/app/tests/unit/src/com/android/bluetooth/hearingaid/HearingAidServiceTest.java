@@ -128,7 +128,6 @@ public class HearingAidServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(HearingAidService.getHearingAidService()).isNull();
     }
 
     @SafeVarargs
@@ -169,11 +168,6 @@ public class HearingAidServiceTest {
     }
 
     @Test
-    public void getHearingAidService() {
-        assertThat(HearingAidService.getHearingAidService()).isEqualTo(mService);
-    }
-
-    @Test
     public void getConnectionPolicy() {
         for (int policy :
                 List.of(
@@ -186,7 +180,6 @@ public class HearingAidServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void okToConnect_whenNotBonded_returnFalse() {
         int badPolicyValue = 1024;
         int badBondState = 42;
@@ -200,31 +193,6 @@ public class HearingAidServiceTest {
                             badPolicyValue)) {
                 doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
                 assertThat(mService.okToConnect(mSingleDevice)).isFalse();
-            }
-        }
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
-    public void okToConnect_whenInvalidBonded_returnFalse() {
-        int badPolicyValue = 1024;
-        int badBondState = 42;
-        doReturn(badBondState).when(mAdapterService).getBondState(any());
-        for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
-            doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mSingleDevice)).isFalse();
-        }
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
-    public void okToConnect_whenNotBonded_returnTrue() {
-        // allow connect Due to desync between BondStateMachine and AdapterProperties
-        for (int bondState : List.of(BOND_NONE, BOND_BONDING)) {
-            doReturn(bondState).when(mAdapterService).getBondState(any());
-            for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
-                doReturn(policy).when(mAdapterService).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mSingleDevice)).isTrue();
             }
         }
     }

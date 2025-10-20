@@ -55,7 +55,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/bt_hdr.h"

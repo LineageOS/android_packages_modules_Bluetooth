@@ -36,6 +36,8 @@ import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__DISABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__ENABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__UNKNOWN
+import com.android.bluetooth.util.Column
+import com.android.bluetooth.util.toTable
 import java.io.PrintWriter
 
 private const val TAG = "ActiveLogs"
@@ -83,10 +85,22 @@ class ActiveLogs {
     fun dump(writer: PrintWriter) {
         if (activeLogs.isEmpty()) {
             writer.println("Bluetooth never enabled!")
-        } else {
-            writer.println("Enable log:")
-            activeLogs.forEach { writer.println("  $it") }
+            return
         }
+
+        writer.println("Enable log:")
+        val table =
+            activeLogs
+                .toTable(
+                    Column("TIMESTAMP", width = 18) { Log.timeToStringWithZone(it.timestamp) },
+                    Column("ACTION", width = 10) {
+                        (if (it.enable) "Enable" else "Disable") + (if (it.isBle) "Ble" else "")
+                    },
+                    Column("REASON", width = 20) { getEnableDisableReasonString(it.reason) },
+                    Column("PACKAGE") { it.packageName },
+                )
+                .prependIndent("  ")
+        writer.println(table)
     }
 
     companion object {
@@ -96,10 +110,10 @@ class ActiveLogs {
 
 @VisibleForTesting
 internal class ActiveLog(
-    private val reason: Int,
-    private val packageName: String,
-    val enable: Boolean,
-    private val isBle: Boolean,
+    internal val reason: Int,
+    internal val packageName: String,
+    internal val enable: Boolean,
+    internal val isBle: Boolean,
 ) {
     val timestamp = System.currentTimeMillis()
 

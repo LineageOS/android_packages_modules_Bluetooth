@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -24,10 +23,8 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
 
-import android.bluetooth.BluetoothAvrcpController;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.content.Intent;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -42,15 +39,13 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -194,15 +189,6 @@ class AvrcpControllerStateMachine extends StateMachine {
         debug("State machine created");
     }
 
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<A2dpSinkService> getA2dpSinkService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getA2dpSinkService();
-        } else {
-            return Optional.ofNullable(A2dpSinkService.getA2dpSinkService());
-        }
-    }
-
     BrowseTree.BrowseNode findNode(String parentMediaId) {
         debug("findNode(mediaId=" + parentMediaId + ")");
         return mBrowseTree.findBrowseNodeByID(parentMediaId);
@@ -227,11 +213,11 @@ class AvrcpControllerStateMachine extends StateMachine {
     }
 
     /** send the connection event asynchronously */
-    public boolean connect(StackEvent event) {
-        if (event.mBrowsingConnected) {
+    public boolean connect(boolean remoteControlConnected, boolean browsingConnected) {
+        if (browsingConnected) {
             onBrowsingConnected();
         }
-        mRemoteControlConnected = event.mRemoteControlConnected;
+        mRemoteControlConnected = remoteControlConnected;
         sendMessage(CONNECT);
         return true;
     }
@@ -262,7 +248,7 @@ class AvrcpControllerStateMachine extends StateMachine {
      * @param sb output string
      */
     public void dump(StringBuilder sb) {
-        ProfileService.println(sb, "mDevice: " + mDevice + "(" + mDevice + ") " + this.toString());
+        ProfileService.println(sb, "mDevice: " + mDevice + this.toString());
         ProfileService.println(sb, "isActive: " + isActive());
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);
@@ -1241,7 +1227,10 @@ class AvrcpControllerStateMachine extends StateMachine {
     }
 
     private int getFocusState() {
-        return getA2dpSinkService().map(A2dpSinkService::getFocusState).orElse(AudioManager.ERROR);
+        return mAdapterService
+                .getA2dpSinkService()
+                .map(A2dpSinkService::getFocusState)
+                .orElse(AudioManager.ERROR);
     }
 
     MediaSessionCompat.Callback mSessionCallbacks =
@@ -1310,7 +1299,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                 @Override
                 public void onPrepare() {
                     debug("onPrepare");
-                    getA2dpSinkService()
+                    mAdapterService
+                            .getA2dpSinkService()
                             .ifPresent(a2dpSink -> a2dpSink.requestAudioFocus(mDevice, true));
                 }
 
@@ -1365,13 +1355,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                 mDevice, BluetoothProfile.AVRCP_CONTROLLER, currentState, mMostRecentState);
 
         debug("Connection state : " + mMostRecentState + "->" + currentState);
-        Intent intent = new Intent(BluetoothAvrcpController.ACTION_CONNECTION_STATE_CHANGED);
-        intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, mMostRecentState);
-        intent.putExtra(BluetoothProfile.EXTRA_STATE, currentState);
-        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
-        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         mMostRecentState = currentState;
-        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private boolean shouldRequestFocus() {

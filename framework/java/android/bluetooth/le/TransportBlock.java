@@ -80,13 +80,11 @@ public final class TransportBlock implements Parcelable {
         }
     }
 
-    /** @hide */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /** @hide */
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) {
@@ -99,7 +97,6 @@ public final class TransportBlock implements Parcelable {
         return Arrays.equals(toByteArray(), other.toByteArray());
     }
 
-    /** @hide */
     @Override
     public int hashCode() {
         return Arrays.hashCode(toByteArray());

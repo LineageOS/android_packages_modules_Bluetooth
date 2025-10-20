@@ -21,6 +21,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.Manifest;
+import android.annotation.Hide;
 import android.os.Build;
 
 import java.lang.annotation.Retention;
@@ -30,8 +31,8 @@ import java.lang.annotation.Target;
  * @memberDoc For apps targeting {@link Build.VERSION_CODES#R} or lower, this requires the {@link
  *     Manifest.permission#BLUETOOTH_ADMIN} permission which can be gained with a simple {@code
  *     <uses-permission>} manifest tag.
- * @hide
  */
+@Hide
 @Retention(SOURCE)
 @Target({METHOD, FIELD})
 @SuppressWarnings("InvalidBlockTag")

@@ -31,6 +31,7 @@
 
 #include "abstract_message_loop.h"
 #include "bta/include/bta_api.h"
+#include "common/message_loop_thread.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 
@@ -98,6 +99,7 @@ typedef struct {
 
 bt_status_t do_in_jni_thread(base::OnceClosure task);
 bool is_on_jni_thread();
+bluetooth::common::MessageLoopThread* get_jni_thread();
 
 using BtJniClosure = std::function<void()>;
 void post_on_bt_jni(BtJniClosure closure);

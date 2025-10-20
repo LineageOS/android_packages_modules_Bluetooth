@@ -49,11 +49,9 @@ import android.util.Pair;
 
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.util.Text;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.protobuf.ByteString;
@@ -65,7 +63,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -1197,15 +1194,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         mEventLogger = new BluetoothEventLogger(200, TAG + " instance (CCID=" + ccid + "): ");
     }
 
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<LeAudioService> getLeAudioService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getLeAudioService();
-        } else {
-            return Optional.ofNullable(LeAudioService.getLeAudioService());
-        }
-    }
-
     protected boolean init(UUID scvUuid) {
         mFeatures = mCallbacks.onGetFeatureFlags();
 
@@ -1271,10 +1259,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             + Request.Opcodes.toString(opcode)
                             + " not supported");
             mHandler.post(
-                    () -> {
-                        setMediaControlRequestResult(
-                                new Request(opcode, 0), Request.Results.OPCODE_NOT_SUPPORTED);
-                    });
+                    () ->
+                            setMediaControlRequestResult(
+                                    new Request(opcode, 0), Request.Results.OPCODE_NOT_SUPPORTED));
             return BluetoothGatt.GATT_SUCCESS;
         }
 
@@ -1314,24 +1301,16 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         // TODO: Activate/deactivate devices with ActiveDeviceManager
         if (!isBroadcastActive() && req.opcode() == Request.Opcodes.PLAY) {
             if (mAdapterService.getActiveDevices(BluetoothProfile.A2DP).size() > 0) {
-                if (Flags.adapterServiceProfilesUseOptional()) {
-                    mAdapterService
-                            .getA2dpService()
-                            .ifPresent(a2dp -> a2dp.removeActiveDevice(false));
-                } else {
-                    A2dpService.getA2dpService().removeActiveDevice(false);
-                }
+                mAdapterService.getA2dpService().ifPresent(a2dp -> a2dp.removeActiveDevice(false));
             }
             if (mAdapterService.getActiveDevices(BluetoothProfile.HEARING_AID).size() > 0) {
-                if (Flags.adapterServiceProfilesUseOptional()) {
-                    mAdapterService
-                            .getHearingAidService()
-                            .ifPresent(hearingAid -> hearingAid.removeActiveDevice(false));
-                } else {
-                    HearingAidService.getHearingAidService().removeActiveDevice(false);
-                }
+                mAdapterService
+                        .getHearingAidService()
+                        .ifPresent(hearingAid -> hearingAid.removeActiveDevice(false));
             }
-            getLeAudioService().ifPresent(leAudio -> leAudio.setActiveDevice(device));
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setActiveDevice(device));
         }
         mCallbacks.onMediaControlRequest(req);
 
@@ -1940,8 +1919,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     private String getTrackTitleChar() {
         if (isFeatureSupported(ServiceFeature.TRACK_TITLE)) {
             BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_TITLE);
-            if (characteristic.getValue() != null) {
-                return characteristic.getStringValue(0);
+            byte[] value = characteristic.getValue();
+            if (value != null && value.length > 0) {
+                return new String(value);
             }
         }
 
@@ -1951,14 +1931,18 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     @VisibleForTesting
     void updateTrackTitleChar(String title, boolean notify) {
         Log.d(TAG, "updateTrackTitleChar: " + title);
-        if (isFeatureSupported(ServiceFeature.TRACK_TITLE)) {
-            BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_TITLE);
-            characteristic.setValue(title);
-            if (notify && isFeatureSupported(ServiceFeature.TRACK_TITLE_NOTIFY)) {
-                notifyCharacteristic(characteristic, null);
-            }
-            mEventLogger.logd(TAG, "updateTrackTitleChar: title= '" + title + "'");
+        if (!isFeatureSupported(ServiceFeature.TRACK_TITLE)) return;
+
+        if (title.getBytes().length > bluetooth.constants.Core.GATT_MAX_ATTR_LEN) {
+            title = Text.truncateUtf8String(title, bluetooth.constants.Core.GATT_MAX_ATTR_LEN);
+            Log.w(TAG, "updateTrackTitleChar, value to long, cutting it to " + title);
         }
+        BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_TITLE);
+        characteristic.setValue(title);
+        if (notify && isFeatureSupported(ServiceFeature.TRACK_TITLE_NOTIFY)) {
+            notifyCharacteristic(characteristic, null);
+        }
+        mEventLogger.logd(TAG, "updateTrackTitleChar: title= '" + title + "'");
     }
 
     @VisibleForTesting
@@ -2051,20 +2035,27 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
     private void updatePlayerIconUrlChar(String url) {
         Log.d(TAG, "updatePlayerIconUrlChar: " + url);
-        if (isFeatureSupported(ServiceFeature.PLAYER_ICON_URL)) {
-            mCharacteristics.get(CharId.PLAYER_ICON_URL).setValue(url);
-            mEventLogger.logd(TAG, "updatePlayerIconUrlChar: " + url);
+        if (!isFeatureSupported(ServiceFeature.PLAYER_ICON_URL)) return;
+
+        if (url.getBytes().length > bluetooth.constants.Core.GATT_MAX_ATTR_LEN) {
+            url = Text.truncateUtf8String(url, bluetooth.constants.Core.GATT_MAX_ATTR_LEN);
+            Log.w(TAG, "updatePlayerIconUrlChar, value to long, cutting it to " + url);
         }
+        mCharacteristics.get(CharId.PLAYER_ICON_URL).setValue(url);
+        mEventLogger.logd(TAG, "updatePlayerIconUrlChar: " + url);
     }
 
     private String getPlayerNameChar() {
+        // If not support then return null, otherwise return gatt char value or default empty string
         if (!isFeatureSupported(ServiceFeature.PLAYER_NAME)) return null;
 
         BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
-        if (characteristic.getValue() != null) {
-            return characteristic.getStringValue(0);
+        byte[] value = characteristic.getValue();
+        if (value != null && value.length > 0) {
+            return new String(value);
         }
-        return null;
+
+        return "";
     }
 
     @VisibleForTesting
@@ -2072,6 +2063,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         Log.d(TAG, "updatePlayerNameChar: " + name);
 
         if (!isFeatureSupported(ServiceFeature.PLAYER_NAME)) return;
+
+        if (name.getBytes().length > bluetooth.constants.Core.GATT_MAX_ATTR_LEN) {
+            name = Text.truncateUtf8String(name, bluetooth.constants.Core.GATT_MAX_ATTR_LEN);
+            Log.w(TAG, "updatePlayerNameChar, value to long, cutting it to " + name);
+        }
 
         BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
         characteristic.setValue(name);
@@ -2097,7 +2093,10 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
      * @return {@code true} if is broadcasting audio, {@code false} otherwise
      */
     private boolean isBroadcastActive() {
-        return getLeAudioService().map(LeAudioService::isBroadcastActive).orElse(false);
+        return mAdapterService
+                .getLeAudioService()
+                .map(LeAudioService::isBroadcastActive)
+                .orElse(false);
     }
 
     @VisibleForTesting

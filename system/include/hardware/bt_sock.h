@@ -84,10 +84,6 @@ typedef struct {
   // loosing data. (L2CAP only)
   uint16_t max_rx_packet_size;
 
-  // The connection uuid. (L2CAP only)
-  uint64_t conn_uuid_lsb;
-  uint64_t conn_uuid_msb;
-
   // Socket ID in connected state
   uint64_t socket_id;
 } __attribute__((packed)) sock_connect_signal_t;
@@ -150,16 +146,6 @@ typedef struct {
    * device address.
    */
   bt_status_t (*disconnect_all)(const RawAddress* bd_addr);
-
-  /**
-   * Get L2CAP local channel ID with the associated connection uuid.
-   */
-  bt_status_t (*get_l2cap_local_cid)(bluetooth::Uuid& conn_uuid, uint16_t* cid);
-
-  /**
-   * Get L2CAP remote channel ID with the associated connection uuid.
-   */
-  bt_status_t (*get_l2cap_remote_cid)(bluetooth::Uuid& conn_uuid, uint16_t* cid);
 } btsock_interface_t;
 
 __END_DECLS

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "bluetooth-a2dp-aidl"
+
 #include "bluetooth_audio_port_impl.h"
 
 #include <bluetooth/log.h>

@@ -319,8 +319,7 @@ static void initNative(JNIEnv* env, jobject obj) {
   }
 
   if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(obj, sCallbacksField))) == nullptr) {
-    log::error("Failed to allocate Global Ref for Hearing Access Callbacks");
-    return;
+    log::fatal("Failed to allocate Global Ref for Hearing Access Callbacks");
   }
 
   android_bluetooth_BluetoothHapPresetInfo.clazz =
@@ -591,17 +590,13 @@ int register_com_android_bluetooth_hap_client(JNIEnv* env) {
           {"groupSetPresetNameNative", "(IILjava/lang/String;)V",
            reinterpret_cast<void*>(groupSetPresetNameNative)},
   };
-  const int result = REGISTER_NATIVE_METHODS(
-          env, "com/android/bluetooth/hap/HapClientNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/hap/HapClientNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
-  jclass jniHapClientNativeInterfaceClass =
-          env->FindClass("com/android/bluetooth/hap/HapClientNativeInterface");
-  sCallbacksField = env->GetFieldID(jniHapClientNativeInterfaceClass, "mHapClientNativeCallback",
-                                    "Lcom/android/bluetooth/hap/HapClientNativeCallback;");
-  env->DeleteLocalRef(jniHapClientNativeInterfaceClass);
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
 
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},

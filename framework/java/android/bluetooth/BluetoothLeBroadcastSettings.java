@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -30,11 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * This class contains the broadcast group settings information for this Broadcast Group.
- *
- * @hide
- */
+/** This class contains the broadcast group settings information for this Broadcast Group. */
+@Hide
 @SystemApi
 public final class BluetoothLeBroadcastSettings implements Parcelable {
     private final boolean mIsPublicBroadcast;
@@ -82,9 +80,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
     /**
      * Return {@code true} if this Broadcast Group is set to broadcast Public Broadcast Announcement
      * otherwise return {@code false}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean isPublicBroadcast() {
@@ -95,8 +92,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
      * Return the broadcast code for this Broadcast Group.
      *
      * @return Broadcast name for this Broadcast Group, null if no name provided
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable String getBroadcastName() {
@@ -115,8 +112,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
      *
      * @return Broadcast Code currently set for this broadcast group, null if code is not required
      *     or code is currently unknown
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getBroadcastCode() {
@@ -127,8 +124,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
      * Get public broadcast metadata for this Broadcast Group.
      *
      * @return public broadcast metadata for this Broadcast Group, null if no public metadata exists
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable BluetoothLeAudioContentMetadata getPublicBroadcastMetadata() {
@@ -139,29 +136,19 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
      * Get available subgroup settings in the broadcast group.
      *
      * @return list of subgroup settings in the broadcast group
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull List<BluetoothLeBroadcastSubgroupSettings> getSubgroupSettings() {
         return mSubgroupSettings;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeBoolean(mIsPublicBroadcast);
@@ -171,12 +158,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
         out.writeTypedList(mSubgroupSettings);
     }
 
-    /**
-     * A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastSettings} from parcel.
-     *
-     * @hide
-     */
-    @SystemApi @NonNull
+    /** A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastSettings} from parcel. */
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeBroadcastSettings> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeBroadcastSettings createFromParcel(@NonNull Parcel in) {
@@ -202,11 +185,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
                 }
             };
 
-    /**
-     * Builder for {@link BluetoothLeBroadcastSettings}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeBroadcastSettings}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private boolean mIsPublicBroadcast = false;
@@ -215,11 +195,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
         private BluetoothLeAudioContentMetadata mPublicBroadcastMetadata = null;
         private List<BluetoothLeBroadcastSubgroupSettings> mSubgroupSettings = new ArrayList<>();
 
-        /**
-         * Create an empty builder.
-         *
-         * @hide
-         */
+        /** Create an empty builder. */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -227,8 +204,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeBroadcastSettings original) {
             mIsPublicBroadcast = original.isPublicBroadcast();
@@ -243,8 +220,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          *
          * @param isPublicBroadcast whether the Public Broadcast is enabled
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPublicBroadcast(boolean isPublicBroadcast) {
@@ -263,8 +240,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          * @throws IllegalArgumentException if name is non-null and its length is less than 4
          *     characters or greater than 32 characters
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setBroadcastName(@Nullable String broadcastName) {
@@ -289,8 +266,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          * @throws IllegalArgumentException if name is non-null and its length is less than 4
          *     characters or greater than 16 characters
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setBroadcastCode(@Nullable byte[] broadcastCode) {
@@ -309,8 +286,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          * @param publicBroadcastMetadata public broadcast metadata for this Broadcast Group, null
          *     if no public meta data provided
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setPublicBroadcastMetadata(
@@ -324,8 +301,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          *
          * @param subgroupSettings contains subgroup's setting data
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder addSubgroupSettings(
@@ -339,8 +316,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          * Clear subgroup settings list so that one can reset the builder
          *
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder clearSubgroupSettings() {
@@ -353,8 +330,8 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
          *
          * @return {@link BluetoothLeBroadcastSettings}
          * @throws IllegalArgumentException if the object cannot be built
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastSettings build() {

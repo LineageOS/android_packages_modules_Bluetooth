@@ -16,6 +16,7 @@
 
 #define LOG_TAG "bt_bta_dm_sec"
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
@@ -54,6 +55,7 @@ static void bta_dm_ble_id_key_cback(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key
 static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result);
 static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr);
 static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr);
+static BtIoCap bta_dm_le_iocap_from_sysprop();
 
 /* bta security callback */
 const tBTM_APPL_INFO bta_security = {
@@ -613,7 +615,7 @@ static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result) {
   }
 }
 
-static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTM_OOB_DATA* p_oob_data,
+static void ble_io_req(const RawAddress& bd_addr, BtIoCap* p_io_cap, tBTM_OOB_DATA* p_oob_data,
                        tBTM_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
                        tBTM_LE_KEY_TYPE* p_init_key, tBTM_LE_KEY_TYPE* p_resp_key) {
   /* Retrieve the properties from file system if possible */
@@ -641,8 +643,17 @@ static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTM_OO
 
   btif_dm_set_oob_for_le_io_req(bd_addr, p_oob_data, p_auth_req);
 
-  if (bte_appl_cfg.ble_io_cap <= 4) {
-    *p_io_cap = static_cast<tBTM_IO_CAP>(bte_appl_cfg.ble_io_cap);
+  /* Override priority order:
+  * 1. Application config
+  * 2. System property
+  * The override value must be valid in order to be applied.
+  */
+  if (bte_appl_cfg.ble_io_cap <= kBtIoCapLeMax) {
+    *p_io_cap = static_cast<BtIoCap>(bte_appl_cfg.ble_io_cap);
+  } else {
+    if (com_android_bluetooth_flags_btm_iocaps_sysprop_override()) {
+      *p_io_cap = bta_dm_le_iocap_from_sysprop();
+    }
   }
 
   if (bte_appl_cfg.ble_init_key <= BTM_BLE_INITIATOR_KEY_SIZE) {
@@ -655,6 +666,34 @@ static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTM_OO
 
   if (bte_appl_cfg.ble_max_key_size > 7 && bte_appl_cfg.ble_max_key_size <= 16) {
     *p_max_key_size = bte_appl_cfg.ble_max_key_size;
+  }
+}
+
+/**
+ * Returns GAP IO capabilities if defined from system property, to be used for LE Pairing.
+ *
+ * For backwards compatibility, defaults to BtIoCap::KEYBOARD_DISPLAY if the system property value
+ * is invalid or undefined.
+ */
+static BtIoCap bta_dm_le_iocap_from_sysprop() {
+  std::optional<android::sysprop::bluetooth::Core::gap_io_capabilities_values> sysprop_value =
+          android::sysprop::bluetooth::Core::gap_io_capabilities();
+  if (!sysprop_value.has_value()) {
+    return BtIoCap::KEYBOARD_DISPLAY;
+  }
+  switch (sysprop_value.value()) {
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::NONE:
+      return BtIoCap::NO_INPUT_NO_OUTPUT;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_ONLY:
+      return BtIoCap::DISPLAY_ONLY;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::DISPLAY_YESNO:
+      return BtIoCap::DISPLAY_YES_NO;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_ONLY:
+      return BtIoCap::KEYBOARD_ONLY;
+    case android::sysprop::bluetooth::Core::gap_io_capabilities_values::KEYBOARD_DISPLAY:
+      return BtIoCap::KEYBOARD_DISPLAY;
+    default:
+      return BtIoCap::KEYBOARD_DISPLAY;
   }
 }
 

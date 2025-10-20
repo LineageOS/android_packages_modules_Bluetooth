@@ -209,7 +209,6 @@ TEST_F(PowerTelemetryTest, test_LogChannelDisconnected) {
   power_telemetry::GetInstance().LogChannelDisconnected(0, 0, 0, bdaddr);
   ASSERT_EQ(State::kDisconnected, ldc.channel_map[bdaddr].back().state);
 
-  RawAddress dummyAddr = RawAddress::FromString("00:00:00:00:00:11").value();
   power_telemetry::GetInstance().LogChannelDisconnected(0, 0, 0, bdaddr);
   ASSERT_EQ(1, (int)ldc.channel_map[bdaddr].size());
 }

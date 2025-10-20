@@ -35,6 +35,7 @@
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/sys/bta_sys.h"
 #include "bta_api_data_types.h"
+#include "btif_status.h"
 #include "hardware/bluetooth.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
@@ -84,17 +85,17 @@ void BTA_HfClientDisable(void) { bta_hf_client_api_disable(); }
  * Description      Opens up a RF connection to the remote device and
  *                  subsequently set it up for a HF SLC
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
+BtStatus BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
   log::verbose("");
   tBTA_HF_CLIENT_API_OPEN* p_buf =
           (tBTA_HF_CLIENT_API_OPEN*)osi_malloc(sizeof(tBTA_HF_CLIENT_API_OPEN));
 
   if (!bta_hf_client_allocate_handle(bd_addr, p_handle)) {
     log::error("could not allocate handle");
-    return BT_STATUS_NOMEM;
+    return BtifStatus(NOMEM);
   }
 
   p_buf->hdr.event = BTA_HF_CLIENT_API_OPEN_EVT;
@@ -102,7 +103,7 @@ bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
   p_buf->bd_addr = bd_addr;
 
   bta_sys_sendmsg(p_buf);
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************

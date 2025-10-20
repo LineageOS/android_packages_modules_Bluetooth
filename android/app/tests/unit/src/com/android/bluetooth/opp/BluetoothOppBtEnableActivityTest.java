@@ -18,6 +18,7 @@ package com.android.bluetooth.opp;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
@@ -31,7 +32,6 @@ import android.content.Context;
 import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -69,7 +69,6 @@ public class BluetoothOppBtEnableActivityTest {
     public void setUp() throws Exception {
         mIntent = new Intent();
         mIntent.setClass(sContext, BluetoothOppBtEnableActivity.class);
-
         Intents.init();
     }
 
@@ -84,13 +83,10 @@ public class BluetoothOppBtEnableActivityTest {
                 ActivityScenario.launch(mIntent)) {
             activityScenario.onActivity(
                     activity -> activity.mOppManager = mock(BluetoothOppManager.class));
-            onView(withText(sContext.getText(R.string.bt_enable_ok).toString()))
-                    .inRoot(isDialog())
-                    .perform(ViewActions.scrollTo());
-            onView(withText(sContext.getText(R.string.bt_enable_ok).toString()))
+            onView(withText(R.string.bt_enable_ok))
                     .inRoot(isDialog())
                     .check(matches(isDisplayed()))
-                    .perform(click());
+                    .perform(scrollTo(), click());
             intended(hasComponent(BluetoothOppBtEnablingActivity.class.getName()));
         }
     }

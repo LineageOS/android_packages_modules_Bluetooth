@@ -57,6 +57,8 @@ static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint
 static void bta_gatts_subrate_chg_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint16_t subrate_factor,
                                         uint16_t latency, uint16_t cont_num, uint16_t timeout,
                                         tGATT_STATUS status);
+static void bta_gatts_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
+                                                        uint32_t session_id, tGATT_STATUS status);
 
 static tGATT_CBACK bta_gatts_cback = {
         .p_conn_cb = bta_gatts_conn_cback,
@@ -69,6 +71,8 @@ static tGATT_CBACK bta_gatts_cback = {
         .p_phy_update_cb = bta_gatts_phy_update_cback,
         .p_conn_update_cb = bta_gatts_conn_update_cback,
         .p_subrate_chg_cb = bta_gatts_subrate_chg_cback,
+        .p_characteristics_unoffloaded_cb = bta_gatts_characteristics_unoffloaded_cback,
+        .p_offloaded_service_chg_cb = nullptr,
 };
 
 static tGATT_APPL_INFO bta_gatts_nv_cback = {bta_gatts_nv_save_cback, bta_gatts_nv_srv_chg_cback};
@@ -675,4 +679,19 @@ static void bta_gatts_cong_cback(tCONN_ID conn_id, bool congested) {
       (*p_rcb->p_cback)(BTA_GATTS_CONGEST_EVT, &cb_data);
     }
   }
+}
+
+static void bta_gatts_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
+                                                        uint32_t session_id, tGATT_STATUS status) {
+  tBTA_GATTS_RCB* p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
+  if (!p_reg || !p_reg->p_cback) {
+    log::error("server_if: {} not found", gatt_if);
+    return;
+  }
+
+  tBTA_GATTS cb_data;
+  cb_data.characteristics_unoffloaded.conn_id = conn_id;
+  cb_data.characteristics_unoffloaded.session_id = session_id;
+  cb_data.characteristics_unoffloaded.status = status;
+  (*p_reg->p_cback)(BTA_GATTS_CHARACTERISTICS_UNOFFLOADED_EVT, &cb_data);
 }

@@ -96,7 +96,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     private <T> T postFromBinder(Callable<T> callable) {
-        FutureTask<T> task = new FutureTask(callable);
+        FutureTask<T> task = new FutureTask<>(callable);
 
         mHandler.post(task);
         try {
@@ -366,8 +366,8 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        Log.d(TAG, "factoryReset(0)");
-        return postFromBinder(() -> mApi.factoryReset(0));
+        Log.d(TAG, "factoryReset()");
+        return postFromBinder(() -> mApi.factoryReset());
     }
 
     @Override

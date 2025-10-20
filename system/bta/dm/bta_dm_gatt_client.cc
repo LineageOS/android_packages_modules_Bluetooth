@@ -71,7 +71,7 @@ static gatt_interface_t default_gatt_interface = {
                    BtaAppRegisterCallback cb, bool eatt_support) {
                   gatt_history_.Push(std::format("{:<32s} eatt_support:{:c}", "GATTC_AppRegister",
                                                  eatt_support ? 'T' : 'F'));
-                  BTA_GATTC_AppRegister(name, p_client_cb, cb, eatt_support);
+                  BTA_GATTC_AppRegister(name, p_client_cb, std::move(cb), eatt_support);
                 },
         .BTA_GATTC_Close =
                 [](tCONN_ID conn_id) {

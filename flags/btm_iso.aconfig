@@ -1,0 +1,22 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "btm_iso_improve_canceling_iso"
+    namespace: "bluetooth"
+    description: "Improve canceling ISO stream"
+    bug: "450861974"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "btm_multi_client_support"
+    namespace: "bluetooth"
+    description: "Support multi iso client"
+    bug: "451535239"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

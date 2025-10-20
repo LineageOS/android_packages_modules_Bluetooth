@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -191,7 +192,7 @@ public final class ScanResult implements Parcelable, Attributable {
         return 0;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void setAttributionSource(@NonNull AttributionSource source) {
         Attributable.setAttributionSource(mDevice, source);
@@ -337,28 +338,16 @@ public final class ScanResult implements Parcelable, Attributable {
 
     @Override
     public String toString() {
-        return "ScanResult{"
-                + "device="
-                + mDevice
-                + ", scanRecord="
-                + Objects.toString(mScanRecord)
-                + ", rssi="
-                + mRssi
-                + ", timestampNanos="
-                + mTimestampNanos
-                + ", eventType="
-                + mEventType
-                + ", primaryPhy="
-                + mPrimaryPhy
-                + ", secondaryPhy="
-                + mSecondaryPhy
-                + ", advertisingSid="
-                + mAdvertisingSid
-                + ", txPower="
-                + mTxPower
-                + ", periodicAdvertisingInterval="
-                + mPeriodicAdvertisingInterval
-                + '}';
+        return ("ScanResult [" + "device=" + mDevice)
+                + (", scanRecord=" + Objects.toString(mScanRecord))
+                + (", rssi=" + mRssi)
+                + (", timestampNanos=" + mTimestampNanos)
+                + (", eventType=" + mEventType)
+                + (", primaryPhy=" + mPrimaryPhy)
+                + (", secondaryPhy=" + mSecondaryPhy)
+                + (", advertisingSid=" + mAdvertisingSid)
+                + (", txPower=" + mTxPower)
+                + (", periodicAdvertisingInterval=" + mPeriodicAdvertisingInterval + "]");
     }
 
     public static final @NonNull Parcelable.Creator<ScanResult> CREATOR =

@@ -86,6 +86,11 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
+  bthh_status_t status;
+} tBTA_HH_API_CLOSE;
+
+typedef struct {
+  BT_HDR_RIGID hdr;
   tAclLinkSpec link_spec;
   tBTA_HH_PROTO_MODE mode;
   bool direct;
@@ -125,9 +130,10 @@ typedef struct {
 typedef union {
   BT_HDR_RIGID hdr;
   tBTA_HH_API_CONN api_conn;
+  tBTA_HH_API_CLOSE api_close;
   tBTA_HH_CMD_DATA api_sndcmd;
   tBTA_HH_CBACK_DATA hid_cback;
-  tBTA_HH_STATUS status;
+  bthh_status_t status;
   tBTA_HH_MAINT_DEV api_maintdev;
   tBTA_HH_LE_CLOSE le_close;
   tBTA_GATTC_OPEN le_open;
@@ -210,7 +216,7 @@ typedef struct {
 #define BTA_HH_LE_DISC_SCPS 0x04
 
   uint8_t disc_active;
-  tBTA_HH_STATUS status;
+  bthh_status_t status;
   tBTM_STATUS btm_status;
   tBTA_HH_LE_HID_SRVC hid_srvc;
   tCONN_ID conn_id;
@@ -281,15 +287,15 @@ void bta_hh_add_device_to_list(tBTA_HH_DEV_CB* p_cb, uint8_t handle, uint16_t at
                                uint16_t max_latency, uint16_t min_tout, uint8_t app_id);
 void bta_hh_update_di_info(tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id, uint16_t product_id,
                            uint16_t version, uint8_t flag, uint8_t ctry_code);
-void bta_hh_cleanup_disable(tBTA_HH_STATUS status);
+void bta_hh_cleanup_disable(bthh_status_t status);
 
 /* action functions used outside state machine */
 void bta_hh_api_enable(tBTA_HH_CBACK* p_cback, bool enable_hid, bool enable_hogp);
 void bta_hh_api_disable(void);
 void bta_hh_disc_cmpl(void);
 
-tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
-                                     uint16_t* p_min_ssr_tout);
+bthh_status_t bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
+                                    uint16_t* p_min_ssr_tout);
 
 /* functions for LE HID */
 void bta_hh_le_enable(void);

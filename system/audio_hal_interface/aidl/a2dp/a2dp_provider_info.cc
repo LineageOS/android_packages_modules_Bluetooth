@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "AIDLA2dpProviderInfo"
+#define LOG_TAG "bluetooth-a2dp-aidl"
 
 #include "a2dp_provider_info.h"
 

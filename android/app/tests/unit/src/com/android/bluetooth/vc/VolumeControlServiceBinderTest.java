@@ -34,7 +34,6 @@ import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -49,7 +48,6 @@ import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /** Test cases for {@link VolumeControlServiceBinder}. */
 @SmallTest
@@ -67,7 +65,7 @@ public class VolumeControlServiceBinderTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+        return FlagsWrapper.progressionOf();
     }
 
     public VolumeControlServiceBinderTest(FlagsWrapper flags) {
@@ -84,12 +82,6 @@ public class VolumeControlServiceBinderTest {
                         })
                 .when(mService)
                 .post(any());
-        doAnswer(
-                        inv -> {
-                            return ((Function) inv.getArgument(0)).apply(mService);
-                        })
-                .when(mService)
-                .syncPost(any(), any());
         mBinder = new VolumeControlServiceBinder(mService);
     }
 

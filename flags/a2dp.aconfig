@@ -10,26 +10,6 @@ flag {
 }
 
 flag {
-    name: "avdt_wait_for_initial_delay_report_as_initiator"
-    namespace: "bluetooth"
-    description: "As signaling initiator wait for delay report for peer sink and only then send open command"
-    bug: "394553654"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_fmq_read_exact"
-    namespace: "bluetooth"
-    description: "Modify BluetoothAudioClientInterface::ReadAudioData to return the exact number bytes requested"
-    bug: "409124193"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_disconnect_reason_api"
     namespace: "bluetooth"
     description: "Define the extra parameter DISCONNECTED_REASON for a2dp.CONNECTION_STATE_CHANGED intent"
@@ -101,6 +81,16 @@ flag {
 }
 
 flag {
+    name: "synchronize_codec_preferences_and_priority"
+    namespace: "bluetooth"
+    description: "Resolve incorrect codec priority of mandatory codec"
+    bug: "438373657"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "a2dp_source_null_fixed_queue"
     namespace: "bluetooth"
     description: "Resolve race in btif_a2dp_source between start and shutdown"
@@ -108,4 +98,80 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "a2dp_adjust_sbc_bitpool"
+    namespace: "bluetooth"
+    description: "Correct invalid SBC bitpool values received from remote devices"
+    bug: "441146545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_reject_sho_request"
+    namespace: "bluetooth"
+    description: "Reject SHO request when rsp pending from active device"
+    bug: "440286060"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_delay_disconnect"
+    namespace: "bluetooth"
+    description: "Delay A2DP profile disconnection to fix interoperability issues"
+    bug: "440507683"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_cancel_acceptor_alarm_for_avdt_init"
+    namespace: "bluetooth"
+    description: "Cancel unnecessary timer for signalling as ACP"
+    bug: "440264270"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_clear_pending_status_before_binder_call"
+    namespace: "bluetooth"
+    description: "Clear the a2dp AIDL pending cmd status before performing a binder call"
+    bug: "448196961"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_source_metadata_changed"
+    namespace: "bluetooth"
+    description: "Optionally reconfigure the codec if the stream changes to gaming mode"
+    bug: "448710897"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_ldac_api"
+    namespace: "bluetooth"
+    description: "API change for LDAC codec"
+    is_exported: true
+    bug: "445909312"
+}
+
+flag {
+    name: "a2dp_create_codec_type_from_id_api"
+    namespace: "bluetooth"
+    description: "API change for BluetoothCodecType - create from codec ID"
+    is_exported: true
+    bug: "445930556"
 }

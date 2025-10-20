@@ -128,11 +128,9 @@ static void btif_storage_set_mode(RawAddress* remote_bd_addr) {
 }
 
 static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
-  if (com::android::bluetooth::flags::prevent_storage_access_without_gd_running()) {
-    if (!bluetooth::shim::is_gd_stack_started_up()) {
-      log::error("is_gd_stack_started_up=false");
-      return false;
-    }
+  if (!bluetooth::shim::is_gd_stack_started_up()) {
+    log::error("is_gd_stack_started_up=false");
+    return false;
   }
 
   std::string bdstr;
@@ -224,7 +222,11 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       value[prop->len] = '\0';
       btif_config_set_str(bdstr, BTIF_STORAGE_KEY_DIS_MODEL_NUM, value);
     } break;
-    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED:
+    case BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
+                          *reinterpret_cast<uint8_t*>(prop->val));
+      break;
+    case BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED:
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED,
                           *reinterpret_cast<uint8_t*>(prop->val));
       break;
@@ -241,11 +243,9 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 }
 
 static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
-  if (com::android::bluetooth::flags::prevent_storage_access_without_gd_running()) {
-    if (!bluetooth::shim::is_gd_stack_started_up()) {
-      log::error("is_gd_stack_started_up=false");
-      return false;
-    }
+  if (!bluetooth::shim::is_gd_stack_started_up()) {
+    log::error("is_gd_stack_started_up=false");
+    return false;
   }
 
   std::string bdstr;
@@ -400,7 +400,17 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       }
     } break;
 
-    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED: {
+    case BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED: {
+      int val;
+
+      if (prop->len >= static_cast<int>(sizeof(uint8_t))) {
+        ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
+                                  &val);
+        *reinterpret_cast<uint8_t*>(prop->val) = (uint8_t)val;
+      }
+    } break;
+
+    case BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED: {
       int val;
 
       if (prop->len >= static_cast<int>(sizeof(uint8_t))) {
@@ -636,7 +646,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     for (uint32_t i = 0; i < bonded_devices.num_devices; ++i) {
       bonded_devices_serialized.push_back(bonded_devices.devices[i].ToSerialized());
     }
-    property->len = bonded_devices.num_devices * bonded_devices_serialized.size();
+    property->len = bonded_devices_serialized.size() * sizeof(tBLE_BD_ADDR_SERIALIZED);
     memcpy(property->val, bonded_devices_serialized.data(), property->len);
 
     /* if there are no bonded_devices, then length shall be 0 */
@@ -849,7 +859,7 @@ bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) 
   btif_config_remove_device(bdstr);
 
   /* Check the length of the paired devices, and if 0 then reset IRK */
-  if (com::android::bluetooth::flags::btsec_cycle_irks()) {
+  if (com_android_bluetooth_flags_btsec_cycle_irks()) {
     auto paired_devices = btif_config_get_paired_devices();
     if (paired_devices.empty()) {
       btif_remove_local_irk_from_resolving_list();

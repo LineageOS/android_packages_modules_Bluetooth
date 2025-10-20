@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <unistd.h>
 
@@ -23,8 +24,6 @@
 #include <mutex>
 #include <queue>
 
-#include "common/bind.h"
-#include "common/callback.h"
 #include "os/handler.h"
 #include "os/linux_generic/reactive_semaphore.h"
 
@@ -35,7 +34,7 @@ namespace os {
 template <typename T>
 class IQueueEnqueue {
 public:
-  using EnqueueCallback = common::Callback<std::unique_ptr<T>()>;
+  using EnqueueCallback = base::RepeatingCallback<std::unique_ptr<T>()>;
   virtual ~IQueueEnqueue() = default;
   virtual void RegisterEnqueue(Handler* handler, EnqueueCallback callback) = 0;
   virtual void UnregisterEnqueue() = 0;
@@ -45,7 +44,7 @@ public:
 template <typename T>
 class IQueueDequeue {
 public:
-  using DequeueCallback = common::Callback<void()>;
+  using DequeueCallback = base::RepeatingCallback<void()>;
   virtual ~IQueueDequeue() = default;
   virtual void RegisterDequeue(Handler* handler, DequeueCallback callback) = 0;
   virtual void UnregisterDequeue() = 0;
@@ -72,10 +71,10 @@ public:
   // A function moving data from enqueue end buffer to queue, it will be continually be invoked
   // until queue is full. Enqueue end should make sure buffer isn't empty and UnregisterEnqueue when
   // buffer become empty.
-  using EnqueueCallback = common::Callback<std::unique_ptr<T>()>;
+  using EnqueueCallback = base::RepeatingCallback<std::unique_ptr<T>()>;
   // A function moving data form queue to dequeue end buffer, it will be continually be invoked
   // until queue is empty. TryDequeue should be use in this function to get data from queue.
-  using DequeueCallback = common::Callback<void()>;
+  using DequeueCallback = base::RepeatingCallback<void()>;
   // Create a queue with |capacity| is the maximum number of messages a queue can contain
   explicit Queue(size_t capacity);
   ~Queue();
@@ -132,8 +131,8 @@ public:
     std::lock_guard<std::mutex> lock(mutex_);
     buffer_.push(std::move(t));
     if (!enqueue_registered_.exchange(true)) {
-      queue_->RegisterEnqueue(
-              handler, common::Bind(&EnqueueBuffer<T>::enqueue_callback, common::Unretained(this)));
+      queue_->RegisterEnqueue(handler, base::BindRepeating(&EnqueueBuffer<T>::enqueue_callback,
+                                                           common::Unretained(this)));
     }
   }
 
@@ -148,7 +147,7 @@ public:
 
   auto Size() const { return buffer_.size(); }
 
-  void NotifyOnEmpty(common::OnceClosure callback) {
+  void NotifyOnEmpty(base::OnceClosure callback) {
     std::lock_guard<std::mutex> lock(mutex_);
     log::assert_that(callback_on_empty_.is_null(), "assert failed: callback_on_empty_.is_null()");
     callback_on_empty_ = std::move(callback);
@@ -172,7 +171,7 @@ private:
   IQueueEnqueue<T>* queue_;
   std::atomic_bool enqueue_registered_ = false;
   std::queue<std::unique_ptr<T>> buffer_;
-  common::OnceClosure callback_on_empty_;
+  base::OnceClosure callback_on_empty_;
 };
 
 template <typename T>
@@ -192,9 +191,9 @@ void Queue<T>::RegisterEnqueue(Handler* handler, EnqueueCallback callback) {
   enqueue_.handler_ = handler;
   enqueue_.reactable_ = enqueue_.handler_->thread_->GetReactor()->Register(
           enqueue_.reactive_semaphore_.GetFd(),
-          base::Bind(&Queue<T>::EnqueueCallbackInternal, base::Unretained(this),
-                     std::move(callback)),
-          base::Closure());
+          base::BindRepeating(&Queue<T>::EnqueueCallbackInternal, base::Unretained(this),
+                              std::move(callback)),
+          base::RepeatingClosure());
 }
 
 template <typename T>
@@ -228,7 +227,7 @@ void Queue<T>::RegisterDequeue(Handler* handler, DequeueCallback callback) {
   log::assert_that(dequeue_.reactable_ == nullptr, "assert failed: dequeue_.reactable_ == nullptr");
   dequeue_.handler_ = handler;
   dequeue_.reactable_ = dequeue_.handler_->thread_->GetReactor()->Register(
-          dequeue_.reactive_semaphore_.GetFd(), callback, base::Closure());
+          dequeue_.reactive_semaphore_.GetFd(), std::move(callback), base::RepeatingClosure());
 }
 
 template <typename T>

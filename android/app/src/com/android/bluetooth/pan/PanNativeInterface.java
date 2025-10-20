@@ -16,33 +16,25 @@
 
 package com.android.bluetooth.pan;
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothPan;
-import android.util.Log;
 
-import com.android.internal.annotations.VisibleForTesting;
+import com.android.bluetooth.profile.NativeInterface;
 
 /** Provides Bluetooth Pan native interface for the Pan service */
-public class PanNativeInterface {
-    private static final String TAG = PanNativeInterface.class.getSimpleName();
+public class PanNativeInterface extends NativeInterface<PanNativeCallback> {
 
-    private final PanService mPanService;
-
-    PanNativeInterface(PanService panService) {
-        mPanService = panService;
+    PanNativeInterface(PanNativeCallback nativeCallback) {
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initializeNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 
@@ -56,48 +48,6 @@ public class PanNativeInterface {
         requireNonNull(identityAddress);
         return disconnectPanNative(identityAddress);
     }
-
-    /**********************************************************************************************/
-    /*********************************** callbacks from native ************************************/
-    /**********************************************************************************************/
-
-    void onControlStateChanged(int localRole, int halState, int error, String ifname) {
-        mPanService.onControlStateChanged(localRole, convertHalState(halState), error, ifname);
-    }
-
-    void onConnectStateChanged(
-            byte[] address, int halState, int error, int localRole, int remoteRole) {
-        mPanService.onConnectStateChanged(
-                address, convertHalState(halState), error, localRole, remoteRole);
-    }
-
-    @VisibleForTesting
-    static int convertHalState(int halState) {
-        return switch (halState) {
-            case CONN_STATE_CONNECTED -> STATE_CONNECTED;
-            case CONN_STATE_CONNECTING -> STATE_CONNECTING;
-            case CONN_STATE_DISCONNECTED -> STATE_DISCONNECTED;
-            case CONN_STATE_DISCONNECTING -> STATE_DISCONNECTING;
-            default -> {
-                Log.e(TAG, "Invalid pan connection state: " + halState);
-                yield STATE_DISCONNECTED;
-            }
-        };
-    }
-
-    /**********************************************************************************************/
-    /******************************************* native *******************************************/
-    /**********************************************************************************************/
-
-    // Constants matching Hal header file bt_hh.h: bthh_connection_state_t
-
-    @VisibleForTesting static final int CONN_STATE_CONNECTED = 0;
-
-    @VisibleForTesting static final int CONN_STATE_CONNECTING = 1;
-
-    @VisibleForTesting static final int CONN_STATE_DISCONNECTED = 2;
-
-    @VisibleForTesting static final int CONN_STATE_DISCONNECTING = 3;
 
     private native void initializeNative();
 

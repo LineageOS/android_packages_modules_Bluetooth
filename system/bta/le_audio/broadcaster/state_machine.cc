@@ -241,6 +241,7 @@ public:
 
   static IBroadcastStateMachineCallbacks* callbacks_;
   static ::BleAdvertiserInterface* advertiser_if_;
+  static hci::iso_manager::IsoClientHandle client_handle_;
 
 private:
   std::optional<BigConfig> active_config_;
@@ -426,7 +427,8 @@ private:
                                                   : std::array<uint8_t, 16>({0}),
     };
 
-    IsoManager::GetInstance()->CreateBig(GetAdvertisingSid(), std::move(big_params));
+    IsoManager::GetInstance()->CreateBig(client_handle_, GetAdvertisingSid(),
+                                         std::move(big_params));
   }
 
   void DisableAnnouncement(void) {
@@ -508,16 +510,14 @@ private:
     }
   }
 
-  static void PrepareDataPath(hci_data_direction_t data_path_dir,
-                              uint8_t data_path_id,
+  static void PrepareDataPath(hci_data_direction_t data_path_dir, uint8_t data_path_id,
                               const std::vector<uint8_t>& data_path_config) {
-    if (!com::android::bluetooth::flags::
-            leaudio_broadcast_config_data_path_before_set_iso_data_path()) {
+    if (!com_android_bluetooth_flags_leaudio_broadcast_config_data_path_before_set_iso_data_path()) {
       log::debug("leaudio_broadcast_config_data_path_before_set_iso_data_path is not enabled");
       return;
     }
-    bluetooth::le_audio::CodecManager::GetInstance()->ConfigureDataPath(
-            data_path_dir, data_path_id, data_path_config);
+    bluetooth::le_audio::CodecManager::GetInstance()->ConfigureDataPath(data_path_dir, data_path_id,
+                                                                        data_path_config);
   }
 
   void TriggerIsoDatapathSetup(uint16_t conn_handle) {
@@ -547,8 +547,7 @@ private:
             .codec_conf = iso_datapath_config.configuration,
     };
 
-    PrepareDataPath(static_cast<hci_data_direction_t>(param.data_path_dir),
-                    param.data_path_id,
+    PrepareDataPath(static_cast<hci_data_direction_t>(param.data_path_dir), param.data_path_id,
                     sm_config_.config.data_path.dataPathConfig);
 
     IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, std::move(param));
@@ -569,17 +568,17 @@ private:
       case HCI_BLE_CREATE_BIG_CPL_EVT: {
         auto* evt = static_cast<big_create_cmpl_evt*>(data);
 
-        if (evt->big_id != GetAdvertisingSid()) {
-          log::error("State={}, Event={}, Unknown big, big_id={}", ToString(GetState()), event,
-                     evt->big_id);
+        if (evt->big_handle != GetAdvertisingSid()) {
+          log::error("State={}, Event={}, Unknown big, big_handle={}", ToString(GetState()), event,
+                     evt->big_handle);
           break;
         }
 
         if (evt->status == 0x00) {
-          log::info("BIG create BIG complete, big_id={}", evt->big_id);
+          log::info("BIG create BIG complete, big_handle={}", evt->big_handle);
           active_config_ = {
                   .status = evt->status,
-                  .big_id = evt->big_id,
+                  .big_handle = evt->big_handle,
                   .big_sync_delay = evt->big_sync_delay,
                   .transport_latency_big = evt->transport_latency_big,
                   .phy = evt->phy,
@@ -594,26 +593,27 @@ private:
 
           if (GetState() == BroadcastStateMachine::State::DISABLING ||
               GetState() == BroadcastStateMachine::State::STOPPING) {
-            log::info("Terminating BIG in state={}, big_id={}", ToString(GetState()), evt->big_id);
+            log::info("Terminating BIG in state={}, big_handle={}", ToString(GetState()),
+                      evt->big_handle);
             TerminateBig();
           } else {
             callbacks_->OnBigCreated(evt->conn_handles);
             TriggerIsoDatapathSetup(evt->conn_handles[0]);
           }
         } else {
-          log::error("State={} Event={}. Unable to create big, big_id={}, status={}",
-                     ToString(GetState()), event, evt->big_id, evt->status);
+          log::error("State={} Event={}. Unable to create big, big_handle={}, status={}",
+                     ToString(GetState()), event, evt->big_handle, evt->status);
         }
       } break;
       case HCI_BLE_TERM_BIG_CPL_EVT: {
         auto* evt = static_cast<big_terminate_cmpl_evt*>(data);
 
-        log::info("BIG terminate BIG cmpl in state={}, reason={} big_id={}", ToString(GetState()),
-                  evt->reason, evt->big_id);
+        log::info("BIG terminate BIG cmpl in state={}, reason={} big_handle={}",
+                  ToString(GetState()), evt->reason, evt->big_handle);
 
-        if (evt->big_id != GetAdvertisingSid()) {
+        if (evt->big_handle != GetAdvertisingSid()) {
           log::error("State={} Event={}, unknown adv.sid={}", ToString(GetState()), event,
-                     evt->big_id);
+                     evt->big_handle);
           break;
         }
 
@@ -642,6 +642,8 @@ private:
 
 IBroadcastStateMachineCallbacks* BroadcastStateMachineImpl::callbacks_ = nullptr;
 ::BleAdvertiserInterface* BroadcastStateMachineImpl::advertiser_if_ = nullptr;
+hci::iso_manager::IsoClientHandle BroadcastStateMachineImpl::client_handle_ =
+        hci::iso_manager::kInvalidIsoClientHandle;
 } /* namespace */
 
 std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(
@@ -650,8 +652,11 @@ std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(
 }
 
 void BroadcastStateMachine::Initialize(IBroadcastStateMachineCallbacks* callbacks,
-                                       AdvertisingCallbacks* adv_callbacks) {
+                                       AdvertisingCallbacks* adv_callbacks,
+                                       hci::iso_manager::IsoClientHandle client_handle) {
   BroadcastStateMachineImpl::callbacks_ = callbacks;
+  BroadcastStateMachineImpl::client_handle_ = client_handle;
+
   /* Get gd le advertiser interface */
   BroadcastStateMachineImpl::advertiser_if_ = bluetooth::shim::get_ble_advertiser_instance();
   if (BroadcastStateMachineImpl::advertiser_if_ != nullptr) {
@@ -685,7 +690,7 @@ std::ostream& operator<<(std::ostream& os,
                          const bluetooth::le_audio::broadcaster::BigConfig& config) {
   os << "\n";
   os << "        Status: 0x" << std::hex << +config.status << std::dec << "\n";
-  os << "        BIG ID: " << +config.big_id << "\n";
+  os << "        BIG ID: " << +config.big_handle << "\n";
   os << "        Sync delay: " << config.big_sync_delay << "\n";
   os << "        Transport Latency: " << config.transport_latency_big << "\n";
   os << "        Phy: " << +config.phy << "\n";

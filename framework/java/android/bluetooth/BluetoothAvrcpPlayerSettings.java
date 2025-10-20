@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
@@ -25,11 +26,8 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Class used to identify settings associated with the player on AG.
- *
- * @hide
- */
+/** Class used to identify settings associated with the player on AG. */
+@Hide
 public final class BluetoothAvrcpPlayerSettings implements Parcelable {
     private static final String TAG = BluetoothAvrcpPlayerSettings.class.getSimpleName();
 

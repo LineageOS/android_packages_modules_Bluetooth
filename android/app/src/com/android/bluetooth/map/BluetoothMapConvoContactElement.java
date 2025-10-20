@@ -30,7 +30,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothMapConvoContactElement
         implements Comparable<BluetoothMapConvoContactElement> {
     private static final String TAG = BluetoothMapConvoContactElement.class.getSimpleName();

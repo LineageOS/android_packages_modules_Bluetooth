@@ -47,18 +47,14 @@ class DckScanTest(
     // TODO(315852141): Include variations for two advertisements at the same time
     // TODO(303502437): Include variations for other callback types when supported in rootcanal
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    // Gives shell permissions during the test.
-    @Rule(order = 0) @JvmField val shellPermissionRule = AdoptShellPermissionsRule()
+    @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
 
-    // Setup a Bumble Pandora device for the duration of the test.
-    // Acting as a Pandora client, it can be interacted with through the Pandora APIs.
-    @Rule(order = 1) @JvmField val bumble = PandoraDevice()
+    @get:Rule(order = 1) val bumble = PandoraDevice()
 
-    // Test rule for common DCK test setup and teardown procedures, along with utility APIs.
     @get:Rule(order = 2)
-    public val dck =
+    val dck =
         DckTestRule(
             context,
             bumble,
@@ -67,7 +63,7 @@ class DckScanTest(
             isGattConnected = isGattConnected,
         )
 
-    @Rule(order = 3) @JvmField val enableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Test
     fun scanForIrkAndIdentityAddress_remoteFound() {

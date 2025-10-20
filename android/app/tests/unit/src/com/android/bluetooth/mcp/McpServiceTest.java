@@ -32,7 +32,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -60,9 +59,7 @@ public class McpServiceTest {
 
     @Before
     public void setUp() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-        }
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
         mMcpService = new McpService(mAdapterService, mMediaControlProfile);
         mMcpService.setAvailable(true);
     }
@@ -70,14 +67,6 @@ public class McpServiceTest {
     @After
     public void tearDown() {
         mMcpService.cleanup();
-        assertThat(McpService.getMcpService()).isNull();
-    }
-
-    @Test
-    public void testGetService() {
-        McpService mMcpServiceDuplicate = McpService.getMcpService();
-        assertThat(mMcpServiceDuplicate).isNotNull();
-        assertThat(mMcpServiceDuplicate).isSameInstanceAs(mMcpService);
     }
 
     @Test

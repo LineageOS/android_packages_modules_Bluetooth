@@ -19,7 +19,6 @@ package com.android.bluetooth.hearingaid;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -48,8 +47,8 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -66,9 +65,6 @@ public class HearingAidService extends ConnectableProfile {
 
     // Upper limit of all HearingAid devices: Bonded or Connected
     private static final int MAX_HEARING_AID_STATE_MACHINES = 10;
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static HearingAidService sHearingAidService;
 
     private final HearingAidNativeInterface mNativeInterface;
     private final AudioManager mAudioManager;
@@ -109,13 +105,12 @@ public class HearingAidService extends ConnectableProfile {
             mStateMachinesThread = null;
             mStateMachinesLooper = looper;
         }
+        var nativeCallback = new HearingAidNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface,
-                        () -> new HearingAidNativeInterface(mAdapterService, this));
+                        nativeInterface, () -> new HearingAidNativeInterface(nativeCallback));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
-        setHearingAidService(this);
         mNativeInterface.init();
     }
 
@@ -134,9 +129,6 @@ public class HearingAidService extends ConnectableProfile {
 
         // Cleanup native interface
         mNativeInterface.cleanup();
-
-        // Mark service as stopped
-        setHearingAidService(null);
 
         // Destroy state machines and stop handler thread
         synchronized (mStateMachines) {
@@ -167,32 +159,6 @@ public class HearingAidService extends ConnectableProfile {
     }
 
     /**
-     * Get the HearingAidService instance
-     *
-     * @return HearingAidService instance
-     */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized HearingAidService getHearingAidService() {
-        if (sHearingAidService == null) {
-            Log.w(TAG, "getHearingAidService(): service is NULL");
-            return null;
-        }
-
-        if (!sHearingAidService.isAvailable()) {
-            Log.w(TAG, "getHearingAidService(): service is not available");
-            return null;
-        }
-        return sHearingAidService;
-    }
-
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    static synchronized void setHearingAidService(HearingAidService instance) {
-        Log.d(TAG, "setHearingAidService(): set to: " + instance);
-        sHearingAidService = instance;
-    }
-
-    /**
      * Connects the hearing aid profile to the passed in device
      *
      * @param device is the device with which we will connect the hearing aid profile
@@ -201,20 +167,10 @@ public class HearingAidService extends ConnectableProfile {
     @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            requireNonNull(device);
+        requireNonNull(device);
 
-            if (!okToConnect(device)) {
-                return false;
-            }
-        } else {
-            if (device == null) {
-                return false;
-            }
-
-            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
-                return false;
-            }
+        if (!okToConnect(device)) {
+            return false;
         }
 
         final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
@@ -325,35 +281,6 @@ public class HearingAidService extends ConnectableProfile {
     public boolean isConnectedPeerDevices(BluetoothDevice device) {
         long hiSyncId = getHiSyncId(device);
         if (getConnectedPeerDevices(hiSyncId).isEmpty()) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Check whether can connect to a peer device. The check considers a number of factors during
-     * the evaluation.
-     *
-     * @param device the peer device to connect to
-     * @return true if connection is allowed, otherwise false
-     */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    @Override
-    public boolean okToConnect(BluetoothDevice device) {
-        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-            return super.okToConnect(device);
-        }
-        // Check if this is an incoming connection in Quiet mode.
-        if (mAdapterService.isQuietModeEnabled()) {
-            Log.e(TAG, "okToConnect: cannot connect to " + device + " : quiet mode enabled");
-            return false;
-        }
-        // Check connection policy and accept or reject the connection.
-        int connectionPolicy = getConnectionPolicy(device);
-        if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
-                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            // Otherwise, reject the connection if connectionPolicy is not valid.
-            Log.w(TAG, "okToConnect: return false, connectionPolicy=" + connectionPolicy);
             return false;
         }
         return true;

@@ -2,58 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "allow_switching_hid_and_hogp"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Allow switching between HID and HOGP supported on the same device"
-    bug: "320762367"
-}
-
-flag {
-    name: "early_incoming_hid_connection"
-    namespace: "bluetooth"
-    description: "Allow early incoming HID connection"
-    bug: "398105207"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hh_state_update_race_fix"
     namespace: "bluetooth"
     description: "Fix stuck in connecting state due to race when updating state"
     bug: "403420458"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "simpler_hid_connection_policy"
-    namespace: "bluetooth"
-    description: "Simplify native HID host connection policy enforcement"
-    bug: "404590499"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "hogp_encryption_collision"
-    namespace: "bluetooth"
-    description: "HOGP host may not be able to proceed with connection if the link is getting encrypted"
-    bug: "405437978"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "reconnect_on_hogp_connection_failure"
-    namespace: "bluetooth"
-    description: "Put the added HOGP device in the background connection list if the connection attempt failed"
-    bug: "406399172"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -74,6 +26,86 @@ flag {
     namespace: "bluetooth"
     description: "Allow background connection requests to be upgraded to direct connections"
     bug: "430179438"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reset_state_when_removing_non_connected_hid_device"
+    namespace: "bluetooth"
+    description: "When removing a not-yet-connected HID device, set conn_state to UNUSED and CID to 0"
+    bug: "441425948"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hidh_close_in_jni_thread"
+    namespace: "bluetooth"
+    description: "Handle incoming HID connection timeout in JNI thread"
+    bug: "441661424"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hidd_handle_set_protocol_before_interrupt_connected"
+    namespace: "bluetooth"
+    description: "Handle incoming SET_PROTOCOL command even when the host hasn't established the interrupt channel"
+    bug: "442379143"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hidd_bump_version_to_111"
+    namespace: "bluetooth"
+    description: "Set HID Device version to v1.1.1 on SDP record"
+    bug: "443625090"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hid_connection_timeout_in_jni_thread"
+    namespace: "bluetooth"
+    description: "Handle incoming HID connection timeout in JNI thread"
+    bug: "440091360"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hid_dont_reconnect_on_uhid_timeout"
+    namespace: "bluetooth"
+    description: "Set connection policy off if we timed out waiting for uhid open"
+    bug: "445363297"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hogp_mtu_exchange"
+    namespace: "bluetooth"
+    description: "HOGP host must exchange ATT MTU on GATT connection"
+    bug: "444476206"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hogp_fix_reconnection"
+    namespace: "bluetooth"
+    description: "Always remove background connection when hogp disconnected so it can be re-armed later"
+    bug: "444365103"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

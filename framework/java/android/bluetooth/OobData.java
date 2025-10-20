@@ -15,6 +15,7 @@ package android.bluetooth;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -49,47 +50,45 @@ import java.lang.annotation.RetentionPolicy;
  *
  * <p>Simplified Tag Format for Single BT Carrier: Bluetooth OOB Data Record: - OOB Data Length -
  * Device Address - Class of Device - Service Class UUID - Bluetooth Local Name
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class OobData implements Parcelable {
     private static final String TAG = OobData.class.getSimpleName();
 
-    /** The {@link OobData#mClassicLength} may be. (AD 3.1.1) (CSS 1.6.2) @hide */
-    @SystemApi public static final int OOB_LENGTH_OCTETS = 2;
+    /** The {@link OobData#mClassicLength} may be. (AD 3.1.1) (CSS 1.6.2) */
+    @Hide @SystemApi public static final int OOB_LENGTH_OCTETS = 2;
 
     /**
      * The length for the {@link OobData#mDeviceAddressWithType}(6) and Address Type(1). (AD 3.1.2)
      * (CSS 1.6.2)
-     *
-     * @hide
      */
-    @SystemApi public static final int DEVICE_ADDRESS_OCTETS = 7;
+    @Hide @SystemApi public static final int DEVICE_ADDRESS_OCTETS = 7;
 
-    /** The Class of Device is 3 octets. (AD 3.1.3) (CSS 1.6.2) @hide */
-    @SystemApi public static final int CLASS_OF_DEVICE_OCTETS = 3;
+    /** The Class of Device is 3 octets. (AD 3.1.3) (CSS 1.6.2) */
+    @Hide @SystemApi public static final int CLASS_OF_DEVICE_OCTETS = 3;
 
-    /** The Confirmation data must be 16 octets. (AD 3.2.2) (CSS 1.6.2) @hide */
-    @SystemApi public static final int CONFIRMATION_OCTETS = 16;
+    /** The Confirmation data must be 16 octets. (AD 3.2.2) (CSS 1.6.2) */
+    @Hide @SystemApi public static final int CONFIRMATION_OCTETS = 16;
 
-    /** The Randomizer data must be 16 octets. (AD 3.2.3) (CSS 1.6.2) @hide */
-    @SystemApi public static final int RANDOMIZER_OCTETS = 16;
+    /** The Randomizer data must be 16 octets. (AD 3.2.3) (CSS 1.6.2) */
+    @Hide @SystemApi public static final int RANDOMIZER_OCTETS = 16;
 
-    /** The LE Device Role length is 1 octet. (AD 3.3.2) (CSS 1.17) @hide */
-    @SystemApi public static final int LE_DEVICE_ROLE_OCTETS = 1;
+    /** The LE Device Role length is 1 octet. (AD 3.3.2) (CSS 1.17) */
+    @Hide @SystemApi public static final int LE_DEVICE_ROLE_OCTETS = 1;
 
-    /** The {@link OobData#mLeTemporaryKey} length. (3.4.1) @hide */
-    @SystemApi public static final int LE_TK_OCTETS = 16;
+    /** The {@link OobData#mLeTemporaryKey} length. (3.4.1) */
+    @Hide @SystemApi public static final int LE_TK_OCTETS = 16;
 
-    /** The {@link OobData#mLeAppearance} length. (3.4.1) @hide */
-    @SystemApi public static final int LE_APPEARANCE_OCTETS = 2;
+    /** The {@link OobData#mLeAppearance} length. (3.4.1) */
+    @Hide @SystemApi public static final int LE_APPEARANCE_OCTETS = 2;
 
-    /** The {@link OobData#mLeFlags} length. (3.4.1) @hide */
-    @SystemApi public static final int LE_DEVICE_FLAG_OCTETS = 1; // 1 octet to hold the 0-4 value.
+    /** The {@link OobData#mLeFlags} length. (3.4.1) */
+    @Hide @SystemApi
+    public static final int LE_DEVICE_FLAG_OCTETS = 1; // 1 octet to hold the 0-4 value.
 
     // Le Roles
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"LE_DEVICE_ROLE_"},
@@ -101,20 +100,16 @@ public final class OobData implements Parcelable {
             })
     public @interface LeRole {}
 
-    /** @hide */
-    @SystemApi public static final int LE_DEVICE_ROLE_PERIPHERAL_ONLY = 0x00;
+    @Hide @SystemApi public static final int LE_DEVICE_ROLE_PERIPHERAL_ONLY = 0x00;
 
-    /** @hide */
-    @SystemApi public static final int LE_DEVICE_ROLE_CENTRAL_ONLY = 0x01;
+    @Hide @SystemApi public static final int LE_DEVICE_ROLE_CENTRAL_ONLY = 0x01;
 
-    /** @hide */
-    @SystemApi public static final int LE_DEVICE_ROLE_BOTH_PREFER_PERIPHERAL = 0x02;
+    @Hide @SystemApi public static final int LE_DEVICE_ROLE_BOTH_PREFER_PERIPHERAL = 0x02;
 
-    /** @hide */
-    @SystemApi public static final int LE_DEVICE_ROLE_BOTH_PREFER_CENTRAL = 0x03;
+    @Hide @SystemApi public static final int LE_DEVICE_ROLE_BOTH_PREFER_CENTRAL = 0x03;
 
     // Le Flags
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"LE_FLAG_"},
@@ -127,27 +122,21 @@ public final class OobData implements Parcelable {
             })
     public @interface LeFlag {}
 
-    /** @hide */
-    @SystemApi public static final int LE_FLAG_LIMITED_DISCOVERY_MODE = 0x00;
+    @Hide @SystemApi public static final int LE_FLAG_LIMITED_DISCOVERY_MODE = 0x00;
 
-    /** @hide */
-    @SystemApi public static final int LE_FLAG_GENERAL_DISCOVERY_MODE = 0x01;
+    @Hide @SystemApi public static final int LE_FLAG_GENERAL_DISCOVERY_MODE = 0x01;
 
-    /** @hide */
-    @SystemApi public static final int LE_FLAG_BREDR_NOT_SUPPORTED = 0x02;
+    @Hide @SystemApi public static final int LE_FLAG_BREDR_NOT_SUPPORTED = 0x02;
 
-    /** @hide */
-    @SystemApi public static final int LE_FLAG_SIMULTANEOUS_CONTROLLER = 0x03;
+    @Hide @SystemApi public static final int LE_FLAG_SIMULTANEOUS_CONTROLLER = 0x03;
 
-    /** @hide */
-    @SystemApi public static final int LE_FLAG_SIMULTANEOUS_HOST = 0x04;
+    @Hide @SystemApi public static final int LE_FLAG_SIMULTANEOUS_HOST = 0x04;
 
     /**
      * Builds an {@link OobData} object and validates that the required combination of values are
      * present to create the LE specific OobData type.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     public static final class LeBuilder {
 
@@ -185,8 +174,8 @@ public final class OobData implements Parcelable {
          * @param deviceName byte array representing the name, may be 0 in length, not null.
          * @return {@link OobData#ClassicBuilder}
          * @throws NullPointerException if deviceName is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull LeBuilder setDeviceName(@NonNull byte[] deviceName) {
@@ -266,8 +255,8 @@ public final class OobData implements Parcelable {
          *     Central Preferred 0x04 - 0xFF Reserved
          * @throws IllegalArgumentException if any of the values fail to be set.
          * @throws NullPointerException if any argument is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         public LeBuilder(
                 @NonNull byte[] confirmationHash,
@@ -304,8 +293,8 @@ public final class OobData implements Parcelable {
          * @return {@link OobData#Builder}
          * @throws IllegalArgumentException if the leTemporaryKey is an invalid format.
          * @throws NullPointerException if leTemporaryKey is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull LeBuilder setLeTemporaryKey(@NonNull byte[] leTemporaryKey) {
@@ -324,8 +313,8 @@ public final class OobData implements Parcelable {
          *     Also, randomizerHash may be all 0s or null in which case it becomes all 0s.
          * @throws IllegalArgumentException if null or incorrect length randomizerHash was passed.
          * @throws NullPointerException if randomizerHash is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull LeBuilder setRandomizerHash(@NonNull byte[] randomizerHash) {
@@ -352,8 +341,8 @@ public final class OobData implements Parcelable {
          *     LE_FLAG_SIMULTANEOUS_HOST} Simultaneous LE and BR/EDR to Same Device Capable (Host).
          *     Bit 55 of LMP Feature Mask Definitions. 0x05- 0x07 Reserved
          * @throws IllegalArgumentException for invalid flag
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull LeBuilder setLeFlags(@LeFlag int leFlags) {
@@ -369,8 +358,8 @@ public final class OobData implements Parcelable {
          *
          * @return {@link OobData} with given builder values
          * @throws IllegalStateException if either of the 2 required fields were not set.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull OobData build() {
@@ -395,9 +384,8 @@ public final class OobData implements Parcelable {
     /**
      * Builds an {@link OobData} object and validates that the required combination of values are
      * present to create the Classic specific OobData type.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     public static final class ClassicBuilder {
         // Used by both Classic and LE
@@ -406,18 +394,15 @@ public final class OobData implements Parcelable {
          *
          * <p>It should be noted that on passive NFC this isn't possible as the data is static and
          * immutable.
-         *
-         * @hide
          */
-        private byte[] mConfirmationHash = null;
+        @Hide private byte[] mConfirmationHash = null;
 
         /**
          * Optional, but adds more validity to the pairing.
          *
          * <p>If not present a value of 0 is assumed.
-         *
-         * @hide
          */
+        @Hide
         private byte[] mRandomizerHash =
                 new byte[] {
                     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
@@ -428,10 +413,8 @@ public final class OobData implements Parcelable {
          * The Bluetooth Device user-friendly name presented over Bluetooth Technology.
          *
          * <p>This is the name that may be displayed to the device user as part of the UI.
-         *
-         * @hide
          */
-        private byte[] mDeviceName = null;
+        @Hide private byte[] mDeviceName = null;
 
         /**
          * This length value provides the absolute length of total OOB data block used for Bluetooth
@@ -441,10 +424,8 @@ public final class OobData implements Parcelable {
          * Address.
          *
          * <p>The minimum length that may be represented in this field is 8.
-         *
-         * @hide
          */
-        private final byte[] mClassicLength;
+        @Hide private final byte[] mClassicLength;
 
         /**
          * The Bluetooth Device Address is the address to which the OOB data belongs.
@@ -454,10 +435,8 @@ public final class OobData implements Parcelable {
          * <p>Address is encoded in Little Endian order.
          *
          * <p>e.g. 00:01:02:03:04:05 would be x05x04x03x02x01x00
-         *
-         * @hide
          */
-        private final byte[] mDeviceAddressWithType;
+        @Hide private final byte[] mDeviceAddressWithType;
 
         /**
          * Class of Device information is to be used to provide a graphical representation to the
@@ -466,10 +445,8 @@ public final class OobData implements Parcelable {
          * <p>This is not to be used to determine a particular service can be used.
          *
          * <p>The length MUST be {@link OobData#CLASS_OF_DEVICE_OCTETS} octets.
-         *
-         * @hide
          */
-        private byte[] mClassOfDevice = null;
+        @Hide private byte[] mClassOfDevice = null;
 
         /**
          * Main creation method for creating a Classic version of {@link OobData}.
@@ -486,8 +463,8 @@ public final class OobData implements Parcelable {
          *     that owns the OOB data. (i.e. the originator) [6 octets]
          * @throws IllegalArgumentException if any of the values fail to be set.
          * @throws NullPointerException if any argument is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         public ClassicBuilder(
                 @NonNull byte[] confirmationHash,
@@ -523,8 +500,8 @@ public final class OobData implements Parcelable {
          *     Also, randomizerHash may be all 0s or null in which case it becomes all 0s.
          * @throws IllegalArgumentException if null or incorrect length randomizerHash was passed.
          * @throws NullPointerException if randomizerHash is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull ClassicBuilder setRandomizerHash(@NonNull byte[] randomizerHash) {
@@ -547,8 +524,8 @@ public final class OobData implements Parcelable {
          * @param deviceName byte array representing the name, may be 0 in length, not null.
          * @return {@link OobData#ClassicBuilder}
          * @throws NullPointerException if deviceName is null
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull ClassicBuilder setDeviceName(@NonNull byte[] deviceName) {
@@ -569,8 +546,8 @@ public final class OobData implements Parcelable {
          * @throws IllegalArgumentException if length is not equal to {@link
          *     OobData#CLASS_OF_DEVICE_OCTETS} octets.
          * @throws NullPointerException if classOfDevice is null.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull ClassicBuilder setClassOfDevice(@NonNull byte[] classOfDevice) {
@@ -589,8 +566,8 @@ public final class OobData implements Parcelable {
          * Validates and builds the {@link OobData} object for Classic Security.
          *
          * @return {@link OobData} with previously given builder values.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull OobData build() {
@@ -655,8 +632,8 @@ public final class OobData implements Parcelable {
      *     octets long with a 1 octet address type associated with the address.
      *     <p>For classic this will be 6 byte address plus the default of PUBLIC_ADDRESS Address
      *     Type. For LE there are more choices for Address Type.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull byte[] getDeviceAddressWithType() {
@@ -666,8 +643,8 @@ public final class OobData implements Parcelable {
     /**
      * @return byte array representing the confirmationHash value which is used to confirm the
      *     identity to the controller.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull byte[] getConfirmationHash() {
@@ -677,8 +654,8 @@ public final class OobData implements Parcelable {
     /**
      * @return byte array representing the randomizerHash value which is used to verify the identity
      *     of the controller.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull byte[] getRandomizerHash() {
@@ -688,8 +665,8 @@ public final class OobData implements Parcelable {
     /**
      * @return Device Name used for displaying name in UI.
      *     <p>Also, this will be populated with the LE Local Name if the data is for LE.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getDeviceName() {
@@ -699,8 +676,8 @@ public final class OobData implements Parcelable {
     /**
      * @return byte array representing the oob data length which is the length of all of the data
      *     including these octets.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull byte[] getClassicLength() {
@@ -710,8 +687,8 @@ public final class OobData implements Parcelable {
     /**
      * @return byte array representing the class of device for UI display.
      *     <p>Does not indicate services available; for display only.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull byte[] getClassOfDevice() {
@@ -720,8 +697,8 @@ public final class OobData implements Parcelable {
 
     /**
      * @return Temporary Key used for LE pairing.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getLeTemporaryKey() {
@@ -731,8 +708,8 @@ public final class OobData implements Parcelable {
     /**
      * @return Appearance used for LE pairing. For use in UI situations when determining what sort
      *     of icons or text to display regarding the device.
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @Nullable byte[] getLeAppearance() {
@@ -748,8 +725,8 @@ public final class OobData implements Parcelable {
      *     Device Capable (Controller). Bit 49 of LMP Feature Mask Definitions. {@link
      *     LE_FLAG_SIMULTANEOUS_HOST} Simultaneous LE and BR/EDR to Same Device Capable (Host). Bit
      *     55 of LMP Feature Mask Definitions. <b>0x05- 0x07 Reserved</b>
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @LeFlag int getLeFlags() {
@@ -763,8 +740,8 @@ public final class OobData implements Parcelable {
      *     LE_DEVICE_ROLE_BOTH_PREFER_PERIPHERAL} Central & Peripheral supported; Peripheral
      *     Preferred {@link LE_DEVICE_ROLE_BOTH_PREFER_CENTRAL} Only peripheral supported; Central
      *     Preferred 0x04 - 0xFF Reserved
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @LeRole int getLeDeviceRole() {
@@ -811,13 +788,11 @@ public final class OobData implements Parcelable {
         mLeFlags = in.readInt();
     }
 
-    /** @hide */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /** @hide */
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {
         // Both
@@ -859,10 +834,6 @@ public final class OobData implements Parcelable {
                 }
             };
 
-    /**
-     * @return a {@link String} representation of the OobData object.
-     * @hide
-     */
     @Override
     public String toString() {
         return "OobData: \n\t"

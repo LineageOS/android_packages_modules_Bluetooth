@@ -285,7 +285,7 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
     do_in_main_thread(Bind(&LeAudioClient::SetInCall, Unretained(LeAudioClient::Get()), in_call));
   }
 
-  void SetUnicastMonitorMode(uint8_t direction, bool enable) {
+  void SetUnicastMonitorMode(uint8_t local_directions, bool enable) {
     log::verbose("enable: {}", enable);
     if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
       log::verbose(
@@ -295,7 +295,7 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
     }
 
     do_in_main_thread(Bind(&LeAudioClient::SetUnicastMonitorMode, Unretained(LeAudioClient::Get()),
-                           direction, enable));
+                           local_directions, enable));
   }
 
   void SendAudioProfilePreferences(int group_id, bool is_output_preference_le_audio,
@@ -326,6 +326,18 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
     do_in_main_thread(Bind(&LeAudioClient::SetGroupAllowedContextMask,
                            Unretained(LeAudioClient::Get()), group_id, sink_context_types,
                            source_context_types));
+  }
+
+  void GroupConfirmActive(int group_id) {
+    if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
+      log::verbose(
+              "call ignored, due to already started cleanup procedure or service "
+              "being not read");
+      return;
+    }
+
+    do_in_main_thread(
+            Bind(&LeAudioClient::GroupConfirmActive, Unretained(LeAudioClient::Get()), group_id));
   }
 
 private:

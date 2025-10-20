@@ -52,15 +52,6 @@ template <>
 struct formatter<bt_discovery_state_t> : enum_formatter<bt_discovery_state_t> {};
 }  // namespace std
 
-static Uuid from_java_uuid(jlong uuid_msb, jlong uuid_lsb) {
-  std::array<uint8_t, Uuid::kNumBytes128> uu;
-  for (int i = 0; i < 8; i++) {
-    uu[7 - i] = (uuid_msb >> (8 * i)) & 0xFF;
-    uu[15 - i] = (uuid_lsb >> (8 * i)) & 0xFF;
-  }
-  return Uuid::From128BitBE(uu);
-}
-
 namespace {
 tBT_TRANSPORT to_bt_transport(jint val) {
   switch (val) {
@@ -85,7 +76,6 @@ namespace android {
 #define BLE_ADDR_RANDOM 0x01
 
 const jint INVALID_FD = -1;
-const jint INVALID_CID = -1;
 
 static jmethodID method_oobDataReceivedCallback;
 static jmethodID method_stateChangeCallback;
@@ -1414,8 +1404,7 @@ static jboolean createBondOutOfBandNative(JNIEnv* env, jobject /* obj */, jbyteA
     return JNI_FALSE;
   }
 
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   // Convert P192 data from Java POJO to C Struct
@@ -1746,15 +1735,9 @@ static jbyteArray obfuscateAddressNative(JNIEnv* env, jobject /* obj */, jbyteAr
   if (!sBluetoothInterface) {
     return env->NewByteArray(0);
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return env->NewByteArray(0);
-  }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-  std::string output = sBluetoothInterface->obfuscate_address(addr_obj);
+
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  std::string output = sBluetoothInterface->obfuscate_address(bd_addr);
   jsize output_size = output.size() * sizeof(char);
   jbyteArray output_bytes = env->NewByteArray(output_size);
   env->SetByteArrayRegion(output_bytes, 0, output_size,
@@ -1884,15 +1867,8 @@ static int getMetricIdNative(JNIEnv* env, jobject /* obj */, jbyteArray address)
   if (!sBluetoothInterface) {
     return 0;  // 0 is invalid id
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return 0;
-  }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-  return sBluetoothInterface->get_metric_id(addr_obj);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  return sBluetoothInterface->get_metric_id(bd_addr);
 }
 
 static jboolean allowLowLatencyAudioNative(JNIEnv* env, jobject /* obj */, jboolean allowed,
@@ -1901,16 +1877,9 @@ static jboolean allowLowLatencyAudioNative(JNIEnv* env, jobject /* obj */, jbool
   if (!sBluetoothInterface) {
     return false;
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return false;
-  }
 
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-  sBluetoothInterface->allow_low_latency_audio(allowed, addr_obj);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sBluetoothInterface->allow_low_latency_audio(allowed, bd_addr);
   return true;
 }
 
@@ -1920,14 +1889,6 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
   if (!sBluetoothInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
 
   if (value == NULL) {
     log::error("metadataChangedNative() ignoring NULL array");
@@ -1940,11 +1901,12 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
     return;
   }
 
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   std::vector<uint8_t> val_vec(reinterpret_cast<uint8_t*>(p_value),
                                reinterpret_cast<uint8_t*>(p_value + len));
   env->ReleaseByteArrayElements(value, p_value, 0);
 
-  sBluetoothInterface->metadata_changed(addr_obj, key, std::move(val_vec));
+  sBluetoothInterface->metadata_changed(bd_addr, key, std::move(val_vec));
   return;
 }
 
@@ -2083,36 +2045,6 @@ static jboolean pbapPseDynamicVersionUpgradeIsEnabledNative(JNIEnv* /* env */, j
   return JNI_FALSE;
 }
 
-static jint getSocketL2capLocalChannelIdNative(JNIEnv* /* env */, jobject /* obj */,
-                                               jlong conn_uuid_lsb, jlong conn_uuid_msb) {
-  log::verbose("");
-
-  if (!sBluetoothSocketInterface) {
-    return INVALID_CID;
-  }
-  uint16_t cid;
-  Uuid uuid = from_java_uuid(conn_uuid_msb, conn_uuid_lsb);
-  if (sBluetoothSocketInterface->get_l2cap_local_cid(uuid, &cid) != BT_STATUS_SUCCESS) {
-    return INVALID_CID;
-  }
-  return (jint)cid;
-}
-
-static jint getSocketL2capRemoteChannelIdNative(JNIEnv* /* env */, jobject /* obj */,
-                                                jlong conn_uuid_lsb, jlong conn_uuid_msb) {
-  log::verbose("");
-
-  if (!sBluetoothSocketInterface) {
-    return INVALID_CID;
-  }
-  uint16_t cid;
-  Uuid uuid = from_java_uuid(conn_uuid_msb, conn_uuid_lsb);
-  if (sBluetoothSocketInterface->get_l2cap_remote_cid(uuid, &cid) != BT_STATUS_SUCCESS) {
-    return INVALID_CID;
-  }
-  return (jint)cid;
-}
-
 static jboolean setDefaultEventMaskExceptNative(JNIEnv* /* env */, jobject /* obj */, jlong mask,
                                                 jlong le_mask) {
   log::verbose("");
@@ -2166,16 +2098,8 @@ static jboolean disconnectAclNative(JNIEnv* env, jobject /* obj */, jbyteArray a
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (addr == nullptr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
-  env->ReleaseByteArrayElements(address, addr, 0);
-
-  return sBluetoothInterface->disconnect_acl(addr_obj, transport);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  return sBluetoothInterface->disconnect_acl(bd_addr, transport);
 }
 
 static jboolean allowWakeByHidNative(JNIEnv* /* env */, jobject /* obj */) {
@@ -2255,10 +2179,6 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
            reinterpret_cast<void*>(getRemotePbapPceVersionNative)},
           {"pbapPseDynamicVersionUpgradeIsEnabledNative", "()Z",
            reinterpret_cast<void*>(pbapPseDynamicVersionUpgradeIsEnabledNative)},
-          {"getSocketL2capLocalChannelIdNative", "(JJ)I",
-           reinterpret_cast<void*>(getSocketL2capLocalChannelIdNative)},
-          {"getSocketL2capRemoteChannelIdNative", "(JJ)I",
-           reinterpret_cast<void*>(getSocketL2capRemoteChannelIdNative)},
           {"setDefaultEventMaskExceptNative", "(JJ)Z",
            reinterpret_cast<void*>(setDefaultEventMaskExceptNative)},
           {"clearEventFilterNative", "()Z", reinterpret_cast<void*>(clearEventFilterNative)},
@@ -2278,8 +2198,8 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
 
   jclass jniAdapterNativeInterfaceClass =
           env->FindClass("com/android/bluetooth/btservice/AdapterNativeInterface");
-  sJniCallbacksField = env->GetFieldID(jniAdapterNativeInterfaceClass, "mJniCallbacks",
-                                       "Lcom/android/bluetooth/btservice/JniCallbacks;");
+  sJniCallbacksField = env->GetFieldID(jniAdapterNativeInterfaceClass, "mNativeCallback",
+                                       "Lcom/android/bluetooth/btservice/AdapterNativeCallback;");
   env->DeleteLocalRef(jniAdapterNativeInterfaceClass);
 
   const JNIJavaMethod javaMethods[] = {
@@ -2305,7 +2225,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"keyMissingCallback", "([BI)V", &method_keyMissingCallback},
           {"encryptionChangeCallback", "([BIZIZI)V", &method_encryptionChangeCallback},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/JniCallbacks", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/AdapterNativeCallback", javaMethods);
 
   const JNIJavaMethod javaUuidTrafficMethods[] = {
           {"<init>", "(IJJ)V", &android_bluetooth_UidTraffic.constructor},
@@ -2476,6 +2396,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_vaps_server(e);
+  if (status < 0) {
+    log::error("jni le audio vaps server registration failure: {}", status);
+    return JNI_ERR;
+  }
+
   status = android::register_com_android_bluetooth_btservice_BluetoothQualityReport(e);
   if (status < 0) {
     log::error("jni bluetooth quality report registration failure: {}", status);
@@ -2515,5 +2441,13 @@ void jniGetMethodsOrDie(JNIEnv* env, const char* className, const JNIJavaMethod*
   }
 
   env->DeleteLocalRef(clazz);
+}
+
+jfieldID getNativeCallbackField(JNIEnv* env, const char* className) {
+  jclass jniNativeInterfaceClass = env->FindClass(className);
+  jfieldID field = env->GetFieldID(jniNativeInterfaceClass, "nativeCallback",
+                                   "Lcom/android/bluetooth/profile/NativeCallback;");
+  env->DeleteLocalRef(jniNativeInterfaceClass);
+  return field;
 }
 }  // namespace android

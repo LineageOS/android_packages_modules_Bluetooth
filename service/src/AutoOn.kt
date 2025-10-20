@@ -35,7 +35,6 @@ import android.os.UserHandle
 import android.provider.Settings
 import androidx.annotation.VisibleForTesting
 import com.android.server.bluetooth.airplane.hasUserToggledApm
-import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -52,6 +51,7 @@ class AutoOn(
     private val user: UserHandle,
     private val state: BluetoothAdapterState,
     private val callback_on: () -> Unit,
+    private val is_airplane_mode_on: () -> Boolean,
 ) {
     private val contentResolver: ContentResolver = context.contentResolver
 
@@ -74,7 +74,7 @@ class AutoOn(
             Log.d(TAG, "Satellite prevent feature activation")
             return
         }
-        if (isAirplaneModeOn) {
+        if (is_airplane_mode_on()) {
             if (!hasUserToggledApm(context)) {
                 Log.d(TAG, "Airplane prevent feature activation")
                 return

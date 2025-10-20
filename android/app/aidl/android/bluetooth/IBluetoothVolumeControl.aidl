@@ -22,11 +22,8 @@ import android.bluetooth.IAudioInputCallback;
 import android.bluetooth.IBluetoothVolumeControlCallback;
 import android.content.AttributionSource;
 
-/**
- * APIs for Bluetooth Volume Control service
- *
- * @hide
- */
+/** Binder method for VCP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothVolumeControl {
 
     const int VOLUME_CONTROL_UNKNOWN_VOLUME = -1;

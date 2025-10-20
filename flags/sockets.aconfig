@@ -2,30 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "unix_file_socket_creation_failure"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "New socket exception code for better logging and error handling"
-    bug: "318886332"
-}
-
-flag {
-    name: "bt_socket_api_l2cap_cid"
-    namespace: "bluetooth"
-    description: "New socket API to get L2CAP channel ID"
-    bug: "326351678"
-    is_exported: true
-}
-
-flag {
-    name: "bt_offload_socket_api"
-    namespace: "bluetooth"
-    description: "New socket API to create offload socket"
-    bug: "367419086"
-    is_exported: true
-}
-
-flag {
     name: "set_max_data_length_for_lecoc"
     namespace: "bluetooth"
     description: "set le data length to max on le coc connection to achieve better data rate"
@@ -33,14 +9,6 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "socket_settings_api"
-    namespace: "bluetooth"
-    description: "Adds new socket settings interface which allows creation of encryption only socket"
-    bug: "374358112"
-    is_exported: true
 }
 
 flag {
@@ -68,16 +36,6 @@ flag {
     namespace: "bluetooth"
     description: "invalidate hci handle associated with lcb on acl removal"
     bug: "394329150"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "disconnect_acls_by_bredr_disabled"
-    namespace: "bluetooth"
-    description: "Fix ACL Link still connected even BREDR is disabled"
-    bug: "391263869"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -168,6 +126,23 @@ flag {
     namespace: "bluetooth"
     description: "while selecting the local MPS, consider the L2cap header bytes"
     bug: "427819296"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "lecoc_with_fixed_psm"
+    namespace: "bluetooth"
+    description: "Support LE CoC with fixed PSM"
+    bug: "443347109"
+}
+
+flag {
+    name: "pseudo_addr_in_socket_connect_signal"
+    namespace: "bluetooth"
+    description: "use pseudo address instead of identity address when sending socket signal"
+    bug: "450667775"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

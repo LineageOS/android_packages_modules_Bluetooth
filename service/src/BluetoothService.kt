@@ -30,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 
 // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
 private const val SERVICE_NAME = "bluetooth_manager"
+private const val TAG = "BluetoothService"
 
 class BluetoothService(context: Context) : SystemService(context) {
     private val looper = HandlerThread("BluetoothSystemServer").apply { start() }.looper
@@ -37,16 +38,10 @@ class BluetoothService(context: Context) : SystemService(context) {
     private val scope = CoroutineScope(serviceDispatcher + SupervisorJob())
 
     private var supervisor: BluetoothSupervisor
-    private var mInitialized = false
 
     init {
-        Log.d("Booting now")
-        val bluetoothComponent =
-            if (Flags.userRestrictionRefactor()) {
-                BluetoothComponent(context)
-            } else {
-                null
-            }
+        Log.d(TAG, "Booting now")
+        val bluetoothComponent = BluetoothComponent(context)
         // Run BluetoothManagerService on the correct thread even during constructor
         supervisor =
             runBlocking(serviceDispatcher) {
@@ -54,9 +49,7 @@ class BluetoothService(context: Context) : SystemService(context) {
             }
 
         runOnBmsThread {
-            if (Flags.userRestrictionRefactor()) {
-                BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
-            }
+            BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
         }
     }
 
@@ -64,36 +57,46 @@ class BluetoothService(context: Context) : SystemService(context) {
     private fun runOnBmsThread(block: suspend CoroutineScope.() -> Unit) = scope.launch { block() }
 
     override fun onStart() {
-        publishBinderService(
-            SERVICE_NAME,
-            BluetoothServiceBinder(looper, supervisor.api(), context),
-        )
+        publishBinderService(SERVICE_NAME, BluetoothServiceBinder(looper, supervisor.api, context))
     }
 
     override fun onUserStarting(user: TargetUser) {
-        if (mInitialized) {
-            Log.i("onUserStarting($user) but already initialized")
-            return
+        if (Flags.userVisibleOnUserStarting()) {
+            val isUserVisible =
+                context
+                    .createContextAsUser(user.userHandle, 0)
+                    .getSystemService(android.os.UserManager::class.java)!!
+                    .isUserVisible
+            if (!isUserVisible) {
+                Log.i(TAG, "onUserStarting($user) Skipping non visible user ")
+                return
+            }
+            Log.i(TAG, "onUserStarting($user) Initializing for visible user ")
+        } else {
+            val isForeground =
+                context
+                    .createContextAsUser(user.userHandle, 0)
+                    .getSystemService(android.os.UserManager::class.java)!!
+                    .isUserForeground
+            if (!isForeground) {
+                Log.i(TAG, "onUserStarting($user) Skipping non foreground user ")
+                return
+            }
+            Log.i(TAG, "onUserStarting($user) Initializing for foreground user ")
         }
-        val isForeground =
-            context
-                .createContextAsUser(user.userHandle, 0)
-                .getSystemService(android.os.UserManager::class.java)!!
-                .isUserForeground
-        if (!isForeground) {
-            Log.i("onUserStarting($user) Skipping non foreground user ")
-            return
-        }
-        Log.i("onUserStarting($user) Initializing for foreground user ")
-        runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
-        mInitialized = true
+        runOnBmsThread { supervisor.onUserStarting(user.userHandle) }
     }
 
-    override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
-        Log.d("onUserSwitching($to)")
-        if (!mInitialized) {
-            throw IllegalStateException("Initialize did not happen")
-        }
+    override fun onUserStopping(user: TargetUser) {
+        Log.i(TAG, "onUserStopping($user): Not implemented")
+    }
+
+    override fun onUserStopped(user: TargetUser) {
+        Log.i(TAG, "onUserStopped($user): Not implemented")
+    }
+
+    override fun onUserSwitching(from: TargetUser?, to: TargetUser) {
+        Log.i(TAG, "onUserSwitching:$from => $to")
         runOnBmsThread { supervisor.onUserSwitching(to.userHandle) }
     }
 }

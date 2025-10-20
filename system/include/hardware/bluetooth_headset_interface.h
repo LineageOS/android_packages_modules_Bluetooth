@@ -21,6 +21,7 @@
 #include "bluetooth.h"
 #include "bluetooth_headset_callbacks.h"
 #include "bt_hf.h"
+#include "bt_status.h"
 
 namespace bluetooth {
 namespace headset {
@@ -38,78 +39,77 @@ public:
    * @param callbacks callbacks for the user of the native stack
    * @param max_hf_clients maximum number of headset clients
    * @param inband_ringing_enabled whether inband ringtone is enabled
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t Init(Callbacks* callbacks, int max_hf_clients,
-                           bool inband_ringing_enabled) = 0;
+  virtual BtStatus Init(Callbacks* callbacks, int max_hf_clients, bool inband_ringing_enabled) = 0;
 
   /**
    * Connect to headset
    *
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t Connect(RawAddress bd_addr) = 0;
+  virtual BtStatus Connect(RawAddress bd_addr) = 0;
 
   /**
    * Disconnect from headset
    *
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t Disconnect(const RawAddress bd_addr) = 0;
+  virtual BtStatus Disconnect(RawAddress bd_addr) = 0;
 
   /**
    * Create an audio connection
    *
    * @param bd_addr remote device address
    * @param disabled_codecs bitset of disabled BTM_SCO_CODECs
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t ConnectAudio(const RawAddress bd_addr, int disabled_codecs) = 0;
+  virtual BtStatus ConnectAudio(RawAddress bd_addr, int disabled_codecs) = 0;
 
   /**
    * Close the audio connection
    *
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t DisconnectAudio(RawAddress bd_addr) = 0;
+  virtual BtStatus DisconnectAudio(RawAddress bd_addr) = 0;
 
   /**
    * Checks whether the device support echo cancellation and/or noise reduction
    * via the AT+BRSF bitmask
    *
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t isNoiseReductionSupported(const RawAddress bd_addr) = 0;
+  virtual BtStatus isNoiseReductionSupported(RawAddress bd_addr) = 0;
 
   /**
    * Checks whether the device supports voice recognition via the AT+BRSF
    * bitmask
    *
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t isVoiceRecognitionSupported(const RawAddress bd_addr) = 0;
+  virtual BtStatus isVoiceRecognitionSupported(RawAddress bd_addr) = 0;
 
   /** start voice recognition */
   /**
    * Start voice recognition
    * @param bd_addr remote device address
    * @param sendResult whether a BVRA response should be sent
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t StartVoiceRecognition(const RawAddress bd_addr, bool sendResult) = 0;
+  virtual BtStatus StartVoiceRecognition(RawAddress bd_addr, bool sendResult) = 0;
 
   /**
    * Stop voice recognition
    *
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t StopVoiceRecognition(const RawAddress bd_addr) = 0;
+  virtual BtStatus StopVoiceRecognition(RawAddress bd_addr) = 0;
 
   /**
    * Change HFP related volume on remote headset
@@ -117,10 +117,9 @@ public:
    * @param type Speaker (+VGS) or Mic (+VGM)
    * @param volume volume level on scale from 0 to 15, p69, HFP 1.7.1 spec
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t VolumeControl(bthf_volume_type_t type, int volume,
-                                    const RawAddress bd_addr) = 0;
+  virtual BtStatus VolumeControl(bthf_volume_type_t type, int volume, RawAddress bd_addr) = 0;
 
   /**
    * Combined device status change notification
@@ -130,20 +129,20 @@ public:
    * @param signal Signal strength, 0 to 5, p86, HFP 1.7.1 spec
    * @param batt_chg Battery level of the phone, 0 to 5, p87, HFP 1.7.1 spec
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t DeviceStatusNotification(bthf_network_state_t ntk_state,
-                                               bthf_service_type_t svc_type, int signal,
-                                               int batt_chg, const RawAddress bd_addr) = 0;
+  virtual BtStatus DeviceStatusNotification(bthf_network_state_t ntk_state,
+                                            bthf_service_type_t svc_type, int signal, int batt_chg,
+                                            const RawAddress bd_addr) = 0;
 
   /**
    * Response for COPS (Query Operator Selection) command
    *
    * @param cops Operator Name, max length 16 char, p32 HFP 1.7.1 spec
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t CopsResponse(const char* cops, const RawAddress bd_addr) = 0;
+  virtual BtStatus CopsResponse(const char* cops, RawAddress bd_addr) = 0;
 
   /**
    * Response for CIND (Stanford Indicator Update) command
@@ -156,20 +155,20 @@ public:
    * @param roam roaming state, 1 for roaming, 0 for home, p86 HFP 1.7.1 spec
    * @param batt_chg AG battery charge, 0 to 5, p87 HFP 1.7.1 spec
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t CindResponse(int svc, int num_active, int num_held,
-                                   bthf_call_state_t call_setup_state, int signal, int roam,
-                                   int batt_chg, const RawAddress bd_addr) = 0;
+  virtual BtStatus CindResponse(int svc, int num_active, int num_held,
+                                bthf_call_state_t call_setup_state, int signal, int roam,
+                                int batt_chg, const RawAddress bd_addr) = 0;
 
   /**
    * Pre-formatted AT response, typically in response to unknown AT cmd
    *
    * @param rsp formatted AT response
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t FormattedAtResponse(const char* rsp, const RawAddress bd_addr) = 0;
+  virtual BtStatus FormattedAtResponse(const char* rsp, RawAddress bd_addr) = 0;
 
   /**
    * ok/error response to AT commands
@@ -177,10 +176,10 @@ public:
    * @param response_code OK or ERROR
    * @param error_code actual error code depend on use case
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t AtResponse(bthf_at_response_t response_code, int error_code,
-                                 RawAddress bd_addr) = 0;
+  virtual BtStatus AtResponse(bthf_at_response_t response_code, int error_code,
+                              RawAddress bd_addr) = 0;
 
   /**
    * Response for CLCC (Current List of Calls) command.
@@ -195,12 +194,12 @@ public:
    * @param number phone number of the call
    * @param type type of the call
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t ClccResponse(int index, bthf_call_direction_t dir, bthf_call_state_t state,
-                                   bthf_call_mode_t mode, bthf_call_mpty_type_t mpty,
-                                   const char* number, bthf_call_addrtype_t type,
-                                   const RawAddress bd_addr) = 0;
+  virtual BtStatus ClccResponse(int index, bthf_call_direction_t dir, bthf_call_state_t state,
+                                bthf_call_mode_t mode, bthf_call_mpty_type_t mpty,
+                                const char* number, bthf_call_addrtype_t type,
+                                const RawAddress bd_addr) = 0;
 
   /**
    * Notify of a call state change
@@ -217,12 +216,12 @@ public:
    * @param type type of the call
    * @param name caller display name
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t PhoneStateChange(int num_active, int num_held,
-                                       bthf_call_state_t call_setup_state, const char* number,
-                                       bthf_call_addrtype_t type, const char* name,
-                                       const RawAddress bd_addr) = 0;
+  virtual BtStatus PhoneStateChange(int num_active, int num_held,
+                                    bthf_call_state_t call_setup_state, const char* number,
+                                    bthf_call_addrtype_t type, const char* name,
+                                    const RawAddress bd_addr) = 0;
 
   /**
    * Enable SWB
@@ -230,9 +229,9 @@ public:
    * @param swbCodec SWB Codec
    * @param enable true to enable, false to disable
    * @param bd_addr remote device address
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t EnableSwb(bthf_swb_codec_t swbCodec, bool enable, RawAddress bd_addr) = 0;
+  virtual BtStatus EnableSwb(bthf_swb_codec_t swbCodec, bool enable, RawAddress bd_addr) = 0;
 
   /**
    * Closes the interface.
@@ -243,17 +242,17 @@ public:
    * Enable/Disable SCO-offloading
    *
    * @param value true to enable, false to disable
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t SetScoOffloadEnabled(bool value) = 0;
+  virtual BtStatus SetScoOffloadEnabled(bool value) = 0;
 
   /**
    * Whether we are allowed to initiate SCO
    *
    * @param value true to allow, false to disallow
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t SetScoAllowed(bool value) = 0;
+  virtual BtStatus SetScoAllowed(bool value) = 0;
 
   /**
    * Send +BSIR response code to enable/disable in-band ringtone in an active
@@ -262,27 +261,27 @@ public:
    * @param value true for enabled, false for disable
    * @param bd_addr remote device address
    */
-  virtual bt_status_t SendBsir(bool value, const RawAddress bd_addr) = 0;
+  virtual BtStatus SendBsir(bool value, RawAddress bd_addr) = 0;
 
   /**
    * Set the current active headset device for SCO audio
    *
    * @param active_device_addr remote device address
    */
-  virtual bt_status_t SetActiveDevice(RawAddress active_device_addr) = 0;
+  virtual BtStatus SetActiveDevice(RawAddress active_device_addr) = 0;
 
   /**
    * Set whether we will use the new SCO Management path based on the java flag value/sys prop
    *
    * @param value true to allow, false to disallow
-   * @return BT_STATUS_SUCCESS on success
+   * @return success status
    */
-  virtual bt_status_t SetIsScoManagedByAudio(bool value) = 0;
+  virtual BtStatus SetIsScoManagedByAudio(bool value) = 0;
 
   /**
    * Trigger a debug dump of the Headset Profile
    */
-  virtual bt_status_t DebugDump() = 0;
+  virtual BtStatus DebugDump() = 0;
 };
 
 }  // namespace headset

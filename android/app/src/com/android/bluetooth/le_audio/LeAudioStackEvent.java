@@ -122,8 +122,12 @@ public class LeAudioStackEvent {
         // event dump
         StringBuilder result = new StringBuilder();
         result.append("LeAudioStackEvent {type:").append(eventTypeToString(type));
-        result.append(", device:").append(device);
+        if (type == EVENT_TYPE_NATIVE_INITIALIZED) {
+            result.append("}");
+            return result.toString();
+        }
 
+        result.append(", device:").append(device);
         if (type != EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED) {
             result.append(", value1:").append(eventTypeValue1ToString(type, valueInt1));
             result.append(", value2:").append(eventTypeValue2ToString(type, valueInt2));

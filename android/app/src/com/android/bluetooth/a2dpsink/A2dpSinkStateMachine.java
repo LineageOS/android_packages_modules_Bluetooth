@@ -17,14 +17,12 @@
 package com.android.bluetooth.a2dpsink;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothA2dpSink;
 import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
@@ -36,7 +34,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -53,12 +51,12 @@ class A2dpSinkStateMachine extends StateMachine {
     @VisibleForTesting static final int MESSAGE_CONNECT_TIMEOUT = 101;
 
     // 200->299 Events from Native
-    @VisibleForTesting static final int MESSAGE_STACK_EVENT = 200;
+    static final int MESSAGE_CONNECTION_STATE_CHANGED = 200;
+    static final int MESSAGE_AUDIO_CONFIG_CHANGED = 201;
 
     static final int CONNECT_TIMEOUT_MS = 10000;
 
     protected final BluetoothDevice mDevice;
-    protected final byte[] mDeviceAddress;
     protected final A2dpSinkService mService;
     protected final A2dpSinkNativeInterface mNativeInterface;
     protected final Disconnected mDisconnected;
@@ -76,7 +74,6 @@ class A2dpSinkStateMachine extends StateMachine {
             A2dpSinkNativeInterface nativeInterface) {
         super(TAG, looper);
         mDevice = device;
-        mDeviceAddress = Utils.getByteAddress(mDevice);
         mService = service;
         mNativeInterface = nativeInterface;
 
@@ -128,11 +125,6 @@ class A2dpSinkStateMachine extends StateMachine {
         sendMessage(MESSAGE_DISCONNECT);
     }
 
-    /** send the stack event asynchronously */
-    final void onStackEvent(StackEvent event) {
-        sendMessage(MESSAGE_STACK_EVENT, event);
-    }
-
     /**
      * Dump the current State Machine to the string builder.
      *
@@ -165,14 +157,17 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         @Override
-        public boolean processMessage(Message message) {
-            switch (message.what) {
-                case MESSAGE_STACK_EVENT -> processStackEvent((StackEvent) message.obj);
+        public boolean processMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 case MESSAGE_CONNECT -> {
                     Log.d(TAG, "[" + mDevice + "] Connect");
                     transitionTo(mConnecting);
                 }
-                case CLEANUP -> mService.removeStateMachine(A2dpSinkStateMachine.this);
+                case CLEANUP -> {
+                    mService.removeStateMachine(A2dpSinkStateMachine.this);
+                    Log.d(TAG, "[" + mDevice + "] State machine removed");
+                }
                 default -> {
                     return false;
                 }
@@ -180,12 +175,8 @@ class A2dpSinkStateMachine extends StateMachine {
             return true;
         }
 
-        @RequiresPermission(BLUETOOTH_PRIVILEGED)
-        void processStackEvent(StackEvent event) {
-            if (event.mType != StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
-                return;
-            }
-            switch (event.mState) {
+        void processConnectionEvent(int state) {
+            switch (state) {
                 case STATE_CONNECTING -> {
                     if (mService.getConnectionPolicy(mDevice) == CONNECTION_POLICY_FORBIDDEN) {
                         Log.w(
@@ -224,9 +215,9 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         @Override
-        public boolean processMessage(Message message) {
-            switch (message.what) {
-                case MESSAGE_STACK_EVENT -> processStackEvent((StackEvent) message.obj);
+        public boolean processMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 case MESSAGE_CONNECT_TIMEOUT -> transitionTo(mDisconnected);
                 case MESSAGE_DISCONNECT -> {
                     Log.d(
@@ -235,7 +226,7 @@ class A2dpSinkStateMachine extends StateMachine {
                                     + mDevice
                                     + "] Received disconnect message while connecting."
                                     + "deferred");
-                    deferMessage(message);
+                    deferMessage(msg);
                 }
                 default -> {
                     return false;
@@ -244,11 +235,8 @@ class A2dpSinkStateMachine extends StateMachine {
             return true;
         }
 
-        void processStackEvent(StackEvent event) {
-            if (event.mType != StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
-                return;
-            }
-            switch (event.mState) {
+        void processConnectionEvent(int state) {
+            switch (state) {
                 case STATE_CONNECTED -> transitionTo(mConnected);
                 case STATE_DISCONNECTED -> transitionTo(mDisconnected);
                 default -> {} // Nothing to do
@@ -270,13 +258,18 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         @Override
-        public boolean processMessage(Message message) {
-            switch (message.what) {
+        public boolean processMessage(Message msg) {
+            switch (msg.what) {
                 case MESSAGE_DISCONNECT -> {
                     transitionTo(mDisconnecting);
                     mNativeInterface.disconnectA2dpSink(mDevice);
                 }
-                case MESSAGE_STACK_EVENT -> processStackEvent((StackEvent) message.obj);
+                case MESSAGE_AUDIO_CONFIG_CHANGED -> {
+                    mAudioConfig =
+                            new BluetoothAudioConfig(
+                                    msg.arg1, msg.arg2, AudioFormat.ENCODING_PCM_16BIT);
+                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 default -> {
                     return false;
                 }
@@ -284,22 +277,10 @@ class A2dpSinkStateMachine extends StateMachine {
             return true;
         }
 
-        void processStackEvent(StackEvent event) {
-            switch (event.mType) {
-                case StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                    switch (event.mState) {
-                        case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
-                        case STATE_DISCONNECTED -> transitionTo(mDisconnected);
-                        default -> {} // Nothing to do
-                    }
-                }
-                case StackEvent.EVENT_TYPE_AUDIO_CONFIG_CHANGED -> {
-                    mAudioConfig =
-                            new BluetoothAudioConfig(
-                                    event.mSampleRate,
-                                    event.mChannelCount,
-                                    AudioFormat.ENCODING_PCM_16BIT);
-                }
+        void processConnectionEvent(int state) {
+            switch (state) {
+                case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
+                case STATE_DISCONNECTED -> transitionTo(mDisconnected);
                 default -> {} // Nothing to do
             }
         }

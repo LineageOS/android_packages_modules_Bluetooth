@@ -27,21 +27,18 @@ import android.os.WorkSource;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 
-/**
- * API for interacting with BLE Scan
- * @hide
- */
+/** Binder method for BLE scan interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothScan {
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void registerScanner(in IScannerCallback callback, in WorkSource workSource, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN,android.Manifest.permission.UPDATE_DEVICE_STATS}, conditional=true)")
+    void registerScanner(in IScannerCallback callback, in ScanSettings settings, in List<ScanFilter> filters, in WorkSource workSource, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void unregisterScanner(in int scannerId, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters,
-                   in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void registerPiAndStartScan(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters,
-                            in AttributionSource attributionSource);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN}, conditional=true)")
+    void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.BLUETOOTH_SCAN}, conditional=true)")
+    void registerPiAndStartScan(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void stopScan(in int scannerId, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
@@ -56,7 +53,7 @@ interface IBluetoothScan {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void transferSync(in BluetoothDevice bda, in int serviceData, in int syncHandle, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void transferSetInfo(in BluetoothDevice bda, in int serviceData, in int advertisingHandle, in IPeriodicAdvertisingCallback callback,  in AttributionSource attributionSource);
+    void transferSetInfo(in BluetoothDevice bda, in int serviceData, in int advertisingHandle, in IPeriodicAdvertisingCallback callback, in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     int numHwTrackFiltersAvailable(in AttributionSource attributionSource);

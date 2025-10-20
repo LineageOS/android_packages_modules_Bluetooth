@@ -1,0 +1,182 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//
+// This file defines the data structure for user-specific Bluetooth data storage.
+// It uses Protocol Buffers (proto3) to ensure data consistency and backward
+// compatibility. The serialized data is stored on disk using Jetpack DataStore.
+//
+// IMPORTANT: Maintaining backward and forward compatibility is crucial.
+// Failure to do so can lead to data loss or application crashes for users
+// when they update the application.
+//
+// When modifying this file, please adhere to the following rules:
+//
+// 1.  **Do NOT change the field numbers (tags) of existing fields.**
+//     Field numbers are used to identify fields in the binary format. Changing
+//     them will break parsing for existing data.
+//
+// 2.  **Do NOT remove existing fields.**
+//     Instead of removing a field, you can mark it as `reserved` to prevent
+//     it from being reused in the future. This ensures that older clients can
+//     still parse the data without errors. If a field is no longer used, it can
+//     be deprecated with a comment.
+//
+// 3.  **You CAN add new fields.**
+//     When adding new fields, use a new, unique field number. Older clients
+//     will simply ignore fields they don't recognize.
+//
+// 4.  **Be careful when changing field types.**
+//     Some type changes are compatible (e.g., int32 to int64), but others are
+//     not. Refer to the official Protobuf documentation for compatibility rules
+//     before changing a type.
+//
+// 5.  **Default values are not serialized.**
+//     In proto3, fields with their default value (e.g., 0 for numbers, empty
+//     string for strings) are not written to the wire. When a client parses a
+//     message and a field is missing, it will assume the default value for that
+//     field.
+//
+// For more details on Protobuf best practices and data evolution, see:
+// https://developers.google.com/protocol-buffers/docs/proto3#updating
+//
+
+syntax = "proto3";
+
+option java_package = "com.android.bluetooth.storage";
+
+option java_multiple_files = true;
+
+message UserStorage {
+  map<string /* address */, Device> devices = 1;
+  uint64 current_connection_number = 2;
+  repeated string active_a2dp_devices = 3;
+  repeated string active_hfp_devices = 4;
+}
+
+message Device {
+  ProfileConnectionPolicies profile_connection_policies = 1;
+  AccessPermission permissions = 2;
+
+  uint64 connection_counter = 3;
+
+  A2dpSettings a2dp_settings = 4;
+  AvrcpSettings avrcp_settings = 5;
+  HfpClientSettings hfp_client_settings = 6;
+  LeAudioSettings le_audio_settings = 7;
+
+  map<uint32, bytes> custom_metadata = 8;
+
+  optional bool microphone_preferred_for_calls = 9;
+  uint32 key_missing_count = 10;
+}
+
+enum Policy {
+  UNKNOWN = 0;
+  ALLOWED = 1;
+  FORBIDDEN = 2;
+}
+
+message ProfileConnectionPolicies {
+  Policy a2dp = 1;
+  Policy a2dp_sink = 2;
+  Policy bass_client = 3;
+  Policy battery = 4;
+  Policy csip = 5;
+  Policy hap = 6;
+  Policy hearing_aid = 7;
+  Policy hfp = 8;
+  Policy hfp_client = 9;
+  Policy hid_host = 10;
+  Policy le_audio = 11;
+  Policy tbs = 12;
+  Policy map = 13;
+  Policy map_client = 14;
+  Policy pan = 15;
+  Policy pbap = 16;
+  Policy pbap_client = 17;
+  Policy sap = 18;
+  Policy vcp = 19;
+}
+
+message AccessPermission {
+  optional bool phonebook = 1;
+  optional bool message = 2;
+  optional bool sim = 3;
+}
+
+message A2dpSettings {
+  optional bool optional_codecs_supported = 1;
+  optional bool optional_codecs_enabled = 2;
+}
+
+message HfpClientSettings {
+  bool call_establish = 1;
+  bool set_active_after_connection = 2;
+  bool in_band_ringtone_enabled = 3;
+}
+
+message AvrcpSettings {
+  optional int32 volume = 1;
+}
+
+message MediaProfile {
+  enum Type {
+    UNKNOWN = 0;
+    A2DP = 1;
+    LE_AUDIO = 2;
+  }
+}
+
+message VoiceProfile {
+  enum Type {
+    UNKNOWN = 0;
+    HFP = 1;
+    LE_AUDIO = 2;
+  }
+}
+
+message ActiveAudioPolicy {
+  enum Type {
+    UNKNOWN = 0;
+    ACTIVE = 1;
+    INACTIVE = 2;
+  }
+}
+
+message LeAudioSettings {
+  repeated LeAudioCodecPreference codec_preferences = 1;
+  MediaProfile.Type preferred_output_profile = 2;
+  VoiceProfile.Type preferred_input_profile = 3;
+  ActiveAudioPolicy.Type active_audio_policy = 4;
+}
+
+message LeAudioCodecPreference {
+  CodecConfig input = 1;
+  CodecConfig output = 2;
+}
+
+message CodecConfig {
+  int32 type = 1;
+  int32 priority = 2;
+  int32 sample_rate = 3;
+  int32 bits_per_sample = 4;
+  int32 channel_count = 5;
+  int32 frame_duration = 6;
+  int32 octets_per_frame = 7;
+  int32 min_octets_per_frame = 8;
+  int32 max_octets_per_frame = 9;
+}

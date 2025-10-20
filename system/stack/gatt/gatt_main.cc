@@ -47,6 +47,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
@@ -156,6 +157,10 @@ void gatt_init(void) {
   gatt_profile_db_init();
 
   EattExtension::GetInstance()->Start();
+
+  if (com::android::bluetooth::flags::gatt_offload_api() && !gatt_offload_init()) {
+    log::warn("error initializing gatt offload");
+  }
 }
 
 /*******************************************************************************
@@ -235,6 +240,37 @@ static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tG
 
   p_tcb->att_lcid = L2CAP_ATT_CID;
   return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_force_disconnect
+ *
+ * Description      This function is called to forcefully disconnect a device.
+ *
+ * Parameter        p_tcb: pointer to the TCB to disconnect.
+ *                  comment: disconnection reason
+ *
+ ******************************************************************************/
+void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment) {
+  log::verbose("");
+
+  if (!p_tcb) {
+    log::warn("Unable to disconnect an unknown device");
+    return;
+  }
+
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
+    gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
+  }
+
+  auto hci_handle =
+          get_btm_client_interface().peer.BTM_GetHCIConnHandle(p_tcb->peer_bda, p_tcb->transport);
+  if (hci_handle == HCI_INVALID_HANDLE) {
+    log::warn("Unable to disconnect - no handle");
+  } else {
+    acl_disconnect_from_handle(hci_handle, HCI_ERR_PEER_USER, comment);
+  }
 }
 
 /*******************************************************************************
@@ -387,6 +423,22 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
     }
   } else {
     if (p_tcb->app_hold_link.empty()) {
+      if (com_android_bluetooth_flags_gatt_discovery_is_non_opportunistic_client() &&
+          p_tcb->transport == BT_TRANSPORT_LE) {
+        tHCI_ROLE role;
+        auto status = get_btm_client_interface().link_policy.BTM_GetRole(p_tcb->peer_bda,
+                                                                         BT_TRANSPORT_LE, &role);
+        if (status == tBTM_STATUS::BTM_SUCCESS && role == tHCI_ROLE::HCI_ROLE_PERIPHERAL) {
+          log::info(
+                  "{} is peripheral and the central device is responsible to disconnect if needed "
+                  "or ACL link should be disconnected.",
+                  p_tcb->peer_bda);
+          return;
+        }
+      }
+      if (com::android::bluetooth::flags::gatt_offload_api()) {
+        gatt_offload_clear_sessions_by_conn_id(gatt_create_conn_id(p_tcb->tcb_idx, gatt_if));
+      }
       // acl link is connected but no application needs to use the link
       if (p_tcb->att_lcid == L2CAP_ATT_CID && is_valid_handle) {
         /* Drop EATT before closing ATT */
@@ -637,13 +689,13 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
 }
 
 void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle, uint8_t tx_phy, uint8_t rx_phy) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
+  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  if (!p_device) {
     log::warn("No Device Found!");
     return;
   }
 
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_device->ble.pseudo_addr, BT_TRANSPORT_LE);
   if (!p_tcb) {
     return;
   }
@@ -678,13 +730,13 @@ void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval, uint16
 
 void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16_t latency,
                                 uint16_t cont_num, uint16_t timeout, uint8_t status) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
+  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  if (!p_device) {
     log::warn("No Device Found!");
     return;
   }
 
-  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(p_device->ble.pseudo_addr, BT_TRANSPORT_LE);
   if (!p_tcb) {
     return;
   }
@@ -1034,12 +1086,14 @@ void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda) {
 
   srv_chg_clt.bda = bda;
   srv_chg_clt.srv_changed = false;
+  srv_chg_clt.start_handle = 0xFFFF;
   if (!gatt_add_srv_chg_clt(&srv_chg_clt)) {
     return;
   }
 
   req.srv_chg.bda = bda;
   req.srv_chg.srv_changed = false;
+  req.srv_chg.start_handle = 0xFFFF;
   if (gatt_cb.cb_info.p_srv_chg_callback) {
     (*gatt_cb.cb_info.p_srv_chg_callback)(GATTS_SRV_CHG_CMD_ADD_CLIENT, &req, NULL);
   }
@@ -1047,7 +1101,7 @@ void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda) {
 
 /** This function is called to send a service changed indication to the
  * specified bd address */
-void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
+void gatt_send_srv_chg_ind(const RawAddress& peer_bda, uint16_t start_handle) {
   static const uint16_t sGATT_DEFAULT_START_HANDLE = (uint16_t)osi_property_get_int32(
           "bluetooth.gatt.default_start_handle_for_srvc_change.value", GATT_GATT_START_HANDLE);
   static const uint16_t sGATT_LAST_HANDLE = (uint16_t)osi_property_get_int32(
@@ -1067,7 +1121,12 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
 
   uint8_t handle_range[GATT_SIZE_OF_SRV_CHG_HNDL_RANGE];
   uint8_t* p = handle_range;
-  UINT16_TO_STREAM(p, sGATT_DEFAULT_START_HANDLE);
+
+  if (com_android_bluetooth_flags_gatt_use_better_start_handle_in_service_changed()) {
+    UINT16_TO_STREAM(p, start_handle);
+  } else {
+    UINT16_TO_STREAM(p, sGATT_DEFAULT_START_HANDLE);
+  }
   UINT16_TO_STREAM(p, sGATT_LAST_HANDLE);
   if (GATTS_HandleValueIndication(conn_id, gatt_cb.handle_of_h_r, GATT_SIZE_OF_SRV_CHG_HNDL_RANGE,
                                   handle_range) != GATT_SUCCESS) {
@@ -1078,10 +1137,23 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
 /** Check sending service changed Indication is required or not if required then
  * send the Indication */
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
-  log::verbose("srv_changed={}", p_srv_chg_clt->srv_changed);
+  log::verbose("srv_changed={}, start_handle: {:#x}", p_srv_chg_clt->srv_changed,
+               p_srv_chg_clt->start_handle);
+
+  if (com_android_bluetooth_flags_gatt_not_send_service_change_indication() &&
+      p_srv_chg_clt->srv_changed) {
+    char remote_name[BD_NAME_LEN] = "";
+
+    if (btif_storage_get_stored_remote_name(p_srv_chg_clt->bda, remote_name)) {
+      if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND, remote_name)) {
+        log::verbose("discard srv chg - interop matched {}", remote_name);
+        p_srv_chg_clt->srv_changed = false;
+      }
+    }
+  }
 
   if (p_srv_chg_clt->srv_changed) {
-    gatt_send_srv_chg_ind(p_srv_chg_clt->bda);
+    gatt_send_srv_chg_ind(p_srv_chg_clt->bda, p_srv_chg_clt->start_handle);
   }
 }
 
@@ -1122,7 +1194,7 @@ void gatt_init_srv_chg(void) {
 }
 
 /**This function is process the service changed request */
-void gatt_proc_srv_chg(void) {
+void gatt_proc_srv_chg(uint16_t start_handle) {
   RawAddress bda;
   tBT_TRANSPORT transport;
   uint8_t found_idx;
@@ -1133,7 +1205,7 @@ void gatt_proc_srv_chg(void) {
     return;
   }
 
-  gatt_set_srv_chg();
+  gatt_set_srv_chg(start_handle);
   uint8_t start_idx = 0;
   while (gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
     tGATT_TCB* p_tcb = &gatt_cb.tcb[found_idx];
@@ -1155,7 +1227,7 @@ void gatt_proc_srv_chg(void) {
     }
 
     if (send_indication) {
-      gatt_send_srv_chg_ind(bda);
+      gatt_send_srv_chg_ind(bda, start_handle);
     }
 
     start_idx = ++found_idx;

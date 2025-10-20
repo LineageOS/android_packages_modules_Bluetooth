@@ -199,7 +199,7 @@ const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
 
 template <typename T>
 class MockEnQueue : public os::IQueueEnqueue<T> {
-  using EnqueueCallback = base::Callback<std::unique_ptr<T>()>;
+  using EnqueueCallback = base::RepeatingCallback<std::unique_ptr<T>()>;
 
   void RegisterEnqueue(os::Handler* /*handler*/, EnqueueCallback /*callback*/) override {}
   void UnregisterEnqueue() override {}
@@ -207,7 +207,7 @@ class MockEnQueue : public os::IQueueEnqueue<T> {
 
 template <typename T>
 class MockDeQueue : public os::IQueueDequeue<T> {
-  using DequeueCallback = base::Callback<void()>;
+  using DequeueCallback = base::RepeatingCallback<void()>;
 
   void RegisterDequeue(os::Handler* /*handler*/, DequeueCallback /*callback*/) override {}
   void UnregisterDequeue() override {}

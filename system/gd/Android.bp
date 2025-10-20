@@ -56,6 +56,7 @@ cc_defaults {
         },
         android: {
             srcs: [
+                "hal/gatt_hal_impl_android.cc",
                 "hal/hci_backend_aidl.cc",
                 "hal/hci_backend_hidl.cc",
                 "hal/hci_hal_impl_android.cc",
@@ -81,6 +82,7 @@ cc_defaults {
             ],
             whole_static_libs: [
                 "android.hardware.bluetooth-V1-ndk",
+                "android.hardware.bluetooth.gatt-V1-ndk",
                 "android.hardware.bluetooth.ranging-V2-ndk",
                 "android.hardware.bluetooth.socket-V1-ndk",
                 "android.hardware.contexthub-V4-ndk",
@@ -95,6 +97,7 @@ cc_defaults {
         "common/utils.cc",
         "hal/link_clocker.cc",
         "hal/snoop_logger.cc",
+        "hal/snoop_logger_file.cc",
         "hal/snoop_logger_socket.cc",
         "hal/snoop_logger_socket_thread.cc",
         "hal/snoop_logger_tracing.cc",
@@ -121,12 +124,11 @@ cc_defaults {
         "hci/remote_name_request_impl.cc",
         "hci/uuid.cc",
         "lpp/lpp_offload_manager.cc",
+        "os/rand.cc",
         "os/system_properties_common.cc",
-        "storage/classic_device.cc",
         "storage/config_cache.cc",
         "storage/config_cache_helper.cc",
         "storage/device.cc",
-        "storage/le_device.cc",
         "storage/legacy_config_file.cc",
         "storage/mutation.cc",
         "storage/mutation_entry.cc",
@@ -178,6 +180,24 @@ cc_library_static {
         "bluetooth_flags_c_lib",
         "libchrome",
     ],
+}
+
+cc_library_static {
+    name: "libbluetooth_gd_os_mock",
+    defaults: ["gd_defaults"],
+    host_supported: true,
+    test_only: true,
+    srcs: [
+        "os/rand.cc",
+    ],
+    static_libs: [
+        "libbluetooth_log",
+        "libgmock",
+    ],
+    shared_libs: [
+        "libcrypto",
+    ],
+    include_dirs: ["packages/modules/Bluetooth/system/gd"],
 }
 
 cc_defaults {
@@ -244,7 +264,7 @@ cc_library_static {
         "-DUSE_FAKE_TIMERS",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_types",
         "libbt-common",
         "libchrome",
@@ -467,7 +487,6 @@ cc_test {
         "hci/address_with_type_test.cc",
         "hci/class_of_device_unittest.cc",
         "hci/controller_impl_test.cc",
-        "hci/controller_impl_unittest.cc",
         "hci/distance_measurement_manager_impl_test.cc",
         "hci/hci_layer_fake.cc",
         "hci/hci_layer_test.cc",
@@ -478,12 +497,12 @@ cc_test {
         "hci/le_periodic_sync_manager_test.cc",
         "hci/le_scanning_manager_impl_test.cc",
         "hci/le_scanning_reassembler_test.cc",
+        "hci/msft_unittest.cc",
         "hci/remote_name_request_impl_test.cc",
         "hci/uuid_unittest.cc",
         "os/handler_unittest.cc",
         "os/parameter_provider_test.cc",
         "os/system_properties_common_test.cc",
-        "storage/classic_device_test.cc",
         "storage/config_cache_helper_test.cc",
         "storage/config_cache_test.cc",
         "storage/device_test.cc",
@@ -499,6 +518,7 @@ cc_test {
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_crypto_toolbox",
+        "libbluetooth_gd_os_mock",
         "libbluetooth_gd_unit_tests",
         "libbluetooth_hci_pdl",
         "libbluetooth_l2cap_pdl",
@@ -515,6 +535,7 @@ cc_test {
         "libflatbuffers-cpp",
         "libgmock",
         "libosi",
+        "libutils",
         "server_configurable_flags",
     ],
     shared_libs: [
@@ -592,7 +613,7 @@ cc_defaults {
         "packages/modules/Bluetooth/system",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd_fuzzing",
         "libbluetooth_log",
@@ -691,7 +712,7 @@ cc_benchmark {
         "os/thread_benchmark.cc",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_gd",
         "libbluetooth_log",

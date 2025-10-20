@@ -27,6 +27,9 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
+
+#include <algorithm>
 
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
@@ -199,29 +202,29 @@ static uint8_t btm_ble_find_irk_index(void) {
  *
  ******************************************************************************/
 static void btm_ble_update_resolving_list(const RawAddress& pseudo_bda, bool add) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_bda);
-  if (p_dev_rec == NULL) {
+  BtmDevice* p_device = btm_find_dev(pseudo_bda);
+  if (p_device == NULL) {
     return;
   }
 
   if (add) {
-    p_dev_rec->ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
+    p_device->ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
     if (!bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-      p_dev_rec->ble.resolving_list_index = btm_ble_find_irk_index();
+      p_device->ble.resolving_list_index = btm_ble_find_irk_index();
     }
   } else {
-    p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
+    p_device->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
     if (!bluetooth::shim::GetController()->SupportsBlePrivacy()) {
       /* clear IRK list index mask */
-      btm_ble_clear_irk_index(p_dev_rec->ble.resolving_list_index);
-      p_dev_rec->ble.resolving_list_index = 0;
+      btm_ble_clear_irk_index(p_device->ble.resolving_list_index);
+      p_device->ble.resolving_list_index = 0;
     }
   }
 }
 
 static bool clear_resolving_list_bit(void* data, void* /* context */) {
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
-  p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
+  p_device->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
   return true;
 }
 
@@ -271,7 +274,11 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
 
     log::verbose("resolving_list_avail_size={}", btm_cb.ble_ctr_cb.resolving_list_avail_size);
 
-    list_foreach(btm_sec_cb.sec_dev_rec, clear_resolving_list_bit, NULL);
+    if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+      list_foreach(btm_sec_cb.sec_dev_rec, clear_resolving_list_bit, NULL);
+    } else {
+      btm_sec_cb.for_each_dev_rec(clear_resolving_list_bit, NULL);
+    }
   }
 }
 
@@ -439,14 +446,14 @@ static void btm_ble_resolving_list_vsc_op_cmpl(tBTM_VSC_CMPL* p_params) {
  * Returns          status
  *
  ******************************************************************************/
-static tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
+static tBTM_STATUS btm_ble_remove_resolving_list_entry(BtmDevice* p_device) {
   /* if controller does not support RPA offloading or privacy 1.2, skip */
   if (bluetooth::shim::GetController()->GetLeResolvingListSize() == 0) {
     return tBTM_STATUS::BTM_WRONG_MODE;
   }
 
   if (bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-    auto& addr = p_dev_rec->ble.identity_address_with_type;
+    auto& addr = p_device->ble.identity_address_with_type;
     bluetooth::shim::GetAclManagerLe()->RemoveDeviceFromResolvingList(
             ToAddressWithType(addr.bda, addr.type));
   } else {
@@ -454,13 +461,13 @@ static tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_r
     uint8_t* p = param;
 
     UINT8_TO_STREAM(p, BTM_BLE_META_REMOVE_IRK_ENTRY);
-    UINT8_TO_STREAM(p, p_dev_rec->ble.identity_address_with_type.type);
-    BDADDR_TO_STREAM(p, p_dev_rec->ble.identity_address_with_type.bda);
+    UINT8_TO_STREAM(p, p_device->ble.identity_address_with_type.type);
+    BDADDR_TO_STREAM(p, p_device->ble.identity_address_with_type.bda);
 
     get_btm_client_interface().vendor.BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                                                                 BTM_BLE_META_REMOVE_IRK_LEN, param,
                                                                 btm_ble_resolving_list_vsc_op_cmpl);
-    btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr, BTM_BLE_META_REMOVE_IRK_ENTRY);
+    btm_ble_enq_resolving_list_pending(p_device->bd_addr, BTM_BLE_META_REMOVE_IRK_ENTRY);
   }
   return tBTM_STATUS::BTM_CMD_STARTED;
 }
@@ -499,55 +506,55 @@ static void btm_ble_clear_resolving_list(void) {
  * Returns          true if command successfully sent, false otherwise
  *
  ******************************************************************************/
-bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
+bool btm_ble_read_resolving_list_entry(BtmDevice* p_device) {
   if (btm_cb.ble_ctr_cb.privacy_mode < BTM_PRIVACY_1_2) {
     log::debug("Privacy 1.2 is not enabled");
     return false;
   }
-  if (!(p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT)) {
+  if (!(p_device->ble.in_controller_list & BTM_RESOLVING_LIST_BIT)) {
     log::info("Unable to read resolving list entry as resolving bit not set");
     return false;
   }
 
   if (bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-    btsnd_hcic_ble_read_resolvable_addr_peer(p_dev_rec->ble.identity_address_with_type.type,
-                                             p_dev_rec->ble.identity_address_with_type.bda);
+    btsnd_hcic_ble_read_resolvable_addr_peer(p_device->ble.identity_address_with_type.type,
+                                             p_device->ble.identity_address_with_type.bda);
   } else {
     uint8_t param[20] = {0};
     uint8_t* p = param;
 
     UINT8_TO_STREAM(p, BTM_BLE_META_READ_IRK_ENTRY);
-    UINT8_TO_STREAM(p, p_dev_rec->ble.resolving_list_index);
+    UINT8_TO_STREAM(p, p_device->ble.resolving_list_index);
 
     get_btm_client_interface().vendor.BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                                                                 BTM_BLE_META_READ_IRK_LEN, param,
                                                                 btm_ble_resolving_list_vsc_op_cmpl);
 
-    btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr, BTM_BLE_META_READ_IRK_ENTRY);
+    btm_ble_enq_resolving_list_pending(p_device->bd_addr, BTM_BLE_META_READ_IRK_ENTRY);
   }
   return true;
 }
 
-static void btm_ble_ble_unsupported_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
+static void btm_ble_ble_unsupported_resolving_list_load_dev(BtmDevice* p_device) {
   log::info("Controller does not support BLE privacy");
   uint8_t param[40] = {0};
   uint8_t* p = param;
 
   UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
-  ARRAY_TO_STREAM(p, p_dev_rec->sec_rec.ble_keys.irk, OCTET16_LEN);
-  UINT8_TO_STREAM(p, p_dev_rec->ble.identity_address_with_type.type);
-  BDADDR_TO_STREAM(p, p_dev_rec->ble.identity_address_with_type.bda);
+  ARRAY_TO_STREAM(p, p_device->sec_rec.ble_keys.irk, OCTET16_LEN);
+  UINT8_TO_STREAM(p, p_device->ble.identity_address_with_type.type);
+  BDADDR_TO_STREAM(p, p_device->ble.identity_address_with_type.bda);
 
   get_btm_client_interface().vendor.BTM_VendorSpecificCommand(HCI_VENDOR_BLE_RPA_VSC,
                                                               BTM_BLE_META_ADD_IRK_LEN, param,
                                                               btm_ble_resolving_list_vsc_op_cmpl);
 
-  btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr, BTM_BLE_META_ADD_IRK_ENTRY);
+  btm_ble_enq_resolving_list_pending(p_device->bd_addr, BTM_BLE_META_ADD_IRK_ENTRY);
   return;
 }
 
-static bool is_peer_identity_key_valid(const tBTM_SEC_DEV_REC& dev_rec) {
-  return dev_rec.sec_rec.ble_keys.key_type & BTM_LE_KEY_PID;
+static bool is_peer_identity_key_valid(const BtmDevice& device) {
+  return device.sec_rec.ble_keys.key_type & BTM_LE_KEY_PID;
 }
 
 static Octet16 get_local_irk() { return btm_sec_cb.devcb.id_keys.irk; }
@@ -555,14 +562,14 @@ static Octet16 get_local_irk() { return btm_sec_cb.devcb.id_keys.irk; }
 static bool count_resolving_list_entries(void* data, void* context) {
   uint16_t* count = (uint16_t*)context;
 
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
-  if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
+  if (p_device->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
     *count = *count + 1;
   }
   return true;
 }
 
-void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
+void btm_ble_resolving_list_load_dev(BtmDevice& device) {
   if (btm_cb.ble_ctr_cb.privacy_mode < BTM_PRIVACY_1_2) {
     log::debug("Privacy 1.2 is not enabled");
     return;
@@ -575,39 +582,46 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
   }
 
   if (!bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-    return btm_ble_ble_unsupported_resolving_list_load_dev(&dev_rec);
+    return btm_ble_ble_unsupported_resolving_list_load_dev(&device);
   }
 
   // No need to check for local identity key validity. It remains unchanged.
-  if (!is_peer_identity_key_valid(dev_rec)) {
-    log::info("Peer is not an RPA enabled device:{}", dev_rec.ble.identity_address_with_type);
+  if (!is_peer_identity_key_valid(device)) {
+    log::info("Peer is not an RPA enabled device:{}", device.ble.identity_address_with_type);
     return;
   }
 
-  if (dev_rec.ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
-    log::warn("Already in Address Resolving list device:{}",
-              dev_rec.ble.identity_address_with_type);
+  if (device.ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
+    log::warn("Already in Address Resolving list device:{}", device.ble.identity_address_with_type);
     return;
   }
 
-  const Octet16& peer_irk = dev_rec.sec_rec.ble_keys.irk;
+  const Octet16& peer_irk = device.sec_rec.ble_keys.irk;
   const Octet16& local_irk = get_local_irk();
 
-  if (dev_rec.ble.identity_address_with_type.bda.IsEmpty()) {
-    dev_rec.ble.identity_address_with_type = {
-            .type = dev_rec.ble.AddressType(),
-            .bda = dev_rec.bd_addr,
+  if (device.ble.identity_address_with_type.bda.IsEmpty()) {
+    device.ble.identity_address_with_type = {
+            .type = device.ble.AddressType(),
+            .bda = device.bd_addr,
     };
   }
 
-  if (!is_ble_addr_type_known(dev_rec.ble.identity_address_with_type.type)) {
+  if (!is_ble_addr_type_known(device.ble.identity_address_with_type.type)) {
     log::error("Adding unknown address type({}) to Address Resolving list.",
-               dev_rec.ble.identity_address_with_type.type);
+               device.ble.identity_address_with_type.type);
     return;
   }
 
   uint16_t count = 1; /* we use 1 entry for local controller */
-  list_foreach(btm_sec_cb.sec_dev_rec, count_resolving_list_entries, &count);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_foreach(btm_sec_cb.sec_dev_rec, count_resolving_list_entries, &count);
+  } else {
+    count += std::count_if(btm_sec_cb.device_records.begin(), btm_sec_cb.device_records.end(),
+                           [](const BtmDevice& dev) {
+                             return dev.IsInitialized() &&
+                                    dev.ble.in_controller_list & BTM_RESOLVING_LIST_BIT;
+                           });
+  }
 
   if (count + 1 > resolving_list_size) {
     log::warn("Le Address Resolution list is full! size:{}", count);
@@ -615,13 +629,13 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
   }
 
   bluetooth::shim::GetAclManagerLe()->AddDeviceToResolvingList(
-          ToAddressWithType(dev_rec.ble.identity_address_with_type.bda,
-                            dev_rec.ble.identity_address_with_type.type),
+          ToAddressWithType(device.ble.identity_address_with_type.bda,
+                            device.ble.identity_address_with_type.type),
           peer_irk, local_irk);
 
-  log::debug("Added to Address Resolving list device:{}", dev_rec.ble.identity_address_with_type);
+  log::debug("Added to Address Resolving list device:{}", device.ble.identity_address_with_type);
 
-  dev_rec.ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
+  device.ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
 }
 
 /*******************************************************************************
@@ -635,17 +649,17 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
  * Returns          status
  *
  ******************************************************************************/
-void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
+void btm_ble_resolving_list_remove_dev(BtmDevice* p_device) {
   if (btm_cb.ble_ctr_cb.privacy_mode < BTM_PRIVACY_1_2) {
     log::debug("Privacy 1.2 is not enabled");
     return;
   }
 
-  if ((p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
-      !btm_ble_brcm_find_resolving_pending_entry(p_dev_rec->bd_addr,
+  if ((p_device->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
+      !btm_ble_brcm_find_resolving_pending_entry(p_device->bd_addr,
                                                  BTM_BLE_META_REMOVE_IRK_ENTRY)) {
-    btm_ble_update_resolving_list(p_dev_rec->bd_addr, false);
-    btm_ble_remove_resolving_list_entry(p_dev_rec);
+    btm_ble_update_resolving_list(p_device->bd_addr, false);
+    btm_ble_remove_resolving_list_entry(p_device);
   } else {
     log::verbose("Device not in resolving list");
   }

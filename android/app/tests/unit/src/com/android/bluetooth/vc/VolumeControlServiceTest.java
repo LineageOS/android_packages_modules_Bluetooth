@@ -65,7 +65,6 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -108,7 +107,6 @@ public class VolumeControlServiceTest {
     @Mock private LeAudioService mLeAudioService;
     @Mock private VolumeControlNativeInterface mNativeInterface;
     @Mock private AudioManager mAudioManager;
-    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private CsipSetCoordinatorService mCsipService;
 
     private static final int BT_LE_AUDIO_MAX_VOL = 255;
@@ -129,7 +127,7 @@ public class VolumeControlServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+        return FlagsWrapper.progressionOf();
     }
 
     public VolumeControlServiceTest(FlagsWrapper flags) {
@@ -150,17 +148,9 @@ public class VolumeControlServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(mCsipService))
-                    .when(mAdapterService)
-                    .getCsipSetCoordinatorService();
-            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
-            doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
-        } else {
-            doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
-            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-            doReturn(mBassClientService).when(mServiceFactory).getBassClientService();
-        }
+        doReturn(Optional.of(mCsipService)).when(mAdapterService).getCsipSetCoordinatorService();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
 
         doReturn(MEDIA_MIN_VOL)
                 .when(mAudioManager)
@@ -181,8 +171,6 @@ public class VolumeControlServiceTest {
 
         mService = new VolumeControlService(mAdapterService, mLooper.getLooper(), mNativeInterface);
         mService.setAvailable(true);
-
-        mService.mFactory = mServiceFactory;
     }
 
     @After
@@ -190,12 +178,6 @@ public class VolumeControlServiceTest {
         assertThat(mLooper.nextMessage()).isNull();
         mService.cleanup();
         mLooper.dispatchAll();
-        assertThat(VolumeControlService.getVolumeControlService()).isNull();
-    }
-
-    @Test
-    public void getVolumeControlService() {
-        assertThat(VolumeControlService.getVolumeControlService()).isEqualTo(mService);
     }
 
     @Test

@@ -21,11 +21,8 @@ import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 import android.net.Uri;
 
-/**
- * System private API for Bluetooth MAP MCE service
- *
- * {@hide}
- */
+/** Binder method for MAP MCE interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothMapClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf = { android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED })")
     boolean connect(in BluetoothDevice device, in AttributionSource attributionSource);

@@ -28,11 +28,12 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.GattOffloadSession;
 import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
@@ -42,7 +43,7 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
+import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
 import java.util.List;
@@ -458,9 +459,6 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
 
         requireNonNull(device);
-        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
-            throw new IllegalArgumentException("Invalid device address: " + device.getAddress());
-        }
 
         return service.subrateModeRequest(callback, device, subrateMode);
     }
@@ -611,6 +609,70 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
         service.disconnectAll(source);
+    }
+
+    @Override
+    public GattOffloadSession.InnerParcel offloadClientCharacteristics(
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            BluetoothGattService gattService,
+            List<BluetoothGattCharacteristic> characteristics,
+            long endpointId,
+            long hubId,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
+        if (service == null) {
+            throw new IllegalArgumentException("Service is null");
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        return service.offloadClientCharacteristics(
+                callback, device, gattService, characteristics, endpointId, hubId, source);
+    }
+
+    @Override
+    public void unoffloadClientCharacteristics(
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int sessionId,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
+        if (service == null) {
+            throw new IllegalArgumentException("Service is null");
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        service.unoffloadClientCharacteristics(callback, device, sessionId, source);
+    }
+
+    @Override
+    public GattOffloadSession.InnerParcel offloadServerCharacteristics(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            BluetoothGattService gattService,
+            List<BluetoothGattCharacteristic> characteristics,
+            long endpointId,
+            long hubId,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
+        if (service == null) {
+            throw new IllegalArgumentException("Service is null");
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        return service.offloadServerCharacteristics(
+                callback, device, gattService, characteristics, endpointId, hubId, source);
+    }
+
+    @Override
+    public void unoffloadServerCharacteristics(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            int sessionId,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
+        if (service == null) {
+            throw new IllegalArgumentException("Service is null");
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        service.unoffloadServerCharacteristics(callback, device, sessionId, source);
     }
 
     // Suppressed because we are conditionally enforcing

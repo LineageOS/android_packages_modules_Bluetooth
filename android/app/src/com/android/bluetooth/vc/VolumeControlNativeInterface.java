@@ -24,24 +24,21 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.profile.NativeInterface;
 
-import java.lang.annotation.Native;
-
-public class VolumeControlNativeInterface {
+public class VolumeControlNativeInterface extends NativeInterface<VolumeControlNativeCallback> {
     private static final String TAG = VolumeControlNativeInterface.class.getSimpleName();
 
-    // Value access from native, see com_android_bluetooth_vc.cpp
-    @Native private final VolumeControlNativeCallback mNativeCallback;
-
     VolumeControlNativeInterface(VolumeControlNativeCallback nativeCallback) {
-        mNativeCallback = requireNonNull(nativeCallback);
+        super(requireNonNull(nativeCallback));
     }
 
     void init() {
         initNative();
     }
 
-    void cleanup() {
+    @Override
+    public void cleanup() {
         cleanupNative();
     }
 

@@ -36,6 +36,7 @@
 
 #include "bta/include/bta_gatt_api.h"
 #include "btif/include/btif_common.h"
+#include "btif_status.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/le_advertising_manager.h"
 
@@ -47,13 +48,13 @@ const btgatt_callbacks_t* bt_gatt_callbacks = NULL;
  *
  * Description      Initializes the GATT interface
  *
- * Returns          bt_status_t
+ * Returns          BtStatus
  *
  ******************************************************************************/
-static bt_status_t btif_gatt_init(const btgatt_callbacks_t* callbacks) {
+static BtStatus btif_gatt_init(const btgatt_callbacks_t* callbacks) {
   bt_gatt_callbacks = callbacks;
   BTA_GATTS_InitBonded();
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /*******************************************************************************
@@ -82,8 +83,9 @@ static btgatt_interface_t btgattInterface = {
 
         .client = &btgattClientInterface,
         .server = &btgattServerInterface,
-        .scanner = nullptr,    // filled in btif_gatt_get_interface
-        .advertiser = nullptr  // filled in btif_gatt_get_interface
+        .scanner = nullptr,                      // filled in btif_gatt_get_interface
+        .advertiser = nullptr,                   // filled in btif_gatt_get_interface
+        .distance_measurement_manager = nullptr  // filled in btif_gatt_get_interface
 };
 
 /*******************************************************************************
@@ -101,7 +103,9 @@ const btgatt_interface_t* btif_gatt_get_interface() {
   // until those dependencies are properly abstracted for tests.
   btgattInterface.scanner = get_ble_scanner_instance();
   btgattInterface.advertiser = bluetooth::shim::get_ble_advertiser_instance();
+#ifndef TARGET_FLOSS
   btgattInterface.distance_measurement_manager =
           bluetooth::shim::get_distance_measurement_instance();
+#endif
   return &btgattInterface;
 }

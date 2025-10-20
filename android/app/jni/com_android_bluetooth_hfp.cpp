@@ -28,6 +28,7 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "bt_status.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bluetooth_headset_callbacks.h"
@@ -63,6 +64,7 @@ static bluetooth::headset::Interface* sBluetoothHfpInterface = nullptr;
 static std::shared_timed_mutex interface_mutex;
 
 static jobject mCallbacksObj = nullptr;
+static jfieldID sCallbacksField;
 static std::shared_timed_mutex callbacks_mutex;
 
 static jbyteArray marshall_bda(RawAddress* bd_addr) {
@@ -512,16 +514,18 @@ static void initializeNative(JNIEnv* env, jobject object, jint max_hf_clients,
     jniThrowIOException(env, EINVAL);
     return;
   }
-  bt_status_t status = sBluetoothHfpInterface->Init(JniHeadsetCallbacks::GetInstance(),
-                                                    max_hf_clients, inband_ringing_enabled);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to initialize Bluetooth Handsfree Interface, status: {}",
-               bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->Init(JniHeadsetCallbacks::GetInstance(), max_hf_clients,
+                                                 inband_ringing_enabled);
+  if (!status) {
+    log::error("Failed to initialize Bluetooth Handsfree Interface, status: {}", status);
     sBluetoothHfpInterface = nullptr;
     return;
   }
 
-  mCallbacksObj = env->NewGlobalRef(object);
+  if ((mCallbacksObj = env->NewGlobalRef(env->GetObjectField(object, sCallbacksField))) ==
+      nullptr) {
+    log::fatal("Failed to allocate Global Ref for Handsfree Callbacks");
+  }
 }
 
 static void cleanupNative(JNIEnv* env, jobject /* object */) {
@@ -559,16 +563,15 @@ static jboolean connectHfpNative(JNIEnv* env, jobject /* object */, jbyteArray a
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("device {}", bd_addr);
-  bt_status_t status = sBluetoothHfpInterface->Connect(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed HF connection, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->Connect(bd_addr);
+  if (!status) {
+    log::error("Failed HF connection, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean disconnectHfpNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
@@ -583,16 +586,15 @@ static jboolean disconnectHfpNative(JNIEnv* env, jobject /* object */, jbyteArra
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("device {}", bd_addr);
-  bt_status_t status = sBluetoothHfpInterface->Disconnect(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed HF disconnection, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->Disconnect(bd_addr);
+  if (!status) {
+    log::error("Failed HF disconnection, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean connectAudioNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
@@ -607,16 +609,15 @@ static jboolean connectAudioNative(JNIEnv* env, jobject /* object */, jbyteArray
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("device {}", bd_addr);
-  bt_status_t status = sBluetoothHfpInterface->ConnectAudio(bd_addr, 0);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed HF audio connection, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->ConnectAudio(bd_addr, 0);
+  if (!status) {
+    log::error("Failed HF audio connection, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean disconnectAudioNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
@@ -631,16 +632,15 @@ static jboolean disconnectAudioNative(JNIEnv* env, jobject /* object */, jbyteAr
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("device {}", bd_addr);
-  bt_status_t status = sBluetoothHfpInterface->DisconnectAudio(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed HF audio disconnection, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->DisconnectAudio(bd_addr);
+  if (!status) {
+    log::error("Failed HF audio disconnection, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean isNoiseReductionSupportedNative(JNIEnv* env, jobject /* object */,
@@ -656,12 +656,11 @@ static jboolean isNoiseReductionSupportedNative(JNIEnv* env, jobject /* object *
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->isNoiseReductionSupported(bd_addr);
+  BtStatus status = sBluetoothHfpInterface->isNoiseReductionSupported(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean isVoiceRecognitionSupportedNative(JNIEnv* env, jobject /* object */,
@@ -677,12 +676,11 @@ static jboolean isVoiceRecognitionSupportedNative(JNIEnv* env, jobject /* object
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->isVoiceRecognitionSupported(bd_addr);
+  BtStatus status = sBluetoothHfpInterface->isVoiceRecognitionSupported(bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean startVoiceRecognitionNative(JNIEnv* env, jobject /* object */, jbyteArray address,
@@ -698,15 +696,14 @@ static jboolean startVoiceRecognitionNative(JNIEnv* env, jobject /* object */, j
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->StartVoiceRecognition(bd_addr, sendResult);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to start voice recognition, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->StartVoiceRecognition(bd_addr, sendResult);
+  if (!status) {
+    log::error("Failed to start voice recognition, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean stopVoiceRecognitionNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
@@ -721,15 +718,14 @@ static jboolean stopVoiceRecognitionNative(JNIEnv* env, jobject /* object */, jb
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->StopVoiceRecognition(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to stop voice recognition, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->StopVoiceRecognition(bd_addr);
+  if (!status) {
+    log::error("Failed to stop voice recognition, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean setVolumeNative(JNIEnv* env, jobject /* object */, jint volume_type, jint volume,
@@ -745,16 +741,15 @@ static jboolean setVolumeNative(JNIEnv* env, jobject /* object */, jint volume_t
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->VolumeControl(
+  BtStatus status = sBluetoothHfpInterface->VolumeControl(
           (bluetooth::headset::bthf_volume_type_t)volume_type, volume, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("FAILED to control volume, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("FAILED to control volume, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean notifyDeviceStatusNative(JNIEnv* env, jobject /* object */, jint network_state,
@@ -771,17 +766,16 @@ static jboolean notifyDeviceStatusNative(JNIEnv* env, jobject /* object */, jint
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->DeviceStatusNotification(
+  BtStatus status = sBluetoothHfpInterface->DeviceStatusNotification(
           (bluetooth::headset::bthf_network_state_t)network_state,
           (bluetooth::headset::bthf_service_type_t)service_type, signal, battery_charge, bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("FAILED to notify device status, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("FAILED to notify device status, status: {}", status);
   }
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean copsResponseNative(JNIEnv* env, jobject /* object */, jstring operator_str,
@@ -797,17 +791,16 @@ static jboolean copsResponseNative(JNIEnv* env, jobject /* object */, jstring op
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   const char* operator_name = env->GetStringUTFChars(operator_str, nullptr);
-  bt_status_t status = sBluetoothHfpInterface->CopsResponse(operator_name, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending cops response, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->CopsResponse(operator_name, bd_addr);
+  if (!status) {
+    log::error("Failed sending cops response, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
   env->ReleaseStringUTFChars(operator_str, operator_name);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean cindResponseNative(JNIEnv* env, jobject /* object */, jint service, jint num_active,
@@ -824,17 +817,16 @@ static jboolean cindResponseNative(JNIEnv* env, jobject /* object */, jint servi
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->CindResponse(
+  BtStatus status = sBluetoothHfpInterface->CindResponse(
           service, num_active, num_held, (bluetooth::headset::bthf_call_state_t)call_state, signal,
           roam, battery_charge, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("failed, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("failed, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean atResponseStringNative(JNIEnv* env, jobject /* object */, jstring response_str,
@@ -850,17 +842,16 @@ static jboolean atResponseStringNative(JNIEnv* env, jobject /* object */, jstrin
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   const char* response = env->GetStringUTFChars(response_str, nullptr);
-  bt_status_t status = sBluetoothHfpInterface->FormattedAtResponse(response, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed formatted AT response, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->FormattedAtResponse(response, bd_addr);
+  if (!status) {
+    log::error("Failed formatted AT response, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
   env->ReleaseStringUTFChars(response_str, response);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean atResponseCodeNative(JNIEnv* env, jobject /* object */, jint response_code,
@@ -876,16 +867,15 @@ static jboolean atResponseCodeNative(JNIEnv* env, jobject /* object */, jint res
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->AtResponse(
+  BtStatus status = sBluetoothHfpInterface->AtResponse(
           (bluetooth::headset::bthf_at_response_t)response_code, cmee_code, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed AT response, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("Failed AT response, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean clccResponseNative(JNIEnv* env, jobject /* object */, jint index, jint dir,
@@ -906,24 +896,23 @@ static jboolean clccResponseNative(JNIEnv* env, jobject /* object */, jint index
   if (number_str) {
     number = env->GetStringUTFChars(number_str, nullptr);
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->ClccResponse(
+  BtStatus status = sBluetoothHfpInterface->ClccResponse(
           index, (bluetooth::headset::bthf_call_direction_t)dir,
           (bluetooth::headset::bthf_call_state_t)callStatus,
           (bluetooth::headset::bthf_call_mode_t)mode,
           mpty ? bluetooth::headset::BTHF_CALL_MPTY_TYPE_MULTI
                : bluetooth::headset::BTHF_CALL_MPTY_TYPE_SINGLE,
           number, (bluetooth::headset::bthf_call_addrtype_t)type, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending CLCC response, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("Failed sending CLCC response, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
   if (number) {
     env->ReleaseStringUTFChars(number_str, number);
   }
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean phoneStateChangeNative(JNIEnv* env, jobject /* object */, jint num_active,
@@ -945,21 +934,20 @@ static jboolean phoneStateChangeNative(JNIEnv* env, jobject /* object */, jint n
   if (name_str != nullptr) {
     name = env->GetStringUTFChars(name_str, nullptr);
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->PhoneStateChange(
+  BtStatus status = sBluetoothHfpInterface->PhoneStateChange(
           num_active, num_held, (bluetooth::headset::bthf_call_state_t)call_state, number,
           (bluetooth::headset::bthf_call_addrtype_t)type, name, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed report phone state change, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("Failed report phone state change, status: {}", status);
   }
   env->ReleaseStringUTFChars(number_str, number);
   if (name != nullptr) {
     env->ReleaseStringUTFChars(name_str, name);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean setScoAllowedNative(JNIEnv* /* env */, jobject /* object */, jboolean value) {
@@ -968,11 +956,11 @@ static jboolean setScoAllowedNative(JNIEnv* /* env */, jobject /* object */, jbo
     log::warn("sBluetoothHfpInterface is null");
     return JNI_FALSE;
   }
-  bt_status_t status = sBluetoothHfpInterface->SetScoAllowed(value == JNI_TRUE);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed HF set sco allowed, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->SetScoAllowed(value == JNI_TRUE);
+  if (!status) {
+    log::error("Failed HF set sco allowed, status: {}", status);
   }
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean sendBsirNative(JNIEnv* env, jobject /* object */, jboolean value,
@@ -988,15 +976,14 @@ static jboolean sendBsirNative(JNIEnv* env, jobject /* object */, jboolean value
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->SendBsir(value == JNI_TRUE, bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending BSIR, value={}, status={}", value, bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->SendBsir(value == JNI_TRUE, bd_addr);
+  if (!status) {
+    log::error("Failed sending BSIR, value={}, status={}", value, status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
@@ -1011,15 +998,14 @@ static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteAr
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t status = sBluetoothHfpInterface->SetActiveDevice(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to set active device, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->SetActiveDevice(bd_addr);
+  if (!status) {
+    log::error("Failed to set active device, status: {}", status);
   }
   env->ReleaseByteArrayElements(address, addr, 0);
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean enableSwbNative(JNIEnv* env, jobject /* object */, jint swbCodec, jboolean enable,
@@ -1035,13 +1021,12 @@ static jboolean enableSwbNative(JNIEnv* env, jobject /* object */, jint swbCodec
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
-  bt_status_t ret = sBluetoothHfpInterface->EnableSwb(
-          (bluetooth::headset::bthf_swb_codec_t)swbCodec, (bool)enable, bd_addr);
+  BtStatus ret = sBluetoothHfpInterface->EnableSwb((bluetooth::headset::bthf_swb_codec_t)swbCodec,
+                                                   (bool)enable, bd_addr);
   env->ReleaseByteArrayElements(address, addr, 0);
-  if (ret != BT_STATUS_SUCCESS) {
+  if (!ret) {
     log::error("Failed to {}", (enable ? "enable" : "disable"));
     return JNI_FALSE;
   }
@@ -1056,13 +1041,14 @@ static jboolean setIsScoManagedByAudioNative(JNIEnv* /* env */, jobject /* objec
     log::warn("sBluetoothHfpInterface is null");
     return JNI_FALSE;
   }
-  bt_status_t status = sBluetoothHfpInterface->SetIsScoManagedByAudio(value == JNI_TRUE);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed HF set is sco managed by audio, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothHfpInterface->SetIsScoManagedByAudio(value == JNI_TRUE);
+  if (!status) {
+    log::error("Failed HF set is sco managed by audio, status: {}", status);
   }
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
+// JNI functions defined in HeadsetNativeInterface
 int register_com_android_bluetooth_hfp(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "(IZ)V", (void*)initializeNative},
@@ -1090,12 +1076,15 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"enableSwbNative", "(IZ[B)Z", (void*)enableSwbNative},
           {"setIsScoManagedByAudioNative", "(Z)Z", (void*)setIsScoManagedByAudioNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeInterface", methods);
+  const char* jniNativeInterfaceClass = "com/android/bluetooth/hfp/HeadsetNativeInterface";
+  const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
   if (result != 0) {
     return result;
   }
 
+  sCallbacksField = getNativeCallbackField(env, jniNativeInterfaceClass);
+
+  // Client callback functions defined in HeadsetNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "(I[BI)V", &method_onConnectionStateChanged},
           {"onAudioStateChanged", "(I[B)V", &method_onAudioStateChanged},
@@ -1120,7 +1109,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"onATBiev", "(II[B)V", &method_onAtBiev},
           {"onAtBia", "(ZZZZ[B)V", &method_onAtBia},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeCallback", javaMethods);
 
   return 0;
 }

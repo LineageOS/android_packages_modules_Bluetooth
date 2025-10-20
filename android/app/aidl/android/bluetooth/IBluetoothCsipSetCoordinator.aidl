@@ -24,11 +24,8 @@ import android.bluetooth.IBluetoothCsipSetCoordinatorLockCallback;
 import java.util.List;
 import java.util.Map;
 
-/**
- * APIs for Bluetooth CSIP Set Coordinator
- *
- * @hide
- */
+/** Binder method for CSIP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothCsipSetCoordinator {
   @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
   List<BluetoothDevice> getConnectedDevices(in AttributionSource attributionSource);

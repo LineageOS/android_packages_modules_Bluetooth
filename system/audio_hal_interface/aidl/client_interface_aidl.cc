@@ -59,8 +59,10 @@ std::ostream& operator<<(std::ostream& os, const BluetoothAudioCtrlAck& ack) {
   }
 }
 
-BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransportInstance* instance)
-    : provider_(nullptr),
+BluetoothAudioClientInterface::BluetoothAudioClientInterface(
+        IBluetoothTransportInstance* instance, bluetooth::common::MessageLoopThread* message_loop)
+    : death_handler_thread_(message_loop),
+      provider_(nullptr),
       provider_factory_(nullptr),
       session_started_(false),
       data_mq_(nullptr),
@@ -190,8 +192,8 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
 }
 
 BluetoothAudioSinkClientInterface::BluetoothAudioSinkClientInterface(
-        IBluetoothSinkTransportInstance* sink)
-    : BluetoothAudioClientInterface{sink}, sink_(sink) {
+        IBluetoothSinkTransportInstance* sink, bluetooth::common::MessageLoopThread* message_loop)
+    : BluetoothAudioClientInterface{sink, message_loop}, sink_(sink) {
   FetchAudioProvider();
 }
 
@@ -202,8 +204,9 @@ BluetoothAudioSinkClientInterface::~BluetoothAudioSinkClientInterface() {
 }
 
 BluetoothAudioSourceClientInterface::BluetoothAudioSourceClientInterface(
-        IBluetoothSourceTransportInstance* source)
-    : BluetoothAudioClientInterface{source}, source_(source) {
+        IBluetoothSourceTransportInstance* source,
+        bluetooth::common::MessageLoopThread* message_loop)
+    : BluetoothAudioClientInterface{source, message_loop}, source_(source) {
   FetchAudioProvider();
 }
 
@@ -220,7 +223,15 @@ void BluetoothAudioClientInterface::binderDiedCallbackAidl(void* ptr) {
     log::error("null audio HAL died!");
     return;
   }
-  client->RenewAudioProviderAndSession();
+  bluetooth::common::MessageLoopThread* death_handler_thread = client->death_handler_thread_;
+  if (death_handler_thread == nullptr) {
+    log::error("death handler thread is null");
+  } else {
+    log::info("calling RenewAudioProviderAndSession on death handler thread");
+    death_handler_thread->DoInThread(
+            base::BindOnce(&BluetoothAudioClientInterface::RenewAudioProviderAndSession,
+                           base::Unretained(client)));
+  }
 }
 
 bool BluetoothAudioClientInterface::UpdateAudioConfig(const AudioConfiguration& audio_config) {
@@ -545,7 +556,7 @@ void BluetoothAudioClientInterface::RenewAudioProviderAndSession() {
   if (session_started_) {
     log::info("Restart the session while audio HAL recovering");
     session_started_ = false;
-
+    transport_->StopRequest();
     StartSession();
   }
 }

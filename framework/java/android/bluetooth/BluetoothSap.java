@@ -18,13 +18,13 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -55,9 +55,8 @@ import java.util.List;
  * BluetoothAdapter#getProfileProxy} to get the BluetoothSap proxy object.
  *
  * <p>Each method is protected with its appropriate permission.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothSap.class.getSimpleName();
@@ -80,9 +79,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
      * #STATE_DISCONNECTED}, {@link #STATE_CONNECTING}, {@link #STATE_CONNECTED}, {@link
      * #STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
@@ -92,26 +90,14 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     public static final String ACTION_CONNECTION_STATE_CHANGED =
             "android.bluetooth.sap.profile.action.CONNECTION_STATE_CHANGED";
 
-    /**
-     * There was an error trying to obtain the state.
-     *
-     * @hide
-     */
-    public static final int STATE_ERROR = -1;
+    /** There was an error trying to obtain the state. */
+    @Hide public static final int STATE_ERROR = -1;
 
-    /**
-     * Connection state change succeeded.
-     *
-     * @hide
-     */
-    public static final int RESULT_SUCCESS = 1;
+    /** Connection state change succeeded. */
+    @Hide public static final int RESULT_SUCCESS = 1;
 
-    /**
-     * Connection canceled before completion.
-     *
-     * @hide
-     */
-    public static final int RESULT_CANCELED = 2;
+    /** Connection canceled before completion. */
+    @Hide public static final int RESULT_CANCELED = 2;
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
@@ -128,7 +114,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         mCloseGuard.open("close");
     }
 
-    /** @hide */
+    @Hide
     @SuppressWarnings("Finalize") // TODO(b/314811467)
     protected void finalize() {
         if (mCloseGuard != null) {
@@ -141,22 +127,21 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * Close the connection to the backing service. Other public functions of BluetoothSap will
      * return default error results once close() has been called. Multiple invocations of close()
      * are ok.
-     *
-     * @hide
      */
+    @Hide
     @Override
     public synchronized void close() {
         mAdapter.closeProfileProxy(this);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothSap.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -167,7 +152,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
@@ -179,8 +164,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      *
      * @return One of the STATE_ return codes, or STATE_ERROR if this proxy object is currently not
      *     connected to the Sap service.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getState() {
@@ -204,8 +189,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      *
      * @return The remote Bluetooth device, or null if not in connected or connecting state, or if
      *     this proxy object is not connected to the Sap service.
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothDevice getClient() {
@@ -228,9 +213,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     /**
      * Returns true if the specified Bluetooth device is connected. Returns false if not connected,
      * or if this proxy object is not currently connected to the Sap service.
-     *
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean isConnected(BluetoothDevice device) {
@@ -249,11 +233,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         return false;
     }
 
-    /**
-     * Initiate connection. Initiation of outgoing connections is not supported for SAP server.
-     *
-     * @hide
-     */
+    /** Initiate connection. Initiation of outgoing connections is not supported for SAP server. */
+    @Hide
     @RequiresNoPermission
     public boolean connect(BluetoothDevice device) {
         log("connect(" + device + ") not supported for SAPS");
@@ -265,8 +246,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      *
      * @param device Remote Bluetooth Device
      * @return false on error, true otherwise
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -290,8 +271,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * Get the list of connected devices. Currently at most one.
      *
      * @return list of connected devices
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getConnectedDevices() {
@@ -315,8 +296,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * Get the list of devices matching specified states. Currently at most one.
      *
      * @return list of matching devices
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
@@ -349,13 +330,13 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     }
     ;
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public void disableBluetoothGetConnectionStateCache() {
         sBluetoothConnectionCache.disableForCurrentProcess();
     }
 
-    /** @hide */
+    @Hide
     public static void invalidateBluetoothGetConnectionStateCache() {
         invalidateCache(GET_CONNECTION_STATE_API);
     }
@@ -403,8 +384,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * Get connection state of device
      *
      * @return device connection state
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SuppressLint("AndroidFrameworkRequiresPermission") // IpcDataCache prevent lint enforcement
@@ -439,8 +420,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      * @throws NullPointerException if device is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -454,8 +435,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
             log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
+                && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -474,8 +454,8 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      * @param device Bluetooth device
      * @return connection policy of the device
      * @throws NullPointerException if device is null
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

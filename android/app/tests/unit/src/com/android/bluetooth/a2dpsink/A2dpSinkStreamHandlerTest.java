@@ -47,10 +47,8 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -102,13 +100,9 @@ public class A2dpSinkStreamHandlerTest {
         final var mAvrcpControllerNativeInterface = mock(AvrcpControllerNativeInterface.class);
         final var avrcpControllerService =
                 new AvrcpControllerService(mAdapterService, mAvrcpControllerNativeInterface);
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            doReturn(Optional.of(avrcpControllerService))
-                    .when(mAdapterService)
-                    .getAvrcpControllerService();
-        } else {
-            AvrcpControllerService.setAvrcpControllerService(avrcpControllerService);
-        }
+        doReturn(Optional.of(avrcpControllerService))
+                .when(mAdapterService)
+                .getAvrcpControllerService();
 
         // Mock the looper
         if (Looper.myLooper() == null) {
@@ -124,13 +118,6 @@ public class A2dpSinkStreamHandlerTest {
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
 
         mStreamHandler = spy(new A2dpSinkStreamHandler(mAdapterService, mNativeInterface));
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            AvrcpControllerService.setAvrcpControllerService(null);
-        }
     }
 
     @Test

@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import android.annotation.Hide;
 import android.annotation.RequiresFeature;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -58,7 +59,7 @@ public final class BluetoothManager {
     private final BluetoothAdapter mAdapter;
     private final Context mContext;
 
-    /** @hide */
+    @Hide
     public BluetoothManager(Context context) {
         // Pin the context DeviceId prevent the associated attribution source to be obsolete
         // TODO: b/343739429 -- pass the context to BluetoothAdapter constructor instead
@@ -193,8 +194,8 @@ public final class BluetoothManager {
      * @param callback GATT server callback handler that will receive asynchronous callbacks.
      * @param eattSupport indicates if server should use eatt channel for notifications.
      * @return BluetoothGattServer instance
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothGattServer openGattServer(
@@ -214,8 +215,8 @@ public final class BluetoothManager {
      *     BluetoothDevice#TRANSPORT_AUTO} or {@link BluetoothDevice#TRANSPORT_BREDR} or {@link
      *     BluetoothDevice#TRANSPORT_LE}
      * @return BluetoothGattServer instance
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothGattServer openGattServer(
@@ -236,8 +237,8 @@ public final class BluetoothManager {
      *     BluetoothDevice#TRANSPORT_LE}
      * @param eattSupport indicates if server should use eatt channel for notifications.
      * @return BluetoothGattServer instance
-     * @hide
      */
+    @Hide
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothGattServer openGattServer(

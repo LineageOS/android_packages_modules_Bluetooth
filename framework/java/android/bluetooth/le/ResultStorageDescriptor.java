@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
@@ -27,8 +28,8 @@ import android.util.Log;
  * Describes the way to store scan result.
  *
  * @deprecated this is not used anywhere
- * @hide
  */
+@Hide
 @Deprecated
 @SystemApi
 public final class ResultStorageDescriptor implements Parcelable {

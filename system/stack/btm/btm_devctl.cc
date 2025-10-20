@@ -27,6 +27,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,9 +122,9 @@ void BTM_db_reset(void) {
 }
 
 static bool set_sec_state_idle(void* data, void* /* context */) {
-  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
-  p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
-  p_dev_rec->sec_rec.classic_link = tSECURITY_STATE::IDLE;
+  BtmDevice* p_device = static_cast<BtmDevice*>(data);
+  p_device->sec_rec.le_link = tSECURITY_STATE::IDLE;
+  p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
   return true;
 }
 
@@ -132,7 +133,11 @@ void BTM_reset_complete() {
   l2cu_device_reset();
 
   /* Clear current security state */
-  list_foreach(btm_sec_cb.sec_dev_rec, set_sec_state_idle, NULL);
+  if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
+    list_foreach(btm_sec_cb.sec_dev_rec, set_sec_state_idle, NULL);
+  } else {
+    btm_sec_cb.for_each_dev_rec(set_sec_state_idle, NULL);
+  }
 
   /* After the reset controller should restore all parameters to defaults. */
   btm_cb.btm_inq_vars.inq_counter = 1;
@@ -382,50 +387,6 @@ void BTM_WriteVoiceSettings(uint16_t settings) {
 
   /* Send the HCI command */
   btsnd_hcic_write_voice_settings((uint16_t)(settings & 0x03ff));
-}
-
-/*******************************************************************************
- *
- * Function         BTM_EnableTestMode
- *
- * Description      Send HCI the enable device under test command.
- *
- *                  Note: Controller can only be taken out of this mode by
- *                      resetting the controller.
- *
- * Returns
- *      tBTM_STATUS::BTM_SUCCESS         Command sent.
- *      tBTM_STATUS::BTM_NO_RESOURCES    If out of resources to send the command.
- *
- *
- ******************************************************************************/
-tBTM_STATUS BTM_EnableTestMode(void) {
-  uint8_t cond;
-
-  log::verbose("BTM: BTM_EnableTestMode");
-
-  /* set auto accept connection as this is needed during test mode */
-  /* Allocate a buffer to hold HCI command */
-  cond = HCI_DO_AUTO_ACCEPT_CONNECT;
-  btsnd_hcic_set_event_filter(HCI_FILTER_CONNECTION_SETUP, HCI_FILTER_COND_NEW_DEVICE, &cond,
-                              sizeof(cond));
-
-  /* put device to connectable mode */
-  if (BTM_SetConnectability(BTM_CONNECTABLE) != tBTM_STATUS::BTM_SUCCESS) {
-    return tBTM_STATUS::BTM_NO_RESOURCES;
-  }
-
-  /* put device to discoverable mode */
-  if (BTM_SetDiscoverability(BTM_GENERAL_DISCOVERABLE) != tBTM_STATUS::BTM_SUCCESS) {
-    return tBTM_STATUS::BTM_NO_RESOURCES;
-  }
-
-  /* mask off all of event from controller */
-  bluetooth::shim::BTM_ClearEventMask();
-
-  /* Send the HCI command */
-  btsnd_hcic_enable_test_mode();
-  return tBTM_STATUS::BTM_SUCCESS;
 }
 
 /*******************************************************************************

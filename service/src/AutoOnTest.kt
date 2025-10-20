@@ -36,8 +36,7 @@ import com.android.server.bluetooth.AutoOn.Companion.STORAGE_KEY
 import com.android.server.bluetooth.AutoOn.Companion.USER_SETTINGS_KEY
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
-import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
-import com.android.server.bluetooth.airplane.test.ModeListenerTest as AirplaneListener
+import com.android.server.bluetooth.airplane.APM_USER_TOGGLED_BLUETOOTH
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
 import com.android.server.bluetooth.satellite.test.ModeListenerTest as SatelliteListener
 import com.google.common.truth.Expect
@@ -74,12 +73,16 @@ class AutoOnTest {
 
     private var callback_count = 0
 
+    private var airplane_mode_is_on = false
+
+    fun is_airplane_mode_on() = airplane_mode_is_on
+
     @Before
     fun setUp() {
         Log.i("AutoOnTest", "\t--> setUp(${testName.getMethodName()})")
 
         callback_count = 0
-        autoOn = AutoOn(looper, context, user, state, this::callback_on)
+        autoOn = AutoOn(looper, context, user, state, this::callback_on, this::is_airplane_mode_on)
         enableSetting()
     }
 
@@ -446,13 +449,12 @@ class AutoOnTest {
     @Test
     @kotlin.time.ExperimentalTime
     fun setupTimer_whenLegacyAirplaneIsOn_isNotSchedule() {
-        val userCallback: () -> Context = { -> context }
-        AirplaneListener.setupAirplaneModeToOn(resolver, looper, userCallback, false)
-        assertThat(isAirplaneModeOn).isTrue()
+        airplane_mode_is_on = true
+        Settings.Secure.putInt(resolver, APM_USER_TOGGLED_BLUETOOTH, 0)
 
         setupTimer()
 
-        AirplaneListener.setupAirplaneModeToOff(resolver, looper)
+        airplane_mode_is_on = false
         expect.that(autoOn.timer).isNull()
         expect.that(callback_count).isEqualTo(0)
         expectNoStorageTime()
@@ -461,13 +463,13 @@ class AutoOnTest {
     @Test
     @kotlin.time.ExperimentalTime
     fun setupTimer_whenApmAirplaneIsOn_isSchedule() {
-        val userCallback: () -> Context = { -> context }
-        AirplaneListener.setupAirplaneModeToOn(resolver, looper, userCallback, true)
-        assertThat(isAirplaneModeOn).isTrue()
+        airplane_mode_is_on = true
+        Settings.Secure.putInt(resolver, APM_USER_TOGGLED_BLUETOOTH, 1)
 
         setupTimer()
 
-        AirplaneListener.setupAirplaneModeToOff(resolver, looper)
+        airplane_mode_is_on = false
+        Settings.Secure.putInt(resolver, APM_USER_TOGGLED_BLUETOOTH, 0)
         expect.that(autoOn.timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()

@@ -29,7 +29,7 @@ import android.bluetooth.IAudioInputCallback;
 import android.os.RemoteCallbackList;
 import android.util.Log;
 
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.profile.ProfileService;
 
 class VolumeControlInputDescriptor {
     private static final String TAG = VolumeControlInputDescriptor.class.getSimpleName();

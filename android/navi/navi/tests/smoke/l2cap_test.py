@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import asyncio
+import contextlib
 import datetime
 import enum
 
@@ -48,10 +49,9 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
         self.dut.reload_snippet()
 
     async def _setup_le_pairing(self) -> None:
-        await self.le_connect_and_pair(hci.OwnAddressType.RANDOM)
-
         # Terminate ACL connection after pairing.
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
+            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM)
             self.logger.info("[DUT] Wait for disconnected.")
             ref_dut_acl = self.ref.device.find_connection_by_bd_addr(
                 hci.Address(self.dut.address),
@@ -59,7 +59,8 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
             )
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
                 if ref_dut_acl:
-                    await ref_dut_acl.disconnect()
+                    with contextlib.suppress(hci.HCI_StatusError):
+                        await ref_dut_acl.disconnect()
                 await self.ref.device.power_off()
                 await self.ref.device.power_on()
             await dut_cb.wait_for_event(bl4a_api.AclDisconnected)
@@ -116,10 +117,7 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
 
         secure = variant == Variant.SECURE
 
-        server = self.dut.bl4a.create_l2cap_server(
-            secure=secure,
-            transport=android_constants.Transport.LE,
-        )
+        server = self.dut.bl4a.create_l2cap_server(secure=secure)
         self.logger.info("[DUT] Listen L2CAP on PSM %d", server.psm)
 
         self.logger.info("[DUT] Start advertising.")
@@ -201,7 +199,6 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
                     address=self.ref.random_address,
                     secure=secure,
                     psm=server.psm,
-                    transport=android_constants.Transport.LE,
                     address_type=android_constants.AddressTypeStatus.RANDOM,
                 ),
             )

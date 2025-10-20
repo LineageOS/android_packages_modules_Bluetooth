@@ -18,11 +18,10 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -60,10 +59,9 @@ import java.util.List;
  * BluetoothPbap in {@link android.bluetooth.BluetoothProfile.ServiceListener#onServiceConnected}.
  *
  * <p>Android only supports one connected Bluetooth Pce at a time.
- *
- * @hide
  */
 @SystemApi
+@Hide
 public class BluetoothPbap implements BluetoothProfile {
     private static final String TAG = BluetoothPbap.class.getSimpleName();
 
@@ -84,9 +82,8 @@ public class BluetoothPbap implements BluetoothProfile {
      * be any of {@link BluetoothProfile#STATE_DISCONNECTED}, {@link
      * BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, {@link
      * BluetoothProfile#STATE_DISCONNECTING}.
-     *
-     * @hide
      */
+    @Hide
     @SuppressLint("ActionValue")
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -97,42 +94,33 @@ public class BluetoothPbap implements BluetoothProfile {
 
     private final AttributionSource mAttributionSource;
 
-    /** @hide */
-    public static final int RESULT_FAILURE = 0;
+    @Hide public static final int RESULT_FAILURE = 0;
 
-    /** @hide */
-    public static final int RESULT_SUCCESS = 1;
+    @Hide public static final int RESULT_SUCCESS = 1;
 
-    /**
-     * Connection canceled before completion.
-     *
-     * @hide
-     */
-    public static final int RESULT_CANCELED = 2;
+    /** Connection canceled before completion. */
+    @Hide public static final int RESULT_CANCELED = 2;
 
     private final BluetoothAdapter mAdapter;
 
     private IBluetoothPbap mService;
 
-    /**
-     * Create a BluetoothPbap proxy object.
-     *
-     * @hide
-     */
+    /** Create a BluetoothPbap proxy object. */
+    @Hide
     public BluetoothPbap(Context context, BluetoothAdapter adapter) {
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
         mService = null;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothPbap.Stub.asInterface(service);
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {
@@ -143,18 +131,15 @@ public class BluetoothPbap implements BluetoothProfile {
         return mService;
     }
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {
         return mAdapter;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -174,11 +159,8 @@ public class BluetoothPbap implements BluetoothProfile {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @SystemApi
     @Override
     @RequiresBluetoothConnectPermission
@@ -204,11 +186,8 @@ public class BluetoothPbap implements BluetoothProfile {
         return STATE_DISCONNECTED;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
+    /** {@inheritDoc} */
+    @Hide
     @Override
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -241,8 +220,8 @@ public class BluetoothPbap implements BluetoothProfile {
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -255,11 +234,10 @@ public class BluetoothPbap implements BluetoothProfile {
         if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         try {
             final IBluetoothPbap service = getService();
-            if (service != null && isEnabled() && isValidDevice(device)) {
-                if (connectionPolicy != CONNECTION_POLICY_FORBIDDEN
-                        && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-                    return false;
-                }
+            if (service != null
+                    && isEnabled()
+                    && isValidDevice(device)
+                    && BluetoothProfile.isValidConnectionPolicy(connectionPolicy)) {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             }
             if (service == null) Log.w(TAG, "Proxy not attached to service");
@@ -274,9 +252,8 @@ public class BluetoothPbap implements BluetoothProfile {
      * Disconnects the current Pbap client (PCE). Currently this call blocks, it may soon be made
      * asynchronous. Returns false if this proxy object is not currently connected to the Pbap
      * service.
-     *
-     * @hide
      */
+    @Hide
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)

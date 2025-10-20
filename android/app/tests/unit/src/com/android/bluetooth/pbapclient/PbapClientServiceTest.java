@@ -34,7 +34,6 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -126,6 +125,7 @@ public class PbapClientServiceTest {
                         })
                 .when(mMockStorage)
                 .getStorageAccountForDevice(any(BluetoothDevice.class));
+        doReturn("").when(mMockStorage).dump();
 
         mTestLooper = new TestLooper();
         final var looper = mTestLooper.getLooper();
@@ -141,23 +141,6 @@ public class PbapClientServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(PbapClientService.getPbapClientService()).isNull();
-    }
-
-    // *********************************************************************************************
-    // * Initialize Service
-    // *********************************************************************************************
-
-    @Test
-    public void testInitialize() {
-        assertThat(PbapClientService.getPbapClientService()).isNotNull();
-    }
-
-    @Test
-    public void testSetPbapClientService_withNull() {
-        PbapClientService.setPbapClientService(null);
-
-        assertThat(PbapClientService.getPbapClientService()).isNull();
     }
 
     // *********************************************************************************************
@@ -304,19 +287,6 @@ public class PbapClientServiceTest {
     // *********************************************************************************************
     // * API Methods
     // *********************************************************************************************
-
-    // getPbapClientService (available) -> this
-    @Test
-    public void testGetService_serviceAvailable_returnsThis() {
-        assertThat(PbapClientService.getPbapClientService()).isEqualTo(mService);
-    }
-
-    // getPbapClientService (unavailable) -> null
-    @Test
-    public void testGetService_serviceUnavailable_returnsNull() {
-        mService.setAvailable(false);
-        assertThat(PbapClientService.getPbapClientService()).isNull();
-    }
 
     // connect (policy allowed) -> connect/true
     @Test
@@ -506,15 +476,6 @@ public class PbapClientServiceTest {
     @Test
     public void testGetConnectionPolicy_onKnownDevice_returnsAllowed() {
         assertThat(mService.getConnectionPolicy(mDevice)).isEqualTo(CONNECTION_POLICY_ALLOWED);
-    }
-
-    // getConnectionPolicy (device null) -> policy unknown
-    @Test
-    public void testGetConnectionPolicy_onNullDevice_returnsUnknown() {
-        doReturn(CONNECTION_POLICY_UNKNOWN)
-                .when(mAdapterService)
-                .getProfileConnectionPolicy(nullable(BluetoothDevice.class), anyInt());
-        assertThat(mService.getConnectionPolicy(null)).isEqualTo(CONNECTION_POLICY_UNKNOWN);
     }
 
     // *********************************************************************************************

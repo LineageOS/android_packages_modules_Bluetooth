@@ -172,6 +172,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockBtaVaps",
+    srcs: [
+        "mock/mock_bta_vaps_*.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockBtaVc",
     srcs: [
         "mock/mock_bta_vc*.cc",
@@ -202,6 +209,7 @@ filegroup {
         ":TestMockBtaRfcMetrics",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
+        ":TestMockBtaVaps",
         ":TestMockBtaVc",
     ],
 }
@@ -477,6 +485,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackGattOffload",
+    srcs: [
+        "mock/mock_stack_gatt_offload.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStackBtu",
     srcs: [
         "mock/mock_stack_btu*.cc",
@@ -573,8 +588,20 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "mts_defaults_map",
+    srcs: ["mts_defaults.map"],
+}
+
 cc_defaults {
     name: "mts_defaults",
+    // (b/445941769): Mainline tests get compiled against the new libc++.so but
+    // the tests also run on old platform versions. The tests load the older
+    // version of libc++.so in these older platform versions which will not have
+    // the newer symbols causing test failures. The fix is to statically link libc++.
+    // The tests need to be linked with a version script else it leads to asan issues.
+    version_script: ":mts_defaults_map",
+    stl: "libc++_static",
     target: {
         android: {
             test_config_template: ":BluetoothGTestConfigTemplate",

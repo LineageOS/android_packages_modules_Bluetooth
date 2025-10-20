@@ -153,6 +153,7 @@ android_library {
         "src/**/*.java",
         "src/**/*.kt",
     ],
+
     proto: {
         type: "lite",
     },
@@ -171,6 +172,7 @@ android_library {
         "framework-media.stubs.module_lib",
         "framework-mediaprovider.stubs.module_lib",
         "framework-statsd.stubs.module_lib",
+        "framework-telecom.stubs.module_lib",
         "framework-tethering.stubs.module_lib",
         "framework-wifi.stubs.module_lib",
         "modules-utils-build",
@@ -182,9 +184,12 @@ android_library {
         "android.os.flags-aconfig-java-export",
         "androidx.annotation_annotation",
         "androidx.core_core",
+        "androidx.datastore_datastore",
+        "androidx.datastore_datastore-core",
         "androidx.lifecycle_lifecycle-livedata",
         "androidx.media_media",
         "androidx.room_room-runtime",
+        "bluetooth-common-java",
         "bluetooth-proto-enums-java-gen",
         "bluetooth-protos-lite",
         "bluetooth.change-ids",

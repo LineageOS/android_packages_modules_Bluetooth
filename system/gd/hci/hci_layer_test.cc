@@ -19,6 +19,7 @@
 #include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <list>
 #include <memory>
 
@@ -280,8 +281,7 @@ TEST_F(HciTest, leMetaEvent) {
 
 TEST_F(HciTest, postEventsOnceOnHciHandler) {
   // Send a CreateConnection command.
-  Address addr;
-  Address::FromString("01:02:03:04:05:06", addr);
+  Address addr = Address::FromString("01:02:03:04:05:06").value();
   upper->SendHciCommandExpectingStatus(CreateConnectionBuilder::Create(
           addr, 0, PageScanRepetitionMode::R0, 0, ClockOffsetValid::INVALID,
           CreateConnectionRoleSwitch::ALLOW_ROLE_SWITCH));
@@ -498,8 +498,7 @@ TEST_F(HciTest, securityInterfacesTest) {
 
 TEST_F(HciTest, createConnectionTest) {
   // Send CreateConnection to the controller
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint16_t packet_type = 0x1234;
   PageScanRepetitionMode page_scan_repetition_mode = PageScanRepetitionMode::R0;
   uint16_t clock_offset = 0x3456;
@@ -589,8 +588,7 @@ TEST_F(HciTest, createConnectionTest) {
 }
 
 TEST_F(HciTest, receiveMultipleAclPackets) {
-  Address bd_addr;
-  ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
   uint16_t handle = 0x0001;
   const uint16_t num_packets = 100;
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
@@ -639,6 +637,817 @@ TEST_F(HciTest, receiveMultipleIsoPackets) {
     ASSERT_EQ(handle, itr.extract<uint16_t>());
     ASSERT_EQ(i, itr.extract<uint16_t>());
   }
+}
+
+TEST_F(HciTest, log_link_layer_command_status_CreateConnectionCancel) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+
+  // Send the CreateConnectionCancel command. This populates the command queue.
+  upper->SendHciCommandExpectingStatus(CreateConnectionCancelBuilder::Create(bd_addr));
+
+  // Verify that the command was sent to the HAL.
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  auto command_view = CreateConnectionCancelView::Create(
+          ConnectionManagementCommandView::Create(AclCommandView::Create(*sent_command)));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(bd_addr, command_view.GetBdAddr());
+
+  // Get the OpCode from the sent command.
+  OpCode op_code = command_view.GetOpCode();
+
+  // Simulate receiving a Command Status event from the HAL, using the correct OpCode.
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  auto status_builder = CommandStatusBuilder::Create(status, num_packets, op_code,
+                                                     std::make_unique<RawBuilder>());
+  hal->callbacks->hciEventReceived(GetPacketBytes(std::move(status_builder)));
+
+  // Verify the event was received by the upper layer.
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(op_code, status_view.GetCommandOpCode());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+// TEST_F(HciTest, log_link_layer_command_status_Disconnect) {
+//   uint16_t handle = 0x123;
+//   DisconnectReason reason = DisconnectReason::AUTHENTICATION_FAILURE;
+//   upper->SendHciCommandExpectingStatus(DisconnectBuilder::Create(handle, reason));
+//   auto sent_command = hal->GetSentCommand();
+//   ASSERT_TRUE(sent_command.has_value());
+//   auto command_view = DisconnectView::Create(
+//           ConnectionManagementCommandView::Create(AclCommandView::Create(*sent_command)));
+//   ASSERT_TRUE(command_view.IsValid());
+//   ASSERT_EQ(handle, command_view.GetConnectionHandle());
+//   ASSERT_EQ(reason, command_view.GetReason());
+
+//   uint8_t num_packets = 1;
+//   ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+//   auto status_builder = DisconnectStatusBuilder::Create(status, num_packets);
+//   hal->callbacks->hciEventReceived(GetPacketBytes(std::move(status_builder)));
+
+//   auto event = upper->GetReceivedEvent();
+//   ASSERT_TRUE(event.has_value());
+//   ASSERT_TRUE(DisconnectStatusView::Create(CommandStatusView::Create(*event)).IsValid());
+//   auto status_view = CommandStatusView::Create(*event);
+//   ASSERT_EQ(status, status_view.GetStatus());
+// }
+
+TEST_F(HciTest, log_link_layer_command_status_SetupSynchronousConnection) {
+  uint16_t handle = 0x123;
+  uint32_t transmit_bandwidth = 0x1F40;
+  uint32_t receive_bandwidth = 0x1F40;
+  uint16_t max_latency = 0x14;
+  uint16_t voice_setting = 0x14;
+  RetransmissionEffort retransmission_effort = RetransmissionEffort::NO_RETRANSMISSION;
+  uint16_t packet_type = static_cast<uint16_t>(BqrPacketType::TYPE_HV1) |
+                         static_cast<uint16_t>(BqrPacketType::TYPE_HV2) |
+                         static_cast<uint16_t>(BqrPacketType::TYPE_HV3);
+  upper->SendHciCommandExpectingStatus(SetupSynchronousConnectionBuilder::Create(
+          handle, transmit_bandwidth, receive_bandwidth, max_latency, voice_setting,
+          retransmission_effort, packet_type));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  OpCode op_code = static_cast<OpCode>(0x428);
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  auto status_builder = CommandStatusBuilder::Create(status, num_packets, op_code,
+                                                     std::make_unique<RawBuilder>());
+  hal->callbacks->hciEventReceived(GetPacketBytes(std::move(status_builder)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_EnhancedSetupSynchronousConnection) {
+  uint16_t handle = 0x123;
+  uint32_t transmit_bandwidth = 0x1F40;
+  uint32_t receive_bandwidth = 0x1F40;
+
+  // Correctly create ScoCodingFormat objects
+  ScoCodingFormat transmit_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+  ScoCodingFormat receive_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+  ScoCodingFormat input_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+  ScoCodingFormat output_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+
+  uint16_t transmit_codec_frame_size = 0x00;
+  uint16_t receive_codec_frame_size = 0x00;
+  uint32_t input_bandwidth = 0x1F40;
+  uint32_t output_bandwidth = 0x1F40;
+  uint16_t input_coded_data_bits = 0x00;
+  uint16_t output_coded_data_bits = 0x00;
+
+  // Correctly create ScoPcmDataFormat objects using a valid enum value
+  ScoPcmDataFormat input_pcm_data_format = ScoPcmDataFormat::TWOS_COMPLEMENT;
+  ScoPcmDataFormat output_pcm_data_format = ScoPcmDataFormat::TWOS_COMPLEMENT;
+
+  uint8_t input_pcm_sample_payload_msb_position = 0x01;
+  uint8_t output_pcm_sample_payload_msb_position = 0x01;
+  ScoDataPath input_data_path = ScoDataPath::HCI;
+  ScoDataPath output_data_path = ScoDataPath::HCI;
+  uint8_t input_transport_unit_bits = 0x00;
+  uint8_t output_transport_unit_bits = 0x00;
+  uint16_t max_latency = 0x14;
+  uint16_t packet_type = static_cast<uint16_t>(BqrPacketType::TYPE_EV3);
+  RetransmissionEffort retransmission_effort = RetransmissionEffort::NO_RETRANSMISSION;
+
+  upper->SendHciCommandExpectingStatus(EnhancedSetupSynchronousConnectionBuilder::Create(
+          handle, transmit_bandwidth, receive_bandwidth, transmit_coding_format,
+          receive_coding_format, transmit_codec_frame_size, receive_codec_frame_size,
+          input_bandwidth, output_bandwidth, input_coding_format, output_coding_format,
+          input_coded_data_bits, output_coded_data_bits, input_pcm_data_format,
+          output_pcm_data_format, input_pcm_sample_payload_msb_position,
+          output_pcm_sample_payload_msb_position, input_data_path, output_data_path,
+          input_transport_unit_bits, output_transport_unit_bits, max_latency, packet_type,
+          retransmission_effort));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  OpCode op_code = static_cast<OpCode>(0x43d);
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  auto status_builder = CommandStatusBuilder::Create(status, num_packets, op_code,
+                                                     std::make_unique<RawBuilder>());
+  hal->callbacks->hciEventReceived(GetPacketBytes(std::move(status_builder)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_AcceptConnectionRequest) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  upper->SendHciCommandExpectingStatus(AcceptConnectionRequestBuilder::Create(
+          bd_addr, AcceptConnectionRequestRole::BECOME_CENTRAL));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(AcceptConnectionRequestStatusBuilder::Create(status, num_packets)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_AcceptSynchronousConnection) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint32_t transmit_bandwidth = 0x1F40;
+  uint32_t receive_bandwidth = 0x1F40;
+  uint16_t max_latency = 0x14;
+  uint16_t voice_setting = 0x14;
+  RetransmissionEffort retransmission_effort = RetransmissionEffort::NO_RETRANSMISSION;
+  uint16_t packet_type = static_cast<uint16_t>(BqrPacketType::TYPE_HV1);
+  upper->SendHciCommandExpectingStatus(AcceptSynchronousConnectionBuilder::Create(
+          bd_addr, transmit_bandwidth, receive_bandwidth, max_latency, voice_setting,
+          retransmission_effort, packet_type));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(AcceptSynchronousConnectionStatusBuilder::Create(status, num_packets)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+TEST_F(HciTest, log_link_layer_command_status_EnhancedAcceptSynchronousConnection) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint32_t transmit_bandwidth = 0x1F40;
+  uint32_t receive_bandwidth = 0x1F40;
+
+  // Correctly create ScoCodingFormat objects
+  ScoCodingFormat transmit_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+  ScoCodingFormat receive_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+  ScoCodingFormat input_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+  ScoCodingFormat output_coding_format(ScoCodingFormatValues::LINEAR_PCM, 0, 0);
+
+  uint16_t transmit_codec_frame_size = 0x00;
+  uint16_t receive_codec_frame_size = 0x00;
+  uint32_t input_bandwidth = 0x1F40;
+  uint32_t output_bandwidth = 0x1F40;
+  uint16_t input_coded_data_bits = 0x00;
+  uint16_t output_coded_data_bits = 0x00;
+
+  // Correctly create ScoPcmDataFormat objects
+  ScoPcmDataFormat input_pcm_data_format = ScoPcmDataFormat::TWOS_COMPLEMENT;
+  ScoPcmDataFormat output_pcm_data_format = ScoPcmDataFormat::TWOS_COMPLEMENT;
+
+  uint8_t input_pcm_sample_payload_msb_position = 0x01;
+  uint8_t output_pcm_sample_payload_msb_position = 0x01;
+  ScoDataPath input_data_path = ScoDataPath::HCI;
+  ScoDataPath output_data_path = ScoDataPath::HCI;
+  uint8_t input_transport_unit_bits = 0x00;
+  uint8_t output_transport_unit_bits = 0x00;
+  uint16_t max_latency = 0x14;
+  uint16_t packet_type = static_cast<uint16_t>(BqrPacketType::TYPE_EV3);
+  RetransmissionEffort retransmission_effort = RetransmissionEffort::NO_RETRANSMISSION;
+
+  upper->SendHciCommandExpectingStatus(EnhancedAcceptSynchronousConnectionBuilder::Create(
+          bd_addr, transmit_bandwidth, receive_bandwidth, transmit_coding_format,
+          receive_coding_format, transmit_codec_frame_size, receive_codec_frame_size,
+          input_bandwidth, output_bandwidth, input_coding_format, output_coding_format,
+          input_coded_data_bits, output_coded_data_bits, input_pcm_data_format,
+          output_pcm_data_format, input_pcm_sample_payload_msb_position,
+          output_pcm_sample_payload_msb_position, input_data_path, output_data_path,
+          input_transport_unit_bits, output_transport_unit_bits, max_latency, packet_type,
+          retransmission_effort));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  auto status_builder =
+          EnhancedAcceptSynchronousConnectionStatusBuilder::Create(status, num_packets);
+  hal->callbacks->hciEventReceived(GetPacketBytes(std::move(status_builder)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_RejectConnectionRequest) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  RejectConnectionReason reason = RejectConnectionReason::LIMITED_RESOURCES;
+  upper->SendHciCommandExpectingStatus(RejectConnectionRequestBuilder::Create(bd_addr, reason));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(RejectConnectionRequestStatusBuilder::Create(status, num_packets)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_RejectSynchronousConnection) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  RejectConnectionReason reason = RejectConnectionReason::LIMITED_RESOURCES;
+  upper->SendHciCommandExpectingStatus(RejectSynchronousConnectionBuilder::Create(bd_addr, reason));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(RejectSynchronousConnectionStatusBuilder::Create(status, num_packets)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_LeCreateConnection) {
+  // 1. Create the LeCreateConnPhyScanParameters object
+  vector<LeCreateConnPhyScanParameters> phy_params;
+  LeCreateConnPhyScanParameters le_phy_params(0x0123,  // scan_interval
+                                              0x4567,  // scan_window
+                                              0x0ABC,  // conn_interval_min
+                                              0x0DEF,  // conn_interval_max
+                                              0x0102,  // conn_latency
+                                              0x0304,  // supervision_timeout
+                                              0x0506,  // min_ce_length
+                                              0x0708   // max_ce_length
+  );
+  phy_params.push_back(le_phy_params);
+
+  // 3. Send the command and expect a status response.
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  upper->SendHciCommandExpectingStatus(LeExtendedCreateConnectionBuilder::Create(
+          InitiatorFilterPolicy::USE_PEER_ADDRESS, OwnAddressType::PUBLIC_DEVICE_ADDRESS,
+          AddressType::PUBLIC_DEVICE_ADDRESS, peer_addr, static_cast<uint8_t>(PhyType::LE_1M),
+          phy_params));
+
+  OpCode op_code = static_cast<OpCode>(OpCode::LE_EXTENDED_CREATE_CONNECTION);
+
+  // Verify the command was sent to the fake HAL.
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  // Simulate receiving a Command Status event from the HAL, using the generic builder.
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  auto status_builder = CommandStatusBuilder::Create(status, num_packets, op_code,
+                                                     std::make_unique<RawBuilder>());
+  hal->callbacks->hciEventReceived(GetPacketBytes(std::move(status_builder)));
+
+  // Verify the HCI layer correctly processed the event.
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(op_code, status_view.GetCommandOpCode());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_LeExtendedCreateConnection) {
+  vector<LeCreateConnPhyScanParameters> phy_params;
+  LeCreateConnPhyScanParameters le_phy_params(0x0123,  // scan_interval
+                                              0x4567,  // scan_window
+                                              0x0ABC,  // conn_interval_min
+                                              0x0DEF,  // conn_interval_max
+                                              0x0102,  // conn_latency
+                                              0x0304,  // supervision_timeout
+                                              0x0506,  // min_ce_length
+                                              0x0708   // max_ce_length
+  );
+  phy_params.push_back(le_phy_params);
+
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+
+  upper->SendHciCommandExpectingStatus(LeExtendedCreateConnectionBuilder::Create(
+          InitiatorFilterPolicy::USE_PEER_ADDRESS, OwnAddressType::PUBLIC_DEVICE_ADDRESS,
+          AddressType::PUBLIC_DEVICE_ADDRESS, peer_addr, static_cast<uint8_t>(PhyType::LE_1M),
+          phy_params));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(LeExtendedCreateConnectionStatusBuilder::Create(status, num_packets)));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_LeCreateConnectionCancel) {
+  upper->SendHciCommandExpectingStatus(LeCreateConnectionCancelBuilder::Create());
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::UNKNOWN_CONNECTION;  // Non-SUCCESS status to hit the if
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          CommandStatusBuilder::Create(status, num_packets, OpCode::LE_CREATE_CONNECTION_CANCEL,
+                                       std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_LeClearFilterAcceptList) {
+  upper->SendHciCommandExpectingStatus(LeClearFilterAcceptListBuilder::Create());
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          CommandStatusBuilder::Create(status, num_packets, OpCode::LE_CLEAR_FILTER_ACCEPT_LIST,
+                                       std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_LeAddDeviceToFilterAcceptList) {
+  Address addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  upper->SendHciCommandExpectingStatus(
+          LeAddDeviceToFilterAcceptListBuilder::Create(FilterAcceptListAddressType::PUBLIC, addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CommandStatusBuilder::Create(
+          status, num_packets, OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST,
+          std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_link_layer_command_status_LeRemoveDeviceFromFilterAcceptList) {
+  Address addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  upper->SendHciCommandExpectingStatus(LeRemoveDeviceFromFilterAcceptListBuilder::Create(
+          FilterAcceptListAddressType::PUBLIC, addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::HARDWARE_FAILURE;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CommandStatusBuilder::Create(
+          status, num_packets, OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST,
+          std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_ReadLocalOobData) {
+  upper->SendHciCommandExpectingComplete(ReadLocalOobDataBuilder::Create());
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(ReadLocalOobDataCompleteBuilder::Create(num_packets, status, {}, {})));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(ReadLocalOobDataCompleteView::Create(CommandCompleteView::Create(*event)).IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_WriteSecureConnectionsHostSupport) {
+  Enable enable = Enable::ENABLED;
+  upper->SendHciCommandExpectingComplete(WriteSecureConnectionsHostSupportBuilder::Create(enable));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          WriteSecureConnectionsHostSupportCompleteBuilder::Create(num_packets, status)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(
+          WriteSecureConnectionsHostSupportCompleteView::Create(CommandCompleteView::Create(*event))
+                  .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_ReadEncryptionKeySize) {
+  uint16_t connection_handle = 0x123;
+  upper->SendHciCommandExpectingComplete(ReadEncryptionKeySizeBuilder::Create(connection_handle));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  uint8_t key_size = 0x10;
+  hal->callbacks->hciEventReceived(GetPacketBytes(ReadEncryptionKeySizeCompleteBuilder::Create(
+          num_packets, status, connection_handle, key_size)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(
+          ReadEncryptionKeySizeCompleteView::Create(CommandCompleteView::Create(*event)).IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_LinkKeyRequestReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  std::array<uint8_t, 16> key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+  upper->SendHciCommandExpectingComplete(LinkKeyRequestReplyBuilder::Create(bd_addr, key));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(LinkKeyRequestReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(
+          LinkKeyRequestReplyCompleteView::Create(CommandCompleteView::Create(*event)).IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_LinkKeyRequestNegativeReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  upper->SendHciCommandExpectingComplete(LinkKeyRequestNegativeReplyBuilder::Create(bd_addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          LinkKeyRequestNegativeReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(LinkKeyRequestNegativeReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                      .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_IoCapabilityRequestReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  IoCapability io_capability = IoCapability::NO_INPUT_NO_OUTPUT;
+  OobDataPresent oob_data_present = OobDataPresent::NOT_PRESENT;
+  AuthenticationRequirements authentication_requirements = AuthenticationRequirements::NO_BONDING;
+  upper->SendHciCommandExpectingComplete(IoCapabilityRequestReplyBuilder::Create(
+          bd_addr, io_capability, oob_data_present, authentication_requirements));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          IoCapabilityRequestReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(IoCapabilityRequestReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                      .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_IoCapabilityRequestNegativeReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  upper->SendHciCommandExpectingComplete(
+          IoCapabilityRequestNegativeReplyBuilder::Create(bd_addr, ErrorCode::LIMIT_REACHED));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          IoCapabilityRequestNegativeReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(
+          IoCapabilityRequestNegativeReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                  .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_UserConfirmationRequestReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  upper->SendHciCommandExpectingComplete(UserConfirmationRequestReplyBuilder::Create(bd_addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          UserConfirmationRequestReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(UserConfirmationRequestReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                      .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_UserConfirmationRequestNegativeReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  upper->SendHciCommandExpectingComplete(
+          UserConfirmationRequestNegativeReplyBuilder::Create(bd_addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(
+          GetPacketBytes(UserConfirmationRequestNegativeReplyCompleteBuilder::Create(
+                  num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(UserConfirmationRequestNegativeReplyCompleteView::Create(
+                      CommandCompleteView::Create(*event))
+                      .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_UserPasskeyRequestReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  uint32_t passkey = 123456;
+  upper->SendHciCommandExpectingComplete(UserPasskeyRequestReplyBuilder::Create(bd_addr, passkey));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          UserPasskeyRequestReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(UserPasskeyRequestReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                      .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_UserPasskeyRequestNegativeReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  upper->SendHciCommandExpectingComplete(UserPasskeyRequestNegativeReplyBuilder::Create(bd_addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          UserPasskeyRequestNegativeReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(
+          UserPasskeyRequestNegativeReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                  .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_RemoteOobDataRequestReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  std::array<uint8_t, 16> c = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+                               0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20};
+  std::array<uint8_t, 16> r = {0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+                               0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30};
+  upper->SendHciCommandExpectingComplete(RemoteOobDataRequestReplyBuilder::Create(bd_addr, c, r));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          RemoteOobDataRequestReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(RemoteOobDataRequestReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                      .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_complete_RemoteOobDataRequestNegativeReply) {
+  Address bd_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  upper->SendHciCommandExpectingComplete(RemoteOobDataRequestNegativeReplyBuilder::Create(bd_addr));
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          RemoteOobDataRequestNegativeReplyCompleteBuilder::Create(num_packets, status, bd_addr)));
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  ASSERT_TRUE(
+          RemoteOobDataRequestNegativeReplyCompleteView::Create(CommandCompleteView::Create(*event))
+                  .IsValid());
+}
+
+TEST_F(HciTest, log_pairing_command_status_AuthenticationRequested) {
+  uint16_t connection_handle = 0x100;
+  upper->SendHciCommandExpectingStatus(AuthenticationRequestedBuilder::Create(connection_handle));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  auto command_view = AuthenticationRequestedView::Create(
+          ConnectionManagementCommandView::Create(AclCommandView::Create(*sent_command)));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(connection_handle, command_view.GetConnectionHandle());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CommandStatusBuilder::Create(
+          status, num_packets, OpCode::AUTHENTICATION_REQUESTED, std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_pairing_command_status_SetConnectionEncryption) {
+  uint16_t connection_handle = 0x101;
+  Enable encryption_enable = Enable::ENABLED;
+  upper->SendHciCommandExpectingStatus(
+          SetConnectionEncryptionBuilder::Create(connection_handle, encryption_enable));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  auto command_view = SetConnectionEncryptionView::Create(
+          ConnectionManagementCommandView::Create(AclCommandView::Create(*sent_command)));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(connection_handle, command_view.GetConnectionHandle());
+  ASSERT_EQ(encryption_enable, command_view.GetEncryptionEnable());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CommandStatusBuilder::Create(
+          status, num_packets, OpCode::SET_CONNECTION_ENCRYPTION, std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_pairing_command_status_RemoteNameRequest) {
+  Address bd_addr = Address::FromString("A1:B2:C3:D4:E5:F6").value();
+  PageScanRepetitionMode page_scan_mode = PageScanRepetitionMode::R2;
+  uint16_t clock_offset = 0x1234;
+  ClockOffsetValid clock_offset_valid = ClockOffsetValid::VALID;
+  upper->SendHciCommandExpectingStatus(RemoteNameRequestBuilder::Create(
+          bd_addr, page_scan_mode, clock_offset, clock_offset_valid));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  auto command_view = RemoteNameRequestView::Create(
+          DiscoveryCommandView::Create(CommandView::Create(*sent_command)));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(bd_addr, command_view.GetBdAddr());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CommandStatusBuilder::Create(
+          status, num_packets, OpCode::REMOTE_NAME_REQUEST, std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_pairing_command_status_RemoteNameRequestCancel) {
+  Address bd_addr = Address::FromString("A1:B2:C3:D4:E5:F6").value();
+  upper->SendHciCommandExpectingStatus(RemoteNameRequestCancelBuilder::Create(bd_addr));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  auto command_view = RemoteNameRequestCancelView::Create(
+          DiscoveryCommandView::Create(CommandView::Create(*sent_command)));
+  ASSERT_TRUE(command_view.IsValid());
+  ASSERT_EQ(bd_addr, command_view.GetBdAddr());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::SUCCESS;
+  hal->callbacks->hciEventReceived(GetPacketBytes(
+          CommandStatusBuilder::Create(status, num_packets, OpCode::REMOTE_NAME_REQUEST_CANCEL,
+                                       std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
+}
+
+TEST_F(HciTest, log_le_connection_command_LeCreateConnection) {
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint16_t scan_interval = 0x1234;
+  uint16_t scan_window = 0x1234;
+  InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
+  AddressType peer_address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
+  uint16_t conn_interval_min = 0x0ABC;
+  uint16_t conn_interval_max = 0x0DEF;
+  uint16_t conn_latency = 0x0123;
+  uint16_t supervision_timeout = 0x0B05;
+  uint16_t minimum_ce_length = 0x0001;
+  uint16_t maximum_ce_length = 0x0002;
+
+  upper->SendHciCommandExpectingStatus(LeCreateConnectionBuilder::Create(
+          scan_interval, scan_window, initiator_filter_policy, peer_address_type, peer_addr,
+          OwnAddressType::PUBLIC_DEVICE_ADDRESS, conn_interval_min, conn_interval_max, conn_latency,
+          supervision_timeout, minimum_ce_length, maximum_ce_length));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+  auto view = LeCreateConnectionView::Create(
+          LeConnectionManagementCommandView::Create(ConnectionManagementCommandView::Create(
+                  AclCommandView::Create(CommandView::Create(*sent_command)))));
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(peer_addr, view.GetPeerAddress());
+}
+
+TEST_F(HciTest, log_le_connection_command_status_LeCreateConnection) {
+  Address peer_addr = Address::FromString("A1:A2:A3:A4:A5:A6").value();
+  uint16_t scan_interval = 0x1234;
+  uint16_t scan_window = 0x1234;
+  InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
+  AddressType peer_address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
+  uint16_t conn_interval_min = 0x0ABC;
+  uint16_t conn_interval_max = 0x0DEF;
+  uint16_t conn_latency = 0x0123;
+  uint16_t supervision_timeout = 0x0B05;
+  uint16_t minimum_ce_length = 0x0001;
+  uint16_t maximum_ce_length = 0x0002;
+
+  upper->SendHciCommandExpectingStatus(LeCreateConnectionBuilder::Create(
+          scan_interval, scan_window, initiator_filter_policy, peer_address_type, peer_addr,
+          OwnAddressType::PUBLIC_DEVICE_ADDRESS, conn_interval_min, conn_interval_max, conn_latency,
+          supervision_timeout, minimum_ce_length, maximum_ce_length));
+
+  auto sent_command = hal->GetSentCommand();
+  ASSERT_TRUE(sent_command.has_value());
+
+  uint8_t num_packets = 1;
+  ErrorCode status = ErrorCode::CONNECTION_FAILED_ESTABLISHMENT;
+  hal->callbacks->hciEventReceived(GetPacketBytes(CommandStatusBuilder::Create(
+          status, num_packets, OpCode::LE_CREATE_CONNECTION, std::make_unique<RawBuilder>())));
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(event.has_value());
+  auto status_view = CommandStatusView::Create(*event);
+  ASSERT_TRUE(status_view.IsValid());
+  ASSERT_EQ(status, status_view.GetStatus());
 }
 
 }  // namespace

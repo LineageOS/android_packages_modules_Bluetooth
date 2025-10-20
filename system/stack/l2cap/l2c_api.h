@@ -49,7 +49,7 @@ public:
   void L2CA_Deregister(uint16_t psm) override;
 
   // Lifecycle methods to register BLE l2cap services
-  [[nodiscard]] uint16_t L2CA_AllocateLePSM(void) override;
+  [[nodiscard]] uint16_t L2CA_AllocateLePSM(int fixed_psm_slots) override;
   void L2CA_FreeLePSM(uint16_t psm) override;
 
   [[nodiscard]] uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,

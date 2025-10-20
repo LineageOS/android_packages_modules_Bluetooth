@@ -22,9 +22,9 @@ import android.os.BatteryStatsManager
 import android.os.WorkSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.TestUtils.FakeTimeProvider
 import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.util.TimeProvider
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -41,9 +41,7 @@ class AppScanStatsTest {
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var batteryStatsManager: BatteryStatsManager
-    @Mock private lateinit var scanController: ScanController
-
-    private val timeProvider = FakeTimeProvider()
+    @Mock private lateinit var timeProvider: TimeProvider
 
     @Before
     fun setUp() {
@@ -55,11 +53,10 @@ class AppScanStatsTest {
         val name = "appName"
         val source: WorkSource? = null
         val uid = 1234
-        val appScanStats =
-            AppScanStats(name, source, uid, adapterService, scanController, timeProvider)
+        val pid = 5678
+        val appScanStats = AppScanStats(uid, pid, name, source, adapterService, timeProvider)
 
-        assertThat(appScanStats.mScanController).isEqualTo(scanController)
-        assertThat(appScanStats.isScanning).isFalse()
+        assertThat(appScanStats.isScanning()).isFalse()
     }
 
     @Test
@@ -67,8 +64,8 @@ class AppScanStatsTest {
         val name = "appName"
         val source: WorkSource? = null
         val uid = 1234
-        val appScanStats =
-            AppScanStats(name, source, uid, adapterService, scanController, timeProvider)
+        val pid = 5678
+        val appScanStats = AppScanStats(uid, pid, name, source, adapterService, timeProvider)
 
         val settings = ScanSettings.Builder().build()
         val filters = listOf(ScanFilter.Builder().setDeviceName("TestName").build())
@@ -84,7 +81,7 @@ class AppScanStatsTest {
             scannerId,
             "tag",
         )
-        appScanStats.mIsRegistered = true
+        appScanStats.isRegistered = true
 
         val stringBuilder = StringBuilder()
         appScanStats.dump(stringBuilder, emptyList())

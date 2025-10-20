@@ -20,10 +20,11 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHE
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothProtoEnums;
+import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.util.TimeProvider;
 import com.android.bluetooth.util.WorkSourceUtil;
 
 class ScanRadioStats {
@@ -46,10 +47,6 @@ class ScanRadioStats {
         mTimeProvider = timeProvider;
     }
 
-    void initScanRadioState() {
-        mIsRadioStarted = false;
-    }
-
     void setScreenState(boolean isScreenOn) {
         if (mIsScreenOn == isScreenOn) {
             return;
@@ -62,29 +59,29 @@ class ScanRadioStats {
         recordScreenOnOffMetrics();
     }
 
-    boolean recordScanRadioStart(
+    void recordScanRadioStart(
             int scanMode, int scannerId, AppScanStats stats, int scanWindowMs, int scanIntervalMs) {
         if (mIsRadioStarted) {
-            return false;
+            Log.w(TAG, "recordScanRadioStart(): Scan radio already started");
+            return;
         }
         mRadioStartTime = mTimeProvider.elapsedRealtime();
-        mRadioScanWorkSourceUtil = stats.mWorkSourceUtil;
-        mRadioScanType = AppScanStats.convertScanType(stats.getScanFromScannerId(scannerId));
+        mRadioScanWorkSourceUtil = stats.getWorkSourceUtil();
+        mRadioScanType = ScanMetricsReporter.convertScanType(stats.getScanFromScannerId(scannerId));
         mRadioScanMode = scanMode;
         mRadioScanWindowMs = scanWindowMs;
         mRadioScanIntervalMs = scanIntervalMs;
         mIsRadioStarted = true;
-        mRadioScanAppImportance = stats.mAppImportance;
+        mRadioScanAppImportance = stats.getAppImportance();
         mRadioScanAttributionTag = stats.getAttributionTagFromScannerId(scannerId);
-        return true;
     }
 
-    boolean recordScanRadioStop() {
+    void recordScanRadioStop(String caller) {
         if (!mIsRadioStarted) {
-            return false;
+            Log.w(TAG, "recordScanRadioStop(caller=" + caller + "): No scan radio to stop");
+            return;
         }
         recordScanRadioDurationMetrics();
-        return true;
     }
 
     void recordScanRadioResultCount() {
@@ -145,7 +142,7 @@ class ScanRadioStats {
                 getRadioScanUids(),
                 getRadioScanTags(),
                 mRadioScanType,
-                AppScanStats.convertScanMode(mRadioScanMode),
+                ScanMetricsReporter.convertScanMode(mRadioScanMode),
                 mRadioScanIntervalMs,
                 mRadioScanWindowMs,
                 mIsScreenOn,

@@ -187,7 +187,7 @@ void LeAclConnection::RegisterCallbacks(LeConnectionManagementCallbacks* callbac
 }
 
 void LeAclConnection::Disconnect(DisconnectReason reason) {
-  if (com::android::bluetooth::flags::dont_send_hci_disconnect_repeatedly()) {
+  if (com_android_bluetooth_flags_dont_send_hci_disconnect_repeatedly()) {
     if (is_disconnecting_) {
       log::info("Already disconnecting {}", remote_address_);
       return;

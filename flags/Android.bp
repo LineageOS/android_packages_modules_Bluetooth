@@ -10,6 +10,8 @@ aconfig_declarations {
     visibility: ["//packages/modules/Bluetooth/framework"],
     // LINT.IfChange
     srcs: [
+        "24q3_exported_api_flags.aconfig",
+        "25q2_exported_api_flags.aconfig",
         "a2dp.aconfig",
         "active_device_manager.aconfig",
         "adapter.aconfig",
@@ -17,6 +19,7 @@ aconfig_declarations {
         "bta_dm.aconfig",
         "btif_dm.aconfig",
         "btm_ble.aconfig",
+        "btm_iso.aconfig",
         "connectivity.aconfig",
         "dis.aconfig",
         "framework.aconfig",
@@ -38,7 +41,7 @@ aconfig_declarations {
         "native.aconfig",
         "opp.aconfig",
         "pairing.aconfig",
-        "pbapclient.aconfig",
+        "pbap.aconfig",
         "ranging.aconfig",
         "rfcomm.aconfig",
         "rnr.aconfig",
@@ -51,7 +54,6 @@ aconfig_declarations {
         "tbs.aconfig",
         "threading.aconfig",
         "vcp.aconfig",
-        "vsc.aconfig",
     ],
     // LINT.ThenChange(/flags/BUILD.gn)
     exportable: true,
@@ -60,7 +62,13 @@ aconfig_declarations {
 java_aconfig_library {
     name: "bluetooth_flags_java_lib",
     aconfig_declarations: "bluetooth_aconfig_flags",
-    visibility: ["//packages/modules/Bluetooth:__subpackages__"],
+    visibility: [
+        "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/android/app/tests/unit",
+        "//packages/modules/Bluetooth/framework",
+        "//packages/modules/Bluetooth/framework/tests/bumble",
+        "//packages/modules/Bluetooth/service",
+    ],
     apex_available: ["com.android.bt"],
     libs: ["framework-configinfrastructure.stubs.module_lib"],
     sdk_version: "module_current",
@@ -77,6 +85,7 @@ java_aconfig_library {
         "//cts/tests/tests/bluetooth:__subpackages__",
         "//frameworks/base",
         "//frameworks/base/packages/SettingsLib",
+        "//packages/modules/Bluetooth:__subpackages__",
     ],
 }
 

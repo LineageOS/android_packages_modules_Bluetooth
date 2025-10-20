@@ -18,7 +18,9 @@ package com.android.pandora
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothLeAudio
+import android.bluetooth.BluetoothLeAudioCodecStatus
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
@@ -45,8 +47,10 @@ import kotlin.io.path.div
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -72,6 +76,23 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
     private var audioTrack: AudioTrack? = null
     private var mediaRecorder: MediaRecorder? = null
 
+    private sealed class LeAudioCallbackEvent {
+        data class CodecConfigChanged(val groupId: Int, val status: BluetoothLeAudioCodecStatus) :
+            LeAudioCallbackEvent()
+
+        data class GroupNodeAdded(val device: BluetoothDevice, val groupId: Int) :
+            LeAudioCallbackEvent()
+
+        data class GroupNodeRemoved(val device: BluetoothDevice, val groupId: Int) :
+            LeAudioCallbackEvent()
+
+        data class GroupStatusChanged(val groupId: Int, val groupStatus: Int) :
+            LeAudioCallbackEvent()
+
+        data class GroupStreamStatusChanged(val groupId: Int, val groupStreamStatus: Int) :
+            LeAudioCallbackEvent()
+    }
+
     init {
         scope = CoroutineScope(Dispatchers.Default)
         val intentFilter = IntentFilter()
@@ -80,6 +101,52 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
 
         flow = intentFlow(context, intentFilter, scope).shareIn(scope, SharingStarted.Eagerly)
     }
+
+    private val mCallbackEvents =
+        callbackFlow {
+                val callback =
+                    object : BluetoothLeAudio.Callback {
+                        override fun onCodecConfigChanged(
+                            groupId: Int,
+                            status: BluetoothLeAudioCodecStatus,
+                        ) {
+                            Log.i(TAG, "onCodecConfigChanged($groupId, $status)")
+                            trySend(LeAudioCallbackEvent.CodecConfigChanged(groupId, status))
+                        }
+
+                        override fun onGroupNodeAdded(device: BluetoothDevice, groupId: Int) {
+                            Log.i(TAG, "onGroupNodeAdded($device, $groupId")
+                            trySend(LeAudioCallbackEvent.GroupNodeAdded(device, groupId))
+                        }
+
+                        override fun onGroupNodeRemoved(device: BluetoothDevice, groupId: Int) {
+                            Log.i(TAG, "onGroupNodeRemoved($device, $groupId)")
+                            trySend(LeAudioCallbackEvent.GroupNodeRemoved(device, groupId))
+                        }
+
+                        override fun onGroupStatusChanged(groupId: Int, groupStatus: Int) {
+                            Log.i(TAG, "onGroupStatusChanged($groupId, $groupStatus)")
+                            trySend(LeAudioCallbackEvent.GroupStatusChanged(groupId, groupStatus))
+                        }
+
+                        override fun onGroupStreamStatusChanged(
+                            groupId: Int,
+                            groupStreamStatus: Int,
+                        ) {
+                            Log.i(TAG, "onGroupStreamStatusChanged($groupId, $groupStreamStatus)")
+                            trySend(
+                                LeAudioCallbackEvent.GroupStreamStatusChanged(
+                                    groupId,
+                                    groupStreamStatus,
+                                )
+                            )
+                        }
+                    }
+                bluetoothLeAudio.registerCallback(context.mainExecutor, callback)
+
+                awaitClose { bluetoothLeAudio.unregisterCallback(callback) }
+            }
+            .shareIn(scope, SharingStarted.Eagerly, replay = 1)
 
     fun mapAudioUsage(audioUsage: AudioUsage): Int {
         return when (audioUsage) {
@@ -134,7 +201,22 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         }
     }
 
+    fun GroupStreamStatus.toAndroidStatus(): Int {
+        return when (this) {
+            GroupStreamStatus.GROUP_STREAM_STATUS_IDLE -> BluetoothLeAudio.GROUP_STREAM_STATUS_IDLE
+            GroupStreamStatus.GROUP_STREAM_STATUS_STREAMING ->
+                BluetoothLeAudio.GROUP_STREAM_STATUS_STREAMING
+            else -> {
+                BluetoothLeAudio.GROUP_STREAM_STATUS_IDLE
+            }
+        }
+    }
+
     override fun close() {
+        audioTrack?.release()
+        audioTrack = null
+        mediaRecorder?.release()
+        mediaRecorder = null
         bluetoothAdapter.closeProfileProxy(BluetoothProfile.LE_AUDIO, bluetoothLeAudio)
         scope.cancel()
     }
@@ -355,6 +437,29 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
                 responseObserver.onNext(LeAudioPlaybackAudioResponse.getDefaultInstance())
                 responseObserver.onCompleted()
             }
+        }
+    }
+
+    override fun leAudioWaitGroupStreamStatusChanged(
+        request: LeAudioWaitGroupStreamStatusChangedRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        grpcUnary(scope, responseObserver) {
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+            val groupId: Int = bluetoothLeAudio.getGroupId(device)
+            val groupStreamStatus: GroupStreamStatus = request.groupStreamStatus
+            Log.i(
+                TAG,
+                "waitLeAudioGroupStreamStatusChanged: device=$device, groupId=${groupId}, groupStreamStatus=${groupStreamStatus}",
+            )
+            mCallbackEvents
+                .filter {
+                    it is LeAudioCallbackEvent.GroupStreamStatusChanged &&
+                        it.groupId == groupId &&
+                        it.groupStreamStatus == groupStreamStatus.toAndroidStatus()
+                }
+                .first()
+            Empty.getDefaultInstance()
         }
     }
 }

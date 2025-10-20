@@ -67,8 +67,9 @@ public class PanServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private PanNativeCallback panNativeCallback;
     @Mock private PanNativeInterface mNativeInterface;
-    @Mock private UserManager mMockUserManager;
+    @Mock private UserManager mUserManager;
 
     private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[] {0, 0, 0, 0, 0, 0};
     private static final int TIMEOUT_MS = 5_000;
@@ -82,34 +83,33 @@ public class PanServiceTest {
     @Before
     public void setUp() {
         doReturn(mContext.getResources()).when(mAdapterService).getResources();
-        mockGetSystemService(mAdapterService, UserManager.class, mMockUserManager);
         mockGetSystemService(mAdapterService, TetheringManager.class);
 
         mTestLooper = new TestLooper();
-        mService = new PanService(mAdapterService, mNativeInterface, mTestLooper.getLooper());
+        mService =
+                new PanService(
+                        mAdapterService,
+                        panNativeCallback,
+                        mNativeInterface,
+                        mUserManager,
+                        mTestLooper.getLooper());
         mService.setAvailable(true);
     }
 
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(PanService.getPanService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(PanService.getPanService()).isNotNull();
     }
 
     @Test
     public void connect_whenGuestUser_returnsFalse() {
-        when(mMockUserManager.isGuestUser()).thenReturn(true);
+        when(mUserManager.isGuestUser()).thenReturn(true);
         assertThat(mService.connect(mRemoteDevice)).isFalse();
     }
 
     @Test
     public void connect_inConnectedState_returnsFalse() {
-        when(mMockUserManager.isGuestUser()).thenReturn(false);
+        when(mUserManager.isGuestUser()).thenReturn(false);
         mService.mPanDevices.put(
                 mRemoteDevice,
                 new BluetoothPanDevice(STATE_CONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
@@ -119,7 +119,7 @@ public class PanServiceTest {
 
     @Test
     public void connect() {
-        when(mMockUserManager.isGuestUser()).thenReturn(false);
+        when(mUserManager.isGuestUser()).thenReturn(false);
         mService.mPanDevices.put(
                 mRemoteDevice,
                 new BluetoothPanDevice(STATE_DISCONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
@@ -138,15 +138,15 @@ public class PanServiceTest {
 
     @Test
     public void convertHalState() {
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_CONNECTED))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_CONNECTED))
                 .isEqualTo(STATE_CONNECTED);
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_CONNECTING))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_CONNECTING))
                 .isEqualTo(STATE_CONNECTING);
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_DISCONNECTED))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_DISCONNECTED))
                 .isEqualTo(STATE_DISCONNECTED);
-        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_DISCONNECTING))
+        assertThat(PanNativeCallback.convertHalState(PanNativeCallback.CONN_STATE_DISCONNECTING))
                 .isEqualTo(STATE_DISCONNECTING);
-        assertThat(PanNativeInterface.convertHalState(-24664)) // illegal value
+        assertThat(PanNativeCallback.convertHalState(-24664)) // illegal value
                 .isEqualTo(STATE_DISCONNECTED);
     }
 

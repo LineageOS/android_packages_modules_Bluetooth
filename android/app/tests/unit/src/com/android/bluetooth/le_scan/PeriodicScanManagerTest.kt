@@ -20,11 +20,14 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.ScanResult
 import android.os.IBinder
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestUtils.getRealDevice
 import com.android.bluetooth.TestUtils.mockGetBluetoothManager
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.MockitoRule
 import org.junit.After
 import org.junit.Before
@@ -33,10 +36,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.inOrder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -45,15 +51,21 @@ import org.mockito.kotlin.whenever
 @RunWith(AndroidJUnit4::class)
 class PeriodicScanManagerTest {
     @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val setFlagsRule = SetFlagsRule()
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
-    @Mock private lateinit var periodicScanNativeInterface: PeriodicScanNativeInterface
+    @Mock private lateinit var nativeCallback: PeriodicScanNativeCallback
+    @Mock private lateinit var nativeInterface: PeriodicScanNativeInterface
     @Mock private lateinit var callback: IPeriodicAdvertisingCallback
     @Mock private lateinit var binder: IBinder
+    @Mock private lateinit var callback2: IPeriodicAdvertisingCallback
+    @Mock private lateinit var binder2: IBinder
 
     private val device: BluetoothDevice =
         getRealDevice(REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+    private val sid: Int = 123
+    private val statusFailure: Int = 1
 
     private lateinit var periodicScanManager: PeriodicScanManager
     private lateinit var scanResult: ScanResult
@@ -64,11 +76,13 @@ class PeriodicScanManagerTest {
         mockGetBluetoothManager(adapterService)
 
         periodicScanManager =
-            PeriodicScanManager(adapterService, scanController, periodicScanNativeInterface)
-        scanResult = ScanResult(device, 0, 0, 0, 0, 0, 0, 0, null, 0)
+            PeriodicScanManager(adapterService, scanController, nativeCallback, nativeInterface)
+        scanResult = ScanResult(device, 0, 0, 0, sid, 0, 0, 0, null, 0)
 
         doReturn(binder).whenever(callback).asBinder()
         doNothing().whenever(binder).linkToDeath(any(), eq(0))
+        doReturn(binder2).whenever(callback2).asBinder()
+        doNothing().whenever(binder2).linkToDeath(any(), eq(0))
 
         syncHandle = periodicScanManager.mTempRegistrationId
     }
@@ -80,24 +94,22 @@ class PeriodicScanManagerTest {
 
     @Test
     fun startSync_invokesNative() {
-        periodicScanManager.startSync(scanResult, 0, 0, callback)
-
-        verify(periodicScanNativeInterface)
-            .startSync(eq(0), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
+        verify(nativeInterface).startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
     }
 
     @Test
     fun startSync_onSyncStarted() {
-        periodicScanManager.startSync(scanResult, 0, 0, callback)
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
 
         val regIdCaptor = argumentCaptor<Int>()
-        verify(periodicScanNativeInterface)
-            .startSync(eq(0), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
+        verify(nativeInterface)
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
 
         periodicScanManager.onSyncStarted(
             regIdCaptor.firstValue,
             syncHandle,
-            0,
+            sid,
             BluetoothDevice.ADDRESS_TYPE_RANDOM,
             REMOTE_DEVICE_ADDRESS,
             0,
@@ -105,7 +117,87 @@ class PeriodicScanManagerTest {
             0,
         )
 
-        verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(0), eq(0), eq(0), eq(0))
+        verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(sid), eq(0), eq(0), eq(0))
+    }
+
+    @Test
+    fun startSyncScanResult_invokesNative() {
+        periodicScanManager.startSync(scanResult, 0, 0, callback)
+        verify(nativeInterface).startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+    }
+
+    @Test
+    fun startSyncScanResult_onSyncStarted() {
+        periodicScanManager.startSync(scanResult, 0, 0, callback)
+
+        val regIdCaptor = argumentCaptor<Int>()
+        verify(nativeInterface)
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
+
+        periodicScanManager.onSyncStarted(
+            regIdCaptor.firstValue,
+            syncHandle,
+            sid,
+            BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            REMOTE_DEVICE_ADDRESS,
+            0,
+            100,
+            0,
+        )
+
+        verify(callback).onSyncEstablished(eq(syncHandle), eq(device), eq(sid), eq(0), eq(0), eq(0))
+    }
+
+    @Test
+    fun stopSync_notStarted_doesNothing() {
+        periodicScanManager.stopSync(callback)
+        verify(nativeInterface, never()).cancelSync(sid, REMOTE_DEVICE_ADDRESS)
+    }
+
+    @Test
+    fun stopSync_afterStart_invokesNative() {
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
+        verify(nativeInterface).startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
+
+        periodicScanManager.stopSync(callback)
+        verify(nativeInterface).cancelSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS))
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    fun onSyncStarted_fails_retryStartSyncInCallback() {
+        // Set up the callback to re-trigger startSync on failure.
+        doAnswer { periodicScanManager.startSync(device, sid, 0, 0, callback2) }
+            .whenever(callback)
+            .onSyncEstablished(any(), any(), any(), any(), any(), eq(statusFailure))
+
+        // Start the first sync
+        periodicScanManager.startSync(device, sid, 0, 0, callback)
+        val regIdCaptor = argumentCaptor<Int>()
+        val invOrder = inOrder(callback, nativeInterface)
+        invOrder
+            .verify(nativeInterface)
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), regIdCaptor.capture())
+
+        // Trigger sync failure
+        periodicScanManager.onSyncStarted(
+            regIdCaptor.firstValue,
+            syncHandle,
+            sid,
+            BluetoothDevice.ADDRESS_TYPE_RANDOM,
+            REMOTE_DEVICE_ADDRESS,
+            0,
+            100,
+            statusFailure,
+        )
+
+        // Verify that the failure callback is invoked, and then a retry is attempted
+        invOrder
+            .verify(callback)
+            .onSyncEstablished(any(), any(), any(), any(), any(), eq(statusFailure))
+        invOrder
+            .verify(nativeInterface)
+            .startSync(eq(sid), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), any())
     }
 
     companion object {

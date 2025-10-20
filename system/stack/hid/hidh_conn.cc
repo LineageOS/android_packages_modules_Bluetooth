@@ -134,7 +134,7 @@ tHID_STATUS hidh_conn_reg(void) {
   }
 
   for (xx = 0; xx < kHID_HOST_MAX_DEVICES; xx++) {
-    if (com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused()) {
+    if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
       hh_cb.devices[xx].state = HIDH_DEV_UNUSED;
     } else {
       hh_cb.devices[xx].in_use = false;
@@ -151,10 +151,10 @@ tHID_STATUS hidh_conn_reg(void) {
  *
  * Description      This function disconnects a connection.
  *
- * Returns          true if disconnect started, false if already disconnected
+ * Returns          void
  *
  ******************************************************************************/
-tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
+void hidh_conn_disconnect(uint8_t dhandle) {
   tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
 
   if ((p_hcon->ctrl_cid != 0) || (p_hcon->intr_cid != 0)) {
@@ -178,7 +178,32 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
-  return HID_SUCCESS;
+}
+
+/*******************************************************************************
+ *
+ * Function         hidh_conn_force_disconnect
+ *
+ * Description      This function forcefully disconnects both HID channels
+ *                  without waiting. This is not a proper behavior, so only use
+ *                  this when gracefully disconnecting is not an option.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void hidh_conn_force_disconnect(uint8_t dhandle) {
+  tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
+
+  log::warn("Forcefully disconnect intr_cid:{}, ctrl_cid:{}", p_hcon->intr_cid, p_hcon->ctrl_cid);
+  if (p_hcon->intr_cid != 0) {
+    stack::l2cap::get_interface().L2CA_DisconnectReq(p_hcon->intr_cid);
+    p_hcon->intr_cid = 0;
+  }
+  if (p_hcon->ctrl_cid != 0) {
+    stack::l2cap::get_interface().L2CA_DisconnectReq(p_hcon->ctrl_cid);
+    p_hcon->ctrl_cid = 0;
+  }
+  p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 }
 
 /*******************************************************************************
@@ -521,7 +546,7 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
-    if (com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused() &&
+    if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused() &&
         hh_cb.devices[dhandle].state == HIDH_DEV_REMOVING) {
       log::verbose("set handle {} state to UNUSED", dhandle);
       hh_cb.devices[dhandle].state = HIDH_DEV_UNUSED;
@@ -602,7 +627,7 @@ static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid, uint16_t /* result */)
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
-    if (com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused() &&
+    if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused() &&
         hh_cb.devices[dhandle].state == HIDH_DEV_REMOVING) {
       log::verbose("set handle {} state to UNUSED", dhandle);
       hh_cb.devices[dhandle].state = HIDH_DEV_UNUSED;
@@ -995,9 +1020,24 @@ void hidh_dump(int fd) {
 #undef DUMPSYS_TAG
 
 bool hidh_in_use(const per_device_ctb& ctb) {
-  if (com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused()) {
+  if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
     return ctb.state != HIDH_DEV_UNUSED;
   } else {
     return ctb.in_use;
   }
+}
+
+void hidh_conn_reset(uint8_t dhandle) {
+  tHID_HOST_DEV_CTB* p_dev = &hh_cb.devices[dhandle];
+  p_dev->in_use = false;
+  p_dev->addr = RawAddress::kEmpty;
+  p_dev->attr_mask = 0;
+  p_dev->state = HIDH_DEV_UNUSED;
+  p_dev->conn_tries = 0;
+  p_dev->conn.conn_state = HID_CONN_STATE_UNUSED;
+  p_dev->conn.conn_flags = 0;
+  p_dev->conn.ctrl_cid = 0;
+  p_dev->conn.intr_cid = 0;
+  p_dev->conn.rem_mtu_size = 0;
+  p_dev->conn.disc_reason = 0;
 }

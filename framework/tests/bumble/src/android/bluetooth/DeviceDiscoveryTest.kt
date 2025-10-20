@@ -51,12 +51,13 @@ private const val TAG = "DeviceDiscoveryTest"
 
 @RunWith(AndroidJUnit4::class)
 class DeviceDiscoveryTest {
-    @get:Rule val permissionRule = AdoptShellPermissionsRule()
-    @get:Rule val bumble = PandoraDevice()
+    @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
+
+    @get:Rule(order = 1) val bumble = PandoraDevice()
 
     @Mock private lateinit var receiver: BroadcastReceiver
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var inOrder: InOrder

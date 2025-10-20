@@ -176,7 +176,7 @@ mod tests {
         GattServiceWithHandle, CHARACTERISTIC_UUID, PRIMARY_SERVICE_DECLARATION_UUID,
     };
     use crate::gatt::server::isolation_manager::IsolationManager;
-    use crate::gatt::server::services::gap::DEVICE_NAME_UUID;
+    use crate::gatt::server::services::gap::{DEVICE_NAME_PREFIX, DEVICE_NAME_UUID};
     use crate::gatt::server::services::gatt::{
         CLIENT_CHARACTERISTIC_CONFIGURATION_UUID, GATT_SERVICE_UUID, SERVICE_CHANGE_UUID,
     };
@@ -556,17 +556,20 @@ mod tests {
             );
             let (tcb_idx, resp) = transport_rx.recv().await.unwrap();
 
-            // assert: the name should not be readable
+            // assert: the name is readable and in the correct format
             assert_eq!(tcb_idx, TCB_IDX);
-            assert_eq!(
-                Ok(resp),
-                att::AttErrorResponse {
-                    opcode_in_error: att::AttOpcode::ReadByTypeRequest,
-                    handle_in_error: AttHandle(1).into(),
-                    error_code: AttErrorCode::InsufficientAuthentication,
-                }
-                .try_into()
-            );
+            let resp: att::AttReadByTypeResponse = resp.try_into().unwrap();
+            assert_eq!(resp.data.len(), 1);
+            let attr = &resp.data[0];
+
+            // The handle is defined in services/gap.rs
+            let device_name_handle = AttHandle(22);
+            assert_eq!(attr.handle, device_name_handle.into());
+            let name_str = std::str::from_utf8(&attr.value).unwrap();
+            assert!(name_str.starts_with(DEVICE_NAME_PREFIX));
+            let suffix = &name_str[DEVICE_NAME_PREFIX.len()..];
+            assert_eq!(suffix.len(), 4);
+            assert!(suffix.parse::<u16>().is_ok());
         });
     }
 
@@ -767,5 +770,53 @@ mod tests {
                 gatt.get_isolation_manager().is_connection_isolated(TCB_IDX);
             assert!(!is_connection_isolated);
         });
+    }
+
+    #[test]
+    fn test_on_le_connect_no_advertiser() {
+        let (mut gatt, _) = start_gatt_module();
+        gatt.open_gatt_server(SERVER_ID).unwrap();
+        gatt.get_isolation_manager().associate_server_with_advertiser(SERVER_ID, ADVERTISER_ID);
+        assert!(gatt.on_le_connect(TCB_IDX, None).is_err());
+        assert!(gatt.get_bearer(TCB_IDX).is_none());
+    }
+
+    #[test]
+    fn test_on_le_connect_no_server() {
+        let (mut gatt, _) = start_gatt_module();
+        gatt.get_isolation_manager().associate_server_with_advertiser(SERVER_ID, ADVERTISER_ID);
+        assert!(gatt.on_le_connect(TCB_IDX, Some(ADVERTISER_ID)).is_err());
+        assert!(gatt.get_bearer(TCB_IDX).is_none());
+    }
+
+    #[test]
+    fn test_on_le_disconnect_no_bearer() {
+        let (mut gatt, _) = start_gatt_module();
+        assert!(gatt.on_le_disconnect(TCB_IDX).is_err());
+    }
+
+    #[test]
+    fn test_unregister_gatt_service_no_server() {
+        let (mut gatt, _) = start_gatt_module();
+        assert!(gatt.unregister_gatt_service(SERVER_ID, SERVICE_HANDLE).is_err());
+    }
+
+    #[test]
+    fn test_open_gatt_server_twice() {
+        let (mut gatt, _) = start_gatt_module();
+        gatt.open_gatt_server(SERVER_ID).unwrap();
+        assert!(gatt.open_gatt_server(SERVER_ID).is_err());
+    }
+
+    #[test]
+    fn test_close_gatt_server_no_server() {
+        let (mut gatt, _) = start_gatt_module();
+        assert!(gatt.close_gatt_server(SERVER_ID).is_err());
+    }
+
+    #[test]
+    fn test_get_bearer_nonexistent() {
+        let (gatt, _) = start_gatt_module();
+        assert!(gatt.get_bearer(TCB_IDX).is_none());
     }
 }

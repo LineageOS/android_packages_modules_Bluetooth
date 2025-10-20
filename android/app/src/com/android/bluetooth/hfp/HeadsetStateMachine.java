@@ -23,7 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-import static android.media.audio.Flags.deprecateStreamBtSco;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,10 +52,12 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ProfileService;
+import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -101,6 +102,7 @@ class HeadsetStateMachine extends StateMachine {
     // message.obj is an intent AudioManager.ACTION_VOLUME_CHANGED
     // EXTRA_VOLUME_STREAM_TYPE is STREAM_BLUETOOTH_SCO/STREAM_VOICE_CALL
     static final int INTENT_SCO_VOLUME_CHANGED = 7;
+    static final int CLCC_RSP_AFTER_VOIP_CALL_END = 18;
     static final int INTENT_CONNECTION_ACCESS_REPLY = 8;
     static final int CALL_STATE_CHANGED = 9;
     static final int DEVICE_STATE_CHANGED = 10;
@@ -151,7 +153,8 @@ class HeadsetStateMachine extends StateMachine {
     private final AdapterService mAdapterService;
     private final HeadsetNativeInterface mNativeInterface;
     private final HeadsetSystemInterface mSystemInterface;
-    private final DatabaseManager mDatabaseManager;
+    private final DatabaseManager mDatabaseManager; // Migrating
+    private final BluetoothStorageManager mStorage;
 
     // Runtime states
     @VisibleForTesting int mSpeakerVolume;
@@ -217,6 +220,7 @@ class HeadsetStateMachine extends StateMachine {
             Looper looper,
             HeadsetService headsetService,
             AdapterService adapterService,
+            BluetoothStorageManager storage,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface) {
         super(TAG, requireNonNull(looper));
@@ -230,19 +234,29 @@ class HeadsetStateMachine extends StateMachine {
         mNativeInterface = requireNonNull(nativeInterface);
         mSystemInterface = requireNonNull(systemInterface);
         mAdapterService = requireNonNull(adapterService);
-        mDatabaseManager = requireNonNull(adapterService.getDatabaseManager());
+        if (Flags.mainlineBetaStorage()) {
+            mDatabaseManager = null;
+            mStorage = requireNonNull(storage);
+        } else {
+            mDatabaseManager = requireNonNull(adapterService.getDatabaseManager()); // Migrating
+            mStorage = null;
+        }
 
         mDeviceSilenced = false;
 
-        BluetoothSinkAudioPolicy storedAudioPolicy =
-                mDatabaseManager.getAudioPolicyMetadata(device);
-        if (storedAudioPolicy == null) {
-            Log.w(TAG, "Audio Policy not created in database! Creating...");
-            mHsClientAudioPolicy = new BluetoothSinkAudioPolicy.Builder().build();
-            mDatabaseManager.setAudioPolicyMetadata(device, mHsClientAudioPolicy);
+        if (Flags.mainlineBetaStorage()) {
+            mHsClientAudioPolicy = mStorage.getAudioPolicyMetadata(device);
         } else {
-            Log.i(TAG, "Audio Policy found in database!");
-            mHsClientAudioPolicy = storedAudioPolicy;
+            BluetoothSinkAudioPolicy storedAudioPolicy =
+                    mDatabaseManager.getAudioPolicyMetadata(device); // Migrating
+            if (storedAudioPolicy == null) {
+                Log.w(TAG, "Audio Policy not created in database! Creating...");
+                mHsClientAudioPolicy = new BluetoothSinkAudioPolicy.Builder().build();
+                mDatabaseManager.setAudioPolicyMetadata(device, mHsClientAudioPolicy); // Migrating
+            } else {
+                Log.i(TAG, "Audio Policy found in database!");
+                mHsClientAudioPolicy = storedAudioPolicy;
+            }
         }
 
         // Create phonebook helper
@@ -1944,7 +1958,7 @@ class HeadsetStateMachine extends StateMachine {
             boolean showVolume = SystemProperties.getBoolean(HFP_VOLUME_CONTROL_ENABLED, true);
             int flag = showVolume && (mCurrentState == mAudioOn) ? AudioManager.FLAG_SHOW_UI : 0;
             int volStream =
-                    deprecateStreamBtSco()
+                    android.media.audio.Flags.deprecateStreamBtSco()
                             ? AudioManager.STREAM_VOICE_CALL
                             : AudioManager.STREAM_BLUETOOTH_SCO;
             int currentVol = mSystemInterface.getAudioManager().getStreamVolume(volStream);
@@ -2142,6 +2156,12 @@ class HeadsetStateMachine extends StateMachine {
             int type = PhoneNumberUtils.toaFromString(phoneNumber);
             mNativeInterface.clccResponse(device, 1, 0, 0, 0, false, phoneNumber, type);
             mNativeInterface.clccResponse(device, 0, 0, 0, 0, false, "", 0);
+        } else if (hasMessages(CLCC_RSP_AFTER_VOIP_CALL_END)) {
+            // This is an interop fix to send CLCC responses as few devices expect
+            // empty CLCC response after the VOIP call is terminated
+            Log.w(TAG, "processAtClcc: send OK response as VOIP call ended just now");
+            mNativeInterface.clccResponse(device, 0, 0, 0, 0, false, "", 0);
+            removeMessages(CLCC_RSP_AFTER_VOIP_CALL_END);
         } else {
             // In Telecom call, ask Telecom to send send remote phone number
             if (!mSystemInterface.listCurrentCalls(mHeadsetService)) {
@@ -2409,14 +2429,13 @@ class HeadsetStateMachine extends StateMachine {
         return true;
     }
 
-    /**
-     * sets the audio policy of the client device and stores in the database
-     *
-     * @param policies policies to be set and stored
-     */
-    public void setHfpCallAudioPolicy(BluetoothSinkAudioPolicy policies) {
+    private void setHfpCallAudioPolicy(BluetoothSinkAudioPolicy policies) {
         mHsClientAudioPolicy = policies;
-        mDatabaseManager.setAudioPolicyMetadata(mDevice, policies);
+        if (Flags.mainlineBetaStorage()) {
+            mStorage.setAudioPolicyMetadata(mDevice, policies);
+        } else {
+            mDatabaseManager.setAudioPolicyMetadata(mDevice, policies); // Migrating
+        }
     }
 
     /** get the audio policy of the client device */
@@ -2679,6 +2698,15 @@ class HeadsetStateMachine extends StateMachine {
             events |= PhoneStateListener.LISTEN_SIGNAL_STRENGTHS;
         }
         mSystemInterface.getHeadsetPhoneState().listenForPhoneState(mDevice, events);
+    }
+
+    boolean isDeviceDenylistedForDelayingCLCCRespAfterVOIPCall() {
+        boolean matched =
+                InteropUtil.interopMatchAddrOrName(
+                        mAdapterService,
+                        InteropUtil.InteropFeature.INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
+                        mDevice.getAddress());
+        return matched;
     }
 
     @Override

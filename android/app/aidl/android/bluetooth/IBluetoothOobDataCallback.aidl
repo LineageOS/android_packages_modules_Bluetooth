@@ -19,11 +19,8 @@ package android.bluetooth;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.OobData;
 
-/**
- * API for receiving OobData from the host stack
- *
- * {@hide}
- */
+/** Binder callback to receive OobData from the host stack */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothOobDataCallback {
     void onOobData(int transport, in OobData oobData);
     void onError(int errorCode);

@@ -160,3 +160,14 @@ void bta_gatt_client_dump(int /* fd */) { inc_func_call_count(__func__); }
 void bta_gattc_link_cache_for_bonded_device(const RawAddress& /*bd_addr*/) {
   inc_func_call_count(__func__);
 }
+
+void BTA_GATTC_OffloadCharacteristics(tCONN_ID /* conn_id */,
+                                      std::vector<btgatt_db_element_t> /* service */,
+                                      uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                                      std::promise<btgatt_offload_result_t> /* promise */) {
+  inc_func_call_count(__func__);
+}
+
+void BTA_GATTC_UnoffloadCharacteristics(tCONN_ID /* conn_id */, int /* session_id */) {
+  inc_func_call_count(__func__);
+}

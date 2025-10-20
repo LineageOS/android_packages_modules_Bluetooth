@@ -24,10 +24,17 @@ namespace bluetooth::lpp::testing {
 
 class MockLppOffloadInterface : public LppOffloadInterface {
 public:
+  // clang-format off
   MOCK_METHOD(bool, RegisterSocketHalCallback, (hal::SocketHalCallback*), (override));
   MOCK_METHOD(hal::SocketCapabilities, GetSocketCapabilities, (), (const override));
   MOCK_METHOD(bool, SocketOpened, (const hal::SocketContext&), (override));
   MOCK_METHOD(void, SocketClosed, (uint64_t), (override));
+  MOCK_METHOD(bool, InitializeGattHal, (hal::GattHalCallback*), (override));
+  MOCK_METHOD(hal::GattCapabilities, GetGattCapabilities, (), (const override));
+  MOCK_METHOD(bool, RegisterGattService, (const hal::GattSession&), (override));
+  MOCK_METHOD(void, UnregisterGattService, (int), (override));
+  MOCK_METHOD(void, ClearGattServices, (int), (override));
+  // clang-format on
 };
 
 }  // namespace bluetooth::lpp::testing

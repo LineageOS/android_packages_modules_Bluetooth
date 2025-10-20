@@ -14,6 +14,7 @@
 
 import asyncio
 import secrets
+import copy
 from typing import List, Optional, Tuple
 
 from avatar import (BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous, enableFlag)
@@ -25,7 +26,7 @@ from bumble.profiles.hap import (DynamicPresets, HearingAccessService, HearingAi
                                  PresetChangedOperation, PresetChangedOperationAvailable,
                                  PresetRecord, PresetSynchronizationSupport, WritablePresetsSupport)
 from mobly import base_test, signals
-from mobly.asserts import assert_equal, assert_not_in
+from mobly.asserts import assert_equal, assert_not_in, assert_is_not_none
 from pandora._utils import AioStream
 from pandora.gatt_grpc_aio import GATT
 from pandora.hap_grpc_aio import HAP
@@ -105,7 +106,7 @@ class HearingAidDevice:
             writable_presets_support=WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
         self.has = HearingAccessService(
             self.ref.device, device_features,
-            [FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET])
+            copy.deepcopy([FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET]))
         self.ref.device.add_service(self.has)
 
     async def __advertise_monaural(self) -> AioStream[AdvertiseResponse]:
@@ -134,7 +135,7 @@ class HearingAidDevice:
 
         self.has = HearingAccessService(
             self.ref.device, device_features,
-            [FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET])
+            copy.deepcopy([FOO_PRESET, BAR_PRESET, LONGNAME_PRESET, UNAVAILABLE_PRESET]))
         self.ref.device.add_service(self.has)
 
         self.csis = CoordinatedSetIdentificationService(
@@ -161,6 +162,13 @@ class HearingAidDevice:
         remote_preset = to_bumble_preset_list(
             (await dut_hap.GetAllPresets(connection=self.to_ref)).preset_record_list)
         assert_equal(remote_preset, get_server_preset_sorted(self.has))
+
+    async def generic_update(self, prev: int, preset: PresetRecord) -> None:
+        await self.has.generic_update(
+            PresetChangedOperation(
+                PresetChangedOperation.ChangeId.GENERIC_UPDATE,
+                PresetChangedOperation.Generic(prev, preset),
+            ))
 
     async def assert_active_preset(self,
                                    dut_hap: HAP,
@@ -316,7 +324,7 @@ class HapTest(base_test.BaseTestClass):
                              self.ref_right.assert_all_presets(self.dut_hap))
 
     @asynchronous
-    async def test_get_features(self) -> None:
+    async def test__monaural__get_features(self) -> None:
         await self.setup_monaural()
 
         features_bytes = (await self.dut_hap.GetFeatures(connection=self.ref_left.to_ref)).features
@@ -324,7 +332,7 @@ class HapTest(base_test.BaseTestClass):
         assert_equal(self.ref_left.has.server_features, features)
 
     @asynchronous
-    async def test_preset__remove_preset__verify_dut_is_updated(self) -> None:
+    async def test__monaural__remove_preset__is_updated(self) -> None:
         await self.setup_monaural()
 
         await self.logcat.Log("Remove preset in server")
@@ -334,19 +342,116 @@ class HapTest(base_test.BaseTestClass):
         await self.ref_left.assert_all_presets(self.dut_hap)
 
     @asynchronous
-    async def test__add_preset__verify_dut_is_updated(self) -> None:
+    async def test__monaural__add_new_preset__is_updated(self) -> None:
         await self.setup_monaural()
 
         added_preset = PresetRecord(BAR_PRESET.index + 3, "added_preset")
         self.ref_left.has.preset_records[added_preset.index] = added_preset
 
         await self.logcat.Log("Preset added in server. Notify now")
-        await self.ref_left.has.generic_update(
-            PresetChangedOperation(PresetChangedOperation.ChangeId.GENERIC_UPDATE,
-                                   PresetChangedOperation.Generic(BAR_PRESET.index, added_preset)))
+        await self.ref_left.generic_update(BAR_PRESET.index, added_preset)
         await self.dut_hap.WaitPresetChanged()
 
         await self.ref_left.assert_all_presets(self.dut_hap)
+
+    @asynchronous
+    async def test__monaural__modify_existing_preset__is_updated(self) -> None:
+        await self.setup_monaural()
+
+        # Change preset name
+        has_preset = self.ref_left.has.preset_records.get(FOO_PRESET.index, None)
+        has_preset.name = "Very nice name"
+        await self.logcat.Log("Preset modified in server. Notify now")
+        await self.ref_left.generic_update(0, has_preset)
+        preset_changed = await self.dut_hap.WaitPresetChanged()
+
+        updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
+        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        assert_equal(updated_preset.name, has_preset.name)
+        assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
+
+    @asynchronous
+    async def test__monaural__modify_existing_preset_at_end_of_chain__is_updated(self) -> None:
+        await self.setup_monaural()
+
+        # Pretent client are disconnected, to force queuing of Operation
+        clients = self.ref_left.has.currently_connected_clients
+        self.ref_left.has.currently_connected_clients = set()
+
+        await self.ref_left.generic_update(0, FOO_PRESET)  # Not propagated yet
+
+        # Reset clients connection status, next operation will trigger all events
+        self.ref_left.has.currently_connected_clients = clients
+
+        # Change preset name
+        has_preset = self.ref_left.has.preset_records.get(LONGNAME_PRESET.index, None)
+        has_preset.name = "Very nice name"
+
+        await self.logcat.Log("Preset modified in server. Notify 2 preset now")
+        await self.ref_left.generic_update(FOO_PRESET.index, has_preset)
+        preset_changed = await self.dut_hap.WaitPresetChanged()
+
+        updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
+        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        assert_equal(updated_preset.name, has_preset.name)
+        assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
+
+    @asynchronous
+    async def test__monaural__modify_multiples_existing_preset_at_middle_of_chain__is_updated(
+            self) -> None:
+        await self.setup_monaural()
+
+        # Pretent client are disconnected, to force queuing of Operation
+        clients = self.ref_left.has.currently_connected_clients
+        self.ref_left.has.currently_connected_clients = set()
+
+        # stack a first change even if this doesn't change anything:
+        await self.ref_left.generic_update(0, FOO_PRESET)  # Not propagated yet
+
+        # Change preset name
+        has_preset = self.ref_left.has.preset_records.get(LONGNAME_PRESET.index, None)
+        has_preset.name = "Very nice name"
+
+        await self.ref_left.generic_update(FOO_PRESET.index, has_preset)  # Not propagated yet
+
+        # Reset clients connection status, next operation will trigger all events
+        self.ref_left.has.currently_connected_clients = clients
+
+        await self.logcat.Log("Preset modified in server. Notify 3 preset now")
+        await self.ref_left.generic_update(UNAVAILABLE_PRESET.index, BAR_PRESET)
+
+        preset_changed = await self.dut_hap.WaitPresetChanged()
+
+        updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
+        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        assert_equal(updated_preset.name, has_preset.name)
+        assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
+
+    @asynchronous
+    async def test__binaural__modify_existing_preset__is_updated(self) -> None:
+        await self.setup_binaural()
+
+        # Change preset name
+        has_preset = self.ref_left.has.preset_records.get(FOO_PRESET.index, None)
+        has_preset.name = "Very nice name"
+        await self.logcat.Log("Preset modified in server. Notify now")
+        await self.ref_left.generic_update(0, has_preset)
+        preset_changed = await self.dut_hap.WaitPresetChanged()
+
+        updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
+        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        assert_equal(updated_preset.name, has_preset.name)
+        assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
+
+        has_preset = self.ref_right.has.preset_records.get(FOO_PRESET.index, None)
+        has_preset.name = "Very nice name"
+        await self.ref_right.generic_update(0, has_preset)
+        preset_changed = await self.dut_hap.WaitPresetChanged()
+
+        updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
+        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        assert_equal(updated_preset.name, has_preset.name)
+        assert_equal(updated_list, get_server_preset_sorted(self.ref_right.has))
 
     @asynchronous
     async def test__set_non_existing_preset_as_active__verify_no_crash_and_no_update(self) -> None:
@@ -421,7 +526,6 @@ class HapTest(base_test.BaseTestClass):
                                                                    BAR_PRESET)
 
     @asynchronous
-    @enableFlag('com.android.bluetooth.flags.synchronize_preset_can_timeout')
     async def test__synchronize_operation_failed__when_selecting_preset__can_recover(self) -> None:
         await self.setup_binaural()
 

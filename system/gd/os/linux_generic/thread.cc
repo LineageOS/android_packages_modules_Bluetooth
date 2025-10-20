@@ -32,20 +32,27 @@ namespace {
 constexpr int kRealTimeFifoSchedulingPriority = 1;
 }
 
-Thread::Thread(const std::string& name, const Priority priority)
-    : name_(name), reactor_(), running_thread_(&Thread::run, this, priority) {}
+Thread::Thread(const std::string& name, const Priority priority, std::promise<void> start_promise)
+    : name_(name),
+      reactor_(),
+      running_thread_(&Thread::run, this, std::move(start_promise)),
+      linux_tid_(-1),
+      priority_(priority) {}
 
-void Thread::run(Priority priority) {
+void Thread::run(std::promise<void> start_promise) {
   pthread_setname_np(pthread_self(), name_.c_str());
-  if (priority == Priority::REAL_TIME) {
+  linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));
+  if (priority_ == Priority::REAL_TIME) {
     struct sched_param rt_params = {.sched_priority = kRealTimeFifoSchedulingPriority};
-    auto linux_tid = static_cast<pid_t>(syscall(SYS_gettid));
     int rc;
-    RUN_NO_INTR(rc = sched_setscheduler(linux_tid, SCHED_FIFO, &rt_params));
+    RUN_NO_INTR(rc = sched_setscheduler(linux_tid_, SCHED_FIFO, &rt_params));
     if (rc != 0) {
+      priority_ =
+              Priority::NORMAL;  // set to NORMAL if we are unable to set the priority to REAL_TIME
       log::error("unable to set SCHED_FIFO priority: {}", strerror(errno));
     }
   }
+  start_promise.set_value();
   reactor_.Run();
 }
 

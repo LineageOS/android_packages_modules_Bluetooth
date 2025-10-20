@@ -21,12 +21,9 @@ import android.bluetooth.State
 import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.os.Looper
 import android.provider.Settings
-import android.widget.Toast
 import com.android.bluetooth.BluetoothStatsLog
-import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.initializeRadioModeListener
@@ -164,7 +161,6 @@ fun setWatchConnectionState(connected: Boolean) {
 
 fun factoryReset(resolver: ContentResolver, userContext: Context) {
     Settings.Global.putInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
-    Settings.Global.putInt(resolver, ToastNotification.TOAST_COUNT, 0)
     setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, 0)
     setUserSettingsSecure(userContext, APM_USER_TOGGLED_BLUETOOTH, 0)
 }
@@ -212,11 +208,7 @@ private fun airplaneModeValueOverride(
     //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
     if (isMediaProfileConnected) {
         Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
-        if (Flags.watchDeviceOverrideAirplaneMode()) {
-            sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
-            return false
-        }
-        ToastNotification.displayIfNeeded(resolver, getUser)
+        sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
         return false
     }
     if (watchConnectionState) {
@@ -229,38 +221,6 @@ private fun airplaneModeValueOverride(
     }
     Log.i(TAG, "Legacy Mode: no override, turns OFF")
     return true
-}
-
-internal class ToastNotification private constructor() {
-    companion object {
-        internal const val TOAST_COUNT = "bluetooth_airplane_toast_count"
-        internal const val MAX_TOAST_COUNT = 10
-
-        private fun userNeedToBeNotified(resolver: ContentResolver): Boolean {
-            val currentToastCount = Settings.Global.getInt(resolver, TOAST_COUNT, 0)
-            if (currentToastCount >= MAX_TOAST_COUNT) {
-                return false
-            }
-            Settings.Global.putInt(resolver, TOAST_COUNT, currentToastCount + 1)
-            return true
-        }
-
-        fun displayIfNeeded(resolver: ContentResolver, getUser: () -> Context) {
-            if (!userNeedToBeNotified(resolver)) {
-                Log.d(TAG, "Dismissed Toast notification")
-                return
-            }
-            val userContext = getUser()
-            val r = userContext.getResources()
-            val text: CharSequence =
-                r.getString(
-                    Resources.getSystem()
-                        .getIdentifier("bluetooth_airplane_mode_toast", "string", "android")
-                )
-            Toast.makeText(userContext, text, Toast.LENGTH_LONG).show()
-            Log.d(TAG, "Displayed Toast notification")
-        }
-    }
 }
 
 @kotlin.time.ExperimentalTime

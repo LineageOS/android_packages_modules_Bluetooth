@@ -33,6 +33,7 @@
 #include "bta/include/bta_jv_api.h"
 #include "bta/include/bta_sec_api.h"
 #include "internal_include/bt_target.h"
+#include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/rfcdefs.h"
 #include "stack/include/sdp_status.h"
@@ -48,7 +49,8 @@
 enum {
   BTA_JV_PM_FREE_ST = 0, /* empty PM slot */
   BTA_JV_PM_IDLE_ST,
-  BTA_JV_PM_BUSY_ST
+  BTA_JV_PM_BUSY_ST,
+  BTA_JV_PM_BUSY_TO_IDLE_ST
 };
 
 /* BTA JV PM control block */
@@ -57,6 +59,7 @@ typedef struct {
   uint8_t state;           /* state: see above enum */
   tBTA_JV_PM_ID app_id;    /* JV app specific id indicating power table to use */
   RawAddress peer_bd_addr; /* Peer BD address */
+  alarm_t* idle_timer;     /* Intermediate timer for preventing frequent state transition */
 } tBTA_JV_PM_CB;
 
 enum {
@@ -146,7 +149,7 @@ extern std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback);
 void bta_jv_disable();
 void bta_jv_get_channel_id(tBTA_JV_CONN_TYPE type, int32_t channel, uint32_t l2cap_socket_id,
-                           uint32_t rfcomm_slot_id);
+                           uint32_t rfcomm_slot_id, uint32_t lecoc_fixed_psm_slots);
 void bta_jv_free_scn(tBTA_JV_CONN_TYPE type, uint16_t scn);
 void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
                             bluetooth::Uuid* uuid_list, uint32_t rfcomm_slot_id);
@@ -179,6 +182,7 @@ void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
 void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_STATE init_st);
 
 void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
+void bta_jv_idle_timeout_handler(void* data);
 
 namespace bluetooth::legacy::testing {
 void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id, const RawAddress& bd_addr,

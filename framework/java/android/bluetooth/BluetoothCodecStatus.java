@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -43,11 +44,8 @@ public final class BluetoothCodecStatus implements Parcelable {
     private final @Nullable List<BluetoothCodecConfig> mCodecsLocalCapabilities;
     private final @Nullable List<BluetoothCodecConfig> mCodecsSelectableCapabilities;
 
-    /**
-     * Creates a new BluetoothCodecStatus.
-     *
-     * @hide
-     */
+    /** Creates a new BluetoothCodecStatus. */
+    @Hide
     public BluetoothCodecStatus(
             @Nullable BluetoothCodecConfig codecConfig,
             @Nullable List<BluetoothCodecConfig> codecsLocalCapabilities,
@@ -156,10 +154,6 @@ public final class BluetoothCodecStatus implements Parcelable {
                 + "}";
     }
 
-    /**
-     * @return 0
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;

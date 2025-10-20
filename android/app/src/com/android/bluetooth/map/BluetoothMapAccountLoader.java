@@ -15,8 +15,6 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -30,8 +28,6 @@ import android.os.RemoteException;
 import android.text.format.DateUtils;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 
 import java.util.ArrayList;
@@ -40,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothMapAccountLoader {
     private static final String TAG = BluetoothMapAccountLoader.class.getSimpleName();
 
@@ -201,11 +196,6 @@ public class BluetoothMapAccountLoader {
                                 BluetoothMapContract.AccountColumns._ID + " DESC");
             }
         } catch (RemoteException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_ACCOUNT_LOADER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    0);
             Log.d(
                     TAG,
                     "Could not establish ContentProviderClient for "

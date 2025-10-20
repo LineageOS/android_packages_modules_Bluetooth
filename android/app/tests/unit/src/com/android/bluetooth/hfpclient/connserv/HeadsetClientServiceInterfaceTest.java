@@ -21,7 +21,6 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
@@ -29,11 +28,9 @@ import android.os.Bundle;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -80,27 +77,12 @@ public class HeadsetClientServiceInterfaceTest {
         mServiceInterface = new HeadsetClientServiceInterface();
     }
 
-    @After
-    public void tearDown() {
-        if (!Flags.adapterServiceProfilesUseOptional()) {
-            HeadsetClientService.setHeadsetClientService(null);
-            assertThat(HeadsetClientService.getHeadsetClientService()).isNull();
-        }
-    }
-
     private void makeHeadsetClientServiceAvailable() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            ExtendedMockito.doReturn(mAdapterService)
-                    .when(() -> AdapterService.deprecatedGetAdapterService());
-            doReturn(Optional.of(mHeadsetClientService))
-                    .when(mAdapterService)
-                    .getHeadsetClientService();
-        } else {
-            when(mHeadsetClientService.isAvailable()).thenReturn(true);
-            HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
-            assertThat(HeadsetClientService.getHeadsetClientService())
-                    .isEqualTo(mHeadsetClientService);
-        }
+        ExtendedMockito.doReturn(mAdapterService)
+                .when(() -> AdapterService.deprecatedGetAdapterService());
+        doReturn(Optional.of(mHeadsetClientService))
+                .when(mAdapterService)
+                .getHeadsetClientService();
     }
 
     @Test

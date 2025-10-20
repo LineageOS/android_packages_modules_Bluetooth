@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -33,13 +34,12 @@ import java.util.List;
  * The {@link ChannelSoundingParams} provide a way to adjust distance measurement preferences for
  * {@link DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING}. Use {@link ChannelSoundingParams.Builder}
  * to create an instance of this class.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class ChannelSoundingParams implements Parcelable {
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             value = {
@@ -49,12 +49,12 @@ public final class ChannelSoundingParams implements Parcelable {
             })
     @interface SightType {}
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {LOCATION_TYPE_UNKNOWN, LOCATION_TYPE_INDOOR, LOCATION_TYPE_OUTDOOR})
     @interface LocationType {}
 
-    /** @hide */
+    @Hide
     @Target(ElementType.TYPE_USE)
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
@@ -67,146 +67,87 @@ public final class ChannelSoundingParams implements Parcelable {
             })
     @interface CsSecurityLevel {}
 
-    /**
-     * Sight type is unknown.
-     *
-     * @hide
-     */
-    @SystemApi public static final int SIGHT_TYPE_UNKNOWN = 0;
+    /** Sight type is unknown. */
+    @Hide @SystemApi public static final int SIGHT_TYPE_UNKNOWN = 0;
 
-    /**
-     * Remote device is in line of sight.
-     *
-     * @hide
-     */
-    @SystemApi public static final int SIGHT_TYPE_LINE_OF_SIGHT = 1;
+    /** Remote device is in line of sight. */
+    @Hide @SystemApi public static final int SIGHT_TYPE_LINE_OF_SIGHT = 1;
 
-    /**
-     * Remote device is not in line of sight.
-     *
-     * @hide
-     */
-    @SystemApi public static final int SIGHT_TYPE_NON_LINE_OF_SIGHT = 2;
+    /** Remote device is not in line of sight. */
+    @Hide @SystemApi public static final int SIGHT_TYPE_NON_LINE_OF_SIGHT = 2;
 
-    /**
-     * Location type is unknown.
-     *
-     * @hide
-     */
-    @SystemApi public static final int LOCATION_TYPE_UNKNOWN = 0;
+    /** Location type is unknown. */
+    @Hide @SystemApi public static final int LOCATION_TYPE_UNKNOWN = 0;
 
-    /**
-     * The location of the usecase is indoor.
-     *
-     * @hide
-     */
-    @SystemApi public static final int LOCATION_TYPE_INDOOR = 1;
+    /** The location of the usecase is indoor. */
+    @Hide @SystemApi public static final int LOCATION_TYPE_INDOOR = 1;
 
-    /**
-     * The location of the usecase is outdoor.
-     *
-     * @hide
-     */
-    @SystemApi public static final int LOCATION_TYPE_OUTDOOR = 2;
+    /** The location of the usecase is outdoor. */
+    @Hide @SystemApi public static final int LOCATION_TYPE_OUTDOOR = 2;
 
     /**
      * Return value for {@link
      * DistanceMeasurementManager#getChannelSoundingMaxSupportedSecurityLevel(BluetoothDevice)} and
      * {@link DistanceMeasurementManager#getLocalChannelSoundingMaxSupportedSecurityLevel()} when
      * Channel Sounding is not supported, or encounters an internal error.
-     *
-     * @hide
      */
-    @SystemApi public static final int CS_SECURITY_LEVEL_UNKNOWN = 0;
+    @Hide @SystemApi public static final int CS_SECURITY_LEVEL_UNKNOWN = 0;
 
-    /**
-     * Either CS tone or CS RTT.
-     *
-     * @hide
-     */
-    @SystemApi public static final int CS_SECURITY_LEVEL_ONE = 1;
+    /** Either CS tone or CS RTT. */
+    @Hide @SystemApi public static final int CS_SECURITY_LEVEL_ONE = 1;
 
-    /**
-     * 150 ns CS RTT accuracy and CS tones.
-     *
-     * @hide
-     */
-    @SystemApi public static final int CS_SECURITY_LEVEL_TWO = 2;
+    /** 150 ns CS RTT accuracy and CS tones. */
+    @Hide @SystemApi public static final int CS_SECURITY_LEVEL_TWO = 2;
 
-    /**
-     * 10 ns CS RTT accuracy and CS tones.
-     *
-     * @hide
-     */
-    @SystemApi public static final int CS_SECURITY_LEVEL_THREE = 3;
+    /** 10 ns CS RTT accuracy and CS tones. */
+    @Hide @SystemApi public static final int CS_SECURITY_LEVEL_THREE = 3;
 
     /**
      * Level 3 with the addition of CS RTT sounding sequence or random sequence payloads, and
      * support of the Normalized Attack Detector Metric requirements.
-     *
-     * @hide
      */
-    @SystemApi public static final int CS_SECURITY_LEVEL_FOUR = 4;
+    @Hide @SystemApi public static final int CS_SECURITY_LEVEL_FOUR = 4;
 
     private final int mSightType;
     private final int mLocationType;
     private final int mCsSecurityLevel;
 
-    /** @hide */
+    @Hide
     public ChannelSoundingParams(int sightType, int locationType, int csSecurityLevel) {
         mSightType = sightType;
         mLocationType = locationType;
         mCsSecurityLevel = csSecurityLevel;
     }
 
-    /**
-     * Returns sight type of this ChannelSoundingParams.
-     *
-     * @hide
-     */
+    /** Returns sight type of this ChannelSoundingParams. */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @SightType int getSightType() {
         return mSightType;
     }
 
-    /**
-     * Returns location type of this ChannelSoundingParams.
-     *
-     * @hide
-     */
+    /** Returns location type of this ChannelSoundingParams. */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @LocationType int getLocationType() {
         return mLocationType;
     }
 
-    /**
-     * Returns CS security level of this ChannelSoundingParams.
-     *
-     * @hide
-     */
+    /** Returns CS security level of this ChannelSoundingParams. */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @CsSecurityLevel int getCsSecurityLevel() {
         return mCsSecurityLevel;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {
         out.writeInt(mSightType);
@@ -232,11 +173,8 @@ public final class ChannelSoundingParams implements Parcelable {
                 }
             };
 
-    /**
-     * Builder for {@link ChannelSoundingParams}.
-     *
-     * @hide
-     */
+    /** Builder for {@link ChannelSoundingParams}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private int mSightType = SIGHT_TYPE_UNKNOWN;
@@ -248,8 +186,8 @@ public final class ChannelSoundingParams implements Parcelable {
          *
          * @param sightType sight type of this ChannelSoundingParams
          * @return the same Builder instance
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setSightType(@SightType int sightType) {
@@ -266,8 +204,8 @@ public final class ChannelSoundingParams implements Parcelable {
          *
          * @param locationType location type of this ChannelSoundingParams
          * @return the same Builder instance
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setLocationType(@LocationType int locationType) {
@@ -286,8 +224,8 @@ public final class ChannelSoundingParams implements Parcelable {
          *
          * @param csSecurityLevel cs security level of this ChannelSoundingParams
          * @return the same Builder instance
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setCsSecurityLevel(@CsSecurityLevel int csSecurityLevel) {
@@ -303,11 +241,8 @@ public final class ChannelSoundingParams implements Parcelable {
             return this;
         }
 
-        /**
-         * Build the {@link ChannelSoundingParams} object.
-         *
-         * @hide
-         */
+        /** Build the {@link ChannelSoundingParams} object. */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull ChannelSoundingParams build() {

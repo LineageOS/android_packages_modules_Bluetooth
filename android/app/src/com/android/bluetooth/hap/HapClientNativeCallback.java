@@ -27,13 +27,14 @@ import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.NativeCallback;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 /** Hearing Access Profile Client Native Callback (from native to Java). */
-public class HapClientNativeCallback {
+public class HapClientNativeCallback implements NativeCallback {
     private static final String TAG = HapClientNativeCallback.class.getSimpleName();
 
     private final AdapterService mAdapterService;

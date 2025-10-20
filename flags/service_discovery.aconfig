@@ -10,3 +10,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ignore_redundant_discovery_if_same_state"
+    namespace: "bluetooth"
+    description: "Ignore redundant service discovery enable or disable call if the state is the same"
+    bug: "447313374"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "defer_br_edr_sdp_results"
+    namespace: "bluetooth"
+    description: "Delay the BR/EDR service discovery notification until after the LE discovery process"
+    bug: "452481091"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

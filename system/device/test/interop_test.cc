@@ -677,7 +677,6 @@ TEST_F(InteropTest, test_dynamic_addr_get_lmp_version) {
 TEST_F(InteropTest, test_dynamic_did_version) {
   module_init(&interop_module);
 
-  auto test_address = RawAddress::FromString("11:22:33:44:55:66").value();
   uint16_t did_version = 0xABCD;
 
   EXPECT_FALSE(interop_database_match_version(INTEROP_DISABLE_SNIFF_DURING_SCO, did_version));

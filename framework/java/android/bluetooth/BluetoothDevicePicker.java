@@ -19,6 +19,7 @@ package android.bluetooth;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.RequiresPermission;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
@@ -28,11 +29,8 @@ import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 
 import com.android.bluetooth.flags.Flags;
 
-/**
- * A helper to show a system "Device Picker" activity to the user.
- *
- * @hide
- */
+/** A helper to show a system "Device Picker" activity to the user. */
+@Hide
 @SystemApi
 public interface BluetoothDevicePicker {
 

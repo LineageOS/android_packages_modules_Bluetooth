@@ -67,9 +67,9 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -286,10 +286,6 @@ class MceStateMachine extends StateMachine {
         if (mService != null) {
             mService.cleanupDevice(mDevice, this);
         }
-    }
-
-    synchronized BluetoothDevice getDevice() {
-        return mDevice;
     }
 
     private void onConnectionStateChanged(int prevState, int state) {
@@ -546,7 +542,8 @@ class MceStateMachine extends StateMachine {
             onConnectionStateChanged(mPreviousState, STATE_CONNECTING);
 
             // When commanded to connect begin SDP to find the MAS server.
-            mDevice.sdpSearch(BluetoothUuid.MAS);
+            mAdapterService.sdpSearch(mDevice, BluetoothUuid.MAS);
+
             sendMessageDelayed(MSG_CONNECTING_TIMEOUT, CONNECT_TIMEOUT.toMillis());
             Log.i(TAG, Utils.getLoggableAddress(mDevice) + " [Connecting]: Await SDP results");
         }
@@ -589,7 +586,7 @@ class MceStateMachine extends StateMachine {
                                 TAG,
                                 Utils.getLoggableAddress(mDevice)
                                         + " [Connecting]: SDP was busy, try again");
-                        mDevice.sdpSearch(BluetoothUuid.MAS);
+                        mAdapterService.sdpSearch(mDevice, BluetoothUuid.MAS);
                     } else {
                         // This means the status is 0 (success, but no record) or 1 (organic
                         // failure). We historically have never retried SDP in failure cases, so we

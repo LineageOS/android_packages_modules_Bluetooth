@@ -20,23 +20,23 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.OobData;
-import android.os.ParcelUuid;
 
 import com.android.bluetooth.Utils;
 
 import java.io.FileDescriptor;
+import java.lang.annotation.Native;
 
 /** Native interface to be used by AdapterService */
 public class AdapterNativeInterface {
     private static final String TAG =
             Utils.BT_PREFIX + AdapterNativeInterface.class.getSimpleName();
 
-    private JniCallbacks mJniCallbacks;
+    @Native private AdapterNativeCallback mNativeCallback;
 
     AdapterNativeInterface() {}
 
-    JniCallbacks getCallbacks() {
-        return mJniCallbacks;
+    AdapterNativeCallback getCallbacks() {
+        return mNativeCallback;
     }
 
     boolean init(
@@ -47,7 +47,7 @@ public class AdapterNativeInterface {
             int configCompareResult,
             boolean isAtvDevice,
             String hciInstanceName) {
-        mJniCallbacks = new JniCallbacks(service, adapterProperties);
+        mNativeCallback = new AdapterNativeCallback(service, adapterProperties);
         return initNative(
                 startRestricted,
                 isCommonCriteriaMode,
@@ -248,18 +248,6 @@ public class AdapterNativeInterface {
         return pbapPseDynamicVersionUpgradeIsEnabledNative();
     }
 
-    int getSocketL2capLocalChannelId(ParcelUuid connectionUuid) {
-        return getSocketL2capLocalChannelIdNative(
-                connectionUuid.getUuid().getLeastSignificantBits(),
-                connectionUuid.getUuid().getMostSignificantBits());
-    }
-
-    int getSocketL2capRemoteChannelId(ParcelUuid connectionUuid) {
-        return getSocketL2capRemoteChannelIdNative(
-                connectionUuid.getUuid().getLeastSignificantBits(),
-                connectionUuid.getUuid().getMostSignificantBits());
-    }
-
     boolean setDefaultEventMaskExcept(long mask, long leMask) {
         return setDefaultEventMaskExceptNative(mask, leMask);
     }
@@ -291,16 +279,6 @@ public class AdapterNativeInterface {
     boolean restoreFilterAcceptList() {
         return restoreFilterAcceptListNative();
     }
-
-    /**********************************************************************************************/
-    /*********************************** callbacks from native ************************************/
-    /**********************************************************************************************/
-
-    // See JniCallbacks.java
-
-    /**********************************************************************************************/
-    /******************************************* native *******************************************/
-    /**********************************************************************************************/
 
     private native boolean initNative(
             boolean startRestricted,
@@ -411,12 +389,6 @@ public class AdapterNativeInterface {
     private native int getRemotePbapPceVersionNative(String address);
 
     private native boolean pbapPseDynamicVersionUpgradeIsEnabledNative();
-
-    private native int getSocketL2capLocalChannelIdNative(
-            long connectionUuidLsb, long connectionUuidMsb);
-
-    private native int getSocketL2capRemoteChannelIdNative(
-            long connectionUuidLsb, long connectionUuidMsb);
 
     private native boolean setDefaultEventMaskExceptNative(long mask, long leMask);
 

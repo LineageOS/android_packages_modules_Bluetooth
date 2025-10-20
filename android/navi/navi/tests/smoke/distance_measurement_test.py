@@ -229,7 +229,7 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
 
-        if int(self.dut.getprop('ro.build.version.sdk')) <= 35:
+        if self.dut.bt.getSdkVersion() < 36:
             # Unable to receive the supported methods from the API, use the hardcoded
             # list instead.
             self.dut_supported_methods = [

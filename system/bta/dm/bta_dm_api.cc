@@ -54,11 +54,6 @@ void BTA_dm_init() {
   get_btm_client_interface().ble.BTM_SetConsolidationCallback(bta_dm_consolidate);
 }
 
-/** Enables bluetooth device under test mode */
-void BTA_EnableTestMode(void) {
-  do_in_main_thread(base::BindOnce(base::IgnoreResult(BTM_EnableTestMode)));
-}
-
 /** This function sets the Bluetooth name of local device */
 void BTA_DmSetDeviceName(const char* p_name) {
   std::vector<uint8_t> name(BD_NAME_LEN + 1);

@@ -29,6 +29,7 @@
 
 #include <bluetooth/types/address.h>
 
+#include "bt_status.h"
 #include "bta/include/bta_av_api.h"
 #include "btif/include/btif_av.h"
 #include "include/hardware/bt_av.h"
@@ -349,11 +350,11 @@ extern struct btif_av_sink_active_peer btif_av_sink_active_peer;
 
 // Name: btif_av_sink_execute_service
 // Params: bool enable
-// Return: bt_status_t
+// Return: BtStatus
 struct btif_av_sink_execute_service {
-  static bt_status_t return_value;
-  std::function<bt_status_t(bool enable)> body{[](bool /* enable */) { return return_value; }};
-  bt_status_t operator()(bool enable) { return body(enable); }
+  static BtStatus return_value;
+  std::function<BtStatus(bool enable)> body{[](bool /* enable */) { return return_value; }};
+  BtStatus operator()(bool enable) { return body(enable); }
 };
 extern struct btif_av_sink_execute_service btif_av_sink_execute_service;
 
@@ -369,11 +370,11 @@ extern struct btif_av_source_active_peer btif_av_source_active_peer;
 
 // Name: btif_av_source_execute_service
 // Params: bool enable
-// Return: bt_status_t
+// Return: BtStatus
 struct btif_av_source_execute_service {
-  static bt_status_t return_value;
-  std::function<bt_status_t(bool enable)> body{[](bool /* enable */) { return return_value; }};
-  bt_status_t operator()(bool enable) { return body(enable); }
+  static BtStatus return_value;
+  std::function<BtStatus(bool enable)> body{[](bool /* enable */) { return return_value; }};
+  BtStatus operator()(bool enable) { return body(enable); }
 };
 extern struct btif_av_source_execute_service btif_av_source_execute_service;
 

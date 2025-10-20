@@ -30,7 +30,8 @@ using ::bluetooth::audio::hidl::BluetoothAudioCtrlAck;
 using ::bluetooth::le_audio::types::AudioSetConfiguration;
 using ::bluetooth::le_audio::types::CodecConfigSetting;
 
-using ::bluetooth::audio::le_audio::StartRequestState;
+using ::bluetooth::audio::le_audio::BluetoothRequest;
+using ::bluetooth::audio::le_audio::BluetoothRequestState;
 
 constexpr uint8_t kChannelNumberMono = 1;
 constexpr uint8_t kChannelNumberStereo = 2;
@@ -81,11 +82,16 @@ public:
                                       uint8_t channels_count, uint32_t data_interval);
 
   bool IsRequestCompletedAfterUpdate(
-          const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
+          const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>&
+                  lambda,
+          BluetoothRequest request);
 
-  StartRequestState GetStartRequestState(void);
-  void ClearStartRequestState(void);
-  void SetStartRequestState(StartRequestState state);
+  BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  BluetoothRequestState GetBluetoothRequestStateUnsafe(BluetoothRequest request);
+  void ClearBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestStateUnsafe(BluetoothRequest request);
+  void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
+  void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
 private:
   void (*flush_)(void);
@@ -95,7 +101,7 @@ private:
   timespec data_position_;
   PcmParameters pcm_config_;
   mutable std::mutex start_request_state_mutex_;
-  std::atomic<StartRequestState> start_request_state_;
+  std::atomic<BluetoothRequestState> start_request_state_;
 };
 
 // Sink transport implementation for Le Audio
@@ -128,11 +134,14 @@ public:
                                       uint8_t channels_count, uint32_t data_interval);
 
   bool IsRequestCompletedAfterUpdate(
-          const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
+          const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>&
+                  lambda,
+          BluetoothRequest request);
 
-  StartRequestState GetStartRequestState(void);
-  void ClearStartRequestState(void);
-  void SetStartRequestState(StartRequestState state);
+  BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestState(BluetoothRequest request);
+  void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
+  void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSinkTransport* instance = nullptr;
   static inline BluetoothAudioSinkClientInterface* interface = nullptr;
@@ -170,10 +179,14 @@ public:
                                       uint8_t channels_count, uint32_t data_interval);
 
   bool IsRequestCompletedAfterUpdate(
-          const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
-  StartRequestState GetStartRequestState(void);
-  void ClearStartRequestState(void);
-  void SetStartRequestState(StartRequestState state);
+          const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>&
+                  lambda,
+          BluetoothRequest request);
+
+  BluetoothRequestState GetBluetoothRequestState(BluetoothRequest request);
+  void ClearBluetoothRequestState(BluetoothRequest request);
+  void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
+  void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
   static inline LeAudioSourceTransport* instance = nullptr;
   static inline BluetoothAudioSourceClientInterface* interface = nullptr;

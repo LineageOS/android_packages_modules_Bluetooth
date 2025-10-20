@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -67,10 +68,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FakeTimeProvider;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -106,15 +107,18 @@ public class GattServiceTest {
     @Mock private IBluetoothGattServerCallback mGattServerCallback2;
     @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
     @Mock private Set<BluetoothDevice> mReliableQueue;
+    @Mock private GattNativeInterface mNativeInterface;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
     @Mock private Resources mResources;
     @Mock private AdapterService mAdapterService;
-    @Mock private GattNativeInterface mNativeInterface;
 
     private GattService mService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final CompanionDeviceManager mCompanionDeviceManager =
+            mContext.getSystemService(CompanionDeviceManager.class);
+
     private CompanionManager mBtCompanionManager;
     private final BluetoothDevice mDevice = getTestDevice(109);
     private MockContentResolver mMockContentResolver;
@@ -165,6 +169,9 @@ public class GattServiceTest {
         clientApp.id = CLIENT_IF;
         doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
         doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
+        doReturn(clientApp, (Object[]) null)
+                .when(mClientMap)
+                .remove(anyInt(), any(ContextMap.RemoveReason.class));
 
         doAnswer(
                         (Answer<Void>)
@@ -222,8 +229,6 @@ public class GattServiceTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
         mockGetSystemService(mAdapterService, ActivityManager.class);
-        final var companionDeviceManager = mContext.getSystemService(CompanionDeviceManager.class);
-        mockGetSystemService(mAdapterService, CompanionDeviceManager.class, companionDeviceManager);
 
         mBtCompanionManager = new CompanionManager(mAdapterService);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
@@ -234,11 +239,11 @@ public class GattServiceTest {
                         mNativeInterface,
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
+                        mClientMap,
+                        mServerMap,
+                        mReliableQueue,
+                        mCompanionDeviceManager,
                         mTimeProvider);
-
-        mService.mClientMap = mClientMap;
-        mService.mReliableQueue = mReliableQueue;
-        mService.mServerMap = mServerMap;
 
         mockGetRemoteDevice(mAdapterService, mDevice);
     }
@@ -262,6 +267,10 @@ public class GattServiceTest {
                             mNativeInterface,
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,
+                            mClientMap,
+                            mServerMap,
+                            mReliableQueue,
+                            mCompanionDeviceManager,
                             mTimeProvider);
         }
     }
@@ -290,6 +299,39 @@ public class GattServiceTest {
                             anyInt(),
                             anyInt());
         }
+    }
+
+    @Test
+    public void subrateModeRequestDisablementLatencyParamRestore() {
+        InOrder inOrder = inOrder(mNativeInterface);
+        int implementInterval = 3;
+        int peripheralLatency = 5;
+        int supervisionTimeout = 6;
+        int status = 0;
+
+        ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
+        doReturn(app).when(mClientMap).getByConnId(CLIENT_CONN_ID);
+        doReturn(mGattCallback).when(app).getCallback();
+        doReturn(mDevice).when(mClientMap).deviceByConnId(CLIENT_CONN_ID);
+
+        mService.onClientConnUpdateFromNative(
+                CLIENT_CONN_ID, implementInterval, peripheralLatency, supervisionTimeout, status);
+
+        mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_HIGH);
+        inOrder.verify(mNativeInterface)
+                .gattSubrateRequest(
+                        eq(CLIENT_IF), eq(mDevice), anyInt(), anyInt(), eq(0), anyInt(), anyInt());
+
+        mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_OFF);
+        inOrder.verify(mNativeInterface)
+                .gattSubrateRequest(
+                        eq(CLIENT_IF),
+                        eq(mDevice),
+                        anyInt(),
+                        anyInt(),
+                        eq(peripheralLatency),
+                        anyInt(),
+                        anyInt());
     }
 
     @Test
@@ -339,6 +381,24 @@ public class GattServiceTest {
                 ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
         verify(mClientMap).remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
         verify(mNativeInterface).gattClientUnregisterApp(CLIENT_IF);
+    }
+
+    @Test
+    public void unregisterClientTwice() {
+        // Simulate simultaneous unregistering from different threads by mocking mClientMap.
+        mService.unregisterClient(
+                mGattCallback,
+                mAttributionSource,
+                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        mService.unregisterClient(
+                mGattCallback,
+                mAttributionSource,
+                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        verify(mClientMap, atLeastOnce())
+                .remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+
+        // The second call is not propagated to the native stack.
+        verify(mNativeInterface, times(1)).gattClientUnregisterApp(CLIENT_IF);
     }
 
     @Test

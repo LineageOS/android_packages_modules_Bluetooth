@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.hfp;
 
-import static android.media.audio.Flags.scoManagedByAudio;
-
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
@@ -389,7 +387,7 @@ class HeadsetSystemInterface {
      */
     boolean isScoManagedByAudioEnabled() {
         // TODO(b/437953494) Replace with SDK check when flag is fully rolled out
-        if (scoManagedByAudio()) {
+        if (android.media.audio.Flags.scoManagedByAudio()) {
             boolean isScoManagedByAudio = mAudioManager.isScoManagedByAudio();
             Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudio);
             return isScoManagedByAudio;

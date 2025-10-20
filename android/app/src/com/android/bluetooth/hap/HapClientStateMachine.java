@@ -57,8 +57,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -213,15 +213,7 @@ final class HapClientStateMachine extends StateMachine {
                         Log.e(TAG, mStateLog + "native error during connection");
                         break;
                     }
-                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
-                        transitionTo(mConnecting);
-                        break;
-                    }
-                    if (mService.okToConnect(mDevice)) {
-                        transitionTo(mConnecting);
-                    } else {
-                        Log.w(TAG, mStateLog + "outgoing connect request rejected");
-                    }
+                    transitionTo(mConnecting);
                 }
                 case MESSAGE_DISCONNECT -> mNativeInterface.disconnectHapClient(mDevice);
                 case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);

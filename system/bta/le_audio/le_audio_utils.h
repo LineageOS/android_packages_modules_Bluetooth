@@ -158,6 +158,96 @@ inline std::string contentTypeToString(audio_content_type_t content_type) {
   }
 }
 
+class AudioDeviceActiveSpeedTracker {
+public:
+  AudioDeviceActiveSpeedTracker(void)
+      : group_id_(bluetooth::groups::kGroupUnknown),
+        start_time_(0),
+        total_time_(0),
+        end_ts_(0),
+        suspend_calls_({0, 0}),
+        resume_calls_({0, 0}) {}
+
+  void Start(int group_id) {
+    if (group_id_ != bluetooth::groups::kGroupUnknown) {
+      return;
+    }
+    group_id_ = group_id;
+    start_time_ = bluetooth::common::time_get_os_boottime_us();
+    clock_gettime(CLOCK_REALTIME, &start_ts_);
+    total_time_ = 0;
+  }
+
+  void Stop(void) {
+    if (group_id_ == bluetooth::groups::kGroupUnknown) {
+      return;
+    }
+    total_time_ = (bluetooth::common::time_get_os_boottime_us() - start_time_) / 1000;
+    clock_gettime(CLOCK_REALTIME, &end_ts_);
+    log::verbose("AudioDeviceActiveSpeedTracker group_id: {}, total time {} ms", group_id_,
+                 total_time_);
+  }
+
+  void Dump(std::stringstream& stream) {
+    char start_ts[20];
+    std::strftime(start_ts, sizeof(start_ts), "%T", std::gmtime(&start_ts_.tv_sec));
+    char end_ts[20];
+    std::strftime(end_ts, sizeof(end_ts), "%T", std::gmtime(&end_ts_.tv_sec));
+    auto lsink_s = suspend_calls_.sink;
+    auto lsink_r = resume_calls_.sink;
+    auto lsource_s = suspend_calls_.source;
+    auto lsource_r = resume_calls_.source;
+
+    char lsink_r_ts[20] = {0};
+    if (lsink_r > 0) {
+      std::strftime(lsink_r_ts, sizeof(lsink_r_ts), "%T",
+                    std::gmtime(&resume_calls_ts_.sink.tv_sec));
+    }
+
+    char lsource_r_ts[20] = {0};
+    if (lsource_r > 0) {
+      std::strftime(lsource_r_ts, sizeof(lsource_r_ts), "%T",
+                    std::gmtime(&resume_calls_ts_.source.tv_sec));
+    }
+
+    stream << "[ " << start_ts << "->" << end_ts << ", gID:" << group_id_ << ", t:" << total_time_
+           << "ms, " << "LSink(s/r) " << lsink_s << "/" << lsink_r << ": " << lsink_r_ts
+           << ", LSource(s/r)" << lsource_s << "/" << lsource_r << ": " << lsource_r_ts << "]";
+  }
+
+  void Reset(void) {
+    group_id_ = bluetooth::groups::kGroupUnknown;
+    start_time_ = 0;
+    suspend_calls_ = {0, 0};
+    resume_calls_ = {0, 0};
+  }
+
+  void LogAHALSuspendOperation(int group_id, uint8_t direction) {
+    if (group_id_ != group_id) {
+      return;
+    }
+    suspend_calls_.get(direction)++;
+  }
+
+  void LogAHALResumeOperation(int group_id, uint8_t direction) {
+    if (group_id_ != group_id) {
+      return;
+    }
+    resume_calls_.get(direction)++;
+    clock_gettime(CLOCK_REALTIME, &resume_calls_ts_.get(direction));
+  }
+
+private:
+  int group_id_;
+  uint64_t start_time_;
+  uint64_t total_time_;
+  timespec start_ts_;
+  timespec end_ts_;
+  types::BidirectionalPair<int> suspend_calls_;
+  types::BidirectionalPair<int> resume_calls_;
+  types::BidirectionalPair<timespec> resume_calls_ts_;
+};
+
 class StreamSpeedTracker {
 public:
   StreamSpeedTracker(void)

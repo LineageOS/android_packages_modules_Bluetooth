@@ -68,25 +68,32 @@ def download_btsnoop(
     destination_base_path: destination base path.
     filename_prefix: (Optional) destination file name prefix.
   """
-    filename = '_'.join(([filename_prefix] if filename_prefix else []) + [device.serial, 'btsnoop'])
+    filename_prefix = '_'.join(([filename_prefix] if filename_prefix else []) + [device.serial])
+    dest = pathlib.Path(destination_base_path)
 
-    device_snoop_paths = [
-        '/data/misc/bluetooth/logs/btsnoop_hci.log',
-        '/data/misc/bluetooth/logs/btsnoop_hci.log.last',
-        '/data/vendor/bluetooth/btsnoop_hci_vnd.log',
-        '/data/vendor/bluetooth/btsnoop_hci_vnd.log.last',
-    ]
-    host_snoop_paths = [
-        str(pathlib.Path(destination_base_path) / f'{filename}.log'),
-        str(pathlib.Path(destination_base_path) / f'{filename}.log.last'),
-        str(pathlib.Path(destination_base_path) / f'{filename}_vnd.log'),
-        str(pathlib.Path(destination_base_path) / f'{filename}_vnd.log.last'),
-    ]
+    for directory in (
+            '/data/misc/bluetooth/logs',
+            '/data/vendor/bluetooth',
+    ):
+        files = (device.adb.shell(['ls', directory, '||', 'true']).decode('utf-8').splitlines())
+        for filename in files:
+            device_snoop_path = str(pathlib.Path(directory, filename))
+            host_snoop_path = dest / f'{filename_prefix}_{filename}'
+            device.adb.pull([device_snoop_path, str(host_snoop_path)])
 
-    for device_snoop_path, host_snoop_path in zip(device_snoop_paths, host_snoop_paths):
-        # If target file doesn't exist, an AdbError will be raised.
+
+def cleanup_btsnoop(device: android_device.AndroidDevice) -> None:
+    """Cleanup Bluetooth snoop log from Android device.
+
+  Args:
+    device: Android device to download log.
+  """
+    for path in (
+            '/data/misc/bluetooth/logs/*',
+            '/data/vendor/bluetooth/*',
+    ):
         with contextlib.suppress(adb.AdbError):
-            device.adb.pull([device_snoop_path, host_snoop_path])
+            device.adb.shell(['rm', '-rf', path])
 
 
 def download_dumpsys(

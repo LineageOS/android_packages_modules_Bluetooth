@@ -34,7 +34,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ConnectableProfile;
+import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -46,9 +46,6 @@ import java.util.Map;
 /** A profile service that connects to the Battery service (BAS) of BLE devices */
 public class BatteryService extends ConnectableProfile {
     private static final String TAG = BatteryService.class.getSimpleName();
-
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    private static BatteryService sBatteryService;
 
     private final Looper mLooper;
     private final Handler mHandler;
@@ -65,7 +62,6 @@ public class BatteryService extends ConnectableProfile {
         super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
         mHandler = new Handler(requireNonNull(looper));
         mLooper = looper;
-        setBatteryService(this);
     }
 
     public static boolean isEnabled() {
@@ -81,8 +77,6 @@ public class BatteryService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setBatteryService(null);
-
         // Destroy state machines and stop handler thread
         synchronized (mStateMachines) {
             for (BatteryStateMachine sm : mStateMachines.values()) {
@@ -93,29 +87,6 @@ public class BatteryService extends ConnectableProfile {
         }
 
         mHandler.removeCallbacksAndMessages(null);
-    }
-
-    /** Gets the BatteryService instance */
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized BatteryService getBatteryService() {
-        if (sBatteryService == null) {
-            Log.w(TAG, "getBatteryService(): service is NULL");
-            return null;
-        }
-
-        if (!sBatteryService.isAvailable()) {
-            Log.w(TAG, "getBatteryService(): service is not available");
-            return null;
-        }
-        return sBatteryService;
-    }
-
-    /** Sets the battery service instance. It should be called only for testing purpose. */
-    @VisibleForTesting
-    @Deprecated // TODO(b/422543753) Delete on flag cleanup
-    public static synchronized void setBatteryService(BatteryService instance) {
-        Log.d(TAG, "setBatteryService(): set to: " + instance);
-        sBatteryService = instance;
     }
 
     /** Connects to the battery service of the given device. */

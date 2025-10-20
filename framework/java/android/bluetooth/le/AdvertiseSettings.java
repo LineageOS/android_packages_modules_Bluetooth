@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
@@ -134,8 +135,8 @@ public final class AdvertiseSettings implements Parcelable {
 
     /**
      * @return the own address type for advertising
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @AddressTypeStatus int getOwnAddressType() {
@@ -144,19 +145,12 @@ public final class AdvertiseSettings implements Parcelable {
 
     @Override
     public String toString() {
-        return "Settings [mAdvertiseMode="
-                + mAdvertiseMode
-                + ", mAdvertiseTxPowerLevel="
-                + mAdvertiseTxPowerLevel
-                + ", mAdvertiseConnectable="
-                + mAdvertiseConnectable
-                + ", mAdvertiseDiscoverable="
-                + mAdvertiseDiscoverable
-                + ", mAdvertiseTimeoutMillis="
-                + mAdvertiseTimeoutMillis
-                + ", mOwnAddressType="
-                + mOwnAddressType
-                + "]";
+        return ("Settings [mAdvertiseMode=" + mAdvertiseMode)
+                + (", mAdvertiseTxPowerLevel=" + mAdvertiseTxPowerLevel)
+                + (", mAdvertiseConnectable=" + mAdvertiseConnectable)
+                + (", mAdvertiseDiscoverable=" + mAdvertiseDiscoverable)
+                + (", mAdvertiseTimeoutMillis=" + mAdvertiseTimeoutMillis)
+                + (", mOwnAddressType=" + mOwnAddressType + "]");
     }
 
     @Override
@@ -286,8 +280,8 @@ public final class AdvertiseSettings implements Parcelable {
          * starting advertising.
          *
          * @throws IllegalArgumentException If the {@code ownAddressType} is invalid
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setOwnAddressType(@AddressTypeStatus int ownAddressType) {

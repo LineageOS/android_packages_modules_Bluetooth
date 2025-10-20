@@ -15,6 +15,10 @@
  */
 package com.android.server.bluetooth
 
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
+import android.Manifest.permission.LOCAL_MAC_ADDRESS
+import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST
 import android.bluetooth.IBluetoothManager
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_DISABLED
@@ -38,6 +42,7 @@ internal class ServiceMessenger(
 ) : Handler(looper) {
     val messenger = Messenger(this)
 
+    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, LOCAL_MAC_ADDRESS])
     override fun handleMessage(msg: Message) {
         Log.i(TAG, "handleMessage: ${msg}")
         val reply = Message.obtain()
@@ -54,6 +59,7 @@ internal class ServiceMessenger(
         }
     }
 
+    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, LOCAL_MAC_ADDRESS])
     private fun handleMessage(sendingUid: Int, obj: Parcelable): Parcelable {
         return when (obj) {
             is SystemServiceMessage.RegisterAdapter -> {
@@ -76,13 +82,13 @@ internal class ServiceMessenger(
                         try {
                             checker.enableAllowed(source, foregroundRequired)
                             if (bleToken != null) {
-                                api.enableBle(source.packageName, bleToken)
+                                api.enableBle(source.packageName!!, bleToken)
                             } else if (isQuiet) {
-                                api.enableNoAutoConnect(source.packageName)
+                                api.enableNoAutoConnect(source.packageName!!)
                             } else {
                                 api.enable(
                                     ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                                    source.packageName,
+                                    source.packageName!!,
                                 )
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
@@ -101,9 +107,9 @@ internal class ServiceMessenger(
                         try {
                             checker.disableAllowed(source, foregroundRequired)
                             if (bleToken != null) {
-                                api.disableBle(source.packageName, bleToken)
+                                api.disableBle(source.packageName!!, bleToken)
                             } else {
-                                api.disable(source.packageName, persist)
+                                api.disable(source.packageName!!, persist)
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
@@ -119,7 +125,7 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.factoryResetAllowed(source)
-                            api.factoryReset(0)
+                            api.factoryReset()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
                             false

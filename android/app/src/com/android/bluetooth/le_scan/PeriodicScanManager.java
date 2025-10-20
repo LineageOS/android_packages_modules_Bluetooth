@@ -17,6 +17,7 @@
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.callbackToApp;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOperations;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -44,7 +45,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /** Manages Bluetooth LE Periodic scans */
-@VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {
     private static final String TAG = PeriodicScanManager.class.getSimpleName();
 
@@ -57,17 +57,30 @@ public class PeriodicScanManager {
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
+    private final PeriodicScanNativeCallback mNativeCallback;
     private final PeriodicScanNativeInterface mNativeInterface;
 
     PeriodicScanManager(
             AdapterService service,
             ScanController scanController,
             PeriodicScanNativeInterface nativeInterface) {
+        this(service, scanController, null, nativeInterface);
+    }
+
+    @VisibleForTesting
+    PeriodicScanManager(
+            AdapterService service,
+            ScanController scanController,
+            PeriodicScanNativeCallback nativeCallback,
+            PeriodicScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
+        mNativeCallback =
+                requireNonNullElseGet(nativeCallback, () -> new PeriodicScanNativeCallback(this));
         mNativeInterface =
-                requireNonNullElseGet(nativeInterface, () -> new PeriodicScanNativeInterface(this));
+                requireNonNullElseGet(
+                        nativeInterface, () -> new PeriodicScanNativeInterface(mNativeCallback));
         mNativeInterface.init();
     }
 
@@ -100,8 +113,8 @@ public class PeriodicScanManager {
 
         @Override
         public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering advertising set");
-            stopSync(mCallback);
+            Log.d(TAG, "binderDied(): Unregistering advertising set");
+            doOnScanThread(() -> stopSync(mCallback));
         }
     }
 
@@ -180,6 +193,9 @@ public class PeriodicScanManager {
                                             status));
 
                 } else {
+                    if (leaudioBroadcastImproveSourceOperations()) {
+                        it.remove();
+                    }
                     callbackToApp(
                             () ->
                                     callback.onSyncEstablished(
@@ -191,7 +207,9 @@ public class PeriodicScanManager {
                                             status));
                     IBinder binder = e.getKey();
                     binder.unlinkToDeath(e.getValue().deathRecipient, 0);
-                    it.remove();
+                    if (!leaudioBroadcastImproveSourceOperations()) {
+                        it.remove();
+                    }
                 }
             }
         }
@@ -243,6 +261,16 @@ public class PeriodicScanManager {
     public void startSync(
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         mScanController.enforceScanThread();
+        startSync(scanResult.getDevice(), scanResult.getAdvertisingSid(), skip, timeout, callback);
+    }
+
+    public void startSync(
+            BluetoothDevice device,
+            int sid,
+            int skip,
+            int timeout,
+            IPeriodicAdvertisingCallback callback) {
+        mScanController.enforceScanThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = callback.asBinder();
         try {
@@ -251,9 +279,8 @@ public class PeriodicScanManager {
             throw new IllegalArgumentException("Can't link to periodic scanner death");
         }
 
-        String address = scanResult.getDevice().getAddress();
-        int addressType = scanResult.getDevice().getAddressType();
-        int sid = scanResult.getAdvertisingSid();
+        String address = device.getAddress();
+        int addressType = device.getAddressType();
         Log.d(
                 TAG,
                 "startSync for Device: "

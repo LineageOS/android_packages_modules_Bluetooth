@@ -758,7 +758,7 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr, BT_HDR* p_
           p_data += AVRC_AVC_HDR_SIZE; /* 3 bytes: ctype, subunit*, opcode */
           msg.sub.page = (*p_data++ >> AVRC_SUB_PAGE_SHIFT) & AVRC_SUB_PAGE_MASK;
           xx = 0;
-          while (*p_data != AVRC_CMD_OPRND_PAD && xx < AVRC_SUB_TYPE_LEN) {
+          while (xx < AVRC_SUB_TYPE_LEN && *p_data != AVRC_CMD_OPRND_PAD) {
             msg.sub.subunit_type[xx] = *p_data++ >> AVRC_SUBTYPE_SHIFT;
             if (msg.sub.subunit_type[xx] == AVRC_SUB_PANEL) {
               msg.sub.panel = true;
@@ -1011,7 +1011,7 @@ uint16_t AVRC_GetProfileVersion() {
   uint16_t profile_version = AVRC_REV_1_4;
   char avrcp_version[PROPERTY_VALUE_MAX] = {0};
 
-  if (!com::android::bluetooth::flags::avrcp_16_default()) {
+  if (!com_android_bluetooth_flags_avrcp_16_default()) {
     osi_property_get(AVRC_VERSION_PROPERTY, avrcp_version, AVRC_1_5_STRING);
   } else {
     osi_property_get(AVRC_VERSION_PROPERTY, avrcp_version, AVRC_1_6_STRING);

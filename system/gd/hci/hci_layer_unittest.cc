@@ -246,8 +246,7 @@ TEST_F(HciLayerTest, le_event_handler_is_invoked) {
                                client_handler_->Bind([](LeMetaEventView /* view */) {
                                  log::debug("{}", kOurLeEventHandlerWasInvoked);
                                }));
-  hci::Address remote_address;
-  Address::FromString("D0:05:04:03:02:01", remote_address);
+  hci::Address remote_address = Address::FromString("D0:05:04:03:02:01").value();
   hal_->InjectEvent(LeEnhancedConnectionCompleteBuilder::Create(
           ErrorCode::SUCCESS, 0x0041, Role::PERIPHERAL, AddressType::PUBLIC_DEVICE_ADDRESS,
           remote_address, Address::kEmpty, Address::kEmpty, 0x0024, 0x0000, 0x0011,

@@ -34,8 +34,6 @@ package com.android.bluetooth.opp;
 
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -54,14 +52,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.util.AlertActivity;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** This class is designed to ask user to confirm if accept incoming file; */
-// Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     private static final String TAG = BluetoothOppIncomingFileConfirmActivity.class.getSimpleName();
 
@@ -93,11 +88,6 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
             Log.w(TAG, "Error: Can not get data from db");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_INCOMING_FILE_CONFIRM_ACTIVITY,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    0);
             finish();
             return;
         }

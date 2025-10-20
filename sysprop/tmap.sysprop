@@ -45,3 +45,44 @@ prop {
     access: Readonly
     prop_name: "bluetooth.profile.tmap.broadcast_media_sender.enabled"
 }
+
+# Whether the TMAP (Telephony and Media Audio Profile) Call Terminal (CT) role is enabled on this
+# device. Set by vendors overlay, read at Bluetooth initialization. The follow framework profiles
+# will be enabled as a result:
+#   * BAP_UNICAST_SERVER
+#   * CCP_CALL_CONTROL_CLIENT
+#   * VCP_VOLUME_RENDERER
+prop {
+    api_name: "isProfileTmapCallTerminalEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.profile.tmap.call_terminal.enabled"
+}
+
+# Whether the TMAP (Telephony and Media Audio Profile) Unicast Media Receiver (UMR) role is enabled
+# on this device. Set by vendors overlay, read at Bluetooth initialization. The follow framework
+# profiles will be enabled as a result:
+#   * BAP_UNICAST_SERVER
+#   * MCP_MEDIA_CONTROL_CLIENT
+#   * VCP_VOLUME_RENDERER
+prop {
+    api_name: "isProfileTmapUnicastMediaReceiverEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.profile.tmap.unicast_media_receiver.enabled"
+}
+
+# Whether the TMAP (Telephony and Media Audio Profile) Broadcast Media Receiver (BMR) role is enabled
+# on this device. Set by vendors overlay, read at Bluetooth initialization. The follow framework
+# profiles will be enabled as a result:
+#   * BAP_BROADCAST_SINK
+#   * VCP_VOLUME_RENDERER
+prop {
+    api_name: "isProfileTmapBroadcastMediaReceiverEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.profile.tmap.broadcast_media_receiver.enabled"
+}

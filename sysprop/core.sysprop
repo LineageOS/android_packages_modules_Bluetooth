@@ -18,14 +18,6 @@ prop {
 }
 
 prop {
-    api_name: "isMsftHciExtEnabled"
-    type: Boolean
-    scope: Internal
-    access: Readonly
-    prop_name: "bluetooth.core.le.use_msft_hci_ext"
-}
-
-prop {
     api_name: "getLeDirectConnectionTimeout"
     type: UInt
     scope: Internal
@@ -95,6 +87,17 @@ prop {
     scope: Internal
     access: Readonly
     prop_name: "bluetooth.core.le.inquiry_scan_window"
+}
+
+# IO Capabilities supported during pairing
+# Set by vendors overlay, read during pairing
+prop {
+    api_name: "gap_io_capabilities"
+    type: Enum
+    scope: Internal
+    access: Readonly
+    enum_values: "display_only|display_yesno|keyboard_only|keyboard_display|none"
+    prop_name: "bluetooth.core.gap.io_capabilities"
 }
 
 # Whether LE Connection with initiating with only LE 1M PHY.

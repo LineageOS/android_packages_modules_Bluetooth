@@ -165,6 +165,8 @@ cc_library_static {
         "sys/bta_sys_conn.cc",
         "sys/bta_sys_main.cc",
         "sys/utl.cc",
+        "vaps/vaps_server.cc",
+        "vaps/vaps_server_utils.cc",
         "vc/device.cc",
         "vc/vc.cc",
     ],
@@ -364,7 +366,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
@@ -407,12 +409,11 @@ cc_test {
         "libcutils",
         "libevent",
         "liblog",
-        "libprotobuf-cpp-lite",
         "libstatssocket",
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -430,6 +431,7 @@ cc_test {
         "libcom.android.sysprop.bluetooth.wrapped",
         "libgmock",
         "libosi",
+        "libprotobuf-cpp-lite",
     ],
 }
 
@@ -470,7 +472,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
@@ -537,7 +539,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -919,6 +921,7 @@ cc_test {
         "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
+        "libcutils",
         "libhidlbase",
         "liblog", // __android_log_print
         "server_configurable_flags",
@@ -1006,6 +1009,8 @@ cc_test {
         "test/common/btm_api_mock.cc",
         "test/common/mock_csis_client.cc",
         "test/common/mock_device_groups.cc",
+        "vaps/vaps_server.cc",
+        "vaps/vaps_server_utils.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -1483,7 +1488,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
@@ -1562,7 +1567,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -1631,7 +1636,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",

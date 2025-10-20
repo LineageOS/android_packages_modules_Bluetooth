@@ -51,6 +51,12 @@ private:
   static constexpr uint16_t kDefaultSendParametersTimeoutMs = 100;
   static constexpr uint16_t kDefaultInitIdleTimeout = 0;
   static constexpr uint16_t kAllAppId = 0xFF;
+
+  // Valid range of Sniff Max Interval is 0x0002 to 0xFFFE as per
+  // Bluetooth Core Spec. V6.0, Vol 4, Part E, 7.2.2
+  // Sniff Offload shall use 0x0001 to select Prefer-Active operation mode.
+  static constexpr uint16_t kDefaultSniffMaxInterval = 0x0001;
+
   // Manages the state for a single connection handle.
   class LinkStateManager {
   public:
@@ -213,7 +219,7 @@ void SniffOffloadImpl::PerformStart(uint16_t subrating_max_latency,
   // ever issued to controller for an ACL, these are the parameters the link should be
   // reverted to when all the profiles have indicated that they have closed.
   default_params_ = {
-          .sniff_max_interval = 0,
+          .sniff_max_interval = kDefaultSniffMaxInterval,
           .sniff_min_interval = 0,
           .sniff_attempts = 0,
           .sniff_timeout = 0,
@@ -328,6 +334,11 @@ void SniffOffloadImpl::LinkStateManager::UpdateProfileStatus(ProfileId profile_i
       profile_info.state = state;
       active_profiles_[key] = profile_info;
     }
+
+    if (state == ProfileState::BTA_SYS_CONN_OPEN) {
+      active_profiles_[key].open_state_config =
+              owner_->PerformReadSniffConfig(key.first, key.second, state);
+    }
   }
 
   // If this was the last profile, mark this instance for eventual removal.
@@ -382,19 +393,19 @@ void SniffOffloadImpl::LinkStateManager::SelectAndUpdateParams() {
 
   for (const auto& [key, info] : active_profiles_) {
     auto read_config = owner_->PerformReadSniffConfig(key.first, key.second, info.state);
+
     log::verbose("profile_id = {}, app_id = {}, state = {}", key.first, key.second, info.state);
-    if (info.state == ProfileState::BTA_SYS_CONN_OPEN) {
-      active_profiles_[key].open_state_config = read_config;
-      log::verbose("Open state config stored for later use. Priority {}.",
-                   static_cast<uint8_t>(active_profiles_[key].open_state_config.priority_));
-    } else if (read_config.priority_ == Priority::kNoPriority) {
+
+    if (read_config.priority_ == Priority::kNoPriority) {
       log::verbose("Priority yielded is no priority. Read Open Config Priority{}",
                    static_cast<uint8_t>(active_profiles_[key].open_state_config.priority_));
+
       read_config = info.open_state_config;
     }
 
     log::verbose("Read priority taken in consideration. {}",
                  static_cast<uint8_t>(read_config.priority_));
+
     if (read_config.priority_ > priority) {
       priority = read_config.priority_;
       new_params = read_config.parameters_;
@@ -404,6 +415,7 @@ void SniffOffloadImpl::LinkStateManager::SelectAndUpdateParams() {
       active_configs.push_back(read_config);
       all_allow_subrating = (all_allow_subrating && read_config.allow_subrating_update_);
     }
+
     idle_timeout = std::max(idle_timeout, read_config.parameters_.link_idle_timeout);
     all_allow_subrating = (all_allow_subrating && read_config.allow_subrating_update_);
   }
@@ -436,6 +448,11 @@ void SniffOffloadImpl::LinkStateManager::SelectAndUpdateParams() {
     new_params.min_remote_timeout = active_link_params_.min_remote_timeout;
     new_params.min_local_timeout = active_link_params_.min_local_timeout;
   }
+
+  log::verbose(" comparison");
+  log::verbose("  new_params = {}", new_params.ToString());
+  log::verbose("   vs ");
+  log::verbose("  active_link_params_ = {}", active_link_params_.ToString());
 
   if (new_params == active_link_params_) {
     log::info("LinkStateManager[{:#06x}]: Parameters unchanged. NOP.", handle_);

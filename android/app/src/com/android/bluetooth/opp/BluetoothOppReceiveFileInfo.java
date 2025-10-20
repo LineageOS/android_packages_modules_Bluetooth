@@ -32,8 +32,6 @@
 
 package com.android.bluetooth.opp;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -44,8 +42,6 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -57,7 +53,6 @@ import java.util.Locale;
  * This class stores information about a single receiving file. It will only be used for inbounds
  * share, e.g. receive a file to determine a correct save file name
  */
-// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppReceiveFileInfo {
     /* To truncate the name of the received file if the length exceeds 237 */
     private static final int OPP_LENGTH_OF_FILE_NAME = 237;
@@ -185,11 +180,6 @@ public class BluetoothOppReceiveFileInfo {
 
         if (insertUri == null) {
             Log.e(Constants.TAG, "Error when creating file " + fullFilename);
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVE_FILE_INFO,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    1);
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_FILE_ERROR);
         }
 

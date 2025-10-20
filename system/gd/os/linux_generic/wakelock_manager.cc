@@ -176,7 +176,7 @@ struct WakelockManager::Stats {
                    "    min_interval_ms: {}\n"
                    "    avg_interval_ms: {}\n"
                    "    total_interval_ms: {}\n"
-                   "    total_time_since_reeset_ms: {}\n",
+                   "    total_time_since_reset_ms: {}\n",
                    is_acquired, is_native, acquired_count, released_count, acquired_errors,
                    released_errors, last_acquired_error, last_released_error, last_interval_ms,
                    last_released_timestamp_ms, last_acquired_interval_ms, max_interval_ms,

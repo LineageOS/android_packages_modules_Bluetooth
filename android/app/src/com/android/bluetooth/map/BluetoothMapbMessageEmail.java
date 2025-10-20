@@ -15,18 +15,12 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProtoEnums;
 import android.util.Log;
-
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-// Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothMapbMessageEmail extends BluetoothMapbMessage {
 
     private String mEmailBody = null;
@@ -73,11 +67,6 @@ public class BluetoothMapbMessageEmail extends BluetoothMapbMessage {
             bodyFragments.add(tmpBody.getBytes(StandardCharsets.UTF_8));
         } else {
             Log.e(TAG, "Email has no body - this should not be possible");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_EMAIL,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    0);
             bodyFragments.add(new byte[0]); // An empty message - this should not be possible
         }
         return encodeGeneric(bodyFragments);

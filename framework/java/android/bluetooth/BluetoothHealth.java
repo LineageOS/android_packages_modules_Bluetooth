@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import android.annotation.Hide;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
@@ -99,24 +100,21 @@ public final class BluetoothHealth implements BluetoothProfile {
      */
     @Deprecated public static final int CHANNEL_TYPE_STREAMING = 11;
 
-    /**
-     * Hide auto-created default constructor
-     *
-     * @hide
-     */
+    /** Hide auto-created default constructor */
+    @Hide
     BluetoothHealth() {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public void onServiceDisconnected() {}
 
-    /** @hide */
+    @Hide
     @Override
     @RequiresNoPermission
     public BluetoothAdapter getAdapter() {

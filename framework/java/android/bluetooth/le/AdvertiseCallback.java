@@ -16,15 +16,13 @@
 
 package android.bluetooth.le;
 
+import android.annotation.Hide;
+
 /** Bluetooth LE advertising callbacks, used to deliver advertising operation status. */
 public abstract class AdvertiseCallback {
 
-    /**
-     * The requested operation was successful.
-     *
-     * @hide
-     */
-    public static final int ADVERTISE_SUCCESS = 0;
+    /** The requested operation was successful. */
+    @Hide public static final int ADVERTISE_SUCCESS = 0;
 
     /**
      * Failed to start advertising as the advertise data to be broadcasted is larger than 31 bytes.

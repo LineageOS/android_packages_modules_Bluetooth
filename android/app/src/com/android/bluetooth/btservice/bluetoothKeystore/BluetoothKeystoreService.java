@@ -25,6 +25,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothKeystoreProto;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.protobuf.ByteString;
@@ -62,8 +63,6 @@ import javax.crypto.spec.GCMParameterSpec;
 /** Service used for handling encryption and decryption of the bt_config.conf */
 public class BluetoothKeystoreService {
     private static final String TAG = BluetoothKeystoreService.class.getSimpleName();
-
-    private static BluetoothKeystoreService sBluetoothKeystoreService;
 
     private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH = 128;
@@ -131,11 +130,6 @@ public class BluetoothKeystoreService {
         debugLog("start");
         KeyStore keyStore;
 
-        if (sBluetoothKeystoreService != null) {
-            errorLog("start() called twice");
-            return;
-        }
-
         keyStore = getKeyStore();
 
         // Confirm whether to enable Common Criteria mode for the first time.
@@ -162,7 +156,7 @@ public class BluetoothKeystoreService {
     public void cleanup() {
         debugLog("cleanup");
 
-        if (sBluetoothKeystoreService == null) {
+        if (!Flags.mainlineBetaStorage()) {
             debugLog("cleanup() called before start()");
             return;
         }

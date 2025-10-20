@@ -57,7 +57,7 @@ import pandora.HostProto.OwnAddressType
 @RunWith(TestParameterInjector::class)
 public class DckGattTest() {
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
     private val bluetoothAdapter = bluetoothManager.adapter
     private val leScanner = bluetoothAdapter.bluetoothLeScanner
@@ -70,15 +70,11 @@ public class DckGattTest() {
             on { onConnectionStateChange(gattCaptor.capture(), any(), any()) } doAnswer {}
         }
 
-    // A Rule live from a test setup through it's teardown.
-    // Gives shell permissions during the test.
-    @Rule(order = 0) @JvmField val mPermissionRule = AdoptShellPermissionsRule()
+    @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
 
-    // Setup a Bumble Pandora device for the duration of the test.
-    // Acting as a Pandora client, it can be interacted with through the Pandora APIs.
-    @Rule(order = 1) @JvmField val mBumble = PandoraDevice()
+    @get:Rule(order = 1) val bumble = PandoraDevice()
 
-    @Rule(order = 2) @JvmField val enableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 2) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Before
     fun setUp() {
@@ -88,7 +84,7 @@ public class DckGattTest() {
         // - `withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))` sets a timeout for the
         //   gRPC call.
         // - `register(Empty.getDefaultInstance())` sends a registration request to the server.
-        mBumble
+        bumble
             .dckBlocking()
             .withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))
             .register(Empty.getDefaultInstance())
@@ -160,7 +156,7 @@ public class DckGattTest() {
         // - `hostBlocking()` accesses another gRPC service related to the host.
         //   The following `advertise(...)` sends an advertise request to the server, setting
         //   specific attributes.
-        mBumble
+        bumble
             .hostBlocking()
             .advertise(
                 AdvertiseRequest.newBuilder()
@@ -313,9 +309,7 @@ public class DckGattTest() {
         }
 
         val cancellableContext = GrpcContext.current().withCancellation()
-        with(cancellableContext) {
-            run { mBumble.hostBlocking().advertise(requestBuilder.build()) }
-        }
+        with(cancellableContext) { run { bumble.hostBlocking().advertise(requestBuilder.build()) } }
 
         return cancellableContext
     }

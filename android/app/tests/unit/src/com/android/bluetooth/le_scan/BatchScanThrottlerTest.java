@@ -18,7 +18,7 @@ package com.android.bluetooth.le_scan;
 
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 
-import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
+import static com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -28,18 +28,18 @@ import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.bluetooth.TestUtils.FakeTimeProvider;
+import com.android.tests.bluetooth.FakeTimeProvider;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -52,12 +52,7 @@ public class BatchScanThrottlerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private FakeTimeProvider mTimeProvider;
-
-    @Before
-    public void setUp() {
-        mTimeProvider = new FakeTimeProvider();
-    }
+    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
     private void advanceTime(long amountToAdvanceMillis) {
         mTimeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis));
@@ -189,14 +184,14 @@ public class BatchScanThrottlerTest {
                         .setReportDelay(reportDelayMillis)
                         .build();
 
-        return new ScanClient(1, scanSettings, createScanFilterList(isFiltered), 1);
+        return new ScanClient(1, 1, scanSettings, createScanFilterList(isFiltered));
     }
 
     private static List<ScanFilter> createScanFilterList(boolean isFiltered) {
-        List<ScanFilter> scanFilterList = null;
         if (isFiltered) {
-            scanFilterList = List.of(new ScanFilter.Builder().setDeviceName("TestName").build());
+            return List.of(new ScanFilter.Builder().setDeviceName("TestName").build());
+        } else {
+            return new ArrayList<>();
         }
-        return scanFilterList;
     }
 }

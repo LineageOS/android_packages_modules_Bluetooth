@@ -90,29 +90,21 @@ static jboolean sdpSearchNative(JNIEnv* env, jobject /* obj */, jbyteArray addre
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (addr == NULL) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
   jbyte* raw_uuid = env->GetByteArrayElements(uuidObj, NULL);
   if (!raw_uuid) {
     log::error("failed to get uuid");
-    env->ReleaseByteArrayElements(address, addr, 0);
     return JNI_FALSE;
   }
+
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   Uuid uuid = Uuid::From128BitBE((uint8_t*)raw_uuid);
   log::debug("UUID {}", uuid);
 
-  int ret = sBluetoothSdpInterface->sdp_search((RawAddress*)addr, uuid);
+  int ret = sBluetoothSdpInterface->sdp_search(bd_addr, uuid);
   if (ret != BT_STATUS_SUCCESS) {
     log::error("SDP Search initialization failed: {}", ret);
   }
 
-  if (addr) {
-    env->ReleaseByteArrayElements(address, addr, 0);
-  }
   if (raw_uuid) {
     env->ReleaseByteArrayElements(uuidObj, raw_uuid, 0);
   }

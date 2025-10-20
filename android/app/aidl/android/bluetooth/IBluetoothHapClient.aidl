@@ -22,11 +22,8 @@ import android.bluetooth.BluetoothHapPresetInfo;
 import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
 
-/**
- * APIs for Bluetooth Hearing Access Profile client
- *
- * @hide
- */
+/** Binder method for HAP interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothHapClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     List<BluetoothDevice> getConnectedDevices(in AttributionSource attributionSource);

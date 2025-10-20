@@ -19,10 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattService;
 
-/**
- * Callback definitions for interacting with BLE / GATT
- * @hide
- */
+/** Callback definitions for interacting with GATT */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothGattCallback {
     void onClientRegistered(in int status);
     void onClientConnectionState(in int status,
@@ -42,4 +40,5 @@ oneway interface IBluetoothGattCallback {
                              in int timeout, in int status);
     void onServiceChanged(in BluetoothDevice device);
     void onSubrateChange(in BluetoothDevice device, in int subrateMode, in int status);
+    void onCharacteristicsUnoffloaded(in BluetoothDevice device, in int sessionId, in int status);
 }

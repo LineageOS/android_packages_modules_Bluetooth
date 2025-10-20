@@ -234,6 +234,7 @@ class GAPProxy(ProfileProxy):
             if event.address == pts_addr and event.passkey_entry_notification:
                 self.log(f"Got passkey entry {event.passkey_entry_notification}")
                 self.cached_passkey = event.passkey_entry_notification
+                self.pairing_events.send(PairingEventAnswer(event=event, confirm=True))
                 return str(event.passkey_entry_notification)
 
         assert False
@@ -615,7 +616,7 @@ class GAPProxy(ProfileProxy):
         """
         Please send a disconnect request to terminate connection.
         """
-        if test == "GAP/CONN/TERM/BV-01-C":
+        if not self.connection:
             self.connection = next(self.advertise).connection
         try:
             self.host.Disconnect(connection=self.connection)

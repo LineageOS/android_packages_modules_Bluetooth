@@ -29,6 +29,7 @@
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "bta/hd/bta_hd_int.h"
 #include "stack/include/bt_hdr.h"
@@ -101,6 +102,11 @@ static void bta_hd_better_state_machine(uint16_t event, tBTA_HD_DATA* p_data) {
           break;
         case BTA_HD_INT_CLOSE_EVT:
           bta_hd_close_act(p_data);
+          break;
+        case BTA_HD_INT_SET_PROTOCOL_EVT:
+          if (com_android_bluetooth_flags_hidd_handle_set_protocol_before_interrupt_connected()) {
+            bta_hd_set_protocol_act(p_data);
+          }
           break;
       }
       break;

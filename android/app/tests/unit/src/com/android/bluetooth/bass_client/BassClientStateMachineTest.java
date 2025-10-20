@@ -63,6 +63,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -100,6 +101,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.primitives.Bytes;
@@ -136,6 +138,7 @@ public class BassClientStateMachineTest {
     @Mock private MetricsLogger mMetricsLogger;
     @Mock private BassClientStateMachine.BluetoothGattTestableWrapper mBluetoothGatt;
     @Mock private BluetoothGattCharacteristic mBroadcastScanControlPoint;
+    @Mock private ScanController mScanController;
 
     private static final int TEST_BROADCAST_ID = 42;
     private static final int TEST_SOURCE_ID = 1;
@@ -164,6 +167,16 @@ public class BassClientStateMachineTest {
                 .getDeviceFromByte(Utils.getBytesFromAddress(EMPTY_BLUETOOTH_DEVICE_ADDRESS));
         doReturn(mAdapterService).when(mBassClientService).getBaseContext();
         mockGetBluetoothManager(mAdapterService);
+
+        doAnswer(
+                        invocation -> {
+                            Runnable runnable = invocation.getArgument(0);
+                            runnable.run();
+                            return null;
+                        })
+                .when(mScanController)
+                .doOnScanThread(any(Runnable.class));
+        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
 
         mStateMachine =
                 new StubBassClientStateMachine(
@@ -889,7 +902,12 @@ public class BassClientStateMachineTest {
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
-        verify(mPeriodicAdvertisingManager).transferSync(any(), eq(serviceData), eq(syncHandle));
+        if (Flags.leaudioBroadcastImproveSourceOperations()) {
+            verify(mScanController).transferSync(any(), eq(serviceData), eq(syncHandle));
+        } else {
+            verify(mPeriodicAdvertisingManager)
+                    .transferSync(any(), eq(serviceData), eq(syncHandle));
+        }
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -909,8 +927,12 @@ public class BassClientStateMachineTest {
         serviceData = serviceData << 8;
         // Address we set in the Source Address can differ from the address in the air
         serviceData = serviceData | BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS;
-        verify(mPeriodicAdvertisingManager)
-                .transferSetInfo(any(), eq(serviceData), anyInt(), any());
+        if (Flags.leaudioBroadcastImproveSourceOperations()) {
+            verify(mScanController).transferSetInfo(any(), eq(serviceData), anyInt(), any());
+        } else {
+            verify(mPeriodicAdvertisingManager)
+                    .transferSetInfo(any(), eq(serviceData), anyInt(), any());
+        }
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -1619,7 +1641,12 @@ public class BassClientStateMachineTest {
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
-        verify(mPeriodicAdvertisingManager).transferSync(any(), eq(serviceData), eq(syncHandle));
+        if (Flags.leaudioBroadcastImproveSourceOperations()) {
+            verify(mScanController).transferSync(any(), eq(serviceData), eq(syncHandle));
+        } else {
+            verify(mPeriodicAdvertisingManager)
+                    .transferSync(any(), eq(serviceData), eq(syncHandle));
+        }
     }
 
     @Test
@@ -2438,6 +2465,33 @@ public class BassClientStateMachineTest {
                 BassClientStateMachine.Connected.class);
         mLooper.dispatchAll();
         Mockito.clearInvocations(scanControlPoint);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_INTENT_BROADCAST_IN_STATE_MACHINE_CLEANUP)
+    public void testDoQuit_inConnectedState_broadcastsDisconnectedIntent() {
+        allowConnection(true);
+        allowConnectGatt(true);
+
+        // Transition the state machine from DISCONNECTED to CONNECTING
+        mStateMachine.sendMessage(CONNECT);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
+
+        // Transition the state machine to CONNECTED
+        mStateMachine.notifyConnectionStateChanged(GATT_SUCCESS, STATE_CONNECTED);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(STATE_CONNECTED, STATE_CONNECTING);
+
+        // Call the method under test, which should trigger a disconnect intent
+        mStateMachine.doQuit();
+
+        // Verify that the connection state broadcast was made for the disconnection
+        verifyIntentSent(
+                hasAction(ACTION_CONNECTION_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
+                hasExtra(EXTRA_STATE, STATE_DISCONNECTED),
+                hasExtra(EXTRA_PREVIOUS_STATE, STATE_CONNECTED));
     }
 
     private void initToConnectingState() {

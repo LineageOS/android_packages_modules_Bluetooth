@@ -62,7 +62,7 @@ void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB* p_cb) {
   inc_func_call_count(__func__);
   test::mock::bta_hh_utils::bta_hh_clean_up_kdev(p_cb);
 }
-void bta_hh_cleanup_disable(tBTA_HH_STATUS status) {
+void bta_hh_cleanup_disable(bthh_status_t status) {
   inc_func_call_count(__func__);
   test::mock::bta_hh_utils::bta_hh_cleanup_disable(status);
 }
@@ -74,8 +74,8 @@ tBTA_HH_DEV_CB* bta_hh_get_cb(const tAclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   return test::mock::bta_hh_utils::bta_hh_get_cb(link_spec);
 }
-tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
-                                     uint16_t* p_min_ssr_tout) {
+bthh_status_t bta_hh_read_ssr_param(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
+                                    uint16_t* p_min_ssr_tout) {
   inc_func_call_count(__func__);
   return test::mock::bta_hh_utils::bta_hh_read_ssr_param(link_spec, p_max_ssr_lat, p_min_ssr_tout);
 }

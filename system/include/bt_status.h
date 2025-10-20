@@ -22,8 +22,12 @@
 #include <iostream>
 #include <string>
 
+#ifndef TARGET_FLOSS
+// Exclude from the Floss build to avoid introducing unnecessary JNI code.
+#include <jni.h>
+#endif
+
 #include "bt_status_origin.h"
-#include "macros.h"
 
 #define BT_SUCCESS 0
 typedef uint16_t BtStatusCode;
@@ -58,6 +62,14 @@ public:
     return static_cast<uint16_t>(origin_) << 16 | static_cast<uint16_t>(code_);
   }
   operator uint32_t() const { return toUint32(); }
+
+// Exclude from the Floss build to avoid introducing unnecessary JNI code.
+#ifndef TARGET_FLOSS
+  // For now, BtStatus objects are for native stack use only. As a result, when
+  // they are being converted to jints to be passed to the upper Java layer, only
+  // pass the internal code to preserve functionality.
+  operator jint() const { return (jint)static_cast<uint32_t>(code_); }
+#endif
 
   // To compare against other statuses
   bool operator==(const BtStatus& other) const {
@@ -106,3 +118,27 @@ template <>
 struct std::hash<BtStatus> {
   size_t operator()(const BtStatus& status) const { return status.toUint32(); }
 };
+
+// All std::formatter specializations must be inside the std namespace
+namespace std {
+
+// Concept to identify any class that inherits from BtStatus
+template <typename T>
+concept IsBtStatusDerived = std::derived_from<T, BtStatus>;
+
+// The primary formatter specialization for the base class, BtStatus.
+// This formatter will handle the core logic.
+template <>
+struct formatter<BtStatus> : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(const BtStatus& status, FormatContext& ctx) const {
+    return formatter<string_view>::format(status.toString(), ctx);
+  }
+};
+
+// A constrained partial specialization for any class T that derives from BtStatus.
+// This formatter simply inherits from the base class formatter, reusing its logic.
+template <IsBtStatusDerived T>
+struct formatter<T> : formatter<BtStatus> {};
+
+}  // namespace std

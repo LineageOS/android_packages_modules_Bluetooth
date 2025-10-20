@@ -46,6 +46,7 @@
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -53,6 +54,7 @@ using ::testing::NiceMock;
 
 using namespace std::chrono_literals;
 using namespace bluetooth;
+using ::testing::_;
 
 namespace {
 constexpr uint8_t kUnusedTimer = BTA_ID_MAX;
@@ -113,6 +115,8 @@ TEST_F(BtaDmTest, nop) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_no_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   bta_dm_cb.disabling = true;
 
   bta_dm_disable();  // Waiting for all ACL connections to drain
@@ -128,6 +132,8 @@ TEST_F(BtaDmCustomAlarmTest, disable_no_acl_links) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
@@ -148,6 +154,8 @@ TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_second_pass_with_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
@@ -349,8 +357,6 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
-  tBTA_DM_SEARCH_CB& search_cb = bluetooth::legacy::testing::bta_dm_disc_search_cb();
-
   mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
                                                       tBT_DEVICE_TYPE* p_dev_type,
                                                       tBLE_ADDR_TYPE* p_addr_type) {
@@ -363,8 +369,6 @@ TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
-  tBTA_DM_SEARCH_CB& search_cb = bluetooth::legacy::testing::bta_dm_disc_search_cb();
-
   mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
                                                       tBT_DEVICE_TYPE* p_dev_type,
                                                       tBLE_ADDR_TYPE* p_addr_type) {
@@ -377,8 +381,6 @@ TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__DUMO) {
-  tBTA_DM_SEARCH_CB& search_cb = bluetooth::legacy::testing::bta_dm_disc_search_cb();
-
   mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
                                                       tBT_DEVICE_TYPE* p_dev_type,
                                                       tBLE_ADDR_TYPE* p_addr_type) {

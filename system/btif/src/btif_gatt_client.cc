@@ -68,19 +68,12 @@ using bluetooth::Uuid;
 using namespace bluetooth;
 using std::vector;
 
-static bt_status_t btif_gattc_test_command_impl(int command, const btgatt_test_params_t* params);
 extern const btgatt_callbacks_t* bt_gatt_callbacks;
 
 typedef struct {
   tGATT_IF gatt_if;
   tCONN_ID conn_id;
 } btif_test_cb_t;
-
-static const char* disc_name[GATT_DISC_MAX] = {
-        "Unknown",        "GATT_DISC_SRVC_ALL",  "GATT_DISC_SRVC_BY_UUID", "GATT_DISC_INC_SRVC",
-        "GATT_DISC_CHAR", "GATT_DISC_CHAR_DSCPT"};
-
-static btif_test_cb_t test_cb;
 
 /*******************************************************************************
  *  Constants & Macros
@@ -209,10 +202,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
         HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
                   p_data->open.status, p_data->open.mtu);
       }
-
-      if (p_data->open.status == GATT_SUCCESS) {
-        btif_gatt_check_encrypted_link(p_data->open.remote_bda, p_data->open.transport);
-      }
       break;
     }
 
@@ -264,6 +253,13 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
                 p_data->subrate_chg.subrate_factor, p_data->subrate_chg.latency,
                 p_data->subrate_chg.cont_num, p_data->subrate_chg.timeout,
                 p_data->subrate_chg.status);
+      break;
+
+    case BTA_GATTC_CHARACTERISTICS_UNOFFLOADED_EVT:
+      HAL_CBACK(callbacks, client->characteristics_unoffloaded_cb,
+                static_cast<int>(p_data->characteristics_unoffloaded.conn_id),
+                static_cast<int>(p_data->characteristics_unoffloaded.session_id),
+                p_data->characteristics_unoffloaded.status);
       break;
 
     default:
@@ -566,8 +562,8 @@ bt_status_t btif_gattc_reg_for_notification(int client_if, const RawAddress& bd_
                                             uint16_t handle) {
   CHECK_BTGATT_INIT();
 
-  return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_reg_for_notification_impl), client_if,
-                               bd_addr, handle));
+  return do_in_main_thread(Bind(base::IgnoreResult(&btif_gattc_reg_for_notification_impl),
+                                client_if, bd_addr, handle));
 }
 
 static void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if, const RawAddress& bda,
@@ -584,8 +580,8 @@ bt_status_t btif_gattc_dereg_for_notification(int client_if, const RawAddress& b
                                               uint16_t handle) {
   CHECK_BTGATT_INIT();
 
-  return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_dereg_for_notification_impl),
-                               client_if, bd_addr, handle));
+  return do_in_main_thread(Bind(base::IgnoreResult(&btif_gattc_dereg_for_notification_impl),
+                                client_if, bd_addr, handle));
 }
 
 static bt_status_t btif_gattc_read_remote_rssi(int client_if, const RawAddress& bd_addr) {
@@ -657,10 +653,6 @@ static int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   return 0;
 }
 
-static bt_status_t btif_gattc_test_command(int command, const btgatt_test_params_t& params) {
-  return btif_gattc_test_command_impl(command, &params);
-}
-
 static void btif_gattc_subrate_request_impl(RawAddress addr, int subrate_min, int subrate_max,
                                             int max_latency, int cont_num, int sup_timeout) {
   if (BTA_DmGetConnectionState(addr)) {
@@ -676,183 +668,40 @@ static bt_status_t btif_gattc_subrate_request(const RawAddress& bd_addr, int sub
                                subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
 
-static void btif_test_connect_cback(tGATT_IF, const RawAddress&, tCONN_ID conn_id, bool connected,
-                                    tGATT_DISCONN_REASON, tBT_TRANSPORT) {
-  log::info("conn_id={}, connected={}", conn_id, connected);
-  test_cb.conn_id = connected ? conn_id : 0;
-}
+static bt_status_t btif_gattc_offload_characteristics(int conn_id, btgatt_db_element_t* service,
+                                                      size_t elements_count, uint64_t endpoint_id,
+                                                      uint64_t hub_id,
+                                                      btgatt_offload_result_t* result) {
+  CHECK_BTGATT_INIT();
+  std::promise<btgatt_offload_result_t> promise;
+  std::future future = promise.get_future();
 
-static void btif_test_command_complete_cback(tCONN_ID conn_id, tGATTC_OPTYPE op,
-                                             tGATT_STATUS status, tGATT_CL_COMPLETE* p_data) {
-  log::info("op_code=0x{:02x}, conn_id=0x{:x}. status=0x{:x}", op, conn_id, status);
-
-  switch (op) {
-    case GATTC_OPTYPE_READ:
-    case GATTC_OPTYPE_WRITE:
-    case GATTC_OPTYPE_CONFIG:
-    case GATTC_OPTYPE_EXE_WRITE:
-    case GATTC_OPTYPE_NOTIFICATION:
-      break;
-
-    case GATTC_OPTYPE_INDICATION:
-      if (GATTC_SendHandleValueConfirm(conn_id, p_data->cid) != GATT_SUCCESS) {
-        log::error(
-                "Unable to send handle value confirmation conn_id:0x{:x} "
-                "cid:0x{:04x}",
-                conn_id, p_data->cid);
-      }
-      break;
-
-    default:
-      log::info("Unknown op_code (0x{:02x})", op);
-      break;
+  bt_status_t status = do_in_main_thread(base::BindOnce(
+          &BTA_GATTC_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id),
+          std::vector(service, service + elements_count), endpoint_id, hub_id, std::move(promise)));
+  if (status != BT_STATUS_SUCCESS) {
+    return status;
   }
-}
+  log::info("Waiting for request status");
+  auto request_status = future.wait_for(std::chrono::seconds(5));
 
-static void btif_test_discovery_result_cback(tCONN_ID /* conn_id */, tGATT_DISC_TYPE disc_type,
-                                             tGATT_DISC_RES* p_data) {
-  log::info("------ GATT Discovery result {:<22s} -------", disc_name[disc_type]);
-  log::info("Attribute handle: 0x{:04x} ({})", p_data->handle, p_data->handle);
-
-  if (disc_type != GATT_DISC_CHAR_DSCPT) {
-    log::info("Attribute type: {}", p_data->type.ToString());
+  if (request_status != std::future_status::ready) {
+    log::error("Offload request is not ready");
+    return BT_STATUS_TIMEOUT;
   }
-
-  switch (disc_type) {
-    case GATT_DISC_SRVC_ALL:
-      log::info("Handle range: 0x{:04x} ~ 0x{:04x} ({} ~ {})", p_data->handle,
-                p_data->value.group_value.e_handle, p_data->handle,
-                p_data->value.group_value.e_handle);
-      log::info("Service UUID: {}", p_data->value.group_value.service_type.ToString());
-      break;
-
-    case GATT_DISC_SRVC_BY_UUID:
-      log::info("Handle range: 0x{:04x} ~ 0x{:04x} ({} ~ {})", p_data->handle, p_data->value.handle,
-                p_data->handle, p_data->value.handle);
-      break;
-
-    case GATT_DISC_INC_SRVC:
-      log::info("Handle range: 0x{:04x} ~ 0x{:04x} ({} ~ {})", p_data->value.incl_service.s_handle,
-                p_data->value.incl_service.e_handle, p_data->value.incl_service.s_handle,
-                p_data->value.incl_service.e_handle);
-      log::info("Service UUID: {}", p_data->value.incl_service.service_type.ToString());
-      break;
-
-    case GATT_DISC_CHAR:
-      log::info("Properties: 0x{:02x}", p_data->value.dclr_value.char_prop);
-      log::info("Characteristic UUID: {}", p_data->value.dclr_value.char_uuid.ToString());
-      break;
-
-    case GATT_DISC_CHAR_DSCPT:
-      log::info("Descriptor UUID: {}", p_data->type.ToString());
-      break;
-    case GATT_DISC_MAX:
-      log::error("Unknown discovery item");
-      break;
-  }
-
-  log::info("-----------------------------------------------------------");
+  btgatt_offload_result_t request_result = future.get();
+  log::info("session_id: {} status: {}", request_result.session_id, request_result.status);
+  *result = request_result;
+  return BT_STATUS_SUCCESS;
 }
 
-static void btif_test_discovery_complete_cback(tCONN_ID /* conn_id */,
-                                               tGATT_DISC_TYPE /* disc_type */,
-                                               tGATT_STATUS status) {
-  log::info("status={}", status);
+static bt_status_t btif_gattc_unoffload_characteristics(int conn_id, int session_id) {
+  CHECK_BTGATT_INIT();
+  return do_in_jni_thread(Bind(base::IgnoreResult(&BTA_GATTC_UnoffloadCharacteristics),
+                               static_cast<tCONN_ID>(conn_id), session_id));
 }
-
-static tGATT_CBACK btif_test_callbacks = {
-        btif_test_connect_cback,
-        btif_test_command_complete_cback,
-        btif_test_discovery_result_cback,
-        btif_test_discovery_complete_cback,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-};
 
 }  // namespace
-
-static bt_status_t btif_gattc_test_command_impl(int command, const btgatt_test_params_t* params) {
-  switch (command) {
-    case 0x01: /* Enable */
-    {
-      log::info("ENABLE - enable={}", params->u1);
-      if (params->u1) {
-        std::array<uint8_t, Uuid::kNumBytes128> tmp;
-        tmp.fill(0xAE);
-        test_cb.gatt_if = GATT_Register(bluetooth::Uuid::From128BitBE(tmp), std::string("GattTest"),
-                                        &btif_test_callbacks, false);
-        GATT_StartIf(test_cb.gatt_if);
-      } else {
-        GATT_Deregister(test_cb.gatt_if);
-        test_cb.gatt_if = 0;
-      }
-      break;
-    }
-
-    case 0x02: /* Connect */
-    {
-      log::info("CONNECT - device={} (dev_type={}, addr_type={})", *params->bda1, params->u1,
-                params->u2);
-
-      if (params->u1 == BT_DEVICE_TYPE_BLE) {
-        BTM_SecAddBleDevice(*params->bda1, BT_DEVICE_TYPE_BLE,
-                            static_cast<tBLE_ADDR_TYPE>(params->u2));
-      }
-
-      if (!GATT_Connect(test_cb.gatt_if, *params->bda1, BTM_BLE_DIRECT_CONNECTION, BT_TRANSPORT_LE,
-                        false)) {
-        log::error("GATT_Connect failed!");
-      }
-      break;
-    }
-
-    case 0x03: /* Disconnect */
-    {
-      log::info("DISCONNECT - conn_id={}", test_cb.conn_id);
-      if (GATT_Disconnect(test_cb.conn_id) != GATT_SUCCESS) {
-        log::error("Unable to disconnect");
-      }
-      break;
-    }
-
-    case 0x04: /* Discover */
-    {
-      if (params->u1 >= GATT_DISC_MAX) {
-        log::error("DISCOVER - Invalid type ({})!", params->u1);
-        return (bt_status_t)0;
-      }
-
-      log::info("DISCOVER ({}), conn_id={}, uuid={}, handles=0x{:04x}-0x{:04x}",
-                disc_name[params->u1], test_cb.conn_id, params->uuid1->ToString(), params->u2,
-                params->u3);
-      if (GATTC_Discover(test_cb.conn_id, static_cast<tGATT_DISC_TYPE>(params->u1), params->u2,
-                         params->u3, *params->uuid1) != GATT_SUCCESS) {
-        log::error("Unable to discover");
-      }
-      break;
-    }
-
-    case 0xF0: /* Pairing configuration */
-      log::info("Setting pairing config auth={}, iocaps={}, keys={}/{}/{}", params->u1, params->u2,
-                params->u3, params->u4, params->u5);
-
-      bte_appl_cfg.ble_auth_req = params->u1;
-      bte_appl_cfg.ble_io_cap = params->u2;
-      bte_appl_cfg.ble_init_key = params->u3;
-      bte_appl_cfg.ble_resp_key = params->u4;
-      bte_appl_cfg.ble_max_key_size = params->u5;
-      break;
-
-    default:
-      log::error("UNKNOWN TEST COMMAND 0x{:02x}", command);
-      break;
-  }
-  return (bt_status_t)0;
-}
 
 const btgatt_client_interface_t btgattClientInterface = {
         btif_gattc_register_app,
@@ -876,6 +725,7 @@ const btgatt_client_interface_t btgattClientInterface = {
         btif_gattc_conn_parameter_update,
         btif_gattc_set_preferred_phy,
         btif_gattc_read_phy,
-        btif_gattc_test_command,
         btif_gattc_subrate_request,
+        btif_gattc_offload_characteristics,
+        btif_gattc_unoffload_characteristics,
 };

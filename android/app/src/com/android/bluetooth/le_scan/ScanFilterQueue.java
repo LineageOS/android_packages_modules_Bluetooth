@@ -209,9 +209,10 @@ import java.util.UUID;
         }
         if (filter.getDeviceAddress() != null) {
             /*
-             * Pass the address type here. This address type will be used for the resolving
-             * address, however, the host stack will force the type to 0x02 for the APCF filter
-             * in btm_ble_adv_filter.cc#BTM_LE_PF_addr_filter(...)
+             * Pass the address type here. This address type will only be used for resolving
+             * addresses, and the host stack will force the type to 0x02 for the APCF filter
+             * in le_scanning_manager_impl.cc#update_address_filter(...). This is to obtain
+             * advertising reports with identity address types as well as public and random types.
              */
             addDeviceAddress(
                     filter.getDeviceAddress(), (byte) filter.getAddressType(), filter.getIrk());

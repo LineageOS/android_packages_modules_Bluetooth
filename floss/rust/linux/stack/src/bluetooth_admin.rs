@@ -254,7 +254,7 @@ impl BluetoothAdmin {
     }
 
     pub fn on_device_found(&mut self, remote_device: &BluetoothDevice) {
-        self.device_policy_affect_cache.insert(remote_device.clone(), None).or_else(|| {
+        self.device_policy_affect_cache.entry(remote_device.clone()).or_insert_with(|| {
             self.callbacks.for_all_callbacks(|cb| {
                 cb.on_device_policy_effect_changed(remote_device.clone(), None);
             });

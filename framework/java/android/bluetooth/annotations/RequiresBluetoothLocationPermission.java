@@ -21,6 +21,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.Manifest;
+import android.annotation.Hide;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -32,8 +33,8 @@ import java.lang.annotation.Target;
  *     declaring {@code usesPermissionFlags="neverForLocation"} on the relevant {@code
  *     <uses-permission>} manifest tag. However, this assertion may restrict the types of Bluetooth
  *     devices you can interact with.
- * @hide
  */
+@Hide
 @Retention(SOURCE)
 @Target({METHOD, FIELD})
 @SuppressWarnings("InvalidBlockTag")

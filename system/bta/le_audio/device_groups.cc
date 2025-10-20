@@ -18,6 +18,7 @@
 
 #include "device_groups.h"
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/bt_transport.h>
 #include <stdio.h>
@@ -57,6 +58,7 @@
 #include "le_audio_utils.h"
 #include "main/shim/entry.h"
 #include "metrics_collector.h"
+#include "osi/include/properties.h"
 #include "stack/include/btm_client_interface.h"
 
 namespace bluetooth::le_audio {
@@ -617,11 +619,21 @@ uint8_t LeAudioDeviceGroup::GetSCA(void) const {
 }
 
 uint8_t LeAudioDeviceGroup::GetPacking(void) const {
-  if (!stream_conf.conf) {
-    log::error("No stream configuration has been set.");
-    return bluetooth::hci::kIsoCigPackingSequential;
+  if (stream_conf.conf) {
+    log::info("packing type: {}",
+              stream_conf.conf->packing == bluetooth::hci::kIsoCigPackingSequential
+                      ? "Sequential"
+                      : "Interleaved");
+    return stream_conf.conf->packing;
   }
-  return stream_conf.conf->packing;
+
+  if (android::sysprop::bluetooth::LeAudio::iso_interleaved_packing_enabled().value_or(false)) {
+    log::info("No stream configuration has been set, return Interleaved packing type");
+    return bluetooth::hci::kIsoCigPackingInterleaved;
+  }
+
+  log::info("No stream configuration has been set, return Sequential packing type");
+  return bluetooth::hci::kIsoCigPackingSequential;
 }
 
 uint8_t LeAudioDeviceGroup::GetFraming(void) const {
@@ -885,7 +897,7 @@ uint16_t LeAudioDeviceGroup::GetRemoteDelay(uint8_t direction) const {
 
 BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
         types::LeAudioContextType ctx_type) const {
-  if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+  if (!com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
     BidirectionalPair<bool> remote_directions = {true, true};
     // Remove the Source support if Sink only scenario is used
     // Note: With the RINGTONE we should already prepare for a call.
@@ -970,7 +982,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         continue;
       }
 
-      if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+      if (!com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
         if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
             ctx_type == types::LeAudioContextType::GAME) {
           // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
@@ -1086,7 +1098,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       }
       break;
     case ::bluetooth::le_audio::types::LeAudioContextType::MEDIA:
-      if (com::android::bluetooth::flags::dsa_use_codec_extensibility() &&
+      if (com_android_bluetooth_flags_dsa_use_codec_extensibility() &&
           (dsa_.mode == DsaMode::ISO_SW || dsa_.mode == DsaMode::ISO_HW)) {
         log::debug("Setting the DSA flag for mode: {}", common::ToString(dsa_.mode));
         // Set the DSA flags
@@ -1125,8 +1137,8 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(LeAudioContextType ctx_type,
                                                           bool use_preference) const {
   auto requirements = GetAudioSetConfigurationRequirements(ctx_type);
-  if (com::android::bluetooth::flags::leaudio_use_context_type_manager() &&
-      !requirements.sink_pacs && !requirements.source_pacs) {
+  if (com_android_bluetooth_flags_leaudio_use_context_type_manager() && !requirements.sink_pacs &&
+      !requirements.source_pacs) {
     log::debug("No requirements for context type: {}", common::ToString(ctx_type));
     return false;
   }
@@ -1391,6 +1403,10 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy() c
     auto strategy_selector = [&, this](uint8_t direction) {
       int expected_group_size = Size();
 
+      if (com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config()) {
+        expected_group_size = DesiredSize();
+      }
+
       if (!audio_locations_.get(direction)) {
         log::error("No audio locations for direction: {} available in the group", +direction);
         return types::LeAudioConfigurationStrategy::RFU;
@@ -1565,7 +1581,7 @@ void LeAudioDeviceGroup::CigConfiguration::GetCisCount(LeAudioContextType contex
 
   // For non-LC3 codecs like Opus, we should base the strategy calcualation based on the config
   const bool derive_strategy_from_config =
-          current_config && com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type();
+          current_config && com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type();
   auto strategy = derive_strategy_from_config
                           ? group_->FindGroupStrategyForConfig(current_config.get())
                           : group_->GetGroupSinkStrategy();
@@ -2016,7 +2032,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     // contexts are not supported. Then we might want to configure the device
     // but use UNSPECIFIED which is always supported (but can be unavailable)
     auto device_cnt = NumOfAvailableForDirection(direction);
-    if (device_cnt == 0) {
+    if (device_cnt == 0 ||
+        com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config()) {
       device_cnt = DesiredSize();
       if (device_cnt == 0) {
         log::error("Device count is 0");
@@ -2096,8 +2113,11 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
       required_device_cnt--;
     }
 
-    if (required_device_cnt > 0) {
-      /* Don't left any active devices if requirements are not met */
+    /* If at least one device got configured we are good to go. */
+    if ((!com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config() &&
+         required_device_cnt > 0) ||
+        (com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config() &&
+         (required_device_cnt == device_cnt))) {
       log::debug("Could not configure all the devices for direction: {}",
                  direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
       return false;
@@ -2174,8 +2194,16 @@ bool LeAudioDeviceGroup::ConfigureAses(
       continue;
     }
 
-    auto const max_required_device_cnt = NumOfAvailableForDirection(direction);
-    auto required_device_cnt = max_required_device_cnt;
+    int max_required_device_cnt = 0;
+    int required_device_cnt = 0;
+
+    if (com_android_bluetooth_flags_leaudio_always_use_group_size_to_check_audio_config()) {
+      max_required_device_cnt = DesiredSize();
+      required_device_cnt = NumOfAvailableForDirection(direction);
+    } else {
+      max_required_device_cnt = required_device_cnt = NumOfAvailableForDirection(direction);
+    }
+
     log::debug("Maximum {} device(s) required for {}", max_required_device_cnt, direction_str);
 
     uint8_t active_ase_cnt = 0;
@@ -2596,7 +2624,7 @@ std::unique_ptr<types::AudioSetConfiguration> LeAudioDeviceGroup::FindFirstSuppo
 }
 
 void LeAudioDeviceGroup::StartConnSubrateIfNeeded() {
-  if (!com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only()) {
+  if (!com_android_bluetooth_flags_start_leaudio_subrate_for_active_set_only()) {
     return;
   }
 
@@ -2607,7 +2635,7 @@ void LeAudioDeviceGroup::StartConnSubrateIfNeeded() {
 }
 
 void LeAudioDeviceGroup::StopConnSubrateIfNeeded() {
-  if (!com::android::bluetooth::flags::start_leaudio_subrate_for_active_set_only()) {
+  if (!com_android_bluetooth_flags_start_leaudio_subrate_for_active_set_only()) {
     return;
   }
 
@@ -2709,8 +2737,10 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
   auto active_conf = GetActiveConfiguration();
 
   stream << "    ■ Group (gID): " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
-         << ", " << (is_active ? "Active\n" : "Inactive\n") << "      Current state: " << GetState()
-         << ",\ttarget state: " << GetTargetState() << ",\tcig state: " << cig.GetState() << "\n"
+         << ", " << (is_active ? "Active (" : "Inactive (")
+         << (active_confirmed_ ? "confirmed)\n" : "not confirmed)\n")
+         << "      Current state: " << GetState() << ",\ttarget state: " << GetTargetState()
+         << ",\tcig state: " << cig.GetState() << "\n"
          << "      Num of devices:\t" << Size() << " (" << NumOfConnected() << " connected)\n"
          << "      Num of sinks:\t" << stream_conf.stream_params.sink.num_of_devices << " ("
          << stream_conf.stream_params.sink.stream_config.stream_map.size() << " connected)\n"
@@ -2750,7 +2780,7 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
 
   stream << std::format("      DSA mode: {}{}, is_active: {}\n", common::ToString(dsa_.mode),
                         (dsa_.mode == DsaMode::DISABLED) ? ""
-                        : com::android::bluetooth::flags::dsa_use_codec_extensibility()
+                        : com_android_bluetooth_flags_dsa_use_codec_extensibility()
                                 ? " (codec extensibility)"
                                 : " (static)",
                         dsa_.active);

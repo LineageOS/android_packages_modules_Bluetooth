@@ -22,11 +22,8 @@ import android.bluetooth.BluetoothHeadsetClientCall;
 import android.content.AttributionSource;
 import android.os.Bundle;
 
-/**
- * API for Bluetooth Headset Client service (HFP HF Role)
- *
- * {@hide}
- */
+/** Binder method for HFP HF interaction */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 interface IBluetoothHeadsetClient {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean connect(in BluetoothDevice device, in AttributionSource attributionSource);
@@ -73,8 +70,6 @@ interface IBluetoothHeadsetClient {
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean sendDTMF(in BluetoothDevice device, byte code, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean getLastVoiceTagNumber(in BluetoothDevice device, in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getAudioState(in BluetoothDevice device, in AttributionSource attributionSource);

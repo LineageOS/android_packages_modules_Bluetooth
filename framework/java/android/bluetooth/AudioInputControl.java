@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -52,8 +53,8 @@ import java.util.stream.IntStream;
  * Control Service Specification (AICS 1.0)</a>.
  *
  * @see BluetoothVolumeControl#getAudioInputControlServices
- * @hide
  */
+@Hide
 @SystemApi
 public class AudioInputControl {
     private static final String TAG = AudioInputControl.class.getSimpleName();
@@ -86,7 +87,7 @@ public class AudioInputControl {
     /** Transparency/Pass-through */
     public static final int AUDIO_INPUT_TYPE_AMBIENT = bluetooth.constants.AudioInputType.AMBIENT;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"AUDIO_INPUT_TYPE_"},
@@ -117,7 +118,7 @@ public class AudioInputControl {
      */
     public static final int AUDIO_INPUT_STATUS_UNKNOWN = -1;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"AUDIO_INPUT_STATUS_"},
@@ -141,7 +142,7 @@ public class AudioInputControl {
      */
     public static final int MUTE_DISABLED = bluetooth.constants.aics.Mute.DISABLED;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"MUTE_"},
@@ -152,7 +153,7 @@ public class AudioInputControl {
             })
     public @interface Mute {}
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"MUTE_"},
@@ -199,7 +200,7 @@ public class AudioInputControl {
      */
     public static final int GAIN_MODE_AUTOMATIC = bluetooth.constants.aics.GainMode.AUTOMATIC;
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"GAIN_MODE_"},
@@ -211,7 +212,7 @@ public class AudioInputControl {
             })
     public @interface GainMode {}
 
-    /** @hide */
+    @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             prefix = {"GAIN_MODE_"},

@@ -25,14 +25,14 @@ import com.android.server.bluetooth.initializeRadioModeListener
 /**
  * constant copied from {@link Settings.Global}
  *
- * TODO(b/274636414): Migrate to official API in Android V.
+ * TODO(b/338123011): Migrate to official API in Android V.
  */
 internal const val SETTINGS_SATELLITE_MODE_RADIOS = "satellite_mode_radios"
 
 /**
  * constant copied from {@link Settings.Global}
  *
- * TODO(b/274636414): Migrate to official API in Android V.
+ * TODO(b/338123011): Migrate to official API in Android V.
  */
 internal const val SETTINGS_SATELLITE_MODE_ENABLED = "satellite_mode_enabled"
 

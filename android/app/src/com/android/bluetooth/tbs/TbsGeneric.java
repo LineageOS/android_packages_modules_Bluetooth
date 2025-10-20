@@ -37,11 +37,8 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.ContentControlIdKeeper;
-import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,7 +47,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -129,8 +125,6 @@ public class TbsGeneric {
     private final List<Bearer> mBearerList = new ArrayList<>();
     private final Map<Integer, TbsCall> mCurrentCallsList = new TreeMap<>();
     private final Receiver mReceiver = new Receiver();
-    // TODO(b/422543753) Delete on flag cleanup
-    @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     private final AdapterService mAdapterService;
     private final TbsGatt mTbsGatt;
@@ -168,7 +162,6 @@ public class TbsGeneric {
             }
         }
     }
-    ;
 
     TbsGeneric(AdapterService adapterService, TbsGatt tbsGatt) {
         mAdapterService = requireNonNull(adapterService);
@@ -215,15 +208,6 @@ public class TbsGeneric {
         mAdapterService.registerReceiver(mReceiver, filter);
 
         mIsInitialized = true;
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<LeAudioService> getLeAudioService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getLeAudioService();
-        } else {
-            return Optional.ofNullable(mFactory.getLeAudioService());
-        }
     }
 
     public synchronized void cleanup() {
@@ -764,7 +748,7 @@ public class TbsGeneric {
 
                 @Override
                 public boolean isInbandRingtoneEnabled(BluetoothDevice device) {
-                    final var leAudio = getLeAudioService();
+                    final var leAudio = mAdapterService.getLeAudioService();
                     if (leAudio.isEmpty()) {
                         Log.i(TAG, "LeAudio service not available");
                         return false;
@@ -1070,7 +1054,8 @@ public class TbsGeneric {
     private synchronized void notifyCclc() {
         Log.d(TAG, "notifyCclc");
 
-        getLeAudioService()
+        mAdapterService
+                .getLeAudioService()
                 .ifPresent(
                         leAudio -> {
                             if (mCurrentCallsList.size() > 0) {
@@ -1111,14 +1096,11 @@ public class TbsGeneric {
             return;
         }
 
-        getLeAudioService()
+        mAdapterService
+                .getLeAudioService()
                 .ifPresentOrElse(
-                        leAudio -> {
-                            leAudio.setActiveDevice(device);
-                        },
-                        () -> {
-                            Log.w(TAG, "mLeAudioService not available");
-                        });
+                        leAudio -> leAudio.setActiveDevice(device),
+                        () -> Log.w(TAG, "mLeAudioService not available"));
     }
 
     private static boolean isCallStateTransitionValid(int callState, int requestedOpcode) {
@@ -1150,7 +1132,7 @@ public class TbsGeneric {
             return false;
         }
 
-        final var leAudio = getLeAudioService();
+        final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.w(TAG, "shouldBlockTbsForBroadcastReceiver: LeAudioService is not available");
             return false;
@@ -1166,14 +1148,14 @@ public class TbsGeneric {
      * @param sb string builder object that TBS module will be appending
      */
     public void dump(StringBuilder sb) {
-        sb.append("\tRinger Mode: ").append(mStoredRingerMode);
+        sb.append("    Ringer Mode: ").append(mStoredRingerMode);
 
-        sb.append("\n\tCurrent call list:");
+        sb.append("\n    Current call list:");
         for (TbsCall call : mCurrentCallsList.values()) {
-            sb.append("\n\t\tFriendly name: ").append(call.getSafeFriendlyName());
-            sb.append("\n\t\t\tState: ").append(TbsCall.stateToString(call.getState()));
-            sb.append("\n\t\t\tURI: ").append(call.getSafeUri());
-            sb.append("\n\t\t\tFlags: ").append(TbsCall.flagsToString(call.getFlags()));
+            sb.append("\n      Friendly name: ").append(call.getSafeFriendlyName());
+            sb.append("\n        State: ").append(TbsCall.stateToString(call.getState()));
+            sb.append("\n        URI: ").append(call.getSafeUri());
+            sb.append("\n        Flags: ").append(TbsCall.flagsToString(call.getFlags()));
         }
 
         mTbsGatt.dump(sb);

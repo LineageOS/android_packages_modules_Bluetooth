@@ -56,7 +56,7 @@ pub enum BthhStatus {
 
 impl From<bindings::bthh_status_t> for BthhStatus {
     fn from(item: bindings::bthh_status_t) -> Self {
-        BthhStatus::from_u32(item).unwrap_or_else(|| BthhStatus::Unknown)
+        BthhStatus::from_u32(item.into()).unwrap_or_else(|| BthhStatus::Unknown)
     }
 }
 
@@ -108,7 +108,7 @@ fn convert_report(count: i32, raw: *mut u8) -> Vec<u8> {
 
 #[derive(Debug)]
 pub enum HHCallbacks {
-    ConnectionState(RawAddress, BtAddrType, BtTransport, BthhConnectionState),
+    ConnectionState(RawAddress, BtAddrType, BtTransport, BthhConnectionState, BthhStatus),
     VirtualUnplug(RawAddress, BtAddrType, BtTransport, BthhStatus),
     HidInfo(RawAddress, BtAddrType, BtTransport, BthhHidInfo),
     ProtocolMode(RawAddress, BtAddrType, BtTransport, BthhStatus, BthhProtocolMode),
@@ -130,7 +130,7 @@ impl Debug for HHCallbacksDispatcher {
 type HHCb = Arc<Mutex<HHCallbacksDispatcher>>;
 
 cb_variant!(HHCb, connection_state_cb -> HHCallbacks::ConnectionState,
-*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_connection_state_t -> BthhConnectionState, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_connection_state_t -> BthhConnectionState, bindings::bthh_status_t -> BthhStatus, {
     let _0 = unsafe { *_0 };
 });
 cb_variant!(HHCb, virtual_unplug_cb -> HHCallbacks::VirtualUnplug,

@@ -22,9 +22,9 @@
 
 #include "hci/controller_mock.h"
 #include "stack/acl/acl.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/hcidefs.h"
@@ -54,7 +54,7 @@ protected:
   }
   void TearDown() override { bluetooth::hci::testing::mock_controller_.reset(); }
 
-  tBTM_SEC_DEV_REC device_record_;
+  BtmDevice btm_device_;
 };
 
 TEST_F(StackAclTest, nop) {}

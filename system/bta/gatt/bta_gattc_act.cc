@@ -34,6 +34,8 @@
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_debug_conn.h"
+#include "btif/include/btif_storage.h"
+#include "device/include/interop.h"
 #include "hardware/bt_gatt_types.h"
 #include "hci/controller.h"
 #include "main/shim/entry.h"
@@ -68,6 +70,9 @@ static void bta_gattc_subrate_chg_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint
                                         uint16_t latency, uint16_t cont_num, uint16_t timeout,
                                         tGATT_STATUS status);
 static void bta_gattc_init_bk_conn(const tBTA_GATTC_API_OPEN* p_data, tBTA_GATTC_RCB* p_clreg);
+static void bta_gattc_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
+                                                        uint32_t session_id, tGATT_STATUS status);
+static void bta_gattc_offloaded_service_chg_cback(tCONN_ID conn_id);
 
 static tGATT_CBACK bta_gattc_cl_cback = {
         .p_conn_cb = bta_gattc_conn_cback,
@@ -80,6 +85,8 @@ static tGATT_CBACK bta_gattc_cl_cback = {
         .p_phy_update_cb = bta_gattc_phy_update_cback,
         .p_conn_update_cb = bta_gattc_conn_update_cback,
         .p_subrate_chg_cb = bta_gattc_subrate_chg_cback,
+        .p_characteristics_unoffloaded_cb = bta_gattc_characteristics_unoffloaded_cback,
+        .p_offloaded_service_chg_cb = bta_gattc_offloaded_service_chg_cback,
 };
 
 /* opcode(tGATTC_OPTYPE) order has to be comply with internal event order */
@@ -196,7 +203,7 @@ void bta_gattc_register(const Uuid& app_uuid, const std::string& name, tBTA_GATT
   }
 
   if (!cb.is_null()) {
-    cb.Run(client_if, status);
+    std::move(cb).Run(client_if, status);
   } else {
     log::warn("No GATT callback available, client_if={}, status={}", client_if, status);
   }
@@ -537,7 +544,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
       bool discovery_already_in_progress = false;
       if (!db.IsEmpty()) {
-        if (!com::android::bluetooth::flags::service_rediscovery_fix()) {
+        if (!com_android_bluetooth_flags_service_rediscovery_fix()) {
           p_clcb->p_srcb->gatt_database = db;
         } else {
           if (p_clcb->p_srcb->srvc_hdl_chg == false) {
@@ -568,7 +575,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
           /* cache load failure, start discovery */
           bta_gattc_start_discover(p_clcb, NULL);
         } else {
-          if (com::android::bluetooth::flags::initial_conn_params_p1() &&
+          if (com_android_bluetooth_flags_initial_conn_params_p1() &&
               p_clcb->transport == BT_TRANSPORT_LE) {
             log::info("Using cached database without robust caching.");
             bluetooth::stack::l2cap::get_interface().L2CA_LockBleConnParamsForServiceDiscovery(
@@ -728,8 +735,7 @@ static void bta_gattc_set_discover_st(tBTA_GATTC_SERV* p_srcb) {
     if (p_clcb->p_srcb != p_srcb) {
       continue;
     }
-    if (com::android::bluetooth::flags::gatt_reuse_discovering_client() &&
-        p_clcb->state == BTA_GATTC_DISCOVER_ST) {
+    if (p_clcb->state == BTA_GATTC_DISCOVER_ST) {
       /* do not reset state if already discovering */
       break;
     }
@@ -905,7 +911,7 @@ void bta_gattc_continue_with_version_and_cache_known(tBTA_GATTC_CLCB* p_clcb,
                                                      RobustCachingSupport cache_support,
                                                      bool is_svc_chg) {
   if (cache_support == RobustCachingSupport::UNSUPPORTED ||
-      (com::android::bluetooth::flags::skip_unknown_robust_caching() &&
+      (com_android_bluetooth_flags_skip_unknown_robust_caching() &&
        cache_support == RobustCachingSupport::UNKNOWN)) {
     // Skip initial DB hash read if no DB hash is known, or if
     // we have strong reason (due to interop,
@@ -968,10 +974,10 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /* p_da
     if (!bta_gattc_is_data_queued(p_clcb, p_q_cmd)) {
       osi_free_and_reset((void**)&p_q_cmd);
     }
-  } else if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+  } else if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
     bta_gattc_continue(p_clcb);
   }
-  if (com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+  if (com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
       p_clcb->p_q_cmd == nullptr) {
     bta_gattc_continue(p_clcb);
   }
@@ -1340,7 +1346,7 @@ void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   }
 
   if (p_clcb->p_srcb && p_clcb->p_srcb->gatt_database.IsEmpty() &&
-      com::android::bluetooth::flags::service_rediscovery_fix() &&
+      com_android_bluetooth_flags_service_rediscovery_fix() &&
       (p_clcb->p_srcb->srvc_hdl_chg == true || p_clcb->p_srcb->state == BTA_GATTC_SERV_DISC ||
        p_clcb->p_srcb->state == BTA_GATTC_SERV_DISC_ACT)) {
     /* Service discovery to device is scheduled. Do not return failure. Client will be notified when
@@ -1476,7 +1482,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   Uuid srvc_chg_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
 
   if (p_srcb->gatt_database.IsEmpty() && p_srcb->state == BTA_GATTC_SERV_IDLE &&
-      (!com::android::bluetooth::flags::service_rediscovery_fix() || p_srcb->update_count == 0)) {
+      (!com_android_bluetooth_flags_service_rediscovery_fix() || p_srcb->update_count == 0)) {
     gatt::Database db = bta_gattc_cache_load(p_srcb->server_bda);
     if (!db.IsEmpty()) {
       p_srcb->gatt_database = db;
@@ -1504,6 +1510,24 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   log::info("{} service changed s_handle=0x{:x}, e_handle=0x{:x}", p_srcb->server_bda, s_handle,
             e_handle);
 
+  if (com::android::bluetooth::flags::ignore_service_change_indication()) {
+    char remote_name[BD_NAME_LEN] = "";
+    btif_storage_get_stored_remote_name(p_srcb->server_bda, remote_name);
+    if (interop_match_name(INTEROP_IGNORE_SERVICE_CHANGED_IND, remote_name)) {
+      if (GATTC_SendHandleValueConfirm(conn_id, p_notify->cid) != GATT_SUCCESS) {
+        log::warn("Unable to send GATT client handle value confirmation conn_id:{} cid:{}", conn_id,
+                  p_notify->cid);
+      }
+
+      log::warn("ignore service changed ind");
+      return true;
+    }
+  }
+
+  if (com::android::bluetooth::flags::gatt_offload_api()) {
+    GATTC_InformServiceChangedIndication(p_srcb->server_bda);
+  }
+
   /* mark service handle change pending */
   p_srcb->srvc_hdl_chg = true;
   /* clear up all notification/indication registration */
@@ -1512,34 +1536,28 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   if (++p_srcb->update_count == bta_gattc_num_reg_app()) {
     /* not an opened connection; or connection busy */
     /**
-     * if com::android::bluetooth::flags::gatt_reuse_discovering_client() is true,
-     * iterate through all clcbs in order to find and reuse a discovering client.
-     * If a discovering client is not found, an available clcb will be used to start
-     * discovery.
+     * Iterate through all clcbs in order to find and reuse a discovering client.
+     * If a discovering client is not found, an available clcb will be used to start discovery.
      */
     /* search for first available clcb and start discovery */
     if (p_clcb == NULL || (p_clcb && p_clcb->p_q_cmd != NULL)) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb && p_clcb_i->p_q_cmd == NULL) {
           p_clcb = p_clcb_i.get();
-          if (com::android::bluetooth::flags::gatt_reuse_discovering_client()) {
-            if (p_clcb_i->disc_active) {
-              log::info("will reuse disc_active client to ", p_srcb->server_bda);
-              break;
-            }
-          } else {
+          if (p_clcb_i->disc_active) {
+            log::info("will reuse disc_active client to ", p_srcb->server_bda);
             break;
           }
         }
       }
     }
     // Use a busy CLCB to start discovery if no CLCB is available, this will be queued.
-    if (com::android::bluetooth::flags::start_discover_service_changed() && p_clcb == NULL) {
+    if (com_android_bluetooth_flags_start_discover_service_changed() && p_clcb == NULL) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb) {
           log::info("will use busy client to {}", p_srcb->server_bda);
           p_clcb = p_clcb_i.get();
-          if (com::android::bluetooth::flags::service_rediscovery_fix()) {
+          if (com_android_bluetooth_flags_service_rediscovery_fix()) {
             bta_gattc_init_cache(p_clcb->p_srcb);
           }
           break;
@@ -1560,6 +1578,10 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
       bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
     } else {
       log::warn("No clcb is available to handle service change indication");
+      // To respond to the next service change indication
+      if (com_android_bluetooth_flags_reset_service_change_ind_counter()) {
+        p_srcb->update_count = 0;
+      }
     }
   }
 
@@ -1794,4 +1816,40 @@ static void bta_gattc_subrate_chg_cback(tGATT_IF gatt_if, tCONN_ID conn_id, uint
   cb_data.subrate_chg.timeout = timeout;
   cb_data.subrate_chg.status = status;
   (*p_clreg->p_cback)(BTA_GATTC_SUBRATE_CHG_EVT, &cb_data);
+}
+
+static void bta_gattc_characteristics_unoffloaded_cback(tGATT_IF gatt_if, tCONN_ID conn_id,
+                                                        uint32_t session_id, tGATT_STATUS status) {
+  tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(gatt_if);
+
+  if (!p_clreg || !p_clreg->p_cback) {
+    log::error("client_if: {} not found", gatt_if);
+    return;
+  }
+
+  tBTA_GATTC cb_data;
+  cb_data.characteristics_unoffloaded.conn_id = conn_id;
+  cb_data.characteristics_unoffloaded.session_id = session_id;
+  cb_data.characteristics_unoffloaded.status = status;
+  (*p_clreg->p_cback)(BTA_GATTC_CHARACTERISTICS_UNOFFLOADED_EVT, &cb_data);
+}
+
+static void bta_gattc_offloaded_service_chg_cback(tCONN_ID conn_id) {
+  log::info("conn_id:{}", conn_id);
+  tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+  if (!p_clcb || !p_clcb->p_srcb) {
+    log::error("conn_id:{} not found", conn_id);
+    return;
+  }
+  p_clcb->p_srcb->srvc_hdl_db_hash = true;
+  bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
+
+  /* notify application for service change */
+  if (p_clcb->p_rcb && p_clcb->p_rcb->p_cback) {
+    tBTA_GATTC bta_gattc = {.service_changed = {
+                                    .remote_bda = p_clcb->p_srcb->server_bda,
+                                    .conn_id = conn_id,
+                            }};
+    (*p_clcb->p_rcb->p_cback)(BTA_GATTC_SRVC_CHG_EVT, &bta_gattc);
+  }
 }

@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -32,9 +33,8 @@ import java.util.Objects;
 /**
  * This class contains the subgroup level information as defined in the BASE structure of Basic
  * Audio profile.
- *
- * @hide
  */
+@Hide
 @SystemApi
 public final class BluetoothLeBroadcastSubgroup implements Parcelable {
     private final long mCodecId;
@@ -72,12 +72,10 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
 
     @Override
     public String toString() {
-        return "BluetoothLeBroadcastSubgroup{"
-                + ("codecId=" + mCodecId)
+        return ("BluetoothLeBroadcastSubgroup [codecId=" + mCodecId)
                 + (", codecSpecificConfig=" + mCodecSpecificConfig)
                 + (", contentMetadata=" + mContentMetadata)
-                + (", channels=" + mChannels)
-                + '}';
+                + (", channels=" + mChannels + "]");
     }
 
     /**
@@ -89,8 +87,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
      * 0xFF
      *
      * @return 5-byte codec ID field in Java long format
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public long getCodecId() {
@@ -101,8 +99,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
      * Get codec specific config metadata for this subgroup.
      *
      * @return codec specific config metadata for this subgroup
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull BluetoothLeAudioCodecConfigMetadata getCodecSpecificConfig() {
@@ -113,8 +111,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
      * Get content metadata for this Broadcast Source subgroup.
      *
      * @return content metadata for this Broadcast Source subgroup
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull BluetoothLeAudioContentMetadata getContentMetadata() {
@@ -128,8 +126,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
      *
      * @return true if Broadcast Sink has at least one preferred Broadcast Channel (BIS) as
      *     indicated by {@link BluetoothLeBroadcastChannel#isSelected()}
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public boolean hasChannelPreference() {
@@ -144,29 +142,19 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
      * <p>A Broadcast subgroup should contain at least 1 Broadcast Channel
      *
      * @return list of Broadcast Channels included in this Broadcast subgroup
-     * @hide
      */
+    @Hide
     @SystemApi
     @RequiresNoPermission
     public @NonNull List<BluetoothLeBroadcastChannel> getChannels() {
         return mChannels;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public int describeContents() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeLong(mCodecId);
@@ -175,12 +163,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
         out.writeTypedList(mChannels);
     }
 
-    /**
-     * A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastSubgroup} from parcel.
-     *
-     * @hide
-     */
-    @SystemApi @NonNull
+    /** A {@link Parcelable.Creator} to create {@link BluetoothLeBroadcastSubgroup} from parcel. */
+    @Hide @SystemApi @NonNull
     public static final Creator<BluetoothLeBroadcastSubgroup> CREATOR =
             new Creator<>() {
                 public @NonNull BluetoothLeBroadcastSubgroup createFromParcel(@NonNull Parcel in) {
@@ -205,11 +189,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
 
     private static final int UNKNOWN_VALUE_PLACEHOLDER = -1;
 
-    /**
-     * Builder for {@link BluetoothLeBroadcastSubgroup}.
-     *
-     * @hide
-     */
+    /** Builder for {@link BluetoothLeBroadcastSubgroup}. */
+    @Hide
     @SystemApi
     public static final class Builder {
         private long mCodecId = UNKNOWN_VALUE_PLACEHOLDER;
@@ -217,11 +198,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
         private BluetoothLeAudioContentMetadata mContentMetadata = null;
         private final List<BluetoothLeBroadcastChannel> mChannels = new ArrayList<>();
 
-        /**
-         * Create an empty constructor.
-         *
-         * @hide
-         */
+        /** Create an empty constructor. */
+        @Hide
         @SystemApi
         public Builder() {}
 
@@ -229,8 +207,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          * Create a builder with copies of information from original object.
          *
          * @param original original object
-         * @hide
          */
+        @Hide
         @SystemApi
         public Builder(@NonNull BluetoothLeBroadcastSubgroup original) {
             mCodecId = original.getCodecId();
@@ -251,8 +229,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          *
          * @param codecId 5-byte codec ID field in Java long format
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setCodecId(long codecId) {
@@ -266,8 +244,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          * @param codecSpecificConfig codec specific config metadata for this subgroup
          * @throws NullPointerException if codecSpecificConfig is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setCodecSpecificConfig(
@@ -283,8 +261,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          * @param contentMetadata content metadata for this Broadcast Source subgroup
          * @throws NullPointerException if contentMetadata is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder setContentMetadata(
@@ -304,8 +282,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          * @param channel a Broadcast Channel to be added to this Broadcast subgroup
          * @throws NullPointerException if channel is null
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder addChannel(@NonNull BluetoothLeBroadcastChannel channel) {
@@ -319,8 +297,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          * object.
          *
          * @return this builder
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull Builder clearChannel() {
@@ -334,8 +312,8 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
          * @return constructed {@link BluetoothLeBroadcastSubgroup}
          * @throws NullPointerException if {@link NonNull} items are null
          * @throws IllegalArgumentException if the object cannot be built
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastSubgroup build() {

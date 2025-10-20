@@ -32,7 +32,7 @@ import android.bluetooth.IBluetoothHeadset;
 import android.content.AttributionSource;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
+import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
 import java.util.List;

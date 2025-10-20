@@ -23,6 +23,7 @@ import android.os.RemoteException
 
 private const val TAG = "AdapterBinder"
 
+@SuppressWarnings("IncorrectRequiresPermissionPropagation") // SystemServer has all the permissions
 class AdapterBinder(rawBinder: IBinder) {
     val adapterBinder: IAdapter = IAdapter.Stub.asInterface(rawBinder)
     var adapterServiceBinder: IBinder? = null
@@ -63,11 +64,6 @@ class AdapterBinder(rawBinder: IBinder) {
     @Throws(RemoteException::class)
     fun unregisterCallback(callback: IBluetoothCallback) {
         adapterBinder.unregisterCallback(callback)
-    }
-
-    @Throws(RemoteException::class)
-    fun unregAllGattClient() {
-        adapterBinder.unregAllGattClient()
     }
 
     @Throws(RemoteException::class)

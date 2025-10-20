@@ -29,7 +29,7 @@
 #include <bluetooth/types/ble_address_with_type.h>
 
 #include "stack/btm/btm_ble_int_types.h"
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/hci_error_code.h"
 
@@ -46,7 +46,7 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
 void btm_ble_connection_established(const RawAddress& bda);
 
 /* BLE address management */
-tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda);
+BtmDevice* btm_ble_resolve_random_addr(const RawAddress& random_bda);
 
 void btm_ble_batchscan_init(void);
 void btm_ble_adv_filter_init(void);

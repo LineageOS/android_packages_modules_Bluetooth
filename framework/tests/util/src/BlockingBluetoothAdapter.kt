@@ -56,7 +56,8 @@ private const val BLE_SCAN_ALWAYS_AVAILABLE = "ble_scan_always_enabled"
 
 object BlockingBluetoothAdapter {
     private val context = InstrumentationRegistry.getInstrumentation().getContext()
-    @JvmStatic val adapter = context.getSystemService(BluetoothManager::class.java).getAdapter()
+    @JvmStatic val manager = context.getSystemService(BluetoothManager::class.java)
+    @JvmStatic val adapter = manager.getAdapter()
 
     private val state = AdapterStateListener(context, adapter)
 

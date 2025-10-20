@@ -17,6 +17,7 @@
 package android.bluetooth.le;
 
 import android.annotation.FlaggedApi;
+import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -69,27 +70,21 @@ public final class ScanSettings implements Parcelable {
      * Perform Bluetooth LE scan in ambient discovery mode. This mode has lower duty cycle and more
      * aggressive scan interval than balanced mode that provides a good trade-off between scan
      * latency and power consumption.
-     *
-     * @hide
      */
-    @SystemApi public static final int SCAN_MODE_AMBIENT_DISCOVERY = 3;
+    @Hide @SystemApi public static final int SCAN_MODE_AMBIENT_DISCOVERY = 3;
 
     /**
      * Default Bluetooth LE scan mode when the screen is off. This mode has the low duty cycle and
      * long scan interval which results in the lowest power consumption among all modes. It is for
      * the framework internal use only.
-     *
-     * @hide
      */
-    public static final int SCAN_MODE_SCREEN_OFF = 4;
+    @Hide public static final int SCAN_MODE_SCREEN_OFF = 4;
 
     /**
      * Balanced Bluetooth LE scan mode for foreground service when the screen is off. It is for the
      * framework internal use only.
-     *
-     * @hide
      */
-    public static final int SCAN_MODE_SCREEN_OFF_BALANCED = 5;
+    @Hide public static final int SCAN_MODE_SCREEN_OFF_BALANCED = 5;
 
     /**
      * Trigger a callback for every Bluetooth advertisement found that matches the filter criteria.
@@ -155,20 +150,16 @@ public final class ScanSettings implements Parcelable {
     /**
      * Request full scan results which contain the device, rssi, advertising data, scan response as
      * well as the scan timestamp.
-     *
-     * @hide
      */
-    @SystemApi public static final int SCAN_RESULT_TYPE_FULL = 0;
+    @Hide @SystemApi public static final int SCAN_RESULT_TYPE_FULL = 0;
 
     /**
      * Request abbreviated scan results which contain the device, rssi and scan timestamp.
      *
      * <p><b>Note:</b> It is possible for an application to get more scan results than it asked for,
      * if there are multiple apps using this type.
-     *
-     * @hide
      */
-    @SystemApi public static final int SCAN_RESULT_TYPE_ABBREVIATED = 1;
+    @Hide @SystemApi public static final int SCAN_RESULT_TYPE_ABBREVIATED = 1;
 
     /**
      * Use all supported PHYs for scanning. This will check the controller capabilities, and start
@@ -188,7 +179,7 @@ public final class ScanSettings implements Parcelable {
     @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
     public static final int SCAN_TYPE_ACTIVE = 2;
 
-    /** @hide */
+    @Hide
     @IntDef(
             prefix = "SCAN_TYPE_",
             value = {
@@ -253,13 +244,13 @@ public final class ScanSettings implements Parcelable {
         return mReportDelayMillis;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public int getMatchMode() {
         return mMatchMode;
     }
 
-    /** @hide */
+    @Hide
     @RequiresNoPermission
     public int getNumOfMatches() {
         return mNumOfMatchesPerFilter;
@@ -440,8 +431,8 @@ public final class ScanSettings implements Parcelable {
          *     ScanSettings#SCAN_RESULT_TYPE_FULL} or {@link
          *     ScanSettings#SCAN_RESULT_TYPE_ABBREVIATED}.
          * @throws IllegalArgumentException If the {@code scanResultType} is invalid.
-         * @hide
          */
+        @Hide
         @SystemApi
         @RequiresNoPermission
         public Builder setScanResultType(int scanResultType) {
@@ -594,24 +585,5 @@ public final class ScanSettings implements Parcelable {
                     mRssiThreshold,
                     mScanType);
         }
-    }
-
-    /**
-     * Converts scan mode integer into string. For internal use only when logging.
-     *
-     * @hide
-     */
-    @RequiresNoPermission
-    public static String getScanModeString(int scanMode) {
-        return switch (scanMode) {
-            case SCAN_MODE_OPPORTUNISTIC -> "SCAN_MODE_OPPORTUNISTIC";
-            case SCAN_MODE_LOW_POWER -> "SCAN_MODE_LOW_POWER";
-            case SCAN_MODE_BALANCED -> "SCAN_MODE_BALANCED";
-            case SCAN_MODE_LOW_LATENCY -> "SCAN_MODE_LOW_LATENCY";
-            case SCAN_MODE_AMBIENT_DISCOVERY -> "SCAN_MODE_AMBIENT_DISCOVERY";
-            case SCAN_MODE_SCREEN_OFF -> "SCAN_MODE_SCREEN_OFF";
-            case SCAN_MODE_SCREEN_OFF_BALANCED -> "SCAN_MODE_SCREEN_OFF_BALANCED";
-            default -> "UNKNOWN value=" + scanMode;
-        };
     }
 }

@@ -47,7 +47,8 @@ using ::aidl::android::hardware::bluetooth::audio::LeAudioConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::PcmConfiguration;
 using ::bluetooth::audio::aidl::AudioConfiguration;
 using ::bluetooth::audio::aidl::BluetoothAudioCtrlAck;
-using ::bluetooth::audio::le_audio::StartRequestState;
+using ::bluetooth::audio::le_audio::BluetoothRequest;
+using ::bluetooth::audio::le_audio::BluetoothRequestState;
 using ::bluetooth::audio::le_audio::StreamCallbacks;
 using ::bluetooth::le_audio::types::AseConfiguration;
 
@@ -69,7 +70,7 @@ LeAudioTransport::LeAudioTransport(void (*flush)(void), StreamCallbacks stream_c
       total_bytes_processed_(0),
       data_position_({}),
       pcm_config_(std::move(pcm_config)),
-      start_request_state_(StartRequestState::IDLE),
+      start_request_state_(BluetoothRequestState::IDLE),
       dsa_mode_(DsaMode::DISABLED),
       cached_source_metadata_({}) {}
 
@@ -82,36 +83,49 @@ LeAudioTransport::~LeAudioTransport() {
 
 BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool /*is_low_latency*/) {
   // Check if operation is pending already
-  if (GetStartRequestState() == StartRequestState::PENDING_AFTER_RESUME) {
+  if (GetBluetoothRequestState(BluetoothRequest::RESUME) ==
+      BluetoothRequestState::PENDING_AFTER_REQUEST) {
     log::info("Start request is already pending. Ignore the request");
     return BluetoothAudioCtrlAck::PENDING;
   }
 
-  SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
+  if (com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestState(BluetoothRequest::RESUME,
+                             BluetoothRequestState::PENDING_BEFORE_REQUEST);
+  } else {
+    SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME,
+                                   BluetoothRequestState::PENDING_BEFORE_REQUEST);
+  }
+
   if (stream_cb_.on_resume_(true)) {
     std::lock_guard<std::mutex> guard(start_request_state_mutex_);
 
     switch (start_request_state_) {
-      case StartRequestState::CONFIRMED:
+      case BluetoothRequestState::CONFIRMED:
         log::info("Start completed.");
-        SetStartRequestState(StartRequestState::IDLE);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
-      case StartRequestState::CANCELED:
+      case BluetoothRequestState::CANCELED:
         log::info("Start request failed.");
-        SetStartRequestState(StartRequestState::IDLE);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         return BluetoothAudioCtrlAck::FAILURE;
-      case StartRequestState::PENDING_BEFORE_RESUME:
+      case BluetoothRequestState::PENDING_BEFORE_REQUEST:
         log::info("Start pending.");
-        SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME,
+                                       BluetoothRequestState::PENDING_AFTER_REQUEST);
         return BluetoothAudioCtrlAck::PENDING;
       default:
-        SetStartRequestState(StartRequestState::IDLE);
+        SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
         log::error("Unexpected state {}", static_cast<int>(start_request_state_.load()));
         return BluetoothAudioCtrlAck::FAILURE;
     }
   }
+  if (com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestState(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  } else {
+    SetBluetoothRequestStateUnsafe(BluetoothRequest::RESUME, BluetoothRequestState::IDLE);
+  }
 
-  SetStartRequestState(StartRequestState::IDLE);
   log::info("On resume failed.");
   return BluetoothAudioCtrlAck::FAILURE;
 }
@@ -267,29 +281,78 @@ const LeAudioBroadcastConfiguration& LeAudioTransport::LeAudioGetBroadcastConfig
 }
 
 bool LeAudioTransport::IsRequestCompletedAfterUpdate(
-        const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda) {
-  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
-  auto result = lambda(start_request_state_);
-  auto new_state = std::get<0>(result);
-  if (new_state != start_request_state_) {
-    start_request_state_ = new_state;
+        const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>& lambda,
+        BluetoothRequest request) {
+  std::pair<BluetoothRequestState, bool> result = {};
+  BluetoothRequestState new_state = BluetoothRequestState::IDLE;
+
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      result = lambda(start_request_state_);
+      new_state = std::get<0>(result);
+      if (new_state != start_request_state_) {
+        start_request_state_ = new_state;
+      }
+    } break;
   }
 
   auto ret = std::get<1>(result);
-  log::verbose("new state: {}, return {}", (int)(start_request_state_.load()), ret);
+  log::verbose("new state: {}, return {}", new_state, ret);
 
   return ret;
 }
 
-StartRequestState LeAudioTransport::GetStartRequestState(void) {
-  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
-  return start_request_state_;
+BluetoothRequestState LeAudioTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      return start_request_state_;
+    } break;
+  }
 }
-void LeAudioTransport::ClearStartRequestState(void) {
-  start_request_state_ = StartRequestState::IDLE;
+void LeAudioTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    ClearBluetoothRequestStateUnsafe(request);
+    return;
+  }
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      start_request_state_ = BluetoothRequestState::IDLE;
+    } break;
+  }
 }
-void LeAudioTransport::SetStartRequestState(StartRequestState state) {
-  start_request_state_ = state;
+
+void LeAudioTransport::ClearBluetoothRequestStateUnsafe(BluetoothRequest request) {
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      start_request_state_ = BluetoothRequestState::IDLE;
+    } break;
+  }
+}
+
+void LeAudioTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                      BluetoothRequestState state) {
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      start_request_state_ = state;
+    } break;
+  }
+}
+
+void LeAudioTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                BluetoothRequestState state) {
+  if (!com_android_bluetooth_flags_leaudio_software_bt_request_lock_fix()) {
+    SetBluetoothRequestStateUnsafe(request, state);
+    return;
+  }
+  switch (request) {
+    case BluetoothRequest::RESUME: {
+      std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+      start_request_state_ = state;
+    } break;
+  }
 }
 
 static void flush_unicast_sink() {
@@ -382,16 +445,24 @@ const LeAudioBroadcastConfiguration& LeAudioSinkTransport::LeAudioGetBroadcastCo
 }
 
 bool LeAudioSinkTransport::IsRequestCompletedAfterUpdate(
-        const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda) {
-  return transport_->IsRequestCompletedAfterUpdate(lambda);
+        const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>& lambda,
+        BluetoothRequest request) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda, request);
 }
 
-StartRequestState LeAudioSinkTransport::GetStartRequestState(void) {
-  return transport_->GetStartRequestState();
+BluetoothRequestState LeAudioSinkTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  return transport_->GetBluetoothRequestState(request);
 }
-void LeAudioSinkTransport::ClearStartRequestState(void) { transport_->ClearStartRequestState(); }
-void LeAudioSinkTransport::SetStartRequestState(StartRequestState state) {
-  transport_->SetStartRequestState(state);
+void LeAudioSinkTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  transport_->ClearBluetoothRequestState(request);
+}
+void LeAudioSinkTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                    BluetoothRequestState state) {
+  transport_->SetBluetoothRequestState(request, state);
+}
+void LeAudioSinkTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                          BluetoothRequestState state) {
+  transport_->SetBluetoothRequestStateUnsafe(request, state);
 }
 
 void flush_source() {
@@ -464,17 +535,24 @@ void LeAudioSourceTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate
 }
 
 bool LeAudioSourceTransport::IsRequestCompletedAfterUpdate(
-        const std::function<std::pair<StartRequestState, bool>(StartRequestState)>& lambda) {
-  return transport_->IsRequestCompletedAfterUpdate(lambda);
+        const std::function<std::pair<BluetoothRequestState, bool>(BluetoothRequestState)>& lambda,
+        BluetoothRequest request) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda, request);
 }
 
-StartRequestState LeAudioSourceTransport::GetStartRequestState(void) {
-  return transport_->GetStartRequestState();
+BluetoothRequestState LeAudioSourceTransport::GetBluetoothRequestState(BluetoothRequest request) {
+  return transport_->GetBluetoothRequestState(request);
 }
-void LeAudioSourceTransport::ClearStartRequestState(void) { transport_->ClearStartRequestState(); }
-
-void LeAudioSourceTransport::SetStartRequestState(StartRequestState state) {
-  transport_->SetStartRequestState(state);
+void LeAudioSourceTransport::ClearBluetoothRequestState(BluetoothRequest request) {
+  transport_->ClearBluetoothRequestState(request);
+}
+void LeAudioSourceTransport::SetBluetoothRequestState(BluetoothRequest request,
+                                                      BluetoothRequestState state) {
+  transport_->SetBluetoothRequestState(request, state);
+}
+void LeAudioSourceTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest request,
+                                                            BluetoothRequestState state) {
+  transport_->SetBluetoothRequestStateUnsafe(request, state);
 }
 
 static std::unordered_map<int32_t, uint8_t> sampling_freq_map{
@@ -520,7 +598,6 @@ static std::unordered_map<AudioLocation, uint32_t> audio_location_map{
 bool hal_ucast_capability_to_stack_format(const UnicastCapability& hal_capability,
                                           CodecConfigSetting& stack_capability) {
   if (hal_capability.codecType != CodecType::LC3) {
-    log::warn("Unsupported codecType: {}", toString(hal_capability.codecType));
     return false;
   }
   if (hal_capability.leAudioCodecCapabilities.getTag() !=
@@ -576,7 +653,6 @@ bool hal_ucast_capability_to_stack_format(const UnicastCapability& hal_capabilit
 static bool hal_bcast_capability_to_stack_format(const BroadcastCapability& hal_bcast_capability,
                                                  CodecConfigSetting& stack_capability) {
   if (hal_bcast_capability.codecType != CodecType::LC3) {
-    log::warn("Unsupported codecType: {}", toString(hal_bcast_capability.codecType));
     return false;
   }
   if (hal_bcast_capability.leAudioCodecCapabilities.getTag() !=
@@ -646,43 +722,54 @@ bluetooth::audio::le_audio::OffloadCapabilities get_offload_capabilities() {
             hal_cap.get<AudioCapabilities::leAudioCapabilities>().unicastDecodeCapability;
     BroadcastCapability hal_bcast_cap =
             hal_cap.get<AudioCapabilities::leAudioCapabilities>().broadcastCapability;
-    AudioSetConfiguration audio_set_config = {.name = "offload capability"};
+    AudioSetConfiguration audio_set_unicast_config = {.name = "offload capability"};
+    AudioSetConfiguration audio_set_broadcast_config = {.name = "broadcast offload capability"};
     str_capability_log.clear();
 
     if (hal_ucast_capability_to_stack_format(hal_encode_cap, encode_cap)) {
       auto ase_cnt = hal_encode_cap.deviceCount * hal_encode_cap.channelCountPerDevice;
-      while (ase_cnt--) {
-        audio_set_config.confs.sink.push_back(AseConfiguration(encode_cap));
+      if (ase_cnt) {
+        str_capability_log = " Encode Capability: " + hal_encode_cap.toString();
       }
-      str_capability_log = " Encode Capability: " + hal_encode_cap.toString();
+      while (ase_cnt--) {
+        audio_set_unicast_config.confs.sink.push_back(AseConfiguration(encode_cap));
+      }
     }
 
     if (hal_ucast_capability_to_stack_format(hal_decode_cap, decode_cap)) {
       auto ase_cnt = hal_decode_cap.deviceCount * hal_decode_cap.channelCountPerDevice;
-      while (ase_cnt--) {
-        audio_set_config.confs.source.push_back(AseConfiguration(decode_cap));
+      if (ase_cnt) {
+        str_capability_log += " Decode Capability: " + hal_decode_cap.toString();
       }
-      str_capability_log += " Decode Capability: " + hal_decode_cap.toString();
+      while (ase_cnt--) {
+        audio_set_unicast_config.confs.source.push_back(AseConfiguration(decode_cap));
+      }
+    }
+
+    if (!audio_set_unicast_config.confs.sink.empty() ||
+        !audio_set_unicast_config.confs.source.empty()) {
+      offload_capabilities.push_back(audio_set_unicast_config);
     }
 
     if (hal_bcast_capability_to_stack_format(hal_bcast_cap, bcast_cap)) {
-      AudioSetConfiguration audio_set_config = {.name = "broadcast offload capability"};
       // Note: The offloader config supports multiple channels per stream
       //       (subgroup), corresponding to the number of BISes, where each BIS
       //       has a single channel.
       bcast_cap.channel_count_per_iso_stream = 1;
       auto bis_cnt = hal_bcast_cap.channelCountPerStream;
-      while (bis_cnt--) {
-        audio_set_config.confs.sink.push_back(AseConfiguration(bcast_cap));
+      if (bis_cnt) {
+        str_capability_log += " Broadcast Capability: " + hal_bcast_cap.toString();
+        while (bis_cnt--) {
+          audio_set_broadcast_config.confs.sink.push_back(AseConfiguration(bcast_cap));
+        }
+        broadcast_offload_capabilities.push_back(audio_set_broadcast_config);
       }
-      broadcast_offload_capabilities.push_back(audio_set_config);
-      str_capability_log += " Broadcast Capability: " + hal_bcast_cap.toString();
     }
 
-    if (!audio_set_config.confs.sink.empty() || !audio_set_config.confs.source.empty()) {
-      offload_capabilities.push_back(audio_set_config);
+    if (!audio_set_unicast_config.confs.sink.empty() ||
+        !audio_set_unicast_config.confs.source.empty() ||
+        !audio_set_broadcast_config.confs.sink.empty()) {
       log::info("Supported codec capability ={}", str_capability_log);
-
     } else {
       log::info("Unknown codec capability ={}", hal_cap.toString());
     }

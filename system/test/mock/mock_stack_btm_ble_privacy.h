@@ -25,7 +25,7 @@
 #include <functional>
 
 // Original included files, if any
-#include "stack/btm/security_device_record.h"
+#include "stack/btm/btm_device_record.h"
 #include "stack/include/btm_status.h"
 
 // Mocked compile conditionals, if any
@@ -72,29 +72,27 @@ struct btm_ble_read_resolving_list_entry_complete {
 };
 extern struct btm_ble_read_resolving_list_entry_complete btm_ble_read_resolving_list_entry_complete;
 // Name: btm_ble_read_resolving_list_entry
-// Params: tBTM_SEC_DEV_REC* p_dev_rec
+// Params: BtmDevice* p_device
 // Returns: bool
 struct btm_ble_read_resolving_list_entry {
-  std::function<bool(tBTM_SEC_DEV_REC* p_dev_rec)> body{
-          [](tBTM_SEC_DEV_REC* /* p_dev_rec */) { return false; }};
-  bool operator()(tBTM_SEC_DEV_REC* p_dev_rec) { return body(p_dev_rec); }
+  std::function<bool(BtmDevice* p_device)> body{[](BtmDevice* /* p_device */) { return false; }};
+  bool operator()(BtmDevice* p_device) { return body(p_device); }
 };
 extern struct btm_ble_read_resolving_list_entry btm_ble_read_resolving_list_entry;
 // Name: btm_ble_resolving_list_load_dev
-// Params: tBTM_SEC_DEV_REC* p_dev_rec
+// Params: BtmDevice* p_device
 // Returns: void
 struct btm_ble_resolving_list_load_dev {
-  std::function<void(const tBTM_SEC_DEV_REC& p_dev_rec)> body{
-          [](const tBTM_SEC_DEV_REC& /* p_dev_rec */) {}};
-  void operator()(const tBTM_SEC_DEV_REC& p_dev_rec) { body(p_dev_rec); }
+  std::function<void(const BtmDevice& p_device)> body{[](const BtmDevice& /* p_device */) {}};
+  void operator()(const BtmDevice& p_device) { body(p_device); }
 };
 extern struct btm_ble_resolving_list_load_dev btm_ble_resolving_list_load_dev;
 // Name: btm_ble_resolving_list_remove_dev
-// Params: tBTM_SEC_DEV_REC* p_dev_rec
+// Params: BtmDevice* p_device
 // Returns: void
 struct btm_ble_resolving_list_remove_dev {
-  std::function<void(tBTM_SEC_DEV_REC* p_dev_rec)> body{[](tBTM_SEC_DEV_REC* /* p_dev_rec */) {}};
-  void operator()(tBTM_SEC_DEV_REC* p_dev_rec) { body(p_dev_rec); }
+  std::function<void(BtmDevice* p_device)> body{[](BtmDevice* /* p_device */) {}};
+  void operator()(BtmDevice* p_device) { body(p_device); }
 };
 extern struct btm_ble_resolving_list_remove_dev btm_ble_resolving_list_remove_dev;
 // Name: btm_ble_enable_resolving_list_for_platform

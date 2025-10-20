@@ -123,7 +123,7 @@ enum class GroupNodeStatus {
 enum class UnicastMonitorModeStatus {
   STREAMING_REQUESTED = 0,
   STREAMING,
-  STREAMING_SUSPENDED,
+  SUSPENDED,
   STREAMING_REQUESTED_NO_CONTEXT_VALIDATE,
 };
 
@@ -138,8 +138,8 @@ inline std::ostream& operator<<(std::ostream& os, const UnicastMonitorModeStatus
     case UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE:
       os << "CONTEXT NOT AVAILABLE";
       break;
-    case UnicastMonitorModeStatus::STREAMING_SUSPENDED:
-      os << "STREAMING_SUSPENDED";
+    case UnicastMonitorModeStatus::SUSPENDED:
+      os << "SUSPENDED";
       break;
     default:
       os << "UNKNOWN";
@@ -461,7 +461,7 @@ public:
   virtual void SetInCall(bool in_call) = 0;
 
   /* Set Sink listening mode flag */
-  virtual void SetUnicastMonitorMode(uint8_t direction, bool enable) = 0;
+  virtual void SetUnicastMonitorMode(uint8_t local_directions, bool enable) = 0;
 
   /* Sends a preferred audio profiles change */
   virtual void SendAudioProfilePreferences(int group_id, bool is_output_preference_le_audio,
@@ -470,6 +470,9 @@ public:
   /* Set allowed to stream context */
   virtual void SetGroupAllowedContextMask(int group_id, int sink_context_types,
                                           int source_context_types) = 0;
+
+  /* Confirm group is active */
+  virtual void GroupConfirmActive(int group_id) = 0;
 };
 
 /* Represents the broadcast source state. */

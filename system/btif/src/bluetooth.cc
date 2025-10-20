@@ -58,6 +58,7 @@
 #include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/include/bta_vc_api.h"
+#include "bta/include/bta_vaps_server_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/bluetooth.h"
 #include "btif/include/btif_a2dp.h"
@@ -849,7 +850,7 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** /*arguments*/) {
-  if (com::android::bluetooth::flags::protect_dumpsys_during_stack_shutdown() &&
+  if (com_android_bluetooth_flags_protect_dumpsys_during_stack_shutdown() &&
       !stack_manager_get_interface()->get_stack_is_running()) {
     log::error("Stack is not running, skipping dumpsys!!");
     return;
@@ -867,6 +868,9 @@ static void dump(int fd, const char** /*arguments*/) {
   btif_sock_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
   gatt_tcb_dump(fd);
+  if (com::android::bluetooth::flags::gatt_offload_api()) {
+    gatt_offload_sessions_dump(fd);
+  }
   bta_gatt_client_dump(fd);
   device_debug_iot_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
@@ -878,6 +882,7 @@ static void dump(int fd, const char** /*arguments*/) {
   LeAudioClient::DebugDump(fd);
   LeAudioBroadcaster::DebugDump(fd);
   VolumeControl::DebugDump(fd);
+  bluetooth::vaps::GetVapsServer()->DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
   AVCT_Dumpsys(fd);
@@ -982,43 +987,15 @@ static const void* get_profile_interface(const char* profile_id) {
     return btif_csis_client_get_interface();
   }
 
+  if (is_profile(profile_id, BT_PROFILE_VAPS_SERVER_ID)) {
+    return btif_vaps_server_get_interface();
+  }
+
   if (is_profile(profile_id, BT_BQR_ID)) {
     return bluetooth::bqr::getBluetoothQualityReportInterface();
   }
 
   return NULL;
-}
-
-static int dut_mode_configure(uint8_t enable) {
-  if (!interface_ready()) {
-    return BT_STATUS_NOT_READY;
-  }
-  if (!stack_manager_get_interface()->get_stack_is_running()) {
-    return BT_STATUS_NOT_READY;
-  }
-
-  do_in_main_thread(base::BindOnce(btif_dut_mode_configure, enable));
-  return BT_STATUS_SUCCESS;
-}
-
-static int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  if (!interface_ready()) {
-    return BT_STATUS_NOT_READY;
-  }
-  if (!btif_is_dut_mode()) {
-    return BT_STATUS_UNEXPECTED_STATE;
-  }
-
-  uint8_t* copy = (uint8_t*)osi_calloc(len);
-  memcpy(copy, buf, len);
-
-  do_in_main_thread(base::BindOnce(
-          [](uint16_t opcode, uint8_t* buf, uint8_t len) {
-            btif_dut_mode_send(opcode, buf, len);
-            osi_free(buf);
-          },
-          opcode, copy, len));
-  return BT_STATUS_SUCCESS;
 }
 
 static int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
@@ -1231,8 +1208,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .pin_reply = pin_reply,
         .ssp_reply = ssp_reply,
         .get_profile_interface = get_profile_interface,
-        .dut_mode_configure = dut_mode_configure,
-        .dut_mode_send = dut_mode_send,
         .le_test_mode = le_test_mode,
         .set_os_callouts = set_os_callouts,
         .read_energy_info = read_energy_info,

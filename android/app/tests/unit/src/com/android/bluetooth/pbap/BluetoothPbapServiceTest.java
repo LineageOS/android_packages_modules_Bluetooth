@@ -51,6 +51,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
@@ -147,6 +148,9 @@ public class BluetoothPbapServiceTest {
 
         mService.onAcceptFailed();
 
+        if (Flags.pbapCleanupUseHandler()) {
+            mLooper.dispatchAll();
+        }
         assertThat(mService.mPbapStateMachineMap).isEmpty();
     }
 

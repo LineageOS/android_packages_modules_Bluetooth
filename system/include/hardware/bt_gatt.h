@@ -23,6 +23,7 @@
 #include "ble_scanner.h"
 #include "bt_gatt_client.h"
 #include "bt_gatt_server.h"
+#include "bt_status.h"
 #include "distance_measurement_interface.h"
 
 __BEGIN_DECLS
@@ -47,7 +48,7 @@ typedef struct {
   /**
    * Initializes the interface and provides callback routines
    */
-  bt_status_t (*init)(const btgatt_callbacks_t* callbacks);
+  BtStatus (*init)(const btgatt_callbacks_t* callbacks);
 
   /** Closes the interface */
   void (*cleanup)(void);

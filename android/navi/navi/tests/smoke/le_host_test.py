@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import asyncio
+import contextlib
 import enum
 import itertools
 import uuid
@@ -382,13 +383,17 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             identity_address = self.ref.address
             identity_address_type = android_constants.AddressTypeStatus.PUBLIC
 
-        self.logger.info("[DUT] Pair with REF.")
-        await self.le_connect_and_pair(identity_address_type)
-        ref_dut_acl = list(self.ref.device.connections.values())[0]
-
-        self.logger.info("[REF] Disconnect.")
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
-            await ref_dut_acl.disconnect()
+            self.logger.info("[DUT] Pair with REF.")
+            await self.le_connect_and_pair(identity_address_type)
+
+            if ref_dut_acl := self.ref.device.find_connection_by_bd_addr(
+                    hci.Address(self.dut.address, hci.AddressType.PUBLIC_DEVICE),
+                    core.BT_LE_TRANSPORT,
+            ):
+                self.logger.info("[REF] Disconnect.")
+                with contextlib.suppress(hci.HCI_StatusError):
+                    await ref_dut_acl.disconnect()
             await dut_cb.wait_for_event(bl4a_api.AclDisconnected)
 
         self.logger.info("[REF] Start advertising.")

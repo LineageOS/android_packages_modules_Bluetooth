@@ -55,6 +55,7 @@
 #include "btm_api_types.h"
 #include "btm_ble_api_types.h"
 #include "btm_iso_api.h"
+#include "btm_iso_api_types.h"
 #include "btm_sec_api_types.h"
 #include "embdrv/g722/g722_enc_dec.h"
 #include "gap_api.h"
@@ -82,7 +83,9 @@
 
 namespace bluetooth::asha {
 
-using base::Closure;
+using bluetooth::hci::iso_manager::IsoClientHandle;
+using bluetooth::hci::iso_manager::IsoManagerCallbacks;
+using bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
 using hci::IsoManager;
 
 // The MIN_CE_LEN parameter for Connection Parameters based on the current
@@ -295,10 +298,17 @@ private:
   // connected.
   std::unique_ptr<bluetooth::audio::asrc::SourceAudioHalAsrc> asrc;
 
-public:
-  ~HearingAidImpl() override = default;
+  IsoManagerCallbacks iso_callbacks_;
+  IsoClientHandle iso_client_handle_ = kInvalidIsoClientHandle;
 
-  HearingAidImpl(HearingAidCallbacks* callbacks, Closure initCb)
+public:
+  ~HearingAidImpl() override {
+    if (iso_client_handle_ != kInvalidIsoClientHandle) {
+      IsoManager::GetInstance()->DeregisterCallbacks(iso_client_handle_);
+    }
+  }
+
+  HearingAidImpl(HearingAidCallbacks* callbacks, base::OnceClosure initCb)
       : audio_running(false),
         overwrite_min_ce_len(-1),
         overwrite_max_ce_len(-1),
@@ -324,25 +334,27 @@ public:
 
     BTA_GATTC_AppRegister(
             "asha", hearingaid_gattc_callback,
-            base::Bind(
-                    [](Closure initCb, uint8_t client_id, uint8_t status) {
+            base::BindOnce(
+                    [](base::OnceClosure initCb, uint8_t client_id, uint8_t status) {
                       if (status != GATT_SUCCESS) {
                         log::error("Can't start Hearing Aid profile - no gatt clients left!");
                         return;
                       }
                       instance->gatt_if = client_id;
-                      initCb.Run();
+                      std::move(initCb).Run();
                     },
-                    initCb),
+                    std::move(initCb)),
             false);
 
-    IsoManager::GetInstance()->Start();
-    IsoManager::GetInstance()->RegisterOnIsoTrafficActiveCallback([](bool is_active) {
+    iso_callbacks_.iso_traffic_active_callback = [](bool is_active) {
       if (!instance) {
         return;
       }
       instance->IsoTrafficEventCb(is_active);
-    });
+    };
+
+    IsoManager::GetInstance()->Start();
+    iso_client_handle_ = IsoManager::GetInstance()->RegisterCallbacks(iso_callbacks_);
   }
 
   void IsoTrafficEventCb(bool is_active) {
@@ -693,14 +705,14 @@ public:
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
       if (hearingDevice->first_connection ||
-          com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+          com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       }
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
-    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
       if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
           hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
           hearingDevice->read_psm_handle) {
@@ -794,7 +806,7 @@ public:
       return;
     }
 
-    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
         !hearingDevice->first_connection) {
       log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
       return;
@@ -803,7 +815,7 @@ public:
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-      if (com::android::bluetooth::flags::continue_queued_command_after_discovery() ||
+      if (com_android_bluetooth_flags_continue_queued_command_after_discovery() ||
           hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       }
@@ -879,7 +891,7 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (hearingDevice->service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error("Service change received before PSM read. Read omitted.");
           return;
         } else {
@@ -948,7 +960,7 @@ public:
       return;
     }
 
-    if (com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    if (com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
       hearingDevice->first_connection = true;
     }
 
@@ -1153,7 +1165,7 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (hearingDevice->service_changed_rcvd) {
-      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+      if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
         log::error("Stream is starting, but service change received. Aborting.");
         return;
       } else {
@@ -1246,7 +1258,7 @@ public:
          * Just in case, log such occurrence, letting us know we may use the old handle.
          */
         if (device.service_changed_rcvd) {
-          if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
             log::error(
                     "Service change received during active stream."
                     "Omit write to Audio Control Point");
@@ -1326,7 +1338,7 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (device->service_changed_rcvd) {
-      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+      if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
         log::error(
                 "Service change received, but stream is starting."
                 "Omit write to Service Changed CCC");
@@ -1375,7 +1387,7 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (device->service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error(
                   "Service change received, but stream is starting."
                   "Omit write using to Audio Control Point");
@@ -1797,10 +1809,10 @@ public:
 
       char eventtime[20];
       char temptime[20];
-      struct tm* tstamp = localtime(&rssi_logs.timestamp.tv_sec);
-      if (!strftime(temptime, sizeof(temptime), "%H:%M:%S", tstamp)) {
-        log::error("strftime fails. tm_sec={}, tm_min={}, tm_hour={}", tstamp->tm_sec,
-                   tstamp->tm_min, tstamp->tm_hour);
+      struct tm tstamp;
+      if (localtime_r(&rssi_logs.timestamp.tv_sec, &tstamp) == nullptr ||
+          !strftime(temptime, sizeof(temptime), "%H:%M:%S", &tstamp)) {
+        log::error("Failed to format time for sec: %ld", (long)rssi_logs.timestamp.tv_sec);
         osi_strlcpy(temptime, "UNKNOWN TIME", sizeof(temptime));
       }
       snprintf(eventtime, sizeof(eventtime), "%s.%03ld", temptime,
@@ -1991,7 +2003,7 @@ public:
 
       std::vector<uint8_t> volume_value({static_cast<unsigned char>(volume)});
       if (device.volume_handle == 0 || device.service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error(
                   "Volume handle not set or service changed received: bd_addr={}"
                   "Write to Volume omitted",
@@ -2248,7 +2260,7 @@ HearingAidAudioReceiverImpl audioReceiverImpl;
 
 }  // namespace
 
-void HearingAid::Initialize(HearingAidCallbacks* callbacks, Closure initCb) {
+void HearingAid::Initialize(HearingAidCallbacks* callbacks, base::OnceClosure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
 
   if (instance) {
@@ -2257,7 +2269,7 @@ void HearingAid::Initialize(HearingAidCallbacks* callbacks, Closure initCb) {
   }
 
   audioReceiver = &audioReceiverImpl;
-  instance = new HearingAidImpl(callbacks, initCb);
+  instance = new HearingAidImpl(callbacks, std::move(initCb));
   HearingAidAudioSource::Initialize();
 }
 

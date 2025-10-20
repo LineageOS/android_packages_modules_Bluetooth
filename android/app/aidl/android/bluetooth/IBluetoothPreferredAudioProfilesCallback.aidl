@@ -19,10 +19,8 @@ package android.bluetooth;
 import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 
-/**
- * Callback definitions for preferred audio profile changes.
- * @hide
- */
+/** Callback definitions for preferred audio profile changes. */
+@JavaPassthrough(annotation="@android.annotation.Hide")
 oneway interface IBluetoothPreferredAudioProfilesCallback {
     void onPreferredAudioProfilesChanged(in BluetoothDevice device, in Bundle preferredAudioProfiles, in int status);
 }
