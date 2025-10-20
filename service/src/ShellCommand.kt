@@ -64,7 +64,7 @@ class ShellCommand(
                     pw.println("    Enable Bluetooth on this device.")
                 },
                 exec = {
-                    if (Flags.systemServerMessenger()) {
+                    if (Flags.bluetoothSystemServerMessenger()) {
                         val reply =
                             send(
                                 SystemServiceMessage.Enable().apply { attributionSource = source },
@@ -83,7 +83,7 @@ class ShellCommand(
                     pw.println("    Disable Bluetooth on this device.")
                 },
                 exec = {
-                    if (Flags.systemServerMessenger()) {
+                    if (Flags.bluetoothSystemServerMessenger()) {
                         val reply =
                             send(
                                 SystemServiceMessage.Disable().apply {
@@ -106,7 +106,7 @@ class ShellCommand(
                     pw.println("    Call enableBle to activate ble only mode on this device.")
                 },
                 exec = {
-                    if (Flags.systemServerMessenger()) {
+                    if (Flags.bluetoothSystemServerMessenger()) {
                         val reply =
                             send(
                                 SystemServiceMessage.Enable().apply {
@@ -129,7 +129,7 @@ class ShellCommand(
                     pw.println("    undo the call to enableBle.")
                 },
                 exec = {
-                    if (Flags.systemServerMessenger()) {
+                    if (Flags.bluetoothSystemServerMessenger()) {
                         val reply =
                             send(
                                 SystemServiceMessage.Disable().apply {
@@ -152,7 +152,7 @@ class ShellCommand(
                     pw.println("    Perform a factory reset of Bluetooth settings.")
                 },
                 exec = {
-                    if (Flags.systemServerMessenger()) {
+                    if (Flags.bluetoothSystemServerMessenger()) {
                         val reply =
                             send(
                                 SystemServiceMessage.FactoryReset().apply {

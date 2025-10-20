@@ -12,9 +12,12 @@ flag {
 }
 
 flag {
-    name: "system_server_messenger"
+    name: "bluetooth_system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
     bug: "321804999"
 }
 
