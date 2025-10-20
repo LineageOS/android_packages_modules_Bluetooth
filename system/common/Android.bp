@@ -68,7 +68,6 @@ cc_test {
     ],
     srcs: [
         "address_obfuscator_unittest.cc",
-        "base_bind_unittest.cc",
         "leaky_bonded_queue_unittest.cc",
         "message_loop_thread_unittest.cc",
         "repeating_timer_unittest.cc",
