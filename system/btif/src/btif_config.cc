@@ -58,7 +58,7 @@ using namespace bluetooth;
  * generate new one and save it to config
  */
 static void read_or_set_metrics_salt() {
-  AddressObfuscator::Octet32 metrics_salt = {};
+  Octet32 metrics_salt = {};
   size_t metrics_salt_length = metrics_salt.size();
   if (!btif_config_get_bin(BTIF_STORAGE_SECTION_METRICS, BTIF_STORAGE_KEY_METRICS_SALT_256BIT,
                            metrics_salt.data(), &metrics_salt_length)) {

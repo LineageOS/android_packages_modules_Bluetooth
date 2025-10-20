@@ -151,7 +151,7 @@ void btsnd_hcic_ble_periodic_advertising_terminate_sync(
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_terminate_sync(
           sync_handle, std::move(cb));
 }
-void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {
+void btsnd_hcic_ble_rand(base::Callback<void(Octet8)> cb) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_rand(std::move(cb));
 }
@@ -221,8 +221,7 @@ void btsnd_hcic_ble_set_scan_params(uint8_t scan_type, uint16_t scan_int, uint16
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_scan_params(
           scan_type, scan_int, scan_win, addr_type_own, scan_filter_policy);
 }
-void btsnd_hcic_ble_start_enc(uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
-                              const Octet16& ltk) {
+void btsnd_hcic_ble_start_enc(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_start_enc(handle, rand, ediv, ltk);
 }

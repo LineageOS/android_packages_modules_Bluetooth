@@ -21,6 +21,7 @@
 
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
@@ -28,9 +29,6 @@
 #include <string>
 
 #include "internal_include/bt_target.h"
-#include "stack/include/bt_device_type.h"
-#include "stack/include/bt_octets.h"
-#include "stack/include/btm_sec_api_types.h"
 
 /*******************************************************************************
  *  Constants & Macros

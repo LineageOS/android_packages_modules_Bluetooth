@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/hci_role.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -29,7 +30,6 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/smp_status.h"
 #include "stack/smp/p_256_ecc_pp.h"
@@ -126,7 +126,7 @@ const stack_config_t* stack_config_get_interface(void) { return &mock_stack_conf
  */
 
 static void dump_uint128_reverse(const Octet16& a, char* buffer) {
-  for (int i = (int)(OCTET16_LEN - 1); i >= 0; --i) {
+  for (int i = (int)(kOctet16Length - 1); i >= 0; --i) {
     snprintf(buffer, 3, "%02x", a[i]);
     buffer += 2;
   }
@@ -191,7 +191,7 @@ TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_central) {
   Octet16 p2 = smp_gen_p2_4_confirm(&p_cb_, remote_bda);
   // Correct p2 is 0x00000000a1a2a3a4a5a6b1b2b3b4b5b6
   const char expected_p2_str[] = "00000000a1a2a3a4a5a6b1b2b3b4b5b6";
-  char p2_str[2 * OCTET16_LEN + 1];
+  char p2_str[2 * kOctet16Length + 1];
   dump_uint128_reverse(p2, p2_str);
   ASSERT_THAT(p2_str, StrEq(expected_p2_str));
 
@@ -225,18 +225,18 @@ TEST_F(SmpCalculateConfirmTest, test_aes_128_as_central) {
   Octet16 p1 = smp_gen_p1_4_confirm(&p_cb_, remote_bd_addr_type);
   // Correct p1 is 0x05000800000302070710000001010001
   const char expected_p1_str[] = "05000800000302070710000001010001";
-  char p1_str[2 * OCTET16_LEN + 1];
+  char p1_str[2 * kOctet16Length + 1];
   dump_uint128_reverse(p1, p1_str);
   ASSERT_THAT(p1_str, StrEq(expected_p1_str));
   smp_xor_128(&p1, rand_);
   // Correct p1 xor r is 0x5283dd2156ae6d096498274ec7712ee1
   const char expected_p1_xor_r_str[] = "5283dd2156ae6d096498274ec7712ee1";
-  char p1_xor_r_str[2 * OCTET16_LEN + 1];
+  char p1_xor_r_str[2 * kOctet16Length + 1];
   dump_uint128_reverse(p1, p1_xor_r_str);
   ASSERT_THAT(p1_xor_r_str, StrEq(expected_p1_xor_r_str));
   Octet16 output = crypto_toolbox::aes_128(p_cb_.tk, p1);
   const char expected_p1_prime_str[] = "02c7aa2a9857ac866ff91232df0e3c95";
-  char p1_prime_str[2 * OCTET16_LEN + 1];
+  char p1_prime_str[2 * kOctet16Length + 1];
   dump_uint128_reverse(output, p1_prime_str);
   ASSERT_THAT(p1_prime_str, StrEq(expected_p1_prime_str));
 
@@ -268,7 +268,7 @@ TEST_F(SmpCalculateConfirmTest, test_smp_calculate_confirm_as_central) {
   EXPECT_EQ(status, SMP_SUCCESS);
   // Correct MConfirm is 0x1e1e3fef878988ead2a74dc5bef13b86
   const char expected_confirm_str[] = "1e1e3fef878988ead2a74dc5bef13b86";
-  char confirm_str[2 * OCTET16_LEN + 1];
+  char confirm_str[2 * kOctet16Length + 1];
   dump_uint128_reverse(output, confirm_str);
   ASSERT_THAT(confirm_str, StrEq(expected_confirm_str));
 

@@ -17,15 +17,10 @@
 #include "crypto_toolbox.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <endian.h>
 
 #include <algorithm>
-
-#include "hci/octets.h"
-
-using bluetooth::hci::kOctet16Length;
-using bluetooth::hci::kOctet32Length;
-using bluetooth::hci::Octet16;
 
 namespace crypto_toolbox {
 

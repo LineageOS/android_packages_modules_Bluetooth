@@ -29,7 +29,6 @@
 
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_utils.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
@@ -159,9 +158,10 @@ bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::BTM_IsBonded(bd_addr, transport);
 }
-void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t* p_pin) {
+void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                      PinCode pin_code) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_sec::BTM_PINCodeReply(bd_addr, res, pin_len, p_pin);
+  test::mock::stack_btm_sec::BTM_PINCodeReply(bd_addr, res, pin_len, pin_code);
 }
 void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr, uint32_t passkey) {
   inc_func_call_count(__func__);
@@ -216,7 +216,7 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
   return test::mock::stack_btm_sec::BTM_SetEncryption(bd_addr, transport, p_callback, p_ref_data,
                                                       sec_act);
 }
-void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
+void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::BTM_SetPinType(pin_type, pin_code, pin_code_len);
 }

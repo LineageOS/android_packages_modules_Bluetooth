@@ -20,6 +20,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstring>
@@ -35,7 +36,6 @@
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
@@ -668,7 +668,7 @@ void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     uint8_t* p = p_data->p_data;
     if (p != NULL) {
       /* save the SConfirm for comparison later */
-      STREAM_TO_ARRAY(p_cb->rconfirm.data(), p, OCTET16_LEN);
+      STREAM_TO_ARRAY(p_cb->rconfirm.data(), p, kOctet16Length);
     }
   }
 
@@ -702,7 +702,7 @@ void smp_proc_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   /* save the SRand for comparison */
-  STREAM_TO_ARRAY(p_cb->rrand.data(), p, OCTET16_LEN);
+  STREAM_TO_ARRAY(p_cb->rrand.data(), p, kOctet16Length);
 }
 
 /*******************************************************************************
@@ -725,15 +725,15 @@ void smp_process_pairing_public_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
-  STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
-  STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
+  STREAM_TO_ARRAY(p_cb->peer_publ_key.x.data(), p, kOctet32Length);
+  STREAM_TO_ARRAY(p_cb->peer_publ_key.y.data(), p, kOctet32Length);
 
   Point pt;
-  memcpy(pt.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
-  memcpy(pt.y, p_cb->peer_publ_key.y, BT_OCTET32_LEN);
+  memcpy(pt.x, p_cb->peer_publ_key.x.data(), p_cb->peer_publ_key.x.size());
+  memcpy(pt.y, p_cb->peer_publ_key.y.data(), p_cb->peer_publ_key.y.size());
 
-  if (!memcmp(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x, BT_OCTET32_LEN)) {
-    log::warn("Remote and local public keys can't match");
+  if (p_cb->peer_publ_key.x == p_cb->loc_publ_key.x) {
+    log::warn("Remote and local public keys match");
     tSMP_INT_DATA smp;
     smp.status = SMP_PAIR_AUTH_FAIL;
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp);
@@ -771,7 +771,7 @@ void smp_process_pairing_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_COMM;
 
   if (p != NULL) {
-    STREAM_TO_ARRAY(p_cb->remote_commitment.data(), p, OCTET16_LEN);
+    STREAM_TO_ARRAY(p_cb->remote_commitment.data(), p, kOctet16Length);
   }
 }
 
@@ -792,7 +792,7 @@ void smp_process_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   if (p != NULL) {
-    STREAM_TO_ARRAY(p_cb->remote_dhkey_check.data(), p, OCTET16_LEN);
+    STREAM_TO_ARRAY(p_cb->remote_dhkey_check.data(), p, kOctet16Length);
   }
 
   p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK;
@@ -990,7 +990,7 @@ void smp_proc_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
-  STREAM_TO_ARRAY(p_cb->ltk.data(), p, OCTET16_LEN);
+  STREAM_TO_ARRAY(p_cb->ltk.data(), p, kOctet16Length);
 
   smp_key_distribution(p_cb, NULL);
 }
@@ -1012,7 +1012,7 @@ void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           .penc_key = {},
   };
   STREAM_TO_UINT16(le_key.penc_key.ediv, p);
-  STREAM_TO_ARRAY(le_key.penc_key.rand, p, BT_OCTET8_LEN);
+  STREAM_TO_ARRAY(le_key.penc_key.rand.data(), p, kOctet8Length);
 
   /* store the encryption keys from peer device */
   le_key.penc_key.ltk = p_cb->ltk;
@@ -1039,7 +1039,7 @@ void smp_proc_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
-  STREAM_TO_ARRAY(p_cb->tk.data(), p, OCTET16_LEN); /* reuse TK for IRK */
+  STREAM_TO_ARRAY(p_cb->tk.data(), p, kOctet16Length); /* reuse TK for IRK */
   smp_key_distribution_by_transport(p_cb, NULL);
 }
 
@@ -1104,7 +1104,8 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   };
 
   /* get peer CSRK */
-  maybe_non_aligned_memcpy(le_key.pcsrk_key.csrk.data(), p_data->p_data, OCTET16_LEN);
+  maybe_non_aligned_memcpy(le_key.pcsrk_key.csrk.data(), p_data->p_data,
+                           le_key.pcsrk_key.csrk.size());
 
   /* initialize the peer counter */
   le_key.pcsrk_key.counter = 0;
@@ -1120,7 +1121,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_proc_compare(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   log::verbose("addr:{}", p_cb->pairing_bda);
-  if (!memcmp(p_cb->rconfirm.data(), p_data->key.p_data, OCTET16_LEN)) {
+  if (!memcmp(p_cb->rconfirm.data(), p_data->key.p_data, p_cb->rconfirm.size())) {
     /* compare the max encryption key size, and save the smaller one for the
      * link */
     if (p_cb->peer_enc_size < p_cb->loc_enc_size) {
@@ -1136,7 +1137,6 @@ void smp_proc_compare(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
       smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
     }
-
   } else {
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_CONFIRM_VALUE_ERR;
@@ -1865,7 +1865,8 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
 void smp_match_dhkey_checks(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
-  if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check.data(), OCTET16_LEN)) {
+  if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check.data(),
+             p_cb->remote_dhkey_check.size())) {
     log::warn("dhkey chcks do no match");
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_DHKEY_CHK_FAIL;
@@ -2020,7 +2021,7 @@ void smp_process_secure_connection_oob_data(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_d
 void smp_set_local_oob_keys(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
-  memcpy(p_cb->sc_oob_data.loc_oob_data.private_key_used, p_cb->private_key, BT_OCTET32_LEN);
+  p_cb->sc_oob_data.loc_oob_data.private_key_used = p_cb->private_key;
   p_cb->sc_oob_data.loc_oob_data.publ_key_used = p_cb->loc_publ_key;
   smp_start_nonce_generation(p_cb);
 }
@@ -2036,8 +2037,8 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data
   p_cb->sc_oob_data.loc_oob_data.randomizer = p_cb->rand;
 
   p_cb->sc_oob_data.loc_oob_data.commitment =
-          crypto_toolbox::f4(p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
-                             p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
+          crypto_toolbox::f4(p_cb->sc_oob_data.loc_oob_data.publ_key_used.x.data(),
+                             p_cb->sc_oob_data.loc_oob_data.publ_key_used.x.data(),
                              p_cb->sc_oob_data.loc_oob_data.randomizer, 0);
 
   p_cb->sc_oob_data.loc_oob_data.present = true;

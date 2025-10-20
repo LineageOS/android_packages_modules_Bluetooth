@@ -26,18 +26,17 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback_forward.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <string.h>
 
 #include "device/include/esco_parameters.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "internal_include/bt_target.h"
-#include "main/shim/acl_api.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_lap.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
 
@@ -563,10 +562,10 @@ void btsnd_hcic_link_key_neg_reply(const RawAddress& bd_addr) {
 }
 
 void btsnd_hcic_pin_code_req_reply(const RawAddress& bd_addr, uint8_t pin_code_len,
-                                   PIN_CODE pin_code) {
+                                   PinCode pin_code) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
-  int i;
+  unsigned int i;
 
   p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_PIN_CODE_REQ_REPLY;
   p->offset = 0;
@@ -578,10 +577,10 @@ void btsnd_hcic_pin_code_req_reply(const RawAddress& bd_addr, uint8_t pin_code_l
   UINT8_TO_STREAM(pp, pin_code_len);
 
   for (i = 0; i < pin_code_len; i++) {
-    *pp++ = *pin_code++;
+    *pp++ = pin_code[i];
   }
 
-  for (; i < PIN_CODE_LEN; i++) {
+  for (; i < kOctet16Length; i++) {
     *pp++ = 0;
   }
 

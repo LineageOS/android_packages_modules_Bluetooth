@@ -30,6 +30,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -39,10 +40,7 @@
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/controller.h"
 #include "main/shim/entry.h"
-#include "stack/btm/btm_int_types.h"
-#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_privacy.h"
 
 using namespace bluetooth;
@@ -104,7 +102,7 @@ bool btm_ble_addr_resolvable(const RawAddress& rpa, BtmDevice* p_device) {
 
   if ((p_device->device_type & BT_DEVICE_TYPE_BLE) &&
       (p_device->sec_rec.ble_keys.key_type & BTM_LE_KEY_PID)) {
-    if (is_zero_irk(p_device->sec_rec.ble_keys.irk)) {
+    if (p_device->sec_rec.ble_keys.irk == ZERO_OCTET16) {
       // An all zero Identity Resolving Key data field indicates that a device
       // does not have a valid resolvable private address
       log::debug("IRK data is Zero for remote device: {}", p_device->bd_addr);
@@ -132,7 +130,7 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
     return true;
   }
 
-  if (is_zero_irk(p_device->sec_rec.ble_keys.irk)) {
+  if (p_device->sec_rec.ble_keys.irk == ZERO_OCTET16) {
     // An all zero Identity Resolving Key data field indicates that a device
     // does not have a valid resolvable private address
     log::debug("IRK data is Zero for remote device: {}", p_device->bd_addr);

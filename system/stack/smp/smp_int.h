@@ -26,6 +26,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
@@ -33,7 +34,6 @@
 #include "macros.h"
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/smp_api_types.h"
 
 typedef enum : uint16_t {
@@ -317,8 +317,8 @@ public:
   Octet16 rconfirm;
   Octet16 rrand; /* for SC this is peer nonce */
   Octet16 rand;  /* for SC this is local nonce */
-  BT_OCTET32 private_key;
-  BT_OCTET32 dhkey;
+  Octet32 private_key;
+  Octet32 dhkey;
   Octet16 commitment;
   Octet16 remote_commitment;
   Octet16 local_random; /* local randomizer - passkey or OOB randomizer */
@@ -362,7 +362,7 @@ public:
   uint16_t div;
   Octet16 csrk; /* storage for local CSRK */
   uint16_t ediv;
-  BT_OCTET8 enc_rand;
+  Octet8 enc_rand;
   tBLE_ADDR_TYPE addr_type;
   RawAddress local_bda;
   bool is_pair_cancel;

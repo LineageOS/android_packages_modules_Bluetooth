@@ -28,7 +28,7 @@ typedef struct {
   RawAddress bd_addr;
   bool accept;
   uint8_t pin_len;
-  uint8_t p_pin[PIN_CODE_LEN];
+  PinCode pin_code;
 } tBTA_DM_API_PIN_REPLY;
 
 typedef struct {

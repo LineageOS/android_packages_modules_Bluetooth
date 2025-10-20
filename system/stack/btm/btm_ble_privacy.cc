@@ -27,23 +27,21 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
 
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
-#include "btm_sec_int_types.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
-#include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/ble_hci_link_interface.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 
@@ -541,7 +539,7 @@ static void btm_ble_ble_unsupported_resolving_list_load_dev(BtmDevice* p_device)
   uint8_t* p = param;
 
   UINT8_TO_STREAM(p, BTM_BLE_META_ADD_IRK_ENTRY);
-  ARRAY_TO_STREAM(p, p_device->sec_rec.ble_keys.irk, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_device->sec_rec.ble_keys.irk, kOctet16Length);
   UINT8_TO_STREAM(p, p_device->ble.identity_address_with_type.type);
   BDADDR_TO_STREAM(p, p_device->ble.identity_address_with_type.bda);
 

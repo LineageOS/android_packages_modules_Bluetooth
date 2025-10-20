@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include "bluetooth/types/bt_octets.h"
 #define LOG_TAG "bt_btm_sec"
 
 #include "stack/btm/btm_sec.h"
@@ -279,9 +280,9 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
  * Returns          void
  *
  ******************************************************************************/
-void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
+void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
   log::verbose("BTM_SetPinType: pin type {} [variable-0, fixed-1], code {}, length {}", pin_type,
-               (char*)pin_code, pin_code_len);
+               (char*)pin_code.data(), pin_code_len);
 
   /* If device is not up security mode will be set as a part of startup */
   if ((btm_sec_cb.cfg.pin_type != pin_type) && bluetooth::shim::GetController() != nullptr) {
@@ -290,7 +291,7 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
 
   btm_sec_cb.cfg.pin_type = pin_type;
   btm_sec_cb.cfg.pin_code_len = pin_code_len;
-  memcpy(btm_sec_cb.cfg.pin_code, pin_code, pin_code_len);
+  btm_sec_cb.cfg.pin_code = pin_code;
 }
 
 /*******************************************************************************
@@ -372,7 +373,8 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm) { return btm_sec_cb.RemoveServiceBy
  *                  p_pin        - pointer to array with the PIN Code
  *
  ******************************************************************************/
-void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t* p_pin) {
+void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                      PinCode pin_code) {
   BtmDevice* p_device;
 
   log::verbose(
@@ -397,7 +399,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_le
     return;
   }
 
-  if ((pin_len > PIN_CODE_LEN) || (pin_len == 0) || (p_pin == NULL)) {
+  if (pin_len > kOctet16Length || pin_len == 0) {
     res = tBTM_STATUS::BTM_ILLEGAL_VALUE;
   }
 
@@ -421,7 +423,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_le
   }
   p_device->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
   p_device->sec_rec.pin_code_length = pin_len;
-  if (pin_len >= 16) {
+  if (pin_len >= kOctet16Length) {
     p_device->sec_rec.sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
   }
 
@@ -429,7 +431,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_le
       (p_device->hci_handle == HCI_INVALID_HANDLE) && (!btm_sec_cb.security_mode_changed)) {
     /* This is start of the dedicated bonding if local device is 2.0 */
     btm_sec_cb.pin_code_len = pin_len;
-    memcpy(btm_sec_cb.pin_code, p_pin, pin_len);
+    btm_sec_cb.pin_code = pin_code;
 
     btm_sec_cb.security_mode_changed = true;
     btsnd_hcic_write_auth_enable(true);
@@ -465,7 +467,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_le
   btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
   acl_set_disconnect_reason(HCI_SUCCESS);
 
-  btsnd_hcic_pin_code_req_reply(bd_addr, pin_len, p_pin);
+  btsnd_hcic_pin_code_req_reply(bd_addr, pin_len, pin_code);
 }
 
 /*******************************************************************************
@@ -3933,7 +3935,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
    * one. Treat such devices as insecure, and remove such bonds on
    * disconnection.
    */
-  if (is_sample_ltk(p_device->sec_rec.ble_keys.pltk)) {
+  if (p_device->sec_rec.ble_keys.pltk == SAMPLE_LTK) {
     log::info("removing bond to device that used sample LTK: {}", p_device->bd_addr);
 
     bta_dm_remove_device(p_device->bd_addr);

@@ -25,10 +25,9 @@
 #define BTA_DM_CI_H
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
-
-#include "stack/include/bt_octets.h"
 
 /*****************************************************************************
  *  Function Declarations

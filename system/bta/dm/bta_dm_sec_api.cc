@@ -26,6 +26,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <future>
@@ -33,7 +34,6 @@
 #include "bta/dm/bta_dm_sec_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_device_type.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
@@ -69,7 +69,7 @@ void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len, uin
   msg->accept = accept;
   if (accept) {
     msg->pin_len = pin_len;
-    memcpy(msg->p_pin, p_pin, pin_len);
+    memcpy(msg->pin_code.data(), p_pin, pin_len);
   }
 
   bta_dm_pin_reply(std::move(msg));

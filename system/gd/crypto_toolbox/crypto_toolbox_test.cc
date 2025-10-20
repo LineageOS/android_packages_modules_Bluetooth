@@ -19,16 +19,14 @@
 #include "crypto_toolbox/crypto_toolbox.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <gtest/gtest.h>
 
 #include <vector>
 
 #include "crypto_toolbox/aes.h"
-#include "hci/octets.h"
 
 namespace crypto_toolbox {
-using bluetooth::hci::kOctet16Length;
-using bluetooth::hci::Octet16;
 
 // BT Spec 5.0 | Vol 3, Part H D.1
 TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
@@ -49,9 +47,9 @@ TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
   EXPECT_EQ(0, memcmp(output, aes_cmac_k_m, kOctet16Length));
 
   // useful for debugging
-  // log::info("k {}", base::HexEncode(k, OCTET16_LEN));
+  // log::info("k {}", base::HexEncode(k, kOctet16Length));
   // log::info("m {}", base::HexEncode(m, sizeof(m)));
-  // log::info("output {}", base::HexEncode(output, OCTET16_LEN));
+  // log::info("output {}", base::HexEncode(output, kOctet16Length));
 }
 
 // BT Spec 5.0 | Vol 3, Part H D.1.1

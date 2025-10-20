@@ -183,10 +183,10 @@ void bta_dm_bond_cancel(const RawAddress& bd_addr) {
 void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   if (msg->accept) {
     get_btm_client_interface().security.BTM_PINCodeReply(msg->bd_addr, tBTM_STATUS::BTM_SUCCESS,
-                                                         msg->pin_len, msg->p_pin);
+                                                         msg->pin_len, msg->pin_code);
   } else {
-    get_btm_client_interface().security.BTM_PINCodeReply(msg->bd_addr,
-                                                         tBTM_STATUS::BTM_NOT_AUTHORIZED, 0, NULL);
+    get_btm_client_interface().security.BTM_PINCodeReply(
+            msg->bd_addr, tBTM_STATUS::BTM_NOT_AUTHORIZED, 0, PinCode{});
   }
 }
 

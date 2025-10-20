@@ -18,14 +18,13 @@
 
 #include "hci/address_with_type.h"
 
+#include <bluetooth/types/bt_octets.h>
 #include <gtest/gtest.h>
 
 #include <map>
 #include <unordered_map>
 
-#include "hci/address.h"
 #include "hci/hci_packets.h"
-#include "hci/octets.h"
 
 using namespace bluetooth;
 

@@ -128,14 +128,14 @@ struct BTM_IsBonded {
 extern struct BTM_IsBonded BTM_IsBonded;
 
 // Name: BTM_PINCodeReply
-// Params: const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t*
+// Params: const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, PinCode pin_code
 // p_pin Return: void
 struct BTM_PINCodeReply {
-  std::function<void(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t* p_pin)>
+  std::function<void(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, PinCode pin_code)>
           body{[](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */, uint8_t /* pin_len */,
-                  uint8_t* /* p_pin */) {}};
-  void operator()(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t* p_pin) {
-    body(bd_addr, res, pin_len, p_pin);
+                  PinCode /* pin_code */) {}};
+  void operator()(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, PinCode pin_code) {
+    body(bd_addr, res, pin_len, pin_code);
   }
 };
 extern struct BTM_PINCodeReply BTM_PINCodeReply;
@@ -290,12 +290,12 @@ struct BTM_SetEncryption {
 extern struct BTM_SetEncryption BTM_SetEncryption;
 
 // Name: BTM_SetPinType
-// Params: uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len
+// Params: uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len
 // Return: void
 struct BTM_SetPinType {
-  std::function<void(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len)> body{
-          [](uint8_t /* pin_type */, PIN_CODE /* pin_code */, uint8_t /* pin_code_len */) {}};
-  void operator()(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
+  std::function<void(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len)> body{
+          [](uint8_t /* pin_type */, PinCode /* pin_code */, uint8_t /* pin_code_len */) {}};
+  void operator()(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
     body(pin_type, pin_code, pin_code_len);
   }
 };

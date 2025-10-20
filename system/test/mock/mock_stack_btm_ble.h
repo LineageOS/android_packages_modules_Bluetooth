@@ -26,15 +26,14 @@
 
 #include <cstdint>
 #include <functional>
-#include <optional>
 
 // Original included files, if any
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/include/bt_device_type.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"
@@ -363,9 +362,9 @@ extern struct btm_ble_link_sec_check btm_ble_link_sec_check;
 // Params: uint16_t handle, uint8_t rand[8], uint16_t ediv
 // Return: void
 struct btm_ble_ltk_request {
-  std::function<void(uint16_t handle, BT_OCTET8 rand, uint16_t ediv)> body{
-          [](uint16_t /* handle */, BT_OCTET8 /* rand */, uint16_t /* ediv */) {}};
-  void operator()(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) { body(handle, rand, ediv); }
+  std::function<void(uint16_t handle, Octet8 rand, uint16_t ediv)> body{
+          [](uint16_t /* handle */, Octet8 /* rand */, uint16_t /* ediv */) {}};
+  void operator()(uint16_t handle, Octet8 rand, uint16_t ediv) { body(handle, rand, ediv); }
 };
 extern struct btm_ble_ltk_request btm_ble_ltk_request;
 

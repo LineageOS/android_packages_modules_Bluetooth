@@ -36,11 +36,11 @@
 using namespace bluetooth;
 
 void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
+  pin_code = {};
   memset(&cfg, 0, sizeof(cfg));
   memset(&devcb, 0, sizeof(devcb));
   memset(&enc_rand, 0, sizeof(enc_rand));
   memset(&api, 0, sizeof(api));
-  memset(&pin_code, 0, sizeof(pin_code));
   memset(sec_serv_rec, 0, sizeof(sec_serv_rec));
   connecting_bda = RawAddress::kEmpty;
   connecting_dc = kDevClassEmpty;

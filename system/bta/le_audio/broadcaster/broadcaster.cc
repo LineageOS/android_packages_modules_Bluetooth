@@ -17,6 +17,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -33,7 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "bt_octets.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/le_audio/broadcaster/state_machine.h"
 #include "bta/le_audio/codec_interface.h"
@@ -147,17 +147,18 @@ public:
   }
 
   void GenerateBroadcastIds(void) {
-    btsnd_hcic_ble_rand(base::Bind([](BT_OCTET8 rand) {
+    btsnd_hcic_ble_rand(base::Bind([](Octet8 rand) {
       if (!instance) {
         return;
       }
 
-      /* LE Rand returns 8 octets. Lets' make 2 outstanding Broadcast Ids out
-       * of it */
+      /* LE Rand returns 8 octets. Lets' make 2 outstanding Broadcast Ids out of it */
+      uint8_t* pp = rand.data();
       for (int i = 0; i < 8; i += 4) {
         BroadcastId broadcast_id = 0;
         /* Broadcast ID should be 3 octets long (BAP v1.0 spec.) */
-        STREAM_TO_UINT24(broadcast_id, rand);
+
+        STREAM_TO_UINT24(broadcast_id, pp);
         if (broadcast_id == bluetooth::le_audio::kBroadcastIdInvalid) {
           continue;
         }

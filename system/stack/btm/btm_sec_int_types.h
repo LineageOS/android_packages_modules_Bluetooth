@@ -19,10 +19,10 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
 
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"  // tBTM_CMPL_CB
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
@@ -34,7 +34,7 @@ typedef struct {
   BD_NAME bd_name;      /* local Bluetooth device name */
   bool pin_type;        /* true if PIN type is fixed */
   uint8_t pin_code_len; /* Bonding information */
-  PIN_CODE pin_code;    /* PIN CODE if pin type is fixed */
+  PinCode pin_code;     /* PIN CODE if pin type is fixed */
 } tBTM_CFG;
 
 /* Pairing State */

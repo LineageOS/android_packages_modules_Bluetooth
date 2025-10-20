@@ -173,7 +173,7 @@ void btsnd_hcic_pin_code_neg_reply(const RawAddress& bd_addr) {
   test::mock::stack_hcic_hcicmds::btsnd_hcic_pin_code_neg_reply(bd_addr);
 }
 void btsnd_hcic_pin_code_req_reply(const RawAddress& bd_addr, uint8_t pin_code_len,
-                                   PIN_CODE pin_code) {
+                                   PinCode pin_code) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_pin_code_req_reply(bd_addr, pin_code_len, pin_code);
 }
