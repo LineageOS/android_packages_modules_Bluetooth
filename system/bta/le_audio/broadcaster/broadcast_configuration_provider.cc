@@ -38,6 +38,9 @@ BroadcastConfiguration GetBroadcastConfig(
   const std::string* options =
           stack_config_get_interface()->get_pts_broadcast_audio_config_options();
   if (options) {
+    if (!options->compare("lc3_stereo_16_2_2")) {
+      return lc3_stereo_16_2_2;
+    }
     if (!options->compare("lc3_stereo_48_1_2")) {
       return lc3_stereo_48_1_2;
     }
