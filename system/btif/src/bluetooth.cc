@@ -291,7 +291,7 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
   void removeDeviceFromProfiles(const RawAddress& bd_addr) override {
 /*special handling for HID devices */
 #if (defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE))
-    tAclLinkSpec link_spec;
+    AclLinkSpec link_spec;
     link_spec.addrt.bda = bd_addr;
     link_spec.addrt.type = BLE_ADDR_PUBLIC;
     link_spec.transport = BT_TRANSPORT_AUTO;
@@ -1423,11 +1423,11 @@ void invoke_le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondar
           main_bd_addr, secondary_bd_addr, identity_address_type));
 }
 
-void invoke_acl_state_changed_cb(bt_status_t status, tAclLinkSpec& link_spec, bt_acl_state_t state,
+void invoke_acl_state_changed_cb(bt_status_t status, AclLinkSpec& link_spec, bt_acl_state_t state,
                                  bt_hci_error_code_t hci_reason, bt_conn_direction_t direction,
                                  uint16_t acl_handle) {
   do_in_jni_thread(base::BindOnce(
-          [](bt_status_t status, tAclLinkSpec link_spec, bt_acl_state_t state,
+          [](bt_status_t status, AclLinkSpec link_spec, bt_acl_state_t state,
              bt_hci_error_code_t hci_reason, bt_conn_direction_t direction, uint16_t acl_handle) {
             HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, status, link_spec, state, hci_reason,
                       direction, acl_handle);

@@ -2592,7 +2592,7 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
 void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
   switch (event) {
     case BTA_DM_LINK_UP_EVT: {
-      tAclLinkSpec& link_spec = p_data->link_up.link_spec;
+      AclLinkSpec& link_spec = p_data->link_up.link_spec;
       log::verbose("BTA_DM_LINK_UP_EVT: Sending BT_ACL_STATE_CONNECTED {}", link_spec);
 
       btif_update_remote_version_property(&link_spec.addrt.bda);
@@ -2621,7 +2621,7 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
       break;
 
     case BTA_DM_LINK_DOWN_EVT: {
-      tAclLinkSpec& link_spec = p_data->link_down.link_spec;
+      AclLinkSpec& link_spec = p_data->link_down.link_spec;
       GetInterfaceToProfiles()->onLinkDown(link_spec.addrt.bda, link_spec.transport);
 
       bt_conn_direction_t direction;
@@ -2960,7 +2960,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
   // there is a valid hid connection with this bd_addr. If yes VUP will be
   // issued.
 #if (BTA_HH_INCLUDED == TRUE)
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   link_spec.addrt.bda = bd_addr;
   link_spec.transport = BT_TRANSPORT_AUTO;
   link_spec.addrt.type = BLE_ADDR_PUBLIC;

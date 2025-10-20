@@ -3766,8 +3766,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
   }
 
   p_device->hci_handle = handle;
-  tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
-                            .transport = BT_TRANSPORT_BR_EDR};
+  AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
+                           .transport = BT_TRANSPORT_BR_EDR};
   btm_acl_created(link_spec, handle, assigned_role);
 
   /* role may not be correct here, it will be updated by l2cap, but we need to

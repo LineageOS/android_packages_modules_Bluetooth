@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <gmock/gmock.h>
 
@@ -54,7 +55,7 @@ EventCallbacks mock_event_callbacks = {
                                              RawAddress /* secondary_bd_addr */,
                                              uint8_t /* identity_address_type */) {},
         .invoke_acl_state_changed_cb =
-                [](bt_status_t /* status */, tAclLinkSpec& /* link_spec */,
+                [](bt_status_t /* status */, AclLinkSpec& /* link_spec */,
                    bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */,
                    bt_conn_direction_t /* direction */, uint16_t /* acl_handle */) {},
         .invoke_thread_evt_cb = [](bt_cb_thread_evt /* event */) {},
@@ -89,11 +90,11 @@ MockCodecInterface mock_codec_msbcCodec;
 MockCodecInterface mock_codec_lc3Codec;
 
 HACK_ProfileInterface mock_HACK_profile_interface = {
-        .btif_hh_virtual_unplug = [](const tAclLinkSpec& /* link_spec */) -> BtStatus {
+        .btif_hh_virtual_unplug = [](const AclLinkSpec& /* link_spec */) -> BtStatus {
           return BtifStatus();
         },
         .bta_hh_read_ssr_param =
-                [](const tAclLinkSpec& /* link_spec */, uint16_t* /* p_max_ssr_lat */,
+                [](const AclLinkSpec& /* link_spec */, uint16_t* /* p_max_ssr_lat */,
                    uint16_t* /* p_min_ssr_tout */) -> bthh_status_t { return BTHH_OK; },
 
         .btif_av_set_dynamic_audio_buffer_size = [](uint8_t /* dynamic_audio_buffer_size */) {},

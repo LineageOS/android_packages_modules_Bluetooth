@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/hci_role.h>
 #include <bluetooth/types/remote_version.h>
@@ -168,7 +169,7 @@ struct tBTM_PM_MCB {
 };
 
 struct tACL_CONN {
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   tBLE_BD_ADDR active_addrt;
 
   bool in_use{false};

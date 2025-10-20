@@ -158,7 +158,7 @@ static tHID_KB_LIST hid_kb_numlock_on_list[] = {
  *  Static functions
  ******************************************************************************/
 
-static void btif_hh_transport_select(tAclLinkSpec& link_spec);
+static void btif_hh_transport_select(AclLinkSpec& link_spec);
 static void btif_hh_timer_timeout(void* data);
 static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data);
 
@@ -315,7 +315,7 @@ static void sync_lockstate_on_connect(btif_hh_device_t* p_dev, tBTA_HH_DEV_DSCP_
  *
  * Returns          Added device entry
  ******************************************************************************/
-static btif_hh_added_device_t* btif_hh_find_added_dev(const tAclLinkSpec& link_spec) {
+static btif_hh_added_device_t* btif_hh_find_added_dev(const AclLinkSpec& link_spec) {
   for (int i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
     btif_hh_added_device_t* added_dev = &btif_hh_cb.added_devices[i];
     if (added_dev->link_spec == link_spec) {
@@ -390,7 +390,7 @@ btif_hh_device_t* btif_hh_find_empty_dev(void) {
  *
  * Returns          Device entry pointer in the device table
  ******************************************************************************/
-static btif_hh_device_t* btif_hh_find_dev_by_link_spec(const tAclLinkSpec& link_spec) {
+static btif_hh_device_t* btif_hh_find_dev_by_link_spec(const AclLinkSpec& link_spec) {
   uint32_t i;
   for (i = 0; i < BTIF_HH_MAX_HID; i++) {
     if (btif_hh_cb.devices[i].state != BTHH_CONN_STATE_UNKNOWN &&
@@ -410,7 +410,7 @@ static btif_hh_device_t* btif_hh_find_dev_by_link_spec(const tAclLinkSpec& link_
  *
  * Returns          Device entry pointer in the device table
  ******************************************************************************/
-static btif_hh_device_t* btif_hh_find_connected_dev_by_link_spec(const tAclLinkSpec& link_spec) {
+static btif_hh_device_t* btif_hh_find_connected_dev_by_link_spec(const AclLinkSpec& link_spec) {
   uint32_t i;
   for (i = 0; i < BTIF_HH_MAX_HID; i++) {
     if (btif_hh_cb.devices[i].state == BTHH_CONN_STATE_CONNECTED &&
@@ -429,7 +429,7 @@ static btif_hh_device_t* btif_hh_find_connected_dev_by_link_spec(const tAclLinkS
  *
  * Returns      void
  ******************************************************************************/
-static void btif_hh_stop_vup_timer(const tAclLinkSpec& link_spec) {
+static void btif_hh_stop_vup_timer(const AclLinkSpec& link_spec) {
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
 
   if (p_dev != NULL) {
@@ -446,7 +446,7 @@ static void btif_hh_stop_vup_timer(const tAclLinkSpec& link_spec) {
  *
  * Returns      void
  ******************************************************************************/
-static void btif_hh_start_vup_timer(const tAclLinkSpec& link_spec) {
+static void btif_hh_start_vup_timer(const AclLinkSpec& link_spec) {
   log::verbose("");
 
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
@@ -510,7 +510,7 @@ static void hh_connect_complete(tBTA_HH_CONN& conn, bthh_connection_state_t stat
  *
  * Returns          true if add successfully, otherwise false.
  ******************************************************************************/
-static bool hh_add_device(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
+static bool hh_add_device(const AclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
                           bool reconnect_allowed) {
   int i;
 
@@ -539,7 +539,7 @@ static bool hh_add_device(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_
   return false;
 }
 
-static bool hh_connection_allowed(const tAclLinkSpec& link_spec) {
+static bool hh_connection_allowed(const AclLinkSpec& link_spec) {
   // Accept connection only if reconnection is allowed for the known device,
   // or outgoing connection was requested
   btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(link_spec);
@@ -895,10 +895,10 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
   }
 }
 
-void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MASK attr_mask,
+void btif_hh_load_bonded_dev(const AclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MASK attr_mask,
                              uint8_t sub_class, uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info,
                              bool reconnect_allowed) {
-  tAclLinkSpec link_spec = link_spec_ref;
+  AclLinkSpec link_spec = link_spec_ref;
 
   if (link_spec.transport == BT_TRANSPORT_AUTO) {
     log::warn("Resolving link spec {} transport to BREDR/LE", link_spec);
@@ -928,7 +928,7 @@ void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
     return;
   }
 
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = addr;
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
   link_spec.transport = BT_TRANSPORT_LE;
@@ -956,7 +956,7 @@ void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
   BTA_HhOpen(p_dev->link_spec, false);
 }
 
-static void btif_hh_remove_device_in_jni_thread(const tAclLinkSpec& link_spec) {
+static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
   BTHH_LOG_LINK(link_spec);
   bool announce_vup = false;
 
@@ -995,7 +995,7 @@ static void btif_hh_remove_device_in_jni_thread(const tAclLinkSpec& link_spec) {
       BTHH_STATE_UPDATE(p_dev->link_spec, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
     } else {
       do_in_jni_thread(base::Bind(
-              [](tAclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK); },
+              [](AclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK); },
               p_dev->link_spec));
     }
 
@@ -1031,7 +1031,7 @@ static void btif_hh_remove_device_in_jni_thread(const tAclLinkSpec& link_spec) {
   }
 
   do_in_jni_thread(base::Bind(
-          [](tAclLinkSpec ls) {
+          [](AclLinkSpec ls) {
             HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
                       ls.transport, BTHH_OK);
           },
@@ -1046,7 +1046,7 @@ static void btif_hh_remove_device_in_jni_thread(const tAclLinkSpec& link_spec) {
  **
  ** Returns          void
  ******************************************************************************/
-void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
+void btif_hh_remove_device(const AclLinkSpec& link_spec) {
   if (!com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
     btif_hh_remove_device_in_jni_thread(link_spec);
     return;
@@ -1063,7 +1063,7 @@ void btif_hh_remove_device(const tAclLinkSpec& link_spec) {
  **
  ** Returns          void
  ******************************************************************************/
-static void btif_hh_remove_pending_connection(const tAclLinkSpec& link_spec) {
+static void btif_hh_remove_pending_connection(const AclLinkSpec& link_spec) {
   size_t pending_connections = btif_hh_cb.new_connection_requests.remove_if([link_spec](auto ls) {
     if (ls.addrt.bda == link_spec.addrt.bda) {
       // Notify service of disconnection to avoid state mismatch
@@ -1071,7 +1071,7 @@ static void btif_hh_remove_pending_connection(const tAclLinkSpec& link_spec) {
         BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
       } else {
         do_in_jni_thread(base::Bind(
-                [](tAclLinkSpec ls) {
+                [](AclLinkSpec ls) {
                   BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
                 },
                 ls));
@@ -1085,12 +1085,12 @@ static void btif_hh_remove_pending_connection(const tAclLinkSpec& link_spec) {
   if (pending_connections > 0) {
     log::verbose("Removed pending connections to {}", link_spec);
     if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
-      tAclLinkSpec ls = link_spec;
+      AclLinkSpec ls = link_spec;
       HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type, ls.transport,
                 BTHH_OK);
     } else {
       do_in_jni_thread(base::Bind(
-              [](tAclLinkSpec ls) {
+              [](AclLinkSpec ls) {
                 HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
                           ls.transport, BTHH_OK);
               },
@@ -1109,7 +1109,7 @@ static void btif_hh_remove_pending_connection(const tAclLinkSpec& link_spec) {
  * Returns          void
  *
  ******************************************************************************/
-BtStatus btif_hh_virtual_unplug(const tAclLinkSpec& link_spec) {
+BtStatus btif_hh_virtual_unplug(const AclLinkSpec& link_spec) {
   BTHH_LOG_LINK(link_spec);
 
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
@@ -1141,10 +1141,10 @@ BtStatus btif_hh_virtual_unplug(const tAclLinkSpec& link_spec) {
   return BtifStatus(DEVICE_NOT_FOUND);
 }
 
-BtStatus btif_hh_virtual_unplug_from_main(const tAclLinkSpec& link_spec) {
+BtStatus btif_hh_virtual_unplug_from_main(const AclLinkSpec& link_spec) {
   if (btif_hh_find_dev_by_link_spec(link_spec) != nullptr ||
       btif_hh_find_added_dev(link_spec) != nullptr) {
-    do_in_jni_thread(base::Bind([](tAclLinkSpec link_spec) { btif_hh_virtual_unplug(link_spec); },
+    do_in_jni_thread(base::Bind([](AclLinkSpec link_spec) { btif_hh_virtual_unplug(link_spec); },
                                 link_spec));
     return BtifStatus();
   }
@@ -1161,7 +1161,7 @@ BtStatus btif_hh_virtual_unplug_from_main(const tAclLinkSpec& link_spec) {
  *
  ******************************************************************************/
 
-BtStatus btif_hh_connect(const tAclLinkSpec& link_spec) {
+BtStatus btif_hh_connect(const AclLinkSpec& link_spec) {
   CHECK_BTHH_INIT();
   log::verbose("BTHH");
   btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(link_spec);
@@ -1205,11 +1205,11 @@ BtStatus btif_hh_connect(const tAclLinkSpec& link_spec) {
   }
 
   if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
-    tAclLinkSpec ls = link_spec;
+    AclLinkSpec ls = link_spec;
     BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
   } else {
     do_in_jni_thread(base::Bind(
-            [](tAclLinkSpec link_spec) {
+            [](AclLinkSpec link_spec) {
               BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
             },
             link_spec));
@@ -1241,7 +1241,7 @@ BtStatus btif_hh_connect(const tAclLinkSpec& link_spec) {
  * Returns          void
  *
  ******************************************************************************/
-static bool btif_hh_disconnect(const tAclLinkSpec& link_spec) {
+static bool btif_hh_disconnect(const AclLinkSpec& link_spec) {
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == nullptr) {
     log::warn("Unable to disconnect unknown HID device:{}", link_spec);
@@ -1506,7 +1506,7 @@ static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
 
 static void btif_hh_handle_evt(uint16_t event, char* p_param) {
   log::assert_that(p_param != nullptr, "assert failed: p_param != nullptr");
-  tAclLinkSpec link_spec = *(tAclLinkSpec*)p_param;
+  AclLinkSpec link_spec = *(AclLinkSpec*)p_param;
 
   switch (event) {
     case BTIF_HH_CONNECT_REQ_EVT: {
@@ -1603,7 +1603,7 @@ static BtStatus init(bthh_callbacks_t* callbacks) {
  * Returns          void
  *
  ******************************************************************************/
-static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
+static void btif_hh_transport_select(AclLinkSpec& link_spec) {
   bool hid_available = false;
   bool hogp_available = false;
   bool headtracker_available = false;
@@ -1674,7 +1674,7 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
  *
  ******************************************************************************/
 static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport) {
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1696,8 +1696,9 @@ static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSP
     btif_hh_transport_select(link_spec);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(btif_transfer_context(btif_hh_handle_evt, BTIF_HH_CONNECT_REQ_EVT, (char*)&link_spec,
-                               sizeof(tAclLinkSpec), NULL)));
+  return BtifStatus(static_cast<BtifStatusCode>(
+          btif_transfer_context(btif_hh_handle_evt, BTIF_HH_CONNECT_REQ_EVT, (char*)&link_spec,
+                                sizeof(AclLinkSpec), NULL)));
 }
 
 /*******************************************************************************
@@ -1712,7 +1713,7 @@ static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSP
 static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                            bool reconnect_allowed) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1756,8 +1757,9 @@ static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
     return BtifStatus(UNHANDLED);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(btif_transfer_context(btif_hh_handle_evt, BTIF_HH_DISCONNECT_REQ_EVT,
-                               (char*)&p_dev->link_spec, sizeof(tAclLinkSpec), NULL)));
+  return BtifStatus(static_cast<BtifStatusCode>(
+          btif_transfer_context(btif_hh_handle_evt, BTIF_HH_DISCONNECT_REQ_EVT,
+                                (char*)&p_dev->link_spec, sizeof(AclLinkSpec), NULL)));
 }
 
 /*******************************************************************************
@@ -1772,7 +1774,7 @@ static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
 static BtStatus virtual_unplug(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                tBT_TRANSPORT transport) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1796,7 +1798,7 @@ static BtStatus virtual_unplug(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
   }
 
   btif_transfer_context(btif_hh_handle_evt, BTIF_HH_VUP_REQ_EVT, (char*)&link_spec,
-                        sizeof(tAclLinkSpec), NULL);
+                        sizeof(AclLinkSpec), NULL);
   return BtifStatus();
 }
 
@@ -1812,7 +1814,7 @@ static BtStatus virtual_unplug(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
 static BtStatus get_idle_time(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                               tBT_TRANSPORT transport) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1843,7 +1845,7 @@ static BtStatus get_idle_time(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
 static BtStatus set_idle_time(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                               uint8_t idle_time) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1876,7 +1878,7 @@ static BtStatus set_info(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANS
                          bthh_hid_info_t hid_info) {
   CHECK_BTHH_INIT();
   tBTA_HH_DEV_DSCP_INFO dscp_info = {};
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1924,7 +1926,7 @@ static BtStatus set_info(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANS
 static BtStatus get_protocol(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                              bthh_protocol_mode_t /* protocolMode */) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1957,7 +1959,7 @@ static BtStatus set_protocol(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_T
   CHECK_BTHH_INIT();
   btif_hh_device_t* p_dev;
   uint8_t proto_mode = protocolMode;
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -1994,7 +1996,7 @@ static BtStatus get_report(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
                            bthh_report_type_t reportType, uint8_t reportId, int bufferSize) {
   CHECK_BTHH_INIT();
   btif_hh_device_t* p_dev;
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -2032,7 +2034,7 @@ static BtStatus get_report_reply(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                  tBT_TRANSPORT transport, bthh_status_t status, char* report,
                                  uint16_t size) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -2064,7 +2066,7 @@ static BtStatus set_report(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
                            bthh_report_type_t reportType, char* report) {
   CHECK_BTHH_INIT();
   btif_hh_device_t* p_dev;
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;
@@ -2119,7 +2121,7 @@ static BtStatus set_report(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
 static BtStatus send_data(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                           char* data) {
   CHECK_BTHH_INIT();
-  tAclLinkSpec link_spec = {};
+  AclLinkSpec link_spec = {};
   link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = addr_type;
   link_spec.transport = transport;

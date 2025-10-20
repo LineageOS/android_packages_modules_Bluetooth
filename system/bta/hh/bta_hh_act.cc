@@ -207,7 +207,7 @@ void bta_hh_disc_cmpl(void) {
 static void bta_hh_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS result, uint16_t attr_mask,
                              tHID_DEV_SDP_INFO* sdp_rec) {
   bthh_status_t status = BTHH_ERR_SDP;
-  tAclLinkSpec link_spec = {
+  AclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr},
           .transport = BT_TRANSPORT_BR_EDR,
   };
@@ -278,7 +278,7 @@ static void bta_hh_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS result, uint
  ******************************************************************************/
 static void bta_hh_di_sdp_cback(const RawAddress& bd_addr, tSDP_RESULT result) {
   bthh_status_t status = BTHH_ERR_SDP;
-  tAclLinkSpec link_spec = {
+  AclLinkSpec link_spec = {
           .addrt = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr},
           .transport = BT_TRANSPORT_BR_EDR,
   };

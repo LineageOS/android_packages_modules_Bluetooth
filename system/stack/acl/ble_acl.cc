@@ -58,7 +58,7 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
     return false;
   }
 
-  tAclLinkSpec link_spec = { .addrt = address_with_type, .transport = BT_TRANSPORT_LE};
+  AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
 
   /* Tell BTM Acl management about the link */
   btm_acl_created(link_spec, handle, role);
@@ -114,7 +114,7 @@ void acl_ble_enhanced_connection_complete_from_shim(
 
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* handle */,
                              bool /* enhanced */, tHCI_STATUS status) {
-  tAclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
+  AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
   acl_set_locally_initiated(true);  // LE connection failures are always locally initiated
   btm_acl_create_failed(link_spec, status);
 

@@ -16,13 +16,13 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 
 #include "bt_status.h"
 #include "bta/include/bta_api.h"
-#include "bta/include/bta_hh_api.h"
 #include "include/hardware/bluetooth.h"
-#include "stack/include/btm_ble_api_types.h"
+#include "include/hardware/bt_hh.h"
 
 namespace bluetooth {
 namespace core {
@@ -49,7 +49,7 @@ struct EventCallbacks {
   void (*invoke_address_consolidate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
   void (*invoke_le_address_associate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                          uint8_t identity_address_type);
-  void (*invoke_acl_state_changed_cb)(bt_status_t status, tAclLinkSpec& link_spec,
+  void (*invoke_acl_state_changed_cb)(bt_status_t status, AclLinkSpec& link_spec,
                                       bt_acl_state_t state, bt_hci_error_code_t hci_reason,
                                       bt_conn_direction_t direction, uint16_t acl_handle);
   void (*invoke_thread_evt_cb)(bt_cb_thread_evt event);
@@ -99,8 +99,8 @@ struct CodecInterface {
 // that profiles can register themselves to.
 struct HACK_ProfileInterface {
   // HID hacks
-  BtStatus (*btif_hh_virtual_unplug)(const tAclLinkSpec& link_spec);
-  bthh_status_t (*bta_hh_read_ssr_param)(const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
+  BtStatus (*btif_hh_virtual_unplug)(const AclLinkSpec& link_spec);
+  bthh_status_t (*bta_hh_read_ssr_param)(const AclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
                                          uint16_t* p_min_ssr_tout);
 
   // AVDTP hacks

@@ -71,9 +71,9 @@ const RawAddress kDeviceAddressConnecting({0x66, 0x55, 0x44, 0x33, 0x22, 0x11});
 const uint16_t kHhHandle = 123;
 const tBLE_ADDR_TYPE kDeviceAddrType = BLE_ADDR_PUBLIC;
 const tBT_TRANSPORT kDeviceTransport = BT_TRANSPORT_AUTO;
-const tAclLinkSpec kDeviceConnecting = {.addrt.type = kDeviceAddrType,
-                                        .addrt.bda = kDeviceAddressConnecting,
-                                        .transport = kDeviceTransport};
+const AclLinkSpec kDeviceConnecting = {.addrt.type = kDeviceAddrType,
+                                       .addrt.bda = kDeviceAddressConnecting,
+                                       .transport = kDeviceTransport};
 // Callback parameters grouped into a structure
 struct get_report_cb_t {
   RawAddress raw_address;

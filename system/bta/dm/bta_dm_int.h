@@ -25,6 +25,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -348,8 +349,8 @@ tBTM_PM_PWR_MD bta_dm_pm_get_sniff_entry(size_t index);
 namespace bluetooth::legacy::testing {
 
 tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle);
-void bta_dm_acl_down(const tAclLinkSpec& link_spec);
+void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle);
+void bta_dm_acl_down(const AclLinkSpec& link_spec);
 void bta_dm_init_cb();
 void bta_dm_deinit_cb();
 

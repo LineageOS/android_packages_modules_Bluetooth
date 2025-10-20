@@ -27,6 +27,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_transport.h>
@@ -165,19 +166,19 @@ typedef enum : uint8_t {
 
 /* Structure associated with BTA_DM_LINK_UP_EVT */
 typedef struct {
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   uint16_t acl_handle;
 } tBTA_DM_LINK_UP;
 
 /* Structure associated with BTA_DM_LINK_UP_FAILED_EVT */
 typedef struct {
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   tHCI_STATUS status; /* The HCI error code associated with this event */
 } tBTA_DM_LINK_UP_FAILED;
 
 /* Structure associated with BTA_DM_LINK_DOWN_EVT */
 typedef struct {
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   tHCI_STATUS status;
 } tBTA_DM_LINK_DOWN;
 

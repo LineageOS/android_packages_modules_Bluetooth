@@ -26,6 +26,7 @@
 #include <string>
 
 // Original included files, if any
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 
 #include "hci/class_of_device.h"
@@ -445,13 +446,13 @@ struct btm_connection_request {
 };
 extern struct btm_connection_request btm_connection_request;
 // Name: btm_acl_created
-// Params: const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role,
+// Params: const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role,
 // Returns: void
 struct btm_acl_created {
-  std::function<void(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role)> body{
-          [](const tAclLinkSpec& /* link_spec */, uint16_t /* hci_handle */,
+  std::function<void(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role)> body{
+          [](const AclLinkSpec& /* link_spec */, uint16_t /* hci_handle */,
              tHCI_ROLE /* link_role */) { ; }};
-  void operator()(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
+  void operator()(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
     body(link_spec, hci_handle, link_role);
   }
 };
