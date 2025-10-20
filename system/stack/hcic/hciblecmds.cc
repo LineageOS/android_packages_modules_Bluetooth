@@ -26,8 +26,8 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <stddef.h>
-#include <string.h>
 
 #include <bitset>
 
@@ -36,7 +36,6 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
 
@@ -158,20 +157,21 @@ void btsnd_hcic_ble_read_remote_feat(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {
+void btsnd_hcic_ble_rand(base::Callback<void(Octet8)> cb) {
   btu_hcif_send_cmd_with_cb(
           HCI_BLE_RAND, nullptr, 0,
           base::Bind(
-                  [](base::Callback<void(BT_OCTET8)> cb, uint8_t* param, uint16_t /* param_len */) {
+                  [](base::Callback<void(Octet8)> cb, uint8_t* param, uint16_t /* param_len */) {
                     bluetooth::log::assert_that(param[0] == 0,
                                                 "LE Rand return status must be zero");
-                    cb.Run(param + 1 /* skip status */);
+                    Octet8 rand{};
+                    memcpy(rand.data(), param + 1, rand.size()); /* Skip status */
+                    cb.Run(rand);
                   },
                   std::move(cb)));
 }
 
-void btsnd_hcic_ble_start_enc(uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
-                              const Octet16& ltk) {
+void btsnd_hcic_ble_start_enc(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 

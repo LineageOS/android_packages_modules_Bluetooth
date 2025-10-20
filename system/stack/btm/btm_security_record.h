@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/remote_version.h>
 
 #include <cstdint>
@@ -25,7 +26,6 @@
 
 #include "internal_include/bt_target.h"
 #include "macros.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 
@@ -61,7 +61,7 @@ typedef struct {
   Octet16 lltk;  /* local long term key */
   Octet16 lcsrk; /* local SRK peer device used to secured sign local data */
 
-  BT_OCTET8 rand;               /* random vector for LTK generation */
+  Octet8 rand;                  /* random vector for LTK generation */
   uint16_t ediv;                /* LTK diversifier of this peripheral device */
   uint16_t div;                 /* local DIV to generate local LTK=d1(ER, DIV, 0) and
                                    CSRK=d1(ER, DIV, 1) */

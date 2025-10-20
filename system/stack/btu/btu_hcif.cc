@@ -1413,7 +1413,9 @@ static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   STREAM_TO_UINT16(handle, p);
   pp = p + 8;
   STREAM_TO_UINT16(ediv, pp);
-  btm_ble_ltk_request(handle, p, ediv);
+  Octet8 rand;
+  STREAM_TO_ARRAY(rand.data(), pp, kOctet8Length);
+  btm_ble_ltk_request(handle, rand, ediv);
   /* This is empty until an upper layer cares about returning event */
 }
 

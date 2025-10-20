@@ -28,11 +28,11 @@
 
 // Original included files, if any
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include "base/callback.h"
 #include "device/include/esco_parameters.h"
 #include "hcimsgs.h"
-#include "stack/include/bt_octets.h"
 
 // Mocked compile conditionals, if any
 
@@ -225,13 +225,13 @@ struct btsnd_hcic_pin_code_neg_reply {
 extern struct btsnd_hcic_pin_code_neg_reply btsnd_hcic_pin_code_neg_reply;
 
 // Name: btsnd_hcic_pin_code_req_reply
-// Params: const RawAddress& bd_addr, uint8_t pin_code_len, PIN_CODE pin_code
+// Params: const RawAddress& bd_addr, uint8_t pin_code_len, PinCode pin_code
 // Return: void
 struct btsnd_hcic_pin_code_req_reply {
-  std::function<void(const RawAddress& bd_addr, uint8_t pin_code_len, PIN_CODE pin_code)> body{
-          [](const RawAddress& /* bd_addr */, uint8_t /* pin_code_len */, PIN_CODE /* pin_code */) {
+  std::function<void(const RawAddress& bd_addr, uint8_t pin_code_len, PinCode pin_code)> body{
+          [](const RawAddress& /* bd_addr */, uint8_t /* pin_code_len */, PinCode /* pin_code */) {
           }};
-  void operator()(const RawAddress& bd_addr, uint8_t pin_code_len, PIN_CODE pin_code) {
+  void operator()(const RawAddress& bd_addr, uint8_t pin_code_len, PinCode pin_code) {
     body(bd_addr, pin_code_len, pin_code);
   }
 };

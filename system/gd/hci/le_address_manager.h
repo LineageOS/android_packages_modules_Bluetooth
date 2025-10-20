@@ -16,6 +16,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <map>
 #include <variant>
@@ -23,7 +24,6 @@
 #include "common/callback.h"
 #include "hci/address_with_type.h"
 #include "hci/controller.h"
-#include "hci/octets.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 

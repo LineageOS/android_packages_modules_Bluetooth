@@ -17,11 +17,11 @@
 #include "hci/le_address_manager.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <ctime>
 
-#include "hci/octets.h"
 #include "include/macros.h"
 #include "os/rand.h"
 

@@ -35,6 +35,7 @@
 #include <bluetooth/metrics/metric_id_api.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -57,8 +58,8 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
-#include "bta/include/bta_vc_api.h"
 #include "bta/include/bta_vaps_server_api.h"
+#include "bta/include/bta_vc_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/bluetooth.h"
 #include "btif/include/btif_a2dp.h"
@@ -120,7 +121,6 @@
 #include "stack/include/avrc_api.h"
 #include "stack/include/bnep_api.h"
 #include "stack/include/bt_name.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/gatt_api.h"
@@ -702,7 +702,7 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
-  if (pin_code == nullptr || pin_len > PIN_CODE_LEN) {
+  if (pin_code == nullptr || pin_len > kOctet16Length) {
     return BT_STATUS_PARM_INVALID;
   }
 

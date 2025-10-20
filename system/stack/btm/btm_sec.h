@@ -25,6 +25,7 @@
 #pragma once
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 
@@ -33,7 +34,6 @@
 
 #include "stack/btm/btm_device_record.h"
 #include "stack/include/bt_device_type.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
@@ -70,7 +70,7 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
  * Returns          void
  *
  ******************************************************************************/
-void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
+void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len);
 
 /*******************************************************************************
  *
@@ -148,7 +148,8 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm);
  *                  p_pin        - pointer to array with the PIN Code
  *
  ******************************************************************************/
-void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t* p_pin);
+void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                      PinCode pin_code);
 
 /*******************************************************************************
  *

@@ -22,6 +22,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -48,7 +49,6 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_name.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_ble_privacy.h"
@@ -356,12 +356,11 @@ void BTM_BleSecureConnectionOobDataReply(const RawAddress& bd_addr, uint8_t* p_c
 
   p_device->sec_rec.sec_flags |= BTM_SEC_LE_AUTHENTICATED;
 
-  tSMP_SC_OOB_DATA oob;
-  memset(&oob, 0, sizeof(tSMP_SC_OOB_DATA));
+  tSMP_SC_OOB_DATA oob = {};
 
   oob.peer_oob_data.present = true;
-  memcpy(&oob.peer_oob_data.randomizer, p_r, OCTET16_LEN);
-  memcpy(&oob.peer_oob_data.commitment, p_c, OCTET16_LEN);
+  memcpy(oob.peer_oob_data.randomizer.data(), p_r, oob.peer_oob_data.randomizer.size());
+  memcpy(oob.peer_oob_data.commitment.data(), p_c, oob.peer_oob_data.commitment.size());
   oob.peer_oob_data.addr_rcvd_from.type = p_device->ble.AddressType();
   oob.peer_oob_data.addr_rcvd_from.bda = bd_addr;
 
@@ -643,7 +642,7 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
   switch (key_type) {
     case BTM_LE_KEY_PENC:
       p_device->sec_rec.ble_keys.pltk = p_keys->penc_key.ltk;
-      memcpy(p_device->sec_rec.ble_keys.rand, p_keys->penc_key.rand, BT_OCTET8_LEN);
+      p_device->sec_rec.ble_keys.rand = p_keys->penc_key.rand;
       p_device->sec_rec.ble_keys.sec_level = p_keys->penc_key.sec_level;
       p_device->sec_rec.ble_keys.ediv = p_keys->penc_key.ediv;
       p_device->sec_rec.ble_keys.key_size = p_keys->penc_key.key_size;
@@ -917,12 +916,12 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_ltk_request(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
+void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv) {
   tBTM_SEC_CB* p_cb = &btm_sec_cb;
   BtmDevice* p_device = btm_find_dev_by_handle(handle);
 
   p_cb->ediv = ediv;
-  memcpy(p_cb->enc_rand, rand, BT_OCTET8_LEN);
+  p_cb->enc_rand = rand;
 
   if (p_device == NULL) {
     log::warn("No device found for handle 0x{:x}", handle);
@@ -942,7 +941,7 @@ void btm_ble_ltk_request(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
 tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk, Octet16* p_stk) {
   tBTM_SEC_CB* p_cb = &btm_sec_cb;
   BtmDevice* p_device = btm_find_dev(bda);
-  BT_OCTET8 dummy_rand = {0};
+  Octet8 dummy_rand = {0};
 
   log::verbose("bd_addr:{}, use_stk:{}", bda, use_stk);
 
@@ -1794,18 +1793,19 @@ void btm_ble_reset_id(void) {
   /* In order to reset identity, we need four random numbers. Make four nested
    * calls to generate them first, then proceed to perform the actual reset in
    * btm_ble_reset_id_impl. */
-  btsnd_hcic_ble_rand(base::Bind([](BT_OCTET8 rand) {
+  btsnd_hcic_ble_rand(base::Bind([](Octet8 rand) {
     reset_id_data tmp;
-    memcpy(tmp.rand1.data(), rand, BT_OCTET8_LEN);
+    memcpy(tmp.rand1.data(), rand.data(), kOctet8Length);
     btsnd_hcic_ble_rand(base::Bind(
-            [](reset_id_data tmp, BT_OCTET8 rand) {
-              memcpy(tmp.rand1.data() + 8, rand, BT_OCTET8_LEN);
+            [](reset_id_data tmp, Octet8 rand) {
+              memcpy(tmp.rand1.data() + kOctet8Length, rand.data(), kOctet8Length);
               btsnd_hcic_ble_rand(base::Bind(
-                      [](reset_id_data tmp, BT_OCTET8 rand) {
-                        memcpy(tmp.rand2.data(), rand, BT_OCTET8_LEN);
+                      [](reset_id_data tmp, Octet8 rand) {
+                        memcpy(tmp.rand2.data(), rand.data(), kOctet8Length);
                         btsnd_hcic_ble_rand(base::Bind(
-                                [](reset_id_data tmp, BT_OCTET8 rand) {
-                                  memcpy(tmp.rand2.data() + 8, rand, BT_OCTET8_LEN);
+                                [](reset_id_data tmp, Octet8 rand) {
+                                  memcpy(tmp.rand2.data() + kOctet8Length, rand.data(),
+                                         kOctet8Length);
                                   // when all random numbers are ready, do the actual reset.
                                   btm_ble_reset_id_impl(tmp.rand1, tmp.rand2);
                                 },

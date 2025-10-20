@@ -69,7 +69,6 @@ static_library("libbluetooth_gd") {
     "hci/le_advertising_manager_impl.cc",
     "hci/le_scanning_manager_impl.cc",
     "hci/le_scanning_reassembler.cc",
-    "hci/link_key.cc",
     "hci/msft.cc",
     "hci/remote_name_request_impl.cc",
     "hci/uuid.cc",

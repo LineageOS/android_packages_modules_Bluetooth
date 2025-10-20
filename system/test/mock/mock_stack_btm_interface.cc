@@ -163,7 +163,7 @@ struct btm_client_interface_t default_btm_client_interface = {
                 .BTM_RemoteOobDataReply = [](tBTM_STATUS /* res */, const RawAddress& /* bd_addr */,
                                              const Octet16& /* c */, const Octet16& /* r */) {},
                 .BTM_PINCodeReply = [](const RawAddress& /* bd_addr */, tBTM_STATUS /* res */,
-                                       uint8_t /* pin_len */, uint8_t* /* p_pin */) {},
+                                       uint8_t /* pin_len */, PinCode /* pin_code */) {},
                 .BTM_SecConfirmReqReply = [](tBTM_STATUS /* res */, tBT_TRANSPORT /* transport */,
                                              const RawAddress /* bd_addr */) {},
                 .BTM_BleSirkConfirmDeviceReply = [](const RawAddress& /* bd_addr */,

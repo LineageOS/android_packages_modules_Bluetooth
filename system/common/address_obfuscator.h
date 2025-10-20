@@ -19,19 +19,16 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <mutex>
 #include <string>
-
-#include "hci/octets.h"
 
 namespace bluetooth {
 namespace common {
 
 class AddressObfuscator {
 public:
-  static constexpr unsigned int kOctet32Length = hci::kOctet32Length;
-  using Octet32 = hci::Octet32;
   static AddressObfuscator* GetInstance() {
     static auto instance = new AddressObfuscator();
     return instance;

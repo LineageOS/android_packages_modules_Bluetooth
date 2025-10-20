@@ -18,6 +18,7 @@
 
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 #include <gmock/gmock.h>
@@ -25,7 +26,6 @@
 #include <cstdint>
 #include <optional>
 
-#include "bt_octets.h"
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/neighbor_inquiry.h"
 

@@ -15,15 +15,14 @@
  */
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <sys/types.h>
 
 #include <cstdint>
-#include <future>
 
 #include "btif/include/btif_common.h"
 #include "btif/include/stack_manager_t.h"
 #include "hardware/bluetooth.h"
-#include "stack/include/bt_octets.h"
 
 void invoke_adapter_state_changed_cb(bt_state_t /* state */) {}
 void invoke_adapter_properties_cb(bt_status_t /* status */, int /* num_properties */,

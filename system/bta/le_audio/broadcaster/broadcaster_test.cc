@@ -88,9 +88,9 @@ struct alarm_t {
   }
 };
 
-static base::Callback<void(BT_OCTET8)> generator_cb;
+static base::Callback<void(Octet8)> generator_cb;
 
-void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) { generator_cb = cb; }
+void btsnd_hcic_ble_rand(base::Callback<void(Octet8)> cb) { generator_cb = cb; }
 
 std::atomic<int> num_async_tasks;
 bluetooth::common::MessageLoopThread message_loop_thread(
@@ -329,7 +329,7 @@ protected:
     ContentControlIdKeeper::GetInstance()->SetCcid(LeAudioContextType::MEDIA, media_ccid);
 
     /* Simulate random generator */
-    uint8_t random[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    Octet8 random = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     generator_cb.Run(random);
 
     ConfigCodecManagerMock(types::CodecLocation::HOST);

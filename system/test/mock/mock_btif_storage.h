@@ -33,11 +33,10 @@
 //       may need attention to prune from (or add to ) the inclusion set.
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/uuid.h>
 
 #include "btif/include/btif_storage.h"
-#include "stack/include/bt_octets.h"
-
 // Original usings
 
 // Mocked compile conditionals, if any

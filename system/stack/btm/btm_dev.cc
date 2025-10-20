@@ -28,12 +28,12 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <string>
 
 #include "btif/include/btif_storage.h"
-#include "btm_int_types.h"
 #include "btm_sec_api.h"
 #include "btm_sec_cb.h"
 #include "connection_manager/connection_manager.h"
@@ -43,7 +43,6 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"

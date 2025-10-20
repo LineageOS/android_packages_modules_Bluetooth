@@ -23,16 +23,13 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <algorithm>
 #include <cstdint>
 
 #include "aes.h"
 #include "crypto_toolbox.h"
-#include "hci/octets.h"
-
-using bluetooth::hci::kOctet16Length;
-using bluetooth::hci::Octet16;
 
 namespace crypto_toolbox {
 
