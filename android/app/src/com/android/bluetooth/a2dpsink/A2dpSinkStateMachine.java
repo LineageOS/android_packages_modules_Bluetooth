@@ -43,7 +43,7 @@ class A2dpSinkStateMachine extends StateMachine {
     private static final String TAG = A2dpSinkStateMachine.class.getSimpleName();
 
     // 0->99 Events from Outside
-    @VisibleForTesting static final int MESSAGE_CONNECT = 1;
+    static final int MESSAGE_CONNECT = 1;
     @VisibleForTesting static final int MESSAGE_DISCONNECT = 2;
 
     // 100->199 Internal Events
@@ -89,7 +89,7 @@ class A2dpSinkStateMachine extends StateMachine {
 
         setInitialState(mDisconnected);
         Log.d(TAG, "[" + mDevice + "] State machine created");
-        start();
+        start(false);
     }
 
     /**
@@ -113,11 +113,6 @@ class A2dpSinkStateMachine extends StateMachine {
      */
     public synchronized BluetoothDevice getDevice() {
         return mDevice;
-    }
-
-    /** send the Connect command asynchronously */
-    final void connect() {
-        sendMessage(MESSAGE_CONNECT);
     }
 
     /** send the Disconnect command asynchronously */
@@ -205,6 +200,7 @@ class A2dpSinkStateMachine extends StateMachine {
         public void enter() {
             Log.d(TAG, "[" + mDevice + "] Enter Connecting");
             onConnectionStateChanged(STATE_CONNECTING);
+            removeMessages(CLEANUP);
             sendMessageDelayed(MESSAGE_CONNECT_TIMEOUT, CONNECT_TIMEOUT_MS);
 
             if (!mIncomingConnection) {
@@ -254,6 +250,7 @@ class A2dpSinkStateMachine extends StateMachine {
         @Override
         public void enter() {
             Log.d(TAG, "[" + mDevice + "] Enter Connected");
+            removeMessages(CLEANUP);
             onConnectionStateChanged(STATE_CONNECTED);
         }
 
