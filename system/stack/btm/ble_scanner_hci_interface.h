@@ -25,9 +25,9 @@
 
 class BleScannerHciInterface {
 public:
-  using status_cb = base::Callback<void(uint8_t /* status */)>;
-  using list_size_cb = base::Callback<void(int8_t /* list_size */)>;
-  using handle_cb = base::Callback<void(uint8_t /* status */, uint16_t /* adv_handle */)>;
+  using status_cb = base::OnceCallback<void(uint8_t /* status */)>;
+  using list_size_cb = base::OnceCallback<void(int8_t /* list_size */)>;
+  using handle_cb = base::OnceCallback<void(uint8_t /* status */, uint16_t /* adv_handle */)>;
 
   static void Initialize();
   static BleScannerHciInterface* Get();
