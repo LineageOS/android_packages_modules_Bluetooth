@@ -788,6 +788,23 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
+    public void userSwitch_onSameUserWhenBtOn_doesNothing() throws Exception {
+        mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing");
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.onUserSwitching(mUser);
+
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        // Verify a subsequent enable call still works (is not blocked by a pending user switch).
+        assertThat(mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing"))
+                .isTrue();
+
+        endTest();
+    }
+
+    @Test
     public void userSwitch_fastSwitchOnInitialUser_restartsForInitialUser() throws Exception {
         mManagerService.enable(0, "userSwitch_fastSwitch_restartsForLatestUser");
         IBluetoothCallback btCallback = transition_offToOn();
