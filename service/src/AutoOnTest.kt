@@ -79,7 +79,7 @@ class AutoOnTest {
 
     @Before
     fun setUp() {
-        Log.i("AutoOnTest", "\t--> setUp(${testName.getMethodName()})")
+        Log.i("AutoOnTest", "\t--> setUp(${testName.methodName})")
 
         callback_count = 0
         autoOn = AutoOn(looper, context, user, state, this::callback_on, this::is_airplane_mode_on)

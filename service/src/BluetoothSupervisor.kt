@@ -100,7 +100,7 @@ class BluetoothSupervisor(
 
         private fun multithreadBms() = bmsProvider.multithreadBms()
 
-        override fun getState() = multithreadBms().getState()
+        override fun getState() = multithreadBms().state
 
         override fun waitForState(state: Int) = multithreadBms().waitForState(state)
 
@@ -110,13 +110,13 @@ class BluetoothSupervisor(
         override fun unregisterAdapter(callback: IBluetoothManagerCallback) =
             bms().unregisterAdapter(callback)
 
-        override fun getAddress() = bms().getAddress()
+        override fun getAddress() = bms().address
 
-        override fun getName() = bms().getName()
+        override fun getName() = bms().name
 
         override fun isBleScanAvailable() = bms().isBleScanAvailable()
 
-        override fun isHearingAidProfileSupported() = bms().isHearingAidProfileSupported()
+        override fun isHearingAidProfileSupported() = bms().isHearingAidProfileSupported
 
         override fun enable(reason: Int, packageName: String) = bms().enable(reason, packageName)
 
@@ -136,11 +136,11 @@ class BluetoothSupervisor(
 
         override fun setBtHciSnoopLogMode(mode: Int) = bms().setBtHciSnoopLogMode(mode)
 
-        override fun getBtHciSnoopLogMode() = bms().getBtHciSnoopLogMode()
+        override fun getBtHciSnoopLogMode() = bms().btHciSnoopLogMode
 
-        override fun isAutoOnSupported() = bms().isAutoOnSupported()
+        override fun isAutoOnSupported() = bms().isAutoOnSupported
 
-        override fun isAutoOnEnabled() = bms().isAutoOnEnabled()
+        override fun isAutoOnEnabled() = bms().isAutoOnEnabled
 
         override fun setAutoOnEnabled(status: Boolean) = bms().setAutoOnEnabled(status)
 
