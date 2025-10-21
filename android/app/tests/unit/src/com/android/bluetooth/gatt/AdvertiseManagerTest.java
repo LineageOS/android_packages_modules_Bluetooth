@@ -48,7 +48,7 @@ import org.mockito.Mock;
 public class AdvertiseManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private AdapterService mAdapterService;
     @Mock private GattService mGattService;
     @Mock private AdvertiserMap mAdvertiserMap;
@@ -90,7 +90,7 @@ public class AdvertiseManagerTest {
                 maxExtAdvEvents,
                 null,
                 mCallback,
-                mAttributionSource);
+                mSource);
 
         mAdvertiserId = mAdvertiseManager.mTempRegistrationId;
     }

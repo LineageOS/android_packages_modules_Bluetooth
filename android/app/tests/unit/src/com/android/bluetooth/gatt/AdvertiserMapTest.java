@@ -52,7 +52,7 @@ public class AdvertiserMapTest {
 
     @Mock private Context mContext;
     @Mock private PackageManager mMockPackageManager;
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
 
     @Before
     public void setUp() throws Exception {
@@ -65,7 +65,7 @@ public class AdvertiserMapTest {
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(id, mContext, mAttributionSource);
+        advertiserMap.addAppAdvertiseStats(id, mContext, mSource);
 
         AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
         assertThat(stats.mAppName).isEqualTo(APP_NAME);
@@ -76,7 +76,7 @@ public class AdvertiserMapTest {
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(id, mContext, mAttributionSource);
+        advertiserMap.addAppAdvertiseStats(id, mContext, mSource);
 
         AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
         assertThat(stats.mAppName).isEqualTo(APP_NAME);
@@ -90,9 +90,7 @@ public class AdvertiserMapTest {
         AdvertiserMap advertiserMap = new AdvertiserMap();
         int id = 12345;
         AppAdvertiseStats appAdvertiseStats =
-                spy(
-                        new AppAdvertiseStats(
-                                Binder.getCallingUid(), id, APP_NAME, mAttributionSource));
+                spy(new AppAdvertiseStats(Binder.getCallingUid(), id, APP_NAME, mSource));
         advertiserMap.addAppAdvertiseStats(id, appAdvertiseStats);
 
         int duration = 60;
@@ -149,11 +147,11 @@ public class AdvertiserMapTest {
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(id, mContext, mAttributionSource);
+        advertiserMap.addAppAdvertiseStats(id, mContext, mSource);
         advertiserMap.recordAdvertiseStop(id);
 
         int idSecond = 54321;
-        advertiserMap.addAppAdvertiseStats(idSecond, mContext, mAttributionSource);
+        advertiserMap.addAppAdvertiseStats(idSecond, mContext, mSource);
         advertiserMap.dump(sb);
     }
 }

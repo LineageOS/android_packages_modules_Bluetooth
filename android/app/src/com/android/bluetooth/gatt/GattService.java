@@ -1250,11 +1250,7 @@ public class GattService extends ProfileService {
     }
 
     void readCharacteristic(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            int authReq,
-            AttributionSource source) {
+            IBluetoothGattCallback callback, BluetoothDevice device, int handle, int authReq) {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
@@ -1348,11 +1344,7 @@ public class GattService extends ProfileService {
     }
 
     void readDescriptor(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            int authReq,
-            AttributionSource source) {
+            IBluetoothGattCallback callback, BluetoothDevice device, int handle, int authReq) {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
@@ -1420,11 +1412,7 @@ public class GattService extends ProfileService {
     }
 
     void registerForNotification(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            boolean enable,
-            AttributionSource source) {
+            IBluetoothGattCallback callback, BluetoothDevice device, int handle, boolean enable) {
         final ContextMap<IBluetoothGattCallback>.App clientApp =
                 mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
@@ -2560,8 +2548,7 @@ public class GattService extends ProfileService {
             BluetoothGattService service,
             List<BluetoothGattCharacteristic> characteristics,
             long endpointId,
-            long hubId,
-            AttributionSource source) {
+            long hubId) {
         if (!isGattClientOffloadSupported()) {
             throw new IllegalStateException("GATT client offload is not supported");
         }
@@ -2572,16 +2559,12 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.v(
                 TAG,
-                "offloadClientCharacteristics() - clientIf="
-                        + clientIf
-                        + " device="
-                        + device
-                        + " service uuid="
-                        + service.getUuid()
-                        + " endpointId="
-                        + endpointId
-                        + " hubId="
-                        + hubId);
+                "offloadClientCharacteristics(): "
+                        + ("clientIf=" + clientIf)
+                        + (" device=" + device)
+                        + (" service uuid=" + service.getUuid())
+                        + (" endpointId=" + endpointId)
+                        + (" hubId=" + hubId));
 
         Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
@@ -2595,10 +2578,7 @@ public class GattService extends ProfileService {
     }
 
     void unoffloadClientCharacteristics(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int sessionId,
-            AttributionSource source) {
+            IBluetoothGattCallback callback, BluetoothDevice device, int sessionId) {
         if (!isGattClientOffloadSupported()) {
             throw new IllegalStateException("GATT client offload is not supported");
         }
@@ -2609,12 +2589,10 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.v(
                 TAG,
-                "unoffloadClientCharacteristics() - clientIf="
-                        + clientIf
-                        + " device="
-                        + device
-                        + " sessionId="
-                        + sessionId);
+                "unoffloadClientCharacteristics(): "
+                        + ("clientIf=" + clientIf)
+                        + (" device=" + device)
+                        + (" sessionId=" + sessionId));
 
         Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
@@ -2631,8 +2609,7 @@ public class GattService extends ProfileService {
             BluetoothGattService service,
             List<BluetoothGattCharacteristic> characteristics,
             long endpointId,
-            long hubId,
-            AttributionSource source) {
+            long hubId) {
         if (!isGattServerOffloadSupported()) {
             throw new IllegalStateException("GATT server offload is not supported");
         }
@@ -2644,16 +2621,12 @@ public class GattService extends ProfileService {
         int serverIf = serverApp.id;
         Log.v(
                 TAG,
-                "offloadServerCharacteristics() - serverIf="
-                        + serverIf
-                        + " device="
-                        + device
-                        + " service uuid="
-                        + service.getUuid()
-                        + " endpointId="
-                        + endpointId
-                        + " hubId="
-                        + hubId);
+                "offloadServerCharacteristics(): "
+                        + ("serverIf=" + serverIf)
+                        + (" device=" + device)
+                        + (" service uuid=" + service.getUuid())
+                        + (" endpointId=" + endpointId)
+                        + (" hubId=" + hubId));
 
         List<ContextMap.Connection> connections =
                 mServerMap.getConnectionsByDevice(serverIf, device);
@@ -2670,10 +2643,7 @@ public class GattService extends ProfileService {
     }
 
     void unoffloadServerCharacteristics(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            int sessionId,
-            AttributionSource source) {
+            IBluetoothGattServerCallback callback, BluetoothDevice device, int sessionId) {
         if (!isGattServerOffloadSupported()) {
             throw new IllegalStateException("GATT server offload is not supported");
         }
@@ -2685,12 +2655,10 @@ public class GattService extends ProfileService {
         int serverIf = serverApp.id;
         Log.v(
                 TAG,
-                "unoffloadServerCharacteristics() - serverIf="
-                        + serverIf
-                        + " device="
-                        + device
-                        + " sessionId="
-                        + sessionId);
+                "unoffloadServerCharacteristics() - "
+                        + ("serverIf=" + serverIf)
+                        + (" device=" + device)
+                        + (" sessionId=" + sessionId));
 
         List<ContextMap.Connection> connections =
                 mServerMap.getConnectionsByDevice(serverIf, device);
