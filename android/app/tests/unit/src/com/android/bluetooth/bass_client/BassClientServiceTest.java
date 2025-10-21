@@ -9162,6 +9162,7 @@ public class BassClientServiceTest {
     public void testNotifyReceiveStateChanged_addClientForBigChannelMapwhenPaSynced() {
         // Mock that the broadcast is local
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
+        doReturn(true).when(mAdapterService).isLeBigSetChannelClassificationSupported();
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9186,6 +9187,7 @@ public class BassClientServiceTest {
     public void testNotifyReceiveStateChanged_addClientForBigChannelMapwhenBisSynced() {
         // Mock that the broadcast is local
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
+        doReturn(true).when(mAdapterService).isLeBigSetChannelClassificationSupported();
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9207,6 +9209,7 @@ public class BassClientServiceTest {
     public void testNotifyReceiveStateChanged_deleteClientForBigChannelMap() {
         // Mock that the broadcast is local
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
+        doReturn(true).when(mAdapterService).isLeBigSetChannelClassificationSupported();
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9244,6 +9247,7 @@ public class BassClientServiceTest {
     public void testNotifyReceiveStateChanged_notLocalBroadcast_doNothing() {
         // Mock that the broadcast is not local
         doReturn(null).when(mLeAudioService).getBroadcastMetadata(anyInt());
+        doReturn(true).when(mAdapterService).isLeBigSetChannelClassificationSupported();
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
@@ -9261,6 +9265,7 @@ public class BassClientServiceTest {
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
     public void testNotifyReceiveStateChanged_noTargetPaSyncStateChange_doNothing() {
         doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(anyInt());
+        doReturn(true).when(mAdapterService).isLeBigSetChannelClassificationSupported();
         prepareConnectedDeviceGroup();
 
         injectRemoteSourceStateChanged(
