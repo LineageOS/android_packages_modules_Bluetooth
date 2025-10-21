@@ -418,6 +418,8 @@ void btif_get_adapter_property(bt_property_type_t type) {
             controller->SupportsBleHighDataThroughputPhy();
     local_le_features.le_connected_isochronous_stream_peripheral_supported =
             controller->SupportsBleConnectedIsochronousStreamPeripheral();
+    local_le_features.le_big_set_channel_map_classification_support =
+            cmn_vsc_cb.big_set_channel_map_classification_support > 0;
 
     memcpy(prop.val, &local_le_features, prop.len);
   } else if (prop.type == BT_PROPERTY_DYNAMIC_AUDIO_BUFFER) {
