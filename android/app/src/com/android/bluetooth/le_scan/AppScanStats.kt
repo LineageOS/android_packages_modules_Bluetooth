@@ -38,8 +38,8 @@ import com.android.bluetooth.le_scan.ScanUtil.callbackTypeToString
 import com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan
 import com.android.bluetooth.le_scan.ScanUtil.isBatchScan
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan
-import com.android.bluetooth.le_scan.ScanUtil.scanFilterToStringWithoutNullParam
 import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
+import com.android.bluetooth.le_scan.ScanUtil.toStringWithoutNullParam
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
 import java.time.Duration
@@ -212,11 +212,7 @@ class AppScanStats(
         }
 
         if (isFilterScan) {
-            filters.forEach { filter ->
-                scan.filterStringBuilder.append(
-                    "\n  └ ${scanFilterToStringWithoutNullParam(filter)}"
-                )
-            }
+            filters.forEach { scan.filterStringBuilder.appendLine(it.toStringWithoutNullParam()) }
         }
 
         if (!isScanning()) {
@@ -525,9 +521,9 @@ class AppScanStats(
         }
 
         append("  └ Config: [ScanMode=${scanModeToString(scanMode)}")
-        append(", callbackType=${callbackTypeToString(scanCallbackType)}]")
+        appendLine(", callbackType=${callbackTypeToString(scanCallbackType)}]")
 
-        if (isFilterScan) append(filterStringBuilder)
+        if (isFilterScan) append(filterStringBuilder.trimEnd().toString().prependIndent("  └ "))
     }
 
     companion object {
