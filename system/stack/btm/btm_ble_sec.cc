@@ -1269,8 +1269,7 @@ static tBTM_STATUS btm_ble_br_keys_req(BtmDevice* p_device, tBTM_LE_IO_REQ* p_da
  *
  ******************************************************************************/
 void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t /* enc_mode */, uint8_t role,
-                       tBLE_ADDR_TYPE addr_type, bool addr_matched,
-                       bool can_read_discoverable_characteristics) {
+                       tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics) {
   BtmDevice* p_device = btm_find_or_alloc_dev(bda);
 
   log::info("Update timestamp for ble connection:{}", bda);
@@ -1289,7 +1288,7 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t /* enc_mo
   p_device->role_central = (role == HCI_ROLE_CENTRAL) ? true : false;
   p_device->can_read_discoverable = can_read_discoverable_characteristics;
 
-  if (!addr_matched) {
+  if (!p_device->sec_rec.is_bonded(BT_TRANSPORT_LE)) {
     p_device->ble.active_addr_type = BTM_BLE_ADDR_PSEUDO;
     if (p_device->ble.AddressType() == BLE_ADDR_RANDOM) {
       p_device->ble.cur_rand_addr = bda;
