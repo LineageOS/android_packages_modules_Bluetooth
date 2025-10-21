@@ -5754,9 +5754,6 @@ public class BassClientService extends ConnectableProfile {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-
-        sb.append("Broadcast Assistant Service instance:\n");
-
         /* Dump first connected state machines */
         for (Map.Entry<BluetoothDevice, BassClientStateMachine> entry : mStateMachines.entrySet()) {
             BassClientStateMachine sm = entry.getValue();

@@ -2445,12 +2445,11 @@ public class RemoteDevices {
             }
         }
 
-        writer.println("");
         writer.println(TAG);
         writer.println("  Bonded devices: " + bondedCount);
-        writer.println(sbBonded.toString());
+        writer.println(sbBonded);
         writer.println("  Other devices: " + knownCount);
-        writer.println(sbKnown.toString());
-        writer.println("");
+        writer.println(sbKnown);
+        writer.println();
     }
 }

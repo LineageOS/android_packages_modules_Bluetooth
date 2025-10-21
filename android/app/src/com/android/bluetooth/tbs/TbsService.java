@@ -239,8 +239,6 @@ public class TbsService extends ProfileService {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-        sb.append("  TbsService instance:\n");
-
         mTbsGeneric.dump(sb);
 
         for (Map.Entry<BluetoothDevice, Integer> entry : mDeviceAuthorizations.entrySet()) {
