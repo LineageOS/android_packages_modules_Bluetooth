@@ -83,7 +83,6 @@ class AppScanStatsTest {
         )
         appScanStats.isRegistered = true
 
-        val stringBuilder = StringBuilder()
-        appScanStats.dump(stringBuilder, emptyList())
+        appScanStats.dump(emptyList())
     }
 }
