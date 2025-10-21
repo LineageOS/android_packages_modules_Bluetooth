@@ -80,14 +80,15 @@ public class Metadata {
     /** This is used for the LE Audio Unicast input codec preference */
     @Embedded(prefix = "le_audio_unicast_client_input_codec_config_preference_")
     @NonNull
-    LeAudioUnicastClientCodecPreferenceEntity leAudioUnicastClientInputCodecConfigPreference;
+    public LeAudioUnicastClientCodecPreferenceEntity leAudioUnicastClientInputCodecConfigPreference;
 
     /** This is used for the LE Audio Unicast output codec preference */
     @Embedded(prefix = "le_audio_unicast_client_output_codec_config_preference_")
     @NonNull
-    LeAudioUnicastClientCodecPreferenceEntity leAudioUnicastClientOutputCodecConfigPreference;
+    public LeAudioUnicastClientCodecPreferenceEntity
+            leAudioUnicastClientOutputCodecConfigPreference;
 
-    Metadata(String address) {
+    public Metadata(String address) {
         this(address, false, false);
     }
 

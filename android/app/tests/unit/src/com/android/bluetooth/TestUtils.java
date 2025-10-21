@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 import android.annotation.IntRange;
@@ -99,7 +100,7 @@ public class TestUtils {
             AdapterService adapterService, BluetoothDevice... devices) {
         for (BluetoothDevice device : devices) {
             final String address = device.getAddress();
-            doReturn(device).when(adapterService).getRemoteDevice(address);
+            lenient().doReturn(device).when(adapterService).getRemoteDevice(address);
         }
     }
 

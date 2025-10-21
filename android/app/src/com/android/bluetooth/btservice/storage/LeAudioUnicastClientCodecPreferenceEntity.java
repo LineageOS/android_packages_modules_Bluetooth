@@ -105,9 +105,9 @@ class LeAudioUnicastClientCodecPreferenceConverters {
 }
 
 @Entity
-class LeAudioUnicastClientCodecPreferenceEntity {
+public class LeAudioUnicastClientCodecPreferenceEntity {
     @TypeConverters(LeAudioUnicastClientCodecPreferenceConverters.class)
-    List<BluetoothLeAudioCodecConfig> list = new ArrayList<>();
+    public List<BluetoothLeAudioCodecConfig> list = new ArrayList<>();
 
     public String toString() {
         return list.toString();
