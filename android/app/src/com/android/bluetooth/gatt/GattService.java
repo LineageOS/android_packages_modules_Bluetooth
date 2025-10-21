@@ -601,10 +601,6 @@ public class GattService extends ProfileService {
                                 .onSubrateChange(device, subrateMode, translateHciCode(status)));
     }
 
-    GattDbElement getSampleGattDbElement() {
-        return new GattDbElement();
-    }
-
     void onGetGattDbFromNative(int connId, List<GattDbElement> db) {
         final var device = mClientMap.deviceByConnId(connId);
         Log.d(TAG, "onGetGattDb() - device=" + device);

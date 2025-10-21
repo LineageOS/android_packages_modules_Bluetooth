@@ -101,7 +101,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         )
     }
 
-    fun getSampleGattDbElement(): GattDbElement = service.getSampleGattDbElement()
+    fun getSampleGattDbElement() = GattDbElement()
 
     fun onGetGattDb(connId: Int, db: List<GattDbElement>) {
         service.onGetGattDbFromNative(connId, db)
