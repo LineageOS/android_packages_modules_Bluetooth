@@ -1,0 +1,33 @@
+genrule {
+    name: "BluetoothGeneratedPacketsPacs_h",
+    defaults: ["BluetoothGeneratedPackets_default"],
+    srcs: ["pacs_packets.pdl"],
+    out: ["pacs/pacs_packets.h"],
+    visibility: ["//visibility:private"],
+}
+
+cc_library_headers {
+    name: "libbluetooth_pacs_pdl_header",
+    generated_headers: [
+        "BluetoothGeneratedPacketsPacs_h",
+    ],
+    export_generated_headers: [
+        "BluetoothGeneratedPacketsPacs_h",
+    ],
+    host_supported: true,
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "36",
+}
+
+cc_library_static {
+    name: "libbluetooth_pacs_pdl",
+    header_libs: [
+        "libbluetooth_pacs_pdl_header",
+    ],
+    export_header_lib_headers: [
+        "libbluetooth_pacs_pdl_header",
+    ],
+    host_supported: true,
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "36",
+}

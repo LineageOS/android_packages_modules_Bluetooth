@@ -1,0 +1,53 @@
+little_endian_packets
+
+struct CodecId {
+    coding_format: 8,
+    vendor_company_id: 16,
+    vendor_codec_id: 16,
+}
+
+struct PacRecord {
+    codec_id: CodecId,
+    _size_(codec_specific_capabilities): 8,
+    codec_specific_capabilities: 8[],
+    _size_(metadata): 8,
+    metadata: 8[],
+}
+
+packet PacCharValue {
+    _count_(pac_records): 8,
+    pac_records: PacRecord[],
+}
+
+test PacCharValue {
+    // One PAC record, no codec_spec_data or metadata
+    "\x01\x06\x00\x00\x00\x00\x00\x00",
+    "\x01\x01\x03\x02\x05\x04\x00\x00",
+    // One PAC record, codec_spec_data with empty LTV, no metadata
+    "\x01\x06\x00\x00\x00\x00\x0A\x02\x02\x03\x03\x03\x04\x05\x01\x04\x00\x00",
+    // One PAC record, some codec_spec_data, no metadata
+    "\x01\x06\x00\x00\x00\x00\x07\x02\x02\x03\x03\x03\x04\x05\x00",
+    // Valid meta
+    "\x01\x06\x00\x00\x00\x00\x07\x02\x02\x03\x03\x03\x04\x05\x04\x03\x02\x01\x00",
+    // Multiple records
+    "\x03\x01\x03\x02\x05\x04\x00\x00\x06\x00\x00\x00\x00\x03\x02\x02\x03\x04\x03\x02\x01\x00\x11\x13\x12\x15\x14\x07\x02\x12\x13\x03\x13\x14\x15\x04\x03\x12\x11\x10",
+    // Vendor codec records
+    "\x01\x01\x03\x02\x05\x04\x0A\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x00",
+}
+
+packet AudioLocationsCharValue {
+    audio_locations : 32,
+}
+
+test AudioLocationsCharValue {
+    "\x01\x02\x03\x04",
+}
+
+packet AudioContextsCharValue {
+    sink_contexts : 16,
+    source_contexts : 16,
+}
+
+test AudioContextsCharValue {
+    "\x01\x02\x03\x04",
+}
