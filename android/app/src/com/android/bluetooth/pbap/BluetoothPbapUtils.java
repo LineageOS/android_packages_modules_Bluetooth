@@ -175,9 +175,9 @@ class BluetoothPbapUtils {
             }
         }
 
-        if (Flags.increaseContactImageResolution() &&
-                !(Flags.disableHighResImagesOnLowRam() &&
-                      ctx.getSystemService(ActivityManager.class).isLowRamDevice())) {
+        if (Flags.increaseContactImageResolution()
+                && !(Flags.disableHighResImagesOnLowRam()
+                        && ctx.getSystemService(ActivityManager.class).isLowRamDevice())) {
             return new VCardComposer(
                     ctx,
                     ctx.getContentResolver(),

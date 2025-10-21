@@ -222,6 +222,7 @@ public class PairingTestDualMode {
         assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
         intentReceiver.close();
     }
+
     /**
      * Test the scenario where DUT is bonded with Bumble REF over LE, Pairing initiated by REF
      * device over BR/EDR.

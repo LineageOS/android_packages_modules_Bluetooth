@@ -3260,8 +3260,7 @@ public class LeAudioService extends ConnectableProfile {
             return;
         }
 
-        BluetoothDevice unicastDevice =
-                getLeadDeviceForTheGroup(mBroadcastToUnicastFallbackGroup);
+        BluetoothDevice unicastDevice = getLeadDeviceForTheGroup(mBroadcastToUnicastFallbackGroup);
         if (unicastDevice == null) {
             /* All devices from group were disconnected in meantime */
             Log.w(
@@ -5750,9 +5749,7 @@ public class LeAudioService extends ConnectableProfile {
         ProfileService.println(sb, "  mActiveAudioOutDevice: " + mActiveAudioOutDevice);
         ProfileService.println(sb, "  mActiveAudioInDevice: " + mActiveAudioInDevice);
         ProfileService.println(
-                sb,
-                "  mBroadcastToUnicastFallbackGroup: "
-                        + mBroadcastToUnicastFallbackGroup);
+                sb, "  mBroadcastToUnicastFallbackGroup: " + mBroadcastToUnicastFallbackGroup);
         ProfileService.println(
                 sb,
                 "  mBroadcastIdDeactivatedForUnicastTransition: "
