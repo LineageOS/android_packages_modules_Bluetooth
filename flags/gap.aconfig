@@ -108,16 +108,6 @@ flag {
 }
 
 flag {
-    name: "batch_scan_support_check"
-    namespace: "bluetooth"
-    description: "Add support check for batch scans when scan starts"
-    bug: "411519279"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "continue_queued_command_after_discovery"
     namespace: "bluetooth"
     description: "Execute enqueued command exiting discovery state"
