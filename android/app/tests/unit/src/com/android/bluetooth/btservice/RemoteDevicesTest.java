@@ -740,22 +740,6 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDeviceProperties(null)).isNull();
     }
 
-    private static Object[] getXEventArray(int batteryLevel, int numLevels) {
-        ArrayList<Object> list = new ArrayList<>();
-        list.add(BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT_BATTERY_LEVEL);
-        list.add(batteryLevel);
-        list.add(numLevels);
-        list.add(0);
-        list.add(0);
-        return list.toArray();
-    }
-
-    private void makeBatteryServiceAvailable(BluetoothDevice device) {
-        BatteryService batteryService = mock(BatteryService.class);
-        when(batteryService.getConnectionState(device)).thenReturn(STATE_CONNECTED);
-        doReturn(Optional.of(batteryService)).when(mAdapterService).getBatteryService();
-    }
-
     @Test
     @EnableFlags(Flags.FLAG_ENABLE_BATTERY_LEVEL_UPDATE_ONLY_THROUGH_HF_INDICATOR)
     public void testResetBatteryLevel_testHfpBatteryIndicatorEnabled() {
@@ -893,6 +877,84 @@ public class RemoteDevicesTest {
         // Set disconnected, and validate the state.
         deviceProp.setDisconnected(transport);
         assertThat(deviceProp.getConnectionHandle(transport)).isEqualTo(BluetoothDevice.ERROR);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_FIX_INTENT_SELECTION_FOR_ACL)
+    public void aclStateChangeCallback_bleOnWithFixIntentFlag_sendsAclIntent() {
+        final int transport = TRANSPORT_BREDR;
+        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_BLE_ON);
+
+        // Test ACL Connected
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                transport,
+                AbstractionLayer.BT_ACL_STATE_CONNECTED,
+                0, // hciReason
+                1); // handle
+        verifyIntentSent(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport));
+
+        // Test ACL Disconnected
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                transport,
+                AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
+                0, // hciReason
+                1); // handle
+        verifyIntentSent(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport));
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_FIX_INTENT_SELECTION_FOR_ACL)
+    public void aclStateChangeCallback_bleOnWithoutFixIntentFlag_sendsBleAclIntent() {
+        final int transport = TRANSPORT_BREDR;
+        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_BLE_ON);
+
+        // Test ACL Connected
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                transport,
+                AbstractionLayer.BT_ACL_STATE_CONNECTED,
+                0, // hciReason
+                1); // handle
+        verifyIntentSent(hasAction(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED));
+
+        // Test ACL Disconnected
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                transport,
+                AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
+                0, // hciReason
+                1); // handle
+        verifyIntentSent(hasAction(BluetoothAdapter.ACTION_BLE_ACL_DISCONNECTED));
+    }
+
+    private static Object[] getXEventArray(int batteryLevel, int numLevels) {
+        ArrayList<Object> list = new ArrayList<>();
+        list.add(BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT_BATTERY_LEVEL);
+        list.add(batteryLevel);
+        list.add(numLevels);
+        list.add(0);
+        list.add(0);
+        return list.toArray();
+    }
+
+    private void makeBatteryServiceAvailable(BluetoothDevice device) {
+        BatteryService batteryService = mock(BatteryService.class);
+        when(batteryService.getConnectionState(device)).thenReturn(STATE_CONNECTED);
+        doReturn(Optional.of(batteryService)).when(mAdapterService).getBatteryService();
     }
 
     private void verifyBatteryLevelUpdate(int batteryLevel) {
