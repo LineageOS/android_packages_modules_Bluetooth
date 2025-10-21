@@ -32,9 +32,9 @@ fun <T> Iterable<T>.toTable(vararg columns: Column<T>) = toTable(columns.toList(
  * Formats an iterable of items into a monospaced string table
  *
  * Column widths are calculated dynamically based on content unless a `width` is specified. To
- * indent the entire resulting table, use [prependIndent] on the returned string:
+ * indent the entire resulting table, use [indent] on the returned string:
  * ```
- * val table = myList.toTable(columns).prependIndent("  ")
+ * val table = myList.toTable(columns).indent("  ")
  * sb.appendLine(table)
  * ```
  * **
@@ -56,14 +56,12 @@ fun <T> Iterable<T>.toTable(columns: List<Column<T>>): String {
 
     return buildString {
         // Headers
-        appendLine(columns.zip(colWidths) { c, width -> c.header.padEnd(width) }.joinToString(" "))
+        appendLine(columns.zip(colWidths) { c, w -> c.header.padEnd(w) }.joinToString(" "))
         // Separators
         appendLine(colWidths.joinToString(" ") { "-".repeat(it) })
-        // Values // Using `append` + `joinToString`, not `appendLine`, to avoid trailing newline
-        append(
-            data.joinToString("\n") { item ->
-                columns.zip(colWidths) { c, width -> c.value(item).padEnd(width) }.joinToString(" ")
-            }
-        )
+        // Values
+        data.forEach {
+            appendLine(columns.zip(colWidths) { c, w -> c.value(it).padEnd(w) }.joinToString(" "))
+        }
     }
 }
