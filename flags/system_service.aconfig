@@ -29,6 +29,16 @@ flag {
 }
 
 flag {
+    name: "reject_enable_from_unknown_requester"
+    namespace: "bluetooth"
+    description: "Sometimes, the requester of enable/enableBle is unknown, making investigation impossible. Let's reject them to trace and properly identify the caller"
+    bug: "453047643"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "user_visible_on_user_starting"
     namespace: "bluetooth"
     description: "Check userVisible API to determine if user should startup bluetooth instance"
@@ -48,3 +58,4 @@ flag {
     description: "Backup and restore airplane mode and auto on bluetooth settings"
     bug: "450288332"
 }
+

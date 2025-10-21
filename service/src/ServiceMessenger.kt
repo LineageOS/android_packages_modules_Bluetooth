@@ -24,6 +24,7 @@ import android.bluetooth.IBluetoothManager
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_DISABLED
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_FILTERED
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_FULL
+import android.content.AttributionSource
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,8 +33,22 @@ import android.os.Messenger
 import android.os.Parcelable
 import android.os.RemoteException
 import android.sysprop.BluetoothProperties
+import com.android.bluetooth.flags.Flags
 
 private const val TAG = "Messenger"
+
+private fun getCallerIdentity(source: AttributionSource): String =
+    if (!Flags.rejectEnableFromUnknownRequester()) {
+        requireNotNull(source.packageName) { "Unknown package caller. Identify yourself" }
+    } else {
+        val pkg = requireNotNull(source.packageName) { "Unknown package caller. Identify yourself" }
+        val tag = source.attributionTag
+        if ("android" == pkg) {
+            "$pkg/" + requireNotNull(tag) { "System generic caller must set the Attribution tag" }
+        } else {
+            tag?.let { "$pkg/$it" } ?: pkg
+        }
+    }
 
 internal class ServiceMessenger(
     looper: Looper,
@@ -81,14 +96,15 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.enableAllowed(source, foregroundRequired)
+                            val callerIdentity = getCallerIdentity(source)
                             if (bleToken != null) {
-                                api.enableBle(source.packageName!!, bleToken)
+                                api.enableBle(callerIdentity, bleToken)
                             } else if (isQuiet) {
-                                api.enableNoAutoConnect(source.packageName!!)
+                                api.enableNoAutoConnect(callerIdentity)
                             } else {
                                 api.enable(
                                     ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                                    source.packageName!!,
+                                    callerIdentity,
                                 )
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
@@ -106,10 +122,11 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.disableAllowed(source, foregroundRequired)
+                            val callerIdentity = getCallerIdentity(source)
                             if (bleToken != null) {
-                                api.disableBle(source.packageName!!, bleToken)
+                                api.disableBle(callerIdentity, bleToken)
                             } else {
-                                api.disable(source.packageName!!, persist)
+                                api.disable(callerIdentity, persist)
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)

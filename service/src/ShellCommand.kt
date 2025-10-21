@@ -36,7 +36,10 @@ class ShellCommand(
 ) : BasicShellCommandHandler() {
 
     private val messenger = SystemServiceMessenger(rawMessenger)
-    private val source = AttributionSource.myAttributionSource()
+    private val source =
+        AttributionSource.Builder(AttributionSource.myAttributionSource())
+            .setAttributionTag(TAG)
+            .build()
 
     data class Command(
         private val name: String,
