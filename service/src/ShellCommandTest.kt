@@ -98,7 +98,8 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
         doReturn(returnValue).whenever(mockBinder).disable(any(), any())
         doReturn(returnValue).whenever(mockBinder).enableBle(any(), any())
         doReturn(returnValue).whenever(mockBinder).disableBle(any(), any())
-        doReturn(returnValue).whenever(mockBinder).factoryReset(any())
+        // TODO (b/450375470): Mocking of 'factoryReset' seems impossible ?
+        // doReturn(returnValue).whenever(mockBinder).factoryReset(any())
     }
 
     @After
