@@ -21,6 +21,27 @@ package com.android.bluetooth.util
 import kotlin.text.Charsets.UTF_8
 
 /**
+ * Prepends the given [indent] to each line of this string, after first removing all trailing
+ * whitespaces.
+ *
+ * This function is a convenience wrapper that calls [trimEnd] before calling [prependIndent]. This
+ * is useful for avoiding the standard [prependIndent] behavior of adding an indent to the blank
+ * line that follows a trailing newline character (`\n`).
+ *
+ * Example:
+ * ```
+ * "Hi\n".prependIndent("  ") // returns "  Hi\n  " (undesired)
+ * "Hi\n".indent("  ")        // returns "  Hi\n"   (desired)
+ * ```
+ *
+ * On a string with no trailing newline, the behavior will be the exact same as [prependIndent]
+ *
+ * @param indent The string to prepend to each line (defaults to four spaces)
+ * @return The indented string, with no trailing indent on the final newline
+ */
+fun String.indent(indent: String = "    ") = trimEnd().prependIndent(indent)
+
+/**
  * Returns the longest prefix of a string for which the UTF-8 encoding fits into the given number of
  * bytes, with the additional guarantee that the string is not truncated in the middle of a valid
  * surrogate pair.
