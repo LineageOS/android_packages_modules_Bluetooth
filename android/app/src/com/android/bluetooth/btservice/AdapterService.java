@@ -1148,13 +1148,26 @@ public class AdapterService extends Service {
         }
     }
 
+    /**
+     * Returns true if device discovery is in progress.
+     *
+     * <p>This is true if either of the following conditions is met:
+     *
+     * <ul>
+     *   <li>The Java layer has initiated discovery (mDiscoveringPackages is not empty).
+     *   <li>The native layer has initiated discovery (isNativeDiscovering() is true).
+     * </ul>
+     *
+     * @return true if discovery is in progress, false otherwise.
+     */
     boolean isDiscovering() {
+        boolean isNativeDiscovering = mAdapterProperties.isNativeDiscovering();
         if (!Flags.ignoreRedundantDiscoveryIfSameState()) {
-            return mAdapterProperties.isDiscovering();
+            return isNativeDiscovering;
         }
 
         synchronized (mDiscoveringPackages) {
-            return !mDiscoveringPackages.isEmpty();
+            return isNativeDiscovering || !mDiscoveringPackages.isEmpty();
         }
     }
 
