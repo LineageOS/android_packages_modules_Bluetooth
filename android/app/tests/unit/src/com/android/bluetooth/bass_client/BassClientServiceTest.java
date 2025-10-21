@@ -5179,26 +5179,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
-    public void bigMonitoring_publicStopBroadcastMonitoring_withoutScanning() {
-        bigMonitoringWithoutScanning();
-
-        mBassClientService.stopBroadcastMonitoring();
-        verifyStopBroadcastMonitoringWithUnsync();
-        checkNoResumeSynchronizationByBig();
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
-    public void bigMonitoring_publicStopBroadcastMonitoring_duringScanning() {
-        bigMonitoringDuringScanning();
-
-        mBassClientService.stopBroadcastMonitoring();
-        verifyStopBroadcastMonitoringWithoutUnsync();
-        checkNoResumeSynchronizationByBig();
-    }
-
-    @Test
     public void bigMonitoring_unsync_withoutScanning() {
         bigMonitoringWithoutScanning();
 
@@ -7139,7 +7119,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_ResumeByBig() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7163,7 +7142,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_outOfRange() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7195,7 +7173,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_failedSyncOnPastRequest() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7236,7 +7213,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_stopSourceReceivers() {
         prepareSynchronizedPairAndStopSearching();
 
