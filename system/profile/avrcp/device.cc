@@ -1494,11 +1494,25 @@ void Device::GetItemAttributesVFSResponse(uint8_t label,
 void Device::GetMediaPlayerListResponse(uint8_t label, std::shared_ptr<GetFolderItemsRequest> pkt,
                                         uint16_t curr_player,
                                         std::vector<MediaPlayerInfo> players) {
-  log::verbose("");
+  log::info("");
 
   if (players.size() == 0) {
     auto no_items_rsp = GetFolderItemsResponseBuilder::MakePlayerListBuilder(
+            Status::NO_AVAILABLE_PLAYERS, 0x0000, browse_mtu_);
+    send_message(label, true, std::move(no_items_rsp));
+    return;
+  } else if (pkt->GetStartItem() >= players.size()) {
+    auto no_items_rsp = GetFolderItemsResponseBuilder::MakePlayerListBuilder(
             Status::RANGE_OUT_OF_BOUNDS, 0x0000, browse_mtu_);
+    send_message(label, true, std::move(no_items_rsp));
+    return;
+  }
+
+  if (RcFeature::RC_FEAT_UNDEFINED != peer_feature_ &&
+      RcFeature::RC_FEAT_NONE == (peer_feature_ & RcFeature::RC_FEAT_BROWSE)) {
+    log::warn("Browsing is not supported, respond with No Available Players.");
+    auto no_items_rsp = GetFolderItemsResponseBuilder::MakePlayerListBuilder(
+            Status::NO_AVAILABLE_PLAYERS, 0x0000, browse_mtu_);
     send_message(label, true, std::move(no_items_rsp));
     return;
   }
