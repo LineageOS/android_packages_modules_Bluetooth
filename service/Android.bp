@@ -176,7 +176,7 @@ android_robolectric_test {
         "androidx.test.core",
         "androidx.test.ext.truth",
         "bluetooth-common-flagwrapper-tests",
-        "bluetooth-common-java-tests",
+        "bluetooth-common-java",
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
         "bluetooth_flags_java_lib",
