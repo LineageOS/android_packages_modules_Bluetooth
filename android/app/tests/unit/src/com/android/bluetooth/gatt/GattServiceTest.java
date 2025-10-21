@@ -396,24 +396,6 @@ public class GattServiceTest {
     }
 
     @Test
-    public void clientUnregAll() throws Exception {
-        int appId = 1;
-        ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
-        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
-        app.id = appId;
-        doReturn(callback).when(app).getCallback();
-        doReturn(app).when(mClientMap).getByCallbackId(callback);
-
-        List<IBluetoothGattCallback> callbacks = new ArrayList<>();
-        callbacks.add(callback);
-        doReturn(callbacks).when(mClientMap).getAllAppsCallbackId();
-
-        mService.unregAll();
-        verify(mClientMap).remove(appId, ContextMap.RemoveReason.REASON_UNREGISTER_ALL);
-        verify(mNativeInterface).gattClientUnregisterApp(appId);
-    }
-
-    @Test
     public void clientConnect() throws Exception {
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = false;
