@@ -31,7 +31,6 @@ import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_RE
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastCreationTimeoutFix;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMachineCleanup;
 
 import static java.util.Objects.requireNonNull;
@@ -4020,11 +4019,6 @@ public class LeAudioService extends ConnectableProfile {
 
                     /* Stop here if Broadcast was not in Streaming state before */
                     if (previousState != LeAudioStackEvent.BROADCAST_STATE_STREAMING) {
-                        if (!leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()) {
-                            // Stop Broadcast Monitoring in case that was some actions on external
-                            // broadcast
-                            bassClient.ifPresent(BassClientService::stopBroadcastMonitoring);
-                        }
                         return;
                     }
 

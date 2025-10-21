@@ -26,7 +26,6 @@ import static com.android.bluetooth.flags.Flags.leaudioBisSyncControl;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastAllowMonitoringOnResume;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastFixAutonomousSourceAdding;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOperations;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSyncHandleToDeviceFix;
 import static com.android.bluetooth.flags.Flags.leaudioFallbackGroupSelection;
@@ -3821,10 +3820,7 @@ public class BassClientService extends ConnectableProfile {
                 // Find broadcastId which is no synced and different from current
                 if (!getAllSources(device).stream()
                                 .anyMatch(rs -> (rs.getBroadcastId() == cachedBroadcastId))
-                        && ((!leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()
-                                        && isSuspendedByHostPauseReason(cachedBroadcastId))
-                                || (leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()
-                                        && (broadcastId != cachedBroadcastId)))) {
+                        && (broadcastId != cachedBroadcastId)) {
                     stopBroadcastMonitoring(cachedBroadcastId, /* hostInitiated */ false);
                     removeSinkMetadata(device, cachedBroadcastId);
                     return;
@@ -4002,9 +3998,7 @@ public class BassClientService extends ConnectableProfile {
                         // Add host intentional pause if previous broadcast is different than
                         // current
                         if (broadcastId != currentMetadata.getBroadcastId()) {
-                            if (leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()) {
-                                mPausedBroadcastSinks.remove(device);
-                            }
+                            mPausedBroadcastSinks.remove(device);
                             stopBroadcastMonitoring(
                                     currentMetadata.getBroadcastId(), /* hostInitiated */ true);
                         }
