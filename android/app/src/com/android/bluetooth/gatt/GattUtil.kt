@@ -166,15 +166,26 @@ object GattUtil {
         }
 
     @JvmStatic
-    fun dumpRegisterId(
+    fun dump(
+        advertiseManager: AdvertiseManager,
         clientMap: ContextMap<IBluetoothGattCallback>,
         serverMap: ContextMap<IBluetoothGattServerCallback>,
+        handleMap: HandleMap,
     ) = buildString {
+        appendLine("Registered App:")
         appendLine("  Client:")
         dumpMapDetails(clientMap)
         appendLine("  Server:")
         dumpMapDetails(serverMap)
         appendLine()
+        appendLine("GATT Advertiser Map:")
+        advertiseManager.dump(this)
+        appendLine("GATT Client Map:")
+        clientMap.dump(this)
+        appendLine("GATT Server Map:")
+        serverMap.dump(this)
+        appendLine("GATT Handle Map:")
+        handleMap.dump(this)
     }
 
     private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
