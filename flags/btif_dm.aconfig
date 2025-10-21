@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "immediate_sdp_results_le"
+    namespace: "bluetooth"
+    description: "Return SDP results immediately to unblock bonding even if the remote doesn't support LEA"
+    bug: "446624664"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
