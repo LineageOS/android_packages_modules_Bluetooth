@@ -29,8 +29,6 @@ import android.bluetooth.BluetoothHearingAid;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.media.AudioDeviceCallback;
-import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -47,7 +45,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -1580,9 +1577,8 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             getDevicesInfo(sb, mPendingLeHearingAidActiveDevice, null);
         }
 
-        writer.println("");
         writer.println(TAG);
-        writer.println(sb.toString());
-        writer.println("");
+        writer.println(sb);
+        writer.println();
     }
 }

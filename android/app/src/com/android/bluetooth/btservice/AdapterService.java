@@ -4551,8 +4551,11 @@ public class AdapterService extends Service {
         }
 
         writer.println();
-        mAdapterProperties.dump(fd, writer, args);
+
+        mAdapterProperties.dump(writer);
+
         mRemoteDevices.dump(writer);
+
         if (mActiveDeviceManager != null) {
             mActiveDeviceManager.dump(writer);
         }
@@ -4560,9 +4563,8 @@ public class AdapterService extends Service {
         writer.println("ScanMode: " + scanModeName(getScanMode()));
         StringBuilder sb = new StringBuilder();
         mScanModeChanges.dump(sb);
-        writer.println(sb.toString());
+        writer.println(sb);
 
-        writer.println();
         writer.println("Enabled Profile Services:");
         for (int profileId : Config.getSupportedProfiles()) {
             writer.println("  " + BluetoothProfile.getProfileName(profileId));
@@ -4587,10 +4589,12 @@ public class AdapterService extends Service {
             stringBuilder.append("\n");
         } else {
             mDatabaseManager.dump(stringBuilder); // Migrating
+            stringBuilder.append("\n");
         }
 
         for (ProfileService profile : mRegisteredProfiles) {
             profile.dump(stringBuilder);
+            stringBuilder.append("\n");
         }
 
         final var scanController = getBluetoothScanController();

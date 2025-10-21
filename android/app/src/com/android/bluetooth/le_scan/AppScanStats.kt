@@ -75,25 +75,25 @@ class AppScanStats(
         internal val startTimestamp: Long,
         internal var endTimestamp: Long = 0,
         internal val scannerId: Int,
-        val scanMode: Int,
-        val scanCallbackType: Int,
-        val reportDelayMillis: Long,
-        val isBackgroundScan: Boolean,
-        val isBatchScan: Boolean,
-        val isCallbackScan: Boolean,
-        val isFilterScan: Boolean,
-        val isOpportunisticScan: Boolean,
+        internal val scanMode: Int,
+        internal val scanCallbackType: Int,
+        internal val reportDelayMillis: Long,
+        internal val isBackgroundScan: Boolean,
+        internal val isBatchScan: Boolean,
+        internal val isCallbackScan: Boolean,
+        internal val isFilterScan: Boolean,
+        internal val isOpportunisticScan: Boolean,
         internal val appImportanceOnStart: Int,
-        val attributionTag: String?,
-        val filterStringBuilder: StringBuilder = StringBuilder(),
+        internal val attributionTag: String?,
+        internal val filterStringBuilder: StringBuilder = StringBuilder(),
         internal var suspendDuration: Long = 0L,
         internal var suspendStartTime: Long = 0L,
         internal var isSuspended: Boolean = false,
         internal var isTimeout: Boolean = false,
         internal var isDowngraded: Boolean = false,
-        var isAutoBatchScan: Boolean = false,
-        var resultsScreenOn: Int = 0,
-        var resultsScreenOff: Int = 0,
+        internal var isAutoBatchScan: Boolean = false,
+        internal var resultsScreenOn: Int = 0,
+        internal var resultsScreenOff: Int = 0,
     )
 
     private val lastScans: MutableList<LastScan> = ArrayList()
@@ -412,7 +412,7 @@ class AppScanStats(
                 lowLatencyScanTime * WEIGHT_LOW_LATENCY +
                 ambientDiscoveryScanTime * WEIGHT_AMBIENT_DISCOVERY) / 100
 
-        appendLine("$name ${if (isRegistered) " (Registered):" else ":"}")
+        appendLine("$name${if (isRegistered) " (Registered):" else ":"}")
 
         if (isRegistered) {
             for (app in apps) {

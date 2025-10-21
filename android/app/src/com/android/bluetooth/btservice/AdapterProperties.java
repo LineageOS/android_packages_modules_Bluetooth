@@ -57,7 +57,6 @@ import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.Text;
 
-import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -975,7 +974,7 @@ public class AdapterProperties {
         return options.toBundle();
     }
 
-    protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
+    protected void dump(PrintWriter writer) {
         writer.println(TAG);
         writer.println("  " + "Name: " + getName());
         writer.println("  " + "Address: " + Utils.getRedactedAddressStringFromByte(mAddress));
@@ -985,6 +984,7 @@ public class AdapterProperties {
         writer.println("  " + "A2dpOffloadEnabled: " + mA2dpOffloadEnabled);
         writer.println("  " + "Discovering: " + mService.isDiscovering());
         writer.println("  " + "DiscoveryEndMs: " + mDiscoveryEndMs);
+        writer.println();
     }
 
     private static String dumpConnectionState(int state) {

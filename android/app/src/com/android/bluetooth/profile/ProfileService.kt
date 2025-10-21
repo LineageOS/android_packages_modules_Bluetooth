@@ -102,7 +102,7 @@ abstract class ProfileService(
     // Suppressed since this is called from framework
     @SuppressLint("AndroidFrameworkRequiresPermission")
     open fun dump(sb: StringBuilder) {
-        sb.appendLine("\nProfile: $name")
+        sb.appendLine("Profile: $name")
     }
 
     companion object {
