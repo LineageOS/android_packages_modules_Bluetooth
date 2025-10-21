@@ -229,7 +229,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
 
-        service.readCharacteristic(callback, device, handle, authReq, source);
+        service.readCharacteristic(callback, device, handle, authReq);
     }
 
     @Override
@@ -304,7 +304,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
 
-        service.readDescriptor(callback, device, handle, authReq, source);
+        service.readDescriptor(callback, device, handle, authReq);
     }
 
     @Override
@@ -368,7 +368,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
 
-        service.registerForNotification(callback, device, handle, enable, source);
+        service.registerForNotification(callback, device, handle, enable);
     }
 
     @Override
@@ -626,7 +626,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.offloadClientCharacteristics(
-                callback, device, gattService, characteristics, endpointId, hubId, source);
+                callback, device, gattService, characteristics, endpointId, hubId);
     }
 
     @Override
@@ -640,7 +640,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             throw new IllegalArgumentException("Service is null");
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        service.unoffloadClientCharacteristics(callback, device, sessionId, source);
+        service.unoffloadClientCharacteristics(callback, device, sessionId);
     }
 
     @Override
@@ -658,7 +658,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.offloadServerCharacteristics(
-                callback, device, gattService, characteristics, endpointId, hubId, source);
+                callback, device, gattService, characteristics, endpointId, hubId);
     }
 
     @Override
@@ -672,7 +672,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             throw new IllegalArgumentException("Service is null");
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        service.unoffloadServerCharacteristics(callback, device, sessionId, source);
+        service.unoffloadServerCharacteristics(callback, device, sessionId);
     }
 
     // Suppressed because we are conditionally enforcing
