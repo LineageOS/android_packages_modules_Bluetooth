@@ -421,3 +421,13 @@ flag {
     description: "Update CIG/CIS parameter without destroying the group"
     bug: "450606834"
 }
+
+flag {
+    name: "lea_asrc_rotate_burst_buffer"
+    namespace: "bluetooth"
+    description: "Use burst buffer with pool rotation"
+    bug: "453508454"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
