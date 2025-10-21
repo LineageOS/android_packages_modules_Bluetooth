@@ -89,16 +89,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_allow_monitoring_on_resume"
-    namespace: "bluetooth"
-    description: "Allow broadcast monitoring on resume from suspend"
-    bug: "404797794"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_fix_stop_reconfiguration_timeout"
     namespace: "bluetooth"
     description: "Fix for stop the reconfiguration timeout"

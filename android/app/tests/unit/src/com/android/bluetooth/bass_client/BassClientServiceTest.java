@@ -7119,7 +7119,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_ResumeByBig() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7143,7 +7142,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_outOfRange() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7175,7 +7173,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_failedSyncOnPastRequest() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7216,7 +7213,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_stopSourceReceivers() {
         prepareSynchronizedPairAndStopSearching();
 
