@@ -26,7 +26,6 @@
 #include <aidl/android/hardware/audio/common/SinkMetadata.h>
 #include <aidl/android/hardware/audio/common/SourceMetadata.h>
 #include <aidl/android/hardware/bluetooth/audio/BnBluetoothAudioPort.h>
-#include <aidl/android/hardware/bluetooth/audio/IBluetoothAudioProvider.h>
 
 #include <aidl/android/hardware/bluetooth/audio/AacCapabilities.h>
 #include <aidl/android/hardware/bluetooth/audio/AacConfiguration.h>
@@ -35,6 +34,7 @@
 #include <aidl/android/hardware/bluetooth/audio/AptxConfiguration.h>
 #include <aidl/android/hardware/bluetooth/audio/AudioCapabilities.h>
 #include <aidl/android/hardware/bluetooth/audio/AudioConfiguration.h>
+#include <aidl/android/hardware/bluetooth/audio/AudioContext.h>
 #include <aidl/android/hardware/bluetooth/audio/AudioLocation.h>
 #include <aidl/android/hardware/bluetooth/audio/BluetoothAudioStatus.h>
 #include <aidl/android/hardware/bluetooth/audio/ChannelMode.h>
