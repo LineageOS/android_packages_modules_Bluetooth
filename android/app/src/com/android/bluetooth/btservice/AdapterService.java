@@ -2935,18 +2935,18 @@ public class AdapterService extends Service {
         // Note, remove this when native stack improves
         mNativeInterface.cancelDiscovery();
 
-        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);
+        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_CREATE_BOND);
         msg.obj = device;
         msg.arg1 = transport;
 
         Bundle remoteOobDatasBundle = new Bundle();
         boolean setData = false;
         if (remoteP192Data != null) {
-            remoteOobDatasBundle.putParcelable(BondStateMachine.OOBDATAP192, remoteP192Data);
+            remoteOobDatasBundle.putParcelable(BondStateMachine.KEY_OOBDATAP192, remoteP192Data);
             setData = true;
         }
         if (remoteP256Data != null) {
-            remoteOobDatasBundle.putParcelable(BondStateMachine.OOBDATAP256, remoteP256Data);
+            remoteOobDatasBundle.putParcelable(BondStateMachine.KEY_OOBDATAP256, remoteP256Data);
             setData = true;
         }
         if (setData) {
@@ -2992,9 +2992,9 @@ public class AdapterService extends Service {
         deviceProp.setBondingInitiatedLocally(false);
 
         if (Flags.mainlineBetaStorage()) {
-            mBondStateMachine.dispatchMessage(BondStateMachine.REMOVE_BOND, device);
+            mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, device);
         } else {
-            Message msg = getBondStateMachine().obtainMessage(BondStateMachine.REMOVE_BOND);
+            Message msg = getBondStateMachine().obtainMessage(BondStateMachine.MESSAGE_REMOVE_BOND);
             msg.obj = device;
             getBondStateMachine().sendMessage(msg);
         }
@@ -3087,7 +3087,7 @@ public class AdapterService extends Service {
      */
     public void deviceUuidUpdated(BluetoothDevice device) {
         // Notify BondStateMachine for SDP complete / UUID changed.
-        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.UUID_UPDATE);
+        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_UUID_UPDATE);
         msg.obj = device;
         mBondStateMachine.sendMessage(msg);
     }
