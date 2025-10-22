@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.gatt;
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -38,7 +37,6 @@ import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributi
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -52,7 +50,6 @@ import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
-import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.PackageManager.PackageInfoFlags;
 import android.os.Binder;
@@ -63,11 +60,9 @@ import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.util.TimeProvider;
@@ -174,14 +169,13 @@ public class GattService extends ProfileService {
 
     private final Object mOffloadLock = new Object();
 
-    private final ActivityManager mActivityManager;
-    private final PackageManager mPackageManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final GattNativeInterface mNativeInterface;
     private final HandlerThread mHandlerThread;
     private final AdvertiseManager mAdvertiseManager;
     private final DistanceMeasurementManager mDistanceMeasurementManager;
     private final TimeProvider mTimeProvider;
+    private final GattMetricsReporter mMetricsReporter;
     @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(
@@ -214,13 +208,12 @@ public class GattService extends ProfileService {
             CompanionDeviceManager companionDeviceManager,
             TimeProvider timeProvider) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
-        mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
-        mPackageManager = requireNonNull(mAdapterService.getPackageManager());
         mClientMap = requireNonNull(clientMap);
         mServerMap = requireNonNull(serverMap);
         mReliableQueue = requireNonNull(reliableQueue);
         mCompanionDeviceManager = companionDeviceManager;
         mTimeProvider = timeProvider;
+        mMetricsReporter = new GattMetricsReporter(mProfileId, adapterService);
 
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
@@ -411,19 +404,13 @@ public class GattService extends ProfileService {
         }
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getById(clientIf);
-        statsLogGattConnectionStateChange(mProfileId, device, clientIf, connectionState, status);
+        mMetricsReporter.logGattConnectionStateChange(device, clientIf, connectionState, status);
         if (app == null) {
             return;
         }
         final var connected = status == BluetoothGatt.GATT_SUCCESS;
         callbackToApp(() -> app.getCallback().onClientConnectionState(status, connected, device));
-        MetricsLogger.getInstance()
-                .logBluetoothEvent(
-                        device,
-                        BluetoothStatsLog
-                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__GATT_CONNECT_JAVA,
-                        connectionStatusToState(status),
-                        app.mUid);
+        mMetricsReporter.logConnectStatus(device, status, app.mUid);
     }
 
     void onDisconnectedFromNative(
@@ -456,12 +443,8 @@ public class GattService extends ProfileService {
             }
         }
 
-        statsLogGattConnectionStateChange(
-                mProfileId,
-                device,
-                clientIf,
-                BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED,
-                status);
+        mMetricsReporter.logGattConnectionStateChange(
+                device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED, status);
         if (app == null) {
             return;
         }
@@ -478,13 +461,7 @@ public class GattService extends ProfileService {
         }
         callbackToApp(
                 () -> app.getCallback().onClientConnectionState(disconnectStatus, false, device));
-        MetricsLogger.getInstance()
-                .logBluetoothEvent(
-                        device,
-                        BluetoothStatsLog
-                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__GATT_DISCONNECT_JAVA,
-                        BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SUCCESS,
-                        app.mUid);
+        mMetricsReporter.logDisconnectSuccess(device, app.mUid);
     }
 
     void onClientPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
@@ -998,13 +975,7 @@ public class GattService extends ProfileService {
         final var clientIf = clientApp.id;
         Log.d(TAG, "unregisterClient(" + callback + ") - clientIf=" + clientIf);
         for (ContextMap.Connection conn : mClientMap.getConnectionByApp(clientIf)) {
-            MetricsLogger.getInstance()
-                    .logBluetoothEvent(
-                            conn.device(),
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__GATT_DISCONNECT_JAVA,
-                            BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__END,
-                            source.getUid());
+            mMetricsReporter.logDisconnectEnd(conn.device(), source.getUid());
         }
         if (mClientMap.remove(clientIf, reason) == null) {
             Log.w(TAG, "failed to remove client - clientIf=" + clientIf);
@@ -1038,24 +1009,11 @@ public class GattService extends ProfileService {
                         + (", isDirect=" + isDirect)
                         + (", opportunistic=" + opportunistic)
                         + (", phy=" + phy));
-        statsLogAppPackage(device, source.getUid(), clientIf);
-
-        logClientForegroundInfo(source.getUid(), isDirect);
-
-        statsLogGattConnectionStateChange(
-                mProfileId, device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_CONNECTING, -1);
-
-        MetricsLogger.getInstance()
-                .logBluetoothEvent(
-                        device,
-                        BluetoothStatsLog
-                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__GATT_CONNECT_JAVA,
-                        isDirect
-                                ? BluetoothStatsLog
-                                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__DIRECT_CONNECT
-                                : BluetoothStatsLog
-                                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__INDIRECT_CONNECT,
-                        source.getUid());
+        mMetricsReporter.logAppPackage(clientIf, device, source.getUid());
+        mMetricsReporter.logClientForegroundInfo(source.getUid(), isDirect);
+        mMetricsReporter.logGattConnectionStateChange(
+                device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_CONNECTING, -1);
+        mMetricsReporter.logConnect(device, isDirect, source.getUid());
 
         int preferredMtu = 0;
 
@@ -1127,20 +1085,9 @@ public class GattService extends ProfileService {
             int clientIf, BluetoothDevice device, AttributionSource source) {
         final var connId = getFirstConnectionIdForDevice(clientIf, device);
         Log.d(TAG, "clientDisconnectInternal() - device=" + device + ", connId=" + connId);
-        statsLogGattConnectionStateChange(
-                mProfileId,
-                device,
-                clientIf,
-                BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTING,
-                -1);
-        MetricsLogger.getInstance()
-                .logBluetoothEvent(
-                        device,
-                        BluetoothStatsLog
-                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__GATT_DISCONNECT_JAVA,
-                        BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__START,
-                        source.getUid());
-
+        mMetricsReporter.logGattConnectionStateChange(
+                device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTING, -1);
+        mMetricsReporter.logDisconnectStart(device, source.getUid());
         mAdapterService.notifyGattClientDisconnect(clientIf, device);
         mNativeInterface.gattClientDisconnect(clientIf, device, connId != null ? connId : 0);
     }
@@ -1760,9 +1707,8 @@ public class GattService extends ProfileService {
         // gattMultiBearerConnections flag is removed.
         final boolean state = stateToReport;
         callbackToApp(() -> app.getCallback().onServerConnectionState((byte) 0, state, device));
-        statsLogAppPackage(device, applicationUid, serverIf);
-        statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT_SERVER, device, serverIf, connectionState, -1);
+        mMetricsReporter.logAppPackage(serverIf, device, applicationUid);
+        mMetricsReporter.logGattConnectionStateChange(device, serverIf, connectionState, -1);
     }
 
     void onServerPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
@@ -2234,8 +2180,7 @@ public class GattService extends ProfileService {
                         + (" device=" + device)
                         + (" transport=" + transportToString(transport)));
 
-        logServerForegroundInfo(source.getUid(), isDirect);
-
+        mMetricsReporter.logServerForegroundInfo(source.getUid(), isDirect);
         mNativeInterface.gattServerConnect(serverIf, device, addressType, isDirect, transport);
     }
 
@@ -2696,54 +2641,6 @@ public class GattService extends ProfileService {
         return type;
     }
 
-    private void logClientForegroundInfo(int uid, boolean isDirect) {
-        String packageName = mPackageManager.getPackagesForUid(uid)[0];
-        int importance = mActivityManager.getPackageImportance(packageName);
-        if (importance == IMPORTANCE_FOREGROUND_SERVICE) {
-            MetricsLogger.getInstance()
-                    .count(
-                            isDirect
-                                    ? BluetoothProtoEnums
-                                            .GATT_CLIENT_CONNECT_IS_DIRECT_IN_FOREGROUND
-                                    : BluetoothProtoEnums
-                                            .GATT_CLIENT_CONNECT_IS_AUTOCONNECT_IN_FOREGROUND,
-                            1);
-        } else {
-            MetricsLogger.getInstance()
-                    .count(
-                            isDirect
-                                    ? BluetoothProtoEnums
-                                            .GATT_CLIENT_CONNECT_IS_DIRECT_NOT_IN_FOREGROUND
-                                    : BluetoothProtoEnums
-                                            .GATT_CLIENT_CONNECT_IS_AUTOCONNECT_NOT_IN_FOREGROUND,
-                            1);
-        }
-    }
-
-    private void logServerForegroundInfo(int uid, boolean isDirect) {
-        String packageName = mPackageManager.getPackagesForUid(uid)[0];
-        int importance = mActivityManager.getPackageImportance(packageName);
-        if (importance == IMPORTANCE_FOREGROUND_SERVICE) {
-            MetricsLogger.getInstance()
-                    .count(
-                            isDirect
-                                    ? BluetoothProtoEnums
-                                            .GATT_SERVER_CONNECT_IS_DIRECT_IN_FOREGROUND
-                                    : BluetoothProtoEnums
-                                            .GATT_SERVER_CONNECT_IS_AUTOCONNECT_IN_FOREGROUND,
-                            1);
-        } else {
-            MetricsLogger.getInstance()
-                    .count(
-                            isDirect
-                                    ? BluetoothProtoEnums
-                                            .GATT_SERVER_CONNECT_IS_DIRECT_NOT_IN_FOREGROUND
-                                    : BluetoothProtoEnums
-                                            .GATT_SERVER_CONNECT_IS_AUTOCONNECT_NOT_IN_FOREGROUND,
-                            1);
-        }
-    }
-
     private void stopNextService(int serverIf, int status) {
         Log.d(
                 TAG,
@@ -2851,56 +2748,6 @@ public class GattService extends ProfileService {
     public void dump(StringBuilder sb) {
         super.dump(sb);
         sb.append(GattUtil.dump(mAdvertiseManager, mClientMap, mServerMap, mHandleMap).indent(2));
-    }
-
-    private void statsLogAppPackage(BluetoothDevice device, int applicationUid, int sessionIndex) {
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.BLUETOOTH_GATT_APP_INFO,
-                sessionIndex,
-                mAdapterService.getMetricId(device),
-                applicationUid);
-        Log.d(
-                TAG,
-                "Logging:"
-                        + (" metric_id=" + mAdapterService.getMetricId(device))
-                        + (", app_uid=" + applicationUid));
-    }
-
-    private void statsLogGattConnectionStateChange(
-            int profile,
-            BluetoothDevice device,
-            int sessionIndex,
-            int connectionState,
-            int connectionStatus) {
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.BLUETOOTH_CONNECTION_STATE_CHANGED,
-                connectionState,
-                0 /* deprecated */,
-                profile,
-                new byte[0],
-                mAdapterService.getMetricId(device),
-                sessionIndex,
-                connectionStatus);
-        Log.d(
-                TAG,
-                "Logging:"
-                        + (" metric_id=" + mAdapterService.getMetricId(device))
-                        + (", session_index=" + sessionIndex)
-                        + (", connectionState=" + connectionState)
-                        + (", connectionStatus=" + connectionStatus));
-    }
-
-    private static int connectionStatusToState(int status) {
-        return switch (status) {
-            // GATT_SUCCESS
-            case 0x00 -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SUCCESS;
-            // GATT_CONNECTION_TIMEOUT
-            case 0x93 ->
-                    BluetoothStatsLog
-                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__CONNECTION_TIMEOUT;
-            // For now all other errors are bucketed together.
-            default -> BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL;
-        };
     }
 
     private static List<GattDbElement> getGattDatabaseForOffload(
