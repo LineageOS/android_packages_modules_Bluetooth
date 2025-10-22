@@ -48,6 +48,7 @@
 #include "hardware/ble_advertiser.h"
 #include "hardware/bt_le_audio.h"
 #include "hci/controller.h"
+#include "hci/hci_packets.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "internal_include/stack_config.h"
@@ -965,11 +966,17 @@ public:
     }
 
     uint8_t big_handle = OwnBroadcaster->GetBigConfig()->big_handle;
-    uint16_t conn_handle =
-            get_btm_client_interface().peer.BTM_GetHCIConnHandle(sink_addr, BT_TRANSPORT_LE);
-    if (conn_handle == HCI_INVALID_HANDLE) {
-      log::error("Could not get connection handle for connected device {}", sink_addr);
-      return;
+    uint16_t conn_handle = HCI_INVALID_HANDLE;
+    // CLEAR action does not require a connection handle, as it applies to all connections
+    // associated with the BIG.
+    if (action !=
+        static_cast<uint8_t>(bluetooth::hci::LeSetBigChannelMapClassificationAction::CLEAR)) {
+      conn_handle =
+              get_btm_client_interface().peer.BTM_GetHCIConnHandle(sink_addr, BT_TRANSPORT_LE);
+      if (conn_handle == HCI_INVALID_HANDLE) {
+        log::error("Could not get connection handle for connected device {}", sink_addr);
+        return;
+      }
     }
     std::vector<uint16_t> handles = {conn_handle};
 

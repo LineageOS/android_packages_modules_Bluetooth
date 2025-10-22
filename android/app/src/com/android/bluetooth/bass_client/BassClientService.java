@@ -1455,6 +1455,7 @@ public class BassClientService extends ConnectableProfile {
     public enum SetBigChannelMapClassificationAction {
         ADD(0x00),
         DELETE(0x01),
+        CLEAR(0x02),
         NO_ACTION(0xFF);
 
         private final int mValue;
