@@ -3279,10 +3279,9 @@ public class BassClientService extends ConnectableProfile {
                         Log.e(TAG, "calling unregisterSync: ScanController is null");
                         return false;
                     }
+                    var periodicAdvertisingCallback = mPeriodicAdvCallbacksMap.get(syncHandle);
                     scanController.doOnScanThread(
-                            () ->
-                                    scanController.unregisterSync(
-                                            mPeriodicAdvCallbacksMap.get(syncHandle)));
+                            () -> scanController.unregisterSync(periodicAdvertisingCallback));
                 } else {
                     Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
                 }
