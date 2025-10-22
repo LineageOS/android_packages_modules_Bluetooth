@@ -1658,6 +1658,7 @@ protected:
     com::android::bluetooth::flags::provider_->start_leaudio_subrate_for_active_set_only(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_unicast_monitor(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_state_machine_invalid_status(true);
+    com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
