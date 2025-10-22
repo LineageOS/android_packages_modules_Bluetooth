@@ -1192,6 +1192,11 @@ struct iso_impl {
     dprintf(fd, "  ----------------");
   }
 
+  void set_big_channel_map_classification(uint8_t action, uint8_t big_handle, uint8_t num_handles,
+                                          const std::vector<uint16_t>& handles) {
+    btsnd_hcic_ble_set_big_channel_map_classification_vsc(action, big_handle, num_handles, handles);
+  }
+
   std::unordered_map<uint16_t, RawAddress> cis_hdl_to_addr;
 
   std::atomic_uint16_t iso_credits_;

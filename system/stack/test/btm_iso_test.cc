@@ -2960,3 +2960,33 @@ TEST_F(IsoManagerTest, ReadIsoLinkQualityLateArrivingCallback) {
   UINT32_TO_STREAM(p, 0);
   std::move(iso_cb).Run(buf.data(), buf.size());
 }
+
+/**
+ * Test case to verify that SetBigChannelMapClassification forwards the call
+ * to the underlying implementation when the IsoManager is running.
+ *
+ * This test ensures that the IsoManager correctly delegates the operation
+ * to its implementation layer, which is the expected behavior under normal
+ * operating conditions.
+ */
+TEST_F(IsoManagerTest, SetBigChannelMapClassificationHciCall) {
+  // --- Test Data ---
+  // Define sample parameters for the function call.
+  uint8_t action = 1;
+  uint8_t big_handle = 2;
+  std::vector<uint16_t> handles = {0x0041, 0x0042};
+  uint8_t num_handles = handles.size();
+
+  // --- Expectations ---
+  // Expect that the LeSetBigChannelMapClassification HCI command is called once
+  // with the parameters we defined above. This verifies that the IsoManager
+  // correctly processes the request and sends the appropriate command to the controller.
+  EXPECT_CALL(hcic_interface_,
+              SetBigChannelMapClassificationByConnHandles(action, big_handle, num_handles, handles))
+          .Times(1);
+
+  // --- Execution ---
+  // Call the function on the IsoManager that we are testing.
+  IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
+                                                                         num_handles, handles);
+}
