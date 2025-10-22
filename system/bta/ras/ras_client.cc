@@ -239,8 +239,7 @@ public:
       } break;
       case BTA_GATTC_CLOSE_EVT: {
         OnGattDisconnected(p_data->close);
-        break;
-      }
+      } break;
       case BTA_GATTC_SEARCH_CMPL_EVT: {
         OnGattServiceSearchComplete(p_data->search_cmpl);
       } break;
@@ -442,6 +441,12 @@ public:
       log::warn("Can't find tracker for conn_id:{}", evt.conn_id);
       return;
     }
+    // Handle race condition where notification arrives before
+    // service discovery is complete.
+    if (tracker->service_ == nullptr) {
+      log::warn("Notification received before service discovery, ignoring. handle:{}", evt.handle);
+      return;
+    }
     auto characteristic = tracker->FindCharacteristicByHandle(evt.handle);
     if (characteristic == nullptr) {
       log::warn("Can't find characteristic for handle:{}", evt.handle);
@@ -456,8 +461,7 @@ public:
       case kRasRealTimeRangingDataCharacteristic16bit:
       case kRasOnDemandDataCharacteristic16bit: {
         OnRemoteData(evt, tracker);
-        break;
-      }
+      } break;
       case kRasControlPointCharacteristic16bit: {
         OnControlPointEvent(evt, tracker);
       } break;
