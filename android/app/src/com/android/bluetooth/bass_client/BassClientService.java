@@ -26,6 +26,7 @@ import static com.android.bluetooth.flags.Flags.leaudioBisSyncControl;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastFixAutonomousSourceAdding;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOperations;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSimplifySetBcastCode;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastSourceChannelMapClassification;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastSyncHandleToDeviceFix;
 import static com.android.bluetooth.flags.Flags.leaudioFallbackGroupSelection;
 import static com.android.bluetooth.flags.Flags.leaudioReactivateAutonomouslyInactivatedGroupByBroadcast;
@@ -1213,6 +1214,32 @@ public class BassClientService extends ConnectableProfile {
     }
 
     /**
+     * Determines the {@link SyncStatus} based on
+     * the provided {@link BluetoothLeBroadcastReceiveState}.
+     * The status is determined in the following order of precedence:
+     * 1. {@link SyncStatus#BIS_SYNCED} if the receive state is synced to BIS.
+     * 2. {@link SyncStatus#PA_SYNCED} if the PA sync state is synchronized.
+     * 3. {@link SyncStatus#SOURCE_ADDED} if a source device is present.
+     * 4. Defaults to {@link SyncStatus#NOT_SYNCED} otherwise.
+     *
+     * @param receiveState The {@link BluetoothLeBroadcastReceiveState} to evaluate.
+     * @return The determined {@link SyncStatus}.
+     */
+    private static SyncStatus GetSyncStatusFromReceiveState(
+                                BluetoothLeBroadcastReceiveState receiveState) {
+        SyncStatus syncStatus = SyncStatus.NOT_SYNCED;
+        if (isReceiveStateSyncedToBis(receiveState)) {
+            syncStatus = SyncStatus.BIS_SYNCED;
+        } else if (receiveState.getPaSyncState()
+                == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED) {
+            syncStatus = SyncStatus.PA_SYNCED;
+        } else if (!isEmptyBluetoothDevice(receiveState.getSourceDevice())) {
+            syncStatus = SyncStatus.SOURCE_ADDED;
+        }
+        return syncStatus;
+    }
+
+    /**
      * Checks if the synchronization state for a given sink and its broadcast source has advanced.
      *
      * <p>This method tracks the synchronization progress for each sink-broadcast pair. It compares
@@ -1228,15 +1255,7 @@ public class BassClientService extends ConnectableProfile {
     @VisibleForTesting
     boolean isBroadcastSyncAdvancing(
             BluetoothDevice sink, BluetoothLeBroadcastReceiveState receiveState) {
-        SyncStatus newSyncStatus = SyncStatus.NOT_SYNCED;
-        if (isReceiveStateSyncedToBis(receiveState)) {
-            newSyncStatus = SyncStatus.BIS_SYNCED;
-        } else if (receiveState.getPaSyncState()
-                == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED) {
-            newSyncStatus = SyncStatus.PA_SYNCED;
-        } else if (!isEmptyBluetoothDevice(receiveState.getSourceDevice())) {
-            newSyncStatus = SyncStatus.SOURCE_ADDED;
-        }
+        SyncStatus newSyncStatus = GetSyncStatusFromReceiveState(receiveState);
 
         if (newSyncStatus == SyncStatus.NOT_SYNCED) {
             HashSet<Integer> syncedBroadcastIds =
@@ -1354,9 +1373,119 @@ public class BassClientService extends ConnectableProfile {
         return entry.get(broadcastId);
     }
 
+    /**
+     * This is used to configure which action the BIG Channel Map should consider channel
+     * classification from sink device
+     */
+    public enum SetBigChannelMapClassificationAction {
+        ADD(0x00),
+        DELETE(0x01),
+        NO_ACTION(0xFF);
+
+        private final int mValue;
+
+        SetBigChannelMapClassificationAction(int value) {
+            mValue = value;
+        }
+
+        public int getValue() {
+            return mValue;
+        }
+
+        public static String toString(int value) {
+            for (SetBigChannelMapClassificationAction action : values()) {
+                if (action.getValue() == value) {
+                    return action.name();
+                }
+            }
+            return "NO_ACTION";
+        }
+    }
+
+    /**
+     * Checks the PA Sync State change for BIG Channel Map classification based on the sink device.
+     * This method determines whether to add or delete a BIG Channel Map classification based on
+     * the transition of the PA sync status.
+     *
+     * @param sink The Bluetooth device sink.
+     * @param oldSyncStatus The previous {@link SyncStatus} of the PA.
+     * @param newSyncStatus The current {@link SyncStatus} of the PA.
+     * @return An integer representing the action to be taken:
+     * {@link SetBigChannelMapClassificationAction#ADD} if transitioned to PA_SYNCED,
+     * {@link SetBigChannelMapClassificationAction#DELETE} if transitioned to NOT_SYNCED,
+     * or {@link SetBigChannelMapClassificationAction#NO_ACTION} if no change or other status.
+     */
+    public int checkPaSyncStatusForBigChannelMapClassification(
+            BluetoothDevice sink, SyncStatus oldSyncStatus, SyncStatus newSyncStatus) {
+
+        int action = SetBigChannelMapClassificationAction.NO_ACTION.getValue();
+
+        //status not changed, return NO_ACTION
+        if (newSyncStatus.compareTo(oldSyncStatus) == 0) {
+            return action;
+        }
+
+        if (newSyncStatus == SyncStatus.PA_SYNCED) {
+            /* PA state transitioned to PA_SYNCED and synced to own broadcast source
+             * action determined: ADD */
+            action = SetBigChannelMapClassificationAction.ADD.getValue();
+
+        } else if (newSyncStatus == SyncStatus.NOT_SYNCED) {
+            /* PA state transitioned to NOT_SYNCED and lost synced to own broadcast source
+             * action determined: DELETE */
+            action = SetBigChannelMapClassificationAction.DELETE.getValue();
+        }
+
+        Log.d(
+            TAG,
+            "PA SyncStatus transitioned from " + oldSyncStatus + " to " + newSyncStatus
+                    + " for " + sink
+                    + ", action: " + SetBigChannelMapClassificationAction.toString(action));
+
+        return action;
+    }
+
+    /**
+     * Checks the PA Sync Status and triggers an update to the BIG Channel Map classification if
+     * the status has changed for a local broadcast.
+     *
+     * @param sink The Bluetooth device sink.
+     * @param broadcastId The ID of the broadcast.
+     * @param receiveState The current {@link BluetoothLeBroadcastReceiveState}.
+     */
+    private void CheckAndTriggerUpdateChannelMapClassification(
+                        BluetoothDevice sink, int broadcastId,
+                        BluetoothLeBroadcastReceiveState receiveState) {
+        if (!leaudioBroadcastSourceChannelMapClassification()) {
+            return;
+        }
+
+        if (isLocalBroadcast(broadcastId)) {
+            // Read the oldSyncStatus from the mSyncStatusMap for comparison with newSyncStatus.
+            SyncStatus oldSyncStatus =
+                mSyncStatusMap
+                    .getOrDefault(sink, Collections.emptyMap())
+                    .getOrDefault(broadcastId, SyncStatus.NOT_SYNCED);
+            SyncStatus newSyncStatus = GetSyncStatusFromReceiveState(receiveState);
+
+            int action = checkPaSyncStatusForBigChannelMapClassification(
+                sink, oldSyncStatus, newSyncStatus);
+            if (action != SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
+                final var leAudio = mAdapterService.getLeAudioService();
+                if (!leAudio.isEmpty()) {
+                    leAudio.get()
+                        .setBigChannelMapClassification(
+                            action, sink, broadcastId);
+                }
+            }
+        }
+    }
+
     private void localNotifyReceiveStateChanged(
             BluetoothDevice sink, BluetoothLeBroadcastReceiveState receiveState) {
         int broadcastId = receiveState.getBroadcastId();
+        // Check and trigger update of BIGChannelMapClassification based on SyncStatus change.
+        CheckAndTriggerUpdateChannelMapClassification(sink, broadcastId, receiveState);
         boolean broadcastSyncIsAdvancing = isBroadcastSyncAdvancing(sink, receiveState);
         // If sink has broadcast synced && not paused by the host
         if (!isEmptyBluetoothDevice(receiveState.getSourceDevice())
