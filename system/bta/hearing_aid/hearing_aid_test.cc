@@ -569,7 +569,6 @@ TEST_F(HearingAidTest, disconnect_when_connected) {
 
 /* Test that bonded device that was loaded from storage refreshes GATT handles */
 TEST_F(HearingAidTest, load_from_storage) {
-  com::android::bluetooth::flags::provider_->continue_queued_command_after_discovery(true);
   set_sample_database(1);
   SetEncryptionResult(test_address, true);
   HearingDevice saved_dev;

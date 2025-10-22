@@ -704,29 +704,15 @@ public:
     if (!success) {
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
-      if (hearingDevice->first_connection ||
-          com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
+      if (hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       }
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
-    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
-      if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
-          hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
-          hearingDevice->read_psm_handle) {
-        // Use cached data, jump to read PSM
-        ReadPSM(hearingDevice);
-      } else {
-        log::info("starting service search request for ASHA: bd_addr={}", address);
-        hearingDevice->first_connection = true;
-        BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
-      }
-    } else {
-      log::info("starting service search request for ASHA: bd_addr={}", address);
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
-    }
+    log::info("starting service search request for ASHA: bd_addr={}", address);
+    BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
   }
 
   void OnPhyUpdateEvent(tCONN_ID conn_id, uint8_t tx_phys, uint8_t rx_phys, tGATT_STATUS status) {
@@ -806,17 +792,10 @@ public:
       return;
     }
 
-    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
-        !hearingDevice->first_connection) {
-      log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
-      return;
-    }
-
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-      if (com_android_bluetooth_flags_continue_queued_command_after_discovery() ||
-          hearingDevice->first_connection) {
+      if (hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       }
       return;
@@ -960,9 +939,7 @@ public:
       return;
     }
 
-    if (com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
-      hearingDevice->first_connection = true;
-    }
+    hearingDevice->first_connection = true;
 
     uint8_t capabilities;
     STREAM_TO_UINT8(capabilities, p);
