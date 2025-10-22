@@ -248,7 +248,7 @@ void btsnd_hcic_ble_read_acceptlist_size(void);
 
 void btsnd_hcic_ble_read_remote_feat(uint16_t handle);
 
-void btsnd_hcic_ble_rand(base::Callback<void(Octet8)> cb);
+void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb);
 
 void btsnd_hcic_ble_start_enc(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk);
 

@@ -160,18 +160,18 @@ void btsnd_hcic_ble_read_remote_feat(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_rand(base::Callback<void(Octet8)> cb) {
-  btu_hcif_send_cmd_with_cb(
-          HCI_BLE_RAND, nullptr, 0,
-          base::Bind(
-                  [](base::Callback<void(Octet8)> cb, uint8_t* param, uint16_t /* param_len */) {
-                    bluetooth::log::assert_that(param[0] == 0,
-                                                "LE Rand return status must be zero");
-                    Octet8 rand{};
-                    memcpy(rand.data(), param + 1, rand.size()); /* Skip status */
-                    cb.Run(rand);
-                  },
-                  std::move(cb)));
+void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb) {
+  btu_hcif_send_cmd_with_cb(HCI_BLE_RAND, nullptr, 0,
+                            base::BindOnce(
+                                    [](base::OnceCallback<void(Octet8)> cb, uint8_t* param,
+                                       uint16_t /* param_len */) {
+                                      bluetooth::log::assert_that(
+                                              param[0] == 0, "LE Rand return status must be zero");
+                                      Octet8 rand{};
+                                      memcpy(rand.data(), param + 1, rand.size()); /* Skip status */
+                                      std::move(cb).Run(rand);
+                                    },
+                                    std::move(cb)));
 }
 
 void btsnd_hcic_ble_start_enc(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk) {

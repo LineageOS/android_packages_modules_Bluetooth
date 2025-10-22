@@ -114,8 +114,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
   enum class AudioState { STOPPED, SUSPENDED, ACTIVE };
 
 public:
-  LeAudioBroadcasterImpl(bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks_)
-      : callbacks_(callbacks_),
+  LeAudioBroadcasterImpl(bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks)
+      : callbacks_(callbacks),
         current_phy_(PHY_LE_2M),
         le_audio_source_hal_client_(nullptr),
         audio_state_(AudioState::SUSPENDED),
@@ -148,7 +148,7 @@ public:
   }
 
   void GenerateBroadcastIds(void) {
-    btsnd_hcic_ble_rand(base::Bind([](Octet8 rand) {
+    btsnd_hcic_ble_rand(base::BindOnce([](Octet8 rand) {
       if (!instance) {
         return;
       }
