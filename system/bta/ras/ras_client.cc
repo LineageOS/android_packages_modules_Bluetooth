@@ -102,7 +102,7 @@ public:
     tCONN_ID conn_id_;
     RawAddress address_;
     RawAddress address_for_cs_;
-    const gatt::Service* service_ = nullptr;
+    gatt::Service service_;
     uint32_t remote_supported_features_;
     uint16_t latest_ranging_counter_ = 0;
     bool handling_on_demand_data_ = false;
@@ -118,11 +118,11 @@ public:
     uint16_t mtu = kDefaultGattMtu;
 
     const gatt::Characteristic* FindCharacteristicByUuid(Uuid uuid) {
-      if (service_ == nullptr) {
+      if (service_.uuid != kRangingService) {
         log::error("Can't find Ranging Service");
         return nullptr;
       }
-      for (auto& characteristic : service_->characteristics) {
+      for (auto& characteristic : service_.characteristics) {
         if (characteristic.uuid == uuid) {
           return &characteristic;
         }
@@ -131,7 +131,7 @@ public:
     }
 
     const gatt::Characteristic* FindCharacteristicByHandle(uint16_t handle) {
-      for (auto& characteristic : service_->characteristics) {
+      for (auto& characteristic : service_.characteristics) {
         if (characteristic.value_handle == handle) {
           return &characteristic;
         }
@@ -331,7 +331,7 @@ public:
     if (all_services != nullptr) {
       for (const auto& service : *all_services) {
         if (service.uuid == kRangingService) {
-          tracker->service_ = &service;
+          tracker->service_ = service;
           service_found = true;
           break;
         }
@@ -447,7 +447,7 @@ public:
     }
     // Handle race condition where notification arrives before
     // service discovery is complete.
-    if (tracker->service_ == nullptr) {
+    if (tracker->service_.uuid != kRangingService) {
       log::warn("Notification received before service discovery, ignoring. handle:{}", evt.handle);
       return;
     }
@@ -730,7 +730,7 @@ public:
 
   void ListCharacteristic(std::shared_ptr<RasTracker> tracker) {
     tracker->vendor_specific_characteristics_.clear();
-    for (auto& characteristic : tracker->service_->characteristics) {
+    for (auto& characteristic : tracker->service_.characteristics) {
       bool vendor_specific = !IsRangingServiceCharacteristic(characteristic.uuid);
       log::info(
               "{}Characteristic uuid:0x{:04x}, handle:0x{:04x}, "
