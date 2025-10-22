@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "vcp_skip_ignoring_volume_during_broadcast"
+    namespace: "bluetooth"
+    description: "Skip ignore-volume flag as broadcast prevents device activation"
+    bug: "454221602"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
