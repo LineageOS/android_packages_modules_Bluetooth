@@ -76,7 +76,13 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
 
         val serviceMessenger =
             ServiceMessenger(handlerThread.looper, mockPermissionChecker, mockApi)
-        shellCommand = ShellCommand(mockBinder, serviceMessenger.messenger, testWaitForState)
+        shellCommand =
+            ShellCommand(
+                mockBinder,
+                handlerThread.looper,
+                serviceMessenger.messenger,
+                testWaitForState,
+            )
 
         shellCommand.init(
             Binder(),
