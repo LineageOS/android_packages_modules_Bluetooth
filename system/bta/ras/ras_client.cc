@@ -328,12 +328,16 @@ public:
     // Get Ranging Service
     bool service_found = false;
     const std::list<gatt::Service>* all_services = BTA_GATTC_GetServices(evt.conn_id);
-    for (const auto& service : *all_services) {
-      if (service.uuid == kRangingService) {
-        tracker->service_ = &service;
-        service_found = true;
-        break;
+    if (all_services != nullptr) {
+      for (const auto& service : *all_services) {
+        if (service.uuid == kRangingService) {
+          tracker->service_ = &service;
+          service_found = true;
+          break;
+        }
       }
+    } else {
+      log::warn("No GATT services found for conn_id: {}", evt.conn_id);
     }
     // config mtu anyway, if it had been configured by others, it can get the current mtu.
     log::info("config the MTU size as RAP minimum value {}", kMinimumRasMtu);
