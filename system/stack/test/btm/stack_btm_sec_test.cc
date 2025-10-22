@@ -437,3 +437,96 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_encryption_required) 
   ASSERT_EQ(status, tBTM_STATUS::BTM_CMD_STARTED);
   ASSERT_EQ(p_device->sec_rec.classic_link, tSECURITY_STATE::ENCRYPTING);
 }
+
+// Test fixture for testing the security upgrade logic.
+class StackBtmSecSecurityUpgradeTest : public StackBtmSecWithInitFreeTest {
+ protected:
+  void SetUp() override {
+    StackBtmSecWithInitFreeTest::SetUp();
+    p_device_ = btm_sec_allocate_dev_rec();
+    ASSERT_NE(p_device_, nullptr);
+    p_device_->bd_addr = kRawAddress;
+    p_device_->hci_handle = 0x1;  // Needed for btm_sec_service_access_request
+    p_device_->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;  // Avoid RNR
+    p_device_->sm4 = BTM_SM4_TRUE;                       // Enable SM4 path
+    btm_sec_cb.pairing_state = BTM_PAIR_STATE_IDLE;      // Ensure not busy
+  }
+
+  void TearDown() override {
+    wipe_secrets_and_remove(p_device_);
+    StackBtmSecWithInitFreeTest::TearDown();
+  }
+
+  BtmDevice* p_device_;
+};
+
+// Verifies that no upgrade is triggered when the existing security is sufficient.
+TEST_F(StackBtmSecSecurityUpgradeTest, PairedNoUpgradeNeeded) {
+  // Setup: Paired with authenticated key, persistent bond, no special requirements.
+  p_device_->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  p_device_->sec_rec.link_key_type = BTM_LKEY_TYPE_AUTH_COMB;
+  p_device_->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
+  uint16_t initial_sec_flags = p_device_->sec_rec.sec_flags;
+  uint8_t initial_sm4 = p_device_->sm4;
+
+  // Action: Request access for a service with no special security.
+  btm_sec_service_access_request(kRawAddress, true /* outgoing */, BTM_SEC_NONE, NULL, NULL);
+
+  // Assert: No upgrade is triggered.
+  ASSERT_EQ(p_device_->sm4, initial_sm4);
+  ASSERT_EQ(p_device_->sec_rec.sec_flags, initial_sec_flags);
+}
+
+// Verifies that an upgrade is triggered to create a persistent bond when
+// accessing a secure service with a temporary bond.
+TEST_F(StackBtmSecSecurityUpgradeTest, TemporaryBondingUpgrade) {
+  // Setup: Paired with a temporary bond.
+  p_device_->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  p_device_->sec_rec.bond_type = BOND_TYPE_TEMPORARY;
+
+  // Action: Request access for a service that requires authentication.
+  btm_sec_service_access_request(kRawAddress, true /* outgoing */, BTM_SEC_OUT_AUTHENTICATE, NULL,
+                                 NULL);
+
+  // Assert: Upgrade is triggered, and link key status is cleared for re-pairing.
+  ASSERT_TRUE(p_device_->sm4 & BTM_SM4_UPGRADE);
+  ASSERT_FALSE(p_device_->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN);
+}
+
+// Verifies that an upgrade is triggered when MITM is required, but the existing
+// key is unauthenticated and IO capabilities support MITM.
+TEST_F(StackBtmSecSecurityUpgradeTest, MitmUpgradePossible) {
+  // Setup: Paired with an unauthenticated key, but MITM is possible.
+  p_device_->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  p_device_->sec_rec.link_key_type = BTM_LKEY_TYPE_UNAUTH_COMB;
+  p_device_->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
+  p_device_->sec_rec.rmt_io_caps = BtIoCap::KEYBOARD_ONLY;
+  btm_sec_cb.devcb.loc_io_caps = BtIoCap::DISPLAY_YES_NO;
+
+  // Action: Request access for a service that requires MITM.
+  btm_sec_service_access_request(kRawAddress, true /* outgoing */, BTM_SEC_OUT_MITM, NULL, NULL);
+
+  // Assert: Upgrade is triggered, and link key status is cleared for re-pairing.
+  ASSERT_TRUE(p_device_->sm4 & BTM_SM4_UPGRADE);
+  ASSERT_FALSE(p_device_->sec_rec.sec_flags & BTM_SEC_LINK_KEY_KNOWN);
+}
+
+// Verifies that no upgrade is triggered when MITM is required, but the IO
+// capabilities do not support it.
+TEST_F(StackBtmSecSecurityUpgradeTest, MitmUpgradeNotPossible) {
+  // Setup: Paired with an unauthenticated key, but MITM is not possible.
+  p_device_->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  p_device_->sec_rec.link_key_type = BTM_LKEY_TYPE_UNAUTH_COMB;
+  p_device_->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
+  p_device_->sec_rec.rmt_io_caps = BtIoCap::NO_INPUT_NO_OUTPUT;
+  btm_sec_cb.devcb.loc_io_caps = BtIoCap::NO_INPUT_NO_OUTPUT;
+  uint16_t initial_sec_flags = p_device_->sec_rec.sec_flags;
+  uint8_t initial_sm4 = p_device_->sm4;
+
+  // Action: Request access for a service that requires MITM.
+  btm_sec_service_access_request(kRawAddress, true /* outgoing */, BTM_SEC_OUT_MITM, NULL, NULL);
+
+  // Assert: No upgrade is triggered because IO caps don't support it.
+  ASSERT_EQ(p_device_->sm4, initial_sm4);
+  ASSERT_EQ(p_device_->sec_rec.sec_flags, initial_sec_flags);
+}
