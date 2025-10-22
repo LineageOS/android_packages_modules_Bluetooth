@@ -2850,20 +2850,7 @@ public class GattService extends ProfileService {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-        sb.append("\nRegistered App:\n");
-        sb.append(GattUtil.dumpRegisterId(mClientMap, mServerMap));
-
-        sb.append("GATT Advertiser Map:\n");
-        mAdvertiseManager.dump(sb);
-
-        sb.append("GATT Client Map:\n");
-        mClientMap.dump(sb);
-
-        sb.append("GATT Server Map:\n");
-        mServerMap.dump(sb);
-
-        sb.append("GATT Handle Map:\n");
-        mHandleMap.dump(sb);
+        sb.append(GattUtil.dump(mAdvertiseManager, mClientMap, mServerMap, mHandleMap).indent(2));
     }
 
     private void statsLogAppPackage(BluetoothDevice device, int applicationUid, int sessionIndex) {
