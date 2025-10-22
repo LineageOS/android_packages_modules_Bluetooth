@@ -145,10 +145,10 @@ class PermissionChecker(
         if (callingUser != foregroundUser && parentUser != foregroundUser) {
             throw BluetoothPermissionException(
                 "Not allowed for non-active and non system user." +
-                    " callingUser=${callingUser}" +
-                    " parentUser=${parentUser}" +
-                    " foregroundUser=${foregroundUser}" +
-                    " callingAppId=${callingAppId}"
+                    " callingUser=$callingUser" +
+                    " parentUser=$parentUser" +
+                    " foregroundUser=$foregroundUser" +
+                    " callingAppId=$callingAppId"
             )
         }
     }
@@ -157,7 +157,7 @@ class PermissionChecker(
     private fun enforceConnectPermission(clientSource: AttributionSource, apiName: String) {
         val perm = BLUETOOTH_CONNECT
         val source = AttributionSource.Builder(attributionSource).setNext(clientSource).build()
-        val msg = "${apiName} enforce ${perm}. But permission is missing for source=${source}"
+        val msg = "$apiName enforce $perm. But permission is missing for source=$source"
         when (permissionManager.checkPermissionForDataDeliveryFromDataSource(perm, source, msg)) {
             PermissionManager.PERMISSION_GRANTED -> {} /* nothing to do, permission granted */
             PermissionManager.PERMISSION_HARD_DENIED -> throw SecurityException(msg)
@@ -168,7 +168,7 @@ class PermissionChecker(
     @RequiresPermission(LOCAL_MAC_ADDRESS)
     private fun enforceLocalMacAddressPermission(uid: Int, apiName: String) {
         val perm = LOCAL_MAC_ADDRESS
-        val msg = "${apiName} enforce ${perm}. But permission is missing"
+        val msg = "$apiName enforce $perm. But permission is missing"
         when (context.checkPermission(perm, -1, uid)) {
             PackageManager.PERMISSION_GRANTED -> {} /* nothing to do, permission granted */
             PackageManager.PERMISSION_DENIED -> throw BluetoothPermissionException(msg)

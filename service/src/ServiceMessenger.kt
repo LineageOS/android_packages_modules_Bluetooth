@@ -59,7 +59,7 @@ internal class ServiceMessenger(
 
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, LOCAL_MAC_ADDRESS])
     override fun handleMessage(msg: Message) {
-        Log.i(TAG, "handleMessage: ${msg}")
+        Log.i(TAG, "handleMessage: $msg")
         val reply = Message.obtain()
         try {
             reply.obj = handleMessage(msg.sendingUid, msg.obj as Parcelable)
@@ -69,7 +69,7 @@ internal class ServiceMessenger(
             try {
                 msg.replyTo?.send(reply)
             } catch (e: RemoteException) {
-                Log.e(TAG, "handleMessage($msg): Failed to send reply=${reply}", e)
+                Log.e(TAG, "handleMessage($msg): Failed to send reply=$reply", e)
             }
         }
     }
@@ -108,7 +108,7 @@ internal class ServiceMessenger(
                                 )
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             false
                         }
                 }
@@ -129,7 +129,7 @@ internal class ServiceMessenger(
                                 api.disable(callerIdentity, persist)
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             false
                         }
                 }
@@ -144,7 +144,7 @@ internal class ServiceMessenger(
                             checker.factoryResetAllowed(source)
                             api.factoryReset()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             false
                         }
                 }
@@ -158,7 +158,7 @@ internal class ServiceMessenger(
                             checker.getAddressAllowed(source)
                             api.getAddress()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             IBluetoothManager.DEFAULT_MAC_ADDRESS
                         }
                 }
@@ -172,7 +172,7 @@ internal class ServiceMessenger(
                             checker.getNameAllowed(source)
                             api.getName()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             null
                         }
                 }
@@ -234,7 +234,7 @@ internal class ServiceMessenger(
                 checker.enforcePrivileged(sendingUid)
                 SystemServiceMessage.IsAutoEnabled.Reply().apply { value = api.isAutoOnEnabled() }
             }
-            else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
+            else -> throw IllegalArgumentException("Invalid command: [$obj] from $sendingUid")
         }
     }
 }
