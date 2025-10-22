@@ -294,8 +294,7 @@ public class AdvertiseManager {
         // If we are using an isolated server, force usage of an NRPA
         int serverIf = 0;
         if (gattServerCallback != null) {
-            final ContextMap<IBluetoothGattServerCallback>.App serverApp =
-                    mGattService.getServerMap().getByCallbackId(gattServerCallback);
+            var serverApp = mGattService.getServerMap().getByCallbackId(gattServerCallback);
             if (serverApp == null) {
                 Log.w(TAG, "startAdvertisingSet(" + gattServerCallback + "): App not registered");
             } else {

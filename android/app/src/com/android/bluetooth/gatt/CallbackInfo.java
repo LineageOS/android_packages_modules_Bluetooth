@@ -25,7 +25,7 @@ import com.google.protobuf.ByteString;
  *
  * <p>These are held during congestion and reported when congestion clears.
  */
-record CallbackInfo(BluetoothDevice device, int status, int handle, ByteString value) {
+public record CallbackInfo(BluetoothDevice device, int status, int handle, ByteString value) {
     CallbackInfo(BluetoothDevice device, int status) {
         this(device, status, 0, null);
     }

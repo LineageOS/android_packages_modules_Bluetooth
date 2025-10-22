@@ -65,13 +65,13 @@ class ContextMapTest {
     fun getAppMethods() {
         val contextMap: ContextMap<IBluetoothGattCallback> = getMapWithAppAndConnection()
         val contextMapById = contextMap.getById(APP_ID1)
-        assertThat(contextMapById.packageName).isEqualTo(APP_NAME)
-        assertThat(contextMapById.callback).isEqualTo(callback)
+        assertThat(contextMapById.getPackageName()).isEqualTo(APP_NAME)
+        assertThat(contextMapById.getCallback()).isEqualTo(callback)
         assertThat(contextMapById.mUuid).isEqualTo(RANDOM_UUID1)
         val contextMapByUuid = contextMap.getByUuid(RANDOM_UUID1)
-        assertThat(contextMapByUuid.packageName).isEqualTo(APP_NAME)
+        assertThat(contextMapByUuid.getPackageName()).isEqualTo(APP_NAME)
         val contextMapByConn = contextMap.getByConnId(CONN_ID1)
-        assertThat(contextMapByConn.packageName).isEqualTo(APP_NAME)
+        assertThat(contextMapByConn.getPackageName()).isEqualTo(APP_NAME)
 
         val ids = contextMap.allApps.map { it.id }
         assertThat(ids).containsExactly(APP_ID1, APP_ID2)
