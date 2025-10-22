@@ -52,6 +52,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.GuardedBy;
@@ -187,7 +188,7 @@ public class VolumeControlService extends ConnectableProfile {
         mGroupMuteCache.clear();
         mDeviceVolumeCache.clear();
         mDeviceMuteCache.clear();
-        setIgnoreSetVolumeFromAfFlag(false);
+        updateIgnoreSetVolumeFromAFFlag(false);
 
         synchronized (mCallbacks) {
             mCallbacks.kill();
@@ -515,7 +516,7 @@ public class VolumeControlService extends ConnectableProfile {
 
         if (mIgnoreSetVolumeFromAF) {
             Log.d(TAG, "setGroupVolume ignored (from AF) because persisted/cached volume was used");
-            setIgnoreSetVolumeFromAfFlag(false);
+            updateIgnoreSetVolumeFromAFFlag(false);
             return;
         }
 
@@ -844,9 +845,35 @@ public class VolumeControlService extends ConnectableProfile {
         }
     }
 
-    private void setIgnoreSetVolumeFromAfFlag(boolean value) {
-        Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
-        mIgnoreSetVolumeFromAF = value;
+    /**
+     * Set the flag to ignore volume changes from the Audio Framework (AF).
+     *
+     * <p>This is necessary when a remote device with a persisted volume connects, or when a cached
+     * volume is used. In these cases, the device becomes active, and AF send a volume change
+     * request which should be ignored to respect the remote's or cached volume.
+     *
+     * <p>However, during a local broadcast, the newly connected device does not become active, so
+     * volume changes from AF should not be ignored.
+     *
+     * @param value The new value for the flag.
+     */
+    private void updateIgnoreSetVolumeFromAFFlag(boolean value) {
+        if (!Flags.vcpSkipIgnoringVolumeDuringBroadcast()) {
+            Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
+            mIgnoreSetVolumeFromAF = value;
+        } else {
+            boolean broadcastActive = false;
+            final var leAudio = mAdapterService.getLeAudioService();
+            if (leAudio.isPresent()) {
+                broadcastActive = leAudio.get().isBroadcastActive();
+            }
+            if (!value || !broadcastActive) {
+                Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
+                mIgnoreSetVolumeFromAF = value;
+            } else {
+                Log.d(TAG, "Skip mIgnoreSetVolumeFromAF set as local broadcast is active");
+            }
+        }
     }
 
     synchronized void handleVolumeControlChanged(
@@ -883,7 +910,7 @@ public class VolumeControlService extends ConnectableProfile {
                     && (getConnectedDevices(groupId).size() == 1)) {
                 Log.i(TAG, "Setting device: " + device + " volume: " + volume + " to the system");
                 // Ignore volume from AF because persisted volume was used
-                setIgnoreSetVolumeFromAfFlag(true);
+                updateIgnoreSetVolumeFromAFFlag(true);
                 updateGroupCacheAndAudioSystem(groupId, volume, mute, false);
                 return;
             }
@@ -907,13 +934,13 @@ public class VolumeControlService extends ConnectableProfile {
                 }
                 if (getConnectedDevices(groupId).size() == 1) {
                     // Ignore volume from AF because cached volume was used
-                    setIgnoreSetVolumeFromAfFlag(true);
+                    updateIgnoreSetVolumeFromAFFlag(true);
                 }
             } else {
                 Log.i(TAG, "Waiting for volume from AF to set to the device: " + device);
                 if (getConnectedDevices(groupId).size() == 1) {
                     // Clear ignore flag as volume from AF is needed
-                    setIgnoreSetVolumeFromAfFlag(false);
+                    updateIgnoreSetVolumeFromAFFlag(false);
                 }
             }
 
