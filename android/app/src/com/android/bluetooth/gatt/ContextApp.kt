@@ -29,9 +29,9 @@ private const val TAG = GattUtil.TAG_PREFIX + "ContextApp"
 
 /** Application entry mapping UUIDs to appIDs and callbacks. */
 class ContextApp<C : IInterface>(
+    val uid: Int,
     val uuid: UUID,
     val callback: C?,
-    val uid: Int,
     val packageName: String,
     val transport: Int,
     source: AttributionSource?,

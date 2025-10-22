@@ -957,7 +957,8 @@ public class GattService extends ProfileService {
                         + (" UUID=" + uuid)
                         + (" name=" + name)
                         + (" transport=" + transportToString(transport)));
-        mClientMap.add(uuid, callback, transport, this, source);
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        mClientMap.add(uid, uuid, callback, transport, this, source);
         mNativeInterface.gattClientRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), name, eattSupport);
     }
@@ -2115,7 +2116,8 @@ public class GattService extends ProfileService {
                         + (" UUID=" + uuid)
                         + (" name=" + name)
                         + (" transport=" + transportToString(transport)));
-        mServerMap.add(uuid, callback, transport, this, source);
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        mServerMap.add(uid, uuid, callback, transport, this, source);
         mNativeInterface.gattServerRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), eattSupport);
     }

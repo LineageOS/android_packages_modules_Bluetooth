@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.IBluetoothGattCallback
 import android.content.AttributionSource
 import android.content.pm.PackageManager
+import android.os.Binder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.rule.ServiceTestRule
@@ -46,10 +47,10 @@ class ContextMapTest {
     @get:Rule val serviceRule = ServiceTestRule()
     @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private lateinit var attributionSource: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var callback: IBluetoothGattCallback
     @Mock private lateinit var packageManager: PackageManager
+    @Mock private lateinit var callback: IBluetoothGattCallback
+    @Mock private lateinit var mSource: AttributionSource
 
     private val device1: BluetoothDevice = getTestDevice(34)
     private val device2: BluetoothDevice = getTestDevice(58)
@@ -176,9 +177,9 @@ class ContextMapTest {
 
     @Test
     fun dump_withRemovedApp_containsAppRecord() {
+        val uid = Binder.getCallingUid()
         val contextMap = ContextMap<IBluetoothGattCallback>()
-        val app =
-            contextMap.add(RANDOM_UUID1, callback, TRANSPORT_LE, adapterService, attributionSource)
+        val app = contextMap.add(uid, RANDOM_UUID1, callback, TRANSPORT_LE, adapterService, mSource)
         app.id = APP_ID1
 
         // Remove the app to create an AppRecord in mLastRecords
@@ -198,12 +199,11 @@ class ContextMapTest {
     }
 
     private fun getMapWithAppAndConnection(): ContextMap<IBluetoothGattCallback> {
+        val uid = Binder.getCallingUid()
         val contextMap = ContextMap<IBluetoothGattCallback>()
-        var app =
-            contextMap.add(RANDOM_UUID1, callback, TRANSPORT_LE, adapterService, attributionSource)
+        var app = contextMap.add(uid, RANDOM_UUID1, callback, TRANSPORT_LE, adapterService, mSource)
         app.id = APP_ID1
-        app =
-            contextMap.add(RANDOM_UUID2, callback, TRANSPORT_LE, adapterService, attributionSource)
+        app = contextMap.add(uid, RANDOM_UUID2, callback, TRANSPORT_LE, adapterService, mSource)
         app.id = APP_ID2
 
         contextMap.addConnection(APP_ID1, CONN_ID1, TRANSPORT_LE, device1)

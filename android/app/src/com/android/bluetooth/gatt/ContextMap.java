@@ -22,7 +22,6 @@ import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 import android.content.Context;
-import android.os.Binder;
 import android.os.IInterface;
 import android.os.SystemClock;
 import android.util.Log;
@@ -150,15 +149,19 @@ public class ContextMap<C extends IInterface> {
 
     /** Add an entry to the application context list. */
     ContextApp<C> add(
-            UUID uuid, C callback, int transport, Context context, AttributionSource source) {
-        int appUid = Binder.getCallingUid();
-        String appName = context.getPackageManager().getNameForUid(appUid);
+            int uid,
+            UUID uuid,
+            C callback,
+            int transport,
+            Context context,
+            AttributionSource source) {
+        String appName = context.getPackageManager().getNameForUid(uid);
         if (appName == null) {
             // Assign an app name if one isn't found
-            appName = "Unknown App (UID: " + appUid + ")";
+            appName = "Unknown App (UID: " + uid + ")";
         }
         synchronized (mAppsLock) {
-            var app = new ContextApp<>(uuid, callback, appUid, appName, transport, source);
+            var app = new ContextApp<>(uid, uuid, callback, appName, transport, source);
             mApps.add(app);
             recordRegisterApp(app);
 

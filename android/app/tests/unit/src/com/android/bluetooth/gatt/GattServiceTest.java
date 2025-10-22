@@ -368,7 +368,7 @@ public class GattServiceTest {
         int transport = TRANSPORT_LE;
 
         mService.registerClient(uuid, callback, eattSupport, transport, mSource);
-        verify(mClientMap, never()).add(any(), any(), anyInt(), any(), any());
+        verify(mClientMap, never()).add(anyInt(), any(), any(), anyInt(), any(), any());
         verify(mNativeInterface, never())
                 .gattClientRegisterApp(anyLong(), anyLong(), any(), anyBoolean());
     }
