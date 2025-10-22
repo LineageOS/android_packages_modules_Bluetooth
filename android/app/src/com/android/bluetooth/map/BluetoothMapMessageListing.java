@@ -18,7 +18,6 @@ package com.android.bluetooth.map;
 import android.util.Log;
 import android.util.Xml;
 
-import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.Utils;
 
 import org.xmlpull.v1.XmlSerializer;
