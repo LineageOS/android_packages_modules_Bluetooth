@@ -348,9 +348,6 @@ constexpr uint16_t kLeAudioHeadtrackerMaxSduSize = 13;
 constexpr uint8_t kLeAudioHeadtrackerRtn = 2;
 
 /* CSIS Types */
-constexpr uint8_t kDefaultScanDurationS = 5;
-constexpr uint8_t kDefaultCsisSetSize = 2;
-
 constexpr uint8_t kLeAudioDirectionSink = 0x01;
 constexpr uint8_t kLeAudioDirectionSource = 0x02;
 constexpr uint8_t kLeAudioDirectionBoth = kLeAudioDirectionSink | kLeAudioDirectionSource;
