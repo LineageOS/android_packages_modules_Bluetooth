@@ -8,7 +8,7 @@
         errorLine2="                ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/service/src/ServiceMessenger.kt"
-            line="63"
+            line="78"
             column="17"/>
     </issue>
 
