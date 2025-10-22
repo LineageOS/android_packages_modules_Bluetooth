@@ -28,8 +28,8 @@ import android.os.ParcelUuid;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 
-import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.obex.ClientOperation;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;

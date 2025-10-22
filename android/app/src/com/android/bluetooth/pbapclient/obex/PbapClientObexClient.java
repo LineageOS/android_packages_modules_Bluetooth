@@ -35,7 +35,7 @@ import android.os.Message;
 import android.os.Process;
 import android.util.Log;
 
-import com.android.bluetooth.ObexAppParameters;
+import com.android.bluetooth.obex.ObexAppParameters;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;

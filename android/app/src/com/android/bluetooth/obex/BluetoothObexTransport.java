@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth;
+package com.android.bluetooth.obex;
 
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ObexTransport;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth;
+package com.android.bluetooth.obex;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;

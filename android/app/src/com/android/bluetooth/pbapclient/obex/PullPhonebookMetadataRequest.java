@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.pbapclient;
 
-import com.android.bluetooth.ObexAppParameters;
+import com.android.bluetooth.obex.ObexAppParameters;
 import com.android.obex.HeaderSet;
 
 /**

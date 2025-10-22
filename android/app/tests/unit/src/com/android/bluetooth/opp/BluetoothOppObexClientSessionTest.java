@@ -42,7 +42,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothObexTransport;
+import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.obex.ClientSession;
 import com.android.tests.bluetooth.MockitoRule;
 
