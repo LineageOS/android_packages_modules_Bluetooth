@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static com.android.bluetooth.Utils.transportToString;
+import android.bluetooth.BluetoothDevice
+import android.content.AttributionSource
+import android.content.Context
+import android.os.IInterface
+import android.os.SystemClock
+import android.util.Log
+import com.android.bluetooth.Utils.transportToString
+import com.android.internal.annotations.GuardedBy
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Collections
+import java.util.UUID
+import java.util.function.Predicate
+import kotlin.text.appendLine
 
-import android.annotation.Nullable;
-import android.bluetooth.BluetoothDevice;
-import android.content.AttributionSource;
-import android.content.Context;
-import android.os.IInterface;
-import android.os.SystemClock;
-import android.util.Log;
-
-import com.android.internal.annotations.GuardedBy;
-
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Predicate;
+private const val TAG = GattUtil.TAG_PREFIX + "ContextMap"
+private const val MAX_LAST_RECORDS = 5
 
 /**
  * Helper class that keeps track of registered GATT applications. This class manages application
@@ -47,263 +41,244 @@ import java.util.function.Predicate;
  *
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-public class ContextMap<C extends IInterface> {
-    private static final String TAG = GattUtil.TAG_PREFIX + ContextMap.class.getSimpleName();
-
-    private static final int MAX_LAST_RECORDS = 5;
+class ContextMap<C : IInterface> {
 
     /** Our internal application list */
-    private final Object mAppsLock = new Object();
+    private val mAppsLock = Any()
 
-    @GuardedBy("mAppsLock")
-    private final List<ContextApp<C>> mApps = new ArrayList<>();
+    @GuardedBy("mAppsLock") private val mApps = mutableListOf<ContextApp<C>>()
 
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
+    @GuardedBy("mAppsLock") private val mOngoingRecords = mutableListOf<AppRecord>()
 
-    @GuardedBy("mAppsLock")
-    final List<AppRecord> mLastRecords = new ArrayList<>();
+    @GuardedBy("mAppsLock") internal val mLastRecords = mutableListOf<AppRecord>()
 
-    private final Object mConnectionsLock = new Object();
+    private val mConnectionsLock = Any()
 
     /** Internal list of connected devices */
-    @GuardedBy("mConnectionsLock")
-    private final List<Connection> mConnections = new ArrayList<>();
+    @GuardedBy("mConnectionsLock") private val mConnections = mutableListOf<Connection>()
 
-    private class AppRecord {
-        private final UUID mUuid;
-        private final String mPackageName;
-        private final int mTransport;
-        @Nullable private final String mAttributionTag;
-        private final Instant mRegisterTime;
+    inner class AppRecord(app: ContextApp<C>) {
+        val mUuid: UUID = app.uuid
+        private val mPackageName: String = app.packageName
+        private val mTransport: Int = app.transport
+        private val mAttributionTag: String? = app.attributionTag
+        private val mRegisterTime: Instant = Instant.now()
 
-        private int mClientIf;
-        private RemoveReason mReason;
-        @Nullable private Instant mUnregisterTime;
+        var mClientIf: Int = 0
+        var mReason: RemoveReason? = null
+        var mUnregisterTime: Instant? = null
 
-        AppRecord(ContextApp<C> app) {
-            mUuid = app.getUuid();
-            mPackageName = app.getPackageName();
-            mTransport = app.getTransport();
-            mAttributionTag = app.getAttributionTag();
-            mRegisterTime = Instant.now();
-        }
+        private val sDateFormat =
+            DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
 
-        private static final DateTimeFormatter sDateFormat =
-                DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
+        override fun toString(): String {
+            val sb = StringBuilder()
             sb.append("AppRecord<")
-                    .append(sDateFormat.format(mRegisterTime))
-                    .append(" ~ ")
-                    .append(sDateFormat.format(mUnregisterTime))
-                    .append(" app_if: ")
-                    .append(mClientIf)
-                    .append(", appName: ")
-                    .append(mPackageName)
-                    .append(", transport: ")
-                    .append(transportToString(mTransport));
+                .append(sDateFormat.format(mRegisterTime))
+                .append(" ~ ")
+                .append(sDateFormat.format(mUnregisterTime))
+                .append(", app_if: ")
+                .append(mClientIf)
+                .append(", appName: ")
+                .append(mPackageName)
+                .append(", transport: ")
+                .append(transportToString(mTransport))
             if (mAttributionTag != null) {
-                sb.append(", tag: ").append(mAttributionTag);
+                sb.append(", tag: ").append(mAttributionTag)
             }
-            sb.append(", reason: ").append(mReason).append(">");
-            return sb.toString();
+            sb.append(", reason: ").append(mReason).append(">")
+            return sb.toString()
         }
     }
 
     /** Connection class helps map connection IDs to devices. */
-    record Connection(
-            int connId, BluetoothDevice device, int transport, int appId, long startTime) {
-        Connection(int connId, BluetoothDevice device, int transport, int appId) {
-            this(connId, device, transport, appId, SystemClock.elapsedRealtime());
-        }
+    data class Connection(
+        val connId: Int,
+        val device: BluetoothDevice,
+        val transport: Int,
+        val appId: Int,
+    ) {
+        val startTime: Long = SystemClock.elapsedRealtime()
 
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
+        override fun toString(): String {
+            val sb = StringBuilder()
             sb.append("Connection<")
-                    .append("conn_id: ")
-                    .append(connId)
-                    .append(", device: ")
-                    .append(device)
-                    .append(", transport: ")
-                    .append(transportToString(transport))
-                    .append(", app_id: ")
-                    .append(appId)
-                    .append(">");
-            return sb.toString();
+                .append("conn_id: ")
+                .append(connId)
+                .append(", device: ")
+                .append(device)
+                .append(", transport: ")
+                .append(transportToString(transport))
+                .append(", app_id: ")
+                .append(appId)
+                .append(">")
+            return sb.toString()
         }
     }
 
-    enum RemoveReason {
+    enum class RemoveReason {
         REASON_UNREGISTER_ALL,
         REASON_UNREGISTER_CLIENT,
         REASON_UNREGISTER_SERVER,
         REASON_BINDER_DIED,
         REASON_REGISTER_FAILED,
-
-        REASON_UNKNOWN
+        REASON_UNKNOWN,
     }
 
     /** Add an entry to the application context list. */
-    ContextApp<C> add(
-            int uid,
-            UUID uuid,
-            C callback,
-            int transport,
-            Context context,
-            AttributionSource source) {
-        String appName = context.getPackageManager().getNameForUid(uid);
+    fun add(
+        uid: Int,
+        uuid: UUID,
+        callback: C,
+        transport: Int,
+        context: Context,
+        source: AttributionSource,
+    ): ContextApp<C> {
+        var appName = context.packageManager.getNameForUid(uid)
         if (appName == null) {
             // Assign an app name if one isn't found
-            appName = "Unknown App (UID: " + uid + ")";
+            appName = "Unknown App (UID: $uid)"
         }
-        synchronized (mAppsLock) {
-            var app = new ContextApp<>(uid, uuid, callback, appName, transport, source);
-            mApps.add(app);
-            recordRegisterApp(app);
-
-            return app;
+        synchronized(mAppsLock) {
+            val app = ContextApp(uid, uuid, callback, appName, transport, source)
+            mApps.add(app)
+            recordRegisterApp(app)
+            return app
         }
     }
 
     /** Remove the context for a given UUID */
-    ContextApp<C> remove(UUID uuid, RemoveReason reason) {
-        synchronized (mAppsLock) {
-            var i = mApps.iterator();
+    fun remove(uuid: UUID, reason: RemoveReason): ContextApp<C>? {
+        synchronized(mAppsLock) {
+            val i = mApps.iterator()
             while (i.hasNext()) {
-                var entry = i.next();
-                if (entry.getUuid().equals(uuid)) {
-                    entry.unlinkToDeath();
-                    i.remove();
-                    recordUnregisterApp(entry, reason);
-                    return entry;
+                val entry = i.next()
+                if (entry.uuid == uuid) {
+                    entry.unlinkToDeath()
+                    i.remove()
+                    recordUnregisterApp(entry, reason)
+                    return entry
                 }
             }
         }
-        return null;
+        return null
     }
 
     /** Remove the context for a given application ID. */
-    ContextApp<C> remove(int id, RemoveReason reason) {
-        ContextApp<C> removedApp = null;
-        synchronized (mAppsLock) {
-            var i = mApps.iterator();
+    fun remove(id: Int, reason: RemoveReason): ContextApp<C>? {
+        var removedApp: ContextApp<C>? = null
+        synchronized(mAppsLock) {
+            val i = mApps.iterator()
             while (i.hasNext()) {
-                var entry = i.next();
-                if (entry.getId() == id) {
-                    removedApp = entry;
-                    entry.unlinkToDeath();
-                    i.remove();
-                    recordUnregisterApp(entry, reason);
-                    break;
+                val entry = i.next()
+                if (entry.id == id) {
+                    removedApp = entry
+                    entry.unlinkToDeath()
+                    i.remove()
+                    recordUnregisterApp(entry, reason)
+                    break
                 }
             }
         }
         if (removedApp != null) {
-            removeConnectionsByAppId(id);
+            removeConnectionsByAppId(id)
         }
-        return removedApp;
+        return removedApp
     }
 
-    List<ContextApp<C>> getAllApps() {
-        synchronized (mAppsLock) {
-            return Collections.unmodifiableList(mApps);
+    fun getAllApps(): List<ContextApp<C>> {
+        synchronized(mAppsLock) {
+            return Collections.unmodifiableList(mApps)
         }
     }
 
     /** Add a new connection for a given application ID. */
-    void addConnection(int id, int connId, int transport, BluetoothDevice device) {
-        synchronized (mConnectionsLock) {
-            var entry = getById(id);
+    fun addConnection(id: Int, connId: Int, transport: Int, device: BluetoothDevice) {
+        synchronized(mConnectionsLock) {
+            val entry = getById(id)
             if (entry != null) {
-                mConnections.add(new Connection(connId, device, transport, id));
+                mConnections.add(Connection(connId, device, transport, id))
             }
         }
     }
 
     /** Remove a connection with the given ID. */
-    void removeConnection(int id, int connId) {
-        synchronized (mConnectionsLock) {
-            mConnections.removeIf(conn -> conn.appId == id && conn.connId == connId);
+    fun removeConnection(id: Int, connId: Int) {
+        synchronized(mConnectionsLock) {
+            mConnections.removeIf { conn -> conn.appId == id && conn.connId == connId }
         }
     }
 
     /** Remove all connections for a given application ID. */
-    void removeConnectionsByAppId(int appId) {
-        synchronized (mConnectionsLock) {
-            mConnections.removeIf(conn -> conn.appId == appId);
-        }
+    fun removeConnectionsByAppId(appId: Int) {
+        synchronized(mConnectionsLock) { mConnections.removeIf { conn -> conn.appId == appId } }
     }
 
-    private ContextApp<C> getAppByPredicate(Predicate<ContextApp<C>> predicate) {
-        synchronized (mAppsLock) {
+    private fun getAppByPredicate(predicate: Predicate<ContextApp<C>>): ContextApp<C>? {
+        synchronized(mAppsLock) {
             // Intentionally using a for-loop over a stream for performance.
-            for (var app : mApps) {
+            for (app in mApps) {
                 if (predicate.test(app)) {
-                    return app;
+                    return app
                 }
             }
-            return null;
+            return null
         }
     }
 
     /** Get an application context by ID. */
-    ContextApp<C> getById(int id) {
-        var app = getAppByPredicate(entry -> entry.getId() == id);
+    fun getById(id: Int): ContextApp<C>? {
+        val app = getAppByPredicate { entry -> entry.id == id }
         if (app == null) {
-            Log.e(TAG, "Context not found for ID " + id);
+            Log.e(TAG, "Context not found for ID $id")
         }
-        return app;
+        return app
     }
 
     /** Get an application context by its callback object. */
-    ContextApp<C> getByCallbackId(C callbackId) {
-        var app =
-                getAppByPredicate(entry -> entry.getCallback().asBinder() == callbackId.asBinder());
+    fun getByCallbackId(callbackId: C): ContextApp<C>? {
+        val app = getAppByPredicate { entry -> entry.callback?.asBinder() == callbackId.asBinder() }
         if (app == null) {
-            Log.e(TAG, "Context not found for callbackID " + callbackId);
+            Log.e(TAG, "Context not found for callbackID $callbackId")
         }
-        return app;
+        return app
     }
 
     /** Get an application context by UUID. */
-    ContextApp<C> getByUuid(UUID uuid) {
-        var app = getAppByPredicate(entry -> entry.getUuid().equals(uuid));
+    fun getByUuid(uuid: UUID): ContextApp<C>? {
+        val app = getAppByPredicate { entry -> entry.uuid == uuid }
         if (app == null) {
-            Log.e(TAG, "Context not found for UUID " + uuid);
+            Log.e(TAG, "Context not found for UUID $uuid")
         }
-        return app;
+        return app
     }
 
     /** Get all connected devices */
-    Set<BluetoothDevice> getConnectedDevices() {
-        Set<BluetoothDevice> devices = new HashSet<>();
-        synchronized (mConnectionsLock) {
-            for (Connection connection : mConnections) {
-                devices.add(connection.device);
+    fun getConnectedDevices(): Set<BluetoothDevice> {
+        val devices = mutableSetOf<BluetoothDevice>()
+        synchronized(mConnectionsLock) {
+            for (connection in mConnections) {
+                devices.add(connection.device)
             }
         }
-        return devices;
+        return devices
     }
 
     /** Get an application context by a connection ID. */
-    ContextApp<C> getByConnId(int connId) {
-        int appId = -1;
-        synchronized (mConnectionsLock) {
-            for (Connection connection : mConnections) {
+    fun getByConnId(connId: Int): ContextApp<C>? {
+        var appId = -1
+        synchronized(mConnectionsLock) {
+            for (connection in mConnections) {
                 if (connection.connId == connId) {
-                    appId = connection.appId;
-                    break;
+                    appId = connection.appId
+                    break
                 }
             }
         }
         if (appId >= 0) {
-            return getById(appId);
+            return getById(appId)
         }
-        return null;
+        return null
     }
 
     /**
@@ -321,101 +296,102 @@ public class ContextMap<C extends IInterface> {
      *
      * <p>This function provides a way to get all connections for a device so we can do the above.
      */
-    List<Connection> getConnectionsByDevice(int appId, BluetoothDevice device) {
-        List<Connection> currentConnections = new ArrayList<>();
-        synchronized (mConnectionsLock) {
-            for (Connection connection : mConnections) {
-                if (connection.device.equals(device) && connection.appId == appId) {
-                    currentConnections.add(connection);
+    fun getConnectionsByDevice(appId: Int, device: BluetoothDevice): List<Connection> {
+        val currentConnections = mutableListOf<Connection>()
+        synchronized(mConnectionsLock) {
+            for (connection in mConnections) {
+                if (connection.device == device && connection.appId == appId) {
+                    currentConnections.add(connection)
                 }
             }
         }
-        return currentConnections;
+        return currentConnections
     }
 
     /** Returns the device for a given connection ID. */
-    BluetoothDevice deviceByConnId(int connId) {
-        synchronized (mConnectionsLock) {
-            for (Connection connection : mConnections) {
+    fun deviceByConnId(connId: Int): BluetoothDevice? {
+        synchronized(mConnectionsLock) {
+            for (connection in mConnections) {
                 if (connection.connId == connId) {
-                    return connection.device;
+                    return connection.device
                 }
             }
         }
-        return null;
+        return null
     }
 
     /** Returns all Connections that have a given app UID. */
-    List<Connection> getConnectionByApp(int appId) {
-        List<Connection> currentConnections = new ArrayList<>();
-        synchronized (mConnectionsLock) {
-            for (Connection connection : mConnections) {
+    fun getConnectionByApp(appId: Int): List<Connection> {
+        val currentConnections = mutableListOf<Connection>()
+        synchronized(mConnectionsLock) {
+            for (connection in mConnections) {
                 if (connection.appId == appId) {
-                    currentConnections.add(connection);
+                    currentConnections.add(connection)
                 }
             }
         }
-        return currentConnections;
+        return currentConnections
     }
 
     /** Counts the number of applications that have a given app UID. */
-    int countByAppUid(int appUid) {
-        synchronized (mAppsLock) {
-            return (int) (mApps.stream().filter(app -> app.getUid() == appUid).count());
+    fun countByAppUid(appUid: Int): Int {
+        synchronized(mAppsLock) {
+            return mApps.stream().filter { app -> app.uid == appUid }.count().toInt()
         }
     }
 
     /** Erases all application context entries. */
-    void clear() {
-        synchronized (mAppsLock) {
-            for (var entry : mApps) {
-                entry.unlinkToDeath();
+    fun clear() {
+        synchronized(mAppsLock) {
+            for (entry in mApps) {
+                entry.unlinkToDeath()
             }
-            mApps.clear();
-            mOngoingRecords.clear();
+            mApps.clear()
+            mOngoingRecords.clear()
         }
 
-        synchronized (mConnectionsLock) {
-            mConnections.clear();
-        }
+        synchronized(mConnectionsLock) { mConnections.clear() }
     }
 
     /** Returns connect device map with addr and appid */
-    Map<Integer, BluetoothDevice> getConnectedMap() {
-        Map<Integer, BluetoothDevice> connectedMap = new HashMap<>();
-        synchronized (mConnectionsLock) {
-            for (Connection conn : mConnections) {
-                connectedMap.put(conn.appId, conn.device);
+    fun getConnectedMap(): Map<Int, BluetoothDevice> {
+        val connectedMap = mutableMapOf<Int, BluetoothDevice>()
+        synchronized(mConnectionsLock) {
+            for (conn in mConnections) {
+                connectedMap[conn.appId] = conn.device
             }
         }
-        return connectedMap;
+        return connectedMap
     }
 
-    protected void dump(StringBuilder sb) {
-        synchronized (mAppsLock) {
-            sb.append(GattUtil.dump(this));
+    fun dump(sb: StringBuilder) {
+        synchronized(mAppsLock) {
+            sb.appendLine("  Entries: ${getAllApps().size}")
+            sb.appendLine("  Last apps: ")
+            mLastRecords.forEach { sb.appendLine("       $it") }
+            sb.appendLine()
         }
     }
 
     @GuardedBy("mAppsLock")
-    private void recordRegisterApp(ContextApp<C> app) {
-        mOngoingRecords.add(new AppRecord(app));
+    private fun recordRegisterApp(app: ContextApp<C>) {
+        mOngoingRecords.add(AppRecord(app))
     }
 
     @GuardedBy("mAppsLock")
-    private void recordUnregisterApp(ContextApp<C> app, RemoveReason reason) {
-        for (int i = 0; i < mOngoingRecords.size(); i++) {
-            if (app.getUuid().equals(mOngoingRecords.get(i).mUuid)) {
-                AppRecord record = mOngoingRecords.remove(i);
-                record.mClientIf = app.getId();
-                record.mReason = reason;
-                record.mUnregisterTime = Instant.now();
+    private fun recordUnregisterApp(app: ContextApp<C>, reason: RemoveReason) {
+        for (i in 0 until mOngoingRecords.size) {
+            if (app.uuid == mOngoingRecords[i].mUuid) {
+                val record = mOngoingRecords.removeAt(i)
+                record.mClientIf = app.id
+                record.mReason = reason
+                record.mUnregisterTime = Instant.now()
 
-                if (mLastRecords.size() >= MAX_LAST_RECORDS) {
-                    mLastRecords.remove(0);
+                if (mLastRecords.size >= MAX_LAST_RECORDS) {
+                    mLastRecords.removeAt(0)
                 }
-                mLastRecords.add(record);
-                break;
+                mLastRecords.add(record)
+                break
             }
         }
     }

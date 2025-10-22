@@ -926,7 +926,7 @@ public class GattService extends ProfileService {
     Integer getFirstConnectionIdForDevice(int clientIf, BluetoothDevice device) {
         final List<ContextMap.Connection> connections =
                 mClientMap.getConnectionsByDevice(clientIf, device);
-        return connections.isEmpty() ? null : connections.get(0).connId();
+        return connections.isEmpty() ? null : connections.get(0).getConnId();
     }
 
     void registerClient(
@@ -975,7 +975,7 @@ public class GattService extends ProfileService {
         final var clientIf = clientApp.getId();
         Log.d(TAG, "unregisterClient(" + callback + ") - clientIf=" + clientIf);
         for (ContextMap.Connection conn : mClientMap.getConnectionByApp(clientIf)) {
-            mMetricsReporter.logDisconnectEnd(conn.device(), source.getUid());
+            mMetricsReporter.logDisconnectEnd(conn.getDevice(), source.getUid());
         }
         if (mClientMap.remove(clientIf, reason) == null) {
             Log.w(TAG, "failed to remove client - clientIf=" + clientIf);
@@ -1722,7 +1722,7 @@ public class GattService extends ProfileService {
 
         final List<ContextMap.Connection> connections =
                 mServerMap.getConnectionsByDevice(serverIf, device);
-        final var connId = connections.isEmpty() ? null : connections.get(0).connId();
+        final var connId = connections.isEmpty() ? null : connections.get(0).getConnId();
         if (connId == null) {
             Log.d(TAG, "onServerPhyRead() - no connection to " + device);
             return;
@@ -2179,7 +2179,7 @@ public class GattService extends ProfileService {
                 mNativeInterface.gattServerDisconnect(serverIf, device, 0);
             } else {
                 for (ContextMap.Connection connection : connections) {
-                    int id = connection.connId();
+                    int id = connection.getConnId();
                     Log.d(TAG, "serverDisconnect() - device=" + device + ", connId=" + id);
                     mNativeInterface.gattServerDisconnect(serverIf, device, id);
                 }
@@ -2187,7 +2187,7 @@ public class GattService extends ProfileService {
         } else {
             final List<ContextMap.Connection> connections =
                     mServerMap.getConnectionsByDevice(serverIf, device);
-            final var connId = connections.isEmpty() ? null : connections.get(0).connId();
+            final var connId = connections.isEmpty() ? null : connections.get(0).getConnId();
             Log.d(TAG, "serverDisconnect() - device=" + device + ", connId=" + connId);
             mNativeInterface.gattServerDisconnect(serverIf, device, connId != null ? connId : 0);
         }
@@ -2353,7 +2353,7 @@ public class GattService extends ProfileService {
             } else {
                 final List<ContextMap.Connection> connections =
                         mServerMap.getConnectionsByDevice(serverIf, device);
-                connId = connections.isEmpty() ? 0 : connections.get(0).connId();
+                connId = connections.isEmpty() ? 0 : connections.get(0).getConnId();
             }
         }
 
@@ -2401,19 +2401,19 @@ public class GattService extends ProfileService {
             // preference. If the transport is AUTO then use the oldest bearer available
             for (ContextMap.Connection connection : connections) {
                 if (transportPreference == TRANSPORT_AUTO
-                        || transportPreference == connection.transport()) {
-                    connId = connection.connId();
+                        || transportPreference == connection.getTransport()) {
+                    connId = connection.getConnId();
                     break;
                 }
             }
 
             // If there was no transport that matches the preference, use the oldest bearer
             if (connId == null && !connections.isEmpty()) {
-                connId = connections.get(0).connId();
+                connId = connections.get(0).getConnId();
             }
         } else {
             if (!connections.isEmpty()) {
-                connId = connections.get(0).connId();
+                connId = connections.get(0).getConnId();
             }
         }
 
@@ -2526,7 +2526,7 @@ public class GattService extends ProfileService {
 
         List<ContextMap.Connection> connections =
                 mServerMap.getConnectionsByDevice(serverIf, device);
-        Integer connId = connections.isEmpty() ? null : connections.get(0).connId();
+        Integer connId = connections.isEmpty() ? null : connections.get(0).getConnId();
         if (connId == null) {
             throw new IllegalArgumentException("No connection to " + device);
         }
@@ -2557,7 +2557,7 @@ public class GattService extends ProfileService {
 
         List<ContextMap.Connection> connections =
                 mServerMap.getConnectionsByDevice(serverIf, device);
-        Integer connId = connections.isEmpty() ? null : connections.get(0).connId();
+        Integer connId = connections.isEmpty() ? null : connections.get(0).getConnId();
         if (connId == null) {
             throw new IllegalArgumentException("No connection to " + device);
         }
