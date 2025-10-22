@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.btservice;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -25,9 +27,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.content.AttributionSource;
+import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 
@@ -54,6 +59,7 @@ public class AdapterServiceBinderTest {
     @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mService;
     @Mock private AdapterProperties mAdapterProperties;
+    @Mock private BluetoothDevice mDevice;
 
     private AdapterServiceBinder mBinder;
 
@@ -168,5 +174,64 @@ public class AdapterServiceBinderTest {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
         mBinder.stopRfcommListener(uuid, mAttributionSource);
         verify(mService).stopRfcommListener(uuid, mAttributionSource);
+    }
+
+    @Test
+    public void setPreferredAudioProfiles_deviceNotBonded_returnsError() {
+        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
+
+        int result = mBinder.setPreferredAudioProfiles(mDevice, new Bundle(), mAttributionSource);
+
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
+        verify(mService, never()).setPreferredAudioProfiles(any(), any());
+    }
+
+    @Test
+    public void setPreferredAudioProfiles_deviceBonded_callsService() {
+        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
+        Bundle bundle = new Bundle();
+
+        mBinder.setPreferredAudioProfiles(mDevice, bundle, mAttributionSource);
+
+        verify(mService).setPreferredAudioProfiles(mDevice, bundle);
+    }
+
+    @Test
+    public void getPreferredAudioProfiles_deviceNotBonded_returnsEmptyBundle() {
+        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
+
+        Bundle result = mBinder.getPreferredAudioProfiles(mDevice, mAttributionSource);
+
+        assertThat(result).isNotNull();
+        assertThat(result).isEqualTo(Bundle.EMPTY);
+        verify(mService, never()).getPreferredAudioProfiles(any());
+    }
+
+    @Test
+    public void getPreferredAudioProfiles_deviceBonded_callsService() {
+        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
+
+        mBinder.getPreferredAudioProfiles(mDevice, mAttributionSource);
+
+        verify(mService).getPreferredAudioProfiles(mDevice);
+    }
+
+    @Test
+    public void notifyActiveDeviceChangeApplied_deviceNotBonded_returnsError() {
+        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
+
+        int result = mBinder.notifyActiveDeviceChangeApplied(mDevice, mAttributionSource);
+
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
+        verify(mService, never()).notifyActiveDeviceChangeApplied(any());
+    }
+
+    @Test
+    public void notifyActiveDeviceChangeApplied_deviceBonded_callsService() {
+        when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
+
+        mBinder.notifyActiveDeviceChangeApplied(mDevice, mAttributionSource);
+
+        verify(mService).notifyActiveDeviceChangeApplied(mDevice);
     }
 }
