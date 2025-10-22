@@ -508,6 +508,133 @@ MATCHER_P(Eq, value, "") { return arg == value; }
 MATCHER_P2(EqPointedArray, value, len, "") { return !std::memcmp(arg, value, len); }
 }  // namespace iso_matchers
 
+struct BigSyncRaceTestParams {
+  uint8_t big_handle;
+  uint16_t sync_handle;
+  uint8_t sync_established_status;    // Status for HCI_BLE_BIG_SYNC_EST_EVT
+  uint8_t terminate_complete_status;  // Status for HCI_BLE_BIG_TERM_SYNC_CMPL_EVT
+  bool established_first;  // true: Sync Established Event arrives first; false: Terminate Complete
+                           // Event arrives first
+  std::string test_name;   // Used to generate friendly test names
+};
+
+class BigSyncRaceTest : public IsoManagerTest,
+                        public testing::WithParamInterface<BigSyncRaceTestParams> {
+protected:
+  void SetUp() override {
+    IsoManagerTest::SetUp();
+    com::android::bluetooth::flags::provider_->btm_broadcast_sink_support(true);
+  }
+};
+
+TEST_P(BigSyncRaceTest, RaceConditionHandling) {
+  // Get the current parameters
+  const auto& params = GetParam();
+
+  // Extract values from parameters
+  const uint8_t big_handle = params.big_handle;
+  const uint16_t sync_handle = params.sync_handle;
+
+  bluetooth::hci::iso_manager::big_create_sync_params sync_params = {
+          .big_handle = big_handle,
+          .sync_handle = sync_handle,
+  };
+
+  // Assertion: We should only receive the terminate complete event, never the sync established
+  // event.
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSinkEvent(bluetooth::hci::iso_manager::BigSinkEvent::kSyncEst, _))
+          .Times(0);
+
+  bluetooth::hci::iso_manager::big_terminate_sync_cmpl_evt term_evt;
+  // Assertion: We MUST receive the terminate complete event once.
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSinkEvent(bluetooth::hci::iso_manager::BigSinkEvent::kTerminateSyncCmpl, _))
+          .WillOnce([&term_evt](bluetooth::hci::iso_manager::BigSinkEvent /*type */, void* data) {
+            term_evt =
+                    *static_cast<bluetooth::hci::iso_manager::big_terminate_sync_cmpl_evt*>(data);
+          });
+
+  base::OnceCallback<void(uint8_t*, uint16_t)> captured_cb;
+  EXPECT_CALL(hcic_interface_, BigTerminateSync)
+          .WillOnce([&captured_cb](uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+            captured_cb = std::move(cb);
+          });
+
+  // 1. Create sync
+  IsoManager::GetInstance()->BigCreateSync(client_handle_, sync_params);
+
+  // 2. Terminate sync (race condition initiated)
+  IsoManager::GetInstance()->BigTerminateSync(big_handle);
+
+  // --- Simulate Event Race ---
+
+  // Prepare HCI_BLE_BIG_Sync_Established_Event buffer
+  std::vector<uint8_t> est_buf(14 + sizeof(uint16_t));
+  uint8_t* p = est_buf.data();
+  UINT8_TO_STREAM(p, params.sync_established_status);  // Use status from parameter
+  UINT8_TO_STREAM(p, big_handle);
+
+  // Prepare HCI_BLE_BIG_TERM_SYNC_CMPL_EVT buffer
+  std::vector<uint8_t> term_buf(2);
+  p = term_buf.data();
+  UINT8_TO_STREAM(p, params.terminate_complete_status);  // Use status from parameter
+  UINT8_TO_STREAM(p, big_handle);
+
+  if (params.established_first) {
+    // 3. Controller sends HCI_BLE_BIG_Sync_Established_Event (Arrives first)
+    IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_BIG_SYNC_EST_EVT, est_buf.data(),
+                                              est_buf.size());
+
+    // 4. Controller sends HCI_BLE_BIG_TERM_SYNC_CMPL_EVT (Arrives second)
+    std::move(captured_cb).Run(term_buf.data(), term_buf.size());
+  } else {
+    // 3. Controller sends HCI_BLE_BIG_TERM_SYNC_CMPL_EVT (Arrives first)
+    std::move(captured_cb).Run(term_buf.data(), term_buf.size());
+
+    // 4. Controller sends HCI_BLE_BIG_Sync_Established_Event (Arrives second)
+    IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_BIG_SYNC_EST_EVT, est_buf.data(),
+                                              est_buf.size());
+  }
+}
+struct PrintTestName {
+  std::string operator()(const testing::TestParamInfo<BigSyncRaceTestParams>& info) const {
+    return info.param.test_name;
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigSyncRaceConditions, BigSyncRaceTest,
+        testing::Values(
+                BigSyncRaceTestParams{
+                        .big_handle = 0x23,
+                        .sync_handle = 0x1234,
+                        .sync_established_status = HCI_SUCCESS,
+                        .terminate_complete_status = HCI_SUCCESS,
+                        .established_first = true,
+                        .test_name = "TerminateWhenSyncEstablishedSuccessAlreadyScheduled"},
+                BigSyncRaceTestParams{
+                        .big_handle = 0x24,
+                        .sync_handle = 0x1235,
+                        .sync_established_status = HCI_ERR_CONN_FAILED_ESTABLISHMENT,
+                        .terminate_complete_status = HCI_ERR_COMMAND_DISALLOWED,
+                        .established_first = true,
+                        .test_name = "TerminateWhenSyncEstablishedFailureAlreadyScheduled"},
+                BigSyncRaceTestParams{
+                        .big_handle = 0x25,
+                        .sync_handle = 0x1236,
+                        .sync_established_status = HCI_ERR_CANCELLED_BY_LOCAL_HOST,
+                        .terminate_complete_status = HCI_SUCCESS,
+                        .established_first = true,
+                        .test_name = "TerminateDuringSyncAndEstablishedCancelledFirst"},
+                BigSyncRaceTestParams{.big_handle = 0x26,
+                                      .sync_handle = 0x1237,
+                                      .sync_established_status = HCI_ERR_CANCELLED_BY_LOCAL_HOST,
+                                      .terminate_complete_status = HCI_SUCCESS,
+                                      .established_first = false,
+                                      .test_name = "TerminateDuringSyncAndTerminatedFirst"}),
+        PrintTestName());
+
 TEST_F(IsoManagerTest, SingletonAccess) {
   auto* iso_mgr = IsoManager::GetInstance();
   ASSERT_EQ(manager_instance_, iso_mgr);

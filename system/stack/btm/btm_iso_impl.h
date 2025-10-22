@@ -97,6 +97,13 @@ struct iso_stream {
   event_stats evt_stats;
 };
 
+struct big_sync_cancel_transaction {
+  bool sync_established_received = false;
+  uint8_t sync_established_status = HCI_SUCCESS;
+  bool terminate_complete_received = false;
+  uint8_t terminate_complete_status = HCI_SUCCESS;
+};
+
 struct iso_impl {
   iso_impl() {
     iso_credits_ = shim::GetController()->GetControllerIsoBufferSize().total_num_le_packets_;
@@ -106,6 +113,53 @@ struct iso_impl {
   }
 
   ~iso_impl() { log::info("{} removed.", std::format_ptr(this)); }
+
+  void check_and_resolve_cancel_transaction(uint8_t big_handle) {
+    auto it = sink_big_handle_to_cancel_transactions_.find(big_handle);
+    if (it == sink_big_handle_to_cancel_transactions_.end()) {
+      return;
+    }
+
+    auto& transaction = it->second;
+    if (!transaction.sync_established_received || !transaction.terminate_complete_received) {
+      // Wait for the other event to arrive.
+      return;
+    }
+
+    log::info(
+            "Resolving BIG sync cancel transaction for big_handle: {}, est_status={}, "
+            "term_status={}",
+            big_handle,
+            hci_status_code_text(static_cast<tHCI_STATUS>(transaction.sync_established_status)),
+            hci_status_code_text(static_cast<tHCI_STATUS>(transaction.terminate_complete_status)));
+
+    // Both events received, always report a successful termination to the upper layer.
+    big_terminate_sync_cmpl_evt evt = {
+            .status = HCI_SUCCESS,
+            .big_handle = big_handle,
+    };
+
+    auto* client_cbs = get_client_callbacks_from_big(big_handle, false);
+    if (client_cbs && client_cbs->big_callbacks) {
+      client_cbs->big_callbacks->OnBigSinkEvent(BigSinkEvent::kTerminateSyncCmpl, &evt);
+    }
+
+    // Cleanup group and streams
+    auto group_it = sink_big_handle_to_group_map_.find(big_handle);
+    if (group_it != sink_big_handle_to_group_map_.end()) {
+      for (auto handle : group_it->second->stream_conn_handles) {
+        conn_hdl_to_iso_stream_map_.erase(handle);
+      }
+      sink_big_handle_to_group_map_.erase(group_it);
+    }
+
+    // Cleanup transaction
+    sink_big_handle_to_cancel_transactions_.erase(it);
+
+    if (conn_hdl_to_iso_stream_map_.empty()) {
+      notify_iso_traffic_active(false);
+    }
+  }
 
   IsoManagerCallbacks* get_client_callbacks_from_cig(uint8_t cig_id) {
     const std::lock_guard<std::mutex> lock(iso_client_mutex_);
@@ -1057,6 +1111,15 @@ struct iso_impl {
 
     STREAM_TO_UINT8(evt.status, data);
     STREAM_TO_UINT8(evt.big_handle, data);
+
+    if (sink_big_handle_to_cancel_transactions_.count(evt.big_handle)) {
+      auto& transaction = sink_big_handle_to_cancel_transactions_.at(evt.big_handle);
+      transaction.sync_established_received = true;
+      transaction.sync_established_status = evt.status;
+      check_and_resolve_cancel_transaction(evt.big_handle);
+      return;
+    }
+
     STREAM_TO_UINT24(evt.transport_latency_big, data);
     STREAM_TO_UINT8(evt.nse, data);
     STREAM_TO_UINT8(evt.bn, data);
@@ -1150,6 +1213,14 @@ struct iso_impl {
     STREAM_TO_UINT8(evt.status, stream);
     STREAM_TO_UINT8(evt.big_handle, stream);
 
+    if (sink_big_handle_to_cancel_transactions_.count(evt.big_handle)) {
+      auto& transaction = sink_big_handle_to_cancel_transactions_.at(evt.big_handle);
+      transaction.terminate_complete_received = true;
+      transaction.terminate_complete_status = evt.status;
+      check_and_resolve_cancel_transaction(evt.big_handle);
+      return;
+    }
+
     auto group_it = sink_big_handle_to_group_map_.find(evt.big_handle);
     log::assert_that(group_it != sink_big_handle_to_group_map_.end(), "No such big: {}",
                      evt.big_handle);
@@ -1178,7 +1249,37 @@ struct iso_impl {
       return;
     }
 
-    log::assert_that(IsBigSinkKnown(big_handle), "No such big: {}", big_handle);
+    auto group_it = sink_big_handle_to_group_map_.find(big_handle);
+    if (group_it != sink_big_handle_to_group_map_.end() &&
+        group_it->second->stream_conn_handles.empty()) {
+      // This is the race condition: Terminate is called while Create is pending.
+      log::info("BIG sync creation is pending for handle: {}, starting cancel transaction",
+                big_handle);
+      sink_big_handle_to_cancel_transactions_[big_handle] = big_sync_cancel_transaction{};
+
+      /*
+       * NOTE: In all scenarios below, only the BIG Terminated Event is forwarded to the
+       * ISO Manager Client. Any received BIG Sync Established Event is ignored by the btm_iso
+       * as the user's intent is termination.
+       *
+       * 1. Established Event Scheduled but Not Sent:
+       * - Scenario 1 & 2: HCI_BLE_BIG_SYNC_EST_EVT (Success or Failure status) was scheduled
+       * when Terminate Sync command was sent.
+       * - Action: btm_iso must ignore the scheduled Established Event and process the Terminated
+       * Event.
+       *
+       * 2. Sync In Progress (Simultaneous Events):
+       * - Scenario 3 & 4: Terminate Sync command sent during BIG synchronization. Controller
+       * generates two events: Termination Complete (Success) and Sync Established (Cancelled by
+       * Host). Event order is random.
+       * - Action: btm_iso must ignore the Sync Established (Cancelled) event if received, and
+       * process the Termination Complete Event as the final outcome.
+       */
+    } else {
+      /* If group is not found, it might have been already terminated due to race condition.
+      Or it was never created. Let controller to handle this and return proper error code. */
+      log::warn("BIG handle {} not found for termination.", big_handle);
+    }
 
     btsnd_hcic_ble_big_terminate_sync(
             big_handle,
@@ -1425,6 +1526,8 @@ struct iso_impl {
           source_big_handle_to_group_map_;
   std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>>
           sink_big_handle_to_group_map_;
+  // BIG sync cancel transaction tracking
+  std::unordered_map<uint8_t, big_sync_cancel_transaction> sink_big_handle_to_cancel_transactions_;
 
   // Member variables should appear before the WeakPtrFactory, to ensure
   // that any WeakPtrs are invalidated before its members
