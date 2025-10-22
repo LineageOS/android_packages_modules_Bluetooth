@@ -275,7 +275,6 @@ java_defaults {
             "-Xep:AndroidFrameworkEfficientParcelable:ERROR",
             "-Xep:AndroidFrameworkEfficientStrings:ERROR",
             "-Xep:AndroidFrameworkPendingIntentMutability:ERROR",
-            "-Xep:AndroidFrameworkRequiresPermission:ERROR",
             "-Xep:AndroidFrameworkRethrowFromSystem:ERROR",
             "-Xep:AndroidFrameworkTargetSdk:ERROR",
             "-Xep:AndroidHideInComments:ERROR",
@@ -288,6 +287,9 @@ java_defaults {
 
             // Does not look pertinent in our situation
             "-Xep:AndroidFrameworkEfficientXml:OFF",
+
+            // Plugin replaced by RequiresPermissionDetector lint
+            "-Xep:AndroidFrameworkRequiresPermission:OFF",
         ],
     },
 }

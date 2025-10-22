@@ -27,7 +27,6 @@ import static com.android.bluetooth.gatt.GattUtil.isHidCharUuid;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -675,8 +674,6 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         service.unoffloadServerCharacteristics(callback, device, sessionId);
     }
 
-    // Suppressed because we are conditionally enforcing
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private static void enforcePrivilegedPermissionIfNeededForHandle(
             GattService service,
             IBluetoothGattCallback callback,

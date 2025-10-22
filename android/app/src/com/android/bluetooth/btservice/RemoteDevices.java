@@ -29,7 +29,6 @@ import static android.bluetooth.BluetoothUtils.toAnonymizedAddress;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.BroadcastOptions;
 import android.app.admin.SecurityLog;
@@ -1778,8 +1777,6 @@ public class RemoteDevices {
         }
     }
 
-    // TODO: remove when key_missing_public flag is deleted
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     void keyMissingCallback(byte[] address, int reason) {
         BluetoothDevice device = getDevice(address);
         if (device == null) {

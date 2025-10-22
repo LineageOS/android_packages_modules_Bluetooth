@@ -527,8 +527,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * Create a BluetoothLeAudio proxy object for interacting with the local Bluetooth LeAudio
      * service.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Consumer wrongly report permission
-    /* package */ BluetoothLeAudio(Context context, BluetoothAdapter adapter) {
+    BluetoothLeAudio(Context context, BluetoothAdapter adapter) {
         mContext = requireNonNull(context);
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
@@ -564,7 +563,6 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
 
     @Hide
     @Override
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Unexposed re-entrant callback
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothLeAudio.Stub.asInterface(service);

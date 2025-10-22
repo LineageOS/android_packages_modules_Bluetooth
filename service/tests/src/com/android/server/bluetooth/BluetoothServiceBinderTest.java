@@ -40,7 +40,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.quality.Strictness.STRICT_STUBS;
 
-import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.admin.DevicePolicyManager;
 import android.bluetooth.IBluetoothManagerCallback;
@@ -85,7 +84,6 @@ import java.util.function.BooleanSupplier;
 
 @SmallTest
 @RunWith(ParameterizedAndroidJunit4.class)
-@SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothServiceBinderTest {
     private static final String TAG = BluetoothServiceBinderTest.class.getSimpleName();
     private static final String LOG_COMPAT_CHANGE = "android.permission.LOG_COMPAT_CHANGE";

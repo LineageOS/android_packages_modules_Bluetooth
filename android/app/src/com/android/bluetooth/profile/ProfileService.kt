@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.profile
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothProfile
 import android.content.ComponentName
 import android.content.ContextWrapper
@@ -99,8 +98,6 @@ abstract class ProfileService(
      *
      * @param sb StringBuilder from the profile.
      */
-    // Suppressed since this is called from framework
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     open fun dump(sb: StringBuilder) {
         sb.appendLine("Profile: $name")
     }

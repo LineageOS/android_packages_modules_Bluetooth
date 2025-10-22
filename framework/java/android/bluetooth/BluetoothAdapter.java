@@ -1576,7 +1576,6 @@ public final class BluetoothAdapter {
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressLint("AndroidFrameworkRequiresPermission") // See disable(boolean) for reason
     public boolean disable() {
         return disable(true);
     }
@@ -2664,7 +2663,6 @@ public final class BluetoothAdapter {
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressLint("AndroidFrameworkRequiresPermission") // IpcDataCache prevent lint enforcement
     public @ConnectionState int getProfileConnectionState(int profile) {
         if (getState() != STATE_ON) {
             return STATE_DISCONNECTED;
@@ -3210,7 +3208,6 @@ public final class BluetoothAdapter {
      * @param proxy Profile proxy object
      */
     @Hide
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     @RequiresNoPermission
     public void closeProfileProxy(@NonNull BluetoothProfile proxy) {
         if (proxy instanceof BluetoothGatt gatt) {
@@ -3336,7 +3333,6 @@ public final class BluetoothAdapter {
 
     private final IBluetoothManagerCallback mManagerCallback =
             new IBluetoothManagerCallback.Stub() {
-                @SuppressLint("AndroidFrameworkRequiresPermission") // Internal callback
                 @RequiresNoPermission
                 public void onBluetoothServiceUp(@NonNull IBinder bluetoothService) {
                     requireNonNull(bluetoothService);

@@ -26,7 +26,6 @@ import static android.permission.PermissionManager.PERMISSION_HARD_DENIED;
 import static com.android.server.bluetooth.ChangeIds.RESTRICT_ENABLE_DISABLE;
 
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AppOpsManager;
 import android.app.admin.DevicePolicyManager;
@@ -77,7 +76,6 @@ class BtPermissionUtils {
      *
      * <p>Should be used in situations where the app op should not be noted.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforces the permission
     @RequiresPermission(BLUETOOTH_CONNECT)
     static boolean checkConnectPermissionForDataDelivery(
             Context ctx,
@@ -170,10 +168,7 @@ class BtPermissionUtils {
         return callingAppId == mSystemUiUid;
     }
 
-    @SuppressWarnings({
-        "AndroidFrameworkRequiresPermission",
-        "IncorrectRequiresPermissionPropagation"
-    }) // No permission enforcement
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // No permission enforcement
     private static boolean isPrivileged(Context ctx, int pid, int uid) {
         return (ctx.checkPermission(BLUETOOTH_PRIVILEGED, pid, uid) == PERMISSION_GRANTED)
                 || (ctx.getPackageManager().checkSignatures(uid, SYSTEM_UID) == SIGNATURE_MATCH);
