@@ -22,6 +22,7 @@ import android.os.Binder
 import android.os.HandlerThread
 import android.os.ParcelFileDescriptor
 import android.os.Process
+import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.flags.Flags
@@ -104,8 +105,6 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
         doReturn(returnValue).whenever(mockBinder).disable(any(), any())
         doReturn(returnValue).whenever(mockBinder).enableBle(any(), any())
         doReturn(returnValue).whenever(mockBinder).disableBle(any(), any())
-        // TODO (b/450375470): Mocking of 'factoryReset' seems impossible ?
-        // doReturn(returnValue).whenever(mockBinder).factoryReset(any())
     }
 
     @After
@@ -180,15 +179,12 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
     fun onCommand_factoryReset() {
         ShadowBinder.setCallingUid(Process.ROOT_UID)
 
         assertThat(shellCommand.onCommand("factoryReset")).isEqualTo(if (returnValue) 0 else -1)
-        if (Flags.systemServerMessenger()) {
-            verify(mockApi).factoryReset()
-        } else {
-            verify(mockBinder).factoryReset(any())
-        }
+        verify(mockApi).factoryReset()
     }
 
     @Test
