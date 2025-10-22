@@ -688,7 +688,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             Log.w(TAG, "(" + callback + ") - App not registered");
             return;
         }
-        final var connId = service.getFirstConnectionIdForDevice(clientApp.id, device);
+        final var connId = service.getFirstConnectionIdForDevice(clientApp.getId(), device);
         if (connId == null) {
             Log.e(TAG, "(" + device + ") - No connection");
             return;

@@ -193,7 +193,7 @@ object GattUtil {
             append("    app_if: ${app.id}")
             append(", appName: ${app.packageName}")
             append(", transport: ${transportToString(app.transport)}")
-            app.mAttributionTag?.let { tag -> append(", tag: $tag") }
+            app.attributionTag?.let { tag -> append(", tag: $tag") }
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
