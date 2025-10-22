@@ -15,7 +15,6 @@
 
 package com.android.bluetooth.map;
 
-import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 
 import org.xmlpull.v1.XmlSerializer;

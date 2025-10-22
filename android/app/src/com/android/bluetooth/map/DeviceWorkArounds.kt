@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth;
+package com.android.bluetooth.map
 
-import java.util.Locale;
+import java.util.Locale
 
-public final class DeviceWorkArounds {
-    public static final String PCM_CARKIT = "9c:df:03";
-    public static final String FORD_SYNC_CARKIT = "00:1e:ae";
-    public static final String HONDA_CARKIT = "64:d4:bd";
-    public static final String SYNC_CARKIT = "d0:39:72";
-    public static final String BREZZA_ZDI_CARKIT = "28:a1:83";
-    public static final String MERCEDES_BENZ_CARKIT = "00:26:e8";
+object DeviceWorkArounds {
+    const val PCM_CARKIT = "9c:df:03"
+    const val FORD_SYNC_CARKIT = "00:1e:ae"
+    const val HONDA_CARKIT = "64:d4:bd"
+    const val SYNC_CARKIT = "d0:39:72"
+    const val BREZZA_ZDI_CARKIT = "28:a1:83"
+    const val MERCEDES_BENZ_CARKIT = "00:26:e8"
 
-    public static boolean addressStartsWith(String bdAddr, String carkitAddr) {
-        return bdAddr.toLowerCase(Locale.ROOT).startsWith(carkitAddr);
+    @JvmStatic
+    fun addressStartsWith(bdAddr: String, carkitAddr: String): Boolean {
+        return bdAddr.lowercase(Locale.ROOT).startsWith(carkitAddr)
     }
 }

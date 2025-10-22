@@ -17,7 +17,6 @@ package com.android.bluetooth.map;
 
 import android.util.Log;
 
-import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.map.BluetoothMapSmsPdu.SmsPdu;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 
