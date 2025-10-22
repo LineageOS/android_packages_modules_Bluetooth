@@ -298,7 +298,7 @@ public class AdvertiseManager {
             if (serverApp == null) {
                 Log.w(TAG, "startAdvertisingSet(" + gattServerCallback + "): App not registered");
             } else {
-                serverIf = serverApp.id;
+                serverIf = serverApp.getId();
             }
         }
         if (serverIf != 0

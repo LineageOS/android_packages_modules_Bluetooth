@@ -83,10 +83,10 @@ public class ContextMap<C extends IInterface> {
         @Nullable private Instant mUnregisterTime;
 
         AppRecord(ContextApp<C> app) {
-            mUuid = app.mUuid;
-            mPackageName = app.mPackageName;
+            mUuid = app.getUuid();
+            mPackageName = app.getPackageName();
             mTransport = app.getTransport();
-            mAttributionTag = app.mAttributionTag;
+            mAttributionTag = app.getAttributionTag();
             mRegisterTime = Instant.now();
         }
 
@@ -172,7 +172,7 @@ public class ContextMap<C extends IInterface> {
             var i = mApps.iterator();
             while (i.hasNext()) {
                 var entry = i.next();
-                if (entry.mUuid.equals(uuid)) {
+                if (entry.getUuid().equals(uuid)) {
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
@@ -190,7 +190,7 @@ public class ContextMap<C extends IInterface> {
             var i = mApps.iterator();
             while (i.hasNext()) {
                 var entry = i.next();
-                if (entry.id == id) {
+                if (entry.getId() == id) {
                     removedApp = entry;
                     entry.unlinkToDeath();
                     i.remove();
@@ -249,7 +249,7 @@ public class ContextMap<C extends IInterface> {
 
     /** Get an application context by ID. */
     ContextApp<C> getById(int id) {
-        var app = getAppByPredicate(entry -> entry.id == id);
+        var app = getAppByPredicate(entry -> entry.getId() == id);
         if (app == null) {
             Log.e(TAG, "Context not found for ID " + id);
         }
@@ -268,7 +268,7 @@ public class ContextMap<C extends IInterface> {
 
     /** Get an application context by UUID. */
     ContextApp<C> getByUuid(UUID uuid) {
-        var app = getAppByPredicate(entry -> entry.mUuid.equals(uuid));
+        var app = getAppByPredicate(entry -> entry.getUuid().equals(uuid));
         if (app == null) {
             Log.e(TAG, "Context not found for UUID " + uuid);
         }
@@ -358,7 +358,7 @@ public class ContextMap<C extends IInterface> {
     /** Counts the number of applications that have a given app UID. */
     int countByAppUid(int appUid) {
         synchronized (mAppsLock) {
-            return (int) (mApps.stream().filter(app -> app.mUid == appUid).count());
+            return (int) (mApps.stream().filter(app -> app.getUid() == appUid).count());
         }
     }
 
@@ -402,9 +402,9 @@ public class ContextMap<C extends IInterface> {
     @GuardedBy("mAppsLock")
     private void recordUnregisterApp(ContextApp<C> app, RemoveReason reason) {
         for (int i = 0; i < mOngoingRecords.size(); i++) {
-            if (app.mUuid.equals(mOngoingRecords.get(i).mUuid)) {
+            if (app.getUuid().equals(mOngoingRecords.get(i).mUuid)) {
                 AppRecord record = mOngoingRecords.remove(i);
-                record.mClientIf = app.id;
+                record.mClientIf = app.getId();
                 record.mReason = reason;
                 record.mUnregisterTime = Instant.now();
 

@@ -166,7 +166,7 @@ public class GattServiceTest {
         doReturn(CLIENT_CONN_LIST).when(mClientMap).getConnectionsByDevice(CLIENT_IF, mDevice);
         var clientApp = mock(ContextApp.class);
         doReturn(mGattCallback).when(clientApp).getCallback();
-        clientApp.id = CLIENT_IF;
+        doReturn(CLIENT_IF).when(clientApp).getId();
         doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
         doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
         doReturn(clientApp, (Object[]) null)
@@ -1555,7 +1555,7 @@ public class GattServiceTest {
             int serverIf, int transport, IBluetoothGattServerCallback cb) {
         @SuppressWarnings("unchecked")
         ContextApp<IBluetoothGattServerCallback> serverApp = mock(ContextApp.class);
-        serverApp.id = serverIf;
+        doReturn(serverIf).when(serverApp).getId();
         doReturn(transport).when(serverApp).getTransport();
         doReturn(cb).when(serverApp).getCallback();
         doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
@@ -1593,7 +1593,7 @@ public class GattServiceTest {
             int connId,
             int transport,
             BluetoothDevice device) {
-        int serverIf = serverApp.id;
+        int serverIf = serverApp.getId();
         ContextMap.Connection conn = new ContextMap.Connection(connId, device, transport, serverIf);
         mServerConnections.add(conn);
         doReturn(serverApp).when(mServerMap).getByConnId(eq(connId));

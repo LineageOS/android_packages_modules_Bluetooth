@@ -29,47 +29,26 @@ private const val TAG = GattUtil.TAG_PREFIX + "ContextApp"
 
 /** Application entry mapping UUIDs to appIDs and callbacks. */
 class ContextApp<C : IInterface>(
-    uuid: UUID,
-    callback: C?,
-    uid: Int,
-    packageName: String,
-    transport: Int,
+    val uuid: UUID,
+    val callback: C?,
+    val uid: Int,
+    val packageName: String,
+    val transport: Int,
     source: AttributionSource?,
 ) {
-    @JvmField val mUuid = uuid
-    private val mCallback = callback
-    @JvmField val mUid = uid
-    @JvmField val mPackageName = packageName
-    private val mTransport = transport
-    @JvmField val mAttributionTag = source.getLastAttributionTag()
-
-    @JvmField var id = 0
-
+    val attributionTag = source.getLastAttributionTag()
+    var id = 0
     /** Flag to signal that transport is congested */
-    @JvmField var isCongested: Boolean = false
-
-    private var mDeathRecipient: IBinder.DeathRecipient? = null
-
+    var isCongested = false
+    private var deathRecipient: IBinder.DeathRecipient? = null
     /** Internal callback info queue, waiting to be send on congestion clear */
-    private val mCongestionQueue = mutableListOf<CallbackInfo>()
+    private val congestionQueue = mutableListOf<CallbackInfo>()
 
-    fun getCallback(): C? {
-        return mCallback
-    }
-
-    fun getPackageName(): String {
-        return mPackageName
-    }
-
-    fun getTransport(): Int {
-        return mTransport
-    }
-
-    fun linkToDeath(deathRecipient: IBinder.DeathRecipient) {
-        mCallback?.let { cb ->
+    fun linkToDeath(recipient: IBinder.DeathRecipient) {
+        callback?.let { cb ->
             try {
-                cb.asBinder().linkToDeath(deathRecipient, 0)
-                mDeathRecipient = deathRecipient
+                cb.asBinder().linkToDeath(recipient, 0)
+                deathRecipient = recipient
             } catch (e: RemoteException) {
                 Log.e(TAG, "Unable to link deathRecipient for app id=$id")
             }
@@ -77,8 +56,8 @@ class ContextApp<C : IInterface>(
     }
 
     fun unlinkToDeath() {
-        mDeathRecipient?.let { recipient ->
-            mCallback?.let { cb ->
+        deathRecipient?.let { recipient ->
+            callback?.let { cb ->
                 try {
                     cb.asBinder().unlinkToDeath(recipient, 0)
                 } catch (e: NoSuchElementException) {
@@ -89,13 +68,13 @@ class ContextApp<C : IInterface>(
     }
 
     fun queueCallback(callbackInfo: CallbackInfo) {
-        mCongestionQueue.add(callbackInfo)
+        congestionQueue.add(callbackInfo)
     }
 
     fun popQueuedCallback(): CallbackInfo? {
-        if (mCongestionQueue.isEmpty()) {
+        if (congestionQueue.isEmpty()) {
             return null
         }
-        return mCongestionQueue.removeAt(0)
+        return congestionQueue.removeAt(0)
     }
 }

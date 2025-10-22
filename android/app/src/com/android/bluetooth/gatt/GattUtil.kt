@@ -191,9 +191,9 @@ object GattUtil {
     private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
         map.allApps.forEach { app ->
             append("    app_if: ${app.id}")
-            append(", appName: ${app.mPackageName}")
-            append(", transport: ${transportToString(app.getTransport())}")
-            app.mAttributionTag?.let { tag -> append(", tag: $tag") }
+            append(", appName: ${app.packageName}")
+            append(", transport: ${transportToString(app.transport)}")
+            app.attributionTag?.let { tag -> append(", tag: $tag") }
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
