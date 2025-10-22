@@ -16,8 +16,8 @@
 
 package com.android.bluetooth.mapclient;
 
-import com.android.bluetooth.ObexAppParameters;
 import com.android.bluetooth.mapclient.MasClient.CharsetType;
+import com.android.bluetooth.obex.ObexAppParameters;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;

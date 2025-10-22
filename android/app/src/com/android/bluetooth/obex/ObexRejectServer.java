@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth;
+package com.android.bluetooth.obex;
 
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;

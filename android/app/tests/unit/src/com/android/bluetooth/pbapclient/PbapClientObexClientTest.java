@@ -40,8 +40,8 @@ import android.util.Log;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.FakeObexServer;
-import com.android.bluetooth.ObexAppParameters;
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.obex.ObexAppParameters;
 import com.android.obex.ApplicationParameter;
 import com.android.obex.HeaderSet;
 import com.android.obex.ObexTransport;

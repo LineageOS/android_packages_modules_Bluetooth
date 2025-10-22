@@ -32,8 +32,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
