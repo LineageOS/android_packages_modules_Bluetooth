@@ -60,4 +60,6 @@ public:
 
   virtual void SetStreamingPhy(uint8_t phy) = 0;
   virtual uint8_t GetStreamingPhy(void) const = 0;
+  virtual void SetBigChannelMapClassification(uint8_t action, const RawAddress& sink_addr,
+                                              uint32_t broadcast_id) = 0;
 };

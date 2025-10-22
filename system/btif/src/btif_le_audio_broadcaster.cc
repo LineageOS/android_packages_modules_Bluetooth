@@ -96,6 +96,12 @@ class LeAudioBroadcasterInterfaceImpl : public LeAudioBroadcasterInterface,
                            Unretained(LeAudioBroadcaster::Get()), broadcast_id));
   }
 
+  void SetBigChannelMapClassification(uint8_t action, const RawAddress& sink_addr,
+                                      uint32_t broadcast_id) override {
+    do_in_main_thread(Bind(&LeAudioBroadcaster::SetBigChannelMapClassification,
+                           Unretained(LeAudioBroadcaster::Get()), action, sink_addr, broadcast_id));
+  }
+
   void OnBroadcastCreated(uint32_t broadcast_id, bool success) override {
     do_in_jni_thread(Bind(&LeAudioBroadcasterCallbacks::OnBroadcastCreated, Unretained(callbacks_),
                           broadcast_id, success));

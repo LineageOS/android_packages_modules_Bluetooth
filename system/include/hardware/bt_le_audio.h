@@ -616,6 +616,9 @@ public:
   virtual void DestroyBroadcast(uint32_t broadcast_id) = 0;
   /* Get Broadcast Metadata */
   virtual void GetBroadcastMetadata(uint32_t broadcast_id) = 0;
+  /* Set BIG Channel Map by Sink Channel Classification */
+  virtual void SetBigChannelMapClassification(uint8_t action, const RawAddress& sink_addr,
+                                              uint32_t broadcast_id) = 0;
 };
 
 } /* namespace le_audio */

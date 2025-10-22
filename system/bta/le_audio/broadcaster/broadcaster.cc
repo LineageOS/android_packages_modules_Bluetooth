@@ -58,6 +58,7 @@
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_iso_api.h"
 
 #ifdef TARGET_FLOSS
@@ -944,6 +945,41 @@ public:
     }
 
     dprintf(fd, "%s", stream.str().c_str());
+  }
+
+  void SetBigChannelMapClassification(uint8_t action, const RawAddress& sink_addr,
+                                      uint32_t broadcast_id) override {
+    if (!com::android::bluetooth::flags::leaudio_broadcast_source_channel_map_classification()) {
+      return;
+    }
+
+    if (instance->broadcasts_.count(broadcast_id) == 0) {
+      log::error("No such broadcast_id={}", broadcast_id);
+      return;
+    }
+
+    auto OwnBroadcaster = instance->broadcasts_.at(broadcast_id).get();
+    if (OwnBroadcaster->GetBigConfig() == std::nullopt) {
+      log::error("Broadcast broadcast_id={} has no valid BIS configurations", broadcast_id);
+      return;
+    }
+
+    uint8_t big_handle = OwnBroadcaster->GetBigConfig()->big_handle;
+    uint16_t conn_handle =
+            get_btm_client_interface().peer.BTM_GetHCIConnHandle(sink_addr, BT_TRANSPORT_LE);
+    if (conn_handle == HCI_INVALID_HANDLE) {
+      log::error("Could not get connection handle for connected device {}", sink_addr);
+      return;
+    }
+    std::vector<uint16_t> handles = {conn_handle};
+
+    log::info(
+            "Issuing SetBigChannelMapClassificationVSC: action={}, big_handle={}, num_handles = "
+            "{}, conn_handle={}",
+            action, big_handle, handles.size(), conn_handle);
+
+    IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
+                                                                           handles.size(), handles);
   }
 
 private:

@@ -1263,6 +1263,7 @@ cc_test {
         ":TestFakeOsi",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
+        ":TestMockStackBtmInterface",
         ":TestMockStackBtmIso",
         "le_audio/broadcaster/broadcaster.cc",
         "le_audio/broadcaster/broadcaster_test.cc",
