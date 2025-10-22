@@ -28,6 +28,7 @@ import com.android.bluetooth.le_scan.ScanUtil.appNameOrUnknown
 import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.getLastAttributionTag
+import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -195,7 +196,7 @@ class ScannerMap {
                 )
             }
 
-            sb.appendLine(apps.toTable(columns).prependIndent("  "))
+            sb.appendLine(apps.toTable(columns).indent("  "))
         }
         sb.appendLine()
 
@@ -203,7 +204,7 @@ class ScannerMap {
         sb.appendLine("  Entries: ${appScanStatsMap.size}")
         for (appScanStats in appScanStatsMap.values) {
             val scannerApps = apps.filter { it.name == appScanStats.name }
-            sb.appendLine(appScanStats.dump(scannerApps).trimEnd().prependIndent("  "))
+            sb.appendLine(appScanStats.dump(scannerApps).indent("  "))
         }
     }
 }

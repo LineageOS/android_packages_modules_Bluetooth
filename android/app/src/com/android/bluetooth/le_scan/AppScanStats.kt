@@ -42,6 +42,7 @@ import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
 import com.android.bluetooth.le_scan.ScanUtil.toStringWithoutNullParam
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
+import com.android.bluetooth.util.indent
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -447,14 +448,14 @@ class AppScanStats(
         if (lastScans.isNotEmpty()) {
             appendLine("  Last ${lastScans.size} scans:")
             lastScans.forEach {
-                appendLine(it.details(currentTime, elapsedTime, false).prependIndent("    "))
+                appendLine(it.details(currentTime, elapsedTime, false).indent("    "))
             }
         }
 
         if (ongoingScans.isNotEmpty()) {
             appendLine("  Ongoing ${ongoingScans.size} scans:")
             ongoingScans.forEach {
-                appendLine(it.details(currentTime, elapsedTime, true).prependIndent("    "))
+                appendLine(it.details(currentTime, elapsedTime, true).indent("    "))
             }
         }
     }
@@ -523,7 +524,7 @@ class AppScanStats(
         append("  └ Config: [ScanMode=${scanModeToString(scanMode)}")
         appendLine(", callbackType=${callbackTypeToString(scanCallbackType)}]")
 
-        if (isFilterScan) append(filterStringBuilder.trimEnd().toString().prependIndent("  └ "))
+        if (isFilterScan) append(filterStringBuilder.toString().indent("  └ "))
     }
 
     companion object {
