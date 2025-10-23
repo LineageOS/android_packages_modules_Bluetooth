@@ -280,20 +280,17 @@ extern struct BTM_SecurityGrant BTM_SecurityGrant;
 
 // Name: btm_ble_connected
 // Params: const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t
-// role, tBLE_ADDR_TYPE addr_type, bool addr_matched, bool can_read_discoverable_characteristics
+// role, tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics
 // Return: void
 struct btm_ble_connected {
   std::function<void(const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t role,
-                     tBLE_ADDR_TYPE addr_type, bool addr_matched,
-                     bool can_read_discoverable_characteristics)>
+                     tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics)>
           body{[](const RawAddress& /* bda */, uint16_t /* handle */, uint8_t /* enc_mode */,
-                  uint8_t /* role */, tBLE_ADDR_TYPE /* addr_type */, bool /* addr_matched */,
+                  uint8_t /* role */, tBLE_ADDR_TYPE /* addr_type */,
                   bool /* can_read_discoverable_characteristics */) {}};
   void operator()(const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t role,
-                  tBLE_ADDR_TYPE addr_type, bool addr_matched,
-                  bool can_read_discoverable_characteristics) {
-    body(bda, handle, enc_mode, role, addr_type, addr_matched,
-         can_read_discoverable_characteristics);
+                  tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics) {
+    body(bda, handle, enc_mode, role, addr_type, can_read_discoverable_characteristics);
   }
 };
 extern struct btm_ble_connected btm_ble_connected;
