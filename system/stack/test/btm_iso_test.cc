@@ -472,12 +472,6 @@ const bluetooth::hci::iso_manager::cig_create_params IsoManagerTest::kDefaultCig
 
 class IsoManagerDeathTest : public IsoManagerTest {};
 
-class IsoManagerDeathTestNoInit : public IsoManagerTest {
-protected:
-  void InitIsoManager() override { /* DO NOTHING */ }
-
-  void CleanupIsoManager() override { /* DO NOTHING */ }
-};
 
 class IsoManagerDeathTestNoCleanup : public IsoManagerTest {
 protected:
