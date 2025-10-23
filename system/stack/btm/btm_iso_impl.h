@@ -416,7 +416,7 @@ struct iso_impl {
   }
 
   void create_cig(IsoClientHandle client_handle, uint8_t cig_id,
-                  struct iso_manager::cig_create_params cig_params) {
+                  struct cig_create_params cig_params) {
     log::assert_that(!IsCigKnown(cig_id), "Invalid cig - already exists: {}", cig_id);
 
     {
@@ -438,7 +438,7 @@ struct iso_impl {
                    std::format("cig_id:0x{:02x}, size: {}", cig_id, cig_params.cis_cfgs.size()));
   }
 
-  void reconfigure_cig(uint8_t cig_id, struct iso_manager::cig_create_params cig_params) {
+  void reconfigure_cig(uint8_t cig_id, struct cig_create_params cig_params) {
     log::assert_that(IsCigKnown(cig_id), "No such cig: {}", cig_id);
 
     btsnd_hcic_ble_set_cig_params(
@@ -497,8 +497,8 @@ struct iso_impl {
                    std::format("cig_id:0x{:02x} (f:{})", cig_id, force));
   }
 
-  void on_status_establish_cis(struct iso_manager::cis_establish_params conn_params,
-                               uint8_t* stream, uint16_t len) {
+  void on_status_establish_cis(struct cis_establish_params conn_params, uint8_t* stream,
+                               uint16_t len) {
     uint8_t status;
 
     log::assert_that(len == 2, "Invalid packet length: {}", len);
@@ -537,7 +537,7 @@ struct iso_impl {
     }
   }
 
-  void establish_cis(struct iso_manager::cis_establish_params conn_params) {
+  void establish_cis(struct cis_establish_params conn_params) {
     for (auto& el : conn_params.conn_pairs) {
       auto stream_ptr = GetStream(el.cis_conn_handle);
       log::assert_that(stream_ptr, "No such cis: {}", el.cis_conn_handle);
@@ -637,8 +637,7 @@ struct iso_impl {
     }
   }
 
-  void setup_iso_data_path(uint16_t conn_handle,
-                           struct iso_manager::iso_data_path_params path_params) {
+  void setup_iso_data_path(uint16_t conn_handle, struct iso_data_path_params path_params) {
     iso_stream* iso = GetStream(conn_handle);
     if (!(iso->state_flags & (kStateFlagIsBroadcastSource | kStateFlagIsBroadcastSink))) {
       log::assert_that(iso->state_flags & kStateFlagIsConnected, "CIS not established");
