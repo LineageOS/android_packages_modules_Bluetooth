@@ -1219,9 +1219,12 @@ public class A2dpService extends ConnectableProfile {
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
             if (mAdapterService.getBondState(device) == BluetoothDevice.BOND_NONE) {
-                mAdapterService
-                        .getAvrcpTargetService()
-                        .ifPresent(avrcpTarget -> avrcpTarget.removeStoredVolumeForDevice(device));
+                if (!Flags.mainlineBetaStorage()) {
+                    mAdapterService
+                            .getAvrcpTargetService()
+                            .ifPresent(
+                                    avrcpTarget -> avrcpTarget.removeStoredVolumeForDevice(device));
+                }
                 removeStateMachine(device);
             }
         }
