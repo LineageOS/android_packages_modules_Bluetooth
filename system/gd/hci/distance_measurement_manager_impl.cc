@@ -84,6 +84,7 @@ static constexpr uint8_t kMaxConfigId = 3;
 static constexpr uint16_t kDefaultIntervalMs = 1000;  // 1s
 static constexpr uint8_t kMaxRetryCounterForReadRemoteCapability = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
+static constexpr uint8_t kMaxRetryCounterForSetProcedureParameter = 0x0a;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint16_t kCommandRetryIntervalMs = 300;  // 300 ms
 static constexpr uint16_t kInvalidConnInterval = 0;  // valid value is from 0x0006 to 0x0C80
@@ -203,6 +204,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     bool setup_complete = false;
     uint8_t retry_counter_for_read_remote_capability = 0;
     uint8_t retry_counter_for_create_config = 0;
+    uint8_t retry_counter_for_set_procedure_parameter = 0;
     uint8_t retry_counter_for_cs_enable = 0;
     uint16_t n_procedure_count = 0;
     CsMainModeType main_mode_type = CsMainModeType::MODE_2;
@@ -508,6 +510,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     it->second.local_hci_role = local_hci_role;
     it->second.retry_counter_for_read_remote_capability = 0;
     it->second.retry_counter_for_create_config = 0;
+    it->second.retry_counter_for_set_procedure_parameter = 0;
     it->second.retry_counter_for_cs_enable = 0;
     it->second.sent_procedure_disable_after_stopping = false;
     it->second.sight_type = sight_type;
@@ -1007,7 +1010,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               (double)measurement_interval_ms /
               (cs_requester_trackers_[connection_handle].conn_interval_ * kConnIntervalUnitMs)));
     }
-    log::debug("procedure params: min_int = {}", min_procedure_interval);
+    log::info("min_procedure_interval:{}, conn_interval:{}", min_procedure_interval,
+              cs_requester_trackers_[connection_handle].conn_interval_);
     hci_layer_->EnqueueCommand(
             LeCsSetProcedureParametersBuilder::Create(
                     connection_handle, config_id, kMaxProcedureLen, min_procedure_interval,
@@ -1405,9 +1409,28 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
       log::warn("Received LeCsSetProcedureParametersCompleteView with error code {}", error_code);
-      handle_cs_setup_failure(
-              connection_handle, REASON_INTERNAL_ERROR,
-              ChannelSoundingStopReason::REASON_SET_PROCEDURE_PARAMETERS_COMPLETE_FAILED);
+      if (cs_requester_trackers_[connection_handle].retry_counter_for_set_procedure_parameter <
+          kMaxRetryCounterForSetProcedureParameter) {
+        // Get a reference to the tracker
+        auto& tracker = cs_requester_trackers_[connection_handle];
+        tracker.retry_counter_for_set_procedure_parameter++;
+        log::info(
+                "Scheduling retry for send_le_cs_set_procedure_parameters after {} ms, "
+                "retry counter {}",
+                kCommandRetryIntervalMs, tracker.retry_counter_for_set_procedure_parameter);
+        // Cancel any pending task and schedule the retry with a delay
+        tracker.procedure_schedule_guard_alarm->Cancel();
+        tracker.procedure_schedule_guard_alarm->Schedule(
+                common::Bind(&impl::send_le_cs_set_procedure_parameters, common::Unretained(this),
+                             connection_handle, tracker.used_config_id,
+                             tracker.remote_num_antennas_supported_,
+                             tracker.remote_max_antenna_paths_supported_),
+                std::chrono::milliseconds(kCommandRetryIntervalMs));
+      } else {
+        handle_cs_setup_failure(
+                connection_handle, REASON_INTERNAL_ERROR,
+                ChannelSoundingStopReason::REASON_SET_PROCEDURE_PARAMETERS_COMPLETE_FAILED);
+      }
       return;
     }
     auto it = cs_requester_trackers_.find(connection_handle);
@@ -1418,6 +1441,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
     if (it->second.measurement_ongoing) {
       log::info("cs set up succeed");
+      it->second.retry_counter_for_set_procedure_parameter = 0;
       it->second.setup_complete = true;
       send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
     }
