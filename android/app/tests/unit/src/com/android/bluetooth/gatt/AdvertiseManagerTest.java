@@ -101,7 +101,8 @@ public class AdvertiseManagerTest {
         int duration = 60;
         int maxExtAdvEvents = 100;
 
-        mAdvertiseManager.enableAdvertisingSet(mAdvertiserId, enable, duration, maxExtAdvEvents);
+        mAdvertiseManager.enableAdvertisingSet(
+                mAdvertiserId, enable, duration, maxExtAdvEvents, mSource);
         verify(mAdvertiserMap)
                 .enableAdvertisingSet(mAdvertiserId, enable, duration, maxExtAdvEvents);
     }

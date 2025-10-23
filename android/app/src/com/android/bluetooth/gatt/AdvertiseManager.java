@@ -38,6 +38,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
@@ -242,13 +243,12 @@ public class AdvertiseManager {
         }
     }
 
-    private void fetchAppForegroundState(int id) {
+    private void fetchAppForegroundState(int uid, int id) {
         final var packageManager = mAdapterService.getPackageManager();
         if (mActivityManager == null || packageManager == null) {
             return;
         }
-        final int appUid = Binder.getCallingUid();
-        String[] packages = packageManager.getPackagesForUid(appUid);
+        String[] packages = packageManager.getPackagesForUid(uid);
         if (packages == null || packages.length == 0) {
             return;
         }
@@ -317,13 +317,13 @@ public class AdvertiseManager {
             return;
         }
 
-        final int appUid = Binder.getCallingUid();
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
         String packageName = null;
         if (mAdapterService.getPackageManager() != null) {
-            packageName = mAdapterService.getPackageManager().getNameForUid(appUid);
+            packageName = mAdapterService.getPackageManager().getNameForUid(uid);
         }
         if (packageName == null) {
-            packageName = "Unknown package name (UID: " + appUid + ")";
+            packageName = "Unknown package name (UID: " + uid + ")";
         }
         final var deathRecipient = new AdvertisingSetDeathRecipient(callback, packageName);
         final var binder = callback.asBinder();
@@ -341,12 +341,12 @@ public class AdvertiseManager {
 
             final int cbId = --mTempRegistrationId;
             mAdvertisers.put(binder, new AdvertiserInfo(cbId, deathRecipient, callback));
-            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents);
+            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents, source);
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
-            mAdvertiserMap.addAppAdvertiseStats(cbId, mAdapterService, source);
-            fetchAppForegroundState(cbId);
+            mAdvertiserMap.addAppAdvertiseStats(uid, cbId, mAdapterService, source);
+            fetchAppForegroundState(uid, cbId);
             mAdvertiserMap.recordAdvertiseStart(
                     cbId,
                     parameters,
@@ -450,12 +450,17 @@ public class AdvertiseManager {
         mAdvertiserMap.recordAdvertiseStop(advertiserId);
     }
 
-    void enableAdvertisingSet(int advertiserId, boolean enable, int duration, int maxExtAdvEvents) {
+    void enableAdvertisingSet(
+            int advertiserId,
+            boolean enable,
+            int duration,
+            int maxExtAdvEvents,
+            AttributionSource source) {
         checkThread();
         if (mAdvertiseSuspendManager.shouldQueueCommand()) {
             Log.i(TAG, "Suspending! Queue command and return early.");
             mAdvertiseSuspendManager.queueEnableAdvertisingSet(
-                    advertiserId, enable, duration, maxExtAdvEvents);
+                    advertiserId, enable, duration, maxExtAdvEvents, source);
             return;
         }
 
@@ -467,7 +472,8 @@ public class AdvertiseManager {
 
         mAdvertiseSuspendManager.onEnableAdvertisingSet(advertiserId);
 
-        fetchAppForegroundState(advertiserId);
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        fetchAppForegroundState(uid, advertiserId);
         mNativeInterface.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
         mAdvertiserMap.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
     }

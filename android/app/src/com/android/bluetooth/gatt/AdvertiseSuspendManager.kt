@@ -48,7 +48,11 @@ class AdvertiseSuspendManager(
         RESUMING, // Enable all paused advertisements.
     }
 
-    class AdvertiserSuspendInfo(val duration: Int, val maxExtAdvEvents: Int) {
+    class AdvertiserSuspendInfo(
+        val duration: Int,
+        val maxExtAdvEvents: Int,
+        val source: AttributionSource,
+    ) {
         var currentlyEnabled = false
         var needEnableOnResume = false
         // The number of ongoing start/enable/disable operations for this advertiser.
@@ -94,6 +98,7 @@ class AdvertiseSuspendManager(
         val enable: Boolean,
         val duration: Int,
         val maxExtAdvEvents: Int,
+        val source: AttributionSource,
     ) : PendingAdvertiseCommand
 
     data class SetAdvertisingDataCommand(val advertiserId: Int, val data: AdvertiseData?) :
@@ -141,6 +146,7 @@ class AdvertiseSuspendManager(
                     command.enable,
                     command.duration,
                     command.maxExtAdvEvents,
+                    command.source,
                 )
             is SetAdvertisingDataCommand ->
                 advertiseManager.setAdvertisingData(command.advertiserId, command.data)
@@ -209,9 +215,10 @@ class AdvertiseSuspendManager(
         enable: Boolean,
         duration: Int,
         maxExtAdvEvents: Int,
+        source: AttributionSource,
     ) {
         pendingCommands.add(
-            EnableAdvertisingSetCommand(advertiserId, enable, duration, maxExtAdvEvents)
+            EnableAdvertisingSetCommand(advertiserId, enable, duration, maxExtAdvEvents, source)
         )
     }
 
@@ -253,10 +260,17 @@ class AdvertiseSuspendManager(
         enable: Boolean,
         duration: Int,
         maxExtAdvEvents: Int,
+        source: AttributionSource,
     ) {
         // Skip the state check when en/disabling advertisement internally.
         forceNoQueue = true
-        advertiseManager.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents)
+        advertiseManager.enableAdvertisingSet(
+            advertiserId,
+            enable,
+            duration,
+            maxExtAdvEvents,
+            source,
+        )
         forceNoQueue = false
     }
 
@@ -305,7 +319,7 @@ class AdvertiseSuspendManager(
                 suspendInfo.needEnableOnResume or suspendInfo.currentlyEnabled
             if (suspendInfo.needEnableOnResume) {
                 suspendAdvCounter += 1
-                enableAdvertisingSet(advertiserId, false, 0, 0)
+                enableAdvertisingSet(advertiserId, false, 0, 0, suspendInfo.source)
             }
         }
 
@@ -337,6 +351,7 @@ class AdvertiseSuspendManager(
                     true,
                     suspendInfo.duration,
                     suspendInfo.maxExtAdvEvents,
+                    suspendInfo.source,
                 )
             }
         }
@@ -356,11 +371,16 @@ class AdvertiseSuspendManager(
     }
 
     /** To be called from AdvertiseManager when starting an advertising set. */
-    fun onStartAdvertisingSet(regId: Int, duration: Int, maxExtAdvEvents: Int) {
+    fun onStartAdvertisingSet(
+        regId: Int,
+        duration: Int,
+        maxExtAdvEvents: Int,
+        source: AttributionSource,
+    ) {
         if (!Flags.adapterSuspendAdvertisement()) {
             return
         }
-        suspendInfoMap[regId] = AdvertiserSuspendInfo(duration, maxExtAdvEvents)
+        suspendInfoMap[regId] = AdvertiserSuspendInfo(duration, maxExtAdvEvents, source)
     }
 
     /** To be called from AdvertiseManager when stopping an advertising set. */

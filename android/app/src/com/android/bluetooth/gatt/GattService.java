@@ -936,7 +936,8 @@ public class GattService extends ProfileService {
             boolean eattSupport,
             int transport,
             AttributionSource source) {
-        if (mClientMap.countByAppUid(Binder.getCallingUid()) >= GATT_CLIENT_LIMIT_PER_APP) {
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        if (mClientMap.countByAppUid(uid) >= GATT_CLIENT_LIMIT_PER_APP) {
             Log.w(TAG, "registerClient() - failed due to too many clients");
             callbackToApp(() -> callback.onClientRegistered(BluetoothGatt.GATT_FAILURE));
             return;
@@ -958,7 +959,6 @@ public class GattService extends ProfileService {
                         + (" UUID=" + uuid)
                         + (" name=" + name)
                         + (" transport=" + transportToString(transport)));
-        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
         mClientMap.add(uid, uuid, callback, transport, this, source);
         mNativeInterface.gattClientRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), name, eattSupport);
