@@ -380,8 +380,6 @@ public class AvrcpControllerStateMachineTest {
     /** Get the root of the device */
     @Test
     public void testGetDeviceRootNode_rootNodeMatchesUuidFormat() {
-        // create new state machine to follow current flags rule
-        mAvrcpStateMachine = makeStateMachine(mDevice);
         setUpConnectedState(true, true);
         final String rootName = "__ROOT__" + mDevice.getAddress().toString();
         // Get the root of the device
