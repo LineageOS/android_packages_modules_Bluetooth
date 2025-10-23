@@ -21,24 +21,19 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.IBluetoothGattCallback
 import android.content.AttributionSource
-import android.content.pm.PackageManager
 import android.os.Binder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.rule.ServiceTestRule
 import com.android.bluetooth.TestUtils.getTestDevice
-import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.util.getLastAttributionTag
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mock
-import org.mockito.Mockito.doReturn
-import org.mockito.kotlin.whenever
 
 /** Test cases for [ContextMap]. */
 @SmallTest
@@ -47,32 +42,23 @@ class ContextMapTest {
     @get:Rule val serviceRule = ServiceTestRule()
     @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var packageManager: PackageManager
     @Mock private lateinit var callback: IBluetoothGattCallback
     @Mock private lateinit var mSource: AttributionSource
 
     private val device1: BluetoothDevice = getTestDevice(34)
     private val device2: BluetoothDevice = getTestDevice(58)
 
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
-        doReturn(packageManager).whenever(adapterService).packageManager
-        doReturn(APP_NAME).whenever(packageManager).getNameForUid(anyInt())
-    }
-
     @Test
     fun getAppMethods() {
         val contextMap: ContextMap<IBluetoothGattCallback> = getMapWithAppAndConnection()
         val contextMapById = contextMap.getById(APP_ID1)
-        assertThat(contextMapById?.packageName).isEqualTo(APP_NAME)
+        assertThat(contextMapById?.name).isEqualTo(APP_NAME)
         assertThat(contextMapById?.callback).isEqualTo(callback)
         assertThat(contextMapById?.uuid).isEqualTo(RANDOM_UUID1)
         val contextMapByUuid = contextMap.getByUuid(RANDOM_UUID1)
-        assertThat(contextMapByUuid?.packageName).isEqualTo(APP_NAME)
+        assertThat(contextMapByUuid?.name).isEqualTo(APP_NAME)
         val contextMapByConn = contextMap.getByConnId(CONN_ID1)
-        assertThat(contextMapByConn?.packageName).isEqualTo(APP_NAME)
+        assertThat(contextMapByConn?.name).isEqualTo(APP_NAME)
 
         val ids = contextMap.getAllApps().map { it.id }
         assertThat(ids).containsExactly(APP_ID1, APP_ID2)
@@ -172,14 +158,15 @@ class ContextMapTest {
         assertThat(dumpOutput).contains("Entries: 2")
         assertThat(dumpOutput).contains("Last apps:")
         // Check that no AppRecord is printed
-        assertThat(dumpOutput).doesNotContain("AppRecord<")
+        assertThat(dumpOutput).doesNotContain("AppRecord")
     }
 
     @Test
     fun dump_withRemovedApp_containsAppRecord() {
         val uid = Binder.getCallingUid()
+        val tag = mSource.getLastAttributionTag()
         val contextMap = ContextMap<IBluetoothGattCallback>()
-        val app = contextMap.add(uid, RANDOM_UUID1, callback, TRANSPORT_LE, adapterService, mSource)
+        val app = contextMap.add(uid, APP_NAME, RANDOM_UUID1, callback, TRANSPORT_LE, tag)
         app.id = APP_ID1
 
         // Remove the app to create an AppRecord in mLastRecords
@@ -190,20 +177,21 @@ class ContextMapTest {
 
         val dumpOutput = sb.toString()
         assertThat(dumpOutput).contains("Last apps:")
-        assertThat(dumpOutput).contains("app_if: $APP_ID1")
-        assertThat(dumpOutput).contains("appName: $APP_NAME")
+        assertThat(dumpOutput).contains("id=$APP_ID1")
+        assertThat(dumpOutput).contains("appName=$APP_NAME")
         assertThat(dumpOutput)
-            .contains("reason: ${ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT}")
+            .contains("reason=${ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT}")
         // Also check that the app is no longer in the main list
         assertThat(dumpOutput).contains("Entries: 0")
     }
 
     private fun getMapWithAppAndConnection(): ContextMap<IBluetoothGattCallback> {
         val uid = Binder.getCallingUid()
+        val tag = mSource.getLastAttributionTag()
         val contextMap = ContextMap<IBluetoothGattCallback>()
-        var app = contextMap.add(uid, RANDOM_UUID1, callback, TRANSPORT_LE, adapterService, mSource)
+        var app = contextMap.add(uid, APP_NAME, RANDOM_UUID1, callback, TRANSPORT_LE, tag)
         app.id = APP_ID1
-        app = contextMap.add(uid, RANDOM_UUID2, callback, TRANSPORT_LE, adapterService, mSource)
+        app = contextMap.add(uid, APP_NAME, RANDOM_UUID2, callback, TRANSPORT_LE, tag)
         app.id = APP_ID2
 
         contextMap.addConnection(APP_ID1, CONN_ID1, TRANSPORT_LE, device1)
