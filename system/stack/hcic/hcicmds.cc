@@ -1397,7 +1397,7 @@ void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
   UINT16_TO_STREAM(p, handle);
 
   btu_hcif_send_cmd_with_cb(HCI_READ_ENCR_KEY_SIZE, param, kLen,
-                            base::Bind(&read_encryption_key_size_complete, base::Passed(&cb)));
+                            base::BindOnce(&read_encryption_key_size_complete, base::Passed(&cb)));
 }
 
 void btsnd_hcic_write_inqscan_type(uint8_t type) {
