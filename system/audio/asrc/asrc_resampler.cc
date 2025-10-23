@@ -425,7 +425,9 @@ SourceAudioHalAsrc::SourceAudioHalAsrc(bluetooth::common::MessageLoopThread* thr
 
   if (!check_bounds(channels, 1, 8) || !check_bounds(sample_rate, 1 * 1000, 100 * 1000) ||
       !check_bounds(bit_depth, 8, 32) || !check_bounds(interval_us, 1 * 1000, 100 * 1000) ||
-      !check_bounds(num_burst_buffers, 0, 10) || !check_bounds(burst_delay_ms, 0, 1000)) {
+      !check_bounds(num_burst_buffers, 0,
+                    com_android_bluetooth_flags_lea_asrc_rotate_burst_buffer() ? 2 : 10) ||
+      !check_bounds(burst_delay_ms, 0, 1000)) {
     log::error(
             "Bad parameters: channels: {} sample_rate: {} bit_depth: {} "
             "interval_us: {} num_burst_buffers: {} burst_delay_ms: {}",
@@ -461,13 +463,21 @@ SourceAudioHalAsrc::SourceAudioHalAsrc(bluetooth::common::MessageLoopThread* thr
   buffers.offset = 0;
 
   // Setup the burst buffers to silence
+  if (com_android_bluetooth_flags_lea_asrc_rotate_burst_buffer()) {
+    burst_buffers_.resize(num_burst_buffers);
+    for (int i = 0; i < num_burst_buffers; ++i) {
+      auto silence_buffer = &buffers_.pool[i + 1];
+      std::fill(silence_buffer->begin(), silence_buffer->end(), 0);
+      burst_buffers_[i] = silence_buffer;
+    }
+  } else {
+    auto silence_buffer = &buffers_.pool[0];
+    std::fill(silence_buffer->begin(), silence_buffer->end(), 0);
 
-  auto silence_buffer = &buffers_.pool[0];
-  std::fill(silence_buffer->begin(), silence_buffer->end(), 0);
-
-  burst_buffers_.resize(num_burst_buffers);
-  for (auto& b : burst_buffers_) {
-    b = silence_buffer;
+    burst_buffers_.resize(num_burst_buffers);
+    for (auto& b : burst_buffers_) {
+      b = silence_buffer;
+    }
   }
 
   burst_delay_us_ = burst_delay_ms * 1000;
@@ -589,8 +599,13 @@ SourceAudioHalAsrc::Run(const std::vector<uint8_t>& in) {
 
   if (burst_buffers_.size()) {
     for (size_t i = 0; i < out.size(); i++) {
-      std::exchange<const std::vector<uint8_t>*>(
-              out[i], burst_buffers_[(out_counter_ + i) % burst_buffers_.size()]);
+      if (com_android_bluetooth_flags_lea_asrc_rotate_burst_buffer()) {
+        std::swap<const std::vector<uint8_t>*>(
+                out[i], burst_buffers_[(out_counter_ + i) % burst_buffers_.size()]);
+      } else {
+        std::exchange<const std::vector<uint8_t>*>(
+                out[i], burst_buffers_[(out_counter_ + i) % burst_buffers_.size()]);
+      }
     }
   }
 
