@@ -84,7 +84,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -192,7 +191,7 @@ public class ScanControllerTest {
         scanClient.setHasNetworkSettingsPermission(true);
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mApp).getAppScanStats();
-        scanClient.setAppScanStats(Optional.of(appScanStats));
+        scanClient.setAppScanStats(appScanStats);
         var callback = mock(IScannerCallback.class);
         doReturn(callback).when(mApp).getCallback();
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
