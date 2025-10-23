@@ -1633,6 +1633,8 @@ public class GattService extends ProfileService {
         if (connected) {
             mServerMap.addConnection(serverIf, connId, transport, device);
         } else {
+            Log.d(TAG, "Reset server congestion connId=" + connId);
+            onServerCongestionFromNative(connId, false);
             mServerMap.removeConnection(serverIf, connId);
         }
 
