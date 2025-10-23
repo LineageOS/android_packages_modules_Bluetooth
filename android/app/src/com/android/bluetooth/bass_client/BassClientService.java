@@ -4675,7 +4675,9 @@ public class BassClientService extends ConnectableProfile {
                             TAG,
                             "findActionableBroadcastId: Found new source to add from peer for "
                                     + sink);
-                    storeSinkMetadata(sink, targetBroadcastId, sourceMetadata);
+                    BluetoothLeBroadcastMetadata newSourceMetadata =
+                            getMetadataWithChannelUnselected(sourceMetadata);
+                    storeSinkMetadata(sink, targetBroadcastId, newSourceMetadata);
                     return Optional.of(targetBroadcastId);
                 }
             }

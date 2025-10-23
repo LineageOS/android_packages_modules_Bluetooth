@@ -6342,6 +6342,54 @@ public class BassClientServiceTest {
         }
     }
 
+    /**
+     * Test that if a sink connects and its peer has an active source that the sink does not know
+     * about, the service will NOT add the peer's source to the newly connected sink if broadcast is
+     * suspended.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ADD_SOURCE_FROM_PEER_DEVICE)
+    public void sinkBassStateReady_doNotAddNewSourceFromPeerIfSuspended() throws RemoteException {
+        prepareConnectedDeviceGroup();
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+        // Add broadcast source to peer device mCurrentDevice
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                clearInvocations(sm);
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        mBroadcastMetadata1,
+                        TEST_SOURCE_ID,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                        mBroadcastMetadata1.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null,
+                        0L);
+                doReturn(mBroadcastMetadata1)
+                        .when(sm)
+                        .getCurrentBroadcastMetadata(eq(TEST_SOURCE_ID));
+                doReturn(true).when(sm).isSyncedToTheSource(eq(TEST_SOURCE_ID));
+            }
+        }
+
+        mBassClientService.suspendAllReceiversSourceSynchronization();
+
+        mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice1);
+        mLooper.dispatchAll();
+
+        // Verify adding source is NOT performed on mCurrentDevice1 once BASS state ready
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice1)) {
+                ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+                verify(sm, never()).sendMessage(messageCaptor.capture());
+            }
+        }
+    }
+
     /** Test add pending source when BASS state get ready */
     @Test
     public void sinkBassStateReady_addPendingSource() throws RemoteException {
