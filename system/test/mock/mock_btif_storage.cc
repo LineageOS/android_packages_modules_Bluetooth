@@ -197,7 +197,7 @@ bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_cod(bd_addr, cod);
 }
-bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr) {
+bool btif_storage_is_restricted_device(const RawAddress remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_is_restricted_device(remote_bd_addr);
 }

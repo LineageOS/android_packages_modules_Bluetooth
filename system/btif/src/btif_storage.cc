@@ -1368,9 +1368,9 @@ uint8_t btif_storage_get_sr_supp_feat(const RawAddress& bd_addr) {
  *                  false otherwise
  *
  ******************************************************************************/
-bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr) {
+bool btif_storage_is_restricted_device(const RawAddress remote_bd_addr) {
   int val;
-  return btif_config_get_int(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_RESTRICTED, &val);
+  return btif_config_get_int(remote_bd_addr.ToString(), BTIF_STORAGE_KEY_RESTRICTED, &val);
 }
 
 /*******************************************************************************

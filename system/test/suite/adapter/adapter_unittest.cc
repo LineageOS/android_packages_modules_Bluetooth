@@ -192,9 +192,9 @@ TEST_F(BluetoothTest, AdapterDisableDuringBonding) {
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";
 
-    EXPECT_EQ(bt_interface()->create_bond(&bdaddr, BT_TRANSPORT_BR_EDR), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->create_bond(bdaddr, BT_TRANSPORT_BR_EDR), BT_STATUS_SUCCESS);
 
-    EXPECT_EQ(bt_interface()->cancel_bond(&bdaddr), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->cancel_bond(bdaddr), BT_STATUS_SUCCESS);
 
     EXPECT_EQ(bt_interface()->disable(), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);

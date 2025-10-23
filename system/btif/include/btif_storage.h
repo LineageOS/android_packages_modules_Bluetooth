@@ -335,7 +335,7 @@ void btif_storage_set_leaudio_has_acceptlist(const RawAddress& address, bool add
  *                  false otherwise
  *
  ******************************************************************************/
-bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr);
+bool btif_storage_is_restricted_device(RawAddress remote_bd_addr);
 
 /*******************************************************************************
  *

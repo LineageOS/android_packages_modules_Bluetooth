@@ -285,9 +285,9 @@ extern struct btif_storage_get_cod btif_storage_get_cod;
 // Return: bool
 struct btif_storage_is_restricted_device {
   static bool return_value;
-  std::function<bool(const RawAddress* remote_bd_addr)> body{
-          [](const RawAddress* /* remote_bd_addr */) { return return_value; }};
-  bool operator()(const RawAddress* remote_bd_addr) { return body(remote_bd_addr); }
+  std::function<bool(RawAddress remote_bd_addr)> body{
+          [](RawAddress /* remote_bd_addr */) { return return_value; }};
+  bool operator()(RawAddress remote_bd_addr) { return body(remote_bd_addr); }
 };
 extern struct btif_storage_is_restricted_device btif_storage_is_restricted_device;
 

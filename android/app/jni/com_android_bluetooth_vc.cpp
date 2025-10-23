@@ -481,15 +481,8 @@ static jboolean connectVolumeControlNative(JNIEnv* env, jobject /* object */, jb
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->Connect(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->Connect(bd_addr);
   return JNI_TRUE;
 }
 
@@ -503,15 +496,8 @@ static jboolean disconnectVolumeControlNative(JNIEnv* env, jobject /* object */,
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->Disconnect(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->Disconnect(bd_addr);
   return JNI_TRUE;
 }
 
@@ -521,15 +507,8 @@ static void setVolumeNative(JNIEnv* env, jobject /* object */, jbyteArray addres
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->SetVolume(*tmpraw, volume);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->SetVolume(bd_addr, volume);
 }
 
 static void setGroupVolumeNative(JNIEnv* /* env */, jobject /* object */, jint group_id,
@@ -548,15 +527,8 @@ static void muteNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->Mute(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->Mute(bd_addr);
 }
 
 static void muteGroupNative(JNIEnv* /* env */, jobject /* object */, jint group_id) {
@@ -573,15 +545,8 @@ static void unmuteNative(JNIEnv* env, jobject /* object */, jbyteArray address) 
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->Unmute(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->Unmute(bd_addr);
 }
 
 static void unmuteGroupNative(JNIEnv* /* env */, jobject /* object */, jint group_id) {
@@ -601,15 +566,8 @@ static jboolean getExtAudioOutVolumeOffsetNative(JNIEnv* env, jobject /* object 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioOutVolumeOffset(*tmpraw, ext_output_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioOutVolumeOffset(bd_addr, ext_output_id);
   return JNI_TRUE;
 }
 
@@ -622,15 +580,8 @@ static jboolean setExtAudioOutVolumeOffsetNative(JNIEnv* env, jobject /* object 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->SetExtAudioOutVolumeOffset(*tmpraw, ext_output_id, offset);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->SetExtAudioOutVolumeOffset(bd_addr, ext_output_id, offset);
   return JNI_TRUE;
 }
 
@@ -642,15 +593,8 @@ static jboolean getExtAudioOutLocationNative(JNIEnv* env, jobject /* object */, 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioOutLocation(*tmpraw, ext_output_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioOutLocation(bd_addr, ext_output_id);
   return JNI_TRUE;
 }
 
@@ -662,15 +606,8 @@ static jboolean setExtAudioOutLocationNative(JNIEnv* env, jobject /* object */, 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->SetExtAudioOutLocation(*tmpraw, ext_output_id, location);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->SetExtAudioOutLocation(bd_addr, ext_output_id, location);
   return JNI_TRUE;
 }
 
@@ -682,15 +619,8 @@ static jboolean getExtAudioOutDescriptionNative(JNIEnv* env, jobject /* object *
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioOutDescription(*tmpraw, ext_output_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioOutDescription(bd_addr, ext_output_id);
   return JNI_TRUE;
 }
 
@@ -703,12 +633,6 @@ static jboolean setExtAudioOutDescriptionNative(JNIEnv* env, jobject /* object *
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
   std::string description;
   if (descr != nullptr) {
     const char* value = env->GetStringUTFChars(descr, nullptr);
@@ -716,9 +640,8 @@ static jboolean setExtAudioOutDescriptionNative(JNIEnv* env, jobject /* object *
     env->ReleaseStringUTFChars(descr, value);
   }
 
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->SetExtAudioOutDescription(*tmpraw, ext_output_id, description);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->SetExtAudioOutDescription(bd_addr, ext_output_id, description);
   return JNI_TRUE;
 }
 
@@ -731,15 +654,8 @@ static jboolean getExtAudioInStateNative(JNIEnv* env, jobject /* object */, jbyt
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioInState(*tmpraw, ext_input_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioInState(bd_addr, ext_input_id);
   return JNI_TRUE;
 }
 
@@ -751,15 +667,8 @@ static jboolean getExtAudioInStatusNative(JNIEnv* env, jobject /* object */, jby
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioInStatus(*tmpraw, ext_input_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioInStatus(bd_addr, ext_input_id);
   return JNI_TRUE;
 }
 
@@ -771,15 +680,8 @@ static jboolean getExtAudioInTypeNative(JNIEnv* env, jobject /* object */, jbyte
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioInType(*tmpraw, ext_input_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioInType(bd_addr, ext_input_id);
   return JNI_TRUE;
 }
 
@@ -791,15 +693,8 @@ static jboolean getExtAudioInGainPropsNative(JNIEnv* env, jobject /* object */, 
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioInGainProps(*tmpraw, ext_input_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioInGainProps(bd_addr, ext_input_id);
   return JNI_TRUE;
 }
 
@@ -811,15 +706,8 @@ static jboolean getExtAudioInDescriptionNative(JNIEnv* env, jobject /* object */
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sVolumeControlInterface->GetExtAudioInDescription(*tmpraw, ext_input_id);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sVolumeControlInterface->GetExtAudioInDescription(bd_addr, ext_input_id);
   return JNI_TRUE;
 }
 
@@ -832,12 +720,6 @@ static jboolean setExtAudioInDescriptionNative(JNIEnv* env, jobject /* object */
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
   std::string description;
   if (descr != nullptr) {
     const char* value = env->GetStringUTFChars(descr, nullptr);
@@ -845,9 +727,8 @@ static jboolean setExtAudioInDescriptionNative(JNIEnv* env, jobject /* object */
     env->ReleaseStringUTFChars(descr, value);
   }
 
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  bool ret = sVolumeControlInterface->SetExtAudioInDescription(*tmpraw, ext_input_id, description);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  bool ret = sVolumeControlInterface->SetExtAudioInDescription(bd_addr, ext_input_id, description);
   return ret ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -860,15 +741,8 @@ static jboolean setExtAudioInGainSettingNative(JNIEnv* env, jobject /* object */
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  bool ret = sVolumeControlInterface->SetExtAudioInGainSetting(*tmpraw, ext_input_id, gain_setting);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  bool ret = sVolumeControlInterface->SetExtAudioInGainSetting(bd_addr, ext_input_id, gain_setting);
   return ret ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -880,16 +754,9 @@ static jboolean setExtAudioInGainModeNative(JNIEnv* env, jobject /* object */, j
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
   bool ret = sVolumeControlInterface->SetExtAudioInGainMode(
-          *tmpraw, ext_input_id, bluetooth::aics::parseGainModeField(gain_mode));
-  env->ReleaseByteArrayElements(address, addr, 0);
+          bd_addr, ext_input_id, bluetooth::aics::parseGainModeField(gain_mode));
   return ret ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -901,16 +768,9 @@ static jboolean setExtAudioInMuteNative(JNIEnv* env, jobject /* object */, jbyte
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  bool ret = sVolumeControlInterface->SetExtAudioInMute(*tmpraw, ext_input_id,
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  bool ret = sVolumeControlInterface->SetExtAudioInMute(bd_addr, ext_input_id,
                                                         bluetooth::aics::parseMuteField(mute));
-  env->ReleaseByteArrayElements(address, addr, 0);
   return ret ? JNI_TRUE : JNI_FALSE;
 }
 
