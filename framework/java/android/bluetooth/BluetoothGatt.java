@@ -45,6 +45,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.internal.annotations.GuardedBy;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -77,10 +78,14 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private int mAuthRetryState = AUTH_RETRY_STATE_IDLE;
 
-    private int mConnState = CONN_STATE_IDLE;
     private final Object mStateLock = new Object();
+
+    @GuardedBy("mStateLock")
+    private int mConnState = CONN_STATE_IDLE;
+
     private final Object mDeviceBusyLock = new Object();
 
+    @GuardedBy("mDeviceBusyLock")
     private boolean mDeviceBusy = false;
 
     private final int mTransport;
@@ -961,7 +966,9 @@ public final class BluetoothGatt implements BluetoothProfile {
         unregisterApp();
         mCallback = null;
 
-        mConnState = CONN_STATE_CLOSED;
+        synchronized (mStateLock) {
+            mConnState = CONN_STATE_CLOSED;
+        }
         mAuthRetryState = AUTH_RETRY_STATE_IDLE;
     }
 
