@@ -14,6 +14,7 @@ compile_commands.json
 *.iml
 **/.idea
 **/__pycache__/
+**/target/
 *.py[cod]
 **/._*
 .jj

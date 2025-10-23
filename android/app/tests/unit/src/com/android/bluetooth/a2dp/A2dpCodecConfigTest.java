@@ -65,7 +65,7 @@ public class A2dpCodecConfigTest {
                 BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
                 BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
                 BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
             };
 
     // Not use the default value to make sure it reads from config
@@ -699,7 +699,7 @@ public class A2dpCodecConfigTest {
 
     @Test
     public void testDisableOptionalCodecs() {
-        BluetoothCodecConfig[] codecConfigsArray = new BluetoothCodecConfig[6];
+        BluetoothCodecConfig[] codecConfigsArray = new BluetoothCodecConfig[7];
         codecConfigsArray[0] =
                 buildBluetoothCodecConfig(
                         BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
@@ -734,7 +734,7 @@ public class A2dpCodecConfigTest {
 
     @Test
     public void testEnableOptionalCodecs() {
-        BluetoothCodecConfig[] codecConfigsArray = new BluetoothCodecConfig[6];
+        BluetoothCodecConfig[] codecConfigsArray = new BluetoothCodecConfig[7];
         codecConfigsArray[0] =
                 buildBluetoothCodecConfig(
                         BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,

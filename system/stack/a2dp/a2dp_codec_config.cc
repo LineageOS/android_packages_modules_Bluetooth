@@ -21,6 +21,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
 #include <cstddef>
@@ -51,6 +52,7 @@
 #include "a2dp_vendor_aptx.h"
 #include "a2dp_vendor_aptx_hd.h"
 #include "a2dp_vendor_ldac.h"
+#include "a2dp_vendor_lhdcv5.h"
 #include "a2dp_vendor_opus.h"
 #endif
 
@@ -219,6 +221,9 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(btav_a2dp_codec_index_t codec_inde
       break;
     case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
       codec_config = new A2dpCodecConfigOpusSink(codec_priority);
+      break;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5:
+      codec_config = new A2dpCodecConfigLhdcV5Source(codec_priority);
       break;
 #endif
     case BTAV_A2DP_CODEC_INDEX_MAX:
@@ -695,6 +700,12 @@ bool A2dpCodecs::init() {
       log::info("OPUS codec disabled, updated priority to {}", codec_priority);
     }
 
+    if (!com::android::bluetooth::flags::lhdc_codec_support() &&
+        codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5) {
+      codec_priority = BTAV_A2DP_CODEC_PRIORITY_DISABLED;
+      log::info("LHDCv5 codec disabled");
+    }
+
     A2dpCodecConfig* codec_config = A2dpCodecConfig::createCodec(codec_index, codec_priority);
     if (codec_config == nullptr) {
       continue;
@@ -703,6 +714,7 @@ bool A2dpCodecs::init() {
     // Test if the codec is disabled
     if (codec_config->codecPriority() == BTAV_A2DP_CODEC_PRIORITY_DISABLED) {
       disabled_codecs_.insert(std::make_pair(codec_index, codec_config));
+      log::info("skip disabled codec");
       continue;
     }
 
@@ -1281,6 +1293,8 @@ bool A2DP_CodecEquals(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info
       return A2DP_VendorCodecEqualsLdac(p_codec_info_a, p_codec_info_b);
     case bluetooth::a2dp::CodecId::OPUS:
       return A2DP_VendorCodecEqualsOpus(p_codec_info_a, p_codec_info_b);
+    case bluetooth::a2dp::CodecId::LHDCV5:
+      return A2DP_VendorCodecEqualsLhdcV5(p_codec_info_a, p_codec_info_b);
 #endif
     default:
       break;
@@ -1311,6 +1325,8 @@ int A2DP_GetTrackSampleRate(const uint8_t* p_codec_info) {
       return A2DP_VendorGetTrackSampleRateLdac(p_codec_info);
     case bluetooth::a2dp::CodecId::OPUS:
       return A2DP_VendorGetTrackSampleRateOpus(p_codec_info);
+    case bluetooth::a2dp::CodecId::LHDCV5:
+      return A2DP_VendorGetTrackSampleRateLhdcV5(p_codec_info);
 #endif
     default:
       break;
@@ -1341,6 +1357,8 @@ int A2DP_GetTrackBitsPerSample(const uint8_t* p_codec_info) {
       return A2DP_VendorGetTrackBitsPerSampleLdac(p_codec_info);
     case bluetooth::a2dp::CodecId::OPUS:
       return A2DP_VendorGetTrackBitsPerSampleOpus(p_codec_info);
+    case bluetooth::a2dp::CodecId::LHDCV5:
+      return A2DP_VendorGetTrackBitsPerSampleLhdcV5(p_codec_info);
 #endif
     default:
       break;
@@ -1371,6 +1389,8 @@ int A2DP_GetTrackChannelCount(const uint8_t* p_codec_info) {
       return A2DP_VendorGetTrackChannelCountLdac(p_codec_info);
     case bluetooth::a2dp::CodecId::OPUS:
       return A2DP_VendorGetTrackChannelCountOpus(p_codec_info);
+    case bluetooth::a2dp::CodecId::LHDCV5:
+      return A2DP_VendorGetTrackChannelCountLhdcV5(p_codec_info);
 #endif
     default:
       break;
@@ -1422,6 +1442,8 @@ bool A2DP_GetPacketTimestamp(const uint8_t* p_codec_info, const uint8_t* p_data,
       return A2DP_VendorGetPacketTimestampLdac(p_codec_info, p_data, p_timestamp);
     case bluetooth::a2dp::CodecId::OPUS:
       return A2DP_VendorGetPacketTimestampOpus(p_codec_info, p_data, p_timestamp);
+    case bluetooth::a2dp::CodecId::LHDCV5:
+      return A2DP_VendorGetPacketTimestampLhdcV5(p_codec_info, p_data, p_timestamp);
 #endif
     default:
       break;
