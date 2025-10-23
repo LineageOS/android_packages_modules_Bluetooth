@@ -375,7 +375,7 @@ public class GattService extends ProfileService {
             mClientMap.remove(uuid, ContextMap.RemoveReason.REASON_REGISTER_FAILED);
         } else {
             app.setId(clientIf);
-            app.linkToDeath(new ClientDeathRecipient(app.getCallback(), app.getPackageName()));
+            app.linkToDeath(new ClientDeathRecipient(app.getCallback(), app.getName()));
         }
         callbackToApp(() -> app.getCallback().onClientRegistered(status));
     }
@@ -936,7 +936,8 @@ public class GattService extends ProfileService {
             boolean eattSupport,
             int transport,
             AttributionSource source) {
-        if (mClientMap.countByAppUid(Binder.getCallingUid()) >= GATT_CLIENT_LIMIT_PER_APP) {
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        if (mClientMap.countByAppUid(uid) >= GATT_CLIENT_LIMIT_PER_APP) {
             Log.w(TAG, "registerClient() - failed due to too many clients");
             callbackToApp(() -> callback.onClientRegistered(BluetoothGatt.GATT_FAILURE));
             return;
@@ -958,8 +959,8 @@ public class GattService extends ProfileService {
                         + (" UUID=" + uuid)
                         + (" name=" + name)
                         + (" transport=" + transportToString(transport)));
-        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
-        mClientMap.add(uid, uuid, callback, transport, this, source);
+        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        mClientMap.add(uid, appName, uuid, callback, transport, tag);
         mNativeInterface.gattClientRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), name, eattSupport);
     }
@@ -1511,7 +1512,7 @@ public class GattService extends ProfileService {
             return;
         }
         app.setId(serverIf);
-        app.linkToDeath(new ServerDeathRecipient(app.getCallback(), app.getPackageName()));
+        app.linkToDeath(new ServerDeathRecipient(app.getCallback(), app.getName()));
         callbackToApp(() -> app.getCallback().onServerRegistered(status));
     }
 
@@ -1680,9 +1681,9 @@ public class GattService extends ProfileService {
         int applicationUid = -1;
         try {
             applicationUid =
-                    getPackageManager().getPackageUid(app.getPackageName(), PackageInfoFlags.of(0));
+                    getPackageManager().getPackageUid(app.getName(), PackageInfoFlags.of(0));
         } catch (NameNotFoundException e) {
-            Log.d(TAG, "onClientConnected() - uid_not_found=" + app.getPackageName());
+            Log.d(TAG, "onClientConnected() - uid_not_found=" + app.getName());
         }
 
         // Lambdas require an effectively final variable. This should be removed when the
@@ -2118,7 +2119,8 @@ public class GattService extends ProfileService {
                         + (" name=" + name)
                         + (" transport=" + transportToString(transport)));
         int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
-        mServerMap.add(uid, uuid, callback, transport, this, source);
+        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        mServerMap.add(uid, appName, uuid, callback, transport, tag);
         mNativeInterface.gattServerRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), eattSupport);
     }

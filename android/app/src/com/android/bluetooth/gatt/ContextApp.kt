@@ -16,12 +16,10 @@
 
 package com.android.bluetooth.gatt
 
-import android.content.AttributionSource
 import android.os.IBinder
 import android.os.IInterface
 import android.os.RemoteException
 import android.util.Log
-import com.android.bluetooth.util.getLastAttributionTag
 import java.util.NoSuchElementException
 import java.util.UUID
 
@@ -30,13 +28,12 @@ private const val TAG = GattUtil.TAG_PREFIX + "ContextApp"
 /** Application entry mapping UUIDs to appIDs and callbacks. */
 class ContextApp<C : IInterface>(
     val uid: Int,
+    val name: String,
     val uuid: UUID,
     val callback: C?,
-    val packageName: String,
     val transport: Int,
-    source: AttributionSource?,
+    val tag: String?,
 ) {
-    val attributionTag = source.getLastAttributionTag()
     var id = 0
     /** Flag to signal that transport is congested */
     var isCongested = false

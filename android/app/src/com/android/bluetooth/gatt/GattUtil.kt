@@ -22,6 +22,7 @@ import android.bluetooth.IBluetoothGattCallback
 import android.bluetooth.IBluetoothGattServerCallback
 import android.os.IInterface
 import com.android.bluetooth.Utils.transportToString
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.gatt.HandleMap.Type
 import com.android.bluetooth.hid.HidHostService
@@ -61,6 +62,10 @@ object GattUtil {
 
     private val APPLE_NOTIFICATION_CENTER_SERVICE_UUID =
         UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0")
+
+    @JvmStatic
+    fun appNameOrUnknown(adapterService: AdapterService, uid: Int) =
+        adapterService.packageManager.getNameForUid(uid) ?: "Unknown App (UID: $uid)"
 
     @JvmStatic fun isHidSrvcUuid(uuid: UUID) = uuid == HID_SERVICE_UUID
 
@@ -191,9 +196,9 @@ object GattUtil {
     private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
         map.getAllApps().forEach { app ->
             append("    app_if: ${app.id}")
-            append(", appName: ${app.packageName}")
+            append(", appName: ${app.name}")
             append(", transport: ${transportToString(app.transport)}")
-            app.attributionTag?.let { tag -> append(", tag: $tag") }
+            app.tag?.let { tag -> append(", tag: $tag") }
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }

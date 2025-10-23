@@ -64,8 +64,9 @@ public class AdvertiserMapTest {
     public void getByMethods() {
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
+        int uid = Binder.getCallingUid();
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(id, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, id, mContext, mSource);
 
         AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
         assertThat(stats.mAppName).isEqualTo(APP_NAME);
@@ -75,8 +76,9 @@ public class AdvertiserMapTest {
     public void clear() {
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
+        int uid = Binder.getCallingUid();
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(id, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, id, mContext, mSource);
 
         AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
         assertThat(stats.mAppName).isEqualTo(APP_NAME);
@@ -146,12 +148,13 @@ public class AdvertiserMapTest {
         StringBuilder sb = new StringBuilder();
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
+        int uid = Binder.getCallingUid();
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(id, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, id, mContext, mSource);
         advertiserMap.recordAdvertiseStop(id);
 
         int idSecond = 54321;
-        advertiserMap.addAppAdvertiseStats(idSecond, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, idSecond, mContext, mSource);
         advertiserMap.dump(sb);
     }
 }

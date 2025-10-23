@@ -106,7 +106,7 @@ class AdvertiseBinder(
         source: AttributionSource,
     ) {
         withManagerRunOnAdvertiseThread(source) {
-            enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents)
+            enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents, source)
         }
     }
 

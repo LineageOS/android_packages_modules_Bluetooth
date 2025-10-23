@@ -185,7 +185,13 @@ class AdvertiseBinderTest {
             attributionSource,
         )
         verify(advertiseManager)
-            .enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents)
+            .enableAdvertisingSet(
+                advertiserId,
+                enable,
+                duration,
+                maxExtAdvEvents,
+                attributionSource,
+            )
     }
 
     @Test

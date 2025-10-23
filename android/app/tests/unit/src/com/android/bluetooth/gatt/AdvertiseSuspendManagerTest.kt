@@ -18,6 +18,7 @@ package com.android.bluetooth.gatt
 
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
+import android.content.AttributionSource
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -52,6 +53,7 @@ class AdvertiseSuspendManagerTest {
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var adapterSuspend: AdapterSuspend
     @Mock private lateinit var advertiseManager: AdvertiseManager
+    @Mock private lateinit var source: AttributionSource
 
     private lateinit var advertiseSuspendManager: AdvertiseSuspendManager
 
@@ -76,13 +78,18 @@ class AdvertiseSuspendManagerTest {
     @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWithOngoingAdvertisement() {
         // Start an advertisement
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
 
         // On suspend, verify we disable the advertisement
         advertiseSuspendManager.enterSuspend()
         verify(advertiseManager)
-            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt())
+            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
@@ -96,6 +103,7 @@ class AdvertiseSuspendManagerTest {
                 eq(true),
                 eq(DURATION1),
                 eq(MAX_EXT_ADV_EVENTS1),
+                eq(source),
             )
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, true, STATUS_OK)
     }
@@ -104,7 +112,12 @@ class AdvertiseSuspendManagerTest {
     @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_ADVERTISEMENT)
     fun suspendWithoutOngoingAdvertisement() {
         // Start an advertisement
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
 
         // Disable the advertisement
@@ -118,7 +131,7 @@ class AdvertiseSuspendManagerTest {
         // Verify we never enable/disable any advertisements
         advertiseSuspendManager.exitSuspend()
         verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
     }
 
     @Test
@@ -127,22 +140,32 @@ class AdvertiseSuspendManagerTest {
         val order = inOrder(advertiseManager)
 
         // Create two advertisements. The native layer hasn't finished creating it.
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID2, DURATION2, MAX_EXT_ADV_EVENTS2)
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID2,
+            DURATION2,
+            MAX_EXT_ADV_EVENTS2,
+            source,
+        )
 
         // We suspend here. Verify we wait instead of enabling/disabling any advertisements or going
         // to suspend.
         advertiseSuspendManager.enterSuspend()
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         // The native layer registered advertisement A. We still wait.
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         // The native layer registered advertisement B with failure.
@@ -150,17 +173,17 @@ class AdvertiseSuspendManagerTest {
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID2, ADVERTISER_ID2, STATUS_FAIL)
         order
             .verify(advertiseManager)
-            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt())
+            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt(), eq(source))
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         // Advertisement A is disabled. We should move to suspend step.
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
         verify(adapterSuspend).advertiseSuspendReady()
 
         // On resume, verify we reenable advertising A only.
@@ -172,11 +195,12 @@ class AdvertiseSuspendManagerTest {
                 eq(true),
                 eq(DURATION1),
                 eq(MAX_EXT_ADV_EVENTS1),
+                eq(source),
             )
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, true, STATUS_OK)
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
     }
 
     @Test
@@ -185,7 +209,12 @@ class AdvertiseSuspendManagerTest {
         val order = inOrder(advertiseManager)
 
         // Start an advertisement.
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
 
         // Disable the advertisement. The process is not yet done.
@@ -201,13 +230,13 @@ class AdvertiseSuspendManagerTest {
         verify(adapterSuspend).advertiseSuspendReady()
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
 
         // On resume, verify we don't reenable the advertisement.
         advertiseSuspendManager.exitSuspend()
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt())
+            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
     }
 
     @Test
@@ -216,11 +245,21 @@ class AdvertiseSuspendManagerTest {
         val order = inOrder(advertiseManager)
 
         // Start an advertisement.
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID1, DURATION1, MAX_EXT_ADV_EVENTS1)
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID1,
+            DURATION1,
+            MAX_EXT_ADV_EVENTS1,
+            source,
+        )
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
 
         // Create another advertisement which isn't yet started.
-        advertiseSuspendManager.onStartAdvertisingSet(REG_ID2, DURATION2, MAX_EXT_ADV_EVENTS2)
+        advertiseSuspendManager.onStartAdvertisingSet(
+            REG_ID2,
+            DURATION2,
+            MAX_EXT_ADV_EVENTS2,
+            source,
+        )
 
         // Suspend here. We shouldn't report ready because we're still waiting for the 2nd adv.
         advertiseSuspendManager.enterSuspend()
@@ -239,7 +278,7 @@ class AdvertiseSuspendManagerTest {
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID2, ADVERTISER_ID2, STATUS_FAIL)
         order
             .verify(advertiseManager)
-            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt())
+            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt(), eq(source))
         advertiseSuspendManager.onEnableAdvertisingSet(ADVERTISER_ID1)
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
 
@@ -257,6 +296,7 @@ class AdvertiseSuspendManagerTest {
                 eq(true),
                 eq(DURATION1),
                 eq(MAX_EXT_ADV_EVENTS1),
+                eq(source),
             )
         order.verify(advertiseManager, never()).setAdvertisingData(anyInt(), any())
         order.verify(advertiseManager, never()).setScanResponseData(anyInt(), any())
