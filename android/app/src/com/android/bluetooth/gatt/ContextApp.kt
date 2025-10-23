@@ -30,36 +30,34 @@ class ContextApp<C : IInterface>(
     val uid: Int,
     val name: String,
     val uuid: UUID,
-    val callback: C?,
+    val callback: C,
     val transport: Int,
     val tag: String?,
 ) {
     var id = 0
     /** Flag to signal that transport is congested */
     var isCongested = false
-    private var deathRecipient: IBinder.DeathRecipient? = null
+
     /** Internal callback info queue, waiting to be send on congestion clear */
     private val congestionQueue = mutableListOf<CallbackInfo>()
 
+    private var deathRecipient: IBinder.DeathRecipient? = null
+
     fun linkToDeath(recipient: IBinder.DeathRecipient) {
-        callback?.let { cb ->
-            try {
-                cb.asBinder().linkToDeath(recipient, 0)
-                deathRecipient = recipient
-            } catch (e: RemoteException) {
-                Log.e(TAG, "Unable to link deathRecipient for app id=$id")
-            }
+        try {
+            callback.asBinder().linkToDeath(recipient, 0)
+            deathRecipient = recipient
+        } catch (_: RemoteException) {
+            Log.e(TAG, "Unable to link deathRecipient for app id=$id")
         }
     }
 
     fun unlinkToDeath() {
         deathRecipient?.let { recipient ->
-            callback?.let { cb ->
-                try {
-                    cb.asBinder().unlinkToDeath(recipient, 0)
-                } catch (e: NoSuchElementException) {
-                    Log.e(TAG, "Unable to unlink deathRecipient for app id=$id")
-                }
+            try {
+                callback.asBinder().unlinkToDeath(recipient, 0)
+            } catch (_: NoSuchElementException) {
+                Log.e(TAG, "Unable to unlink deathRecipient for app id=$id")
             }
         }
     }
