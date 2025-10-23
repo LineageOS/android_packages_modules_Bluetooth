@@ -863,7 +863,10 @@ public class LeAudioService extends ConnectableProfile {
 
             BluetoothDevice device =
                     getStorage().getLeastRecentlyConnectedDeviceInList(availableDevices);
-            updateFallbackUnicastGroupIdForBroadcast(getDeviceDescriptor(device).mGroupId);
+            LeAudioDeviceDescriptor descriptor = getDeviceDescriptor(device);
+            int targetGroupId =
+                    descriptor != null ? descriptor.mGroupId : LE_AUDIO_GROUP_ID_INVALID;
+            updateFallbackUnicastGroupIdForBroadcast(targetGroupId);
             return;
         }
 
