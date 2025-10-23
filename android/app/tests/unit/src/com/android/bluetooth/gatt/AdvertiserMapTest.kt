@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,134 +14,125 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static com.google.common.truth.Truth.assertThat;
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertisingSetParameters
+import android.bluetooth.le.PeriodicAdvertisingParameters
+import android.content.AttributionSource
+import android.os.Binder
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.spy
+import org.mockito.Mockito.verify
 
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.AdvertisingSetParameters;
-import android.bluetooth.le.PeriodicAdvertisingParameters;
-import android.content.AttributionSource;
-import android.os.Binder;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-/** Test cases for {@link AdvertiserMap}. */
+/** Test cases for [AdvertiserMap]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class AdvertiserMapTest {
-    private static final String APP_NAME = "com.android.what.a.name";
+@RunWith(AndroidJUnit4::class)
+class AdvertiserMapTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private AttributionSource mSource;
+    @Mock private lateinit var source: AttributionSource
 
     @Test
-    public void getByMethods() {
-        AdvertiserMap advertiserMap = new AdvertiserMap();
+    fun getByMethods() {
+        val advertiserMap = AdvertiserMap()
+        val uid = Binder.getCallingUid()
+        val id = 12345
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, source)
 
-        int uid = Binder.getCallingUid();
-        int id = 12345;
-        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, mSource);
-
-        AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
-        assertThat(stats.mAppName).isEqualTo(APP_NAME);
+        val stats = advertiserMap.getAppAdvertiseStatsById(id)
+        assertThat(stats.mAppName).isEqualTo(APP_NAME)
     }
 
     @Test
-    public void clear() {
-        AdvertiserMap advertiserMap = new AdvertiserMap();
+    fun clear() {
+        val advertiserMap = AdvertiserMap()
+        val uid = Binder.getCallingUid()
+        val id = 12345
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, source)
 
-        int uid = Binder.getCallingUid();
-        int id = 12345;
-        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, mSource);
+        val stats = advertiserMap.getAppAdvertiseStatsById(id)
+        assertThat(stats.mAppName).isEqualTo(APP_NAME)
 
-        AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
-        assertThat(stats.mAppName).isEqualTo(APP_NAME);
-
-        advertiserMap.clear();
-        assertThat(advertiserMap.getAppAdvertiseStatsById(id)).isNull();
+        advertiserMap.clear()
+        assertThat(advertiserMap.getAppAdvertiseStatsById(id)).isNull()
     }
 
     @Test
-    public void advertisingSetAndData() {
-        AdvertiserMap advertiserMap = new AdvertiserMap();
-        int id = 12345;
-        AppAdvertiseStats appAdvertiseStats =
-                spy(new AppAdvertiseStats(Binder.getCallingUid(), id, APP_NAME, mSource));
-        advertiserMap.addAppAdvertiseStats(id, appAdvertiseStats);
+    fun advertisingSetAndData() {
+        val advertiserMap = AdvertiserMap()
+        val id = 12345
+        val appAdvertiseStats = spy(AppAdvertiseStats(Binder.getCallingUid(), id, APP_NAME, source))
+        advertiserMap.addAppAdvertiseStats(id, appAdvertiseStats)
 
-        int duration = 60;
-        int maxExtAdvEvents = 100;
-        int instanceCount = 1;
-        advertiserMap.enableAdvertisingSet(id, true, duration, maxExtAdvEvents);
+        val duration = 60
+        val maxExtAdvEvents = 100
+        val instanceCount = 1
+        advertiserMap.enableAdvertisingSet(id, true, duration, maxExtAdvEvents)
         verify(appAdvertiseStats)
-                .enableAdvertisingSet(true, duration, maxExtAdvEvents, instanceCount);
+            .enableAdvertisingSet(true, duration, maxExtAdvEvents, instanceCount)
 
-        AdvertiseData advertiseData = new AdvertiseData.Builder().build();
-        advertiserMap.setAdvertisingData(id, advertiseData);
-        verify(appAdvertiseStats).setAdvertisingData(advertiseData);
+        val advertiseData = AdvertiseData.Builder().build()
+        advertiserMap.setAdvertisingData(id, advertiseData)
+        verify(appAdvertiseStats).setAdvertisingData(advertiseData)
 
-        AdvertiseData scanResponse = new AdvertiseData.Builder().build();
-        advertiserMap.setScanResponseData(id, scanResponse);
-        verify(appAdvertiseStats).setScanResponseData(scanResponse);
+        val scanResponse = AdvertiseData.Builder().build()
+        advertiserMap.setScanResponseData(id, scanResponse)
+        verify(appAdvertiseStats).setScanResponseData(scanResponse)
 
-        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
-        advertiserMap.setAdvertisingParameters(id, parameters);
-        verify(appAdvertiseStats).setAdvertisingParameters(parameters);
+        val parameters = AdvertisingSetParameters.Builder().build()
+        advertiserMap.setAdvertisingParameters(id, parameters)
+        verify(appAdvertiseStats).setAdvertisingParameters(parameters)
 
-        PeriodicAdvertisingParameters periodicParameters =
-                new PeriodicAdvertisingParameters.Builder().build();
-        advertiserMap.setPeriodicAdvertisingParameters(id, periodicParameters);
-        verify(appAdvertiseStats).setPeriodicAdvertisingParameters(periodicParameters);
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        advertiserMap.setPeriodicAdvertisingParameters(id, periodicParameters)
+        verify(appAdvertiseStats).setPeriodicAdvertisingParameters(periodicParameters)
 
-        AdvertiseData periodicData = new AdvertiseData.Builder().build();
-        advertiserMap.setPeriodicAdvertisingData(id, periodicData);
-        verify(appAdvertiseStats).setPeriodicAdvertisingData(periodicData);
+        val periodicData = AdvertiseData.Builder().build()
+        advertiserMap.setPeriodicAdvertisingData(id, periodicData)
+        verify(appAdvertiseStats).setPeriodicAdvertisingData(periodicData)
 
-        advertiserMap.onPeriodicAdvertiseEnabled(id, true);
-        verify(appAdvertiseStats).onPeriodicAdvertiseEnabled(true);
+        advertiserMap.onPeriodicAdvertiseEnabled(id, true)
+        verify(appAdvertiseStats).onPeriodicAdvertiseEnabled(true)
 
-        AppAdvertiseStats toBeRemoved = advertiserMap.getAppAdvertiseStatsById(id);
-        assertThat(toBeRemoved).isNotNull();
+        val toBeRemoved = advertiserMap.getAppAdvertiseStatsById(id)
+        assertThat(toBeRemoved).isNotNull()
 
-        advertiserMap.removeAppAdvertiseStats(id);
+        advertiserMap.removeAppAdvertiseStats(id)
 
-        AppAdvertiseStats isRemoved = advertiserMap.getAppAdvertiseStatsById(id);
-        assertThat(isRemoved).isNull();
+        val isRemoved = advertiserMap.getAppAdvertiseStatsById(id)
+        assertThat(isRemoved).isNull()
     }
 
     @Test
-    public void emptyStop_doesNotCrash() {
-        AdvertiserMap advertiserMap = new AdvertiserMap();
-
-        int id = 12345;
-        advertiserMap.recordAdvertiseStop(id);
+    fun emptyStop_doesNotCrash() {
+        val advertiserMap = AdvertiserMap()
+        val id = 12345
+        advertiserMap.recordAdvertiseStop(id)
     }
 
     @Test
-    public void testDump_doesNotCrash() {
-        StringBuilder sb = new StringBuilder();
-        AdvertiserMap advertiserMap = new AdvertiserMap();
+    fun testDump_doesNotCrash() {
+        val sb = StringBuilder()
+        val advertiserMap = AdvertiserMap()
+        val uid = Binder.getCallingUid()
+        val id = 12345
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, source)
+        advertiserMap.recordAdvertiseStop(id)
 
-        int uid = Binder.getCallingUid();
-        int id = 12345;
-        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, mSource);
-        advertiserMap.recordAdvertiseStop(id);
+        val idSecond = 54321
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, idSecond, source)
+        advertiserMap.dump(sb)
+    }
 
-        int idSecond = 54321;
-        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, idSecond, mSource);
-        advertiserMap.dump(sb);
+    private companion object {
+        private const val APP_NAME = "com.android.what.a.name"
     }
 }
