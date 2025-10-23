@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,104 +14,91 @@
  * limitations under the License.
  */
 
-package android.bluetooth;
+package android.bluetooth
 
-import android.app.PendingIntent;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanResult;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
+import android.app.PendingIntent
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanResult
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import java.util.concurrent.CompletableFuture
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+private const val TAG = "PendingIntentScanReceiver"
 
 /**
  * PendingIntentScanReceiver is registered statically in the manifest file as a BroadcastReceiver
  * for the android.bluetooth.ACTION_SCAN_RESULT action. Tests can use nextScanResult() to get a
  * future that completes when scan results are next delivered.
  */
-public class PendingIntentScanReceiver extends BroadcastReceiver {
-    private static final String TAG = PendingIntentScanReceiver.class.getSimpleName();
+class PendingIntentScanReceiver : BroadcastReceiver() {
 
-    public static final String ACTION_SCAN_RESULT = "android.bluetooth.test.ACTION_SCAN_RESULT";
+    override fun onReceive(context: Context, intent: Intent) {
+        Log.d(TAG, "onReceive() intent: $intent")
 
-    private static Optional<CompletableFuture<List<ScanResult>>> sNextScanResultFuture =
-            Optional.empty();
+        if (ACTION_SCAN_RESULT != intent.action) {
+            throw RuntimeException()
+        }
 
-    /**
-     * Constructs a new Intent associated with this class.
-     *
-     * @param context The context the to associate with the Intent.
-     * @return The new Intent.
-     */
-    private static Intent newIntent(Context context) {
-        Intent intent = new Intent();
-        intent.setAction(PendingIntentScanReceiver.ACTION_SCAN_RESULT);
-        intent.setClass(context, PendingIntentScanReceiver.class);
-        return intent;
+        val errorCode = intent.getIntExtra(BluetoothLeScanner.EXTRA_ERROR_CODE, 0)
+        if (errorCode != 0) {
+            Log.e(TAG, "onReceive() error: $errorCode")
+            throw RuntimeException("onReceive() unexpected error: $errorCode")
+        }
+
+        val scanResults =
+            intent.getParcelableArrayListExtra(
+                BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT,
+                ScanResult::class.java,
+            )
+
+        nextScanResultFuture?.let {
+            it.complete(scanResults)
+            nextScanResultFuture = null
+        } ?: throw IllegalStateException("scan result received but no future set")
     }
 
-    /**
-     * Constructs a new PendingIntent associated with this class.
-     *
-     * @param context The context to associate the PendingIntent with.
-     * @param requestCode The request code to uniquely identify this PendingIntent with.
-     */
-    public static PendingIntent newBroadcastPendingIntent(Context context, int requestCode) {
-        return PendingIntent.getBroadcast(
+    companion object {
+        const val ACTION_SCAN_RESULT: String = "android.bluetooth.test.ACTION_SCAN_RESULT"
+
+        private var nextScanResultFuture: CompletableFuture<List<ScanResult>>? = null
+
+        /**
+         * Constructs a new PendingIntent associated with this class.
+         *
+         * @param context The context to associate the PendingIntent with.
+         * @param requestCode The request code to uniquely identify this PendingIntent with.
+         */
+        fun newBroadcastPendingIntent(context: Context, requestCode: Int) =
+            PendingIntent.getBroadcast(
                 context,
                 requestCode,
-                newIntent(context),
-                PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT);
-    }
+                Intent().apply {
+                    action = ACTION_SCAN_RESULT
+                    setClass(context, PendingIntentScanReceiver::class.java)
+                },
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT,
+            )
 
-    /**
-     * Use this method for statically registered receivers.
-     *
-     * @return A future that will complete when the next scan result is received.
-     */
-    public static CompletableFuture<List<ScanResult>> nextScanResult()
-            throws IllegalStateException {
-        if (sNextScanResultFuture.isPresent()) {
-            throw new IllegalStateException("scan result future already set");
-        }
-        sNextScanResultFuture = Optional.of(new CompletableFuture<List<ScanResult>>());
-        return sNextScanResultFuture.get();
-    }
-
-    /** Clears the future waiting for the next static receiver scan result, if any. */
-    public static void resetNextScanResultFuture() {
-        sNextScanResultFuture = Optional.empty();
-    }
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "onReceive() intent: " + intent);
-
-        if (!ACTION_SCAN_RESULT.equals(intent.getAction())) {
-            throw new RuntimeException();
+        /**
+         * Use this method for statically registered receivers.
+         *
+         * @return A future that will complete when the next scan result is received.
+         */
+        @Throws(IllegalStateException::class)
+        fun nextScanResult(): CompletableFuture<List<ScanResult>> {
+            if (nextScanResultFuture != null) {
+                throw IllegalStateException("scan result future already set")
+            }
+            val future = CompletableFuture<List<ScanResult>>()
+            nextScanResultFuture = future
+            return future
         }
 
-        int errorCode = intent.getIntExtra(BluetoothLeScanner.EXTRA_ERROR_CODE, 0);
-        if (errorCode != 0) {
-            Log.e(TAG, "onReceive() error: " + errorCode);
-            throw new RuntimeException("onReceive() unexpected error: " + errorCode);
-        }
-
-        List<ScanResult> scanResults =
-                intent.getParcelableExtra(
-                        BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT,
-                        new ArrayList<ScanResult>().getClass());
-
-        if (sNextScanResultFuture.isPresent()) {
-            sNextScanResultFuture.get().complete(scanResults);
-            sNextScanResultFuture = Optional.empty();
-        } else {
-            throw new IllegalStateException("scan result received but no future set");
+        /** Clears the future waiting for the next static receiver scan result, if any. */
+        fun resetNextScanResultFuture() {
+            nextScanResultFuture = null
         }
     }
 }
