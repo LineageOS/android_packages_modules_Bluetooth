@@ -131,7 +131,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     @Test
     fun onCommand_enable() {
         assertThat(shellCommand.onCommand("enable")).isEqualTo(if (returnValue) 0 else -1)
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             verify(mockApi).enable(any(), any())
         } else {
             verify(mockBinder).enable(any())
@@ -142,7 +142,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     fun onCommand_enableBle() {
         ShadowBinder.setCallingUid(Process.ROOT_UID)
         assertThat(shellCommand.onCommand("enableBle")).isEqualTo(if (returnValue) 0 else -1)
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             verify(mockApi).enableBle(any(), eq(mockBinder))
         } else {
             verify(mockBinder).enableBle(any(), eq(mockBinder))
@@ -152,7 +152,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     @Test
     fun onCommand_disable() {
         assertThat(shellCommand.onCommand("disable")).isEqualTo(if (returnValue) 0 else -1)
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             verify(mockApi).disable(any(), eq(true))
         } else {
             verify(mockBinder).disable(any(), eq(true))
@@ -163,7 +163,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     fun onCommand_disableBle() {
         ShadowBinder.setCallingUid(Process.ROOT_UID)
         assertThat(shellCommand.onCommand("disableBle")).isEqualTo(if (returnValue) 0 else -1)
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             verify(mockApi).disableBle(any(), eq(mockBinder))
         } else {
             verify(mockBinder).disableBle(any(), eq(mockBinder))
@@ -179,7 +179,7 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @EnableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     fun onCommand_factoryReset() {
         ShadowBinder.setCallingUid(Process.ROOT_UID)
 
@@ -211,7 +211,8 @@ class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue:
         @JvmStatic
         @Parameters(name = "{0}|returnValue={1}")
         fun getParams() =
-            FlagsWrapper.progressionOf(Flags.FLAG_SYSTEM_SERVER_MESSENGER).flatMap { flag ->
+            FlagsWrapper.progressionOf(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER).flatMap { flag
+                ->
                 listOf(arrayOf(flag, true), arrayOf(flag, false))
             }
     }

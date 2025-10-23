@@ -1009,7 +1009,7 @@ public final class BluetoothAdapter {
         mManagerService = requireNonNull(managerService);
         mContext = Optional.ofNullable(context);
         mAttributionSource = requireNonNull(source);
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             try {
                 mSystemServiceMessenger =
                         new SystemServiceMessenger(mManagerService.getServiceMessenger());
@@ -1303,7 +1303,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disableBLE() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.Disable();
             data.attributionSource = mAttributionSource;
             data.bleToken = mToken;
@@ -1353,7 +1353,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean enableBLE() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.Enable();
             data.attributionSource = mAttributionSource;
             data.bleToken = mToken;
@@ -1524,7 +1524,7 @@ public final class BluetoothAdapter {
             Log.d(TAG, "enable(): BT already enabled!");
             return true;
         }
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.Enable();
             data.attributionSource = mAttributionSource;
 
@@ -1593,7 +1593,7 @@ public final class BluetoothAdapter {
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
     public boolean disable(boolean persist) {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.Disable();
             data.attributionSource = mAttributionSource;
             data.persist = persist;
@@ -1618,7 +1618,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS})
     public String getAddress() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.GetAddress();
             data.attributionSource = mAttributionSource;
 
@@ -1642,7 +1642,7 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public String getName() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.GetName();
             data.attributionSource = mAttributionSource;
 
@@ -1673,7 +1673,7 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean clearBluetooth() {
         try {
-            if (Flags.systemServerMessenger()) {
+            if (Flags.bluetoothSystemServerMessenger()) {
                 var data = new SystemServiceMessage.FactoryReset();
                 data.attributionSource = mAttributionSource;
 
@@ -2108,7 +2108,7 @@ public final class BluetoothAdapter {
     @SystemApi
     @RequiresNoPermission
     public boolean isBleScanAlwaysAvailable() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.IsBleScanAvailable();
             return mSystemServiceMessenger.send(data).value;
         }
@@ -2361,7 +2361,7 @@ public final class BluetoothAdapter {
      */
     @RequiresNoPermission
     private boolean isHearingAidProfileSupported() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.IsHearingAidSupported();
             return mSystemServiceMessenger.send(data).value;
         }
@@ -3457,7 +3457,7 @@ public final class BluetoothAdapter {
             Log.d(TAG, "enableNoAutoConnect(): BT already enabled!");
             return true;
         }
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.Enable();
             data.attributionSource = mAttributionSource;
             data.isQuiet = true;
@@ -3753,7 +3753,7 @@ public final class BluetoothAdapter {
         if (isRegistered == wantRegistered) {
             return;
         }
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             if (wantRegistered) {
                 var data = new SystemServiceMessage.RegisterAdapter();
                 data.binder = sManagerCallback;
@@ -4993,7 +4993,7 @@ public final class BluetoothAdapter {
                 && mode != BT_SNOOP_LOG_MODE_FULL) {
             throw new IllegalArgumentException("Invalid Bluetooth HCI snoop log mode param value");
         }
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.SetSnoopLog();
             data.mode = mode;
 
@@ -5017,7 +5017,7 @@ public final class BluetoothAdapter {
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     @BluetoothSnoopLogMode
     public int getBluetoothHciSnoopLoggingMode() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.GetSnoopLog();
 
             return mSystemServiceMessenger.send(data).value;
@@ -5034,7 +5034,7 @@ public final class BluetoothAdapter {
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean isAutoOnSupported() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.IsAutoSupported();
             return mSystemServiceMessenger.send(data).value;
         }
@@ -5055,7 +5055,7 @@ public final class BluetoothAdapter {
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean isAutoOnEnabled() {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.IsAutoEnabled();
             return mSystemServiceMessenger.send(data).value;
         }
@@ -5077,7 +5077,7 @@ public final class BluetoothAdapter {
     @SystemApi
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public void setAutoOnEnabled(boolean status) {
-        if (Flags.systemServerMessenger()) {
+        if (Flags.bluetoothSystemServerMessenger()) {
             var data = new SystemServiceMessage.SetAutoOnEnabled();
             data.enabledStatus = status;
             mSystemServiceMessenger.send(data);
