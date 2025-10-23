@@ -1473,17 +1473,11 @@ public final class BluetoothAdapter {
 
     boolean getLeAccess() {
         int state = getLeState();
-        if (!Flags.returnCorrectBleState()) {
-            if (state == STATE_ON || state == STATE_BLE_ON) {
-                return true;
-            }
-        } else {
-            if (state == STATE_ON
-                    || state == STATE_BLE_ON
-                    || state == STATE_TURNING_OFF
-                    || state == STATE_TURNING_ON) {
-                return true;
-            }
+        if (state == STATE_ON
+                || state == STATE_BLE_ON
+                || state == STATE_TURNING_OFF
+                || state == STATE_TURNING_ON) {
+            return true;
         }
         return false;
     }
