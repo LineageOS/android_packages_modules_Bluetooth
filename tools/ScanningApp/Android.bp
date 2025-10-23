@@ -22,4 +22,7 @@ android_app {
     ],
 
     platform_apis: true,
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }

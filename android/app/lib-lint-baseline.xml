@@ -2,6 +2,83 @@
 <issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
 
     <issue
+        id="NewApi"
+        message="Call requires API level 36.1 (current min is 36): `android.media.AudioDeviceVolumeManager#setDeviceAbsoluteMultiVolumeBehavior`"
+        errorLine1="                .setDeviceAbsoluteMultiVolumeBehavior("
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="275"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
+        errorLine1="                                BluetoothProfileConnectionInfo.createHfpInfo());"
+        errorLine2="                                                               ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="1126"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
+        errorLine1="                                    BluetoothProfileConnectionInfo.createHfpInfo());"
+        errorLine2="                                                                   ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="1207"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
+        errorLine1="                                    BluetoothProfileConnectionInfo.createHfpInfo());"
+        errorLine2="                                                                   ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="1225"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
+        errorLine1="                                    BluetoothProfileConnectionInfo.createHfpInfo());"
+        errorLine2="                                                                   ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="1255"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 36.1 (current min is 36): `android.media.AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener`"
+        errorLine1="            implements AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener {"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="2243"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 36): `android.media.AudioManager#isScoManagedByAudio`"
+        errorLine1="            boolean isScoManagedByAudio = mAudioManager.isScoManagedByAudio();"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetSystemInterface.java"
+            line="391"
+            column="57"/>
+    </issue>
+
+    <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
         errorLine1="            return String.format("
