@@ -124,9 +124,10 @@ public class GattService extends ProfileService {
             new HashSet<>(
                     Arrays.asList(
                             "activeunlock_primary",
+                            "channelsounding",
                             "channelsoundingtestapp",
                             "com.google.android.apps.adm",
-                            "channelsounding"));
+                            "crossdeviceaccessservice"));
 
     // Remote RSSI read throttle time
     private static final String RSSI_READ_THROTTLE_MS =
