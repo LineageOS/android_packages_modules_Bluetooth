@@ -71,7 +71,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -720,7 +719,7 @@ public class ScanController {
             return;
         }
         client.setAppDied(true);
-        client.getAppScanStats().ifPresent(stats -> stats.setAppDead(true));
+        client.ifAppScanStatsPresent(stats -> stats.setAppDead(true));
         stopScan(client.getScannerId());
     }
 
@@ -1154,7 +1153,7 @@ public class ScanController {
             int scannerId, ScanSettings settings, List<ScanFilter> filters, ScanClient scanClient) {
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
-            scanClient.setAppScanStats(Optional.of(appScanStats));
+            scanClient.setAppScanStats(appScanStats);
             mScanManager.fetchAppForegroundState(scanClient);
             boolean isFilteredScan = !filters.isEmpty();
             boolean isCallbackScan = false;
@@ -1269,7 +1268,7 @@ public class ScanController {
 
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
-            scanClient.setAppScanStats(Optional.of(appScanStats));
+            scanClient.setAppScanStats(appScanStats);
             mScanManager.fetchAppForegroundState(scanClient);
             boolean isFilteredScan = !piInfo.filters.isEmpty();
             appScanStats.recordScanStart(
