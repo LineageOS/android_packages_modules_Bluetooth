@@ -1,4 +1,4 @@
-// Copyright 2025, The Android Open Source Project
+// Copyright (C) 2026, The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,40 +16,34 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-rust_proc_macro {
-    name: "libbluetooth_offload_hci_derive",
-    crate_name: "bluetooth_offload_hci_derive",
-    crate_root: "derive/lib.rs",
+rust_defaults {
+    name: "bluetooth_offload_a2dp_hci_defaults",
+    crate_root: "lib.rs",
+    crate_name: "bluetooth_offload_a2dp_hci",
     edition: "2021",
     rustlibs: [
-        "libproc_macro2",
-        "libquote",
-        "libsyn",
-    ],
-}
-
-rust_defaults {
-    name: "bluetooth_offload_hci_defaults",
-    crate_root: "lib.rs",
-    crate_name: "bluetooth_offload_hci",
-    edition: "2021",
-    proc_macros: [
-        "libbluetooth_offload_hci_derive",
-    ],
-    visibility: [
-        "//packages/modules/Bluetooth/offload:__subpackages__",
+        "android.hardware.bluetooth.offload.a2dp-rust",
+        "libbinder_rs",
+        "libbluetooth_offload_hci",
+        "liblog_rust",
+        "liblogger",
     ],
 }
 
 rust_library {
-    name: "libbluetooth_offload_hci",
-    defaults: ["bluetooth_offload_hci_defaults"],
-    host_supported: true,
+    name: "libbluetooth_offload_a2dp_hci",
+    defaults: ["bluetooth_offload_a2dp_hci_defaults"],
     vendor_available: true,
+    visibility: [
+        "//device/google/cuttlefish/guest/hals/bluetooth",
+        "//hardware/interfaces/bluetooth:__subpackages__",
+        "//packages/modules/Bluetooth/offload:__subpackages__",
+        "//vendor:__subpackages__",
+    ],
 }
 
 rust_test {
-    name: "libbluetooth_offload_hci_test",
+    name: "libbluetooth_offload_a2dp_hci_test",
     host_supported: true,
     target: {
         android: {
@@ -69,5 +63,5 @@ rust_test {
             suffix: "64",
         },
     },
-    defaults: ["bluetooth_offload_hci_defaults"],
+    defaults: ["bluetooth_offload_a2dp_hci_defaults"],
 }

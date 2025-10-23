@@ -10,6 +10,18 @@ package {
 cc_library_static {
     name: "libbt-sbc-encoder",
     defaults: ["fluoride_defaults"],
+    visibility: [
+        "//hardware/interfaces/bluetooth/audio/utils",
+        "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/offload/a2dp/audio",
+        "//packages/modules/Bluetooth/system/audio_hal_interface",
+        "//packages/modules/Bluetooth/system/audio_hal_interface/fuzzer",
+        "//packages/modules/Bluetooth/system/btif",
+        "//packages/modules/Bluetooth/system/stack",
+        "//packages/modules/Bluetooth/system/stack/test/fuzzers",
+        "//packages/modules/Bluetooth/system/test/suite",
+
+    ],
     cflags: [
         "-Wno-missing-prototypes",
     ],
@@ -31,6 +43,10 @@ cc_library_static {
         "packages/modules/Bluetooth/system",
     ],
     host_supported: true,
-    apex_available: ["com.android.bt"],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bt",
+    ],
     min_sdk_version: "36",
+    vendor_available: true,
 }

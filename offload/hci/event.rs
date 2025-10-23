@@ -16,10 +16,13 @@
 
 use crate::reader::{Read, Reader};
 use crate::writer::{Write, Writer};
+use crate::BluetoothAddress;
 
 /// HCI Event Packet, as defined in Part E - 5.4.4
 #[derive(Debug)]
 pub enum Event {
+    /// 7.7.3  Connection Complete
+    ConnectionComplete(ConnectionComplete),
     /// 7.7.5   Disconnection Complete
     DisconnectionComplete(DisconnectionComplete),
     /// 7.7.14  Command Complete
@@ -68,6 +71,7 @@ impl Event {
         Some(match code {
             CommandComplete::CODE => Self::CommandComplete(r.read()?),
             CommandStatus::CODE => Self::CommandStatus(r.read()?),
+            ConnectionComplete::CODE => Self::ConnectionComplete(r.read()?),
             DisconnectionComplete::CODE => Self::DisconnectionComplete(r.read()?),
             NumberOfCompletedPackets::CODE => Self::NumberOfCompletedPackets(r.read()?),
             LeCisEstablished::CODE => Self::LeCisEstablished(r.read()?),
@@ -119,6 +123,32 @@ pub trait EventToBytes: EventCode + Write {
 use crate::command::{OpCode, ReturnParameters};
 use crate::derive::{EventToBytes, Read, Write};
 use crate::status::Status;
+
+// 7.7.3 Connection Complete
+impl EventCode for ConnectionComplete {
+    const CODE: Code = Code(0x03, None);
+}
+
+#[derive(Debug, Read, Write, EventToBytes)]
+pub struct ConnectionComplete {
+    pub status: Status,
+    pub connection_handle: u16,
+    pub bd_addr: BluetoothAddress,
+    pub link_type: u8,
+    pub encryption_enabled: u8,
+}
+
+#[test]
+fn test_connection_complete() {
+    let dump = [0x03, 0x0B, 0x00, 0x60, 0x00, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00, 0x01, 0x00];
+    let Ok(Event::ConnectionComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    assert_eq!(e.status, Status::Success);
+    assert_eq!(e.connection_handle, 0x60);
+    assert_eq!(e.bd_addr, BluetoothAddress::from_be_bytes([0x00, 0x11, 0x22, 0x33, 0x44, 0x55]));
+    assert_eq!(e.link_type, 0x01);
+    assert_eq!(e.encryption_enabled, 0x00);
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
 
 // 7.7.5 Disconnection Complete
 

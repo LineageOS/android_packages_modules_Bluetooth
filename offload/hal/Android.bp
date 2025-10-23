@@ -26,10 +26,18 @@ rust_ffi {
         "android.hardware.bluetooth-V1-rust",
         "libandroid_logger",
         "libbinder_rs",
+        "libbluetooth_offload_a2dp_hci",
         "libbluetooth_offload_hci",
         "libbluetooth_offload_leaudio_hci",
         "liblog_rust",
     ],
+    target: {
+        android: {
+            rustlibs: [
+                "libandroid_logger",
+            ],
+        },
+    },
     export_include_dirs: [
         "include",
     ],
