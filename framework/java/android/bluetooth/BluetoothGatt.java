@@ -71,9 +71,9 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private final IBluetoothGatt mService;
     private volatile BluetoothGattCallback mCallback;
-    private Handler mHandler;
+    private final Handler mHandler;
     private final BluetoothDevice mDevice;
-    private boolean mAutoConnect;
+    private final boolean mAutoConnect;
     private boolean mClientRegistered;
 
     private int mAuthRetryState = AUTH_RETRY_STATE_IDLE;
@@ -81,7 +81,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     private final Object mStateLock = new Object();
 
     @GuardedBy("mStateLock")
-    private int mConnState = CONN_STATE_IDLE;
+    private int mConnState = CONN_STATE_CONNECTING;
 
     private final Object mDeviceBusyLock = new Object();
 
@@ -209,12 +209,12 @@ public final class BluetoothGatt implements BluetoothProfile {
     @IntDef(
             prefix = {"ON_SUBRATE_CHANGE_MODE"},
             value = {
-                BluetoothGatt.SUBRATE_MODE_OFF,
-                BluetoothGatt.SUBRATE_MODE_LOW,
-                BluetoothGatt.SUBRATE_MODE_BALANCED,
-                BluetoothGatt.SUBRATE_MODE_HIGH,
-                BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE,
-                BluetoothGatt.SUBRATE_MODE_NOT_UPDATED,
+                SUBRATE_MODE_OFF,
+                SUBRATE_MODE_LOW,
+                SUBRATE_MODE_BALANCED,
+                SUBRATE_MODE_HIGH,
+                SUBRATE_MODE_SYSTEM_UPDATE,
+                SUBRATE_MODE_NOT_UPDATED,
             })
     public @interface OnSubrateChangeModeValues {}
 
@@ -920,19 +920,42 @@ public final class BluetoothGatt implements BluetoothProfile {
         }
     }
 
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
     BluetoothGatt(
             @NonNull IBluetoothGatt iGatt,
             @NonNull BluetoothDevice device,
             int transport,
             boolean opportunistic,
             int phy,
-            AttributionSource source) {
+            AttributionSource source,
+            boolean autoConnect,
+            BluetoothGattCallback callback,
+            Handler handler) {
         mService = iGatt;
         mDevice = device;
         mTransport = transport;
+        mAutoConnect = autoConnect;
         mPhy = phy;
         mOpportunistic = opportunistic;
         mAttributionSource = source;
+        mCallback = callback;
+        mHandler = handler;
+        UUID uuid = UUID.randomUUID();
+        Log.d(TAG, "BluetoothGatt() UUID=" + uuid);
+        try {
+            mService.registerClient(
+                    new ParcelUuid(uuid),
+                    mBluetoothGattCallback,
+                    false, // eattSupport
+                    mTransport,
+                    mAttributionSource);
+        } catch (RemoteException e) {
+            synchronized (mStateLock) {
+                mConnState = CONN_STATE_IDLE;
+            }
+            Log.e(TAG, "", e);
+        }
     }
 
     @Hide
@@ -1014,41 +1037,6 @@ public final class BluetoothGatt implements BluetoothProfile {
         return null;
     }
 
-    /**
-     * Register an application callback to start using GATT.
-     *
-     * <p>This is an asynchronous call. If registration is successful, client connection will be
-     * initiated.
-     *
-     * @param callback GATT callback handler that will receive asynchronous callbacks.
-     * @return If true, the callback will be called to notify success or failure, false on immediate
-     *     error
-     */
-    @Hide
-    @RequiresLegacyBluetoothPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    boolean registerApp(BluetoothGattCallback callback, Handler handler) {
-        mCallback = callback;
-        mHandler = handler;
-        UUID uuid = UUID.randomUUID();
-        Log.d(TAG, "registerApp() - UUID=" + uuid);
-
-        try {
-            mService.registerClient(
-                    new ParcelUuid(uuid),
-                    mBluetoothGattCallback,
-                    false, // eattSupport
-                    mTransport,
-                    mAttributionSource);
-        } catch (RemoteException e) {
-            Log.e(TAG, "", e);
-            return false;
-        }
-
-        return true;
-    }
-
     /** Unregister the current application and callbacks. */
     @UnsupportedAppUsage
     @RequiresBluetoothConnectPermission
@@ -1063,49 +1051,6 @@ public final class BluetoothGatt implements BluetoothProfile {
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
-    }
-
-    /**
-     * Initiate a connection to a Bluetooth GATT capable device.
-     *
-     * <p>The connection may not be established right away, but will be completed when the remote
-     * device is available. A {@link BluetoothGattCallback#onConnectionStateChange} callback will be
-     * invoked when the connection state changes as a result of this function.
-     *
-     * <p>The autoConnect parameter determines whether to actively connect to the remote device, or
-     * rather passively scan and finalize the connection when the remote device is in
-     * range/available. Generally, the first ever connection to a device should be direct
-     * (autoConnect set to false) and subsequent connections to known devices should be invoked with
-     * the autoConnect parameter set to true.
-     *
-     * @param autoConnect Whether to directly connect to the remote device (false) or to
-     *     automatically connect as soon as the remote device becomes available (true).
-     * @return true, if the connection attempt was initiated successfully
-     */
-    @RequiresLegacyBluetoothPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    boolean connect(boolean autoConnect, BluetoothGattCallback callback, Handler handler) {
-        Log.d(TAG, "connect() - device: " + mDevice + ", auto: " + autoConnect);
-        synchronized (mStateLock) {
-            if (mConnState != CONN_STATE_IDLE) {
-                throw new IllegalStateException("Not idle");
-            }
-            mConnState = CONN_STATE_CONNECTING;
-        }
-
-        mAutoConnect = autoConnect;
-
-        if (!registerApp(callback, handler)) {
-            synchronized (mStateLock) {
-                mConnState = CONN_STATE_IDLE;
-            }
-            Log.e(TAG, "Failed to register callback");
-            return false;
-        }
-
-        // The connection will continue in the onClientRegistered callback
-        return true;
     }
 
     /**
