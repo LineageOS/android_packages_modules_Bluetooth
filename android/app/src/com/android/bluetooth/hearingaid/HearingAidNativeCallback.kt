@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.hearingaid
 
+import android.bluetooth.BluetoothDevice
 import android.util.Log
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
@@ -32,21 +33,18 @@ class HearingAidNativeCallback(
         adapterService.getRemoteDevice(Utils.getAddressStringFromByte(address))
 
     fun onConnectionStateChanged(state: Int, address: ByteArray) {
-        val event = HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED)
-        event.device = getDevice(address)
-        event.valueInt1 = state
-
-        Log.d(TAG, "onConnectionStateChanged: $event")
-        service.messageFromNative(event)
+        val device: BluetoothDevice = getDevice(address)
+        Log.d(TAG, "onConnectionStateChanged(): device=$device, state=$state")
+        service.onConnectionStateChangedFromNative(device, state)
     }
 
     fun onDeviceAvailable(capabilities: Byte, hiSyncId: Long, address: ByteArray) {
-        val event = HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE)
-        event.device = getDevice(address)
-        event.valueInt1 = capabilities.toInt()
-        event.valueLong2 = hiSyncId
-
-        Log.d(TAG, "onDeviceAvailable: $event")
-        service.messageFromNative(event)
+        val device: BluetoothDevice = getDevice(address)
+        Log.d(
+            TAG,
+            ("onDeviceAvailable(): device=$device, capabilities=${capabilities.toInt()}") +
+                ", hiSyncId=$hiSyncId",
+        )
+        service.onDeviceAvailableFromNative(device, capabilities.toInt(), hiSyncId)
     }
 }
