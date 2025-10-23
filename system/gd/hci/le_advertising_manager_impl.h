@@ -56,7 +56,6 @@ public:
   int GetAdvertiserRegId(AdvertiserId advertiser_id) override;
 
   void ExtendedCreateAdvertiser(uint8_t client_id, int reg_id, const AdvertisingConfig config,
-                                common::Callback<void(Address, AddressType)> scan_callback,
                                 uint16_t duration, uint8_t max_extended_advertising_events,
                                 os::Handler* handler) override;
 
@@ -64,7 +63,6 @@ public:
                         uint16_t duration,
                         base::OnceCallback<void(uint8_t /* status */)> status_callback,
                         base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
-                        common::Callback<void(Address, AddressType)> scan_callback,
                         os::Handler* handler) override;
 
   void GetOwnAddress(uint8_t advertiser_id) override;
