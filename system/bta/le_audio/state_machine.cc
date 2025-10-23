@@ -952,17 +952,18 @@ public:
 
   void ProcessHciNotifIsoLinkQualityRead(LeAudioDeviceGroup* /*group*/,
                                          LeAudioDevice* /*leAudioDevice*/, uint8_t conn_handle,
-                                         uint32_t txUnackedPackets, uint32_t txFlushedPackets,
-                                         uint32_t txLastSubeventPackets,
-                                         uint32_t retransmittedPackets, uint32_t crcErrorPackets,
-                                         uint32_t rxUnreceivedPackets, uint32_t duplicatePackets) {
+                                         uint32_t tx_unacked_packets, uint32_t tx_flushed_packets,
+                                         uint32_t tx_last_subevent_packets,
+                                         uint32_t retransmitted_packets, uint32_t crc_error_packets,
+                                         uint32_t rx_unreceived_packets,
+                                         uint32_t duplicate_packets) {
     log::info(
-            "conn_handle: 0x{:x}, txUnackedPackets: 0x{:x}, txFlushedPackets: "
-            "0x{:x}, txLastSubeventPackets: 0x{:x}, retransmittedPackets: 0x{:x}, "
-            "crcErrorPackets: 0x{:x}, rxUnreceivedPackets: 0x{:x}, "
-            "duplicatePackets: 0x{:x}",
-            conn_handle, txUnackedPackets, txFlushedPackets, txLastSubeventPackets,
-            retransmittedPackets, crcErrorPackets, rxUnreceivedPackets, duplicatePackets);
+            "conn_handle: 0x{:x}, tx_unacked_packets: 0x{:x}, tx_flushed_packets: "
+            "0x{:x}, tx_last_subevent_packets: 0x{:x}, retransmitted_packets: 0x{:x}, "
+            "crc_error_packets: 0x{:x}, rx_unreceived_packets: 0x{:x}, "
+            "duplicate_packets: 0x{:x}",
+            conn_handle, tx_unacked_packets, tx_flushed_packets, tx_last_subevent_packets,
+            retransmitted_packets, crc_error_packets, rx_unreceived_packets, duplicate_packets);
   }
 
   void ReleaseCisIds(LeAudioDeviceGroup* group) {

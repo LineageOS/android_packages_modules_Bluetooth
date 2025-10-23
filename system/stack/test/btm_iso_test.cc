@@ -107,10 +107,10 @@ public:
   MOCK_METHOD((void), OnRemoveIsoDataPath, (uint8_t status, uint16_t conn_handle, uint8_t cig_id),
               (override));
   MOCK_METHOD((void), OnIsoLinkQualityRead,
-              (uint8_t conn_handle, uint8_t cig_id, uint32_t txUnackedPackets,
-               uint32_t txFlushedPackets, uint32_t txLastSubeventPackets,
-               uint32_t retransmittedPackets, uint32_t crcErrorPackets,
-               uint32_t rxUnreceivedPackets, uint32_t duplicatePackets),
+              (uint8_t conn_handle, uint8_t cig_id, uint32_t tx_unacked_packets,
+               uint32_t tx_flushed_packets, uint32_t tx_last_subevent_packets,
+               uint32_t retransmitted_packets, uint32_t crc_error_packets,
+               uint32_t rx_unreceived_packets, uint32_t duplicate_packets),
               (override));
 
   MOCK_METHOD((void), OnCisEvent, (uint8_t event, void* data), (override));

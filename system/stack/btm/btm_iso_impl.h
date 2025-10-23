@@ -722,13 +722,13 @@ struct iso_impl {
   void on_iso_link_quality_read(uint8_t* stream, uint16_t len) {
     uint8_t status;
     uint16_t conn_handle;
-    uint32_t txUnackedPackets;
-    uint32_t txFlushedPackets;
-    uint32_t txLastSubeventPackets;
-    uint32_t retransmittedPackets;
-    uint32_t crcErrorPackets;
-    uint32_t rxUnreceivedPackets;
-    uint32_t duplicatePackets;
+    uint32_t tx_unacked_packets;
+    uint32_t tx_flushed_packets;
+    uint32_t tx_last_subevent_packets;
+    uint32_t retransmitted_packets;
+    uint32_t crc_error_packets;
+    uint32_t rx_unreceived_packets;
+    uint32_t duplicate_packets;
 
     // 1 + 2 + 4 * 7
 #define ISO_LINK_QUALITY_SIZE 31
@@ -762,17 +762,18 @@ struct iso_impl {
                      conn_handle);
     log::assert_that(client_cbs->cig_callbacks != nullptr, "Invalid CIG callbacks");
 
-    STREAM_TO_UINT32(txUnackedPackets, stream);
-    STREAM_TO_UINT32(txFlushedPackets, stream);
-    STREAM_TO_UINT32(txLastSubeventPackets, stream);
-    STREAM_TO_UINT32(retransmittedPackets, stream);
-    STREAM_TO_UINT32(crcErrorPackets, stream);
-    STREAM_TO_UINT32(rxUnreceivedPackets, stream);
-    STREAM_TO_UINT32(duplicatePackets, stream);
+    STREAM_TO_UINT32(tx_unacked_packets, stream);
+    STREAM_TO_UINT32(tx_flushed_packets, stream);
+    STREAM_TO_UINT32(tx_last_subevent_packets, stream);
+    STREAM_TO_UINT32(retransmitted_packets, stream);
+    STREAM_TO_UINT32(crc_error_packets, stream);
+    STREAM_TO_UINT32(rx_unreceived_packets, stream);
+    STREAM_TO_UINT32(duplicate_packets, stream);
 
-    client_cbs->cig_callbacks->OnIsoLinkQualityRead(
-            conn_handle, iso->group_id, txUnackedPackets, txFlushedPackets, txLastSubeventPackets,
-            retransmittedPackets, crcErrorPackets, rxUnreceivedPackets, duplicatePackets);
+    client_cbs->cig_callbacks->OnIsoLinkQualityRead(conn_handle, iso->group_id, tx_unacked_packets,
+                                                    tx_flushed_packets, tx_last_subevent_packets,
+                                                    retransmitted_packets, crc_error_packets,
+                                                    rx_unreceived_packets, duplicate_packets);
   }
 
   void read_iso_link_quality(uint16_t conn_handle) {
