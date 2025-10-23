@@ -17,6 +17,7 @@
 package com.android.bluetooth.gatt;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -27,6 +28,7 @@ import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.IAdvertisingSetCallback;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.content.AttributionSource;
+import android.content.pm.PackageManager;
 import android.os.IBinder;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -55,12 +57,18 @@ public class AdvertiseManagerTest {
     @Mock private AdvertiseManagerNativeInterface mNativeInterface;
     @Mock private IAdvertisingSetCallback mCallback;
     @Mock private IBinder mBinder;
+    @Mock private PackageManager mPackageManager;
+
+    private static final String APP_NAME = "com.android.what.a.name";
 
     private AdvertiseManager mAdvertiseManager;
     private int mAdvertiserId;
 
     @Before
     public void setUp() throws Exception {
+        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
+        doReturn(APP_NAME).when(mPackageManager).getNameForUid(anyInt());
+
         mAdvertiseManager =
                 new AdvertiseManager(
                         mAdapterService,

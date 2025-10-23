@@ -139,16 +139,16 @@ public class AdvertiseManager {
 
     private class AdvertisingSetDeathRecipient implements IBinder.DeathRecipient {
         private final IAdvertisingSetCallback mCallback;
-        private final String mPackageName;
+        private final String mAppName;
 
-        AdvertisingSetDeathRecipient(IAdvertisingSetCallback callback, String packageName) {
+        AdvertisingSetDeathRecipient(IAdvertisingSetCallback callback, String appName) {
             this.mCallback = callback;
-            this.mPackageName = packageName;
+            this.mAppName = appName;
         }
 
         @Override
         public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering advertising set (" + mPackageName + ")!");
+            Log.d(TAG, "Binder is dead - unregistering advertising set (" + mAppName + ")!");
             doOnAdvertiseThread(() -> stopAdvertisingSet(mCallback));
         }
     }
@@ -318,14 +318,8 @@ public class AdvertiseManager {
         }
 
         int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
-        String packageName = null;
-        if (mAdapterService.getPackageManager() != null) {
-            packageName = mAdapterService.getPackageManager().getNameForUid(uid);
-        }
-        if (packageName == null) {
-            packageName = "Unknown package name (UID: " + uid + ")";
-        }
-        final var deathRecipient = new AdvertisingSetDeathRecipient(callback, packageName);
+        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        final var deathRecipient = new AdvertisingSetDeathRecipient(callback, appName);
         final var binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);
@@ -345,7 +339,7 @@ public class AdvertiseManager {
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
-            mAdvertiserMap.addAppAdvertiseStats(uid, cbId, mAdapterService, source);
+            mAdvertiserMap.addAppAdvertiseStats(uid, appName, cbId, source);
             fetchAppForegroundState(uid, cbId);
             mAdvertiserMap.recordAdvertiseStart(
                     cbId,

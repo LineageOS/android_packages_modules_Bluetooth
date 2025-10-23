@@ -18,8 +18,6 @@ package com.android.bluetooth.gatt;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
@@ -27,8 +25,6 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.content.AttributionSource;
-import android.content.Context;
-import android.content.pm.PackageManager;
 import android.os.Binder;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -36,7 +32,6 @@ import androidx.test.filters.SmallTest;
 
 import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,15 +45,7 @@ public class AdvertiserMapTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mContext;
-    @Mock private PackageManager mMockPackageManager;
     @Mock private AttributionSource mSource;
-
-    @Before
-    public void setUp() throws Exception {
-        doReturn(mMockPackageManager).when(mContext).getPackageManager();
-        doReturn(APP_NAME).when(mMockPackageManager).getNameForUid(anyInt());
-    }
 
     @Test
     public void getByMethods() {
@@ -66,7 +53,7 @@ public class AdvertiserMapTest {
 
         int uid = Binder.getCallingUid();
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(uid, id, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, mSource);
 
         AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
         assertThat(stats.mAppName).isEqualTo(APP_NAME);
@@ -78,7 +65,7 @@ public class AdvertiserMapTest {
 
         int uid = Binder.getCallingUid();
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(uid, id, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, mSource);
 
         AppAdvertiseStats stats = advertiserMap.getAppAdvertiseStatsById(id);
         assertThat(stats.mAppName).isEqualTo(APP_NAME);
@@ -136,7 +123,7 @@ public class AdvertiserMapTest {
     }
 
     @Test
-    public void emptyStop_doesNotCrash() throws Exception {
+    public void emptyStop_doesNotCrash() {
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
         int id = 12345;
@@ -144,17 +131,17 @@ public class AdvertiserMapTest {
     }
 
     @Test
-    public void testDump_doesNotCrash() throws Exception {
+    public void testDump_doesNotCrash() {
         StringBuilder sb = new StringBuilder();
         AdvertiserMap advertiserMap = new AdvertiserMap();
 
         int uid = Binder.getCallingUid();
         int id = 12345;
-        advertiserMap.addAppAdvertiseStats(uid, id, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, id, mSource);
         advertiserMap.recordAdvertiseStop(id);
 
         int idSecond = 54321;
-        advertiserMap.addAppAdvertiseStats(uid, idSecond, mContext, mSource);
+        advertiserMap.addAppAdvertiseStats(uid, APP_NAME, idSecond, mSource);
         advertiserMap.dump(sb);
     }
 }
