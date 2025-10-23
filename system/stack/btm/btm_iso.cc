@@ -16,9 +16,13 @@
  */
 
 #include <memory>
+#include <utility>
+#include <vector>
 
+#include "bluetooth/log.h"
 #include "btm/btm_iso_impl.h"
 #include "include/btm_iso_api.h"
+#include "include/btm_iso_api_types.h"
 #include "stack/include/bt_hdr.h"
 
 using bluetooth::hci::iso_manager::iso_impl;

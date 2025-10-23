@@ -17,6 +17,11 @@
 
 #include "mock_stack_btm_iso.h"
 
+#include <cstdint>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "btm_iso_api.h"
 #include "btm_iso_api_types.h"
 

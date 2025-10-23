@@ -18,19 +18,26 @@
 #pragma once
 
 #include <base/functional/bind.h>
-#include <base/functional/callback.h>
 #include <com_android_bluetooth_flags.h>
 
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstdio>
+#include <format>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <vector>
 
+#include "bluetooth/log.h"
+#include "bluetooth/types/address.h"
 #include "btm_dev.h"
 #include "btm_iso_api.h"
 #include "btm_iso_api_types.h"
 #include "common/time_util.h"
 #include "hci/controller.h"
-#include "hci/include/hci_layer.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
 #include "main/shim/hci_layer.h"
