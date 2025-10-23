@@ -66,11 +66,13 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final PermissionManager mPermissionManager;
     private final BtPermissionUtils mPermissionUtils;
     private final Handler mHandler;
+    private final Looper mLooper;
     private final Messenger mMessenger;
 
     BluetoothServiceBinder(Looper looper, BluetoothManagerServiceApi api, Context ctx) {
         mApi = api;
         mContext = ctx;
+        mLooper = looper;
         mUserManager = requireNonNull(ctx.getSystemService(UserManager.class));
         mAppOpsManager = requireNonNull(ctx.getSystemService(AppOpsManager.class));
         mPermissionManager = requireNonNull(ctx.getSystemService(PermissionManager.class));
@@ -426,7 +428,7 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
             @NonNull ParcelFileDescriptor out,
             @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new ShellCommand(this, mMessenger, mApi::waitForState)
+        return new ShellCommand(this, mLooper, mMessenger, mApi::waitForState)
                 .exec(
                         this,
                         in.getFileDescriptor(),
