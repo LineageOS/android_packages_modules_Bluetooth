@@ -195,7 +195,9 @@ public class GattServiceTest {
                                     int id = (int) arguments[0];
                                     int connId = (int) arguments[1];
                                     mServerConnections.removeIf(
-                                            conn -> conn.appId() == id && conn.connId() == connId);
+                                            conn ->
+                                                    conn.getAppId() == id
+                                                            && conn.getConnId() == connId);
                                     return null;
                                 })
                 .when(mServerMap)
@@ -209,8 +211,8 @@ public class GattServiceTest {
                                     int id = (int) arguments[0];
                                     BluetoothDevice device = (BluetoothDevice) arguments[1];
                                     for (ContextMap.Connection connection : mServerConnections) {
-                                        if (connection.device().equals(device)
-                                                && connection.appId() == id) {
+                                        if (connection.getDevice().equals(device)
+                                                && connection.getAppId() == id) {
                                             currentConnections.add(connection);
                                         }
                                     }
@@ -368,7 +370,7 @@ public class GattServiceTest {
         int transport = TRANSPORT_LE;
 
         mService.registerClient(uuid, callback, eattSupport, transport, mSource);
-        verify(mClientMap, never()).add(any(), any(), anyInt(), any(), any());
+        verify(mClientMap, never()).add(anyInt(), any(), any(), anyInt(), any(), any());
         verify(mNativeInterface, never())
                 .gattClientRegisterApp(anyLong(), anyLong(), any(), anyBoolean());
     }

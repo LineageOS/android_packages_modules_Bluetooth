@@ -189,7 +189,7 @@ object GattUtil {
     }
 
     private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
-        map.allApps.forEach { app ->
+        map.getAllApps().forEach { app ->
             append("    app_if: ${app.id}")
             append(", appName: ${app.packageName}")
             append(", transport: ${transportToString(app.transport)}")
@@ -197,14 +197,6 @@ object GattUtil {
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
-
-    @JvmStatic
-    fun <C : IInterface> ContextMap<C>.dump() = buildString {
-        appendLine("  Entries: ${allApps.size}")
-        appendLine("  Last apps: ")
-        mLastRecords.forEach { appendLine("       $it") }
-        appendLine()
-    }
 
     @JvmStatic
     fun HandleMap.dump() = buildString {
