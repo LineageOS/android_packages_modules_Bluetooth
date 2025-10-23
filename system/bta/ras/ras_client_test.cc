@@ -483,6 +483,68 @@ TEST_F(RasClientTestNoInit, SetFirstSegmentTimeoutInLowPowerMode) {
   DisconnectGatt();
 }
 
+TEST_F(RasClientTestNoInit, OnGattNotification_BeforeServiceDiscovery) {
+  // AppRegister should be triggered when Initialize
+  EXPECT_CALL(mock_gatt_interface_, AppRegister(_, _, _, _))
+          .WillOnce(testing::SaveArg<1>(&captured_gatt_callback_));
+  GetRasClient()->Initialize();
+  ASSERT_NE(captured_gatt_callback_, nullptr);
+  GetRasClient()->RegisterCallbacks(&mock_ras_client_callbacks_);
+
+  // Open should be triggered when connect
+  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_DIRECT_CONNECTION, _)).Times(1);
+  GetRasClient()->Connect(test_address_);
+
+  // EXPECT the ServiceSearchRequest to be called *immediately*
+  // by the BTA_GATTC_OPEN_EVT handler.
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(test_conn_id_, _)).Times(1);
+
+  // 1. Simulate the BTA_GATTC_OPEN_EVT
+  // This creates the RasTracker and triggers the ServiceSearchRequest.
+  tBTA_GATTC p_data;
+  tBTA_GATTC_OPEN open_event_data;
+  open_event_data.remote_bda = test_address_;
+  open_event_data.conn_id = test_conn_id_;
+  open_event_data.status = GATT_SUCCESS;
+  open_event_data.transport = BT_TRANSPORT_LE;
+  p_data.open = open_event_data;
+  captured_gatt_callback_(BTA_GATTC_OPEN_EVT, &p_data);
+
+  // 2. Simulate the BTA_GATTC_NOTIF_EVT (the crash-causing event)
+  // This notification arrives BEFORE service discovery is complete.
+  // We expect OnRemoteData to NOT be called, and the client should not crash.
+  EXPECT_CALL(mock_ras_client_callbacks_, OnRemoteData(test_address_, _)).Times(0);
+
+  // Simulate the notification
+  tBTA_GATTC p_data_notify;
+  tBTA_GATTC_NOTIFY notify_data;
+  notify_data.conn_id = test_conn_id_;
+  notify_data.handle = GetCharacteristicHandle(kRasRealTimeRangingDataCharacteristic);
+  notify_data.len = 5;
+  std::vector<uint8_t> data = {0x01, 0x02, 0x03, 0x04, 0x05};
+  std::copy(data.begin(), data.end(), notify_data.value);
+  p_data_notify.notify = notify_data;
+  captured_gatt_callback_(BTA_GATTC_NOTIF_EVT, &p_data_notify);
+
+  // 3. Now, simulate the (delayed) service discovery completion
+  // This will assign tracker->service_
+  EXPECT_CALL(mock_gatt_interface_, GetServices(test_conn_id_))
+          .WillOnce(Return(&services_to_return_));
+  EXPECT_CALL(mock_gatt_interface_, ConfigureMTU(test_conn_id_, _)).Times(1);
+
+  tBTA_GATTC p_data2;
+  tBTA_GATTC_SEARCH_CMPL search_cmpl_event_data;
+  search_cmpl_event_data.conn_id = test_conn_id_;
+  p_data2.search_cmpl = search_cmpl_event_data;
+  captured_gatt_callback_(BTA_GATTC_SEARCH_CMPL_EVT, &p_data2);
+
+  // 4. Clean up the connection
+  EXPECT_CALL(mock_ras_client_callbacks_,
+              OnDisconnected(test_address_, RasDisconnectReason::GATT_DISCONNECT))
+          .Times(1);
+  DisconnectGatt();
+}
+
 TEST_F(RasClientTest, OnConnIntervalUpdatedInvalid) {
   EXPECT_CALL(mock_ras_client_callbacks_, OnConnIntervalUpdated(test_address_, 0x1111))
           .Times(AtMost(1));
