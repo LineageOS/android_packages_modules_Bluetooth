@@ -62,8 +62,7 @@ class PeriodicScanManagerTest {
     @Mock private lateinit var callback2: IPeriodicAdvertisingCallback
     @Mock private lateinit var binder2: IBinder
 
-    private val device: BluetoothDevice =
-        getRealDevice(REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+    private val device = getRealDevice(REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM)
     private val sid: Int = 123
     private val statusFailure: Int = 1
 

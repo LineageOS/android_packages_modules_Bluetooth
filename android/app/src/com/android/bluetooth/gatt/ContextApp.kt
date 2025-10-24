@@ -16,10 +16,12 @@
 
 package com.android.bluetooth.gatt
 
+import android.bluetooth.BluetoothDevice
 import android.os.IBinder
 import android.os.IInterface
 import android.os.RemoteException
 import android.util.Log
+import com.google.protobuf.ByteString
 import java.util.NoSuchElementException
 import java.util.UUID
 
@@ -43,6 +45,17 @@ class ContextApp<C : IInterface>(
 
     private var deathRecipient: IBinder.DeathRecipient? = null
 
+    data class CallbackInfo(
+        val device: BluetoothDevice,
+        val status: Int,
+        val handle: Int,
+        val value: ByteString?,
+    ) {
+        constructor(device: BluetoothDevice, status: Int) : this(device, status, 0, null)
+
+        fun valueByteArray() = value?.toByteArray()
+    }
+
     fun linkToDeath(recipient: IBinder.DeathRecipient) {
         try {
             callback.asBinder().linkToDeath(recipient, 0)
@@ -62,9 +75,7 @@ class ContextApp<C : IInterface>(
         }
     }
 
-    fun queueCallback(callbackInfo: CallbackInfo) {
-        congestionQueue.add(callbackInfo)
-    }
+    fun queueCallback(callbackInfo: CallbackInfo) = congestionQueue.add(callbackInfo)
 
     fun popQueuedCallback(): CallbackInfo? {
         if (congestionQueue.isEmpty()) {

@@ -743,9 +743,8 @@ public class GattService extends ProfileService {
             if (queuedStatus == BluetoothGatt.GATT_CONNECTION_CONGESTED) {
                 queuedStatus = BluetoothGatt.GATT_SUCCESS;
             }
-            final ByteString value = ByteString.copyFrom(data);
-            CallbackInfo callbackInfo = new CallbackInfo(device, queuedStatus, handle, value);
-            app.queueCallback(callbackInfo);
+            var value = ByteString.copyFrom(data);
+            app.queueCallback(new ContextApp.CallbackInfo(device, queuedStatus, handle, value));
         }
     }
 
@@ -838,7 +837,6 @@ public class GattService extends ProfileService {
     void onClientCongestionFromNative(int connId, boolean congested) {
         Log.v(TAG, "onClientCongestion() - connId=" + connId + ", congested=" + congested);
         var app = mClientMap.getByConnId(connId);
-
         if (app == null) {
             return;
         }
@@ -852,9 +850,9 @@ public class GattService extends ProfileService {
                     () ->
                             app.getCallback()
                                     .onCharacteristicWrite(
-                                            callbackInfo.device(),
-                                            callbackInfo.status(),
-                                            callbackInfo.handle(),
+                                            callbackInfo.getDevice(),
+                                            callbackInfo.getStatus(),
+                                            callbackInfo.getHandle(),
                                             callbackInfo.valueByteArray()));
         }
     }
@@ -2042,18 +2040,16 @@ public class GattService extends ProfileService {
             if (queuedStatus == BluetoothGatt.GATT_CONNECTION_CONGESTED) {
                 queuedStatus = BluetoothGatt.GATT_SUCCESS;
             }
-            app.queueCallback(new CallbackInfo(device, queuedStatus));
+            app.queueCallback(new ContextApp.CallbackInfo(device, queuedStatus));
         }
     }
 
     void onServerCongestionFromNative(int connId, boolean congested) {
         Log.d(TAG, "onServerCongestion() - connId=" + connId + ", congested=" + congested);
-
         var app = mServerMap.getByConnId(connId);
         if (app == null) {
             return;
         }
-
         app.setCongested(congested);
         while (!app.isCongested()) {
             final var callbackInfo = app.popQueuedCallback();
@@ -2064,7 +2060,7 @@ public class GattService extends ProfileService {
                     () ->
                             app.getCallback()
                                     .onNotificationSent(
-                                            callbackInfo.device(), callbackInfo.status()));
+                                            callbackInfo.getDevice(), callbackInfo.getStatus()));
         }
     }
 
