@@ -110,7 +110,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.hamcrest.MockitoHamcrest;
 
@@ -577,7 +576,7 @@ public class BassClientServiceTest {
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
 
         assertThat(mBassClientService.isSearchInProgress()).isFalse();
@@ -646,7 +645,7 @@ public class BassClientServiceTest {
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
 
         clearInvocations(mScanController);
@@ -3897,7 +3896,7 @@ public class BassClientServiceTest {
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         // Make another stream request with no context validate
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -7501,7 +7500,7 @@ public class BassClientServiceTest {
         // No more updates
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -7542,7 +7541,7 @@ public class BassClientServiceTest {
         // No more updates
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -7590,7 +7589,7 @@ public class BassClientServiceTest {
         // No more updates
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -7782,7 +7781,7 @@ public class BassClientServiceTest {
         // Check if no metadataUpdate on PA/BIG report
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
