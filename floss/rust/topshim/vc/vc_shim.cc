@@ -34,15 +34,15 @@ namespace internal {
 
 static VolumeControlIntf* g_vc_if;
 
-static BtVcConnectionState to_rust_btvc_connection_state(vc::ConnectionState state) {
+static BtVcConnectionState to_rust_btvc_connection_state(vcp::ConnectionState state) {
   switch (state) {
-    case vc::ConnectionState::DISCONNECTED:
+    case vcp::ConnectionState::DISCONNECTED:
       return BtVcConnectionState::Disconnected;
-    case vc::ConnectionState::CONNECTING:
+    case vcp::ConnectionState::CONNECTING:
       return BtVcConnectionState::Connecting;
-    case vc::ConnectionState::CONNECTED:
+    case vcp::ConnectionState::CONNECTED:
       return BtVcConnectionState::Connected;
-    case vc::ConnectionState::DISCONNECTING:
+    case vcp::ConnectionState::DISCONNECTING:
       return BtVcConnectionState::Disconnecting;
     default:
       log::assert_that(false, "Unhandled enum value from C++");
@@ -50,7 +50,7 @@ static BtVcConnectionState to_rust_btvc_connection_state(vc::ConnectionState sta
   return BtVcConnectionState{};
 }
 
-static void connection_state_cb(vc::ConnectionState state, const RawAddress& address) {
+static void connection_state_cb(vcp::ConnectionState state, const RawAddress& address) {
   vc_connection_state_callback(to_rust_btvc_connection_state(state), address);
 }
 
@@ -84,16 +84,16 @@ static void ext_audio_out_description_cb(const RawAddress& address, uint8_t ext_
 
 }  // namespace internal
 
-class DBusVolumeControlCallbacks : public vc::VolumeControlCallbacks {
+class DBusVolumeControlCallbacks : public vcp::VolumeControllerCallbacks {
 public:
-  static vc::VolumeControlCallbacks* GetInstance() {
+  static vcp::VolumeControllerCallbacks* GetInstance() {
     static auto instance = new DBusVolumeControlCallbacks();
     return instance;
   }
 
   DBusVolumeControlCallbacks() {}
 
-  void OnConnectionState(vc::ConnectionState state, const RawAddress& address) override {
+  void OnConnectionState(vcp::ConnectionState state, const RawAddress& address) override {
     log::info("state={}, address={}", static_cast<int>(state), address);
     topshim::rust::internal::connection_state_cb(state, address);
   }
@@ -161,12 +161,12 @@ public:
   }
 
   void OnExtAudioInStatusChanged(const RawAddress& address, uint8_t ext_input_id,
-                                 bluetooth::vc::VolumeInputStatus status) {
+                                 bluetooth::vcp::VolumeInputStatus status) {
     log::info("address={}, ext_input_id={}, status={}", address, ext_input_id, status);
     log::info("Not implemented");
   }
   void OnExtAudioInTypeChanged(const RawAddress& address, uint8_t ext_input_id,
-                               bluetooth::vc::VolumeInputType type) {
+                               bluetooth::vcp::VolumeInputType type) {
     log::info("address={}, ext_input_id={}, type={}", address, ext_input_id, type);
     log::info("Not implemented");
   }
@@ -193,8 +193,8 @@ std::unique_ptr<VolumeControlIntf> GetVolumeControlProfile(const unsigned char* 
 
   const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
 
-  auto vc_if = std::make_unique<VolumeControlIntf>(const_cast<vc::VolumeControlInterface*>(
-          reinterpret_cast<const vc::VolumeControlInterface*>(
+  auto vc_if = std::make_unique<VolumeControlIntf>(const_cast<vcp::VolumeControllerInterface*>(
+          reinterpret_cast<const vcp::VolumeControllerInterface*>(
                   btif_->get_profile_interface("volume_control"))));
 
   internal::g_vc_if = vc_if.get();

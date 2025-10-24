@@ -19,12 +19,12 @@
 #include "include/hardware/bt_csis.h"
 #include "include/hardware/bt_has.h"
 #include "include/hardware/bt_le_audio.h"
-#include "include/hardware/bt_vc.h"
 #include "include/hardware/bt_vaps_server.h"
+#include "include/hardware/bt_vcp_controller.h"
 
 bluetooth::le_audio::LeAudioClientInterface* btif_le_audio_get_interface();
 bluetooth::le_audio::LeAudioBroadcasterInterface* btif_le_audio_broadcaster_get_interface();
-bluetooth::vc::VolumeControlInterface* btif_volume_control_get_interface();
+bluetooth::vcp::VolumeControllerInterface* btif_vcp_controller_get_interface();
 bluetooth::csis::CsisClientInterface* btif_csis_client_get_interface();
 bluetooth::has::HasClientInterface* btif_has_client_get_interface();
 bluetooth::vaps::VapsServerInterface* btif_vaps_server_get_interface();

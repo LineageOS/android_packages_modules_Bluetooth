@@ -43,7 +43,7 @@
 #include <hardware/bt_csis.h>
 #include <hardware/bt_hearing_aid.h>
 #include <hardware/bt_le_audio.h>
-#include <hardware/bt_vc.h>
+#include <hardware/bt_vcp_controller.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>

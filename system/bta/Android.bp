@@ -171,8 +171,8 @@ cc_library_static {
         "sys/utl.cc",
         "vaps/vaps_server.cc",
         "vaps/vaps_server_utils.cc",
-        "vc/device.cc",
-        "vc/vc.cc",
+        "vcp/vcp_controller.cc",
+        "vcp/vcp_controller_device.cc",
     ],
     cflags: [
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
@@ -645,10 +645,10 @@ cc_test {
         "test/common/btm_api_mock.cc",
         "test/common/mock_csis_client.cc",
         "test/common/mock_device_groups.cc",
-        "vc/device.cc",
-        "vc/devices_test.cc",
-        "vc/vc.cc",
-        "vc/vc_test.cc",
+        "vcp/vcp_controller.cc",
+        "vcp/vcp_controller_device.cc",
+        "vcp/vcp_controller_devices_test.cc",
+        "vcp/vcp_controller_test.cc",
     ],
     shared_libs: [
         "libbase",

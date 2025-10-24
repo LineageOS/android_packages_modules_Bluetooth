@@ -22,23 +22,23 @@
 #include <base/functional/callback.h>
 #include <bluetooth/types/address.h>
 
-#include "bta/include/bta_vc_api.h"
+#include "bta/include/bta_vcp_controller_api.h"
 #include "test/common/mock_functions.h"
 
-void VolumeControl::AddFromStorage(const RawAddress& /* address */) {
+void VolumeController::AddFromStorage(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }
-void VolumeControl::CleanUp() { inc_func_call_count(__func__); }
-void VolumeControl::DebugDump(int /* fd */) { inc_func_call_count(__func__); }
-VolumeControl* VolumeControl::Get(void) {
+void VolumeController::CleanUp() { inc_func_call_count(__func__); }
+void VolumeController::DebugDump(int /* fd */) { inc_func_call_count(__func__); }
+VolumeController* VolumeController::Get(void) {
   inc_func_call_count(__func__);
   return nullptr;
 }
-bool VolumeControl::IsVolumeControlRunning() {
+bool VolumeController::IsRunning() {
   inc_func_call_count(__func__);
   return false;
 }
-void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* /* callbacks */,
-                               base::OnceClosure /* initCb */) {
+void VolumeController::Initialize(bluetooth::vcp::VolumeControllerCallbacks* /* callbacks */,
+                                  base::OnceClosure /* initCb */) {
   inc_func_call_count(__func__);
 }

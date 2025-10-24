@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "include/hardware/bt_vc.h"
+#include "include/hardware/bt_vcp_controller.h"
 #include "rust/cxx.h"
 
 namespace bluetooth {
@@ -29,7 +29,7 @@ namespace rust {
 
 class VolumeControlIntf {
 public:
-  VolumeControlIntf(vc::VolumeControlInterface* intf) : intf_(intf) {}
+  VolumeControlIntf(vcp::VolumeControllerInterface* intf) : intf_(intf) {}
 
   void init(/*VolumeControlCallbacks* callbacks*/);
   void cleanup();
@@ -47,7 +47,7 @@ public:
   void set_ext_audio_out_description(RawAddress addr, uint8_t ext_output_id, const char* descr);
 
 private:
-  vc::VolumeControlInterface* intf_;
+  vcp::VolumeControllerInterface* intf_;
 };
 
 std::unique_ptr<VolumeControlIntf> GetVolumeControlProfile(const unsigned char* btif);

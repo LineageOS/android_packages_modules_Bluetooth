@@ -81,7 +81,7 @@ static_library("btif") {
     "src/btif_storage.cc",
     "src/btif_uid.cc",
     "src/btif_util.cc",
-    "src/btif_vc.cc",
+    "src/btif_vcp_controller.cc",
     "src/stack_manager.cc",
   ]
 
