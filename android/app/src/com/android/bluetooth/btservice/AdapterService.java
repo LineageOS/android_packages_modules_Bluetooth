@@ -242,6 +242,10 @@ public class AdapterService extends Service {
 
     private final Map<String, DiscoveringPackageInfo> mDiscoveringPackages = new HashMap<>();
 
+    // Used to broadcast discovered devices to new packages starting discovery.
+    @GuardedBy("mDiscoveringPackages")
+    private final Set<BluetoothDevice> mDiscoveredDevices = new HashSet<>();
+
     private final Map<BluetoothDevice, RemoteCallbackList<IBluetoothMetadataListener>>
             mMetadataListeners = new HashMap<>();
 
@@ -1004,7 +1008,7 @@ public class AdapterService extends Service {
 
         MetricsLogger.getInstance().init(this, mRemoteDevices);
 
-        clearDiscoveringPackages();
+        clearDiscoveryData();
         mAdapter = requireNonNull(getSystemService(BluetoothManager.class).getAdapter());
         boolean isCommonCriteriaMode =
                 requireNonNull(getSystemService(DevicePolicyManager.class))
@@ -1133,9 +1137,14 @@ public class AdapterService extends Service {
         Log.i(TAG, "factoryResetIfNeeded(): Completed");
     }
 
-    void clearDiscoveringPackages() {
+    // Clears both the discovery packages and discovered devices list.
+    void clearDiscoveryData() {
         synchronized (mDiscoveringPackages) {
             mDiscoveringPackages.clear();
+
+            if (Flags.sendDiscoveredDevToNewPkgs()) {
+                mDiscoveredDevices.clear();
+            }
         }
     }
 
@@ -2778,9 +2787,10 @@ public class AdapterService extends Service {
         }
 
         synchronized (mDiscoveringPackages) {
-            boolean discovering = !mDiscoveringPackages.isEmpty();
-            mDiscoveringPackages.put(
-                    callingPackage, new DiscoveringPackageInfo(permission, hasDisavowedLocation));
+            boolean discovering = isDiscovering();
+            DiscoveringPackageInfo pkgInfo =
+                    new DiscoveringPackageInfo(permission, hasDisavowedLocation);
+            mDiscoveringPackages.put(callingPackage, pkgInfo);
 
             if (Flags.ignoreRedundantDiscoveryIfSameState() && discovering) {
                 // If discovery is already running, broadcast the ACTION_DISCOVERY_STARTED intent.
@@ -2788,6 +2798,18 @@ public class AdapterService extends Service {
                 Intent intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 intent.setPackage(callingPackage);
                 sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+
+                // Now start sending all the discovered devices to the new discovering package.
+                if (Flags.sendDiscoveredDevToNewPkgs()) {
+                    for (BluetoothDevice device : mDiscoveredDevices) {
+                        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+                        if (deviceProp == null) {
+                            continue;
+                        }
+                        Intent discoveryResIntent = prepareDiscoveryResultIntent(deviceProp);
+                        sendDiscoveryResult(callingPackage, pkgInfo, device, discoveryResIntent);
+                    }
+                }
                 return true;
             }
         }
@@ -5203,15 +5225,42 @@ public class AdapterService extends Service {
             return;
         }
 
-        if (mDiscoveringPackages == null || mDiscoveringPackages.isEmpty()) {
-            Log.e(
-                    TAG,
-                    "discoveryResultHandler: deviceFoundCallback was triggered, but no discovering"
-                            + " packages found!");
-            return;
+        synchronized (mDiscoveringPackages) {
+            if (mDiscoveringPackages.isEmpty()) {
+                Log.e(
+                        TAG,
+                        "discoveryResultHandler: deviceFoundCallback was triggered, but no"
+                                + " discovering packages found!");
+                return;
+            }
         }
 
         BluetoothDevice device = deviceProp.getDevice();
+        Intent intent = prepareDiscoveryResultIntent(deviceProp);
+
+        synchronized (mDiscoveringPackages) {
+            // Populate the intent with the discovering packages and send the broadcast.
+            for (Map.Entry<String, DiscoveringPackageInfo> pkgEntry :
+                    mDiscoveringPackages.entrySet()) {
+                sendDiscoveryResult(pkgEntry.getKey(), pkgEntry.getValue(), device, intent);
+            }
+
+            if (Flags.sendDiscoveredDevToNewPkgs()) {
+                // Cache the new discovered device to the discovered device list.
+                mDiscoveredDevices.add(device);
+            }
+        }
+    }
+
+    /**
+     * Prepare the ACTION_FOUND intent to be sent to required packages.
+     *
+     * @param deviceProp the discovered device properties to be used in the intent
+     * @return the prepared intent
+     */
+    private static Intent prepareDiscoveryResultIntent(@NonNull DeviceProperties deviceProp) {
+        BluetoothDevice device = deviceProp.getDevice();
+
         Intent intent = new Intent(BluetoothDevice.ACTION_FOUND);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(
@@ -5238,28 +5287,37 @@ public class AdapterService extends Service {
             }
         }
 
-        // Populate the intent with the discovering packages and send the broadcast.
-        synchronized (mDiscoveringPackages) {
-            for (Map.Entry<String, DiscoveringPackageInfo> pkgEntry :
-                    mDiscoveringPackages.entrySet()) {
-                String pkgName = pkgEntry.getKey();
-                DiscoveringPackageInfo pkgInfo = pkgEntry.getValue();
-                if (pkgInfo.hasDisavowedLocation()) {
-                    if (mLocationDenylistPredicate.test(device)) {
-                        continue;
-                    }
-                }
+        return intent;
+    }
 
-                intent.setPackage(pkgName);
-                if (pkgInfo.permission() != null) {
-                    sendBroadcastMultiplePermissions(
-                            intent,
-                            new String[] {BLUETOOTH_SCAN, pkgInfo.permission()},
-                            Utils.getTempBroadcastOptions());
-                } else {
-                    sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
-                }
+    /**
+     * Send the discovery result intent to the specific package.
+     *
+     * @param pkgName the package name of the discovering package
+     * @param pkgInfo the package information of the discovering package
+     * @param discoveredDevice the discovered device to be sent in the intent
+     * @param intent the intent to be sent
+     */
+    private void sendDiscoveryResult(
+            @NonNull String pkgName,
+            @NonNull DiscoveringPackageInfo pkgInfo,
+            @NonNull BluetoothDevice discoveredDevice,
+            @NonNull Intent intent) {
+        if (pkgInfo.hasDisavowedLocation()) {
+            if (mLocationDenylistPredicate.test(discoveredDevice)) {
+                return;
             }
+        }
+
+        intent.setPackage(pkgName);
+        intent.setAction(BluetoothDevice.ACTION_FOUND);
+        if (pkgInfo.permission() != null) {
+            sendBroadcastMultiplePermissions(
+                    intent,
+                    new String[] {BLUETOOTH_SCAN, pkgInfo.permission()},
+                    Utils.getTempBroadcastOptions());
+        } else {
+            sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
         }
     }
 }

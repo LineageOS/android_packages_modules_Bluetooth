@@ -949,7 +949,7 @@ public class AdapterProperties {
                 if (!Flags.ignoreRedundantDiscoveryIfSameState()) {
                     mDiscovering = false;
                 }
-                mService.clearDiscoveringPackages();
+                mService.clearDiscoveryData();
                 mDiscoveryEndMs = System.currentTimeMillis();
                 intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
                 mService.sendBroadcast(
