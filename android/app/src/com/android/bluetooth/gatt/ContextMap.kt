@@ -26,7 +26,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Collections
 import java.util.UUID
-import java.util.function.Predicate
 import kotlin.text.appendLine
 
 private const val TAG = GattUtil.TAG_PREFIX + "ContextMap"
@@ -96,7 +95,6 @@ class ContextMap<C : IInterface> {
         REASON_UNKNOWN,
     }
 
-    /** Add an entry to the application context list. */
     fun add(
         appUid: Int,
         appName: String,
@@ -113,7 +111,6 @@ class ContextMap<C : IInterface> {
         }
     }
 
-    /** Remove the context for a given UUID */
     fun remove(uuid: UUID, reason: RemoveReason): ContextApp<C>? {
         synchronized(appsLock) {
             val i = apps.iterator()
@@ -130,7 +127,6 @@ class ContextMap<C : IInterface> {
         return null
     }
 
-    /** Remove the context for a given application ID. */
     fun remove(id: Int, reason: RemoveReason): ContextApp<C>? {
         var removedApp: ContextApp<C>? = null
         synchronized(appsLock) {
@@ -158,7 +154,6 @@ class ContextMap<C : IInterface> {
         }
     }
 
-    /** Add a new connection for a given application ID. */
     fun addConnection(id: Int, connId: Int, transport: Int, device: BluetoothDevice) {
         synchronized(connectionsLock) {
             val entry = getById(id)
@@ -168,58 +163,33 @@ class ContextMap<C : IInterface> {
         }
     }
 
-    /** Remove a connection with the given ID. */
     fun removeConnection(id: Int, connId: Int) {
         synchronized(connectionsLock) {
             connections.removeIf { conn -> conn.appId == id && conn.connId == connId }
         }
     }
 
-    /** Remove all connections for a given application ID. */
     fun removeConnectionsByAppId(appId: Int) {
         synchronized(connectionsLock) { connections.removeIf { conn -> conn.appId == appId } }
     }
 
-    private fun getAppByPredicate(predicate: Predicate<ContextApp<C>>): ContextApp<C>? {
+    fun getById(id: Int) = findBy("ID=$id") { it.id == id }
+
+    fun getByCallbackId(callbackId: C) =
+        findBy("callbackId=$callbackId") { it.callback.asBinder() == callbackId.asBinder() }
+
+    fun getByUuid(uuid: UUID) = findBy("UUID=$uuid") { it.uuid == uuid }
+
+    private fun findBy(criteria: String, predicate: (ContextApp<C>) -> Boolean): ContextApp<C>? {
         synchronized(appsLock) {
-            // Intentionally using a for-loop over a stream for performance.
-            for (app in apps) {
-                if (predicate.test(app)) {
-                    return app
-                }
+            val app = apps.find(predicate)
+            if (app == null) {
+                Log.e(TAG, "Context not found for $criteria")
             }
-            return null
+            return app
         }
     }
 
-    /** Get an application context by ID. */
-    fun getById(id: Int): ContextApp<C>? {
-        val app = getAppByPredicate { entry -> entry.id == id }
-        if (app == null) {
-            Log.e(TAG, "Context not found for ID $id")
-        }
-        return app
-    }
-
-    /** Get an application context by its callback object. */
-    fun getByCallbackId(callbackId: C): ContextApp<C>? {
-        val app = getAppByPredicate { entry -> entry.callback?.asBinder() == callbackId.asBinder() }
-        if (app == null) {
-            Log.e(TAG, "Context not found for callbackID $callbackId")
-        }
-        return app
-    }
-
-    /** Get an application context by UUID. */
-    fun getByUuid(uuid: UUID): ContextApp<C>? {
-        val app = getAppByPredicate { entry -> entry.uuid == uuid }
-        if (app == null) {
-            Log.e(TAG, "Context not found for UUID $uuid")
-        }
-        return app
-    }
-
-    /** Get all connected devices */
     fun getConnectedDevices(): Set<BluetoothDevice> {
         val devices = mutableSetOf<BluetoothDevice>()
         synchronized(connectionsLock) {
