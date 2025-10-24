@@ -213,6 +213,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class AdapterService extends Service {
     private static final String TAG = Utils.BT_PREFIX + AdapterService.class.getSimpleName();
@@ -946,6 +947,12 @@ public class AdapterService extends Service {
 
     public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
+    }
+
+    private Stream<ConnectableProfile> getStartedConnectableProfiles() {
+        return mStartedProfiles.values().stream()
+                .filter(ConnectableProfile.class::isInstance)
+                .map(ConnectableProfile.class::cast);
     }
 
     private <T extends ProfileService> Optional<T> getStartedProfile(int id, Class<T> profile) {
@@ -1942,9 +1949,7 @@ public class AdapterService extends Service {
      */
     boolean isAllProfilesUnknown(BluetoothDevice device) {
         if (Flags.mainlineBetaStorage()) {
-            return !mStartedProfiles.values().stream()
-                    .filter(ConnectableProfile.class::isInstance)
-                    .map(ConnectableProfile.class::cast)
+            return !getStartedConnectableProfiles()
                     .anyMatch(p -> p.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN);
         }
         return !mStartedProfiles.values().stream()
@@ -3002,9 +3007,7 @@ public class AdapterService extends Service {
         for (BluetoothDevice dev : devices) {
             getBondAttemptCallerInfo().remove(dev.getAddress());
             if (Flags.mainlineBetaStorage()) {
-                mStartedProfiles.values().stream()
-                        .filter(ConnectableProfile.class::isInstance)
-                        .map(ConnectableProfile.class::cast)
+                getStartedConnectableProfiles()
                         .filter(p -> p.getConnectionPolicy(dev) == CONNECTION_POLICY_ALLOWED)
                         .forEach(
                                 p -> {
