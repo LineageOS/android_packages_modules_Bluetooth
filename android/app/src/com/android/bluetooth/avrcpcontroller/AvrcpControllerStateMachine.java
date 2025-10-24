@@ -64,7 +64,6 @@ class AvrcpControllerStateMachine extends StateMachine {
     // 100->199 Internal Events
     protected static final int CLEANUP = 100;
     private static final int CONNECT_TIMEOUT = 101;
-    static final int MESSAGE_INTERNAL_ABS_VOL_TIMEOUT = 102;
 
     // 200->299 Events from Native
     static final int STACK_EVENT = 200;
@@ -137,7 +136,6 @@ class AvrcpControllerStateMachine extends StateMachine {
     // Number of items to get in a single fetch
     static final int ITEM_PAGE_SIZE = 20;
     static final int CMD_TIMEOUT_MILLIS = 10000;
-    static final int ABS_VOL_TIMEOUT_MILLIS = 1000; // 1s
 
     AvrcpControllerStateMachine(
             AdapterService adapterService,
@@ -539,8 +537,6 @@ class AvrcpControllerStateMachine extends StateMachine {
                     }
                 }
                 case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> {
-                    removeMessages(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT);
-                    sendMessageDelayed(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT, ABS_VOL_TIMEOUT_MILLIS);
                     handleAbsVolumeRequest(msg.arg1, msg.arg2);
                 }
                 case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION -> {
@@ -1161,8 +1157,6 @@ class AvrcpControllerStateMachine extends StateMachine {
             debug("Source volume is assumed to be fixed, responding with max volume");
             absVol = ABS_VOL_BASE;
         } else {
-            removeMessages(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT);
-            sendMessageDelayed(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT, ABS_VOL_TIMEOUT_MILLIS);
             setAbsVolume(absVol);
         }
         mNativeInterface.sendAbsVolRsp(mDeviceAddress, absVol, label);
@@ -1383,7 +1377,6 @@ class AvrcpControllerStateMachine extends StateMachine {
             case AUDIO_FOCUS_STATE_CHANGE -> "AUDIO_FOCUS_STATE_CHANGE";
             case CLEANUP -> "CLEANUP";
             case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
-            case MESSAGE_INTERNAL_ABS_VOL_TIMEOUT -> "MESSAGE_INTERNAL_ABS_VOL_TIMEOUT";
             case STACK_EVENT -> "STACK_EVENT";
             case MESSAGE_INTERNAL_CMD_TIMEOUT -> "MESSAGE_INTERNAL_CMD_TIMEOUT";
             case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> "MESSAGE_PROCESS_SET_ABS_VOL_CMD";
