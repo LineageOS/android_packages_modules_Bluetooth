@@ -69,7 +69,6 @@ struct Advertiser {
   base::OnceCallback<void(uint8_t /* status */)> status_callback;
   base::OnceCallback<void(uint8_t /* status */)> timeout_callback;
   common::Callback<void(Address, AddressType)> scan_callback;
-  common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback;
   int8_t tx_power;
   uint16_t duration;
   uint8_t max_extended_advertising_events;
@@ -508,11 +507,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
   }
 
-  void create_advertiser(
-          int reg_id, const AdvertisingConfig config,
-          common::Callback<void(Address, AddressType)> scan_callback,
-          common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-          os::Handler* handler) {
+  void create_advertiser(int reg_id, const AdvertisingConfig config,
+                         common::Callback<void(Address, AddressType)> scan_callback,
+                         os::Handler* handler) {
     AdvertiserId id = allocate_advertiser();
     if (id == kInvalidId) {
       log::warn("Number of max instances reached");
@@ -520,14 +517,12 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       return;
     }
 
-    create_advertiser_with_id(reg_id, id, config, scan_callback, set_terminated_callback, handler);
+    create_advertiser_with_id(reg_id, id, config, scan_callback, handler);
   }
 
-  void create_advertiser_with_id(
-          int reg_id, AdvertiserId id, const AdvertisingConfig config,
-          common::Callback<void(Address, AddressType)> scan_callback,
-          common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-          os::Handler* handler) {
+  void create_advertiser_with_id(int reg_id, AdvertiserId id, const AdvertisingConfig config,
+                                 common::Callback<void(Address, AddressType)> scan_callback,
+                                 os::Handler* handler) {
     // check advertising data is valid before start advertising
     if (!check_advertising_data(config.advertisement, config.connectable && config.discoverable) ||
         !check_advertising_data(config.scan_response, false)) {
@@ -539,7 +534,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
 
     id_map_[id] = reg_id;
     advertising_sets_[id].scan_callback = scan_callback;
-    advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].handler = handler;
 
     if (!address_manager_registered) {
@@ -592,47 +586,41 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
   }
 
-  void start_advertising(
-          AdvertiserId id, const AdvertisingConfig config, uint16_t duration,
-          base::OnceCallback<void(uint8_t /* status */)> status_callback,
-          base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
-          const common::Callback<void(Address, AddressType)> scan_callback,
-          const common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-          os::Handler* handler) {
+  void start_advertising(AdvertiserId id, const AdvertisingConfig config, uint16_t duration,
+                         base::OnceCallback<void(uint8_t /* status */)> status_callback,
+                         base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
+                         const common::Callback<void(Address, AddressType)> scan_callback,
+                         os::Handler* handler) {
     advertising_sets_[id].status_callback = std::move(status_callback);
     advertising_sets_[id].timeout_callback = std::move(timeout_callback);
 
     // legacy start_advertising use default jni client id
     create_extended_advertiser_with_id(kAdvertiserClientIdJni, kIdLocal, id, config, scan_callback,
-                                       set_terminated_callback, duration, 0, handler);
+                                       duration, 0, handler);
   }
 
-  void create_extended_advertiser(
-          uint8_t client_id, int reg_id, const AdvertisingConfig config,
-          common::Callback<void(Address, AddressType)> scan_callback,
-          common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-          uint16_t duration, uint8_t max_ext_adv_events, os::Handler* handler) {
+  void create_extended_advertiser(uint8_t client_id, int reg_id, const AdvertisingConfig config,
+                                  common::Callback<void(Address, AddressType)> scan_callback,
+                                  uint16_t duration, uint8_t max_ext_adv_events,
+                                  os::Handler* handler) {
     AdvertiserId id = allocate_advertiser();
     if (id == kInvalidId) {
       log::warn("Number of max instances reached");
       start_advertising_fail(reg_id, AdvertisingCallback::AdvertisingStatus::TOO_MANY_ADVERTISERS);
       return;
     }
-    create_extended_advertiser_with_id(client_id, reg_id, id, config, scan_callback,
-                                       set_terminated_callback, duration, max_ext_adv_events,
-                                       handler);
+    create_extended_advertiser_with_id(client_id, reg_id, id, config, scan_callback, duration,
+                                       max_ext_adv_events, handler);
   }
 
   void create_extended_advertiser_with_id(
           uint8_t client_id, int reg_id, AdvertiserId id, const AdvertisingConfig config,
-          common::Callback<void(Address, AddressType)> scan_callback,
-          common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-          uint16_t duration, uint8_t max_ext_adv_events, os::Handler* handler) {
+          common::Callback<void(Address, AddressType)> scan_callback, uint16_t duration,
+          uint8_t max_ext_adv_events, os::Handler* handler) {
     id_map_[id] = reg_id;
 
     if (advertising_api_type_ != AdvertisingApiType::EXTENDED) {
-      create_advertiser_with_id(reg_id, id, config, scan_callback, set_terminated_callback,
-                                handler);
+      create_advertiser_with_id(reg_id, id, config, scan_callback, handler);
       return;
     }
 
@@ -652,7 +640,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
 
     advertising_sets_[id].scan_callback = scan_callback;
-    advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].duration = duration;
     advertising_sets_[id].max_extended_advertising_events = max_ext_adv_events;
     advertising_sets_[id].handler = handler;
@@ -1563,8 +1550,6 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   hci::LeAddressManager* le_address_manager_;
   hci::OnAdvertisingSetTerminatedInterface* on_set_terminated_;
   common::Callback<void(Address, AddressType)> scan_callback_;
-  common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)>
-          set_terminated_callback_{};
   AdvertisingCallback* advertising_callbacks_ = nullptr;
   os::Handler* registered_handler_{nullptr};
   uint16_t le_maximum_advertising_data_length_;
@@ -1908,9 +1893,8 @@ int LeAdvertisingManagerImpl::GetAdvertiserRegId(AdvertiserId advertiser_id) {
 
 void LeAdvertisingManagerImpl::ExtendedCreateAdvertiser(
         uint8_t client_id, int reg_id, const AdvertisingConfig config,
-        common::Callback<void(Address, AddressType)> scan_callback,
-        common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-        uint16_t duration, uint8_t max_extended_advertising_events, os::Handler* handler) {
+        common::Callback<void(Address, AddressType)> scan_callback, uint16_t duration,
+        uint8_t max_extended_advertising_events, os::Handler* handler) {
   AdvertisingApiType advertising_api_type = pimpl_->get_advertising_api_type();
   if (advertising_api_type != AdvertisingApiType::EXTENDED) {
     if (config.peer_address == Address::kEmpty) {
@@ -1923,7 +1907,7 @@ void LeAdvertisingManagerImpl::ExtendedCreateAdvertiser(
     }
     pimpl_->handler_->Post(common::BindOnce(&impl::create_advertiser,
                                             common::Unretained(pimpl_.get()), reg_id, config,
-                                            scan_callback, set_terminated_callback, handler));
+                                            scan_callback, handler));
 
     return;
   };
@@ -1964,8 +1948,8 @@ void LeAdvertisingManagerImpl::ExtendedCreateAdvertiser(
     return;
   }
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::create_extended_advertiser, client_id, reg_id,
-                           config, scan_callback, set_terminated_callback, duration,
-                           max_extended_advertising_events, handler);
+                           config, scan_callback, duration, max_extended_advertising_events,
+                           handler);
   return;
 }
 
@@ -1973,12 +1957,10 @@ void LeAdvertisingManagerImpl::StartAdvertising(
         AdvertiserId advertiser_id, const AdvertisingConfig config, uint16_t duration,
         base::OnceCallback<void(uint8_t /* status */)> status_callback,
         base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
-        common::Callback<void(Address, AddressType)> scan_callback,
-        common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-        os::Handler* handler) {
+        common::Callback<void(Address, AddressType)> scan_callback, os::Handler* handler) {
   pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_advertising, advertiser_id, config, duration,
                            std::move(status_callback), std::move(timeout_callback), scan_callback,
-                           set_terminated_callback, handler);
+                           handler);
 }
 
 void LeAdvertisingManagerImpl::RegisterAdvertiser(

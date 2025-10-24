@@ -144,9 +144,9 @@ public:
     parse_gap_data(advertise_data, config.advertisement);
     parse_gap_data(scan_response_data, config.scan_response);
 
-    bluetooth::shim::GetAdvertising()->StartAdvertising(
-            advertiser_id, config, timeout_s * 100, cb, timeout_cb, scan_callback,
-            set_terminated_callback, bluetooth::shim::GetGdShimHandler());
+    bluetooth::shim::GetAdvertising()->StartAdvertising(advertiser_id, config, timeout_s * 100, cb,
+                                                        timeout_cb, scan_callback,
+                                                        bluetooth::shim::GetGdShimHandler());
   }
 
   // ::BleAdvertiserInterface
@@ -182,8 +182,8 @@ public:
     }
 
     bluetooth::shim::GetAdvertising()->ExtendedCreateAdvertiser(
-            client_id, reg_id, config, scan_callback, set_terminated_callback, duration,
-            maxExtAdvEvents, bluetooth::shim::GetGdShimHandler());
+            client_id, reg_id, config, scan_callback, duration, maxExtAdvEvents,
+            bluetooth::shim::GetGdShimHandler());
 
     log::info("create advertising set, client_id:{}, reg_id:{}", client_id, reg_id);
     BTM_LogHistory(kBtmLogTag, RawAddress::kEmpty, "Le advert started",
@@ -235,16 +235,8 @@ public:
     log::info("in shim layer");
   }
 
-  void on_set_terminated(ErrorCode /* error_code */, uint8_t, uint8_t) {
-    log::info("in shim layer");
-  }
-
   const bluetooth::common::Callback<void(Address, AddressType)> scan_callback =
           bluetooth::common::Bind(&BleAdvertiserInterfaceImpl::on_scan,
-                                  bluetooth::common::Unretained(this));
-
-  const bluetooth::common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback =
-          bluetooth::common::Bind(&BleAdvertiserInterfaceImpl::on_set_terminated,
                                   bluetooth::common::Unretained(this));
 
   // bluetooth::hci::AdvertisingCallback
