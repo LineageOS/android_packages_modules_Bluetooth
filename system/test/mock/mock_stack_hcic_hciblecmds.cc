@@ -61,6 +61,8 @@ struct btsnd_hcic_ble_set_big_channel_map_classification_vsc
         btsnd_hcic_ble_set_big_channel_map_classification_vsc;
 struct btsnd_hcic_ble_big_create_sync btsnd_hcic_ble_big_create_sync;
 struct btsnd_hcic_ble_big_terminate_sync btsnd_hcic_ble_big_terminate_sync;
+struct btsnd_hcic_ble_accept_cis_req btsnd_hcic_ble_accept_cis_req;
+struct btsnd_hcic_ble_reject_cis_req btsnd_hcic_ble_reject_cis_req;
 
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock
@@ -222,5 +224,18 @@ void btsnd_hcic_ble_big_terminate_sync(uint8_t big_handle,
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_big_terminate_sync(big_handle, std::move(cb));
 }
+
+void btsnd_hcic_ble_accept_cis_req(uint16_t cis_conn_handle) {
+  inc_func_call_count(__func__);
+  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_accept_cis_req(cis_conn_handle);
+}
+
+void btsnd_hcic_ble_reject_cis_req(uint16_t cis_conn_handle, uint8_t reason,
+                                   base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  inc_func_call_count(__func__);
+  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_reject_cis_req(cis_conn_handle, reason,
+                                                                   std::move(cb));
+}
+
 // Mocked functions complete
 // END mockcify generation

@@ -101,6 +101,15 @@ void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8
   hcic_interface->SetBigChannelMapClassificationByConnHandles(action, big_handle, handles);
 }
 
+void btsnd_hcic_ble_accept_cis_req(uint16_t cis_conn_handle) {
+  hcic_interface->AcceptCis(cis_conn_handle);
+}
+
+void btsnd_hcic_ble_reject_cis_req(uint16_t cis_conn_handle, uint8_t reason,
+                                   base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  hcic_interface->RejectCis(cis_conn_handle, reason, std::move(cb));
+}
+
 void btsnd_hcic_ble_big_create_sync(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
                                     const std::array<uint8_t, 16>& bcast_code, uint8_t mse,
                                     uint16_t sync_timeout, const std::vector<uint8_t>& bis) {

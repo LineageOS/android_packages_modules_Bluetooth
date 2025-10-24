@@ -49,7 +49,10 @@ using testing::SaveArg;
 using testing::StrictMock;
 using testing::Test;
 
-const BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
+std::map<uint16_t, BtmDevice> AclHandleToMockBtmDevice = {};
+const BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
+  return AclHandleToMockBtmDevice.count(handle) ? &AclHandleToMockBtmDevice.at(handle) : nullptr;
+}
 void BTM_LogHistory(const std::string& /* tag */, const RawAddress& /* bd_addr */,
                     const std::string& /* msg */, const std::string& /* extra */) {}
 
@@ -129,8 +132,8 @@ public:
   MOCK_METHOD((void), OnBisEvent, (uint8_t event, void* data), (override));
   MOCK_METHOD((void), OnBigSourceEvent,
               (bluetooth::hci::iso_manager::BigSourceEvent event, void* data), (override));
-  MOCK_METHOD((void), OnBigSinkEvent,
-              (bluetooth::hci::iso_manager::BigSinkEvent event, void* data), (override));
+  MOCK_METHOD((void), OnBigSinkEvent, (bluetooth::hci::iso_manager::BigSinkEvent event, void* data),
+              (override));
 };
 }  // namespace
 
@@ -150,6 +153,7 @@ protected:
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
     is_iso_active_ = false;
+    AclHandleToMockBtmDevice = {};
 
     iso_sizes_.total_num_le_packets_ = 6;
     iso_sizes_.le_data_packet_length_ = 1024;
@@ -2063,6 +2067,202 @@ TEST_F(IsoManagerTest, TerminateBigHciCall) {
   IsoManager::GetInstance()->TerminateBig(big_handle, reason);
 }
 
+TEST_F(IsoManagerTest, AddMultipleIncomingCisEventsListeners) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
+  com::android::bluetooth::flags::provider_->leaudio_peripheral_feature(true);
+
+  // Register an alternative client
+  auto second_cig_callbacks = std::make_unique<MockCigCallbacks>();
+  bluetooth::hci::iso_manager::IsoManagerCallbacks second_iso_callbacks = {
+          .cig_callbacks = second_cig_callbacks.get(),
+          .big_callbacks = nullptr,
+          .iso_traffic_active_callback = nullptr,
+  };
+  auto second_client_handle = manager_instance_->RegisterCallbacks(second_iso_callbacks);
+  ASSERT_NE(client_handle_, second_client_handle);
+
+  IsoManager::GetInstance()->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                          cis_id);
+  IsoManager::GetInstance()->AddIncomingCisEventsListener(second_client_handle, test_address,
+                                                          cig_id + 1, cis_id + 1);
+
+  // Fake the BtmDevice for the btm_find_dev_by_handle(acl_conn_handle)
+  BtmDevice mock_btm_device = BtmDevice();
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  // Expect a callback only for the registered as a listener
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .WillOnce([&](uint8_t /*evt_code*/, void* event) {
+            bluetooth::hci::iso_manager::cis_request_evt* cis_request_evt =
+                    static_cast<bluetooth::hci::iso_manager::cis_request_evt*>(event);
+
+            ASSERT_EQ(cis_request_evt->acl_conn_hdl, acl_conn_handle);
+            ASSERT_EQ(cis_request_evt->cis_conn_hdl, cis_conn_handle);
+            ASSERT_EQ(cis_request_evt->cig_id, cig_id);
+            ASSERT_EQ(cis_request_evt->cis_id, cis_id);
+          });
+  EXPECT_CALL(*second_cig_callbacks,
+              OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .Times(0);
+
+  // Inject the CIS request event
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+  IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+
+  manager_instance_->DeregisterCallbacks(second_client_handle);
+}
+
+TEST_F(IsoManagerTest, RemoveIncomingCisEventsListener) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
+  com::android::bluetooth::flags::provider_->leaudio_peripheral_feature(true);
+
+  IsoManager::GetInstance()->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                          cis_id);
+  IsoManager::GetInstance()->RemoveIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                             cis_id);
+
+  // Fake the BtmDevice for the btm_find_dev_by_handle(acl_conn_handle)
+  BtmDevice mock_btm_device;
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  // Expect no callback when not registered as a listener
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .Times(0);
+
+  // Inject the CIS request event
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+  IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+}
+
+TEST_F(IsoManagerTest, AcceptIncomingCisConnectionHciCall) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
+  com::android::bluetooth::flags::provider_->leaudio_peripheral_feature(true);
+
+  IsoManager::GetInstance()->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                          cis_id);
+
+  // Fake the BtmDevice for the btm_find_dev_by_handle(acl_conn_handle)
+  BtmDevice mock_btm_device;
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  // Expect a callback when registered as a listener
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .WillOnce([&](uint8_t /*evt_code*/, void* event) {
+            bluetooth::hci::iso_manager::cis_request_evt* cis_request_evt =
+                    static_cast<bluetooth::hci::iso_manager::cis_request_evt*>(event);
+            ASSERT_EQ(cis_request_evt->acl_conn_hdl, acl_conn_handle);
+            ASSERT_EQ(cis_request_evt->cis_conn_hdl, cis_conn_handle);
+            ASSERT_EQ(cis_request_evt->cig_id, cig_id);
+            ASSERT_EQ(cis_request_evt->cis_id, cis_id);
+          });
+
+  // Inject the CIS request event
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+  IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+
+  // Expect a successful call to HCI interface
+  EXPECT_CALL(hcic_interface_, AcceptCis(cis_conn_handle)).Times(1);
+  IsoManager::GetInstance()->AcceptIncomingCisConnection(cis_conn_handle);
+}
+
+TEST_F(IsoManagerTest, RejectIncomingCisConnectionHciCall) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
+  com::android::bluetooth::flags::provider_->leaudio_peripheral_feature(true);
+
+  IsoManager::GetInstance()->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                          cis_id);
+
+  // Fake the BtmDevice for the btm_find_dev_by_handle(acl_conn_handle)
+  BtmDevice mock_btm_device;
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  // Expect a callback when registered as a listener
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .WillOnce([&](uint8_t /*evt_code*/, void* event) {
+            bluetooth::hci::iso_manager::cis_request_evt* cis_request_evt =
+                    static_cast<bluetooth::hci::iso_manager::cis_request_evt*>(event);
+            ASSERT_EQ(cis_request_evt->acl_conn_hdl, acl_conn_handle);
+            ASSERT_EQ(cis_request_evt->cis_conn_hdl, cis_conn_handle);
+            ASSERT_EQ(cis_request_evt->cig_id, cig_id);
+            ASSERT_EQ(cis_request_evt->cis_id, cis_id);
+          });
+
+  // Inject the CIS request event
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+  IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+
+  // Expect a successful call to HCI interface
+  EXPECT_CALL(hcic_interface_, RejectCis(cis_conn_handle, _, _))
+          .WillOnce([&](uint16_t cis_conn_handle, uint8_t reason,
+                        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+            std::vector<uint8_t> buf(3);
+            uint8_t* p = buf.data();
+            UINT8_TO_STREAM(p, reason);
+            UINT16_TO_STREAM(p, cis_conn_handle);
+            std::move(cb).Run(buf.data(), buf.size());
+          });
+  // Expect a reject status
+  EXPECT_CALL(*cig_callbacks_,
+              OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequestRejectStatus, _))
+          .WillOnce([&](uint8_t /*evt_code*/, void* event) {
+            bluetooth::hci::iso_manager::reject_cis_request_reject_status*
+                    reject_cis_request_reject_status = static_cast<
+                            bluetooth::hci::iso_manager::reject_cis_request_reject_status*>(event);
+            ASSERT_EQ(reject_cis_request_reject_status->status, HCI_ERR_HOST_REJECT_RESOURCES);
+            ASSERT_EQ(reject_cis_request_reject_status->cis_conn_hdl, cis_conn_handle);
+          });
+  IsoManager::GetInstance()->RejectIncomingCisConnection(cis_conn_handle,
+                                                         HCI_ERR_HOST_REJECT_RESOURCES);
+}
+
 TEST_F(IsoManagerDeathTest, TerminateSameBigTwice) {
   const uint8_t big_handle = 0x22;
   const uint8_t reason = 0x16;  // Terminated by local host
@@ -3449,4 +3649,172 @@ TEST_F(IsoManagerTest, NotifyIsoTrafficActiveOnRemoveCigCreateBigDeadlock) {
 
   ASSERT_TRUE(reentrancy_success)
           << "Deadlock detected or callback not fired during RemoveCig -> CreateBig transition!";
+}
+
+TEST_F(IsoManagerTest, StrayCisEstablishedEvt) {
+  uint16_t cis_conn_handle = 0x2345;
+  uint8_t status = HCI_SUCCESS;
+
+  EXPECT_CALL(hcic_interface_, Disconnect(cis_conn_handle, HCI_ERR_CANCELLED_BY_LOCAL_HOST))
+          .Times(1);
+
+  std::vector<uint8_t> buf(28);
+  uint8_t* p = buf.data();
+  UINT8_TO_STREAM(p, status);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT24_TO_STREAM(p, 0);  // CIG_Sync_Delay
+  UINT24_TO_STREAM(p, 0);  // CIS_Sync_Delay
+  UINT24_TO_STREAM(p, 0);  // Transport_Latency_M_To_S
+  UINT24_TO_STREAM(p, 0);  // Transport_Latency_S_To_M
+  UINT8_TO_STREAM(p, 0);   // PHY_M_To_S
+  UINT8_TO_STREAM(p, 0);   // PHY_S_To_M
+  UINT8_TO_STREAM(p, 0);   // NSE
+  UINT8_TO_STREAM(p, 0);   // BN_M_To_S
+  UINT8_TO_STREAM(p, 0);   // BN_S_To_M
+  UINT8_TO_STREAM(p, 0);   // FT_M_To_S
+  UINT8_TO_STREAM(p, 0);   // FT_S_To_M
+  UINT16_TO_STREAM(p, 0);  // Max_PDU_M_To_S
+  UINT16_TO_STREAM(p, 0);  // Max_PDU_S_To_M
+  UINT16_TO_STREAM(p, 0);  // ISO_Interval
+
+  // No CIG/CIS events should be generated for a stray connection
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(_, _)).Times(0);
+  EXPECT_CALL(*cig_callbacks_, OnCigEvent(_, _)).Times(0);
+
+  manager_instance_->HandleHciEvent(HCI_BLE_CIS_EST_EVT, buf.data(), buf.size());
+}
+
+class IncomingCisTest : public IsoManagerTest {
+protected:
+  void SetUp() override {
+    IsoManagerTest::SetUp();
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->leaudio_peripheral_feature(true);
+
+    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  }
+};
+
+TEST_F(IncomingCisTest, AddIncomingCisEventsListenerHappy) {
+  RawAddress test_address;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+}
+
+TEST_F(IncomingCisTest, AddIncomingCisEventsListenerRejectOtherClient) {
+  RawAddress test_address;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  auto other_client_callbacks = std::make_unique<MockCigCallbacks>();
+  auto other_client_handle = manager_instance_->RegisterCallbacks({
+          .cig_callbacks = other_client_callbacks.get(),
+  });
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+  ASSERT_FALSE(manager_instance_->AddIncomingCisEventsListener(other_client_handle, test_address,
+                                                               cig_id, cis_id));
+}
+
+TEST_F(IncomingCisTest, AddIncomingCisEventsListenerRejectOverrideValidHandle) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  BtmDevice mock_btm_device;
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+
+  // Simulate CIS request to associate a handle
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .Times(1);
+  manager_instance_->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+
+  // Try to re-register, should fail because handle is now valid
+  ASSERT_FALSE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                               cis_id));
+}
+
+TEST_F(IncomingCisTest, AddIncomingCisEventsListenerReregister) {
+  RawAddress test_address;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+  // Re-registering should be idempotent and succeed
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+}
+
+TEST_F(IncomingCisTest, AddIncomingCisEventsListenerSameCigDifferentCis) {
+  RawAddress test_address;
+  uint8_t cig_id = 1;
+  uint8_t cis_id_1 = 2;
+  uint8_t cis_id_2 = 3;
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id_1));
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id_2));
+}
+
+TEST_F(IncomingCisTest, AddIncomingCisEventsListenerSameCisDifferentCig) {
+  RawAddress test_address;
+  uint8_t cig_id_1 = 1;
+  uint8_t cig_id_2 = 2;
+  uint8_t cis_id = 3;
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address,
+                                                              cig_id_1, cis_id));
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address,
+                                                              cig_id_2, cis_id));
+}
+
+TEST_F(IncomingCisTest, RemoveIncomingCisEventsListenerRejectWhenConnected) {
+  RawAddress test_address;
+  uint16_t acl_conn_handle = 1;
+  uint16_t cis_conn_handle = 2;
+  uint8_t cig_id = 1;
+  uint8_t cis_id = 2;
+
+  BtmDevice mock_btm_device;
+  mock_btm_device.ble.pseudo_addr = test_address;
+  AclHandleToMockBtmDevice = {{acl_conn_handle, mock_btm_device}};
+
+  ASSERT_TRUE(manager_instance_->AddIncomingCisEventsListener(client_handle_, test_address, cig_id,
+                                                              cis_id));
+
+  // Simulate CIS request to associate a handle
+  std::vector<uint8_t> buf(6);
+  uint8_t* p = buf.data();
+  UINT16_TO_STREAM(p, acl_conn_handle);
+  UINT16_TO_STREAM(p, cis_conn_handle);
+  UINT8_TO_STREAM(p, cig_id);
+  UINT8_TO_STREAM(p, cis_id);
+
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisRequest, _))
+          .Times(1);
+  manager_instance_->HandleHciEvent(HCI_BLE_CIS_REQ_EVT, buf.data(), buf.size());
+
+  // Try to remove the listener, should fail because it is "connected"
+  ASSERT_DEATH(manager_instance_->RemoveIncomingCisEventsListener(client_handle_, test_address,
+                                                                  cig_id, cis_id),
+               ".*");
 }
