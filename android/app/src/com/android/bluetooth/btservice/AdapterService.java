@@ -76,6 +76,7 @@ import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BufferConstraints;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.GattOffloadCapabilities;
@@ -2975,30 +2976,52 @@ public class AdapterService extends Service {
             Log.w(TAG, header + "FAIL. Device bond state is " + deviceProp.getBondState());
             return false;
         }
-        getBondAttemptCallerInfo().remove(device.getAddress());
-        if (Flags.mainlineBetaStorage()) {
-            mStartedProfiles.values().stream()
-                    .filter(ConnectableProfile.class::isInstance)
-                    .map(ConnectableProfile.class::cast)
-                    .filter(p -> p.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)
-                    .forEach(
-                            p -> {
-                                Log.d(TAG, header + "Manually disable " + p);
-                                p.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN);
-                            });
-        } else {
-            getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(device));
-        }
         deviceProp.setBondingInitiatedLocally(false);
 
-        if (Flags.mainlineBetaStorage()) {
-            mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, device);
-        } else {
-            Message msg = getBondStateMachine().obtainMessage(BondStateMachine.MESSAGE_REMOVE_BOND);
-            msg.obj = device;
-            getBondStateMachine().sendMessage(msg);
+        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>(List.of(device));
+        if (Flags.coordinatedRemoveBond()) {
+            Optional<CsipSetCoordinatorService> csipSetCoordinatorService =
+                    getCsipSetCoordinatorService();
+            if (csipSetCoordinatorService.isPresent()) {
+                List<BluetoothDevice> groupDevices =
+                        csipSetCoordinatorService
+                                .get()
+                                .getGroupDevicesOrdered(device, BluetoothUuid.CAP);
+                if (!groupDevices.isEmpty()) {
+                    Log.i(TAG, header + "Group devices found: " + groupDevices);
+                    devices.addAll(groupDevices);
+                }
+            }
         }
+
+        removeBondGroup(devices);
         return true;
+    }
+
+    private void removeBondGroup(Set<BluetoothDevice> devices) {
+        for (BluetoothDevice dev : devices) {
+            getBondAttemptCallerInfo().remove(dev.getAddress());
+            if (Flags.mainlineBetaStorage()) {
+                mStartedProfiles.values().stream()
+                        .filter(ConnectableProfile.class::isInstance)
+                        .map(ConnectableProfile.class::cast)
+                        .filter(p -> p.getConnectionPolicy(dev) == CONNECTION_POLICY_ALLOWED)
+                        .forEach(
+                                p -> {
+                                    Log.d(TAG, "removeBondGroup: " + dev + "Manually disable " + p);
+                                    p.setConnectionPolicy(dev, CONNECTION_POLICY_FORBIDDEN);
+                                });
+
+                mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, dev);
+            } else {
+                getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(dev));
+
+                Message msg =
+                        getBondStateMachine().obtainMessage(BondStateMachine.MESSAGE_REMOVE_BOND);
+                msg.obj = dev;
+                getBondStateMachine().sendMessage(msg);
+            }
+        }
     }
 
     /**
