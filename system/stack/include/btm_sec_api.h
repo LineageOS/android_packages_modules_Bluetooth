@@ -24,7 +24,6 @@
 #include <cstdint>
 
 #include "stack/include/bt_dev_class.h"
-#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 
 /*****************************************************************************
@@ -81,21 +80,6 @@ bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport = BT_TRANSP
 
 /*******************************************************************************
  *
- * Function         BTM_DeleteStoredLinkKey
- *
- * Description      This function is called to delete link key for the specified
- *                  device addresses from the NVRAM storage attached to the
- *                  Bluetooth controller.
- *
- * Parameters:      bd_addr      - Addresses of the devices
- *                  p_cb         - Call back function to be called to return
- *                                 the results
- *
- ******************************************************************************/
-tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr, tBTM_CMPL_CB* p_cb);
-
-/*******************************************************************************
- *
  * Function         BTM_BleSirkConfirmDeviceReply
  *
  * Description      This procedure confirms requested to validate set device.
@@ -109,3 +93,14 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr, tBTM_CMPL_CB* p_c
 void BTM_BleSirkConfirmDeviceReply(const RawAddress& bd_addr, tBTM_STATUS res);
 
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_hci_delete_stored_link_key
+ *
+ * Description      Instructs the controller to delete the stored link key for the device.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_sec_hci_delete_stored_link_key(const RawAddress& bd_addr);
