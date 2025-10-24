@@ -79,8 +79,8 @@ public:
                        int discard_rule, Callback cb) override;
   void BatchScanDisable(Callback cb) override;
   void BatchScanReadReports(int client_if, int scan_mode) override;
-  void StartSync(uint8_t sid, RawAddress address, uint16_t skip, uint16_t timeout,
-                 int reg_id) override;
+  void StartSync(uint8_t sid, RawAddress address, tBLE_ADDR_TYPE address_type, uint16_t skip,
+                 uint16_t timeout, int reg_id) override;
   void StopSync(uint16_t handle) override;
   void CancelCreateSync(uint8_t sid, RawAddress address) override;
   void TransferSync(RawAddress address, uint16_t service_data, uint16_t sync_handle,

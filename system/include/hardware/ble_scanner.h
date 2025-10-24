@@ -156,8 +156,8 @@ public:
   /* Read out batchscan reports */
   virtual void BatchScanReadReports(int client_if, int scan_mode) = 0;
 
-  virtual void StartSync(uint8_t sid, RawAddress address, uint16_t skip, uint16_t timeout,
-                         int reg_id) = 0;
+  virtual void StartSync(uint8_t sid, RawAddress address, uint8_t address_type, uint16_t skip,
+                         uint16_t timeout, int reg_id) = 0;
   virtual void StopSync(uint16_t handle) = 0;
 
   virtual void RegisterCallbacks(ScanningCallbacks* callbacks) = 0;

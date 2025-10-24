@@ -328,7 +328,7 @@ public class PeriodicScanManager {
                 binder, new SyncInfo(cbId, sid, address, skip, timeout, deathRecipient, callback));
 
         Log.d(TAG, "startSync() - reg_id=" + cbId + ", callback: " + binder);
-        mNativeInterface.startSync(sid, address, skip, timeout, cbId);
+        mNativeInterface.startSync(sid, address, addressType, skip, timeout, cbId);
     }
 
     public void stopSync(IPeriodicAdvertisingCallback callback) {
