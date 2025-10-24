@@ -37,6 +37,8 @@ import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -517,6 +519,13 @@ public final class ScanFilter implements Parcelable {
 
     // Check whether the data pattern matches the parsed data.
     static boolean matchesPartialData(byte[] data, byte[] dataMask, byte[] parsedData) {
+        if (Flags.useFilterForEachManufacturerDataBlock()) {
+            if (parsedData == null) {
+                return false;
+            }
+            return matchesPartialDataSubArray(data, dataMask, parsedData, 0, parsedData.length);
+        }
+
         if (parsedData == null || parsedData.length < data.length) {
             return false;
         }
@@ -530,6 +539,49 @@ public final class ScanFilter implements Parcelable {
         }
         for (int i = 0; i < data.length; ++i) {
             if ((dataMask[i] & parsedData[i]) != (dataMask[i] & data[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Check whether the data pattern matches the subarray of given parsed data.
+    static boolean matchesPartialDataSubArray(
+            byte[] data,
+            byte[] dataMask,
+            byte[] parsedData,
+            int parsedDataStartIndex,
+            int parsedDataEndIndex) {
+        if (parsedData == null) {
+            return false;
+        }
+
+        if (parsedDataStartIndex < 0
+                || parsedDataEndIndex > parsedData.length
+                || parsedDataEndIndex < parsedDataStartIndex) {
+            throw new IllegalArgumentException(
+                    "Illegal indices passed! startIndex="
+                            + parsedDataStartIndex
+                            + ", endIndex="
+                            + parsedDataEndIndex
+                            + ", totalLength="
+                            + parsedData.length);
+        }
+
+        int subarrayLength = parsedDataEndIndex - parsedDataStartIndex;
+        if (subarrayLength < data.length) {
+            return false;
+        }
+        if (dataMask == null) {
+            for (int i = 0; i < data.length; ++i) {
+                if (parsedData[parsedDataStartIndex + i] != data[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for (int i = 0; i < data.length; ++i) {
+            if ((dataMask[i] & parsedData[parsedDataStartIndex + i]) != (dataMask[i] & data[i])) {
                 return false;
             }
         }
@@ -591,11 +643,47 @@ public final class ScanFilter implements Parcelable {
 
         // Manufacturer data match.
         if (mManufacturerId >= 0 && mManufacturerData != null) {
-            if (!matchesPartialData(
-                    mManufacturerData,
-                    mManufacturerDataMask,
-                    scanRecord.getManufacturerSpecificData(mManufacturerId))) {
-                return false;
+            if (Flags.useFilterForEachManufacturerDataBlock()) {
+                // Try matching each manufacturer data block in concatenated array.
+                byte[] manufacturerData = scanRecord.getManufacturerSpecificData(mManufacturerId);
+                List<Integer> dataBlockStartIndices =
+                        scanRecord.getManufacturerDataBlockStartIndices(mManufacturerId);
+
+                boolean matchesAnyOfManufacturerDataBlocks = false;
+                if (manufacturerData != null && dataBlockStartIndices != null) {
+                    for (int i = 0; i < dataBlockStartIndices.size(); i++) {
+                        int startIndex = dataBlockStartIndices.get(i);
+                        int endIndex =
+                                (i == dataBlockStartIndices.size() - 1)
+                                        ? manufacturerData.length
+                                        : dataBlockStartIndices.get(i + 1);
+
+                        if (matchesPartialDataSubArray(
+                                mManufacturerData,
+                                mManufacturerDataMask,
+                                manufacturerData,
+                                startIndex,
+                                endIndex)) {
+                            matchesAnyOfManufacturerDataBlocks = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!matchesAnyOfManufacturerDataBlocks) {
+                    // If nothing matched, try matching the concatenated manufacturer data
+                    if (!matchesPartialData(
+                            mManufacturerData, mManufacturerDataMask, manufacturerData)) {
+                        return false;
+                    }
+                }
+            } else {
+                if (!matchesPartialData(
+                        mManufacturerData,
+                        mManufacturerDataMask,
+                        scanRecord.getManufacturerSpecificData(mManufacturerId))) {
+                    return false;
+                }
             }
         }
 
