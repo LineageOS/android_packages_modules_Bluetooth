@@ -31,16 +31,21 @@ python_library_host {
     ],
 }
 
-python_defaults {
-    name: "navi-defaults",
+python_test_host {
+    name: "navi",
     main: "main.py",
     srcs: [
         "main.py",
     ],
+    embedded_launcher: true,
+    test_config: "Mobly.xml",
     test_suites: [
         "general-tests",
     ],
-    embedded_launcher: true,
+    test_options: {
+        unit_test: false,
+        runner: "mobly",
+    },
     device_common_data: [
         ":BluetoothSnippet",
     ],
@@ -49,22 +54,17 @@ python_defaults {
     ],
 }
 
-python_test_host {
-    name: "navi-mobly",
-    defaults: ["navi-defaults"],
-    test_config: "Mobly.xml",
-    test_options: {
-        unit_test: false,
-        runner: "mobly",
-    },
-}
-
 // For Coverage only.
 python_test_host {
     name: "navi-tf",
-    defaults: ["navi-defaults"],
+    main: "main.py",
+    srcs: [
+        "main.py",
+    ],
+    embedded_launcher: true,
     test_config: "Tradefed.xml",
     test_suites: [
+        "general-tests",
         "mts-bt",
     ],
     test_options: {
@@ -72,5 +72,11 @@ python_test_host {
     },
     data: [
         "config.yml",
+    ],
+    device_common_data: [
+        ":BluetoothSnippet",
+    ],
+    libs: [
+        "navi-lib",
     ],
 }
