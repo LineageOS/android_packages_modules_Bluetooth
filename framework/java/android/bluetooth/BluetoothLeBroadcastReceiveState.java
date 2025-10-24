@@ -291,7 +291,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * Get the address type of the Broadcast Source
      *
      * Can be either {@link BluetoothDevice#ADDRESS_TYPE_PUBLIC} or
-     * {@link BluetoothDevice#ADDRESS_TYPE_RANDOM
+     * {@link BluetoothDevice#ADDRESS_TYPE_RANDOM}
      *
      * @return address type of the Broadcast Source
      */
