@@ -33,6 +33,7 @@
 #include "btif_common.h"
 #include "btif_profile_storage.h"
 #include "hardware/avrcp/avrcp.h"
+#include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
 
 using base::Bind;
@@ -70,6 +71,12 @@ class HearingAidInterfaceImpl : public HearingAidInterface, public HearingAidCal
   }
 
   void Connect(const RawAddress& address) override {
+    do_in_main_thread(base::BindOnce(
+            [](RawAddress bd_addr) {
+              stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(bd_addr,
+                                                                                       false);
+            },
+            address));
     do_in_main_thread(Bind(&HearingAid::Connect, address));
   }
 
