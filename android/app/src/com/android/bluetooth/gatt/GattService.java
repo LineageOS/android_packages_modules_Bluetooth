@@ -89,25 +89,25 @@ public class GattService extends ProfileService {
     private final int[] mSubrateLowParameters;
     private final int[] mSubrateOffParameters;
 
-    public static final int GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX = 0;
-    public static final int GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX = 1;
-    public static final int GATT_SUBRATE_LATENCY_INDEX = 2;
-    public static final int GATT_SUBRATE_CONT_NUM_INDEX = 3;
+    private static final int GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX = 0;
+    private static final int GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX = 1;
+    private static final int GATT_SUBRATE_LATENCY_INDEX = 2;
+    private static final int GATT_SUBRATE_CONT_NUM_INDEX = 3;
 
-    public static final int SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT = 2;
-    public static final int SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT = 4;
-    public static final int SUBRATE_LOW_MODE_LATENCY_DEFAULT = 0;
-    public static final int SUBRATE_LOW_MODE_CONT_NUM_DEFAULT = 1;
+    private static final int SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT = 2;
+    private static final int SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT = 4;
+    private static final int SUBRATE_LOW_MODE_LATENCY_DEFAULT = 0;
+    private static final int SUBRATE_LOW_MODE_CONT_NUM_DEFAULT = 1;
 
-    public static final int SUBRATE_BALANCED_MODE_SUBRATE_MIN_DEFAULT = 5;
-    public static final int SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT = 7;
-    public static final int SUBRATE_BALANCED_MODE_LATENCY_DEFAULT = 0;
-    public static final int SUBRATE_BALANCED_MODE_CONT_NUM_DEFAULT = 4;
+    private static final int SUBRATE_BALANCED_MODE_SUBRATE_MIN_DEFAULT = 5;
+    private static final int SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT = 7;
+    private static final int SUBRATE_BALANCED_MODE_LATENCY_DEFAULT = 0;
+    private static final int SUBRATE_BALANCED_MODE_CONT_NUM_DEFAULT = 4;
 
-    public static final int SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT = 8;
-    public static final int SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT = 10;
-    public static final int SUBRATE_HIGH_MODE_LATENCY_DEFAULT = 0;
-    public static final int SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT = 6;
+    private static final int SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT = 8;
+    private static final int SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT = 10;
+    private static final int SUBRATE_HIGH_MODE_LATENCY_DEFAULT = 0;
+    private static final int SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT = 6;
 
     private static final Integer GATT_MTU_MAX = 517;
     private static final Map<String, Integer> EARLY_MTU_EXCHANGE_PACKAGES =
@@ -316,16 +316,30 @@ public class GattService extends ProfileService {
         mHandlerThread.quit();
     }
 
-    ContextMap<IBluetoothGattServerCallback> getServerMap() {
-        return mServerMap;
+    @Override
+    public void dump(StringBuilder sb) {
+        super.dump(sb);
+        sb.append(GattUtil.dump(mAdvertiseManager, mClientMap, mServerMap, mHandleMap).indent(2));
+    }
+
+    public IBinder getBluetoothAdvertise() {
+        return mAdvertiseManager.getBinder();
+    }
+
+    public IBinder getDistanceMeasurement() {
+        return mDistanceMeasurementManager.getBinder();
+    }
+
+    public AdvertiseManager getAdvertiseManager() {
+        return mAdvertiseManager;
     }
 
     CompanionDeviceManager getCompanionDeviceManager() {
         return mCompanionDeviceManager;
     }
 
-    public AdvertiseManager getAdvertiseManager() {
-        return mAdvertiseManager;
+    ContextMap<IBluetoothGattServerCallback> getServerMap() {
+        return mServerMap;
     }
 
     private class ServerDeathRecipient implements IBinder.DeathRecipient {
@@ -2571,29 +2585,13 @@ public class GattService extends ProfileService {
         }
     }
 
-    boolean isGattClientOffloadSupported() {
+    private boolean isGattClientOffloadSupported() {
         return mAdapterService.isGattClientOffloadSupported();
     }
 
-    boolean isGattServerOffloadSupported() {
+    private boolean isGattServerOffloadSupported() {
         return mAdapterService.isGattServerOffloadSupported();
     }
-
-    /**************************************************************************
-     * Binder functions
-     *************************************************************************/
-
-    public IBinder getBluetoothAdvertise() {
-        return mAdvertiseManager.getBinder();
-    }
-
-    public IBinder getDistanceMeasurement() {
-        return mDistanceMeasurementManager.getBinder();
-    }
-
-    /**************************************************************************
-     * Private functions
-     *************************************************************************/
 
     private boolean isRestrictedSrvcUuid(final UUID uuid, BluetoothDevice device) {
         return isFidoSrvcUuid(uuid)
@@ -2665,7 +2663,7 @@ public class GattService extends ProfileService {
      * @param contNum Continuation Number for this LE connection.
      * @return the connection subrating priority in integer
      */
-    public int verifyGattSubratingMode(
+    private int verifyGattSubratingMode(
             BluetoothDevice device, int subrateFactor, int latency, int contNum) {
         int returnSubrateMode = BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE;
         if (mSubrateLowParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] <= subrateFactor
@@ -2713,12 +2711,6 @@ public class GattService extends ProfileService {
             case BluetoothGatt.SUBRATE_MODE_HIGH -> mSubrateHighParameters[type];
             default -> mSubrateOffParameters[type];
         };
-    }
-
-    @Override
-    public void dump(StringBuilder sb) {
-        super.dump(sb);
-        sb.append(GattUtil.dump(mAdvertiseManager, mClientMap, mServerMap, mHandleMap).indent(2));
     }
 
     private static List<GattDbElement> getGattDatabaseForOffload(
