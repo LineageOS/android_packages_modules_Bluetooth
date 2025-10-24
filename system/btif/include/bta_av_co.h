@@ -234,14 +234,6 @@ public:
                     const uint8_t* p_codec_info, bool* p_no_rtp_header);
 
   /**
-   * Process AVDTP Stop when the audio data streaming is stopped.
-   *
-   * @param bta_av_handle the BTA AV handle to identify the peer
-   * @param peer_address the peer address
-   */
-  void ProcessStop(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address);
-
-  /**
    * Get the next encoded audio data packet to send.
    *
    * @param p_codec_info the codec configuration

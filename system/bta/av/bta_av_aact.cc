@@ -135,10 +135,12 @@ enum {
 
 /* the call out functions for audio stream */
 const tBTA_AV_CO_FUNCTS bta_av_a2dp_cos = {
-        bta_av_co_audio_init,      bta_av_co_audio_disc_res,   bta_av_co_audio_getconfig,
-        bta_av_co_audio_setconfig, bta_av_co_audio_open,       bta_av_co_audio_close,
-        bta_av_co_audio_start,     bta_av_co_audio_stop,       bta_av_co_audio_source_data_path,
-        bta_av_co_audio_delay,     bta_av_co_audio_update_mtu, bta_av_co_get_scmst_info};
+        bta_av_co_audio_init,      bta_av_co_audio_disc_res,
+        bta_av_co_audio_getconfig, bta_av_co_audio_setconfig,
+        bta_av_co_audio_open,      bta_av_co_audio_close,
+        bta_av_co_audio_start,     bta_av_co_audio_source_data_path,
+        bta_av_co_audio_delay,     bta_av_co_audio_update_mtu,
+        bta_av_co_get_scmst_info};
 
 /* these tables translate AVDT events to SSM events */
 static const uint16_t bta_av_stream_evt_ok[] = {
@@ -1928,8 +1930,6 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
     bta_av_stream_chg(p_scb, false);
     p_scb->co_started = false;
-
-    p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
   }
 
   if (com_android_bluetooth_flags_delay_sniff_subrating()) {
@@ -2406,7 +2406,6 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->role |= BTA_AV_ROLE_SUSPEND;
       p_scb->cong = true; /* do not allow the media data to go through */
       /* do not duplicate the media packets to this channel */
-      p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
       p_scb->co_started = false;
       tBTA_AV_API_STOP stop = {
               .hdr = {},
@@ -2594,10 +2593,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     }
     bta_av_stream_chg(p_scb, false);
 
-    {
-      p_scb->co_started = false;
-      p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
-    }
+    p_scb->co_started = false;
   }
 
   {
@@ -2889,9 +2885,6 @@ void bta_av_rcfg_open(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
                p_scb->num_disc_snks);
 
   if (p_scb->num_disc_snks == 0) {
-    /* Need to update call-out module so that it will be ready for discover */
-    p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
-
     /* send avdtp discover request */
     AVDT_DiscoverReq(p_scb->PeerAddress(), p_scb->hdi, p_scb->sep_info, BTA_AV_NUM_SEPS,
                      &bta_av_proc_stream_evt);

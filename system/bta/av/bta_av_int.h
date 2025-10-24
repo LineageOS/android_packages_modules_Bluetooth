@@ -198,7 +198,6 @@ typedef struct {
   tBTA_AV_CO_OPEN open;
   tBTA_AV_CO_CLOSE close;
   tBTA_AV_CO_START start;
-  tBTA_AV_CO_STOP stop;
   tBTA_AV_CO_DATAPATH data;
   tBTA_AV_CO_DELAY delay;
   tBTA_AV_CO_UPDATE_MTU update_mtu;
