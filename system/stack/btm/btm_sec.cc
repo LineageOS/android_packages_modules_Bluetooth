@@ -1392,6 +1392,14 @@ static bool btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC* p_dev_rec, bool is_ori
        * security level database */
       is_possible = true;
     }
+
+    /*if authentication is requirement & currently on temp bonding
+     * trigger pairing */
+    if (com::android::bluetooth::flags::upgrade_temp_bonding_on_auth_req() &&
+        (p_dev_rec->sec_rec.security_required & BTM_SEC_OUT_AUTHENTICATE) &&
+        p_dev_rec->sec_rec.is_bond_type_temporary()) {
+      is_possible = true;
+    }
   }
   log::verbose("is_possible: {} sec_flags: 0x{:x}", is_possible, p_dev_rec->sec_rec.sec_flags);
   return is_possible;
