@@ -143,7 +143,7 @@ public class BluetoothMapService extends ConnectableProfile {
     }
 
     public BluetoothMapService(AdapterService adapterService) {
-        super(BluetoothProfile.MAP, requireNonNull(adapterService));
+        super(BluetoothProfile.MAP, adapterService);
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
 
         setComponentAvailable(MAP_FILE_PROVIDER, true);

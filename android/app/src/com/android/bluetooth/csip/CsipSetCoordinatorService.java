@@ -103,7 +103,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             AdapterService adapterService,
             Looper looper,
             CsipSetCoordinatorNativeInterface nativeInterface) {
-        super(BluetoothProfile.CSIP_SET_COORDINATOR, requireNonNull(adapterService));
+        super(BluetoothProfile.CSIP_SET_COORDINATOR, adapterService);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

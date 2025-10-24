@@ -553,7 +553,7 @@ public class BassClientService extends ConnectableProfile {
 
     @VisibleForTesting
     BassClientService(AdapterService adapterService, Looper looper) {
-        super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, requireNonNull(adapterService));
+        super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, adapterService);
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
 
