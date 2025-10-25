@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.app.PendingIntent
 import android.bluetooth.le.IScannerCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
 import android.os.UserHandle
@@ -42,6 +43,7 @@ class ScannerMap {
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
     private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
+    @JvmOverloads // TODO(b/455057044) Remove on cleanup
     fun addWithCallback(
         appUid: Int,
         appPid: Int,
@@ -50,7 +52,10 @@ class ScannerMap {
         source: AttributionSource,
         workSource: WorkSource?,
         callback: IScannerCallback,
+        settings: ScanSettings? = null, // TODO(b/455057044) Remove nullable on cleanup
+        filters: List<ScanFilter>? = null, // TODO(b/455057044) Remove not nullable on cleanup
         adapterService: AdapterService,
+        isInternal: Boolean = false,
     ): ScannerApp =
         add(
             appUid = appUid,
@@ -61,8 +66,11 @@ class ScannerMap {
             source = source,
             workSource = workSource,
             callback = callback,
+            settings = settings,
+            filters = filters,
             piInfo = null,
             adapterService = adapterService,
+            isInternal = isInternal,
         )
 
     fun addWithPendingIntent(
@@ -70,6 +78,8 @@ class ScannerMap {
         userHandle: UserHandle,
         source: AttributionSource,
         piInfo: ScanController.PendingIntentInfo,
+        settings: ScanSettings? = null,
+        filters: List<ScanFilter>? = null,
         adapterService: AdapterService,
     ): ScannerApp =
         add(
@@ -81,8 +91,11 @@ class ScannerMap {
             source = source,
             workSource = null,
             callback = null,
+            settings = settings,
+            filters = filters,
             piInfo = piInfo,
             adapterService = adapterService,
+            isInternal = false,
         )
 
     private fun add(
@@ -94,8 +107,11 @@ class ScannerMap {
         source: AttributionSource,
         workSource: WorkSource?,
         callback: IScannerCallback?,
+        settings: ScanSettings?, // TODO(b/455057044) Remove nullable on cleanup
+        filters: List<ScanFilter>?, // TODO(b/455057044) Remove nullable on cleanup
         piInfo: ScanController.PendingIntentInfo?,
         adapterService: AdapterService,
+        isInternal: Boolean,
     ): ScannerApp {
         val appScanStats =
             appScanStatsMap.getOrPut(appUid) {
@@ -115,7 +131,11 @@ class ScannerMap {
                 userHandle,
                 source.getLastAttributionTag(),
                 callback,
+                settings,
+                filters,
+                source,
                 piInfo,
+                isInternal,
             )
         apps.add(app)
         appScanStats.isRegistered = true

@@ -273,6 +273,21 @@ public class BassClientService extends ConnectableProfile {
 
                 mScannerId = SCANNER_ID_INITIALIZING;
                 var source = getAttributionSource();
+
+                if (Flags.scanRegisterAndStart()) {
+                    ScanSettings settings =
+                            new ScanSettings.Builder()
+                                    .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                                    .setLegacy(false)
+                                    .build();
+                    scanController.doOnScanThread(
+                            () ->
+                                    scanController.registerAndStartScanInternal(
+                                            this, source, settings, mBaasUuidFilters));
+                    return;
+                }
+
                 scanController.doOnScanThread(
                         () -> scanController.registerScannerInternal(this, null, source));
             }
@@ -318,6 +333,15 @@ public class BassClientService extends ConnectableProfile {
                     return;
                 }
                 mScannerId = scannerId;
+
+                if (Flags.scanRegisterAndStart()) {
+                    // `ScanController#onScannerRegistered` starts the scan for us
+                    if (mIsForegroundScan) {
+                        mCallbacks.notifySearchStarted(
+                                BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
+                    }
+                    return;
+                }
 
                 ScanSettings settings =
                         new ScanSettings.Builder()

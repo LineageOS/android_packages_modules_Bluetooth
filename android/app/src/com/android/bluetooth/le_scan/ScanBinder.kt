@@ -69,6 +69,7 @@ class ScanBinder(
         return scanController
     }
 
+    // TODO(b/455057044) Delete on flag cleanup
     override fun registerScanner(
         callback: IScannerCallback,
         settings: ScanSettings,
@@ -85,10 +86,27 @@ class ScanBinder(
         }
     }
 
+    override fun registerAndStartScan(
+        callback: IScannerCallback,
+        settings: ScanSettings,
+        filters: List<ScanFilter>,
+        workSource: WorkSource?,
+        source: AttributionSource,
+    ) {
+        enforcePrivilegedPermissionIfNeeded(settings, filters)
+        if (workSource != null) {
+            adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
+        }
+        withControllerRunOnScanThread(source, "registerAndStartScan") {
+            registerAndStartScan(callback, workSource, source, settings, filters)
+        }
+    }
+
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
         withControllerRunOnScanThread(source, "unregisterScanner") { unregisterScanner(scannerId) }
     }
 
+    // TODO(b/455057044) Delete on flag cleanup
     override fun startScan(
         scannerId: Int,
         settings: ScanSettings,

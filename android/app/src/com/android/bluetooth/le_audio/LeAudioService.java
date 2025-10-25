@@ -2148,6 +2148,27 @@ public class LeAudioService extends ConnectableProfile {
             mScannerId = SCANNER_INITIALIZING;
             final var scanController = mAdapterService.getBluetoothScanController();
             var source = getAttributionSource();
+
+            if (Flags.scanRegisterAndStart()) {
+                ScanFilter filter =
+                        new ScanFilter.Builder()
+                                .setServiceData(
+                                        BluetoothUuid.CAP, CAP_TARGETED_ANNOUNCEMENT_PAYLOAD)
+                                .build();
+                ScanSettings settings =
+                        new ScanSettings.Builder()
+                                .setLegacy(false)
+                                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                                .setPhy(BluetoothDevice.PHY_LE_1M)
+                                .build();
+                scanController.doOnScanThread(
+                        () ->
+                                scanController.registerAndStartScanInternal(
+                                        this, source, settings, List.of(filter)));
+                return;
+            }
+
             scanController.doOnScanThread(
                     () -> scanController.registerScannerInternal(this, null, source));
         }
@@ -2175,6 +2196,11 @@ public class LeAudioService extends ConnectableProfile {
                 return;
             }
             mScannerId = scannerId;
+
+            if (Flags.scanRegisterAndStart()) {
+                // `ScanController#onScannerRegistered` starts the scan for us
+                return;
+            }
 
             ScanFilter filter =
                     new ScanFilter.Builder()

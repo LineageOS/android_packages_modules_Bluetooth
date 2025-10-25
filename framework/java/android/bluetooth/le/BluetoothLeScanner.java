@@ -44,6 +44,8 @@ import android.os.RemoteException;
 import android.os.WorkSource;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -348,9 +350,15 @@ public final class BluetoothLeScanner {
                 filters = new ArrayList<>();
             }
             if (callback != null) {
-                BleScanCallbackWrapper wrapper =
-                        new BleScanCallbackWrapper(scan, filters, settings, workSource, callback);
-                wrapper.startRegistration();
+                if (Flags.scanRegisterAndStart()) {
+                    new BleScanCallbackWrapper(scan, filters, settings, workSource, callback)
+                            .registerAndStartScan();
+                } else {
+                    BleScanCallbackWrapper wrapper =
+                            new BleScanCallbackWrapper(
+                                    scan, filters, settings, workSource, callback);
+                    wrapper.startRegistration();
+                }
             } else {
                 try {
                     scan.registerPiAndStartScan(callbackIntent, settings, filters, mSource);
@@ -463,6 +471,7 @@ public final class BluetoothLeScanner {
 
     /** Bluetooth GATT interface callbacks */
     private final class BleScanCallbackWrapper extends IScannerCallback.Stub {
+        // TODO(b/455057044) Delete on flag cleanup
         private static final int REGISTRATION_CALLBACK_TIMEOUT_MILLIS = 2000;
 
         private final IBluetoothScan mScan;
@@ -491,6 +500,7 @@ public final class BluetoothLeScanner {
             mScannerId = 0;
         }
 
+        // TODO(b/455057044) Delete on flag cleanup
         @RequiresPermission(BLUETOOTH_SCAN)
         // The permission {@link android.Manifest.permission#UPDATE_DEVICE_STATS} is required by
         // IBluetoothScan#registerScanner only when `mWorkSource` is non-null. The @SystemApi
@@ -500,6 +510,9 @@ public final class BluetoothLeScanner {
         @SuppressLint("IncorrectRequiresPermissionPropagation")
         @SuppressWarnings("WaitNotInLoop") // TODO(b/314811467)
         void startRegistration() {
+            if (Flags.scanRegisterAndStart()) {
+                throw new IllegalStateException("scanRegisterAndStart");
+            }
             synchronized (this) {
                 // Scan stopped.
                 if (mScannerId == -1 || mScannerId == -2) return;
@@ -525,6 +538,25 @@ public final class BluetoothLeScanner {
 
                     postCallbackError(
                             mCallback, ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED);
+                }
+            }
+        }
+
+        // The permission {@link android.Manifest.permission#UPDATE_DEVICE_STATS} is required by
+        // IBluetoothScan#registerAndStartScan only when `mWorkSource` is non-null. The @SystemApi
+        // methods that provide a WorkSource, such as `startScanFromSource()`, are already annotated
+        // with this permission. This suppression avoids propagating the conditional requirement to
+        // Public API methods that do not use a WorkSource.
+        @SuppressLint("IncorrectRequiresPermissionPropagation")
+        @RequiresPermission(BLUETOOTH_SCAN)
+        void registerAndStartScan() {
+            synchronized (this) {
+                try {
+                    mScan.registerAndStartScan(this, mSettings, mFilters, mWorkSource, mSource);
+                    mLeScanClients.put(mCallback, this);
+                } catch (RemoteException e) {
+                    Log.e(TAG, "registerAndStartScan(): Exception", e);
+                    postCallbackError(mCallback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
                 }
             }
         }
@@ -562,7 +594,6 @@ public final class BluetoothLeScanner {
         }
 
         /** Application interface registered - app is ready to go */
-        // TODO(b/447235251) Move all this logic to within the app without triggering the callback
         @Override
         public void onScannerRegistered(int status, int scannerId) {
             Log.d(
@@ -571,6 +602,10 @@ public final class BluetoothLeScanner {
                             + (", mScannerId=" + mScannerId));
             synchronized (this) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
+                    if (Flags.scanRegisterAndStart()) {
+                        mScannerId = scannerId;
+                        return;
+                    }
                     try {
                         if (mScannerId == -1) {
                             // Registration succeeds after timeout, unregister scanner.
@@ -584,13 +619,19 @@ public final class BluetoothLeScanner {
                         mScannerId = -1;
                     }
                 } else if (status == ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY) {
-                    // application was scanning too frequently
-                    mScannerId = -2;
+                    if (Flags.scanRegisterAndStart()) {
+                        mLeScanClients.remove(mCallback);
+                    }
+                    mScannerId = -2; // Application was scanning too frequently
                 } else {
-                    // registration failed
-                    mScannerId = -1;
+                    if (Flags.scanRegisterAndStart()) {
+                        mLeScanClients.remove(mCallback);
+                    }
+                    mScannerId = -1; // Registration failed
                 }
-                notifyAll();
+                if (!Flags.scanRegisterAndStart()) {
+                    notifyAll();
+                }
             }
         }
 
@@ -653,7 +694,7 @@ public final class BluetoothLeScanner {
         @Override
         public void onScanManagerErrorCallback(final int errorCode) {
             if (VDBG) {
-                Log.d(TAG, "onScanManagerErrorCallback(); errorCode=" + errorCode);
+                Log.d(TAG, "onScanManagerErrorCallback(): errorCode=" + errorCode);
             }
             synchronized (this) {
                 if (mScannerId <= 0) {
