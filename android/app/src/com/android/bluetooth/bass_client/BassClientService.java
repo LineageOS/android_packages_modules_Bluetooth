@@ -1214,19 +1214,18 @@ public class BassClientService extends ConnectableProfile {
     }
 
     /**
-     * Determines the {@link SyncStatus} based on
-     * the provided {@link BluetoothLeBroadcastReceiveState}.
-     * The status is determined in the following order of precedence:
-     * 1. {@link SyncStatus#BIS_SYNCED} if the receive state is synced to BIS.
-     * 2. {@link SyncStatus#PA_SYNCED} if the PA sync state is synchronized.
-     * 3. {@link SyncStatus#SOURCE_ADDED} if a source device is present.
-     * 4. Defaults to {@link SyncStatus#NOT_SYNCED} otherwise.
+     * Determines the {@link SyncStatus} based on the provided {@link
+     * BluetoothLeBroadcastReceiveState}. The status is determined in the following order of
+     * precedence: 1. {@link SyncStatus#BIS_SYNCED} if the receive state is synced to BIS. 2. {@link
+     * SyncStatus#PA_SYNCED} if the PA sync state is synchronized. 3. {@link
+     * SyncStatus#SOURCE_ADDED} if a source device is present. 4. Defaults to {@link
+     * SyncStatus#NOT_SYNCED} otherwise.
      *
      * @param receiveState The {@link BluetoothLeBroadcastReceiveState} to evaluate.
      * @return The determined {@link SyncStatus}.
      */
     private static SyncStatus GetSyncStatusFromReceiveState(
-                                BluetoothLeBroadcastReceiveState receiveState) {
+            BluetoothLeBroadcastReceiveState receiveState) {
         SyncStatus syncStatus = SyncStatus.NOT_SYNCED;
         if (isReceiveStateSyncedToBis(receiveState)) {
             syncStatus = SyncStatus.BIS_SYNCED;
@@ -1404,23 +1403,23 @@ public class BassClientService extends ConnectableProfile {
 
     /**
      * Checks the PA Sync State change for BIG Channel Map classification based on the sink device.
-     * This method determines whether to add or delete a BIG Channel Map classification based on
-     * the transition of the PA sync status.
+     * This method determines whether to add or delete a BIG Channel Map classification based on the
+     * transition of the PA sync status.
      *
      * @param sink The Bluetooth device sink.
      * @param oldSyncStatus The previous {@link SyncStatus} of the PA.
      * @param newSyncStatus The current {@link SyncStatus} of the PA.
-     * @return An integer representing the action to be taken:
-     * {@link SetBigChannelMapClassificationAction#ADD} if transitioned to PA_SYNCED,
-     * {@link SetBigChannelMapClassificationAction#DELETE} if transitioned to NOT_SYNCED,
-     * or {@link SetBigChannelMapClassificationAction#NO_ACTION} if no change or other status.
+     * @return An integer representing the action to be taken: {@link
+     *     SetBigChannelMapClassificationAction#ADD} if transitioned to PA_SYNCED, {@link
+     *     SetBigChannelMapClassificationAction#DELETE} if transitioned to NOT_SYNCED, or {@link
+     *     SetBigChannelMapClassificationAction#NO_ACTION} if no change or other status.
      */
     public int checkPaSyncStatusForBigChannelMapClassification(
             BluetoothDevice sink, SyncStatus oldSyncStatus, SyncStatus newSyncStatus) {
 
         int action = SetBigChannelMapClassificationAction.NO_ACTION.getValue();
 
-        //status not changed, return NO_ACTION
+        // status not changed, return NO_ACTION
         if (newSyncStatus.compareTo(oldSyncStatus) == 0) {
             return action;
         }
@@ -1437,25 +1436,29 @@ public class BassClientService extends ConnectableProfile {
         }
 
         Log.d(
-            TAG,
-            "PA SyncStatus transitioned from " + oldSyncStatus + " to " + newSyncStatus
-                    + " for " + sink
-                    + ", action: " + SetBigChannelMapClassificationAction.toString(action));
+                TAG,
+                "PA SyncStatus transitioned from "
+                        + oldSyncStatus
+                        + " to "
+                        + newSyncStatus
+                        + " for "
+                        + sink
+                        + ", action: "
+                        + SetBigChannelMapClassificationAction.toString(action));
 
         return action;
     }
 
     /**
-     * Checks the PA Sync Status and triggers an update to the BIG Channel Map classification if
-     * the status has changed for a local broadcast.
+     * Checks the PA Sync Status and triggers an update to the BIG Channel Map classification if the
+     * status has changed for a local broadcast.
      *
      * @param sink The Bluetooth device sink.
      * @param broadcastId The ID of the broadcast.
      * @param receiveState The current {@link BluetoothLeBroadcastReceiveState}.
      */
     private void CheckAndTriggerUpdateChannelMapClassification(
-                        BluetoothDevice sink, int broadcastId,
-                        BluetoothLeBroadcastReceiveState receiveState) {
+            BluetoothDevice sink, int broadcastId, BluetoothLeBroadcastReceiveState receiveState) {
         if (!leaudioBroadcastSourceChannelMapClassification()) {
             return;
         }
@@ -1463,19 +1466,18 @@ public class BassClientService extends ConnectableProfile {
         if (isLocalBroadcast(broadcastId)) {
             // Read the oldSyncStatus from the mSyncStatusMap for comparison with newSyncStatus.
             SyncStatus oldSyncStatus =
-                mSyncStatusMap
-                    .getOrDefault(sink, Collections.emptyMap())
-                    .getOrDefault(broadcastId, SyncStatus.NOT_SYNCED);
+                    mSyncStatusMap
+                            .getOrDefault(sink, Collections.emptyMap())
+                            .getOrDefault(broadcastId, SyncStatus.NOT_SYNCED);
             SyncStatus newSyncStatus = GetSyncStatusFromReceiveState(receiveState);
 
-            int action = checkPaSyncStatusForBigChannelMapClassification(
-                sink, oldSyncStatus, newSyncStatus);
+            int action =
+                    checkPaSyncStatusForBigChannelMapClassification(
+                            sink, oldSyncStatus, newSyncStatus);
             if (action != SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
                 final var leAudio = mAdapterService.getLeAudioService();
                 if (!leAudio.isEmpty()) {
-                    leAudio.get()
-                        .setBigChannelMapClassification(
-                            action, sink, broadcastId);
+                    leAudio.get().setBigChannelMapClassification(action, sink, broadcastId);
                 }
             }
         }
