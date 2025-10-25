@@ -120,7 +120,7 @@ object GattUtil {
      * This block should be kept in sync with system/stack/gatt/gatt_api.h
      */
     @JvmStatic
-    fun gattStatusToString(status: Int) =
+    fun statusToString(status: Int) =
         when (status) {
             BluetoothGatt.GATT_SUCCESS -> "GATT_SUCCESS (0x00)"
             0x01 -> "GATT_INVALID_HANDLE (0x01)"
