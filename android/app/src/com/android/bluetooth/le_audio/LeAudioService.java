@@ -2142,10 +2142,9 @@ public class LeAudioService extends ConnectableProfile {
 
             mScannerId = SCANNER_INITIALIZING;
             final var scanController = mAdapterService.getBluetoothScanController();
+            var source = getAttributionSource();
             scanController.doOnScanThread(
-                    () ->
-                            scanController.registerScannerInternal(
-                                    this, null, getAttributionSource()));
+                    () -> scanController.registerScannerInternal(this, null, source));
         }
 
         synchronized void stopBackgroundScan() {
