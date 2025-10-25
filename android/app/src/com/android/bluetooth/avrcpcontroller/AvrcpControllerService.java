@@ -18,7 +18,6 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
@@ -136,7 +135,7 @@ public class AvrcpControllerService extends ProfileService {
     @VisibleForTesting
     public AvrcpControllerService(
             AdapterService adapterService, AvrcpControllerNativeInterface nativeInterface) {
-        super(BluetoothProfile.AVRCP_CONTROLLER, requireNonNull(adapterService));
+        super(BluetoothProfile.AVRCP_CONTROLLER, adapterService);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

@@ -170,7 +170,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     @VisibleForTesting
     BluetoothPbapService(
             AdapterService adapterService, NotificationManager notificationManager, Looper looper) {
-        super(BluetoothProfile.PBAP, requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP, adapterService);
         mNotificationManager = requireNonNull(notificationManager);
 
         IntentFilter userFilter = new IntentFilter();

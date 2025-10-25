@@ -66,7 +66,7 @@ public class TbsService extends ProfileService {
     }
 
     public TbsService(AdapterService adapterService, GattService gattService) {
-        super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
+        super(BluetoothProfile.LE_CALL_CONTROL, adapterService);
         unusedGattService = requireNonNull(gattService);
 
         mTbsGeneric = new TbsGeneric(adapterService, new TbsGatt(adapterService, this));

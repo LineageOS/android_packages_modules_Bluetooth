@@ -94,7 +94,7 @@ public class HearingAidService extends ConnectableProfile {
             AdapterService adapterService,
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
-        super(BluetoothProfile.HEARING_AID, requireNonNull(adapterService));
+        super(BluetoothProfile.HEARING_AID, adapterService);
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("HearingAidService.StateMachines");

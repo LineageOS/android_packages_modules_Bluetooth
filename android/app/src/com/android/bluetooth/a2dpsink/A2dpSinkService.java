@@ -76,7 +76,7 @@ public class A2dpSinkService extends ConnectableProfile {
     @VisibleForTesting
     A2dpSinkService(
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
-        super(BluetoothProfile.A2DP_SINK, requireNonNull(adapterService));
+        super(BluetoothProfile.A2DP_SINK, adapterService);
         var nativeCallback = new A2dpSinkNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(

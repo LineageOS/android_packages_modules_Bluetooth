@@ -49,7 +49,7 @@ public class McpService extends ProfileService {
 
     @VisibleForTesting
     McpService(AdapterService adapterService, MediaControlProfile mediaControlProfile) {
-        super(BluetoothProfile.MCP_SERVER, requireNonNull(adapterService));
+        super(BluetoothProfile.MCP_SERVER, adapterService);
         mGmcs = requireNonNull(mediaControlProfile);
 
         mGmcs.init(this);

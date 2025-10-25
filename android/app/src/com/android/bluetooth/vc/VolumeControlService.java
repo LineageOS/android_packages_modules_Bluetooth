@@ -111,7 +111,7 @@ public class VolumeControlService extends ConnectableProfile {
             AdapterService adapterService,
             Looper looper,
             VolumeControlNativeInterface nativeInterface) {
-        super(BluetoothProfile.VOLUME_CONTROL, requireNonNull(adapterService));
+        super(BluetoothProfile.VOLUME_CONTROL, adapterService);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

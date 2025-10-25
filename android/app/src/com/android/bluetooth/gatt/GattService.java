@@ -208,7 +208,7 @@ public class GattService extends ProfileService {
             Set<BluetoothDevice> reliableQueue,
             CompanionDeviceManager companionDeviceManager,
             TimeProvider timeProvider) {
-        super(BluetoothProfile.GATT, requireNonNull(adapterService));
+        super(BluetoothProfile.GATT, adapterService);
         mClientMap = requireNonNull(clientMap);
         mServerMap = requireNonNull(serverMap);
         mReliableQueue = requireNonNull(reliableQueue);

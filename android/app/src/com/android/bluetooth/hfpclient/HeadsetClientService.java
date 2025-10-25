@@ -89,7 +89,7 @@ public class HeadsetClientService extends ConnectableProfile {
     @VisibleForTesting
     HeadsetClientService(
             AdapterService adapterService, HeadsetClientNativeInterface nativeInterface) {
-        super(BluetoothProfile.HEADSET_CLIENT, requireNonNull(adapterService));
+        super(BluetoothProfile.HEADSET_CLIENT, adapterService);
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mMaxAmVcVol = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);

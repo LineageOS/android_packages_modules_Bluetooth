@@ -59,7 +59,7 @@ public class BatteryService extends ConnectableProfile {
 
     @VisibleForTesting
     BatteryService(AdapterService adapterService, Looper looper) {
-        super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
+        super(BluetoothProfile.BATTERY, adapterService);
         mHandler = new Handler(requireNonNull(looper));
         mLooper = looper;
     }
