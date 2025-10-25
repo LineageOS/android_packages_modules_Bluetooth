@@ -28,6 +28,7 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "bt_status.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_rc.h"
@@ -756,10 +757,9 @@ static void initNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  bt_status_t status = sBluetoothAvrcpInterface->init(&sBluetoothAvrcpCallbacks);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to initialize Bluetooth Avrcp Controller, status: {}",
-               bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->init(&sBluetoothAvrcpCallbacks);
+  if (!status) {
+    log::error("Failed to initialize Bluetooth Avrcp Controller, status: {}", status);
     sBluetoothAvrcpInterface = NULL;
     return;
   }
@@ -796,13 +796,13 @@ static jboolean sendPassThroughCommandNative(JNIEnv* env, jobject /* object */, 
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->send_pass_through_cmd(bd_addr, (uint8_t)key_code,
-                                                                       (uint8_t)key_state);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending passthru command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->send_pass_through_cmd(bd_addr, (uint8_t)key_code,
+                                                                    (uint8_t)key_state);
+  if (!status) {
+    log::error("Failed sending passthru command, status: {}", status);
   }
 
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean sendGroupNavigationCommandNative(JNIEnv* env, jobject /* object */,
@@ -815,13 +815,13 @@ static jboolean sendGroupNavigationCommandNative(JNIEnv* env, jobject /* object 
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->send_group_navigation_cmd(
-          bd_addr, (uint8_t)key_code, (uint8_t)key_state);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending Grp Navigation command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->send_group_navigation_cmd(bd_addr, (uint8_t)key_code,
+                                                                        (uint8_t)key_state);
+  if (!status) {
+    log::error("Failed sending Grp Navigation command, status: {}", status);
   }
 
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static void setPlayerApplicationSettingValuesNative(JNIEnv* env, jobject /* object */,
@@ -856,10 +856,10 @@ static void setPlayerApplicationSettingValuesNative(JNIEnv* env, jobject /* obje
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->set_player_app_setting_cmd(
+  BtStatus status = sBluetoothAvrcpInterface->set_player_app_setting_cmd(
           bd_addr, (uint8_t)num_attrib, pAttrs, pAttrsVal);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending setPlAppSettValNative command, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("Failed sending setPlAppSettValNative command, status: {}", status);
   }
   delete[] pAttrs;
   delete[] pAttrsVal;
@@ -876,10 +876,10 @@ static void sendAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyteArray ad
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status =
+  BtStatus status =
           sBluetoothAvrcpInterface->set_volume_rsp(bd_addr, (uint8_t)abs_vol, (uint8_t)label);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending sendAbsVolRspNative command, status: {}", bt_status_text(status));
+  if (!status) {
+    log::error("Failed sending sendAbsVolRspNative command, status: {}", status);
   }
 }
 
@@ -892,11 +892,10 @@ static void sendRegisterAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyte
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->register_abs_vol_rsp(
+  BtStatus status = sBluetoothAvrcpInterface->register_abs_vol_rsp(
           bd_addr, (btrc_notification_type_t)rsp_type, (uint8_t)abs_vol, (uint8_t)label);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending sendRegisterAbsVolRspNative command, status: {}",
-               bt_status_text(status));
+  if (!status) {
+    log::error("Failed sending sendRegisterAbsVolRspNative command, status: {}", status);
   }
 }
 
@@ -908,10 +907,9 @@ static void getCurrentMetadataNative(JNIEnv* env, jobject /* object */, jbyteArr
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->get_current_metadata_cmd(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getCurrentMetadataNative command, status: {}",
-               bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->get_current_metadata_cmd(bd_addr);
+  if (!status) {
+    log::error("Failed sending getCurrentMetadataNative command, status: {}", status);
   }
 }
 
@@ -923,9 +921,9 @@ static void getPlaybackStateNative(JNIEnv* env, jobject /* object */, jbyteArray
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->get_playback_state_cmd(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getPlaybackStateNative command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->get_playback_state_cmd(bd_addr);
+  if (!status) {
+    log::error("Failed sending getPlaybackStateNative command, status: {}", status);
   }
 }
 
@@ -938,10 +936,9 @@ static void getNowPlayingListNative(JNIEnv* env, jobject /* object */, jbyteArra
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->get_now_playing_list_cmd(bd_addr, start, end);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getNowPlayingListNative command, status: {}",
-               bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->get_now_playing_list_cmd(bd_addr, start, end);
+  if (!status) {
+    log::error("Failed sending getNowPlayingListNative command, status: {}", status);
   }
 }
 
@@ -954,9 +951,9 @@ static void getFolderListNative(JNIEnv* env, jobject /* object */, jbyteArray ad
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->get_folder_list_cmd(bd_addr, start, end);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getFolderListNative command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->get_folder_list_cmd(bd_addr, start, end);
+  if (!status) {
+    log::error("Failed sending getFolderListNative command, status: {}", status);
   }
 }
 
@@ -969,9 +966,9 @@ static void getPlayerListNative(JNIEnv* env, jobject /* object */, jbyteArray ad
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->get_player_list_cmd(bd_addr, start, end);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getPlayerListNative command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->get_player_list_cmd(bd_addr, start, end);
+  if (!status) {
+    log::error("Failed sending getPlayerListNative command, status: {}", status);
   }
 }
 
@@ -984,10 +981,10 @@ static void changeFolderPathNative(JNIEnv* env, jobject /* object */, jbyteArray
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->change_folder_path_cmd(bd_addr, (uint8_t)direction,
-                                                                        (uint8_t*)&uid);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending changeFolderPathNative command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->change_folder_path_cmd(bd_addr, (uint8_t)direction,
+                                                                     (uint8_t*)&uid);
+  if (!status) {
+    log::error("Failed sending changeFolderPathNative command, status: {}", status);
   }
 }
 
@@ -999,9 +996,9 @@ static void setBrowsedPlayerNative(JNIEnv* env, jobject /* object */, jbyteArray
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->set_browsed_player_cmd(bd_addr, (uint16_t)id);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending setBrowsedPlayerNative command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->set_browsed_player_cmd(bd_addr, (uint16_t)id);
+  if (!status) {
+    log::error("Failed sending setBrowsedPlayerNative command, status: {}", status);
   }
 }
 
@@ -1014,10 +1011,9 @@ static void setAddressedPlayerNative(JNIEnv* env, jobject /* object */, jbyteArr
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->set_addressed_player_cmd(bd_addr, (uint16_t)id);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending setAddressedPlayerNative command, status: {}",
-               bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->set_addressed_player_cmd(bd_addr, (uint16_t)id);
+  if (!status) {
+    log::error("Failed sending setAddressedPlayerNative command, status: {}", status);
   }
 }
 
@@ -1030,10 +1026,10 @@ static void playItemNative(JNIEnv* env, jobject /* object */, jbyteArray address
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  bt_status_t status = sBluetoothAvrcpInterface->play_item_cmd(
-          bd_addr, (uint8_t)scope, (uint8_t*)&uid, (uint16_t)uidCounter);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending playItemNative command, status: {}", bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->play_item_cmd(bd_addr, (uint8_t)scope, (uint8_t*)&uid,
+                                                            (uint16_t)uidCounter);
+  if (!status) {
+    log::error("Failed sending playItemNative command, status: {}", status);
   }
 }
 

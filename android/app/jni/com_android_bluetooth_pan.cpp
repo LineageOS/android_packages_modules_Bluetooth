@@ -23,6 +23,7 @@
 
 #include <cstring>
 
+#include "bt_status.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_pan.h"
@@ -51,7 +52,7 @@ static jbyteArray marshall_bda(const RawAddress* bd_addr) {
   return addr;
 }
 
-static void control_state_callback(btpan_control_state_t state, int local_role, bt_status_t error,
+static void control_state_callback(btpan_control_state_t state, int local_role, BtStatus error,
                                    const char* ifname) {
   log::debug("state:{}, local_role:{}, ifname:{}", state, local_role, ifname);
   if (mCallbacksObj == NULL) {
@@ -67,7 +68,7 @@ static void control_state_callback(btpan_control_state_t state, int local_role, 
                                (jint)state, (jint)error, js_ifname.get());
 }
 
-static void connection_state_callback(btpan_connection_state_t state, bt_status_t error,
+static void connection_state_callback(btpan_connection_state_t state, BtStatus error,
                                       const RawAddress* bd_addr, int local_role, int remote_role) {
   log::debug("state:{}, local_role:{}, remote_role:{}", state, local_role, remote_role);
   if (mCallbacksObj == NULL) {
@@ -128,9 +129,9 @@ static void initializeNative(JNIEnv* env, jobject object) {
     log::fatal("Failed to allocate Global Ref for Pan Callbacks");
   }
 
-  bt_status_t status = sPanIf->init(&sBluetoothPanCallbacks);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to initialize Bluetooth PAN, status: {}", bt_status_text(status));
+  BtStatus status = sPanIf->init(&sBluetoothPanCallbacks);
+  if (!status) {
+    log::error("Failed to initialize Bluetooth PAN, status: {}", status);
     sPanIf = NULL;
     if (mCallbacksObj != NULL) {
       log::warn("initialization failed: Cleaning up Bluetooth PAN callback object");
@@ -171,9 +172,9 @@ static jboolean connectPanNative(JNIEnv* env, jobject /* object */, jbyteArray a
   RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
 
-  bt_status_t status = sPanIf->connect(bd_addr, src_role, dest_role);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed PAN channel connection, status: {}", bt_status_text(status));
+  BtStatus status = sPanIf->connect(bd_addr, src_role, dest_role);
+  if (!status) {
+    log::error("Failed PAN channel connection, status: {}", status);
     ret = JNI_FALSE;
   }
 
@@ -189,9 +190,9 @@ static jboolean disconnectPanNative(JNIEnv* env, jobject /* object */, jbyteArra
   RawAddress bd_addr = addressFromJByteArray(env, address);
   jboolean ret = JNI_TRUE;
 
-  bt_status_t status = sPanIf->disconnect(bd_addr);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed disconnect pan channel, status: {}", bt_status_text(status));
+  BtStatus status = sPanIf->disconnect(bd_addr);
+  if (!status) {
+    log::error("Failed disconnect pan channel, status: {}", status);
     ret = JNI_FALSE;
   }
 
