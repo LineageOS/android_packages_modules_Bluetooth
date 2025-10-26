@@ -163,17 +163,13 @@ public class AdvertiseManager {
     void onAdvertisingSetStarted(int regId, int advertiserId, int txPower, int status) {
         Log.d(
                 TAG,
-                "onAdvertisingSetStarted() - regId="
-                        + regId
-                        + ", advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onAdvertisingSetStarted(): regId=" + regId + ", advertiserId=" + advertiserId)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(regId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingSetStarted() - no callback found for regId " + regId);
+            Log.i(TAG, "onAdvertisingSetStarted(): No callback found for regId " + regId);
             // Advertising set was stopped before it was properly registered.
             mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
             mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
@@ -212,20 +208,15 @@ public class AdvertiseManager {
     void onAdvertisingEnabled(int advertiserId, boolean enable, int status) {
         Log.d(
                 TAG,
-                "onAdvertisingSetEnabled() - advertiserId="
-                        + advertiserId
-                        + ", enable="
-                        + enable
-                        + ", status="
-                        + status);
+                ("onAdvertisingSetEnabled(): advertiserId=" + advertiserId + ", enable=" + enable)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.i(
                     TAG,
-                    "onAdvertisingSetEnable() - no callback found for advertiserId "
-                            + advertiserId);
+                    "onAdvertisingSetEnable(): No callback found for advertiserId=" + advertiserId);
             return;
         }
 
@@ -377,7 +368,7 @@ public class AdvertiseManager {
     }
 
     void onOwnAddressRead(int advertiserId, int addressType, String address) {
-        Log.d(TAG, "onOwnAddressRead() advertiserId=" + advertiserId);
+        Log.d(TAG, "onOwnAddressRead(): advertiserId=" + advertiserId);
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
@@ -639,12 +630,8 @@ public class AdvertiseManager {
     void onAdvertisingParametersUpdated(int advertiserId, int txPower, int status) {
         Log.d(
                 TAG,
-                "onAdvertisingParametersUpdated() advertiserId="
-                        + advertiserId
-                        + ", txPower="
-                        + txPower
-                        + ", status="
-                        + status);
+                ("onAdvertisingParametersUpdated(): advertiserId=" + advertiserId)
+                        + (", txPower=" + txPower + ", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
@@ -660,17 +647,15 @@ public class AdvertiseManager {
     void onPeriodicAdvertisingParametersUpdated(int advertiserId, int status) {
         Log.d(
                 TAG,
-                "onPeriodicAdvertisingParametersUpdated() advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onPeriodicAdvertisingParametersUpdated(): advertiserId=" + advertiserId)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.i(
                     TAG,
-                    "onPeriodicAdvertisingParametersUpdated() - bad advertiserId " + advertiserId);
+                    "onPeriodicAdvertisingParametersUpdated(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -681,15 +666,13 @@ public class AdvertiseManager {
     void onPeriodicAdvertisingDataSet(int advertiserId, int status) {
         Log.d(
                 TAG,
-                "onPeriodicAdvertisingDataSet() advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onPeriodicAdvertisingDataSet(): advertiserId=" + advertiserId)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onPeriodicAdvertisingDataSet() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onPeriodicAdvertisingDataSet(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -700,17 +683,15 @@ public class AdvertiseManager {
     void onPeriodicAdvertisingEnabled(int advertiserId, boolean enable, int status) {
         Log.d(
                 TAG,
-                "onPeriodicAdvertisingEnabled() advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onPeriodicAdvertisingEnabled(): advertiserId=" + advertiserId)
+                        + (", status=" + status));
+        checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingSetEnable() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onAdvertisingSetEnable(): Bad advertiserId " + advertiserId);
             return;
         }
-        checkThread();
 
         final var callback = entry.getValue().callback;
         callbackToApp(() -> callback.onPeriodicAdvertisingEnabled(advertiserId, enable, status));
