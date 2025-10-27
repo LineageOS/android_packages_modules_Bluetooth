@@ -302,7 +302,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        return service.getAdapterProperties().isDiscovering();
+        return service.isDiscovering();
     }
 
     @Override
