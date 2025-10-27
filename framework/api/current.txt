@@ -45,6 +45,7 @@ package android.bluetooth {
     method public int isLeAudioSupported();
     method public boolean isLeCodedPhySupported();
     method public boolean isLeExtendedAdvertisingSupported();
+    method @FlaggedApi("com.android.bluetooth.flags.leaudio_over_hdt_phy_api") public int isLeHighDataThroughputPhySupported();
     method public boolean isLePeriodicAdvertisingSupported();
     method public boolean isMultipleAdvertisementSupported();
     method public boolean isOffloadedFilteringSupported();
@@ -614,6 +615,8 @@ package android.bluetooth {
     field public static final int PHY_LE_2M_MASK = 2; // 0x2
     field public static final int PHY_LE_CODED = 3; // 0x3
     field public static final int PHY_LE_CODED_MASK = 4; // 0x4
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_over_hdt_phy_api") public static final int PHY_LE_HDT = 5; // 0x5
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_over_hdt_phy_api") public static final int PHY_LE_HDT_MASK = 16; // 0x10
     field public static final int PHY_OPTION_NO_PREFERRED = 0; // 0x0
     field public static final int PHY_OPTION_S2 = 1; // 0x1
     field public static final int PHY_OPTION_S8 = 2; // 0x2

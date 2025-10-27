@@ -120,6 +120,7 @@ public:
   virtual bool SupportsBleConnectionSubrating() const override;
   virtual bool SupportsBleConnectionSubratingHost() const override;
   virtual bool SupportsBleChannelSounding() const override;
+  virtual bool SupportsBleHighDataThroughputPhy() const override;
 
   virtual uint16_t GetAclPacketLength() const override;
 

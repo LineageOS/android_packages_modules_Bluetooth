@@ -1250,6 +1250,16 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
+    public boolean isLeHighDataThroughputPhySupported() {
+        AdapterService service = getService();
+        if (service == null) {
+            return false;
+        }
+
+        return service.isLeHighDataThroughputPhySupported();
+    }
+
+    @Override
     public boolean isLeExtendedAdvertisingSupported() {
         AdapterService service = getService();
         if (service == null) {

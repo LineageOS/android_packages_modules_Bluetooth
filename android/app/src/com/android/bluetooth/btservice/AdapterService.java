@@ -3971,6 +3971,18 @@ public class AdapterService extends Service {
         return mAdapterProperties.isLeCodedPhySupported();
     }
 
+    /**
+     * Check if the LE high data throughput phy feature is supported.
+     *
+     * @return true, if the LE high data throughput phy feature is supported
+     */
+    public boolean isLeHighDataThroughputPhySupported() {
+        if (!Flags.leaudioOverHdtPhyApi()) {
+            return false;
+        }
+        return mAdapterProperties.isLeHighDataThroughputPhySupported();
+    }
+
     public boolean isLeExtendedAdvertisingSupported() {
         return mAdapterProperties.isLeExtendedAdvertisingSupported();
     }

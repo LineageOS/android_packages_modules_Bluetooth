@@ -32,27 +32,31 @@ public abstract class BluetoothGattCallback {
      * remote device changing the PHY.
      *
      * @param gatt GATT client
-     * @param txPhy the transmitter PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}.
-     * @param rxPhy the receiver PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}.
+     * @param txPhy the transmitter PHY in use.
+     * @param rxPhy the receiver PHY in use.
      * @param status Status of the PHY update operation. {@link BluetoothGatt#GATT_SUCCESS} if the
      *     operation succeeds.
      */
-    public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {}
+    public void onPhyUpdate(
+            BluetoothGatt gatt,
+            @BluetoothDevice.PhyType int txPhy,
+            @BluetoothDevice.PhyType int rxPhy,
+            int status) {}
 
     /**
      * Callback triggered as result of {@link BluetoothGatt#readPhy}
      *
      * @param gatt GATT client
-     * @param txPhy the transmitter PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}.
-     * @param rxPhy the receiver PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}.
+     * @param txPhy the transmitter PHY in use.
+     * @param rxPhy the receiver PHY in use.
      * @param status Status of the PHY read operation. {@link BluetoothGatt#GATT_SUCCESS} if the
      *     operation succeeds.
      */
-    public void onPhyRead(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {}
+    public void onPhyRead(
+            BluetoothGatt gatt,
+            @BluetoothDevice.PhyType int txPhy,
+            @BluetoothDevice.PhyType int rxPhy,
+            int status) {}
 
     /**
      * Callback indicating when GATT client has connected/disconnected to/from a remote GATT server.

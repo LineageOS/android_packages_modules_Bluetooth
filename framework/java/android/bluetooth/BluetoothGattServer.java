@@ -721,20 +721,20 @@ public final class BluetoothGattServer implements BluetoothProfile {
      * <p>{@link BluetoothGattServerCallback#onPhyUpdate} will be triggered as a result of this
      * call, even if no PHY change happens. It is also triggered when remote device updates the PHY.
      *
-     * @param device The remote device to send this response to
-     * @param txPhy preferred transmitter PHY. Bitwise OR of any of {@link
-     *     BluetoothDevice#PHY_LE_1M_MASK}, {@link BluetoothDevice#PHY_LE_2M_MASK}, and {@link
-     *     BluetoothDevice#PHY_LE_CODED_MASK}.
-     * @param rxPhy preferred receiver PHY. Bitwise OR of any of {@link
-     *     BluetoothDevice#PHY_LE_1M_MASK}, {@link BluetoothDevice#PHY_LE_2M_MASK}, and {@link
-     *     BluetoothDevice#PHY_LE_CODED_MASK}.
+     * @param device The remote device to send this response to.
+     * @param txPhy preferred transmitter PHY.
+     * @param rxPhy preferred receiver PHY.
      * @param phyOptions preferred coding to use when transmitting on the LE Coded PHY. Can be one
      *     of {@link BluetoothDevice#PHY_OPTION_NO_PREFERRED}, {@link BluetoothDevice#PHY_OPTION_S2}
-     *     or {@link BluetoothDevice#PHY_OPTION_S8}
+     *     or {@link BluetoothDevice#PHY_OPTION_S8}.
      */
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public void setPreferredPhy(BluetoothDevice device, int txPhy, int rxPhy, int phyOptions) {
+    public void setPreferredPhy(
+            BluetoothDevice device,
+            @BluetoothDevice.PhyMask int txPhy,
+            @BluetoothDevice.PhyMask int rxPhy,
+            int phyOptions) {
         try {
             mService.serverSetPreferredPhy(
                     mBluetoothGattServerCallback,
