@@ -974,11 +974,9 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /* p_da
     if (!bta_gattc_is_data_queued(p_clcb, p_q_cmd)) {
       osi_free_and_reset((void**)&p_q_cmd);
     }
-  } else if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
-    bta_gattc_continue(p_clcb);
   }
-  if (com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
-      p_clcb->p_q_cmd == nullptr) {
+
+  if (p_clcb->p_q_cmd == nullptr) {
     bta_gattc_continue(p_clcb);
   }
 
