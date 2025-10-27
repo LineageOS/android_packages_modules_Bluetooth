@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,111 +14,96 @@
  * limitations under the License.
  */
 
-package android.bluetooth;
+package android.bluetooth
 
-import android.util.Log;
+import android.util.Log
+import io.grpc.stub.ClientCallStreamObserver
+import io.grpc.stub.ClientResponseObserver
+import java.util.Spliterator
+import java.util.Spliterators
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.function.Consumer
 
-import io.grpc.stub.ClientCallStreamObserver;
-import io.grpc.stub.ClientResponseObserver;
+private const val TAG = "StreamObserverSpliterator"
 
-import java.util.Iterator;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
+class StreamObserverSpliterator<ReqT, RespT> :
+    Spliterator<RespT>, ClientResponseObserver<ReqT, RespT> {
 
-public class StreamObserverSpliterator<ReqT, RespT>
-        implements Spliterator<RespT>, ClientResponseObserver<ReqT, RespT> {
-    private static final String TAG = StreamObserverSpliterator.class.getSimpleName();
-    private static final Object COMPLETED_INDICATOR = new Object();
-    private static final long WAIT_TIME_FOR_CANCEL_MS = 100;
-
-    private final BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
-
-    private ClientCallStreamObserver<ReqT> mRequestStream;
+    private val queue: BlockingQueue<Any> = LinkedBlockingQueue()
+    private var requestStream: ClientCallStreamObserver<ReqT>? = null
 
     /**
      * Creates and returns an iterator over the elements contained in the internal blocking queue.
      *
-     * <p>The iterator is based on this class's Spliterator implementation. As elements are consumed
+     * The iterator is based on this class's Spliterator implementation. As elements are consumed
      * from the iterator, they are removed from the queue. The iterator continues to provide
      * elements as long as new items are added to the queue via the onNext method or until the
      * onCompleted method is called.
      *
-     * <p>If the onError method was called previously and the corresponding Throwable is retrieved
-     * by the iterator, it will throw a RuntimeException wrapping the original Throwable.
+     * If the onError method was called previously and the corresponding Throwable is retrieved by
+     * the iterator, it will throw a RuntimeException wrapping the original Throwable.
      *
      * @return an iterator over the elements contained in the internal blocking queue
      */
-    public Iterator<RespT> iterator() {
-        return Spliterators.iterator(this);
-    }
+    fun iterator(): Iterator<RespT> = Spliterators.iterator(this)
 
-    /** Cancels the ongoing call. See {@link ClientCallStreamObserver#cancel(String, Throwable)}. */
-    public void cancel(String message) {
-        if (mRequestStream != null) {
-            mRequestStream.cancel(message, null);
+    /** Cancels the ongoing call. See [ClientCallStreamObserver.cancel]. */
+    fun cancel(message: String) {
+        val stream = requestStream
+        if (stream != null) {
+            stream.cancel(message, null)
             try {
-                Thread.sleep(WAIT_TIME_FOR_CANCEL_MS);
-            } catch (Exception e) {
-                Log.e(TAG, "Exception happened while waiting for cancel", e);
+                Thread.sleep(WAIT_TIME_FOR_CANCEL_MS)
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception happened while waiting for cancel", e)
             }
         } else {
-            throw new UnsupportedOperationException(
-                    "Canceling operation is not supported when request type is missing!");
+            throw UnsupportedOperationException(
+                "Canceling operation is not supported when request type is missing!"
+            )
         }
     }
 
-    @Override
-    public void beforeStart(ClientCallStreamObserver<ReqT> requestStream) {
-        mRequestStream = requestStream;
+    override fun beforeStart(requestStream: ClientCallStreamObserver<ReqT>) {
+        this@StreamObserverSpliterator.requestStream = requestStream
     }
 
-    @Override
-    public int characteristics() {
-        return ORDERED | NONNULL;
-    }
+    override fun characteristics() = Spliterator.ORDERED or Spliterator.NONNULL
 
-    @Override
-    public long estimateSize() {
-        return Long.MAX_VALUE;
-    }
+    override fun estimateSize() = Long.MAX_VALUE
 
-    @Override
-    public boolean tryAdvance(Consumer<? super RespT> action) {
+    override fun tryAdvance(action: Consumer<in RespT>): Boolean {
         try {
-            Object item = mQueue.take();
-            if (item == COMPLETED_INDICATOR) {
-                return false;
+            when (val item = queue.take()) {
+                COMPLETED_INDICATOR -> return false
+                is Throwable -> throw RuntimeException(item)
+                else -> {
+                    @Suppress("UNCHECKED_CAST") action.accept(item as RespT)
+                    return true
+                }
             }
-            if (item instanceof Throwable) {
-                throw new RuntimeException((Throwable) item);
-            }
-            action.accept((RespT) item);
-            return true;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (e: InterruptedException) {
+            throw RuntimeException(e)
         }
     }
 
-    @Override
-    public Spliterator<RespT> trySplit() {
-        return null;
+    override fun trySplit(): Spliterator<RespT>? = null
+
+    override fun onNext(value: RespT) {
+        queue.add(value)
     }
 
-    @Override
-    public void onNext(RespT value) {
-        mQueue.add(value);
+    override fun onError(t: Throwable) {
+        queue.add(t)
     }
 
-    @Override
-    public void onError(Throwable t) {
-        mQueue.add(t);
+    override fun onCompleted() {
+        queue.add(COMPLETED_INDICATOR)
     }
 
-    @Override
-    public void onCompleted() {
-        mQueue.add(COMPLETED_INDICATOR);
+    private companion object {
+        private val COMPLETED_INDICATOR = Any()
+        private const val WAIT_TIME_FOR_CANCEL_MS = 100L
     }
 }
