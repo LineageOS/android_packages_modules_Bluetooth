@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "remove_hop_from_le_adv_set_term"
-    namespace: "bluetooth"
-    description: "Remove one hop from the handling of LE Advertising Set Terminated handling to be consistent with the add_hop_to_event_callback flagged change for subevent callback"
-    bug: "407893031"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "set_ptr_null_after_free"
     namespace: "bluetooth"
     description: "Set the alarm pointers to null after freeing them"

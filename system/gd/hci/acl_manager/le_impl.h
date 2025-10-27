@@ -710,14 +710,6 @@ public:
             conn_handle, DataAsPeripheral{adv_set_address, adv_set_id, is_discoverable});
 
     if (connection != nullptr) {
-      if (!com::android::bluetooth::flags::remove_hop_from_le_adv_set_term()) {
-        le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
-                                                  common::Unretained(le_client_callbacks_),
-                                                  connection->GetRemoteAddress(),
-                                                  std::move(connection)));
-        return;
-      }
-
       // Remove one hop from the handling of LE Advertising Set Terminated event.
       // Serialize the OnLeConnectSuccess call as these are on the same thread and handler.
       // This is added to handle the LTK and LE Advertising Set Terminated events in the same
