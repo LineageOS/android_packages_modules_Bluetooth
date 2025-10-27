@@ -28,12 +28,16 @@ import android.bluetooth.SdpPseRecord;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.android.tests.bluetooth.MockitoRule;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /** Test cases for {@link PbapSdpRecord}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapSdpRecordTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     private final BluetoothDevice mDevice = getTestDevice(1);
 

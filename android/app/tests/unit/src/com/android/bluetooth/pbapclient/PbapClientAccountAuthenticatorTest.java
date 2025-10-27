@@ -44,7 +44,6 @@ public class PbapClientAccountAuthenticatorTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock AccountAuthenticatorResponse mResponse;
-
     @Mock Account mAccount;
 
     private PbapClientAccountAuthenticator mAuthenticator;

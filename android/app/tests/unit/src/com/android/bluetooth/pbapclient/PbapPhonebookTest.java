@@ -35,7 +35,6 @@ import java.util.Arrays;
 /** Test cases for {@link PbapPhonebook}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapPhonebookTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     // *********************************************************************************************
