@@ -893,6 +893,43 @@ public class VolumeControlServiceTest {
         verify(mNativeInterface).setGroupVolume(eq(GROUP_ID_2), eq(expectedAfVol));
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_VCP_SKIP_IGNORING_VOLUME_DURING_BROADCAST)
+    public void connectedDeviceWithUserPersistFlagSet_whileBroadcastActive() {
+        int volumeDevice = 56;
+        int volumeFromAf = 123;
+        int flags = VolumeControlService.VOLUME_FLAGS_PERSISTED_USER_SET_VOLUME_MASK;
+        boolean initialMuteState = false;
+        boolean initialAutonomousFlag = true;
+
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice1, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList(mDevice1));
+        }
+
+        generateDeviceAvailableMessageFromNative(mDevice1, GROUP_ID, 1, 1);
+        generateConnectionMessageFromNative(mDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_CONNECTED);
+        assertThat(mService.getDevices()).contains(mDevice1);
+
+        // Simulate active broadcast
+        when(mLeAudioService.isBroadcastActive()).thenReturn(true);
+
+        // Device with persisted volume connects.
+        // `mIgnoreSetVolumeFromAF=true` should be skipped due to active broadcast.
+        generateVolumeStateChanged(
+                mDevice1,
+                LE_AUDIO_GROUP_ID_INVALID,
+                volumeDevice,
+                flags,
+                initialMuteState,
+                initialAutonomousFlag);
+
+        // Volume from AF should NOT be ignored and should be sent to native.
+        mService.setGroupVolume(GROUP_ID, volumeFromAf);
+        verify(mNativeInterface).setGroupVolume(eq(GROUP_ID), eq(volumeFromAf));
+    }
+
     private void testConnectedDeviceWithResetFlag(
             int resetVolumeDeviceOne, int resetVolumeDeviceTwo) {
         int streamVolume = 30;
