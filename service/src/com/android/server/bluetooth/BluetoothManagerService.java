@@ -1285,11 +1285,17 @@ class BluetoothManagerService {
                     if (mState.oneOf(State.TURNING_ON, State.ON)) {
                         bluetoothStateChangeHandler(mState.get(), State.TURNING_OFF);
                     }
-                    if (mState.oneOf(State.TURNING_OFF)) {
-                        bluetoothStateChangeHandler(mState.get(), State.BLE_ON);
-                    }
-                    if (mState.oneOf(State.BLE_ON)) {
-                        bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
+                    if (Flags.skipBleOnWhenTurningOff()) {
+                        if (mState.oneOf(State.TURNING_OFF, State.BLE_ON)) {
+                            bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
+                        }
+                    } else {
+                        if (mState.oneOf(State.TURNING_OFF)) {
+                            bluetoothStateChangeHandler(mState.get(), State.BLE_ON);
+                        }
+                        if (mState.oneOf(State.BLE_ON)) {
+                            bluetoothStateChangeHandler(mState.get(), State.BLE_TURNING_OFF);
+                        }
                     }
                     if (mState.oneOf(State.BLE_TURNING_ON, State.BLE_TURNING_OFF)) {
                         bluetoothStateChangeHandler(mState.get(), State.OFF);
