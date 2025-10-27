@@ -38,7 +38,6 @@ import android.text.util.Rfc822Tokenizer;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;

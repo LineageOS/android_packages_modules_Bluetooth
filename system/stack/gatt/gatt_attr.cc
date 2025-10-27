@@ -26,6 +26,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <deque>
 #include <map>
@@ -265,6 +266,13 @@ static tGATT_STATUS read_attr_value(tCONN_ID conn_id, uint16_t handle, tGATT_VAL
     return GATT_READ_NOT_PERMIT;
   }
 
+  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed() &&
+      handle == gatt_cb.handle_of_srv_changed_cccd) {
+    /* GATT_UUID_GATT_SRV_CHGD CCCD*/
+    log::verbose("Read: cccd of service changed");
+    return GATT_READ_NOT_PERMIT;
+  }
+
   return GATT_NOT_FOUND;
 }
 
@@ -302,6 +310,13 @@ static tGATT_STATUS proc_write_req(tCONN_ID conn_id, tGATTS_REQ_TYPE, tGATT_WRIT
   /* GATT_UUID_GATT_SRV_CHGD */
   if (handle == gatt_cb.handle_of_h_r) {
     return GATT_WRITE_NOT_PERMIT;
+  }
+
+  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed() &&
+      handle == gatt_cb.handle_of_srv_changed_cccd) {
+    /* GATT_UUID_GATT_SRV_CHGD CCCD*/
+    log::verbose("Write: cccd of service changed");
+    return GATT_SUCCESS;
   }
 
   return GATT_NOT_FOUND;
@@ -419,49 +434,68 @@ void gatt_profile_db_init(void) {
   Uuid service_uuid = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
 
   Uuid srv_changed_char_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
+  Uuid srv_changed_desc_cccd_uuid = Uuid::From16Bit(GATT_UUID_CLIENT_CHAR_CONFIGURATION);
   Uuid svr_sup_feat_uuid = Uuid::From16Bit(GATT_UUID_SERVER_SUP_FEAT);
   Uuid cl_sup_feat_uuid = Uuid::From16Bit(GATT_UUID_CLIENT_SUP_FEAT);
   Uuid database_hash_uuid = Uuid::From16Bit(GATT_UUID_DATABASE_HASH);
 
-  btgatt_db_element_t service[] = {
-          {
-                  .uuid = service_uuid,
-                  .type = BTGATT_DB_PRIMARY_SERVICE,
-          },
-          {
-                  .uuid = srv_changed_char_uuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_INDICATE,
-                  .permissions = 0,
-          },
-          {
-                  .uuid = svr_sup_feat_uuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_READ,
-                  .permissions = GATT_PERM_READ,
-          },
-          {
-                  .uuid = cl_sup_feat_uuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE,
-                  .permissions = GATT_PERM_READ | GATT_PERM_WRITE,
-          },
-          {
-                  .uuid = database_hash_uuid,
-                  .type = BTGATT_DB_CHARACTERISTIC,
-                  .properties = GATT_CHAR_PROP_BIT_READ,
-                  .permissions = GATT_PERM_READ,
-          }};
+  std::vector<btgatt_db_element_t> service;
+  btgatt_db_element_t gatt_server;
+  gatt_server.uuid = service_uuid;
+  gatt_server.type = BTGATT_DB_PRIMARY_SERVICE;
+  service.push_back(gatt_server);
 
-  if (GATTS_AddService(gatt_cb.gatt_if, service, sizeof(service) / sizeof(btgatt_db_element_t)) !=
-      GATT_SERVICE_STARTED) {
+  btgatt_db_element_t service_changed_char;
+  service_changed_char.uuid = srv_changed_char_uuid;
+  service_changed_char.type = BTGATT_DB_CHARACTERISTIC;
+  service_changed_char.properties = GATT_CHAR_PROP_BIT_INDICATE;
+  service_changed_char.permissions = 0;
+  service.push_back(service_changed_char);
+
+  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed()) {
+    btgatt_db_element_t service_changed_desc;
+    service_changed_desc.uuid = srv_changed_desc_cccd_uuid;
+    service_changed_desc.type = BTGATT_DB_DESCRIPTOR;
+    service_changed_desc.permissions = GATT_PERM_WRITE | GATT_PERM_READ;
+    service.push_back(service_changed_desc);
+  }
+
+  btgatt_db_element_t server_supp_features_char;
+  server_supp_features_char.uuid = svr_sup_feat_uuid;
+  server_supp_features_char.type = BTGATT_DB_CHARACTERISTIC;
+  server_supp_features_char.properties = GATT_CHAR_PROP_BIT_READ;
+  server_supp_features_char.permissions = GATT_PERM_READ;
+  service.push_back(server_supp_features_char);
+
+  btgatt_db_element_t client_supp_features_char;
+  client_supp_features_char.uuid = cl_sup_feat_uuid;
+  client_supp_features_char.type = BTGATT_DB_CHARACTERISTIC;
+  client_supp_features_char.properties = GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE;
+  client_supp_features_char.permissions = GATT_PERM_READ | GATT_PERM_WRITE;
+  service.push_back(client_supp_features_char);
+
+  btgatt_db_element_t database_hash_char;
+  database_hash_char.uuid = database_hash_uuid;
+  database_hash_char.type = BTGATT_DB_CHARACTERISTIC;
+  database_hash_char.properties = GATT_CHAR_PROP_BIT_READ;
+  database_hash_char.permissions = GATT_PERM_READ;
+  service.push_back(database_hash_char);
+
+  if (GATTS_AddService(gatt_cb.gatt_if, service.data(), service.size()) != GATT_SERVICE_STARTED) {
     log::warn("Unable to add GATT server service gatt_if:{}", gatt_cb.gatt_if);
   }
 
   gatt_cb.handle_of_h_r = service[1].attribute_handle;
-  gatt_cb.handle_sr_supported_feat = service[2].attribute_handle;
-  gatt_cb.handle_cl_supported_feat = service[3].attribute_handle;
-  gatt_cb.handle_of_database_hash = service[4].attribute_handle;
+  if (com::android::bluetooth::flags::gatt_add_cccd_on_service_changed()) {
+    gatt_cb.handle_of_srv_changed_cccd = service[2].attribute_handle;
+    gatt_cb.handle_sr_supported_feat = service[3].attribute_handle;
+    gatt_cb.handle_cl_supported_feat = service[4].attribute_handle;
+    gatt_cb.handle_of_database_hash = service[5].attribute_handle;
+  } else {
+    gatt_cb.handle_sr_supported_feat = service[2].attribute_handle;
+    gatt_cb.handle_cl_supported_feat = service[3].attribute_handle;
+    gatt_cb.handle_of_database_hash = service[4].attribute_handle;
+  }
 
   gatt_cb.gatt_svr_supported_feat_mask |= BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
   gatt_cb.gatt_cl_supported_feat_mask |= BLE_GATT_CL_ANDROID_SUP_FEAT;

@@ -21,13 +21,13 @@
 
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
 #include <string>
 
 #include "main/shim/acl_api.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "test/common/mock_functions.h"
 
 void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& /* raw_address */) {

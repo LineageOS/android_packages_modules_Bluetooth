@@ -110,7 +110,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.hamcrest.MockitoHamcrest;
 
@@ -577,7 +576,7 @@ public class BassClientServiceTest {
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
 
         assertThat(mBassClientService.isSearchInProgress()).isFalse();
@@ -646,7 +645,7 @@ public class BassClientServiceTest {
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
 
         clearInvocations(mScanController);
@@ -3897,7 +3896,7 @@ public class BassClientServiceTest {
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         // Make another stream request with no context validate
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -5179,26 +5178,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
-    public void bigMonitoring_publicStopBroadcastMonitoring_withoutScanning() {
-        bigMonitoringWithoutScanning();
-
-        mBassClientService.stopBroadcastMonitoring();
-        verifyStopBroadcastMonitoringWithUnsync();
-        checkNoResumeSynchronizationByBig();
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
-    public void bigMonitoring_publicStopBroadcastMonitoring_duringScanning() {
-        bigMonitoringDuringScanning();
-
-        mBassClientService.stopBroadcastMonitoring();
-        verifyStopBroadcastMonitoringWithoutUnsync();
-        checkNoResumeSynchronizationByBig();
-    }
-
-    @Test
     public void bigMonitoring_unsync_withoutScanning() {
         bigMonitoringWithoutScanning();
 
@@ -6362,6 +6341,54 @@ public class BassClientServiceTest {
         }
     }
 
+    /**
+     * Test that if a sink connects and its peer has an active source that the sink does not know
+     * about, the service will NOT add the peer's source to the newly connected sink if broadcast is
+     * suspended.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ADD_SOURCE_FROM_PEER_DEVICE)
+    public void sinkBassStateReady_doNotAddNewSourceFromPeerIfSuspended() throws RemoteException {
+        prepareConnectedDeviceGroup();
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
+        // Add broadcast source to peer device mCurrentDevice
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                clearInvocations(sm);
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        mBroadcastMetadata1,
+                        TEST_SOURCE_ID,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                        mBroadcastMetadata1.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null,
+                        0L);
+                doReturn(mBroadcastMetadata1)
+                        .when(sm)
+                        .getCurrentBroadcastMetadata(eq(TEST_SOURCE_ID));
+                doReturn(true).when(sm).isSyncedToTheSource(eq(TEST_SOURCE_ID));
+            }
+        }
+
+        mBassClientService.suspendAllReceiversSourceSynchronization();
+
+        mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice1);
+        mLooper.dispatchAll();
+
+        // Verify adding source is NOT performed on mCurrentDevice1 once BASS state ready
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice1)) {
+                ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+                verify(sm, never()).sendMessage(messageCaptor.capture());
+            }
+        }
+    }
+
     /** Test add pending source when BASS state get ready */
     @Test
     public void sinkBassStateReady_addPendingSource() throws RemoteException {
@@ -7139,7 +7166,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_ResumeByBig() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7163,7 +7189,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_outOfRange() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7195,7 +7220,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_failedSyncOnPastRequest() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7236,7 +7260,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
     public void broadcastMonitoringOnResume_stopSourceReceivers() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7477,7 +7500,7 @@ public class BassClientServiceTest {
         // No more updates
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -7518,7 +7541,7 @@ public class BassClientServiceTest {
         // No more updates
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -7566,7 +7589,7 @@ public class BassClientServiceTest {
         // No more updates
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -7758,7 +7781,7 @@ public class BassClientServiceTest {
         // Check if no metadataUpdate on PA/BIG report
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            Mockito.clearInvocations(sm);
+            clearInvocations(sm);
         }
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
@@ -8276,5 +8299,93 @@ public class BassClientServiceTest {
                         MockitoHamcrest.argThat(AllOf.allOf(matchers)),
                         any(),
                         any(BroadcastOptions.class));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_addClientForBigChannelMap() {
+        // Mock that the broadcast is local
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is called with ADD action
+        verify(mLeAudioService)
+                .setBigChannelMapClassification(
+                        eq(BassClientService.SetBigChannelMapClassificationAction.ADD.getValue()),
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1.getBroadcastId()));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_deleteClientForBigChannelMap() {
+        // Mock that the broadcast is local
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Clear the mock so we can focus on verifying the DELETE action.
+        clearInvocations(mLeAudioService);
+
+        // Create a new metadata object with a null device to simulate removal.
+        BluetoothLeBroadcastMetadata emptyMetadata =
+                new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
+                        .setSourceDevice(
+                        getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_PUBLIC),
+                        ADDRESS_TYPE_PUBLIC).build();
+
+        // Inject a state change using the empty metadata
+        // This should cause `isEmptyBluetoothDevice` to be true, and `newSyncStatus` to be
+        // `NOT_SYNCED`
+        injectRemoteSourceStateChanged(
+                emptyMetadata, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is called with DELETE action
+        verify(mLeAudioService)
+                .setBigChannelMapClassification(
+                        eq(BassClientService.SetBigChannelMapClassificationAction.DELETE
+                                                                                .getValue()),
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1.getBroadcastId()));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_notLocalBroadcast_doNothing() {
+        // Mock that the broadcast is not local
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(null);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is never called
+        verify(mLeAudioService, never())
+                .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_noTargetPaSyncStateChange_doNothing() {
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is never called
+        verify(mLeAudioService, never())
+                .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
     }
 }

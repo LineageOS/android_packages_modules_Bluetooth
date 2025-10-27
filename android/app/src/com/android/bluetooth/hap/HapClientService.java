@@ -106,7 +106,7 @@ public class HapClientService extends ConnectableProfile {
             AdapterService adapterService,
             Looper looper,
             HapClientNativeInterface nativeInterface) {
-        super(BluetoothProfile.HAP_CLIENT, requireNonNull(adapterService));
+        super(BluetoothProfile.HAP_CLIENT, adapterService);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

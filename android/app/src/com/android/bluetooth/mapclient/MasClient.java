@@ -18,7 +18,6 @@ package com.android.bluetooth.mapclient;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.SdpMasRecord;
@@ -28,9 +27,9 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothObexTransport;
-import com.android.bluetooth.ObexAppParameters;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
+import com.android.bluetooth.obex.ObexAppParameters;
 import com.android.internal.util.StateMachine;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
@@ -113,7 +112,6 @@ public class MasClient {
         mHandler.obtainMessage(CONNECT).sendToTarget();
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
     private void connect() {
         try {
             int l2capSocket = mSdpMasRecord.getL2capPsm();

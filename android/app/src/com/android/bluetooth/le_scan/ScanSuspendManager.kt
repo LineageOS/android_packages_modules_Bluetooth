@@ -72,9 +72,7 @@ internal class ScanSuspendManager(
 
     private fun handleSuspendAllScans() {
         fun suspendScan(client: ScanClient) {
-            client.appScanStats.ifPresent { stats: AppScanStats ->
-                stats.recordScanSuspend(client.scannerId)
-            }
+            client.appScanStats?.recordScanSuspend(client.scannerId)
             Log.d(TAG, "Suspend scan for $client")
             scanManager.stopScan(client.scannerId)
             scanManager.suspendedScanQueue.add(client)

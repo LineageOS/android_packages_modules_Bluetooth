@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.TestUtils.mockGetRemoteDevice
@@ -53,18 +54,21 @@ class BluetoothStorageManagerTest {
     @get:Rule val tempFolder = TemporaryFolder()
 
     @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var context: Context
     @Mock private lateinit var packageManager: PackageManager
 
-    private lateinit var testDispatcher: TestDispatcher
-    private lateinit var storageManager: BluetoothStorageManager
+    private val context: Context = ApplicationProvider.getApplicationContext()
     private val device1: BluetoothDevice = getTestDevice(0)
     private val device2: BluetoothDevice = getTestDevice(1)
 
+    private lateinit var testDispatcher: TestDispatcher
+    private lateinit var storageManager: BluetoothStorageManager
+
     @Before
     fun setUp() {
-        doReturn(context).whenever(adapterService).createDeviceProtectedStorageContext()
-        doReturn(tempFolder.root).whenever(context).filesDir
+        doReturn(adapterService).whenever(adapterService).createDeviceProtectedStorageContext()
+        doReturn(context.applicationInfo).whenever(adapterService).applicationInfo
+        doReturn("com.android.bluetooth").whenever(adapterService).packageName
+        doReturn(tempFolder.root).whenever(adapterService).filesDir
         whenever(adapterService.getDatabasePath(anyString())).thenAnswer {
             File(tempFolder.root, it.getArgument(0) as String)
         }

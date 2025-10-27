@@ -12,9 +12,12 @@ flag {
 }
 
 flag {
-    name: "system_server_messenger"
+    name: "bluetooth_system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
     bug: "321804999"
 }
 
@@ -23,6 +26,16 @@ flag {
     namespace: "bluetooth"
     description: "Now that transitioning from ON to BLE_ON go through OFF, we should not broadcast BLE_ON when going OFF."
     bug: "444761370"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reject_enable_from_unknown_requester"
+    namespace: "bluetooth"
+    description: "Sometimes, the requester of enable/enableBle is unknown, making investigation impossible. Let's reject them to trace and properly identify the caller"
+    bug: "453047643"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -48,3 +61,4 @@ flag {
     description: "Backup and restore airplane mode and auto on bluetooth settings"
     bug: "450288332"
 }
+

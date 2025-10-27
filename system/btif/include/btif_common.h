@@ -23,6 +23,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <hardware/bluetooth.h>
 #include <stdlib.h>
@@ -32,6 +33,7 @@
 #include "abstract_message_loop.h"
 #include "bta/include/bta_api.h"
 #include "common/message_loop_thread.h"
+#include "include/hardware/bluetooth.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 
@@ -154,7 +156,7 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, bt_bon
 void invoke_address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
 void invoke_le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                     uint8_t identity_address_type);
-void invoke_acl_state_changed_cb(bt_status_t status, tAclLinkSpec& link_spec, bt_acl_state_t state,
+void invoke_acl_state_changed_cb(bt_status_t status, AclLinkSpec& link_spec, bt_acl_state_t state,
                                  bt_hci_error_code_t hci_reason, bt_conn_direction_t direction,
                                  uint16_t acl_handle);
 void invoke_thread_evt_cb(bt_cb_thread_evt event);

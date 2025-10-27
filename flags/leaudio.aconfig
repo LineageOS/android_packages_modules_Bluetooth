@@ -32,6 +32,16 @@ flag {
 }
 
 flag {
+    name: "csis_quirk_for_single_device_with_sirk_all_zeros"
+    namespace: "bluetooth"
+    description: "Allow LeAudio device with invalid CSIS when set size is 1 and sirk is ALL zeros"
+    bug: "447588233"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_dynamic_direction_opening"
     namespace: "bluetooth"
     description: "Enable direction only when needed"
@@ -46,6 +56,16 @@ flag {
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"
     bug: "379178585"
+}
+
+flag {
+    name: "leaudio_fix_allocation_in_codec_config"
+    namespace: "bluetooth"
+    description: "Fix not setting allocation LTV in CodecConfig for mono allication"
+    bug: "454311602"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
 
 flag {
@@ -83,26 +103,6 @@ flag {
     namespace: "bluetooth"
     description: "use aggressive parameters for LE Audio device"
     bug: "400607635"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_remove_sink_metadata_on_switch_to_local"
-    namespace: "bluetooth"
-    description: "Allow to remove sink metadata while switching to local broadcast"
-    bug: "404752913"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_allow_monitoring_on_resume"
-    namespace: "bluetooth"
-    description: "Allow broadcast monitoring on resume from suspend"
-    bug: "404797794"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -420,4 +420,24 @@ flag {
     namespace: "bluetooth"
     description: "Update CIG/CIS parameter without destroying the group"
     bug: "450606834"
+}
+
+flag {
+    name: "lea_asrc_rotate_burst_buffer"
+    namespace: "bluetooth"
+    description: "Use burst buffer with pool rotation"
+    bug: "453508454"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "coordinated_remove_bond"
+    namespace: "bluetooth"
+    description: "Remove all coordinated set members when any member is requested to be removed"
+    bug: "454419225"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }

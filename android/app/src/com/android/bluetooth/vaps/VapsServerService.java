@@ -204,29 +204,38 @@ public class VapsServerService extends ProfileService {
             Log.e(TAG, "Event ignored, service not available: " + stackEvent);
             return;
         }
-        BluetoothDevice device = stackEvent.device;
+        mHandler.post(
+                () -> {
+                    BluetoothDevice device = stackEvent.device;
 
-        switch (stackEvent.type) {
-            case VapsServerStackEvent.EVENT_TYPE_ON_INITIALIZED -> {
-                Log.d(TAG, "onInitialized");
-                setCcid();
-                Log.d(TAG, "Calling setVaeName after initialization");
-                setVaeName();
-            }
-            case VapsServerStackEvent.EVENT_TYPE_ON_START_VA_SESSION -> {
-                Log.d(TAG, "start VA session by remote Headset:" + device);
+                    switch (stackEvent.type) {
+                        case VapsServerStackEvent.EVENT_TYPE_ON_INITIALIZED -> {
+                            Log.d(TAG, "onInitialized");
+                            setCcid();
+                            Log.d(TAG, "Calling setVaeName after initialization");
+                            setVaeName();
+                        }
+                        case VapsServerStackEvent.EVENT_TYPE_ON_START_VA_SESSION -> {
+                            Log.d(TAG, "start VA session by remote Headset:" + device);
 
-                if (!activateVoiceRecognition(device)) {
-                    Log.w(TAG, "start VA session by remote Headset: failed request from " + device);
-                }
-            }
-            case VapsServerStackEvent.EVENT_TYPE_ON_STOP_VA_SESSION -> {
-                Log.d(TAG, "stop VA session by remote Headset:" + device);
-                if (!deactivateVoiceRecognition(device)) {
-                    Log.w(TAG, "stop VA session by remote Headset: failed request from " + device);
-                }
-            }
-            default -> {}
-        }
+                            if (!activateVoiceRecognition(device)) {
+                                Log.w(
+                                        TAG,
+                                        "start VA session by remote Headset: failed request from "
+                                                + device);
+                            }
+                        }
+                        case VapsServerStackEvent.EVENT_TYPE_ON_STOP_VA_SESSION -> {
+                            Log.d(TAG, "stop VA session by remote Headset:" + device);
+                            if (!deactivateVoiceRecognition(device)) {
+                                Log.w(
+                                        TAG,
+                                        "stop VA session by remote Headset: failed request from "
+                                                + device);
+                            }
+                        }
+                        default -> {}
+                    }
+                });
     }
 }

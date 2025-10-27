@@ -20,14 +20,18 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.IBluetoothGattCallback
 import android.bluetooth.IBluetoothGattServerCallback
+import android.os.IInterface
 import com.android.bluetooth.Utils.transportToString
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.gatt.HandleMap.Type
 import com.android.bluetooth.hid.HidHostService
 import java.util.UUID
 
 private const val TAG = "GattUtil"
 
 object GattUtil {
-    @JvmField val TAG_PREFIX = "BtGatt."
+    const val TAG_PREFIX = "BtGatt."
 
     private val HID_SERVICE_UUID = UUID.fromString("00001812-0000-1000-8000-00805F9B34FB")
 
@@ -58,6 +62,10 @@ object GattUtil {
 
     private val APPLE_NOTIFICATION_CENTER_SERVICE_UUID =
         UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0")
+
+    @JvmStatic
+    fun appNameOrUnknown(adapterService: AdapterService, uid: Int) =
+        adapterService.packageManager.getNameForUid(uid) ?: "Unknown App (UID: $uid)"
 
     @JvmStatic fun isHidSrvcUuid(uuid: UUID) = uuid == HID_SERVICE_UUID
 
@@ -112,7 +120,7 @@ object GattUtil {
      * This block should be kept in sync with system/stack/gatt/gatt_api.h
      */
     @JvmStatic
-    fun gattStatusToString(status: Int) =
+    fun statusToString(status: Int) =
         when (status) {
             BluetoothGatt.GATT_SUCCESS -> "GATT_SUCCESS (0x00)"
             0x01 -> "GATT_INVALID_HANDLE (0x01)"
@@ -163,24 +171,63 @@ object GattUtil {
         }
 
     @JvmStatic
-    fun dumpRegisterId(
+    fun dump(
+        advertiseManager: AdvertiseManager,
         clientMap: ContextMap<IBluetoothGattCallback>,
         serverMap: ContextMap<IBluetoothGattServerCallback>,
+        handleMap: HandleMap,
     ) = buildString {
-        append("  Client:\n")
+        appendLine("Registered App:")
+        appendLine("  Client:")
         dumpMapDetails(clientMap)
-        append("  Server:\n")
+        appendLine("  Server:")
         dumpMapDetails(serverMap)
-        append("\n\n")
+        appendLine()
+        appendLine("GATT Advertiser Map:")
+        advertiseManager.dump(this)
+        appendLine("GATT Client Map:")
+        clientMap.dump(this)
+        appendLine("GATT Server Map:")
+        serverMap.dump(this)
+        appendLine("GATT Handle Map:")
+        handleMap.dump(this)
     }
 
-    private fun StringBuilder.dumpMapDetails(map: ContextMap<*>) =
-        map.allApps.forEach { app ->
+    private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
+        map.getAllApps().forEach { app ->
             append("    app_if: ${app.id}")
-            append(", appName: ${app.packageName}")
+            append(", appName: ${app.name}")
             append(", transport: ${transportToString(app.transport)}")
-            app.mAttributionTag?.let { tag -> append(", tag: $tag") }
+            app.tag?.let { tag -> append(", tag: $tag") }
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
+
+    @JvmStatic
+    fun HandleMap.dump() = buildString {
+        appendLine("  Entries: ${mEntries.size}")
+        for (entry in mEntries) {
+            append("      ${entry.mServerIf}: [${entry.mHandle}] ")
+            when (entry.mType) {
+                Type.SERVICE -> appendLine("Service ${entry.mUuid}, started ${entry.mStarted}")
+                Type.CHARACTERISTIC -> appendLine("  Characteristic ${entry.mUuid}")
+                Type.DESCRIPTOR -> appendLine("    Descriptor ${entry.mUuid}")
+            }
+        }
+        appendLine("  Requests: ${mRequestMap.size}")
+        if (Flags.gattMultiBearerTransactions()) {
+            for (context in mRequestContextMap.values) {
+                appendLine("      $context")
+            }
+        } else {
+            for ((key, request) in mRequestMap) {
+                appendLine(
+                    "RequestData<" +
+                        "request_id/transaction_id: $key" +
+                        ", conn_id: ${request.connId()}" +
+                        ", handle: ${request.handle()}>"
+                )
+            }
+        }
+    }
 }

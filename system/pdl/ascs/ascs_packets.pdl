@@ -1,0 +1,301 @@
+little_endian_packets
+
+struct CodecId {
+    coding_format: 8,
+    vendor_company_id: 16,
+    vendor_codec_id: 16,
+}
+
+enum AseStateValue : 8 {
+    IDLE = 0,
+    CODEC_CONFIGURED = 1,
+    QOS_CONFIGURED = 2,
+    ENABLING = 3,
+    STREAMING = 4,
+    DISABLING = 5,
+    RELEASING = 6,
+}
+
+enum Framing : 8 {
+    UNFRAMED = 0x00,
+    FRAMED = 0x01,
+}
+
+enum PhyBitmask : 8 {
+    NONE = 0x00,
+    LE_1M_PHY = 0x01,
+    LE_2M_PHY = 0x02,
+    LE_CODED_PHY = 0x04,
+}
+
+packet AseCharValueBase {
+    ase_id : 8,
+    ase_state : AseStateValue,
+    _body_,
+}
+
+packet AseIdleCharValue : AseCharValueBase (ase_state = IDLE) {
+    // No additional ASE parameters in IDLE state
+}
+
+test AseIdleCharValue {
+    "\x01\x00",
+}
+
+packet AseCodecConfiguredCharValue : AseCharValueBase (ase_state = CODEC_CONFIGURED) {
+    // Additional ASE parameters in CODEC_CONFIGURED state
+    framing : Framing,
+    preferred_phy : PhyBitmask,
+    preferred_rtn : 8,
+    max_transport_latency : 16,
+    presentation_delay_min: 24,
+    presentation_delay_max: 24,
+    preferred_presentation_delay_min: 24,
+    preferred_presentation_delay_max: 24,
+    codec_id : CodecId,
+    _size_(codec_specific_configuration): 8,
+    codec_specific_configuration: 8[],
+}
+
+test AseCodecConfiguredCharValue {
+    // Ase ID, ASE State: 'Codec Configured', Framing: Unframed, Peferred PHY: 2M PHY, Preferred retransimssion Num.
+    // Max transport Latency, Pressentation delay min., Pressentation delay max., Preferred presentation delay min.
+    // Preferred presentation delay max., Codec ID, Codec spec. conf. length: 0
+    "\x01\x01\x01\x02\x04\x05\x00\x00\x01\x02\x10\x11\x12\x01\x02\x03\x09\x10\x11\x01\x02\x03\x04\x05\x00",
+    // Ase ID, ASE State, Framing, Peferred PHY, Preferred retransimssion Num., Max transport Latency,
+    // Pressentation delay min., Pressentation delay max., Preferred presentation delay min., Preferred presentation delay max.
+    // Codec ID, Codec spec. conf. length, Codec spec. conf.
+    "\x02\x01\x01\x02\x04\x05\x00\x00\x01\x02\x10\x11\x12\x01\x02\x03\x09\x10\x11\x01\x02\x03\x04\x05\x05\x0A\x0B\x0C\x0D\x0E",
+}
+
+packet AseQosConfiguredCharValue : AseCharValueBase (ase_state = QOS_CONFIGURED) {
+    // Additional ASE parameters in QOS_CONFIGURED state
+    cig_id : 8,
+    cis_id : 8,
+    sdu_interval : 24,
+    framing: Framing,
+    phy : PhyBitmask,
+    max_sdu : 16,
+    rtn : 8,
+    max_transport_latency : 16,
+    presentation_delay : 24,
+}
+
+test AseQosConfiguredCharValue {
+    "\x01\x02\x03\x04\x05\x06\x07\x01\x02\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F",
+}
+
+packet AseEnablingCharValue : AseCharValueBase (ase_state = ENABLING) {
+    // Additional ASE parameters in ENABLING state
+    cig_id : 8,
+    cis_id : 8,
+    _size_(metadata): 8,
+    metadata: 8[],
+}
+
+test AseEnablingCharValue {
+    // AseID, AseStateValue, CIG ID, CIS ID, Metadata len: 0
+    "\x01\x03\x03\x04\x00",
+    // Metadata len: 3, val: 0x020100
+    "\x02\x03\x03\x04\x03\x02\x01\x00",
+}
+
+packet AseStreamingCharValue : AseCharValueBase (ase_state = STREAMING) {
+    // Additional ASE parameters in STREAMING state
+    cig_id : 8,
+    cis_id : 8,
+    _size_(metadata): 8,
+    metadata: 8[],
+}
+
+test AseStreamingCharValue {
+    "\x01\x04\x03\x04\x00",
+    "\x02\x04\x03\x04\x03\x02\x01\x00",
+}
+
+packet AseDisablingCharValue : AseCharValueBase (ase_state = DISABLING) {
+    // Additional ASE parameters in DISABLING state
+    cig_id : 8,
+    cis_id : 8,
+    _size_(metadata): 8,
+    metadata: 8[],
+}
+
+test AseDisablingCharValue {
+    "\x01\x05\x03\x04\x00",
+    "\x02\x05\x03\x04\x03\x02\x01\x00",
+}
+
+packet AseReleasingCharValue : AseCharValueBase (ase_state = RELEASING) {
+    // No additional ASE parameters in RELEASING state
+}
+
+test AseReleasingCharValue {
+    "\x01\x06",
+}
+
+enum AseOpcode : 8 {
+    CONFIG_CODEC = 0x01,
+    CONFIG_QOS = 0x02,
+    ENABLE = 0x03,
+    RECEIVER_START_READY = 0x04,
+    DISABLE = 0x05,
+    RECEIVER_STOP_READY = 0x06,
+    UPDATE_METADATA = 0x07,
+    RELEASE = 0x08,
+}
+
+packet AseControlPointRequestBase {
+    opcode : AseOpcode,
+    _body_,
+}
+
+enum TargetPhy : 8 {
+    LE_1M_PHY = 0x01,
+    LE_2M_PHY = 0x02,
+    LE_CODEC_PHY = 0x03,
+}
+
+enum Targetlatency : 8 {
+    LOW_LATENCY = 0x01,
+    BALANCED_LATENCY_AND_RELIABILITY = 0x02,
+    HIGH_RELIABILITY = 0x03,
+}
+
+struct AseControlPointConfigCodecRequestAseEntry {
+    ase_id : 8,
+    target_latency : Targetlatency,
+    target_phy : TargetPhy,
+    codec_id : CodecId,
+    _size_(codec_specific_configuration) : 8,
+    codec_specific_configuration : 8[],
+}
+
+packet AseControlPointConfigCodecRequest : AseControlPointRequestBase(opcode = CONFIG_CODEC) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointConfigCodecRequestAseEntry[],
+}
+
+test AseControlPointConfigCodecRequest {
+    // CodecConfigSingle
+    "\x01\x01\x05\x03\x02\x06\x03\x02\x05\x04\x10\x02\x01\x10\x02\x02\x03\x05\x03\x07\x06\x05\x04\x03\x04\x03\x02",
+    // CodecConfigMultiple
+    "\x01\x01\x05\x03\x02\x06\x03\x02\x05\x04\x10\x02\x01\x10\x02\x02\x03\x05\x03\x07\x06\x05\x04\x03\x04\x03\x02",
+}
+
+struct AseControlPointConfigQosRequestAseEntry {
+    ase_id : 8,
+    cig_id : 8,
+    cis_id : 8,
+    sdu_interval : 24,
+    framing : Framing,
+    phy : PhyBitmask,
+    max_sdu : 16,
+    rtn : 8,
+    max_transport_latency : 16,
+    presentation_delay : 24,
+}
+
+packet AseControlPointConfigQosRequest : AseControlPointRequestBase(opcode = CONFIG_QOS) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointConfigQosRequestAseEntry[],
+}
+
+test AseControlPointConfigQosRequest {
+    // Single ASE - opcode, count_entries, entry
+    "\x02\x01\x01\x11\x12\x15\x14\x13\x01\x01\x03\x02\x04\x02\x03\x14\x13\x12",
+    // Multiple ASEs
+    // "\x02\x02\x01\x11\x12\x15\x14\x13\x01\x01\x03\x02\x04\x02\x03\x14\x13\x12\x11\x21\x22\x25\x24\x23\x02\x02\x23\x22\x24\x22\x23\x24\x23\x22",
+}
+
+struct AseControlPointAseMetadataEntry {
+    ase_id : 8,
+    _size_(metadata): 8,
+    metadata: 8[],
+}
+
+packet AseControlPointEnableRequest : AseControlPointRequestBase(opcode = ENABLE) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointAseMetadataEntry[],
+}
+
+struct AseControlPointAseEntry {
+    ase_id : 8,
+}
+
+packet AseControlPointReceiverStartReadyRequest : AseControlPointRequestBase(opcode = RECEIVER_START_READY) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointAseEntry[],
+}
+
+packet AseControlPointDisableRequest : AseControlPointRequestBase(opcode = DISABLE) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointAseEntry[],
+}
+
+packet AseControlPointReceiverStopReadyRequest : AseControlPointRequestBase(opcode = RECEIVER_STOP_READY) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointAseEntry[],
+}
+
+packet AseControlPointUpdateMetadataRequest : AseControlPointRequestBase(opcode = UPDATE_METADATA) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointAseMetadataEntry[],
+}
+
+packet AseControlPointReleaseRequest : AseControlPointRequestBase(opcode = RELEASE) {
+    _count_(ase_entries) : 8,
+    ase_entries : AseControlPointAseEntry[],
+}
+
+enum ResponseCode : 8 {
+    SUCCESS = 0x00,
+    UNSUPPORTED_OPCODE = 0x01,
+    INVALID_LENGTH = 0x02,
+    INVALID_ASE_ID = 0x03,
+    INVALID_ASE_STATE_TRANSITION = 0x04,
+    INVALID_ASE_DIRECTION = 0x05,
+    UNSUPPORTED_AUDIO_CAPABILITIES = 0x06,
+    UNSUPPORTED_CONFIGURATION_PARAMETER_VALUE = 0x07,
+    REJECTED_CONFIGURATION_PARAMETER_VALUE = 0x08,
+    INVALID_CONFIGURATION_PARAMETER_VALUE = 0x09,
+    UNSUPPORTED_METADATA = 0x0A,
+    REJECTED_METADATA = 0x0B,
+    INVALID_METADATA = 0x0C,
+    INSUFFICIENT_RESOURCES = 0x0D,
+    UNSPECIFIED_ERROR = 0x0E,
+}
+
+enum ConfigurationParameterReason : 8 {
+    CODEC_ID = 0x01,
+    CODEC_SPECIFIC_CONFIGURATION = 0x02,
+    SDU_INTERVAL = 0x03,
+    FRAMING = 0x04,
+    PHY = 0x05,
+    MAXIMUM_SDU_SIZE = 0x06,
+    RETRANSMISSION_NUMBER = 0x07,
+    MAX_TRANSPORT_LATENCY = 0x08,
+    PRESENTATION_DELAY = 0x09,
+    INVALID_ASE_CIS_MAPPING = 0x0A,
+}
+
+struct AseControlPointNotificationEntry {
+    ase_id : 8,
+    response_code : ResponseCode,
+    reason : 8,
+}
+
+packet AseControlPointNotification {
+    opcode : AseOpcode,
+    _count_(ase_entries): 8,
+    ase_entries: AseControlPointNotificationEntry[],
+}
+
+test AseControlPointNotification {
+    // Notification
+    "\x01\x02\x01\x01\x01\x03\x02\x03",
+    // ConfigurationIssue
+    "\x01\x02\x01\x07\x01\x03\x05\x05",
+    // MetadataIssue
+    "\x01\x02\x01\x0A\x01\x03\x0D\xFF",
+}

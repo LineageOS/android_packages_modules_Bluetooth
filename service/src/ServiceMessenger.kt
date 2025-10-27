@@ -24,6 +24,7 @@ import android.bluetooth.IBluetoothManager
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_DISABLED
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_FILTERED
 import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_FULL
+import android.content.AttributionSource
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,8 +33,22 @@ import android.os.Messenger
 import android.os.Parcelable
 import android.os.RemoteException
 import android.sysprop.BluetoothProperties
+import com.android.bluetooth.flags.Flags
 
 private const val TAG = "Messenger"
+
+private fun getCallerIdentity(source: AttributionSource): String =
+    if (!Flags.rejectEnableFromUnknownRequester()) {
+        requireNotNull(source.packageName) { "Unknown package caller. Identify yourself" }
+    } else {
+        val pkg = requireNotNull(source.packageName) { "Unknown package caller. Identify yourself" }
+        val tag = source.attributionTag
+        if ("android" == pkg) {
+            "$pkg/" + requireNotNull(tag) { "System generic caller must set the Attribution tag" }
+        } else {
+            tag?.let { "$pkg/$it" } ?: pkg
+        }
+    }
 
 internal class ServiceMessenger(
     looper: Looper,
@@ -44,7 +59,7 @@ internal class ServiceMessenger(
 
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, LOCAL_MAC_ADDRESS])
     override fun handleMessage(msg: Message) {
-        Log.i(TAG, "handleMessage: ${msg}")
+        Log.i(TAG, "handleMessage: $msg")
         val reply = Message.obtain()
         try {
             reply.obj = handleMessage(msg.sendingUid, msg.obj as Parcelable)
@@ -54,7 +69,7 @@ internal class ServiceMessenger(
             try {
                 msg.replyTo?.send(reply)
             } catch (e: RemoteException) {
-                Log.e(TAG, "handleMessage($msg): Failed to send reply=${reply}", e)
+                Log.e(TAG, "handleMessage($msg): Failed to send reply=$reply", e)
             }
         }
     }
@@ -81,18 +96,19 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.enableAllowed(source, foregroundRequired)
+                            val callerIdentity = getCallerIdentity(source)
                             if (bleToken != null) {
-                                api.enableBle(source.packageName!!, bleToken)
+                                api.enableBle(callerIdentity, bleToken)
                             } else if (isQuiet) {
-                                api.enableNoAutoConnect(source.packageName!!)
+                                api.enableNoAutoConnect(callerIdentity)
                             } else {
                                 api.enable(
                                     ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                                    source.packageName!!,
+                                    callerIdentity,
                                 )
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             false
                         }
                 }
@@ -106,13 +122,14 @@ internal class ServiceMessenger(
                     value =
                         try {
                             checker.disableAllowed(source, foregroundRequired)
+                            val callerIdentity = getCallerIdentity(source)
                             if (bleToken != null) {
-                                api.disableBle(source.packageName!!, bleToken)
+                                api.disableBle(callerIdentity, bleToken)
                             } else {
-                                api.disable(source.packageName!!, persist)
+                                api.disable(callerIdentity, persist)
                             }
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             false
                         }
                 }
@@ -127,7 +144,7 @@ internal class ServiceMessenger(
                             checker.factoryResetAllowed(source)
                             api.factoryReset()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             false
                         }
                 }
@@ -141,7 +158,7 @@ internal class ServiceMessenger(
                             checker.getAddressAllowed(source)
                             api.getAddress()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             IBluetoothManager.DEFAULT_MAC_ADDRESS
                         }
                 }
@@ -155,7 +172,7 @@ internal class ServiceMessenger(
                             checker.getNameAllowed(source)
                             api.getName()
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
-                            Log.e(TAG, "${obj}: FAILED", e)
+                            Log.e(TAG, "$obj: FAILED", e)
                             null
                         }
                 }
@@ -217,7 +234,7 @@ internal class ServiceMessenger(
                 checker.enforcePrivileged(sendingUid)
                 SystemServiceMessage.IsAutoEnabled.Reply().apply { value = api.isAutoOnEnabled() }
             }
-            else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
+            else -> throw IllegalArgumentException("Invalid command: [$obj] from $sendingUid")
         }
     }
 }

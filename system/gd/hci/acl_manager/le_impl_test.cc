@@ -17,6 +17,7 @@
 #include "hci/acl_manager/le_impl.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -33,7 +34,6 @@
 #include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
-#include "hci/octets.h"
 #include "os/handler.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
@@ -70,7 +70,7 @@ constexpr uint16_t kHciHandle = 123;
 [[maybe_unused]] constexpr bool kSkipFilterAcceptList = !kAddToFilterAcceptList;
 [[maybe_unused]] constexpr bool kIsDirectConnection = true;
 [[maybe_unused]] constexpr bool kIsBackgroundConnection = !kIsDirectConnection;
-constexpr hci::Octet16 kRotationIrk = {};
+constexpr Octet16 kRotationIrk = {};
 constexpr std::chrono::milliseconds kMinimumRotationTime(14 * 1000);
 constexpr std::chrono::milliseconds kMaximumRotationTime(16 * 1000);
 constexpr uint16_t kIntervalMax = 0x40;

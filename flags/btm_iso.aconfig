@@ -20,3 +20,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "btm_broadcast_sink_support"
+    namespace: "bluetooth"
+    description: "Support broadcast sink cmds/events"
+    bug: "452185775"
+}

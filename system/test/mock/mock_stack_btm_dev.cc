@@ -22,15 +22,12 @@
 #include "test/mock/mock_stack_btm_dev.h"
 
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <string>
-
 #include "stack/btm/btm_dev.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_addr.h"
-#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
 #include "test/common/mock_functions.h"
 

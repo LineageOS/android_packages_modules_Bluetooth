@@ -38,10 +38,11 @@ import com.android.bluetooth.le_scan.ScanUtil.callbackTypeToString
 import com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan
 import com.android.bluetooth.le_scan.ScanUtil.isBatchScan
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan
-import com.android.bluetooth.le_scan.ScanUtil.scanFilterToStringWithoutNullParam
 import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
+import com.android.bluetooth.le_scan.ScanUtil.toStringWithoutNullParam
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
+import com.android.bluetooth.util.indent
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -57,7 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - Recording scan starts ([recordScanStart]) and stops ([recordScanStop])
  * - Tracking scan suspensions ([recordScanSuspend]) and resumes ([recordScanResume])
  * - Aggregating total scan time, active time, and time spent in each scan mode (e.g. `oppScanTime`)
- * - Counting scan results received while the screen is on vs. off ([addResult], [addResults])
+ * - Counting scan results received while the screen is on vs. off ([addResults])
  * - Enforcing scan quotas by checking [isScanningTooFrequently] and [isScanningTooLong]
  * - Reporting scan activity and results to [ScanMetricsReporter]
  * - Storing application state like [appImportance] and [isRegistered]
@@ -75,25 +76,25 @@ class AppScanStats(
         internal val startTimestamp: Long,
         internal var endTimestamp: Long = 0,
         internal val scannerId: Int,
-        val scanMode: Int,
-        val scanCallbackType: Int,
-        val reportDelayMillis: Long,
-        val isBackgroundScan: Boolean,
-        val isBatchScan: Boolean,
-        val isCallbackScan: Boolean,
-        val isFilterScan: Boolean,
-        val isOpportunisticScan: Boolean,
+        internal val scanMode: Int,
+        internal val scanCallbackType: Int,
+        internal val reportDelayMillis: Long,
+        internal val isBackgroundScan: Boolean,
+        internal val isBatchScan: Boolean,
+        internal val isCallbackScan: Boolean,
+        internal val isFilterScan: Boolean,
+        internal val isOpportunisticScan: Boolean,
         internal val appImportanceOnStart: Int,
-        val attributionTag: String?,
-        val filterStringBuilder: StringBuilder = StringBuilder(),
+        internal val attributionTag: String?,
+        internal val filterStringBuilder: StringBuilder = StringBuilder(),
         internal var suspendDuration: Long = 0L,
         internal var suspendStartTime: Long = 0L,
         internal var isSuspended: Boolean = false,
         internal var isTimeout: Boolean = false,
         internal var isDowngraded: Boolean = false,
-        var isAutoBatchScan: Boolean = false,
-        var resultsScreenOn: Int = 0,
-        var resultsScreenOff: Int = 0,
+        internal var isAutoBatchScan: Boolean = false,
+        internal var resultsScreenOn: Int = 0,
+        internal var resultsScreenOff: Int = 0,
     )
 
     private val lastScans: MutableList<LastScan> = ArrayList()
@@ -140,30 +141,9 @@ class AppScanStats(
 
     @Synchronized fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
 
+    @JvmOverloads
     @Synchronized
-    fun addResult(scannerId: Int) {
-        val isScreenOn = sIsScreenOn.get()
-        if (isScreenOn) {
-            resultsScreenOn++
-        } else {
-            resultsScreenOff++
-        }
-
-        val scan = getScanFromScannerId(scannerId) ?: return
-        if (isScreenOn) {
-            scan.resultsScreenOn++
-        } else {
-            scan.resultsScreenOff++
-        }
-
-        // Only update battery stats every 100 results to lower the high-cost of binder transactions
-        if ((scan.resultsScreenOn + scan.resultsScreenOff) % 100 == 0) {
-            scanMetricsReporter.reportScanResults(100)
-        }
-    }
-
-    @Synchronized
-    fun addResults(scannerId: Int, numberOfNewResults: Int) {
+    fun addResults(scannerId: Int, numberOfNewResults: Int = 1) {
         val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
             resultsScreenOn += numberOfNewResults
@@ -172,7 +152,6 @@ class AppScanStats(
         }
 
         val scan = getScanFromScannerId(scannerId) ?: return
-
         val resultsBeforeUpdate = scan.resultsScreenOn + scan.resultsScreenOff
         if (isScreenOn) {
             scan.resultsScreenOn += numberOfNewResults
@@ -234,11 +213,7 @@ class AppScanStats(
         }
 
         if (isFilterScan) {
-            filters.forEach { filter ->
-                scan.filterStringBuilder
-                    .append("\n        └ ")
-                    .append(scanFilterToStringWithoutNullParam(filter))
-            }
+            filters.forEach { scan.filterStringBuilder.appendLine(it.toStringWithoutNullParam()) }
         }
 
         if (!isScanning()) {
@@ -388,9 +363,9 @@ class AppScanStats(
         getScanFromScannerId(scannerId)?.attributionTag ?: ""
 
     @Synchronized
-    fun dump(sb: StringBuilder, apps: List<ScannerApp>) {
-        val currentTimeMs = System.currentTimeMillis()
-        val elapsedRealtimeMs = timeProvider.elapsedRealtime()
+    fun dump(apps: List<ScannerApp>) = buildString {
+        val currentTime = System.currentTimeMillis()
+        val elapsedTime = timeProvider.elapsedRealtime()
         val opportunisticScan = oppScan
         val lowPowerScan = lowPowerScan
         val balancedScan = balancedScan
@@ -407,10 +382,10 @@ class AppScanStats(
 
         val ongoingScans = ongoingScans.values
         for (ongoingScan in ongoingScans) {
-            val scanDuration = elapsedRealtimeMs - ongoingScan.startTimestamp
+            val scanDuration = elapsedTime - ongoingScan.startTimestamp
             val suspendDuration =
                 if (ongoingScan.isSuspended) {
-                    elapsedRealtimeMs - ongoingScan.suspendStartTime
+                    elapsedTime - ongoingScan.suspendStartTime
                 } else {
                     0
                 }
@@ -434,132 +409,122 @@ class AppScanStats(
                 lowLatencyScanTime * WEIGHT_LOW_LATENCY +
                 ambientDiscoveryScanTime * WEIGHT_AMBIENT_DISCOVERY) / 100
 
-        sb.append("  $name")
-        sb.append(if (isRegistered) " (Registered):" else ":")
+        appendLine("$name${if (isRegistered) " (Registered):" else ":"}")
 
         if (isRegistered) {
             for (app in apps) {
-                sb.append("\n    Application ID: ${app.id}, UUID: ${app.uuid}")
-                app.attributionTag?.let { sb.append(", Tag: $it") }
+                fun tag() = app.attributionTag?.let { ", Tag: $it" } ?: ""
+                appendLine("  Application ID: ${app.id}, UUID: ${app.uuid}${tag()}")
             }
         }
 
-        sb.append("\n    LE scans               ")
-            .append("(Started/Stopped)                                   : ")
-        sb.append("$scansStarted / $scansStopped")
+        append("  LE scans               (Started/Stopped)                                   : ")
+        appendLine("$scansStarted / $scansStopped")
 
-        sb.append("\n    Scan time(ms)          ")
-            .append("(Active/Suspend/Total)                              : ")
-        sb.append("$totalActiveTime / $totalSuspendTime / $totalScanTime")
+        append("  Scan time(ms)          (Active/Suspend/Total)                              : ")
+        appendLine("$totalActiveTime / $totalSuspendTime / $totalScanTime")
 
-        sb.append("\n    Scan time per mode(ms) ")
-            .append("(Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
-        sb.append("$opportunisticScanTime / $lowPowerScanTime / $balancedScanTime / ")
-            .append("$lowLatencyScanTime / $ambientDiscoveryScanTime")
+        append("  Scan time per mode(ms) (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
+        append("$opportunisticScanTime / $lowPowerScanTime / $balancedScanTime / ")
+            .appendLine("$lowLatencyScanTime / $ambientDiscoveryScanTime")
 
-        sb.append("\n    Scan mode counter ")
-            .append("     (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
-        sb.append("$opportunisticScan / $lowPowerScan / $balancedScan / ")
-            .append("$lowLatencyScan / $ambientDiscoveryScan")
+        append("  Scan mode counter      (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery) : ")
+        append("$opportunisticScan / $lowPowerScan / $balancedScan / ")
+            .appendLine("$lowLatencyScan / $ambientDiscoveryScan")
 
-        sb.append("\n    Score ")
-            .append("                                                                     : $score")
+        appendLine(
+            "  Score                                                                      : $score"
+        )
 
         val results = resultsScreenOff + resultsScreenOn
-        sb.append("\n    Number of results      (ScreenOff/ScreenOn/Total)")
-            .append("                          : $resultsScreenOff / $resultsScreenOn / $results")
+        append("  Number of results      (ScreenOff/ScreenOn/Total)                          : ")
+            .appendLine("$resultsScreenOff / $resultsScreenOn / $results")
 
         if (scheduledBatchAlarmCount > 0) {
-            sb.append("\n    Number of batch alarms scheduled")
-                .append("                                           : $scheduledBatchAlarmCount")
+            append("  Number of batch alarms scheduled                                         ")
+                .appendLine("  : $scheduledBatchAlarmCount")
         }
 
         if (lastScans.isNotEmpty()) {
-            sb.append("\n    Last ${lastScans.size} scans:")
-            lastScans.forEach { it.appendDetails(sb, currentTimeMs, elapsedRealtimeMs, false) }
+            appendLine("  Last ${lastScans.size} scans:")
+            lastScans.forEach {
+                appendLine(it.details(currentTime, elapsedTime, false).indent("    "))
+            }
         }
 
         if (ongoingScans.isNotEmpty()) {
-            sb.append("\n    Ongoing ${ongoingScans.size} scans:")
-            ongoingScans.forEach { it.appendDetails(sb, currentTimeMs, elapsedRealtimeMs, true) }
+            appendLine("  Ongoing ${ongoingScans.size} scans:")
+            ongoingScans.forEach {
+                appendLine(it.details(currentTime, elapsedTime, true).indent("    "))
+            }
         }
-
-        sb.appendLine()
     }
 
-    private fun LastScan.appendDetails(
-        sb: StringBuilder,
-        currentTimeMs: Long,
-        elapsedRealtimeMs: Long,
-        ongoing: Boolean,
-    ) {
-        val bootEpochMs = currentTimeMs - elapsedRealtimeMs
+    private fun LastScan.details(currTime: Long, elapsedTime: Long, active: Boolean) = buildString {
+        val bootEpochMs = currTime - elapsedTime
 
-        val start = Instant.ofEpochMilli(bootEpochMs + startTimestamp)
-        sb.append("\n      [${Utils.formatInstant(start)}")
-        if (!ongoing) {
-            val end = Instant.ofEpochMilli(bootEpochMs + endTimestamp)
-            sb.append(" --> ${Utils.formatInstant(end)}")
-        }
-        sb.append("]  (")
+        val start = Utils.formatInstant(Instant.ofEpochMilli(bootEpochMs + startTimestamp))
+        val end =
+            if (active) ""
+            else " --> ${Utils.formatInstant(Instant.ofEpochMilli(bootEpochMs + endTimestamp))}"
+        append("[$start$end] (")
 
         val duration: Long
-        if (ongoing) {
-            duration = elapsedRealtimeMs - startTimestamp
-            sb.append("Elapsed: ${duration}ms")
+        if (active) {
+            duration = elapsedTime - startTimestamp
+            appendLine("Elapsed: ${duration}ms)")
         } else {
             duration = endTimestamp - startTimestamp
-            sb.append("Duration: ${duration}ms")
+            appendLine("Duration: ${duration}ms)")
         }
 
-        sb.append(")\n        └ Info: ")
+        append("  └ Info: ")
 
-        if (isOpportunisticScan) sb.append("(Opp) ")
-        if (isBackgroundScan) sb.append("(Back) ")
-        if (isTimeout) sb.append("(Forced) ")
-        if (isFilterScan) sb.append("(Filter) ")
-        if (ongoing && isSuspended) sb.append("(Suspended) ")
+        if (isOpportunisticScan) append("(Opp) ")
+        if (isBackgroundScan) append("(Back) ")
+        if (isTimeout) append("(Forced) ")
+        if (isFilterScan) append("(Filter) ")
+        if (active && isSuspended) append("(Suspended) ")
 
         val results = resultsScreenOff + resultsScreenOn
-        sb.append("Results: ($resultsScreenOff / $resultsScreenOn / $results) | ")
+        append("Results: ($resultsScreenOff / $resultsScreenOn / $results) | ")
             .append("id: ($scannerId) | ")
 
-        attributionTag?.let { sb.append("[$it] | ") }
+        attributionTag?.let { append("[$it] | ") }
 
-        sb.append(if (isCallbackScan) "CB " else "PI ")
+        append(if (isCallbackScan) "CB " else "PI ")
         when {
-            isBatchScan -> sb.append("Batch Scan")
-            isAutoBatchScan -> sb.append("Auto Batch Scan")
-            else -> sb.append("Regular Scan")
+            isBatchScan -> appendLine("Batch Scan")
+            isAutoBatchScan -> appendLine("Auto Batch Scan")
+            else -> appendLine("Regular Scan")
         }
 
-        if (!ongoing) {
+        if (!active) {
             val importanceText =
                 when {
                     appImportanceOnStart < IMPORTANCE_FOREGROUND_SERVICE -> " Higher than"
                     appImportanceOnStart > IMPORTANCE_FOREGROUND_SERVICE -> " Lower than"
                     else -> ""
                 }
-            sb.append("\n        └ App Importance:$importanceText Foreground Service")
+            appendLine("  └ App Importance:$importanceText Foreground Service")
         }
 
         if (suspendStartTime != 0L) {
             val suspendDuration =
-                if (ongoing && isSuspended) {
-                    (elapsedRealtimeMs - suspendStartTime) + suspendDuration
+                if (active && isSuspended) {
+                    (elapsedTime - suspendStartTime) + suspendDuration
                 } else {
                     suspendDuration
                 }
             val activeDuration = duration - suspendDuration
 
-            sb.append("\n        └ ")
-            sb.append("Active Time: ${activeDuration}ms, Suspended Time: ${suspendDuration}ms")
+            appendLine("  └ Active Time: ${activeDuration}ms, Suspended Time: ${suspendDuration}ms")
         }
 
-        sb.append("\n        └ Config: [ScanMode=${scanModeToString(scanMode)}")
-        sb.append(", callbackType=${callbackTypeToString(scanCallbackType)}]")
+        append("  └ Config: [ScanMode=${scanModeToString(scanMode)}")
+        appendLine(", callbackType=${callbackTypeToString(scanCallbackType)}]")
 
-        if (isFilterScan) sb.append(filterStringBuilder)
+        if (isFilterScan) append(filterStringBuilder.toString().indent("  └ "))
     }
 
     companion object {

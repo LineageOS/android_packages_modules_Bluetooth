@@ -56,6 +56,9 @@ public:
   virtual Status SuspendStream() const { return Status::FAILURE; }
   virtual Status StopStream() const { return SuspendStream(); }
   virtual Status SetLatencyMode(bool /*low_latency*/) const { return Status::FAILURE; }
+  virtual Status SourceMetadataChanged(btav_a2dp_codec_audio_context_t /*audio_context*/) const {
+    return Status::FAILURE;
+  }
 };
 
 struct ahal_codec_configuration {

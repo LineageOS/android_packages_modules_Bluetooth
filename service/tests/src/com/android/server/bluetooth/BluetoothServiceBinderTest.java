@@ -40,7 +40,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.quality.Strictness.STRICT_STUBS;
 
-import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.admin.DevicePolicyManager;
 import android.bluetooth.IBluetoothManagerCallback;
@@ -85,7 +84,6 @@ import java.util.function.BooleanSupplier;
 
 @SmallTest
 @RunWith(ParameterizedAndroidJunit4.class)
-@SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothServiceBinderTest {
     private static final String TAG = BluetoothServiceBinderTest.class.getSimpleName();
     private static final String LOG_COMPAT_CHANGE = "android.permission.LOG_COMPAT_CHANGE";
@@ -158,7 +156,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void registerAdapter() {
         assertThrows(NullPointerException.class, () -> mBinder.registerAdapter(null));
         mBinder.registerAdapter(mock(IBluetoothManagerCallback.class));
@@ -167,7 +165,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void unregisterAdapter() {
         assertThrows(NullPointerException.class, () -> mBinder.unregisterAdapter(null));
         mBinder.unregisterAdapter(mock(IBluetoothManagerCallback.class));
@@ -177,7 +175,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     @DisableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void enableNoRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.enable(null));
 
@@ -192,7 +190,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     @EnableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void enableWithRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.enable(null));
 
@@ -206,7 +204,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void enableNoAutoConnect() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.enableNoAutoConnect(null));
 
@@ -224,7 +222,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     @DisableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void disableNoRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.disable(null, true));
 
@@ -241,7 +239,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     @EnableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void disableWithRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.disable(null, true));
 
@@ -264,7 +262,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void getAddress() {
         assertThrows(NullPointerException.class, () -> mBinder.getAddress(null));
 
@@ -294,7 +292,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void getName() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
+        mSetFlagsRule.disableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER);
         assertThrows(NullPointerException.class, () -> mBinder.getName(null));
 
         assertThrows(SecurityException.class, () -> mBinder.getName(mSource));
@@ -313,7 +311,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void isBleScanAvailable() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
+        mSetFlagsRule.disableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER);
         // No permission needed for this call
         mBinder.isBleScanAvailable();
         verify(mApi).isBleScanAvailable();
@@ -321,7 +319,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void enableBle() throws Exception {
         IBinder token = mock(IBinder.class);
         assertThrows(NullPointerException.class, () -> mBinder.enableBle(null, token));
@@ -336,7 +334,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    @DisableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER)
     public void disableBle() throws Exception {
         IBinder token = mock(IBinder.class);
         assertThrows(NullPointerException.class, () -> mBinder.disableBle(null, token));
@@ -352,7 +350,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void isHearingAidProfileSupported() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
+        mSetFlagsRule.disableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER);
         // No permission needed for this call
         mBinder.isHearingAidProfileSupported();
         verify(mApi).isHearingAidProfileSupported();
@@ -361,7 +359,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void setBtHciSnoopLogMode() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
+        mSetFlagsRule.disableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER);
         assertThrows(SecurityException.class, () -> mBinder.setBtHciSnoopLogMode(0));
 
         InstrumentationRegistry.getInstrumentation()
@@ -374,7 +372,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void getBtHciSnoopLogMode() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
+        mSetFlagsRule.disableFlags(Flags.FLAG_BLUETOOTH_SYSTEM_SERVER_MESSENGER);
         assertThrows(SecurityException.class, () -> mBinder.getBtHciSnoopLogMode());
 
         InstrumentationRegistry.getInstrumentation()

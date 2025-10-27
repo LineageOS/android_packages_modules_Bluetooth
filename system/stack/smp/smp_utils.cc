@@ -27,6 +27,7 @@
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -45,7 +46,6 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_ble_sec_api.h"
@@ -55,20 +55,20 @@
 #include "stack/include/smp_status.h"
 
 #define SMP_PAIRING_REQ_SIZE 7
-#define SMP_CONFIRM_CMD_SIZE (OCTET16_LEN + 1)
-#define SMP_RAND_CMD_SIZE (OCTET16_LEN + 1)
-#define SMP_INIT_CMD_SIZE (OCTET16_LEN + 1)
-#define SMP_ENC_INFO_SIZE (OCTET16_LEN + 1)
-#define SMP_CENTRAL_ID_SIZE (BT_OCTET8_LEN + 2 + 1)
-#define SMP_ID_INFO_SIZE (OCTET16_LEN + 1)
+#define SMP_CONFIRM_CMD_SIZE (kOctet16Length + 1)
+#define SMP_RAND_CMD_SIZE (kOctet16Length + 1)
+#define SMP_INIT_CMD_SIZE (kOctet16Length + 1)
+#define SMP_ENC_INFO_SIZE (kOctet16Length + 1)
+#define SMP_CENTRAL_ID_SIZE (kOctet8Length + 2 + 1)
+#define SMP_ID_INFO_SIZE (kOctet16Length + 1)
 #define SMP_ID_ADDR_SIZE (BD_ADDR_LEN + 1 + 1)
-#define SMP_SIGN_INFO_SIZE (OCTET16_LEN + 1)
+#define SMP_SIGN_INFO_SIZE (kOctet16Length + 1)
 #define SMP_PAIR_FAIL_SIZE 2
 #define SMP_SECURITY_REQUEST_SIZE 2
-#define SMP_PAIR_PUBL_KEY_SIZE (1 /* opcode */ + (2 * BT_OCTET32_LEN))
-#define SMP_PAIR_COMMITM_SIZE (1 /* opcode */ + OCTET16_LEN /*Commitment*/)
+#define SMP_PAIR_PUBL_KEY_SIZE (1 /* opcode */ + (2 * kOctet32Length))
+#define SMP_PAIR_COMMITM_SIZE (1 /* opcode */ + kOctet16Length /*Commitment*/)
 #define SMP_PAIR_DHKEY_CHECK_SIZE \
-  (1 /* opcode */ + OCTET16_LEN /*DHKey \
+  (1 /* opcode */ + kOctet16Length /*DHKey \
                                                                    Check*/)
 #define SMP_PAIR_KEYPR_NOTIF_SIZE (1 /* opcode */ + 1 /*Notif Type*/)
 
@@ -494,7 +494,7 @@ static BT_HDR* smp_build_confirm_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
   UINT8_TO_STREAM(p, SMP_OPCODE_CONFIRM);
-  ARRAY_TO_STREAM(p, p_cb->confirm, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->confirm, kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_CONFIRM_CMD_SIZE;
@@ -517,7 +517,7 @@ static BT_HDR* smp_build_rand_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_RAND);
-  ARRAY_TO_STREAM(p, p_cb->rand, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->rand, kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_RAND_CMD_SIZE;
@@ -540,7 +540,7 @@ static BT_HDR* smp_build_encrypt_info_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb)
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_ENCRYPT_INFO);
-  ARRAY_TO_STREAM(p, p_cb->ltk, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->ltk, kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_ENC_INFO_SIZE;
@@ -564,7 +564,7 @@ static BT_HDR* smp_build_central_id_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_CENTRAL_ID);
   UINT16_TO_STREAM(p, p_cb->ediv);
-  ARRAY_TO_STREAM(p, p_cb->enc_rand, BT_OCTET8_LEN);
+  ARRAY_TO_STREAM(p, p_cb->enc_rand, kOctet8Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_CENTRAL_ID_SIZE;
@@ -590,7 +590,7 @@ static BT_HDR* smp_build_identity_info_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb
   const Octet16& irk = BTM_GetDeviceIDRoot();
 
   UINT8_TO_STREAM(p, SMP_OPCODE_IDENTITY_INFO);
-  ARRAY_TO_STREAM(p, irk.data(), OCTET16_LEN);
+  ARRAY_TO_STREAM(p, irk.data(), kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_ID_INFO_SIZE;
@@ -637,7 +637,7 @@ static BT_HDR* smp_build_signing_info_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb)
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_SIGN_INFO);
-  ARRAY_TO_STREAM(p, p_cb->csrk, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->csrk, kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_SIGN_INFO_SIZE;
@@ -702,18 +702,18 @@ static BT_HDR* smp_build_security_request(uint8_t /* cmd_code */, tSMP_CB* p_cb)
  ******************************************************************************/
 static BT_HDR* smp_build_pair_public_key_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
-  uint8_t publ_key[2 * BT_OCTET32_LEN];
+  uint8_t publ_key[2 * kOctet32Length];
   uint8_t* p_publ_key = publ_key;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_PUBL_KEY_SIZE + L2CAP_MIN_OFFSET);
 
   log::verbose("addr:{}", p_cb->pairing_bda);
 
-  memcpy(p_publ_key, p_cb->loc_publ_key.x, BT_OCTET32_LEN);
-  memcpy(p_publ_key + BT_OCTET32_LEN, p_cb->loc_publ_key.y, BT_OCTET32_LEN);
+  memcpy(p_publ_key, p_cb->loc_publ_key.x.data(), p_cb->loc_publ_key.x.size());
+  memcpy(p_publ_key + kOctet32Length, p_cb->loc_publ_key.y.data(), p_cb->loc_publ_key.y.size());
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIR_PUBLIC_KEY);
-  ARRAY_TO_STREAM(p, p_publ_key, 2 * BT_OCTET32_LEN);
+  ARRAY_TO_STREAM(p, p_publ_key, 2 * kOctet32Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_PAIR_PUBL_KEY_SIZE;
@@ -736,7 +736,7 @@ static BT_HDR* smp_build_pairing_commitment_cmd(uint8_t /* cmd_code */, tSMP_CB*
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_CONFIRM);
-  ARRAY_TO_STREAM(p, p_cb->commitment, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->commitment, kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_PAIR_COMMITM_SIZE;
@@ -760,7 +760,7 @@ static BT_HDR* smp_build_pair_dhkey_check_cmd(uint8_t /* cmd_code */, tSMP_CB* p
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIR_DHKEY_CHECK);
-  ARRAY_TO_STREAM(p, p_cb->dhkey_check, OCTET16_LEN);
+  ARRAY_TO_STREAM(p, p_cb->dhkey_check, kOctet16Length);
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_PAIR_DHKEY_CHECK_SIZE;
@@ -812,8 +812,8 @@ void smp_convert_string_to_tk(Octet16* tk, uint32_t passkey) {
  * encryption key size. */
 void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data) {
   log::verbose("smp_mask_enc_key");
-  if (loc_enc_size < OCTET16_LEN) {
-    for (; loc_enc_size < OCTET16_LEN; loc_enc_size++) {
+  if (loc_enc_size < kOctet16Length) {
+    for (; loc_enc_size < kOctet16Length; loc_enc_size++) {
       (*p_data)[loc_enc_size] = 0;
     }
   }
@@ -821,14 +821,14 @@ void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data) {
 }
 
 /** utility function to do an biteise exclusive-OR of two bit strings of the
- * length of OCTET16_LEN. Result is stored in first argument.
+ * length of kOctet16Length. Result is stored in first argument.
  */
 void smp_xor_128(Octet16* a, const Octet16& b) {
   log::assert_that(a != nullptr, "assert failed: a != nullptr");
   uint8_t i, *aa = a->data();
   const uint8_t* bb = b.data();
 
-  for (i = 0; i < OCTET16_LEN; i++) {
+  for (i = 0; i < kOctet16Length; i++) {
     aa[i] = aa[i] ^ bb[i];
   }
 }
@@ -1457,12 +1457,11 @@ void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
  ******************************************************************************/
 bool smp_check_commitment(tSMP_CB* p_cb) {
   log::verbose("addr:{}", p_cb->pairing_bda);
-
   Octet16 expected = smp_calculate_peer_commitment(p_cb);
-  print128(expected, "calculated peer commitment");
-  print128(p_cb->remote_commitment, "received peer commitment");
 
-  if (memcmp(p_cb->remote_commitment.data(), expected.data(), OCTET16_LEN)) {
+  if (p_cb->remote_commitment != expected) {
+    print128(expected, "calculated peer commitment");
+    print128(p_cb->remote_commitment, "received peer commitment");
     log::warn("Commitment check fails");
     return false;
   }
@@ -1502,7 +1501,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
                           .key_size = p_cb->loc_enc_size,
                   },
   };
-  memset(ple_key.penc_key.rand, 0, BT_OCTET8_LEN);
+  ple_key.penc_key.rand = ZERO_OCTET8;
   btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &ple_key, true);
 }
 
@@ -1529,7 +1528,7 @@ void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
     nb = p_cb->rand;
   }
 
-  crypto_toolbox::f5(p_cb->dhkey, na, nb, a, b, &p_cb->mac_key, &p_cb->ltk);
+  crypto_toolbox::f5(p_cb->dhkey.data(), na, nb, a, b, &p_cb->mac_key, &p_cb->ltk);
 }
 
 /*******************************************************************************
@@ -1577,9 +1576,9 @@ void print128(const Octet16& x, const char* key_name) {
   std::string key_str;
 
   for (int i = 0; i < 4; i++) {
-    key_str += std::format("{:02x}:{:02x}:{:02x}:{:02x}  ", p[OCTET16_LEN - i * 4 - 1],
-                           p[OCTET16_LEN - i * 4 - 2], p[OCTET16_LEN - i * 4 - 3],
-                           p[OCTET16_LEN - i * 4 - 4]);
+    key_str += std::format("{:02x}:{:02x}:{:02x}:{:02x}  ", p[kOctet16Length - i * 4 - 1],
+                           p[kOctet16Length - i * 4 - 2], p[kOctet16Length - i * 4 - 3],
+                           p[kOctet16Length - i * 4 - 4]);
   }
   log::verbose("{}(MSB~LSB): {}", key_name, key_str);
 }

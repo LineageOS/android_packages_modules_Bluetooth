@@ -20,7 +20,6 @@ import android.annotation.Hide;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Binder;
 import android.os.Parcel;
@@ -464,7 +463,6 @@ public final class BluetoothUtils {
      * <p>This check doesn't replace the permissions check when reaching the Bluetooth binder.
      */
     @Hide
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Enforcement in framework is never valid
     public static void enforcePermissionInFramework(Context context, String... permissions) {
         final int pid = Process.myPid();
         final int uid = Process.myUid();

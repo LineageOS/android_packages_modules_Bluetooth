@@ -65,6 +65,7 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
@@ -120,7 +121,7 @@ public class A2dpServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf();
+        return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
     }
 
     public A2dpServiceTest(FlagsWrapper flags) {
@@ -1162,6 +1163,8 @@ public class A2dpServiceTest {
                         Arrays.asList(codecsLocalCapabilities),
                         Arrays.asList(badCodecsSelectableCapabilities));
 
+        doReturn(previousSupport).when(mStorage).getA2dpOptionalCodecsSupported(mDevice);
+        doReturn(previousEnabled).when(mStorage).getA2dpOptionalCodecsEnabled(mDevice);
         when(mDatabaseManager.getA2dpSupportsOptionalCodecs(mDevice)).thenReturn(previousSupport);
         when(mDatabaseManager.getA2dpOptionalCodecsEnabled(mDevice)).thenReturn(previousEnabled);
 
@@ -1174,13 +1177,27 @@ public class A2dpServiceTest {
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
 
         // Check optional codec status is set properly
-        verify(mDatabaseManager, times(verifyNotSupportTime))
-                .setA2dpSupportsOptionalCodecs(
-                        mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
-        verify(mDatabaseManager, times(verifySupportTime))
-                .setA2dpSupportsOptionalCodecs(mDevice, BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED);
-        verify(mDatabaseManager, times(verifyEnabledTime))
-                .setA2dpOptionalCodecsEnabled(mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
+        if (Flags.mainlineBetaStorage()) {
+            verify(mStorage, times(verifyNotSupportTime))
+                    .setA2dpOptionalCodecsSupported(
+                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
+            verify(mStorage, times(verifySupportTime))
+                    .setA2dpOptionalCodecsSupported(
+                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED);
+            verify(mStorage, times(verifyEnabledTime))
+                    .setA2dpOptionalCodecsEnabled(
+                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
+        } else {
+            verify(mDatabaseManager, times(verifyNotSupportTime))
+                    .setA2dpSupportsOptionalCodecs(
+                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED);
+            verify(mDatabaseManager, times(verifySupportTime))
+                    .setA2dpSupportsOptionalCodecs(
+                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED);
+            verify(mDatabaseManager, times(verifyEnabledTime))
+                    .setA2dpOptionalCodecsEnabled(
+                            mDevice, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
+        }
     }
 
     private static BluetoothCodecConfig buildBluetoothCodecConfig(

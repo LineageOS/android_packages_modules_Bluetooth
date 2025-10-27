@@ -52,6 +52,7 @@ enum class RcFeature : uint8_t {
   RC_FEAT_ABSOLUTE_VOLUME = 0x02, /* Supports TG role and volume sync */
   RC_FEAT_BROWSE = 0x04,          /* AVRCP 1.4 and up, with Browsing support */
   RC_FEAT_COVERART = 0x08,        /* AVRCP 1.6 and up, with Cover Art support */
+  RC_FEAT_UNDEFINED = 0xff,       /* SDP search is not done, default value */
 };
 
 using RcFeatureType = std::underlying_type_t<RcFeature>;
@@ -60,7 +61,7 @@ inline RcFeature operator|(RcFeature lhs, RcFeature rhs) {
   return static_cast<RcFeature>(static_cast<RcFeatureType>(lhs) | static_cast<RcFeatureType>(rhs));
 }
 
-inline RcFeature operator|=(RcFeature lhs, RcFeature rhs) {
+inline RcFeature operator|=(RcFeature& lhs, RcFeature rhs) {
   lhs = lhs | rhs;
   return lhs;
 }
@@ -69,7 +70,7 @@ inline RcFeature operator&(RcFeature lhs, RcFeature rhs) {
   return static_cast<RcFeature>(static_cast<RcFeatureType>(lhs) & static_cast<RcFeatureType>(rhs));
 }
 
-inline RcFeature operator&=(RcFeature lhs, RcFeature rhs) {
+inline RcFeature operator&=(RcFeature& lhs, RcFeature rhs) {
   lhs = lhs & rhs;
   return lhs;
 }

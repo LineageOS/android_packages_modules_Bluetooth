@@ -687,7 +687,7 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return nullptr;
 }
 
-static void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   const RawAddress& bd_addr = link_spec.addrt.bda;
   tBT_TRANSPORT transport = link_spec.transport;
 
@@ -739,11 +739,11 @@ static void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
   bta_dm_adjust_roles(true);
 }
 
-void BTA_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   do_in_main_thread(base::BindOnce(bta_dm_acl_up, link_spec, acl_handle));
 }
 
-static void bta_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS status) {
+static void bta_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS status) {
   if (bta_dm_acl_cb.p_acl_cback) {
     tBTA_DM_ACL conn = {};
     conn.link_up_failed.link_spec = link_spec;
@@ -752,12 +752,11 @@ static void bta_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS stat
   }
 }
 
-void BTA_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS status) {
+void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS status) {
   do_in_main_thread(base::BindOnce(bta_dm_acl_up_failed, link_spec, status));
 }
 
-
-static void bta_dm_acl_down(const tAclLinkSpec& link_spec) {
+static void bta_dm_acl_down(const AclLinkSpec& link_spec) {
   const RawAddress& bd_addr = link_spec.addrt.bda;
   tBT_TRANSPORT transport = link_spec.transport;
 
@@ -801,7 +800,7 @@ static void bta_dm_acl_down(const tAclLinkSpec& link_spec) {
   bta_dm_remove_on_disconnect(bd_addr, transport);
 }
 
-void BTA_dm_acl_down(const tAclLinkSpec& link_spec) {
+void BTA_dm_acl_down(const AclLinkSpec& link_spec) {
   do_in_main_thread(base::BindOnce(bta_dm_acl_down, link_spec));
 }
 
@@ -1790,12 +1789,10 @@ tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr, tBT_TRANSPOR
   return ::allocate_device_for(bd_addr, transport);
 }
 
-void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   ::bta_dm_acl_up(link_spec, acl_handle);
 }
-void bta_dm_acl_down(const tAclLinkSpec& link_spec) {
-  ::bta_dm_acl_down(link_spec);
-}
+void bta_dm_acl_down(const AclLinkSpec& link_spec) { ::bta_dm_acl_down(link_spec); }
 void bta_dm_init_cb() { ::bta_dm_init_cb(); }
 void bta_dm_deinit_cb() { ::bta_dm_deinit_cb(); }
 

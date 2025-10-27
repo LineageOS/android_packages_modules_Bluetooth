@@ -38,6 +38,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
@@ -138,16 +139,16 @@ public class AdvertiseManager {
 
     private class AdvertisingSetDeathRecipient implements IBinder.DeathRecipient {
         private final IAdvertisingSetCallback mCallback;
-        private final String mPackageName;
+        private final String mAppName;
 
-        AdvertisingSetDeathRecipient(IAdvertisingSetCallback callback, String packageName) {
+        AdvertisingSetDeathRecipient(IAdvertisingSetCallback callback, String appName) {
             this.mCallback = callback;
-            this.mPackageName = packageName;
+            this.mAppName = appName;
         }
 
         @Override
         public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering advertising set (" + mPackageName + ")!");
+            Log.d(TAG, "Binder is dead - unregistering advertising set (" + mAppName + ")!");
             doOnAdvertiseThread(() -> stopAdvertisingSet(mCallback));
         }
     }
@@ -162,17 +163,13 @@ public class AdvertiseManager {
     void onAdvertisingSetStarted(int regId, int advertiserId, int txPower, int status) {
         Log.d(
                 TAG,
-                "onAdvertisingSetStarted() - regId="
-                        + regId
-                        + ", advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onAdvertisingSetStarted(): regId=" + regId + ", advertiserId=" + advertiserId)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(regId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingSetStarted() - no callback found for regId " + regId);
+            Log.i(TAG, "onAdvertisingSetStarted(): No callback found for regId " + regId);
             // Advertising set was stopped before it was properly registered.
             mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
             mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
@@ -211,20 +208,15 @@ public class AdvertiseManager {
     void onAdvertisingEnabled(int advertiserId, boolean enable, int status) {
         Log.d(
                 TAG,
-                "onAdvertisingSetEnabled() - advertiserId="
-                        + advertiserId
-                        + ", enable="
-                        + enable
-                        + ", status="
-                        + status);
+                ("onAdvertisingSetEnabled(): advertiserId=" + advertiserId + ", enable=" + enable)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.i(
                     TAG,
-                    "onAdvertisingSetEnable() - no callback found for advertiserId "
-                            + advertiserId);
+                    "onAdvertisingSetEnable(): No callback found for advertiserId=" + advertiserId);
             return;
         }
 
@@ -242,13 +234,12 @@ public class AdvertiseManager {
         }
     }
 
-    private void fetchAppForegroundState(int id) {
+    private void fetchAppForegroundState(int uid, int id) {
         final var packageManager = mAdapterService.getPackageManager();
         if (mActivityManager == null || packageManager == null) {
             return;
         }
-        final int appUid = Binder.getCallingUid();
-        String[] packages = packageManager.getPackagesForUid(appUid);
+        String[] packages = packageManager.getPackagesForUid(uid);
         if (packages == null || packages.length == 0) {
             return;
         }
@@ -294,12 +285,11 @@ public class AdvertiseManager {
         // If we are using an isolated server, force usage of an NRPA
         int serverIf = 0;
         if (gattServerCallback != null) {
-            final ContextMap<IBluetoothGattServerCallback>.App serverApp =
-                    mGattService.getServerMap().getByCallbackId(gattServerCallback);
+            var serverApp = mGattService.getServerMap().getByCallbackId(gattServerCallback);
             if (serverApp == null) {
                 Log.w(TAG, "startAdvertisingSet(" + gattServerCallback + "): App not registered");
             } else {
-                serverIf = serverApp.id;
+                serverIf = serverApp.getId();
             }
         }
         if (serverIf != 0
@@ -318,15 +308,9 @@ public class AdvertiseManager {
             return;
         }
 
-        final int appUid = Binder.getCallingUid();
-        String packageName = null;
-        if (mAdapterService.getPackageManager() != null) {
-            packageName = mAdapterService.getPackageManager().getNameForUid(appUid);
-        }
-        if (packageName == null) {
-            packageName = "Unknown package name (UID: " + appUid + ")";
-        }
-        final var deathRecipient = new AdvertisingSetDeathRecipient(callback, packageName);
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        final var deathRecipient = new AdvertisingSetDeathRecipient(callback, appName);
         final var binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);
@@ -342,12 +326,12 @@ public class AdvertiseManager {
 
             final int cbId = --mTempRegistrationId;
             mAdvertisers.put(binder, new AdvertiserInfo(cbId, deathRecipient, callback));
-            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents);
+            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents, source);
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
-            mAdvertiserMap.addAppAdvertiseStats(cbId, mAdapterService, source);
-            fetchAppForegroundState(cbId);
+            mAdvertiserMap.addAppAdvertiseStats(uid, appName, cbId, source);
+            fetchAppForegroundState(uid, cbId);
             mAdvertiserMap.recordAdvertiseStart(
                     cbId,
                     parameters,
@@ -384,7 +368,7 @@ public class AdvertiseManager {
     }
 
     void onOwnAddressRead(int advertiserId, int addressType, String address) {
-        Log.d(TAG, "onOwnAddressRead() advertiserId=" + advertiserId);
+        Log.d(TAG, "onOwnAddressRead(): advertiserId=" + advertiserId);
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
@@ -451,12 +435,17 @@ public class AdvertiseManager {
         mAdvertiserMap.recordAdvertiseStop(advertiserId);
     }
 
-    void enableAdvertisingSet(int advertiserId, boolean enable, int duration, int maxExtAdvEvents) {
+    void enableAdvertisingSet(
+            int advertiserId,
+            boolean enable,
+            int duration,
+            int maxExtAdvEvents,
+            AttributionSource source) {
         checkThread();
         if (mAdvertiseSuspendManager.shouldQueueCommand()) {
             Log.i(TAG, "Suspending! Queue command and return early.");
             mAdvertiseSuspendManager.queueEnableAdvertisingSet(
-                    advertiserId, enable, duration, maxExtAdvEvents);
+                    advertiserId, enable, duration, maxExtAdvEvents, source);
             return;
         }
 
@@ -468,7 +457,8 @@ public class AdvertiseManager {
 
         mAdvertiseSuspendManager.onEnableAdvertisingSet(advertiserId);
 
-        fetchAppForegroundState(advertiserId);
+        int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
+        fetchAppForegroundState(uid, advertiserId);
         mNativeInterface.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
         mAdvertiserMap.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
     }
@@ -640,12 +630,8 @@ public class AdvertiseManager {
     void onAdvertisingParametersUpdated(int advertiserId, int txPower, int status) {
         Log.d(
                 TAG,
-                "onAdvertisingParametersUpdated() advertiserId="
-                        + advertiserId
-                        + ", txPower="
-                        + txPower
-                        + ", status="
-                        + status);
+                ("onAdvertisingParametersUpdated(): advertiserId=" + advertiserId)
+                        + (", txPower=" + txPower + ", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
@@ -661,17 +647,15 @@ public class AdvertiseManager {
     void onPeriodicAdvertisingParametersUpdated(int advertiserId, int status) {
         Log.d(
                 TAG,
-                "onPeriodicAdvertisingParametersUpdated() advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onPeriodicAdvertisingParametersUpdated(): advertiserId=" + advertiserId)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.i(
                     TAG,
-                    "onPeriodicAdvertisingParametersUpdated() - bad advertiserId " + advertiserId);
+                    "onPeriodicAdvertisingParametersUpdated(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -682,15 +666,13 @@ public class AdvertiseManager {
     void onPeriodicAdvertisingDataSet(int advertiserId, int status) {
         Log.d(
                 TAG,
-                "onPeriodicAdvertisingDataSet() advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onPeriodicAdvertisingDataSet(): advertiserId=" + advertiserId)
+                        + (", status=" + status));
         checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onPeriodicAdvertisingDataSet() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onPeriodicAdvertisingDataSet(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -701,17 +683,15 @@ public class AdvertiseManager {
     void onPeriodicAdvertisingEnabled(int advertiserId, boolean enable, int status) {
         Log.d(
                 TAG,
-                "onPeriodicAdvertisingEnabled() advertiserId="
-                        + advertiserId
-                        + ", status="
-                        + status);
+                ("onPeriodicAdvertisingEnabled(): advertiserId=" + advertiserId)
+                        + (", status=" + status));
+        checkThread();
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingSetEnable() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onAdvertisingSetEnable(): Bad advertiserId " + advertiserId);
             return;
         }
-        checkThread();
 
         final var callback = entry.getValue().callback;
         callbackToApp(() -> callback.onPeriodicAdvertisingEnabled(advertiserId, enable, status));

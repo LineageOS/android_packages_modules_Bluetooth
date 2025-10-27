@@ -19,6 +19,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 
+#include "bt_status.h"
 #include "hardware/bluetooth.h"
 
 #define BTPAN_ROLE_NONE 0
@@ -37,11 +38,11 @@ typedef enum { BTPAN_STATE_ENABLED = 0, BTPAN_STATE_DISABLED = 1 } btpan_control
 /**
  * Callback for pan connection state
  */
-typedef void (*btpan_connection_state_callback)(btpan_connection_state_t state, bt_status_t error,
+typedef void (*btpan_connection_state_callback)(btpan_connection_state_t state, BtStatus error,
                                                 const RawAddress* bd_addr, int local_role,
                                                 int remote_role);
 typedef void (*btpan_control_state_callback)(btpan_control_state_t state, int local_role,
-                                             bt_status_t error, const char* ifname);
+                                             BtStatus error, const char* ifname);
 
 typedef struct {
   size_t size;
@@ -54,14 +55,14 @@ typedef struct {
   /**
    * Initialize the pan interface and register the btpan callbacks
    */
-  bt_status_t (*init)(const btpan_callbacks_t* callbacks);
+  BtStatus (*init)(const btpan_callbacks_t* callbacks);
   /*
    * enable the pan service by specified role. The result state of
    * enabl will be returned by btpan_control_state_callback. when pan-nap is
    * enabled, the state of connecting panu device will be notified by
    * btpan_connection_state_callback
    */
-  bt_status_t (*enable)(int local_role);
+  BtStatus (*enable)(int local_role);
   /*
    * get current pan local role
    */
@@ -70,12 +71,12 @@ typedef struct {
    * start bluetooth pan connection to the remote device by specified pan role.
    * The result state will be returned by btpan_connection_state_callback
    */
-  bt_status_t (*connect)(const RawAddress bd_addr, int local_role, int remote_role);
+  BtStatus (*connect)(const RawAddress bd_addr, int local_role, int remote_role);
   /**
    * stop bluetooth pan connection. The result state will be returned by
    * btpan_connection_state_callback
    */
-  bt_status_t (*disconnect)(const RawAddress bd_addr);
+  BtStatus (*disconnect)(const RawAddress bd_addr);
 
   /**
    * Cleanup the pan interface

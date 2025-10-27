@@ -383,10 +383,13 @@ void BleScannerInterfaceImpl::BatchScanReadReports(int client_if, int scan_mode)
   bluetooth::shim::GetScanning()->BatchScanReadReport(scanner_id, batch_scan_mode);
 }
 
-void BleScannerInterfaceImpl::StartSync(uint8_t sid, RawAddress address, uint16_t skip,
+void BleScannerInterfaceImpl::StartSync(uint8_t sid, RawAddress address,
+                                        tBLE_ADDR_TYPE address_type, uint16_t skip,
                                         uint16_t timeout, int reg_id) {
   log::info("in shim layer");
-  tBLE_ADDR_TYPE address_type = BLE_ADDR_RANDOM;
+  if (!is_ble_addr_type_valid(address_type)) {
+    address_type = BLE_ADDR_RANDOM;
+  }
   tINQ_DB_ENT* p_i = btm_inq_db_find(address);
   if (p_i) {
     address_type = p_i->inq_info.results.ble_addr_type;  // Random
@@ -481,9 +484,13 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
 
   // Do not update device properties of already bonded devices.
   if (!BTM_IsBonded(raw_address)) {
-    do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
-                                    base::Unretained(this), raw_address, ble_addr_type,
-                                    advertising_data));
+    // Prevent updating properties without scan response
+    if (!com_android_bluetooth_flags_support_passive_scanning() || !(event_type & kScannableMask) ||
+        (event_type & kScanResponseMask) || msft_adv_monitor_enabled_) {
+      do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
+                                      base::Unretained(this), raw_address, ble_addr_type,
+                                      advertising_data));
+    }
   }
 
   do_in_jni_thread(base::BindOnce(

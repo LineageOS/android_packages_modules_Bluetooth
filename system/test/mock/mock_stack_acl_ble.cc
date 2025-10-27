@@ -33,14 +33,11 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& /* address_with_type */, uint16
                              bool /* enhanced */, tHCI_STATUS /* status */) {
   inc_func_call_count(__func__);
 }
-void acl_ble_enhanced_connection_complete(const tBLE_BD_ADDR& /* address_with_type */,
-                                          uint16_t /* handle */, tHCI_ROLE /* role */,
-                                          bool /* match */, uint16_t /* conn_interval */,
-                                          uint16_t /* conn_latency */, uint16_t /* conn_timeout */,
-                                          const RawAddress& /* local_rpa */,
-                                          const RawAddress& /* peer_rpa */,
-                                          uint8_t /* peer_addr_type */,
-                                          bool /* can_read_discoverable_characteristics */) {
+void acl_ble_enhanced_connection_complete(
+        const tBLE_BD_ADDR& /* address_with_type */, uint16_t /* handle */, tHCI_ROLE /* role */,
+        uint16_t /* conn_interval */, uint16_t /* conn_latency */, uint16_t /* conn_timeout */,
+        const RawAddress& /* local_rpa */, const RawAddress& /* peer_rpa */,
+        uint8_t /* peer_addr_type */, bool /* can_read_discoverable_characteristics */) {
   inc_func_call_count(__func__);
 }
 void acl_ble_enhanced_connection_complete_from_shim(

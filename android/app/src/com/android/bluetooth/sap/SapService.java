@@ -23,10 +23,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static java.util.Objects.requireNonNull;
-
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -118,7 +115,7 @@ public class SapService extends ConnectableProfile
     };
 
     public SapService(AdapterService adapterService) {
-        super(BluetoothProfile.SAP, requireNonNull(adapterService));
+        super(BluetoothProfile.SAP, adapterService);
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
 
@@ -173,7 +170,6 @@ public class SapService extends ConnectableProfile
 
     private static final int CREATE_RETRY_TIME = 10;
 
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private boolean initSocket() {
         Log.v(TAG, "Sap Service initSocket");
 

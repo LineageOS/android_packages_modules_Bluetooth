@@ -66,7 +66,7 @@ public class TbsService extends ProfileService {
     }
 
     public TbsService(AdapterService adapterService, GattService gattService) {
-        super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
+        super(BluetoothProfile.LE_CALL_CONTROL, adapterService);
         unusedGattService = requireNonNull(gattService);
 
         mTbsGeneric = new TbsGeneric(adapterService, new TbsGatt(adapterService, this));
@@ -239,8 +239,6 @@ public class TbsService extends ProfileService {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
-        sb.append("  TbsService instance:\n");
-
         mTbsGeneric.dump(sb);
 
         for (Map.Entry<BluetoothDevice, Integer> entry : mDeviceAuthorizations.entrySet()) {

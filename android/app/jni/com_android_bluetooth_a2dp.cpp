@@ -446,7 +446,7 @@ static jboolean setSilenceDeviceNative(JNIEnv* env, jobject /* object */, jbyteA
 
 static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
-  RawAddress bd_addr = addressFromNullableJByteArray(env, address).value_or(RawAddress::kEmpty);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
 
   log::info("{}", bd_addr);
 

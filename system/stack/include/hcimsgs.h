@@ -22,14 +22,13 @@
 #include <base/functional/callback_forward.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
 #include <vector>
 
 #include "device/include/esco_parameters.h"
 #include "stack/include/bt_lap.h"
-#include "stack/include/bt_name.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
 
 /* Message by message.... */
@@ -71,7 +70,7 @@ void btsnd_hcic_link_key_neg_reply(const RawAddress& bd_addr);
 
 /* PIN Code Request Reply */
 void btsnd_hcic_pin_code_req_reply(const RawAddress& bd_addr, uint8_t pin_code_len,
-                                   PIN_CODE pin_code);
+                                   PinCode pin_code);
 
 /* Link Key Request Neg Reply */
 void btsnd_hcic_pin_code_neg_reply(const RawAddress& bd_addr);
@@ -249,10 +248,9 @@ void btsnd_hcic_ble_read_acceptlist_size(void);
 
 void btsnd_hcic_ble_read_remote_feat(uint16_t handle);
 
-void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb);
+void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb);
 
-void btsnd_hcic_ble_start_enc(uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
-                              const Octet16& ltk);
+void btsnd_hcic_ble_start_enc(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk);
 
 void btsnd_hcic_ble_ltk_req_reply(uint16_t handle, const Octet16& ltk);
 
@@ -401,5 +399,9 @@ void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
 
 void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction, uint8_t data_path_id,
                                     std::vector<uint8_t> vendor_config);
+
+void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
+                                                       uint8_t num_handles,
+                                                       const std::vector<uint16_t>& handles);
 
 #endif

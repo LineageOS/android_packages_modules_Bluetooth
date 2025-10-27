@@ -32,10 +32,10 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -46,15 +46,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
-import android.util.ArrayMap;
-import android.util.SparseIntArray;
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -67,6 +62,7 @@ import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -80,6 +76,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -87,10 +86,10 @@ import java.util.Optional;
 
 /** Test cases for {@link ActiveDeviceManager}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class ActiveDeviceManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AdapterService mAdapterService;
     @Mock private A2dpService mA2dpService;
@@ -99,32 +98,43 @@ public class ActiveDeviceManagerTest {
     @Mock private LeAudioService mLeAudioService;
     @Mock private AudioManager mAudioManager;
     @Mock private BluetoothStorageManager mStorage;
+    @Mock private DatabaseManager mDatabaseManager;
 
     @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
+
     private static final int A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS =
             ActiveDeviceManager.A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS + 2_000;
     private static final long HEARING_AID_HI_SYNC_ID = 1010;
     private static final long DUAL_MODE_HEARING_AID_HI_SYNC_ID = 2020;
 
-    private BluetoothDevice mA2dpDevice;
-    private BluetoothDevice mHeadsetDevice;
-    private BluetoothDevice mA2dpHeadsetDevice;
-    private BluetoothDevice mHearingAidDevice;
-    private BluetoothDevice mLeAudioDevice;
-    private BluetoothDevice mLeAudioDevice2;
-    private BluetoothDevice mLeAudioDevice3;
-    private BluetoothDevice mLeAudioDevice4;
-    private BluetoothDevice mLeHearingAidDevice;
-    private BluetoothDevice mSecondaryAudioDevice;
-    private BluetoothDevice mDualModeAudioDevice;
-    private BluetoothDevice mDualModeHearingAidDevice;
-    private BluetoothDevice mDualModeAudioDevice2;
+    private final BluetoothDevice mA2dpDevice = getTestDevice(0);
+    private final BluetoothDevice mHeadsetDevice = getTestDevice(1);
+    private final BluetoothDevice mA2dpHeadsetDevice = getTestDevice(2);
+    private final BluetoothDevice mHearingAidDevice = getTestDevice(3);
+    private final BluetoothDevice mLeAudioDevice = getTestDevice(4);
+    private final BluetoothDevice mLeAudioDevice2 = getTestDevice(5);
+    private final BluetoothDevice mLeAudioDevice3 = getTestDevice(6);
+    private final BluetoothDevice mLeAudioDevice4 = getTestDevice(7);
+    private final BluetoothDevice mLeHearingAidDevice = getTestDevice(8);
+    private final BluetoothDevice mSecondaryAudioDevice = getTestDevice(9);
+    private final BluetoothDevice mDualModeAudioDevice = getTestDevice(10);
+    private final BluetoothDevice mDualModeHearingAidDevice = getTestDevice(11);
+    private final BluetoothDevice mDualModeAudioDevice2 = getTestDevice(12);
+
     private ArrayList<BluetoothDevice> mDeviceConnectionStack;
     private BluetoothDevice mMostRecentDevice;
     private ActiveDeviceManager mActiveDeviceManager;
     private boolean mOriginalDualModeAudioState;
-    private TestDatabaseManager mDatabaseManager;
     private TestLooper mTestLooper;
+
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_MAINLINE_BETA_STORAGE);
+    }
+
+    public ActiveDeviceManagerTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -133,7 +143,12 @@ public class ActiveDeviceManagerTest {
         doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
         doNothing().when(mMethodProxy).threadStart(any());
 
-        mDatabaseManager = new TestDatabaseManager(mAdapterService);
+        doAnswer(invocation -> getMostRecentlyConnectedDeviceInList(invocation.getArgument(0)))
+                .when(mDatabaseManager)
+                .getMostRecentlyConnectedDevicesInList(any());
+        doAnswer(invocation -> getMostRecentlyConnectedDeviceInList(invocation.getArgument(0)))
+                .when(mStorage)
+                .getMostRecentlyConnectedDeviceInList(any());
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         when(mAdapterService.getDatabaseManager()).thenReturn(mDatabaseManager);
@@ -146,19 +161,6 @@ public class ActiveDeviceManagerTest {
         mActiveDeviceManager.start();
 
         // Get devices for testing
-        mA2dpDevice = getTestDevice(0);
-        mHeadsetDevice = getTestDevice(1);
-        mA2dpHeadsetDevice = getTestDevice(2);
-        mHearingAidDevice = getTestDevice(3);
-        mLeAudioDevice = getTestDevice(4);
-        mLeHearingAidDevice = getTestDevice(5);
-        mSecondaryAudioDevice = getTestDevice(6);
-        mDualModeAudioDevice = getTestDevice(7);
-        mLeAudioDevice2 = getTestDevice(8);
-        mLeAudioDevice3 = getTestDevice(9);
-        mLeAudioDevice4 = getTestDevice(10);
-        mDualModeHearingAidDevice = getTestDevice(11);
-        mDualModeAudioDevice2 = getTestDevice(12);
         mDeviceConnectionStack = new ArrayList<>();
         mMostRecentDevice = null;
         mOriginalDualModeAudioState = Utils.isDualModeAudioEnabled();
@@ -257,6 +259,19 @@ public class ActiveDeviceManagerTest {
         }
         Utils.setDualModeAudioStateForTesting(mOriginalDualModeAudioState);
         assertThat(mTestLooper.nextMessage()).isNull();
+    }
+
+    private BluetoothDevice getMostRecentlyConnectedDeviceInList(List<BluetoothDevice> devices) {
+        if (devices.isEmpty()) {
+            return null;
+        } else if (devices.contains(mLeHearingAidDevice)) {
+            return mLeHearingAidDevice;
+        } else if (devices.contains(mHearingAidDevice)) {
+            return mHearingAidDevice;
+        } else if (mMostRecentDevice != null && devices.contains(mMostRecentDevice)) {
+            return mMostRecentDevice;
+        }
+        return devices.get(0);
     }
 
     @Test
@@ -2132,57 +2147,5 @@ public class ActiveDeviceManagerTest {
 
         mActiveDeviceManager.profileConnectionStateChanged(
                 BluetoothProfile.HAP_CLIENT, device, STATE_CONNECTED, STATE_DISCONNECTED);
-    }
-
-    private class TestDatabaseManager extends DatabaseManager {
-        final ArrayMap<BluetoothDevice, SparseIntArray> mProfileConnectionPolicy;
-
-        TestDatabaseManager(AdapterService service) {
-            super(service);
-            mProfileConnectionPolicy = new ArrayMap<>();
-        }
-
-        @Override
-        public BluetoothDevice getMostRecentlyConnectedDevicesInList(
-                List<BluetoothDevice> devices) {
-            if (devices == null || devices.size() == 0) {
-                return null;
-            } else if (devices.contains(mLeHearingAidDevice)) {
-                return mLeHearingAidDevice;
-            } else if (devices.contains(mHearingAidDevice)) {
-                return mHearingAidDevice;
-            } else if (mMostRecentDevice != null && devices.contains(mMostRecentDevice)) {
-                return mMostRecentDevice;
-            }
-            return devices.get(0);
-        }
-
-        @Override
-        public boolean setProfileConnectionPolicy(BluetoothDevice device, int profile, int policy) {
-            if (device == null) {
-                return false;
-            }
-            if (policy != CONNECTION_POLICY_UNKNOWN
-                    && policy != CONNECTION_POLICY_FORBIDDEN
-                    && policy != CONNECTION_POLICY_ALLOWED) {
-                return false;
-            }
-            SparseIntArray policyMap = mProfileConnectionPolicy.get(device);
-            if (policyMap == null) {
-                policyMap = new SparseIntArray();
-                mProfileConnectionPolicy.put(device, policyMap);
-            }
-            policyMap.put(profile, policy);
-            return true;
-        }
-
-        @Override
-        public int getProfileConnectionPolicy(BluetoothDevice device, int profile) {
-            SparseIntArray policy = mProfileConnectionPolicy.get(device);
-            if (policy == null) {
-                return CONNECTION_POLICY_FORBIDDEN;
-            }
-            return policy.get(profile, CONNECTION_POLICY_FORBIDDEN);
-        }
     }
 }

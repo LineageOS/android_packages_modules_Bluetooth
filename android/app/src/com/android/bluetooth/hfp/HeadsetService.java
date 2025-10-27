@@ -2561,6 +2561,7 @@ public class HeadsetService extends ConnectableProfile {
 
     @Override
     public void dump(StringBuilder sb) {
+        super.dump(sb);
         boolean isScoOn = mSystemInterface.getAudioManager().isBluetoothScoOn();
         boolean isInbandRingingSupported =
                 getResources()
@@ -2568,7 +2569,6 @@ public class HeadsetService extends ConnectableProfile {
                                 com.android.bluetooth.R.bool
                                         .config_bluetooth_hfp_inband_ringing_support);
         synchronized (mStateMachines) {
-            super.dump(sb);
             ProfileService.println(sb, "mMaxHeadsetConnections: " + mMaxHeadsetConnections);
             ProfileService.println(
                     sb,

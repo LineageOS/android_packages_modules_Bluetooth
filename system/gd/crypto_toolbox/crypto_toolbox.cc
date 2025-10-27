@@ -17,15 +17,10 @@
 #include "crypto_toolbox.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <endian.h>
 
 #include <algorithm>
-
-#include "hci/octets.h"
-
-using bluetooth::hci::kOctet16Length;
-using bluetooth::hci::kOctet32Length;
-using bluetooth::hci::Octet16;
 
 namespace crypto_toolbox {
 
@@ -181,14 +176,14 @@ Octet16 link_key_to_ltk(const Octet16& link_key, bool use_h7) {
   return h6(iltk, keyID_brle);
 }
 
-Octet16 c1(const Octet16& k, const Octet16& r, const uint8_t* preq, const uint8_t* pres,
+Octet16 c1(const Octet16& k, const Octet16& r, const uint8_t* pres, const uint8_t* preq,
            const uint8_t iat, const uint8_t* ia, const uint8_t rat, const uint8_t* ra) {
   Octet16 p1;
   auto it = p1.begin();
   it = std::copy(&iat, &iat + 1, it);
   it = std::copy(&rat, &rat + 1, it);
-  it = std::copy(preq, preq + 7, it);
   it = std::copy(pres, pres + 7, it);
+  it = std::copy(preq, preq + 7, it);
 
   for (uint8_t i = 0; i < kOctet16Length; i++) {
     p1[i] = r[i] ^ p1[i];

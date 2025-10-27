@@ -76,6 +76,7 @@ import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BufferConstraints;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.GattOffloadCapabilities;
@@ -212,6 +213,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class AdapterService extends Service {
     private static final String TAG = Utils.BT_PREFIX + AdapterService.class.getSimpleName();
@@ -693,11 +695,6 @@ public class AdapterService extends Service {
         // This is the first method call with a context attached
         if (Flags.mainlineBetaStorage()) {
             factoryResetIfNeeded();
-            try {
-                DataMigration.run(this);
-            } catch (Exception e) {
-                Log.e(TAG, "Migration failure: ", e);
-            }
             mStorage.initialize();
         }
         mUserManager = requireNonNull(getSystemService(UserManager.class));
@@ -950,6 +947,12 @@ public class AdapterService extends Service {
 
     public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
+    }
+
+    private Stream<ConnectableProfile> getStartedConnectableProfiles() {
+        return mStartedProfiles.values().stream()
+                .filter(ConnectableProfile.class::isInstance)
+                .map(ConnectableProfile.class::cast);
     }
 
     private <T extends ProfileService> Optional<T> getStartedProfile(int id, Class<T> profile) {
@@ -1946,9 +1949,7 @@ public class AdapterService extends Service {
      */
     boolean isAllProfilesUnknown(BluetoothDevice device) {
         if (Flags.mainlineBetaStorage()) {
-            return !mStartedProfiles.values().stream()
-                    .filter(ConnectableProfile.class::isInstance)
-                    .map(ConnectableProfile.class::cast)
+            return !getStartedConnectableProfiles()
                     .anyMatch(p -> p.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN);
         }
         return !mStartedProfiles.values().stream()
@@ -2940,18 +2941,18 @@ public class AdapterService extends Service {
         // Note, remove this when native stack improves
         mNativeInterface.cancelDiscovery();
 
-        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);
+        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_CREATE_BOND);
         msg.obj = device;
         msg.arg1 = transport;
 
         Bundle remoteOobDatasBundle = new Bundle();
         boolean setData = false;
         if (remoteP192Data != null) {
-            remoteOobDatasBundle.putParcelable(BondStateMachine.OOBDATAP192, remoteP192Data);
+            remoteOobDatasBundle.putParcelable(BondStateMachine.KEY_OOBDATAP192, remoteP192Data);
             setData = true;
         }
         if (remoteP256Data != null) {
-            remoteOobDatasBundle.putParcelable(BondStateMachine.OOBDATAP256, remoteP256Data);
+            remoteOobDatasBundle.putParcelable(BondStateMachine.KEY_OOBDATAP256, remoteP256Data);
             setData = true;
         }
         if (setData) {
@@ -2980,30 +2981,50 @@ public class AdapterService extends Service {
             Log.w(TAG, header + "FAIL. Device bond state is " + deviceProp.getBondState());
             return false;
         }
-        getBondAttemptCallerInfo().remove(device.getAddress());
-        if (Flags.mainlineBetaStorage()) {
-            mStartedProfiles.values().stream()
-                    .filter(ConnectableProfile.class::isInstance)
-                    .map(ConnectableProfile.class::cast)
-                    .filter(p -> p.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)
-                    .forEach(
-                            p -> {
-                                Log.d(TAG, header + "Manually disable " + p);
-                                p.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN);
-                            });
-        } else {
-            getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(device));
-        }
         deviceProp.setBondingInitiatedLocally(false);
 
-        if (Flags.mainlineBetaStorage()) {
-            mBondStateMachine.dispatchMessage(BondStateMachine.REMOVE_BOND, device);
-        } else {
-            Message msg = getBondStateMachine().obtainMessage(BondStateMachine.REMOVE_BOND);
-            msg.obj = device;
-            getBondStateMachine().sendMessage(msg);
+        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>(List.of(device));
+        if (Flags.coordinatedRemoveBond()) {
+            Optional<CsipSetCoordinatorService> csipSetCoordinatorService =
+                    getCsipSetCoordinatorService();
+            if (csipSetCoordinatorService.isPresent()) {
+                List<BluetoothDevice> groupDevices =
+                        csipSetCoordinatorService
+                                .get()
+                                .getGroupDevicesOrdered(device, BluetoothUuid.CAP);
+                if (!groupDevices.isEmpty()) {
+                    Log.i(TAG, header + "Group devices found: " + groupDevices);
+                    devices.addAll(groupDevices);
+                }
+            }
         }
+
+        removeBondGroup(devices);
         return true;
+    }
+
+    private void removeBondGroup(Set<BluetoothDevice> devices) {
+        for (BluetoothDevice dev : devices) {
+            getBondAttemptCallerInfo().remove(dev.getAddress());
+            if (Flags.mainlineBetaStorage()) {
+                getStartedConnectableProfiles()
+                        .filter(p -> p.getConnectionPolicy(dev) == CONNECTION_POLICY_ALLOWED)
+                        .forEach(
+                                p -> {
+                                    Log.d(TAG, "removeBondGroup: " + dev + "Manually disable " + p);
+                                    p.setConnectionPolicy(dev, CONNECTION_POLICY_FORBIDDEN);
+                                });
+
+                mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, dev);
+            } else {
+                getPhonePolicy().ifPresent(policy -> policy.onRemoveBondRequest(dev));
+
+                Message msg =
+                        getBondStateMachine().obtainMessage(BondStateMachine.MESSAGE_REMOVE_BOND);
+                msg.obj = dev;
+                getBondStateMachine().sendMessage(msg);
+            }
+        }
     }
 
     /**
@@ -3092,7 +3113,7 @@ public class AdapterService extends Service {
      */
     public void deviceUuidUpdated(BluetoothDevice device) {
         // Notify BondStateMachine for SDP complete / UUID changed.
-        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.UUID_UPDATE);
+        Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_UUID_UPDATE);
         msg.obj = device;
         mBondStateMachine.sendMessage(msg);
     }
@@ -4556,8 +4577,11 @@ public class AdapterService extends Service {
         }
 
         writer.println();
-        mAdapterProperties.dump(fd, writer, args);
+
+        mAdapterProperties.dump(writer);
+
         mRemoteDevices.dump(writer);
+
         if (mActiveDeviceManager != null) {
             mActiveDeviceManager.dump(writer);
         }
@@ -4565,9 +4589,8 @@ public class AdapterService extends Service {
         writer.println("ScanMode: " + scanModeName(getScanMode()));
         StringBuilder sb = new StringBuilder();
         mScanModeChanges.dump(sb);
-        writer.println(sb.toString());
+        writer.println(sb);
 
-        writer.println();
         writer.println("Enabled Profile Services:");
         for (int profileId : Config.getSupportedProfiles()) {
             writer.println("  " + BluetoothProfile.getProfileName(profileId));
@@ -4592,10 +4615,12 @@ public class AdapterService extends Service {
             stringBuilder.append("\n");
         } else {
             mDatabaseManager.dump(stringBuilder); // Migrating
+            stringBuilder.append("\n");
         }
 
         for (ProfileService profile : mRegisteredProfiles) {
             profile.dump(stringBuilder);
+            stringBuilder.append("\n");
         }
 
         final var scanController = getBluetoothScanController();

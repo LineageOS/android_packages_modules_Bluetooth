@@ -28,6 +28,7 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "bt_status.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_rc.h"
@@ -756,10 +757,9 @@ static void initNative(JNIEnv* env, jobject object) {
     return;
   }
 
-  bt_status_t status = sBluetoothAvrcpInterface->init(&sBluetoothAvrcpCallbacks);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed to initialize Bluetooth Avrcp Controller, status: {}",
-               bt_status_text(status));
+  BtStatus status = sBluetoothAvrcpInterface->init(&sBluetoothAvrcpCallbacks);
+  if (!status) {
+    log::error("Failed to initialize Bluetooth Avrcp Controller, status: {}", status);
     sBluetoothAvrcpInterface = NULL;
     return;
   }
@@ -789,70 +789,47 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
 
 static jboolean sendPassThroughCommandNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                              jint key_code, jint key_state) {
+  log::info("key_code: {}, key_state: {}", key_code, key_state);
+
   if (!sBluetoothAvrcpInterface) {
     return JNI_FALSE;
   }
 
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-
-  log::info("key_code: {}, key_state: {}", key_code, key_state);
-
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->send_pass_through_cmd(bd_addr, (uint8_t)key_code,
+                                                                    (uint8_t)key_state);
+  if (!status) {
+    log::error("Failed sending passthru command, status: {}", status);
   }
 
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-  bt_status_t status = sBluetoothAvrcpInterface->send_pass_through_cmd(
-          rawAddress, (uint8_t)key_code, (uint8_t)key_state);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending passthru command, status: {}", bt_status_text(status));
-  }
-  env->ReleaseByteArrayElements(address, addr, 0);
-
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean sendGroupNavigationCommandNative(JNIEnv* env, jobject /* object */,
                                                  jbyteArray address, jint key_code,
                                                  jint key_state) {
+  log::info("key_code: {}, key_state: {}", key_code, key_state);
+
   if (!sBluetoothAvrcpInterface) {
     return JNI_FALSE;
   }
 
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-
-  log::info("key_code: {}, key_state: {}", key_code, key_state);
-
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->send_group_navigation_cmd(bd_addr, (uint8_t)key_code,
+                                                                        (uint8_t)key_state);
+  if (!status) {
+    log::error("Failed sending Grp Navigation command, status: {}", status);
   }
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  bt_status_t status = sBluetoothAvrcpInterface->send_group_navigation_cmd(
-          rawAddress, (uint8_t)key_code, (uint8_t)key_state);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending Grp Navigation command, status: {}", bt_status_text(status));
-  }
-  env->ReleaseByteArrayElements(address, addr, 0);
-
-  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+  return status ? JNI_TRUE : JNI_FALSE;
 }
 
 static void setPlayerApplicationSettingValuesNative(JNIEnv* env, jobject /* object */,
                                                     jbyteArray address, jbyte num_attrib,
                                                     jbyteArray attrib_ids, jbyteArray attrib_val) {
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  if (!sBluetoothAvrcpInterface) {
-    return;
-  }
+  log::info("");
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
+  if (!sBluetoothAvrcpInterface) {
     return;
   }
 
@@ -877,250 +854,183 @@ static void setPlayerApplicationSettingValuesNative(JNIEnv* env, jobject /* obje
     pAttrs[i] = (uint8_t)attr[i];
     pAttrsVal[i] = (uint8_t)attr_val[i];
   }
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  bt_status_t status = sBluetoothAvrcpInterface->set_player_app_setting_cmd(
-          rawAddress, (uint8_t)num_attrib, pAttrs, pAttrsVal);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending setPlAppSettValNative command, status: {}", bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->set_player_app_setting_cmd(
+          bd_addr, (uint8_t)num_attrib, pAttrs, pAttrsVal);
+  if (!status) {
+    log::error("Failed sending setPlAppSettValNative command, status: {}", status);
   }
   delete[] pAttrs;
   delete[] pAttrsVal;
   env->ReleaseByteArrayElements(attrib_ids, attr, 0);
   env->ReleaseByteArrayElements(attrib_val, attr_val, 0);
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void sendAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyteArray address, jint abs_vol,
                                 jint label) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status =
+          sBluetoothAvrcpInterface->set_volume_rsp(bd_addr, (uint8_t)abs_vol, (uint8_t)label);
+  if (!status) {
+    log::error("Failed sending sendAbsVolRspNative command, status: {}", status);
   }
-
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-
-  bt_status_t status =
-          sBluetoothAvrcpInterface->set_volume_rsp(rawAddress, (uint8_t)abs_vol, (uint8_t)label);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending sendAbsVolRspNative command, status: {}", bt_status_text(status));
-  }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void sendRegisterAbsVolRspNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                         jbyte rsp_type, jint abs_vol, jint label) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->register_abs_vol_rsp(
+          bd_addr, (btrc_notification_type_t)rsp_type, (uint8_t)abs_vol, (uint8_t)label);
+  if (!status) {
+    log::error("Failed sending sendRegisterAbsVolRspNative command, status: {}", status);
   }
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-
-  bt_status_t status = sBluetoothAvrcpInterface->register_abs_vol_rsp(
-          rawAddress, (btrc_notification_type_t)rsp_type, (uint8_t)abs_vol, (uint8_t)label);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending sendRegisterAbsVolRspNative command, status: {}",
-               bt_status_text(status));
-  }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void getCurrentMetadataNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->get_current_metadata_cmd(bd_addr);
+  if (!status) {
+    log::error("Failed sending getCurrentMetadataNative command, status: {}", status);
   }
-  log::verbose("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-
-  bt_status_t status = sBluetoothAvrcpInterface->get_current_metadata_cmd(rawAddress);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getCurrentMetadataNative command, status: {}",
-               bt_status_text(status));
-  }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void getPlaybackStateNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->get_playback_state_cmd(bd_addr);
+  if (!status) {
+    log::error("Failed sending getPlaybackStateNative command, status: {}", status);
   }
-  log::verbose("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-
-  bt_status_t status = sBluetoothAvrcpInterface->get_playback_state_cmd(rawAddress);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getPlaybackStateNative command, status: {}", bt_status_text(status));
-  }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void getNowPlayingListNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                     jint start, jint end) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  log::verbose("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  bt_status_t status = sBluetoothAvrcpInterface->get_now_playing_list_cmd(rawAddress, start, end);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getNowPlayingListNative command, status: {}",
-               bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->get_now_playing_list_cmd(bd_addr, start, end);
+  if (!status) {
+    log::error("Failed sending getNowPlayingListNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void getFolderListNative(JNIEnv* env, jobject /* object */, jbyteArray address, jint start,
                                 jint end) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  log::verbose("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  bt_status_t status = sBluetoothAvrcpInterface->get_folder_list_cmd(rawAddress, start, end);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getFolderListNative command, status: {}", bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->get_folder_list_cmd(bd_addr, start, end);
+  if (!status) {
+    log::error("Failed sending getFolderListNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void getPlayerListNative(JNIEnv* env, jobject /* object */, jbyteArray address, jint start,
                                 jint end) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  bt_status_t status = sBluetoothAvrcpInterface->get_player_list_cmd(rawAddress, start, end);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending getPlayerListNative command, status: {}", bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->get_player_list_cmd(bd_addr, start, end);
+  if (!status) {
+    log::error("Failed sending getPlayerListNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void changeFolderPathNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                    jbyte direction, jlong uid) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
 
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-
-  bt_status_t status = sBluetoothAvrcpInterface->change_folder_path_cmd(
-          rawAddress, (uint8_t)direction, (uint8_t*)&uid);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending changeFolderPathNative command, status: {}", bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->change_folder_path_cmd(bd_addr, (uint8_t)direction,
+                                                                     (uint8_t*)&uid);
+  if (!status) {
+    log::error("Failed sending changeFolderPathNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void setBrowsedPlayerNative(JNIEnv* env, jobject /* object */, jbyteArray address, jint id) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  bt_status_t status = sBluetoothAvrcpInterface->set_browsed_player_cmd(rawAddress, (uint16_t)id);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending setBrowsedPlayerNative command, status: {}", bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->set_browsed_player_cmd(bd_addr, (uint16_t)id);
+  if (!status) {
+    log::error("Failed sending setBrowsedPlayerNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void setAddressedPlayerNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                      jint id) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
 
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  bt_status_t status = sBluetoothAvrcpInterface->set_addressed_player_cmd(rawAddress, (uint16_t)id);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending setAddressedPlayerNative command, status: {}",
-               bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->set_addressed_player_cmd(bd_addr, (uint16_t)id);
+  if (!status) {
+    log::error("Failed sending setAddressedPlayerNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 static void playItemNative(JNIEnv* env, jobject /* object */, jbyteArray address, jbyte scope,
                            jlong uid, jint uidCounter) {
+  log::info("");
+
   if (!sBluetoothAvrcpInterface) {
     return;
   }
-  jbyte* addr = env->GetByteArrayElements(address, NULL);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
 
-  RawAddress rawAddress = RawAddress::FromOctets((uint8_t*)addr);
-
-  log::info("sBluetoothAvrcpInterface: {}", std::format_ptr(sBluetoothAvrcpInterface));
-  bt_status_t status = sBluetoothAvrcpInterface->play_item_cmd(
-          rawAddress, (uint8_t)scope, (uint8_t*)&uid, (uint16_t)uidCounter);
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("Failed sending playItemNative command, status: {}", bt_status_text(status));
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  BtStatus status = sBluetoothAvrcpInterface->play_item_cmd(bd_addr, (uint8_t)scope, (uint8_t*)&uid,
+                                                            (uint16_t)uidCounter);
+  if (!status) {
+    log::error("Failed sending playItemNative command, status: {}", status);
   }
-  env->ReleaseByteArrayElements(address, addr, 0);
 }
 
 int register_com_android_bluetooth_avrcp_controller(JNIEnv* env) {

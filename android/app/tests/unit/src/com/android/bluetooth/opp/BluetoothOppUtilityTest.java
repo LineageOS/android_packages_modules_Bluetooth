@@ -44,7 +44,6 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.provider.Settings;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -444,16 +443,15 @@ public class BluetoothOppUtilityTest {
     @Test
     public void grantPermissionToNearbyComponent() {
         Uri originalUri = Uri.parse("content://test.provider/1");
-        Settings.Secure.putString(
-                mContext.getContentResolver(),
-                "nearby_sharing_component",
-                "com.example/.BComponent");
-        Context spiedContext = spy(new ContextWrapper(mContext));
+        doReturn("com.example/.BComponent")
+                .when(mCallProxy)
+                .settingsSecureGetString(any(), eq("nearby_sharing_component"));
 
-        BluetoothOppUtility.grantPermissionToNearbyComponent(spiedContext, List.of(originalUri));
+        BluetoothOppUtility.grantPermissionToNearbyComponent(mContext, List.of(originalUri));
 
-        verify(spiedContext)
+        verify(mCallProxy)
                 .grantUriPermission(
+                        eq(mContext),
                         eq("com.example"),
                         eq(originalUri),
                         eq(Intent.FLAG_GRANT_READ_URI_PERMISSION));

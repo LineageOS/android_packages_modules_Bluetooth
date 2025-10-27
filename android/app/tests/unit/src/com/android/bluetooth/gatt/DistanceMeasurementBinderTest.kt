@@ -48,7 +48,7 @@ class DistanceMeasurementBinderTest {
 
     @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private lateinit var attributionSource: AttributionSource
+    @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var distanceMeasurementManager: DistanceMeasurementManager
     @Mock private lateinit var adapterService: AdapterService
 
@@ -76,7 +76,7 @@ class DistanceMeasurementBinderTest {
 
     @Test
     fun getSupportedDistanceMeasurementMethods() {
-        binder.getSupportedDistanceMeasurementMethods(attributionSource)
+        binder.getSupportedDistanceMeasurementMethods(source)
         verify(distanceMeasurementManager).supportedDistanceMeasurementMethods
     }
 
@@ -90,9 +90,9 @@ class DistanceMeasurementBinderTest {
                 .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
                 .build()
         val callback = mock(IDistanceMeasurementCallback::class.java)
-        binder.startDistanceMeasurement(ParcelUuid(uuid), params, callback, attributionSource)
+        binder.startDistanceMeasurement(ParcelUuid(uuid), params, callback, source)
         verify(distanceMeasurementManager)
-            .startDistanceMeasurement(uuid, attributionSource.uid, params, callback)
+            .startDistanceMeasurement(uuid, source.uid, params, callback)
     }
 
     @Test
@@ -100,7 +100,7 @@ class DistanceMeasurementBinderTest {
         val uuid = UUID.randomUUID()
         val device: BluetoothDevice = getTestDevice(3)
         val method = DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI
-        binder.stopDistanceMeasurement(ParcelUuid(uuid), device, method, attributionSource)
+        binder.stopDistanceMeasurement(ParcelUuid(uuid), device, method, source)
         verify(distanceMeasurementManager).stopDistanceMeasurement(uuid, device, method, false)
     }
 }

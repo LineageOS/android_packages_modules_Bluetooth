@@ -59,9 +59,9 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
   MOCK_METHOD((void), BTM_RemoteOobDataReply,
               (tBTM_STATUS /* res */, const RawAddress& /* bd_addr */, const Octet16& /* c */,
                const Octet16& /* r */));
-  MOCK_METHOD((void), BTM_PINCodeReply,
+  MOCK_METHOD(void, BTM_PINCodeReply,
               (const RawAddress& /* bd_addr */, tBTM_STATUS /* res */, uint8_t /* pin_len */,
-               uint8_t* /* p_pin */));
+               PinCode /* pin_code */));
   MOCK_METHOD((void), BTM_SecConfirmReqReply,
               (tBTM_STATUS /* res */, tBT_TRANSPORT /* transport */,
                const RawAddress /* bd_addr */));

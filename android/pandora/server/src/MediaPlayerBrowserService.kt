@@ -78,10 +78,15 @@ class MediaPlayerBrowserService : MediaBrowserServiceCompat() {
             PlaybackStateCompat.ACTION_PLAY or
             PlaybackStateCompat.ACTION_STOP or
             PlaybackStateCompat.ACTION_PAUSE or
-            PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
+            PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE or
+            PlaybackStateCompat.ACTION_SEEK_TO
 
     private fun setPlaybackState(state: Int) {
-        playbackStateBuilder.setState(state, 0, 1.0f).setActiveQueueItemId(currentTrack.toLong())
+        val position =
+            mMediaPlayer?.currentPosition?.toLong() ?: PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
+        playbackStateBuilder
+            .setState(state, position, 1.0f)
+            .setActiveQueueItemId(currentTrack.toLong())
         mediaSession.setPlaybackState(playbackStateBuilder.build())
     }
 
@@ -100,6 +105,8 @@ class MediaPlayerBrowserService : MediaBrowserServiceCompat() {
         mMediaPlayer?.setOnCompletionListener { stopTestPlayback() }
 
         mMediaPlayer?.start()
+        setPlaybackState(PlaybackStateCompat.STATE_PLAYING)
+        updateDuration()
     }
 
     fun stopTestPlayback() {
@@ -161,6 +168,18 @@ class MediaPlayerBrowserService : MediaBrowserServiceCompat() {
         setPlaybackState(PlaybackStateCompat.STATE_PLAYING)
     }
 
+    fun updateDuration() {
+        val metadata = mediaSession.controller.metadata ?: MediaMetadataCompat.Builder().build()
+        mediaSession.setMetadata(
+            MediaMetadataCompat.Builder(metadata)
+                .putLong(
+                    MediaMetadataCompat.METADATA_KEY_DURATION,
+                    mMediaPlayer?.duration?.toLong() ?: -1L,
+                )
+                .build()
+        )
+    }
+
     fun updateQueue() {
         val metaData: MediaMetadataCompat =
             MediaMetadataCompat.Builder()
@@ -211,6 +230,11 @@ class MediaPlayerBrowserService : MediaBrowserServiceCompat() {
         }
     }
 
+    fun seekTo(position: Long) {
+        mMediaPlayer?.seekTo(position.toInt())
+        setPlaybackState(mediaSession.controller.playbackState.state)
+    }
+
     private val mSessionCallback: MediaSessionCompat.Callback =
         object : MediaSessionCompat.Callback() {
             override fun onPlay() {
@@ -241,6 +265,11 @@ class MediaPlayerBrowserService : MediaBrowserServiceCompat() {
             override fun onSetShuffleMode(shuffleMode: Int) {
                 Log.i(TAG, "MediaSessionCallback——》onSetShuffleMode $shuffleMode")
                 mediaSession.setShuffleMode(shuffleMode)
+            }
+
+            override fun onSeekTo(pos: Long) {
+                Log.i(TAG, "onSeekTo")
+                seekTo(pos)
             }
         }
 

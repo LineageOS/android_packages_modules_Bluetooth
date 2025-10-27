@@ -34,7 +34,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 class BleScanSettingListenerTest {
     private val resolver: ContentResolver =
-        ApplicationProvider.getApplicationContext<Context>().getContentResolver()
+        ApplicationProvider.getApplicationContext<Context>().contentResolver
 
     private val looper: Looper = Looper.getMainLooper()
 

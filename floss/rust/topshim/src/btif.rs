@@ -1023,7 +1023,7 @@ impl Display for DisplayAddress<'_> {
     }
 }
 
-pub type AclLinkSpec = bindings::tAclLinkSpec;
+pub type AclLinkSpec = bindings::AclLinkSpec;
 pub type OobData = bindings::bt_oob_data_s;
 
 /// An enum representing `bt_callbacks_t` from btif.

@@ -18,14 +18,12 @@
 
 #pragma once
 
-#include <sstream>
+#include <bluetooth/types/bt_octets.h>
+
 #include <string>
-#include <utility>
 
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "hci/address.h"
 #include "hci/hci_packets.h"
-#include "hci/octets.h"
 
 namespace bluetooth {
 namespace hci {
@@ -49,7 +47,7 @@ public:
   }
 
   /* Is this an Resolvable Private Address, that was generated from given irk ? */
-  bool IsRpaThatMatchesIrk(const hci::Octet16& irk) const {
+  bool IsRpaThatMatchesIrk(const Octet16& irk) const {
     if (!IsRpa()) {
       return false;
     }
@@ -60,7 +58,7 @@ public:
     prand[1] = address_.address[4];
     prand[2] = address_.address[5];
     /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-    hci::Octet16 computed_hash = crypto_toolbox::aes_128(irk, prand);
+    Octet16 computed_hash = crypto_toolbox::aes_128(irk, prand);
     uint8_t hash[3];
     hash[0] = address_.address[0];
     hash[1] = address_.address[1];

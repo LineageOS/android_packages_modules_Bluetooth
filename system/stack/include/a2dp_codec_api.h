@@ -92,7 +92,7 @@ public:
 
   // Gets the bitRate for the A2DP codec.
   // Returns the bitrate of current codec configuration, or 0 if not configured
-  int getTrackBitRate() const;
+  virtual int getTrackBitRate() const;
 
   // Copies out the current OTA codec config to |p_codec_info|.
   // Returns true if the current codec config is valid and copied,

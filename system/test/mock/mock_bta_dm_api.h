@@ -29,6 +29,7 @@
 #include <base/functional/bind.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <vector>
 
@@ -36,7 +37,6 @@
 #include "bta/include/bta_sec_api.h"
 #include "hci/le_rand_callback.h"
 #include "stack/include/bt_device_type.h"
-#include "stack/include/bt_octets.h"
 
 // Original usings
 

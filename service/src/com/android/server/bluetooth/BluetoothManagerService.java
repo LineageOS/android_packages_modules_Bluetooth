@@ -614,7 +614,6 @@ class BluetoothManagerService {
         Log.d(TAG, "AutoOn allowed by config=" + mConfigAllowAutoOn);
     }
 
-
     Unit onBluetoothDisallowed() {
         if (mSharingRestriction != null) {
             mSharingRestriction.updateRestriction();

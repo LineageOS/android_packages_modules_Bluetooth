@@ -16,6 +16,8 @@
 
 #include "os/handler.h"
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/timerfd.h>
@@ -23,22 +25,19 @@
 #include <chrono>
 #include <ctime>
 
-#include "common/bind.h"
-#include "common/callback.h"
 #include "os/reactor.h"
 namespace bluetooth {
 namespace os {
-using common::OnceClosure;
 
 Handler::Handler(Thread* thread)
-    : tasks_(new std::queue<OnceClosure>()),
+    : tasks_(new std::queue<base::OnceClosure>()),
       thread_(thread),
       delayed_tasks_(new DelayedTaskQueue()) {
   alarm_ = new Alarm(thread_, false);
   event_ = thread_->GetReactor()->NewEvent();
   reactable_ = thread_->GetReactor()->Register(
-          event_->Id(), common::Bind(&Handler::handle_next_event, common::Unretained(this)),
-          common::Closure());
+          event_->Id(), base::BindRepeating(&Handler::handle_next_event, base::Unretained(this)),
+          base::RepeatingClosure());
 }
 
 Handler::~Handler() {
@@ -49,7 +48,7 @@ Handler::~Handler() {
   event_->Close();
 }
 
-void Handler::Post(OnceClosure closure) {
+void Handler::Post(base::OnceClosure closure) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (was_cleared()) {
@@ -62,7 +61,7 @@ void Handler::Post(OnceClosure closure) {
 }
 
 void Handler::Clear() {
-  std::queue<OnceClosure>* tmp = nullptr;
+  std::queue<base::OnceClosure>* tmp = nullptr;
   Reactor::Reactable* reactable = nullptr;
   DelayedTaskQueue* delayed_tasks = nullptr;
   Alarm* alarm = nullptr;
@@ -81,7 +80,7 @@ void Handler::Clear() {
   delete tmp;
   delete delayed_tasks;
   delete alarm;
-  // TODO:: Log all the pending tasks from the queue.
+  // TODO: Log all the pending tasks from the queue.
 
   event_->Clear();
 
@@ -98,7 +97,7 @@ void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
 }
 
 void Handler::handle_next_event() {
-  common::OnceClosure closure;
+  base::OnceClosure closure;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     bool has_data = event_->Read();
@@ -127,7 +126,7 @@ std::future<void> Handler::NotifyWhenIdle() {
   return future;
 }
 
-bool Handler::PostWithDelay(OnceClosure closure, std::chrono::milliseconds delay) {
+bool Handler::PostWithDelay(base::OnceClosure closure, std::chrono::milliseconds delay) {
   if (delay == std::chrono::milliseconds::zero()) {
     Post(std::move(closure));
     return true;
@@ -171,7 +170,8 @@ void Handler::handle_delayed_event() {
     // Either the task is expired (<= deadline), or the task is due in less than 1ms.
     while (!delayed_tasks_->empty() &&
            ((delayed_tasks_->top().first - deadline) <= std::chrono::milliseconds(1))) {
-      OnceClosure closure = std::move(const_cast<OnceClosure&>(delayed_tasks_->top().second));
+      base::OnceClosure closure =
+              std::move(const_cast<base::OnceClosure&>(delayed_tasks_->top().second));
       delayed_tasks_->pop();
       tasks_->emplace(std::move(closure));
       num_tasks_posted++;
@@ -200,7 +200,7 @@ void Handler::reschedule_delayed_tasks() {
   std::chrono::milliseconds next_task_time_ms =
           std::max(std::chrono::duration_cast<std::chrono::milliseconds>(next_task_time),
                    std::chrono::milliseconds(1));
-  alarm_->Schedule(common::BindOnce(&Handler::handle_delayed_event, common::Unretained(this)),
+  alarm_->Schedule(base::BindOnce(&Handler::handle_delayed_event, base::Unretained(this)),
                    next_task_time_ms);
 }
 

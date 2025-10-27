@@ -89,15 +89,15 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
   inc_func_call_count(__func__);
   return test::mock::bta_dm_act::BTA_DmSetVisibility(mode);
 }
-void BTA_dm_acl_down(const tAclLinkSpec& link_spec) {
+void BTA_dm_acl_down(const AclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::BTA_dm_acl_down(link_spec);
 }
-void BTA_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::BTA_dm_acl_up(link_spec, acl_handle);
 }
-void BTA_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status) {
+void BTA_dm_acl_up_failed(const AclLinkSpec& link_spec, tHCI_STATUS hci_status) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::BTA_dm_acl_up_failed(link_spec, hci_status);
 }

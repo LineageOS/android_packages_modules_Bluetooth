@@ -17,6 +17,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_octets.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -33,7 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "bt_octets.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/le_audio/broadcaster/state_machine.h"
 #include "bta/le_audio/codec_interface.h"
@@ -58,6 +58,7 @@
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_iso_api.h"
 
 #ifdef TARGET_FLOSS
@@ -113,8 +114,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
   enum class AudioState { STOPPED, SUSPENDED, ACTIVE };
 
 public:
-  LeAudioBroadcasterImpl(bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks_)
-      : callbacks_(callbacks_),
+  LeAudioBroadcasterImpl(bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks)
+      : callbacks_(callbacks),
         current_phy_(PHY_LE_2M),
         le_audio_source_hal_client_(nullptr),
         audio_state_(AudioState::SUSPENDED),
@@ -147,17 +148,18 @@ public:
   }
 
   void GenerateBroadcastIds(void) {
-    btsnd_hcic_ble_rand(base::Bind([](BT_OCTET8 rand) {
+    btsnd_hcic_ble_rand(base::BindOnce([](Octet8 rand) {
       if (!instance) {
         return;
       }
 
-      /* LE Rand returns 8 octets. Lets' make 2 outstanding Broadcast Ids out
-       * of it */
+      /* LE Rand returns 8 octets. Lets' make 2 outstanding Broadcast Ids out of it */
+      uint8_t* pp = rand.data();
       for (int i = 0; i < 8; i += 4) {
         BroadcastId broadcast_id = 0;
         /* Broadcast ID should be 3 octets long (BAP v1.0 spec.) */
-        STREAM_TO_UINT24(broadcast_id, rand);
+
+        STREAM_TO_UINT24(broadcast_id, pp);
         if (broadcast_id == bluetooth::le_audio::kBroadcastIdInvalid) {
           continue;
         }
@@ -943,6 +945,41 @@ public:
     }
 
     dprintf(fd, "%s", stream.str().c_str());
+  }
+
+  void SetBigChannelMapClassification(uint8_t action, const RawAddress& sink_addr,
+                                      uint32_t broadcast_id) override {
+    if (!com::android::bluetooth::flags::leaudio_broadcast_source_channel_map_classification()) {
+      return;
+    }
+
+    if (instance->broadcasts_.count(broadcast_id) == 0) {
+      log::error("No such broadcast_id={}", broadcast_id);
+      return;
+    }
+
+    auto OwnBroadcaster = instance->broadcasts_.at(broadcast_id).get();
+    if (OwnBroadcaster->GetBigConfig() == std::nullopt) {
+      log::error("Broadcast broadcast_id={} has no valid BIS configurations", broadcast_id);
+      return;
+    }
+
+    uint8_t big_handle = OwnBroadcaster->GetBigConfig()->big_handle;
+    uint16_t conn_handle =
+            get_btm_client_interface().peer.BTM_GetHCIConnHandle(sink_addr, BT_TRANSPORT_LE);
+    if (conn_handle == HCI_INVALID_HANDLE) {
+      log::error("Could not get connection handle for connected device {}", sink_addr);
+      return;
+    }
+    std::vector<uint16_t> handles = {conn_handle};
+
+    log::info(
+            "Issuing SetBigChannelMapClassificationVSC: action={}, big_handle={}, num_handles = "
+            "{}, conn_handle={}",
+            action, big_handle, handles.size(), conn_handle);
+
+    IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
+                                                                           handles.size(), handles);
   }
 
 private:

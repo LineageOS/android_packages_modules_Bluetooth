@@ -458,6 +458,7 @@ enum OpCode : 16 {
   CONTROLLER_A2DP_OPCODE = 0xFD5D,
   CONTROLLER_BQR = 0xFD5E,
   DYNAMIC_AUDIO_BUFFER = 0xFD5F,
+  LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION = 0xFD65,
   // MSFT_OPCODE_xxxx below are needed for the tests.
   MSFT_OPCODE_MEDIATEK = 0xFD30,
   MSFT_OPCODE_QUALCOMM = 0xFD70,
@@ -7541,4 +7542,28 @@ packet WriteSniffOffloadParameters : VendorCommand (op_code = WRITE_SNIFF_OFFLOA
 
 packet WriteSniffOffloadParametersComplete : CommandComplete (command_op_code = WRITE_SNIFF_OFFLOAD_PARAMETERS) {
   status : ErrorCode,
+}
+
+enum LeSetBigChannelMapClassificationSubOpcode : 8 {
+  SET_BY_CONNECTION_HANDLE = 0x01,
+}
+
+enum LeSetBigChannelMapClassificationAction : 8 {
+  ADD = 0x00,
+  DELETE = 0x01,
+}
+
+packet LeSetBigChannelMapClassificationByConnHandle : VendorCommand(op_code = LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION) {
+  sub_opcode: LeSetBigChannelMapClassificationSubOpcode,
+  action: LeSetBigChannelMapClassificationAction,
+  big_handle: 8,
+  num_handles: 8,
+  conn_handles: 16[],
+}
+
+packet LeSetBigChannelMapClassificationComplete : CommandComplete(command_op_code=LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION) {
+  status: ErrorCode,
+  sub_opcode: LeSetBigChannelMapClassificationSubOpcode,
+  action: LeSetBigChannelMapClassificationAction,
+  big_handle: 8,
 }

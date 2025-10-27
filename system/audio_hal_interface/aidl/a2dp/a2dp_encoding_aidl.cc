@@ -78,6 +78,8 @@ public:
   bool GetPresentationPosition(uint64_t* remote_delay_report_ns, uint64_t* total_bytes_read,
                                timespec* data_position) override;
 
+  void SourceMetadataChanged(btav_a2dp_codec_audio_context_t audio_context);
+
   tA2DP_CTRL_CMD GetPendingCmd() const;
 
   void ResetPendingCmd();
@@ -108,6 +110,7 @@ namespace {
 
 using ::aidl::android::hardware::bluetooth::audio::A2dpStreamConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
+using ::aidl::android::hardware::bluetooth::audio::AudioContext;
 using ::aidl::android::hardware::bluetooth::audio::ChannelMode;
 using ::aidl::android::hardware::bluetooth::audio::CodecConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::PcmConfiguration;
@@ -186,6 +189,10 @@ void A2dpTransport::StopRequest() {
 
 void A2dpTransport::SetLatencyMode(LatencyMode latency_mode) {
   stream_callbacks_->SetLatencyMode(latency_mode == LatencyMode::LOW_LATENCY);
+}
+
+void A2dpTransport::SourceMetadataChanged(btav_a2dp_codec_audio_context_t audio_context) {
+  stream_callbacks_->SourceMetadataChanged(audio_context);
 }
 
 bool A2dpTransport::GetPresentationPosition(uint64_t* remote_delay_report_ns,
@@ -749,6 +756,17 @@ provider::get_a2dp_configuration(
       codecParameters.bitdepth = 32;
       break;
     default:
+      break;
+  }
+  switch (user_preferences.audio_context) {
+    case BTAV_A2DP_CODEC_AUDIO_CONTEXT_MEDIA:
+      hint.audioContext.bitmask = AudioContext::MEDIA;
+      break;
+    case BTAV_A2DP_CODEC_AUDIO_CONTEXT_GAME:
+      hint.audioContext.bitmask = AudioContext::GAME;
+      break;
+    default:
+      hint.audioContext.bitmask = AudioContext::UNSPECIFIED;
       break;
   }
 

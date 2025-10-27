@@ -26,8 +26,8 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 #include <stddef.h>
-#include <string.h>
 
 #include <bitset>
 
@@ -36,7 +36,6 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
 
@@ -106,6 +105,9 @@
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER 5
 #define HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS 8
 #define HCIC_PARAM_SIZE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS 8
+#define HCIC_PARAM_SIZE_SET_BIG_CHANNEL_MAP_CLASSIFICATION_VSC_BASE 4
+
+constexpr uint8_t kMaxParametersSize = 255;
 
 void btsnd_hcic_ble_set_scan_params(uint8_t scan_type, uint16_t scan_int, uint16_t scan_win,
                                     uint8_t addr_type_own, uint8_t scan_filter_policy) {
@@ -158,20 +160,21 @@ void btsnd_hcic_ble_read_remote_feat(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {
-  btu_hcif_send_cmd_with_cb(
-          HCI_BLE_RAND, nullptr, 0,
-          base::Bind(
-                  [](base::Callback<void(BT_OCTET8)> cb, uint8_t* param, uint16_t /* param_len */) {
-                    bluetooth::log::assert_that(param[0] == 0,
-                                                "LE Rand return status must be zero");
-                    cb.Run(param + 1 /* skip status */);
-                  },
-                  std::move(cb)));
+void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb) {
+  btu_hcif_send_cmd_with_cb(HCI_BLE_RAND, nullptr, 0,
+                            base::BindOnce(
+                                    [](base::OnceCallback<void(Octet8)> cb, uint8_t* param,
+                                       uint16_t /* param_len */) {
+                                      bluetooth::log::assert_that(
+                                              param[0] == 0, "LE Rand return status must be zero");
+                                      Octet8 rand{};
+                                      memcpy(rand.data(), param + 1, rand.size()); /* Skip status */
+                                      std::move(cb).Run(rand);
+                                    },
+                                    std::move(cb)));
 }
 
-void btsnd_hcic_ble_start_enc(uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
-                              const Octet16& ltk) {
+void btsnd_hcic_ble_start_enc(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -365,7 +368,10 @@ void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 15 + cis_cnt * 9;
-  uint8_t param[params_len];
+  bluetooth::log::assert_that(params_len <= kMaxParametersSize,
+                              "assert failed: params_len={} <= kMaxParametersSize={}", params_len,
+                              kMaxParametersSize);
+  uint8_t param[kMaxParametersSize];
   uint8_t* pp = param;
 
   UINT8_TO_STREAM(pp, cig_id);
@@ -394,7 +400,10 @@ void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32
 void btsnd_hcic_ble_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
                                base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 1 + num_cis * 4;
-  uint8_t param[params_len];
+  bluetooth::log::assert_that(params_len <= kMaxParametersSize,
+                              "assert failed: params_len={} <= kMaxParametersSize={}", params_len,
+                              kMaxParametersSize);
+  uint8_t param[kMaxParametersSize];
   uint8_t* pp = param;
 
   UINT8_TO_STREAM(pp, num_cis);
@@ -408,13 +417,13 @@ void btsnd_hcic_ble_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cf
 }
 
 void btsnd_hcic_ble_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  const int params_len = 1;
-  uint8_t param[params_len];
+  constexpr int kParamsLen = 1;
+  uint8_t param[kParamsLen];
   uint8_t* pp = param;
 
   UINT8_TO_STREAM(pp, cig_id);
 
-  btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_CIG, param, params_len, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_CIG, param, kParamsLen, std::move(cb));
 }
 
 void btsnd_hcic_ble_req_peer_sca(uint16_t conn_handle) {
@@ -487,7 +496,10 @@ void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_d
                                         uint32_t controller_delay, std::vector<uint8_t> codec_conf,
                                         base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   const int params_len = 13 + codec_conf.size();
-  uint8_t param[params_len];
+  bluetooth::log::assert_that(params_len <= kMaxParametersSize,
+                              "assert failed: params_len={} <= kMaxParametersSize={}", params_len,
+                              kMaxParametersSize);
+  uint8_t param[kMaxParametersSize];
   uint8_t* pp = param;
 
   UINT16_TO_STREAM(pp, iso_handle);
@@ -505,25 +517,25 @@ void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_d
 
 void btsnd_hcic_ble_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
                                          base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  const int params_len = 3;
-  uint8_t param[params_len];
+  constexpr int kParamsLen = 3;
+  uint8_t param[kParamsLen];
   uint8_t* pp = param;
 
   UINT16_TO_STREAM(pp, iso_handle);
   UINT8_TO_STREAM(pp, data_path_dir);
 
-  btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_ISO_DATA_PATH, param, params_len, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_ISO_DATA_PATH, param, kParamsLen, std::move(cb));
 }
 
 void btsnd_hcic_ble_read_iso_link_quality(uint16_t iso_handle,
                                           base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  const int params_len = 2;
-  uint8_t param[params_len];
+  constexpr int kParamsLen = 2;
+  uint8_t param[kParamsLen];
   uint8_t* pp = param;
 
   UINT16_TO_STREAM(pp, iso_handle);
 
-  btu_hcif_send_cmd_with_cb(HCI_LE_READ_ISO_LINK_QUALITY, param, params_len, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_READ_ISO_LINK_QUALITY, param, kParamsLen, std::move(cb));
 }
 
 void btsnd_hcic_ble_periodic_advertising_create_sync(uint8_t options, uint8_t adv_sid,
@@ -672,4 +684,27 @@ void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
   btu_hcif_send_cmd_with_cb(HCI_LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAM, param,
                             HCIC_PARAM_SIZE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS,
                             std::move(cb));
+}
+
+void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
+                                                       uint8_t num_handles,
+                                                       const std::vector<uint16_t>& handles) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  const uint8_t param_len =
+      HCIC_PARAM_SIZE_SET_BIG_CHANNEL_MAP_CLASSIFICATION_VSC_BASE + (num_handles * 2);
+  p->len = HCIC_PREAMBLE_SIZE + param_len;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION_OPCODE);
+  UINT8_TO_STREAM(pp, param_len);
+
+  UINT8_TO_STREAM(pp, SET_BIG_MAP_BY_CONNECTION_HANDLE);
+  UINT8_TO_STREAM(pp, action);
+  UINT8_TO_STREAM(pp, big_handle);
+  UINT8_TO_STREAM(pp, num_handles);
+  ARRAY_TO_STREAM(pp, handles.data(), static_cast<int>(num_handles * 2));
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }

@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.profile
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothProfile
 import android.content.ComponentName
 import android.content.ContextWrapper
@@ -40,7 +39,7 @@ abstract class ProfileService(
 
     val name = javaClass.simpleName
     val binder: Optional<IProfileServiceBinder>
-    @get:JvmName("isAvailable") @set:JvmName("setAvailable") var available = false
+    var isAvailable = false
 
     init {
         Log.d(name, "Service created")
@@ -99,10 +98,8 @@ abstract class ProfileService(
      *
      * @param sb StringBuilder from the profile.
      */
-    // Suppressed since this is called from framework
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     open fun dump(sb: StringBuilder) {
-        sb.append("\nProfile: ").append(name).append("\n")
+        sb.appendLine("Profile: $name")
     }
 
     companion object {
@@ -110,11 +107,11 @@ abstract class ProfileService(
          * Append an indented String for adding dumpsys support to subclasses.
          *
          * @param sb StringBuilder from the profile.
-         * @param s String to indent and append.
+         * @param text String to indent and append.
          */
         @JvmStatic
-        fun println(sb: StringBuilder, s: String) {
-            sb.append("  ").append(s).append("\n")
+        fun println(sb: StringBuilder, text: String) {
+            sb.appendLine("  $text")
         }
     }
 }

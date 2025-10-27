@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.os.Handler;
 import android.os.Looper;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -58,6 +59,8 @@ public class A2dpSinkService extends ConnectableProfile {
 
     private final A2dpSinkNativeInterface mNativeInterface;
     private final Looper mLooper;
+    private final Handler mHandler;
+
     private final int mMaxConnectedAudioDevices;
 
     @GuardedBy("mStreamHandlerLock")
@@ -73,13 +76,14 @@ public class A2dpSinkService extends ConnectableProfile {
     @VisibleForTesting
     A2dpSinkService(
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
-        super(BluetoothProfile.A2DP_SINK, requireNonNull(adapterService));
+        super(BluetoothProfile.A2DP_SINK, adapterService);
         var nativeCallback = new A2dpSinkNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
                         () -> new A2dpSinkNativeInterface(nativeCallback, mAdapterService));
-        mLooper = looper;
+        mLooper = requireNonNull(looper);
+        mHandler = new Handler(mLooper);
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
         mNativeInterface.init(mMaxConnectedAudioDevices);
         synchronized (mStreamHandlerLock) {
@@ -165,27 +169,19 @@ public class A2dpSinkService extends ConnectableProfile {
     @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect device=" + device);
-        if (device == null) {
-            throw new IllegalArgumentException("Null device");
-        }
-        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
+
+        if (getConnectionPolicy(requireNonNull(device)) == CONNECTION_POLICY_FORBIDDEN) {
             Log.w(TAG, "Connection not allowed: <" + device + "> is CONNECTION_POLICY_FORBIDDEN");
             return false;
         }
 
-        A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
-        if (stateMachine != null) {
-            stateMachine.connect();
-            return true;
-        } else {
-            // a state machine instance doesn't exist yet, and the max has been reached.
-            Log.e(
-                    TAG,
-                    "Maxed out on the number of allowed A2DP Sink connections. "
-                            + "Connect request rejected on "
-                            + device);
-            return false;
-        }
+        mHandler.post(
+                () -> {
+                    A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
+                    stateMachine.dispatchMessage(A2dpSinkStateMachine.MESSAGE_CONNECT);
+                });
+
+        return true;
     }
 
     /**
@@ -358,11 +354,18 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     void onConnectionStateChangedFromNative(BluetoothDevice device, int state) {
+        Log.d(TAG, "onConnectionStateChangedFromNative(" + device + ", " + state + ")");
+
         if (device == null) {
             return;
         }
-        A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
-        stateMachine.sendMessage(A2dpSinkStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
+
+        mHandler.post(
+                () -> {
+                    A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
+                    stateMachine.dispatchMessage(
+                            A2dpSinkStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
+                });
     }
 
     void onAudioStateChangedFromNative(int state) {
@@ -388,9 +391,11 @@ public class A2dpSinkService extends ConnectableProfile {
                         + ", "
                         + channelCount
                         + ")");
+
         if (device == null) {
             return;
         }
+
         A2dpSinkStateMachine stateMachine = getStateMachineForDevice(device);
         if (stateMachine == null) {
             Log.w(TAG, "onAudioConfigChangedFromNative on unconnected " + device);

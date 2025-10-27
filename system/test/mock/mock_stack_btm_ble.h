@@ -26,15 +26,14 @@
 
 #include <cstdint>
 #include <functional>
-#include <optional>
 
 // Original included files, if any
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/include/bt_device_type.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"
@@ -281,20 +280,17 @@ extern struct BTM_SecurityGrant BTM_SecurityGrant;
 
 // Name: btm_ble_connected
 // Params: const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t
-// role, tBLE_ADDR_TYPE addr_type, bool addr_matched, bool can_read_discoverable_characteristics
+// role, tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics
 // Return: void
 struct btm_ble_connected {
   std::function<void(const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t role,
-                     tBLE_ADDR_TYPE addr_type, bool addr_matched,
-                     bool can_read_discoverable_characteristics)>
+                     tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics)>
           body{[](const RawAddress& /* bda */, uint16_t /* handle */, uint8_t /* enc_mode */,
-                  uint8_t /* role */, tBLE_ADDR_TYPE /* addr_type */, bool /* addr_matched */,
+                  uint8_t /* role */, tBLE_ADDR_TYPE /* addr_type */,
                   bool /* can_read_discoverable_characteristics */) {}};
   void operator()(const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t role,
-                  tBLE_ADDR_TYPE addr_type, bool addr_matched,
-                  bool can_read_discoverable_characteristics) {
-    body(bda, handle, enc_mode, role, addr_type, addr_matched,
-         can_read_discoverable_characteristics);
+                  tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics) {
+    body(bda, handle, enc_mode, role, addr_type, can_read_discoverable_characteristics);
   }
 };
 extern struct btm_ble_connected btm_ble_connected;
@@ -363,9 +359,9 @@ extern struct btm_ble_link_sec_check btm_ble_link_sec_check;
 // Params: uint16_t handle, uint8_t rand[8], uint16_t ediv
 // Return: void
 struct btm_ble_ltk_request {
-  std::function<void(uint16_t handle, BT_OCTET8 rand, uint16_t ediv)> body{
-          [](uint16_t /* handle */, BT_OCTET8 /* rand */, uint16_t /* ediv */) {}};
-  void operator()(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) { body(handle, rand, ediv); }
+  std::function<void(uint16_t handle, Octet8 rand, uint16_t ediv)> body{
+          [](uint16_t /* handle */, Octet8 /* rand */, uint16_t /* ediv */) {}};
+  void operator()(uint16_t handle, Octet8 rand, uint16_t ediv) { body(handle, rand, ediv); }
 };
 extern struct btm_ble_ltk_request btm_ble_ltk_request;
 

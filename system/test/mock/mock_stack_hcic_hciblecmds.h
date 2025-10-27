@@ -28,10 +28,10 @@
 
 // Original included files, if any
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include "base/callback.h"
 #include "hcimsgs.h"
-#include "stack/include/bt_octets.h"
 
 // Mocked compile conditionals, if any
 
@@ -202,12 +202,12 @@ extern struct btsnd_hcic_ble_periodic_advertising_terminate_sync
         btsnd_hcic_ble_periodic_advertising_terminate_sync;
 
 // Name: btsnd_hcic_ble_rand
-// Params: base::Callback<void(BT_OCTET8
+// Params: base::OnceCallback<void(Octet8)>
 // Return: void
 struct btsnd_hcic_ble_rand {
-  std::function<void(base::Callback<void(BT_OCTET8)>)> body{
-          [](base::Callback<void(BT_OCTET8)> /* cb */) {}};
-  void operator()(base::Callback<void(BT_OCTET8)> cb) { body(std::move(cb)); }
+  std::function<void(base::OnceCallback<void(Octet8)>)> body{
+          [](base::OnceCallback<void(Octet8)> /* cb */) {}};
+  void operator()(base::OnceCallback<void(Octet8)> cb) { body(std::move(cb)); }
 };
 extern struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
 
@@ -379,15 +379,13 @@ struct btsnd_hcic_ble_set_scan_params {
 extern struct btsnd_hcic_ble_set_scan_params btsnd_hcic_ble_set_scan_params;
 
 // Name: btsnd_hcic_ble_start_enc
-// Params: uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
+// Params: uint16_t handle, Octet8 rand, uint16_t ediv,
 // const Octet16& ltk Return: void
 struct btsnd_hcic_ble_start_enc {
-  std::function<void(uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
-                     const Octet16& ltk)>
-          body{[](uint16_t /* handle */, uint8_t[HCIC_BLE_RAND_DI_SIZE] /* rand */,
-                  uint16_t /* ediv */, const Octet16& /* ltk */) {}};
-  void operator()(uint16_t handle, uint8_t rand[HCIC_BLE_RAND_DI_SIZE], uint16_t ediv,
-                  const Octet16& ltk) {
+  std::function<void(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk)> body{
+          [](uint16_t /* handle */, Octet8 /* rand */, uint16_t /* ediv */,
+             const Octet16& /* ltk */) {}};
+  void operator()(uint16_t handle, Octet8 rand, uint16_t ediv, const Octet16& ltk) {
     body(handle, rand, ediv, ltk);
   }
 };
@@ -555,6 +553,22 @@ struct btsnd_hcic_ble_term_big {
   void operator()(uint8_t big_handle, uint8_t reason) { body(big_handle, reason); }
 };
 extern struct btsnd_hcic_ble_term_big btsnd_hcic_ble_term_big;
+
+// Name: btsnd_hcic_ble_set_big_channel_map_classification_vsc
+// Params: uint8_t action, uint8_t big_handle,
+// uint8_t num_handles, const std::vector<uint16_t>& handles
+// Return: void
+struct btsnd_hcic_ble_set_big_channel_map_classification_vsc {
+  std::function<void(uint8_t, uint8_t, uint8_t, std::vector<uint16_t>)> body{
+          [](uint8_t /* action */, uint8_t /* big_handle */, uint8_t /* num_handles */,
+             std::vector<uint16_t> /* handles */) {}};
+  void operator()(uint8_t action, uint8_t big_handle, uint8_t num_handles,
+                  const std::vector<uint16_t>& handles) {
+    body(action, big_handle, num_handles, handles);
+  }
+};
+extern struct btsnd_hcic_ble_set_big_channel_map_classification_vsc
+        btsnd_hcic_ble_set_big_channel_map_classification_vsc;
 
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock

@@ -286,7 +286,7 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_connected(bda, handle, status, enc_mode);
 }
-void btm_acl_created(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
+void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_created(link_spec, hci_handle, link_role);
 }

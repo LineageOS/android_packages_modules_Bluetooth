@@ -18,9 +18,10 @@
 
 #pragma once
 
+#include <bluetooth/types/bt_octets.h>
+
 #include <cstdint>
 
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 
@@ -30,7 +31,7 @@
 /* BLE encryption keys */
 typedef struct {
   Octet16 ltk;
-  BT_OCTET8 rand;
+  Octet8 rand;
   uint16_t ediv;
   uint8_t sec_level;
   uint8_t key_size;

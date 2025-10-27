@@ -30,7 +30,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -1133,7 +1132,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
      * to test the correct functioning of the McpService class, the final class must be put into a
      * container that can be mocked correctly.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
     public static class BluetoothGattServerProxy {
         private final BluetoothGattServer mBluetoothGattServer;
         private final BluetoothManager mBluetoothManager;
@@ -1326,7 +1324,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         mBluetoothGattServer = proxy;
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private boolean initGattService(UUID serviceUuid) {
         mEventLogger.logd(TAG, "initGattService: uuid= " + serviceUuid);
 
@@ -1549,7 +1546,10 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         if (stateFields.containsKey(PlayerStateField.PLAYER_NAME)) {
             String name = (String) stateFields.get(PlayerStateField.PLAYER_NAME);
-            if ((getPlayerNameChar() != null) && (name.compareTo(getPlayerNameChar()) != 0)) {
+            String playerNameChar = getPlayerNameChar();
+            if ((name != null)
+                    && (playerNameChar != null)
+                    && (name.compareTo(playerNameChar) != 0)) {
                 updatePlayerNameChar(name, doNotifyValueChange);
 
                 // Most likely the player has changed - request critical info fields
@@ -1593,11 +1593,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         boolean notifyTrackChange = false;
         if (stateFields.containsKey(PlayerStateField.TRACK_TITLE)) {
             String newTitle = (String) stateFields.get(PlayerStateField.TRACK_TITLE);
-
+            if (newTitle == null) {
+                newTitle = "";
+            }
             if (getTrackTitleChar().compareTo(newTitle) != 0) {
-                updateTrackTitleChar(
-                        (String) stateFields.get(PlayerStateField.TRACK_TITLE),
-                        doNotifyValueChange);
+                updateTrackTitleChar(newTitle, doNotifyValueChange);
                 notifyTrackChange = true;
             }
         }

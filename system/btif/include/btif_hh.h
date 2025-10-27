@@ -20,6 +20,7 @@
 #define BTIF_HH_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <hardware/bluetooth.h>
@@ -85,7 +86,7 @@ typedef struct {
   int internal_send_fd;  // for passing to other threads so they can send
                          // internal events
   uint8_t dev_handle;
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   bool ready_for_data;
   fixed_queue_t* get_rpt_id_queue;
 #if ENABLE_UHID_SET_REPORT
@@ -100,7 +101,7 @@ typedef struct {
 typedef struct {
   bthh_connection_state_t state;
   uint8_t dev_handle;
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   tBTA_HH_ATTR_MASK attr_mask;
   uint8_t sub_class;
   uint8_t app_id;
@@ -113,7 +114,7 @@ typedef struct {
 /* Control block to maintain properties of devices */
 typedef struct {
   uint8_t dev_handle;
-  tAclLinkSpec link_spec;
+  AclLinkSpec link_spec;
   tBTA_HH_ATTR_MASK attr_mask;
   bool reconnect_allowed;  // Connection policy
 } btif_hh_added_device_t;
@@ -129,7 +130,7 @@ typedef struct {
   btif_hh_added_device_t added_devices[BTIF_HH_MAX_ADDED_DEV];
   bool service_dereg_active;
 
-  std::list<tAclLinkSpec> new_connection_requests;
+  std::list<AclLinkSpec> new_connection_requests;
 
   tBTA_HH_CONN pending_incoming_connection;  // Unexpected incoming connection request
   alarm_t* incoming_connection_timer;        // Timer to handle unexpected incoming connection
@@ -146,10 +147,10 @@ BtStatus btif_hh_execute_service(bool b_enable);
 btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
 btif_hh_device_t* btif_hh_find_dev_by_handle(uint8_t handle);
 btif_hh_device_t* btif_hh_find_empty_dev(void);
-BtStatus btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
-BtStatus btif_hh_virtual_unplug_from_main(const tAclLinkSpec& link_spec);
-BtStatus btif_hh_connect(const tAclLinkSpec& link_spec);
-void btif_hh_remove_device(const tAclLinkSpec& link_spec);
+BtStatus btif_hh_virtual_unplug(const AclLinkSpec& link_spec);
+BtStatus btif_hh_virtual_unplug_from_main(const AclLinkSpec& link_spec);
+BtStatus btif_hh_connect(const AclLinkSpec& link_spec);
+void btif_hh_remove_device(const AclLinkSpec& link_spec);
 void btif_hh_setreport(btif_hh_uhid_t* p_uhid, bthh_report_type_t r_type, uint16_t size,
                        uint8_t* report);
 void btif_hh_senddata(btif_hh_uhid_t* p_uhid, uint16_t size, uint8_t* report);
@@ -157,7 +158,7 @@ void btif_hh_getreport(btif_hh_uhid_t* p_uhid, bthh_report_type_t r_type, uint8_
                        uint16_t bufferSize);
 void btif_hh_service_registration(bool enable);
 
-void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
+void btif_hh_load_bonded_dev(const AclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
                              uint8_t sub_class, uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info,
                              bool reconnect_allowed);
 void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport);

@@ -1793,7 +1793,7 @@ void l2cu_release_ble_rcb(tL2C_RCB* p_rcb) {
 void l2cu_disconnect_chnl(tL2C_CCB* p_ccb) {
   uint16_t local_cid = p_ccb->local_cid;
 
-  if (local_cid >= L2CAP_BASE_APPL_CID) {
+  if (p_ccb->p_rcb != nullptr && local_cid >= L2CAP_BASE_APPL_CID) {
     tL2CA_DISCONNECT_IND_CB* p_disc_cb = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
 
     log::warn("L2CAP - disconnect_chnl CID: 0x{:04x}", local_cid);
@@ -1907,6 +1907,12 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
   bool flush_to_ok = true;
   bool fcr_ok = true;
   uint8_t fcr_status;
+
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("p_ccb->p_rcb is NULL");
+    return L2CAP_PEER_CFG_DISCONNECT;
+  }
+
   uint16_t required_remote_mtu =
           std::max<uint16_t>(L2CAP_MIN_MTU, p_ccb->p_rcb->required_remote_mtu);
 

@@ -22,8 +22,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static java.util.Objects.requireNonNull;
-
 import android.accounts.Account;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
@@ -92,7 +90,7 @@ public class PbapClientService extends ConnectableProfile {
     }
 
     public PbapClientService(AdapterService adapterService) {
-        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, adapterService);
         mHandler = new Handler(Looper.getMainLooper());
         mStateMachinesLooper = null;
 
@@ -112,7 +110,7 @@ public class PbapClientService extends ConnectableProfile {
             PbapClientContactsStorage storage,
             Map<BluetoothDevice, PbapClientStateMachine> deviceMap,
             Looper looper) {
-        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, adapterService);
 
         // This is an override unique to this constructor which belongs to tests only
         mHandler = new Handler(looper);

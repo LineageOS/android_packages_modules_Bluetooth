@@ -23,11 +23,11 @@ import android.util.Log;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.android.bluetooth.ObexAppParameters;
 import com.android.bluetooth.map.BluetoothMapMessageListing;
 import com.android.bluetooth.map.BluetoothMapMessageListingElement;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.map.BluetoothMapUtils;
+import com.android.bluetooth.obex.ObexAppParameters;
 import com.android.obex.HeaderSet;
 import com.android.tests.bluetooth.MockitoRule;
 

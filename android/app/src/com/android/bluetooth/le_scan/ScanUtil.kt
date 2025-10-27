@@ -371,15 +371,15 @@ object ScanUtil {
         isTimeoutScanClient(client) || isDowngradedScanClient(client)
 
     private fun isTimeoutScanClient(client: ScanClient) =
-        client.appScanStats.map { it.isScanTimeout(client.scannerId) }.orElse(false)
+        client.appScanStats?.isScanTimeout(client.scannerId) ?: false
 
     @JvmStatic
     fun isDowngradedScanClient(client: ScanClient) =
-        client.appScanStats.map { it.isScanDowngraded(client.scannerId) }.orElse(false)
+        client.appScanStats?.isScanDowngraded(client.scannerId) ?: false
 
     @JvmStatic
     fun isAutoBatchScanClientEnabled(client: ScanClient) =
-        client.appScanStats.map { it.isAutoBatchScan(client.scannerId) }.orElse(false)
+        client.appScanStats?.isAutoBatchScan(client.scannerId) ?: false
 
     @JvmStatic
     fun isPhyConfigured(client: ScanClient, use1mPhy: Boolean) =
@@ -423,9 +423,7 @@ object ScanUtil {
         client.updateScanMode(SCAN_MODE_SCREEN_OFF)
         val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during setAutoBatchScanClient() to $scanModeString")
-        client.appScanStats.ifPresent { appScanStats ->
-            appScanStats.setAutoBatchScan(client.scannerId, true)
-        }
+        client.appScanStats?.setAutoBatchScan(client.scannerId, true)
     }
 
     @JvmStatic
@@ -436,36 +434,25 @@ object ScanUtil {
         client.updateScanMode(client.scanModeApp)
         val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
-        client.appScanStats.ifPresent { appScanStats ->
-            appScanStats.setAutoBatchScan(client.scannerId, false)
-        }
+        client.appScanStats?.setAutoBatchScan(client.scannerId, false)
     }
 
-    @JvmStatic
-    fun scanFilterToStringWithoutNullParam(filter: ScanFilter): String {
-        return buildString {
-            append("Filter: [")
-            filter.deviceName?.let { append(" DeviceName=").append(it) }
-            filter.deviceAddress?.let { append(" DeviceAddress=").append(it) }
-            filter.serviceUuid?.let { append(" ServiceUuid=").append(it) }
-            filter.serviceUuidMask?.let { append(" ServiceUuidMask=").append(it) }
-            filter.serviceSolicitationUuid?.let { append(" ServiceSolicitationUuid=").append(it) }
-            filter.serviceSolicitationUuidMask?.let {
-                append(" ServiceSolicitationUuidMask=").append(it)
-            }
-            filter.serviceDataUuid?.let { append(" ServiceDataUuid=").append(it) }
-            filter.serviceData?.let { append(" ServiceData=").append(it.contentToString()) }
-            filter.serviceDataMask?.let { append(" ServiceDataMask=").append(it.contentToString()) }
-            if (filter.manufacturerId >= 0) {
-                append(" ManufacturerId=").append(filter.manufacturerId)
-            }
-            filter.manufacturerData?.let {
-                append(" ManufacturerData=").append(it.contentToString())
-            }
-            filter.manufacturerDataMask?.let {
-                append(" ManufacturerDataMask=").append(it.contentToString())
-            }
-            append(" ]")
+    fun ScanFilter.toStringWithoutNullParam() = buildString {
+        append("Filter: [")
+        deviceName?.let { append(" DeviceName=").append(it) }
+        deviceAddress?.let { append(" DeviceAddress=").append(it) }
+        serviceUuid?.let { append(" ServiceUuid=").append(it) }
+        serviceUuidMask?.let { append(" ServiceUuidMask=").append(it) }
+        serviceSolicitationUuid?.let { append(" ServiceSolicitationUuid=").append(it) }
+        serviceSolicitationUuidMask?.let { append(" ServiceSolicitationUuidMask=").append(it) }
+        serviceDataUuid?.let { append(" ServiceDataUuid=").append(it) }
+        serviceData?.let { append(" ServiceData=").append(it.contentToString()) }
+        serviceDataMask?.let { append(" ServiceDataMask=").append(it.contentToString()) }
+        if (manufacturerId >= 0) {
+            append(" ManufacturerId=").append(manufacturerId)
         }
+        manufacturerData?.let { append(" ManufacturerData=").append(it.contentToString()) }
+        manufacturerDataMask?.let { append(" ManufacturerDataMask=").append(it.contentToString()) }
+        append(" ]")
     }
 }

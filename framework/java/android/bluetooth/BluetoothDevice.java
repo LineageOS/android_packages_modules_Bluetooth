@@ -2049,7 +2049,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressLint("AndroidFrameworkRequiresPermission") // IpcDataCache prevent lint enforcement
     public int getBondState() {
         final IBluetooth service = getService();
         if (service == null) {
@@ -2360,7 +2359,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    @SuppressLint("AndroidFrameworkRequiresPermission") // See fetchUuidsWithSdp(int) for reason
     public boolean fetchUuidsWithSdp() {
         return fetchUuidsWithSdp(TRANSPORT_AUTO);
     }
@@ -3127,8 +3125,16 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             return null;
         }
         BluetoothGatt gatt =
-                new BluetoothGatt(iGatt, this, transport, opportunistic, phy, mAttributionSource);
-        gatt.connect(autoConnect, callback, handler);
+                new BluetoothGatt(
+                        iGatt,
+                        this,
+                        transport,
+                        opportunistic,
+                        phy,
+                        mAttributionSource,
+                        autoConnect,
+                        callback,
+                        handler);
         return gatt;
     }
 

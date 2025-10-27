@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.hid;
 
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;

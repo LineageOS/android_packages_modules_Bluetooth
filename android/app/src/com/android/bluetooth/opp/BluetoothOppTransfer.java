@@ -55,16 +55,15 @@ import android.os.Process;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
 
 import java.io.IOException;
 
 /** This class run an actual Opp transfer session (from connect target device to disconnect) */
-@SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatchListener {
     private static final String TAG = BluetoothOppTransfer.class.getSimpleName();
 

@@ -201,18 +201,6 @@ struct bta_av_co_audio_start {
 };
 extern struct bta_av_co_audio_start bta_av_co_audio_start;
 
-// Name: bta_av_co_audio_stop
-// Params: tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address
-// Return: void
-struct bta_av_co_audio_stop {
-  std::function<void(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address)> body{
-          [](tBTA_AV_HNDL /* bta_av_handle */, const RawAddress& /* peer_address */) {}};
-  void operator()(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address) {
-    body(bta_av_handle, peer_address);
-  }
-};
-extern struct bta_av_co_audio_stop bta_av_co_audio_stop;
-
 // Name: bta_av_co_audio_update_mtu
 // Params: tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address, uint16_t
 // mtu Return: void

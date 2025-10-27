@@ -170,13 +170,11 @@ android_robolectric_test {
         "src/satellite/ModeListenerTest.kt",
     ],
 
-    jarjar_rules: ":bluetooth-jarjar-rules",
-
     static_libs: [
         "androidx.test.core",
         "androidx.test.ext.truth",
         "bluetooth-common-flagwrapper-tests",
-        "bluetooth-common-java-tests",
+        "bluetooth-common-java",
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
         "bluetooth_flags_java_lib",

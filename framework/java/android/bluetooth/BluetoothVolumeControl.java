@@ -283,7 +283,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     @Hide
     @Override
     @RequiresNoPermission
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Unexposed re-entrant callback
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothVolumeControl.Stub.asInterface(service);
         // re-register the service-to-app callback

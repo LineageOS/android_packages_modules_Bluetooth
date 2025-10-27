@@ -678,7 +678,7 @@ int bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len) {
  * Returns       True if platform specific initialization is successful
  ******************************************************************************/
 bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, tBTA_HH_ATTR_MASK attr_mask,
-                    uint8_t app_id, tAclLinkSpec& link_spec) {
+                    uint8_t app_id, AclLinkSpec& link_spec) {
   bool new_device = false;
 
   if (dev_handle == BTA_HH_INVALID_HANDLE) {
@@ -936,7 +936,7 @@ void bta_hh_co_get_rpt_rsp(uint8_t dev_handle, uint8_t status, const uint8_t* p_
  * Returns          void.
  *
  ******************************************************************************/
-void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec, tBTA_HH_RPT_CACHE_ENTRY* p_entry,
+void bta_hh_le_co_rpt_info(const AclLinkSpec& link_spec, tBTA_HH_RPT_CACHE_ENTRY* p_entry,
                            uint8_t /* app_id */) {
   unsigned idx = 0;
 
@@ -974,7 +974,7 @@ void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec, tBTA_HH_RPT_CACHE_ENTR
  * Returns          the cached report array
  *
  ******************************************************************************/
-tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec, uint8_t* p_num_rpt,
+tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const AclLinkSpec& link_spec, uint8_t* p_num_rpt,
                                                  uint8_t app_id) {
   std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
@@ -1015,7 +1015,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec, 
  * Returns          none
  *
  ******************************************************************************/
-void bta_hh_le_co_reset_rpt_cache(const tAclLinkSpec& link_spec, uint8_t /* app_id */) {
+void bta_hh_le_co_reset_rpt_cache(const AclLinkSpec& link_spec, uint8_t /* app_id */) {
   std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
 

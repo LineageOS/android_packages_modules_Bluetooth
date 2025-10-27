@@ -17,7 +17,9 @@
 
 #pragma once
 
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
 #include <list>
@@ -27,7 +29,6 @@
 #include "osi/include/list.h"
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_sec_int_types.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/security_client_callbacks.h"
 
 // TODO: b/446803190 - Fix the arguments by making them const references.
@@ -43,7 +44,7 @@ public:
   tBTM_SEC_DEVCB devcb;
 
   uint16_t enc_handle{0};
-  BT_OCTET8 enc_rand; /* received rand value from LTK request*/
+  Octet8 enc_rand;    /* received rand value from LTK request*/
   uint16_t ediv{0};   /* received ediv value from LTK request */
   uint8_t key_size{0};
 
@@ -64,11 +65,11 @@ public:
   bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
   uint8_t pin_code_len{0};                               /* for legacy devices */
-  PIN_CODE pin_code;                                     /* for legacy devices */
+  PinCode pin_code;                                      /* for legacy devices */
   tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
   uint8_t pairing_flags{0};                              /* The current pairing flags    */
-  tAclLinkSpec link_spec;                                /* The device currently pairing.
-                                                            Address type is ignored currently */
+  AclLinkSpec link_spec;                                 /* The device currently pairing.
+                                                             Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
 // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.

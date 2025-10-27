@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.gatt
 
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.DistanceMeasurementMethod
 import android.bluetooth.le.DistanceMeasurementParams
 import android.bluetooth.le.IDistanceMeasurementCallback
@@ -48,7 +47,7 @@ class DistanceMeasurementTrackerTest {
     @Mock private lateinit var distanceMeasurementManager: DistanceMeasurementManager
     @Mock private lateinit var callback: IDistanceMeasurementCallback
 
-    private val device: BluetoothDevice = getTestDevice(35)
+    private val device = getTestDevice(35)
 
     private lateinit var tracker: DistanceMeasurementTracker
     private lateinit var uuid: UUID

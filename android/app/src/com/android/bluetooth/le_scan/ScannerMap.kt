@@ -28,6 +28,7 @@ import com.android.bluetooth.le_scan.ScanUtil.appNameOrUnknown
 import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.getLastAttributionTag
+import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -121,10 +122,8 @@ class ScannerMap {
         return app
     }
 
-    /** Remove the context for a given application ID. */
     fun remove(id: Int) = removeBy("id=$id") { it.id == id }
 
-    /** Remove the context for a given UUID */
     fun remove(uuid: UUID) = removeBy("UUID=$uuid") { it.uuid == uuid }
 
     private fun removeBy(removalContext: String, predicate: (ScannerApp) -> Boolean) {
@@ -140,40 +139,32 @@ class ScannerMap {
         }
     }
 
-    /** Erases all application context entries. */
     fun clear() {
         apps.forEach(ScannerApp::cleanup)
         apps.clear()
     }
 
-    /** Get Logging info by application UID */
     fun getAppScanStatsByUid(uid: Int): AppScanStats? = appScanStatsMap[uid]
 
-    /** Get Logging info by ID */
     fun getAppScanStatsById(id: Int): AppScanStats? = getById(id)?.appScanStats
 
-    /** Get an application context by ID. */
     fun getById(id: Int) = findBy("ID=$id") { it.id == id }
 
-    /** Get an application context by UUID. */
     fun getByUuid(uuid: UUID) = findBy("UUID=$uuid") { it.uuid == uuid }
 
-    /** Get an application context by the pending intent info object's intent. */
     fun getByPendingIntentInfo(intent: PendingIntent) =
         findBy("intent=$intent") { it.info?.intent() == intent }
 
-    private fun findBy(searchContext: String, predicate: (ScannerApp) -> Boolean): ScannerApp? {
+    private fun findBy(criteria: String, predicate: (ScannerApp) -> Boolean): ScannerApp? {
         val app = apps.find(predicate)
         if (app == null) {
-            Log.e(TAG, "Context not found for $searchContext")
+            Log.e(TAG, "Context not found for $criteria")
         }
         return app
     }
 
-    /** Logs debug information for registered apps and their scan statistics. */
     fun dump(sb: StringBuilder, settingsMap: Map<Int, ScanSettings>) {
-        sb.appendLine("\nLE Scanner:")
-
+        sb.appendLine("LE Scanner:")
         if (apps.isNotEmpty()) {
             val columns =
                 mutableListOf<Column<ScannerApp>>(
@@ -196,15 +187,15 @@ class ScannerMap {
                 )
             }
 
-            val table = apps.toTable(columns).prependIndent("  ")
-            sb.appendLine(table)
+            sb.appendLine(apps.toTable(columns).indent("  "))
         }
+        sb.appendLine()
 
-        sb.appendLine("\nLE Scanner Map:")
+        sb.appendLine("LE Scanner Map:")
         sb.appendLine("  Entries: ${appScanStatsMap.size}")
         for (appScanStats in appScanStatsMap.values) {
             val scannerApps = apps.filter { it.name == appScanStats.name }
-            appScanStats.dump(sb, scannerApps)
+            sb.appendLine(appScanStats.dump(scannerApps).indent("  "))
         }
     }
 }

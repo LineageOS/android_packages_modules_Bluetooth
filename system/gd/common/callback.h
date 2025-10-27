@@ -21,6 +21,9 @@
 namespace bluetooth {
 namespace common {
 
+// This base:: -> common:: renaming is deprecated, please use the base:: classes
+// directly.
+// TODO: Replace the existing usages and remove this file.
 using base::Callback;
 using base::Closure;
 using base::OnceCallback;

@@ -63,16 +63,6 @@ flag {
 }
 
 flag {
-    name: "start_discover_service_changed"
-    namespace: "bluetooth"
-    description: "Start discovery again when service change indication arrives."
-    bug: "400828637"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "rssi_scan_filter"
     namespace: "bluetooth"
     is_exported: true
@@ -115,16 +105,6 @@ flag {
     namespace: "bluetooth"
     description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
     bug: "407051373"
-}
-
-flag {
-    name: "batch_scan_support_check"
-    namespace: "bluetooth"
-    description: "Add support check for batch scans when scan starts"
-    bug: "411519279"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -337,6 +317,16 @@ flag {
     namespace: "bluetooth"
     description: "Migrate btm scan logic to gd le scanning manager"
     bug: "452239954"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "use_filter_for_each_manufacturer_data_block"
+    namespace: "bluetooth"
+    description: "When multiple manufacturer data blocks exist for same ID, also try matching each of them in ScanFilter"
+    bug: "453511802"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

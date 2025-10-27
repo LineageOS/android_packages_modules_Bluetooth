@@ -260,6 +260,8 @@ class HfpTest {
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
         hfpService.setForceScoAudio(true)
+        // Allow one second delay to complete  SLC on bumble side
+        Thread.sleep(1000)
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
         verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)

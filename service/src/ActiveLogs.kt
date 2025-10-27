@@ -37,6 +37,7 @@ import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__ENABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__UNKNOWN
 import com.android.bluetooth.util.Column
+import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
 import java.io.PrintWriter
 
@@ -89,7 +90,7 @@ class ActiveLogs {
         }
 
         writer.println("Enable log:")
-        val table =
+        writer.println(
             activeLogs
                 .toTable(
                     Column("TIMESTAMP", width = 18) { Log.timeToStringWithZone(it.timestamp) },
@@ -99,8 +100,8 @@ class ActiveLogs {
                     Column("REASON", width = 20) { getEnableDisableReasonString(it.reason) },
                     Column("PACKAGE") { it.packageName },
                 )
-                .prependIndent("  ")
-        writer.println(table)
+                .indent("  ")
+        )
     }
 
     companion object {

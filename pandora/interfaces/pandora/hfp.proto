@@ -58,6 +58,12 @@ service HFP {
       returns (SetVoiceRecognitionAsHandsfreeResponse);
   // Send DTMF code from the handsfree
   rpc SendDtmfFromHandsfree(SendDtmfFromHandsfreeRequest) returns (SendDtmfFromHandsfreeResponse);
+  // Release the active call and accept the waiting call (as a handsfree)
+  rpc ReleaseActiveAcceptOtherAsHandsfree(ReleaseActiveAcceptOtherAsHandsfreeRequest) returns (ReleaseActiveAcceptOtherAsHandsfreeResponse);
+  // Hold the active call and retrieve the waiting call (as a handsfree)
+  rpc SwapActiveCallAsHandsfree(SwapActiveCallAsHandsfreeRequest) returns (SwapActiveCallAsHandsfreeResponse);
+  // Hold all active calls except the one specified by the index (as a handsfree)
+  rpc ConsultCallByIndexAsHandsfree(ConsultCallByIndexAsHandsfreeRequest) returns (ConsultCallByIndexAsHandsfreeResponse);
 }
 
 // Request of the `EnableSlc` method.
@@ -191,3 +197,22 @@ message SendDtmfFromHandsfreeRequest {
 }
 
 message SendDtmfFromHandsfreeResponse {}
+
+message ReleaseActiveAcceptOtherAsHandsfreeRequest {
+  Connection connection = 1;
+}
+
+message ReleaseActiveAcceptOtherAsHandsfreeResponse {}
+
+message SwapActiveCallAsHandsfreeRequest {
+  Connection connection = 1;
+}
+
+message SwapActiveCallAsHandsfreeResponse {}
+
+message ConsultCallByIndexAsHandsfreeRequest {
+  Connection connection = 1;
+  int32 index = 2;
+}
+
+message ConsultCallByIndexAsHandsfreeResponse {}

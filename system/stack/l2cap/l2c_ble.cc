@@ -626,9 +626,14 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
             l2cu_send_peer_disc_req(temp_p_ccb);
 
             temp_p_ccb = l2cu_find_ccb_by_cid(p_lcb, cid);
-            con_info.l2cap_result = static_cast<tL2CAP_CONN>(
-                    tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS);
-            l2c_csm_execute(temp_p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG, &con_info);
+
+            if (temp_p_ccb != nullptr) {
+              con_info.l2cap_result = static_cast<tL2CAP_CONN>(
+                      tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS);
+              l2c_csm_execute(temp_p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG, &con_info);
+            } else {
+              log::error("L2CAP - cannot find CCB for cid: {}", cid);
+            }
             continue;
           }
         }

@@ -29,7 +29,6 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.content.AttributionSource;
@@ -764,7 +763,6 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
 
     @Hide
     @Override
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Unexposed re-entrant callback
     @RequiresNoPermission
     public void onServiceConnected(IBinder service) {
         mService = IBluetoothLeAudio.Stub.asInterface(service);

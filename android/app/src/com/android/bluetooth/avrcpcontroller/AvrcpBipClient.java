@@ -24,7 +24,6 @@ import static android.bluetooth.BluetoothProfile.getConnectionStateName;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
@@ -33,8 +32,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
@@ -242,7 +241,6 @@ public class AvrcpBipClient {
     }
 
     /** Connects to the remote device's BIP Image Pull server */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // socket are handled in framework space
     private synchronized void connect() {
         debug("Connect using psm: " + mPsm);
         if (isConnected()) {

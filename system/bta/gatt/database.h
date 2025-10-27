@@ -18,13 +18,12 @@
 
 #pragma once
 
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/uuid.h>
 
 #include <list>
 #include <string>
 #include <vector>
-
-#include "stack/include/bt_octets.h"
 
 namespace gatt {
 constexpr uint16_t HANDLE_MIN = 0x0001;

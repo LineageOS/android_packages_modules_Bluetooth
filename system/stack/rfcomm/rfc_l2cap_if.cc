@@ -399,6 +399,9 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
                  std::format_ptr(p_mcb));
     p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci] = p_port->handle;
     p_port->rfc.p_mcb = p_mcb;
+    if (com_android_bluetooth_flags_hfp_collision_fix_rfcomm_port_rx_buf_critical_error()) {
+      port_select_mtu(p_port);
+    }
   }
 
   if (event == RFC_EVENT_UIH) {

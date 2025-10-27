@@ -22,11 +22,11 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothObexTransport;
-import com.android.bluetooth.IObexConnectionHandler;
-import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
+import com.android.bluetooth.obex.IObexConnectionHandler;
+import com.android.bluetooth.obex.ObexServerSockets;
 import com.android.obex.ServerSession;
 
 import java.io.IOException;

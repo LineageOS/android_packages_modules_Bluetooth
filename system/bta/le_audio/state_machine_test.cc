@@ -271,6 +271,7 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
             true);
+    com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
 
     reset_mock_function_count_map();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);

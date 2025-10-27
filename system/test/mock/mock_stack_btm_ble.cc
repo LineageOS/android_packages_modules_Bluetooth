@@ -192,10 +192,9 @@ void BTM_SecurityGrant(const RawAddress& bd_addr, tBTM_STATUS res) {
   test::mock::stack_btm_ble::BTM_SecurityGrant(bd_addr, res);
 }
 void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t role,
-                       tBLE_ADDR_TYPE addr_type, bool addr_matched,
-                       bool can_read_discoverable_characteristics) {
+                       tBLE_ADDR_TYPE addr_type, bool can_read_discoverable_characteristics) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::btm_ble_connected(bda, handle, enc_mode, role, addr_type, addr_matched,
+  test::mock::stack_btm_ble::btm_ble_connected(bda, handle, enc_mode, role, addr_type,
                                                can_read_discoverable_characteristics);
 }
 void btm_ble_connection_established(const RawAddress& bda) {
@@ -219,7 +218,7 @@ tBTM_BLE_SEC_REQ_ACT btm_ble_link_sec_check(const RawAddress& bd_addr, tBTM_LE_A
   inc_func_call_count(__func__);
   return test::mock::stack_btm_ble::btm_ble_link_sec_check(bd_addr, auth_req);
 }
-void btm_ble_ltk_request(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
+void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble::btm_ble_ltk_request(handle, rand, ediv);
 }

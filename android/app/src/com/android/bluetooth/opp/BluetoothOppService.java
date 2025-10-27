@@ -32,8 +32,6 @@
 
 package com.android.bluetooth.opp;
 
-import static java.util.Objects.requireNonNull;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
@@ -59,11 +57,11 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothObexTransport;
-import com.android.bluetooth.IObexConnectionHandler;
-import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.obex.BluetoothObexTransport;
+import com.android.bluetooth.obex.IObexConnectionHandler;
+import com.android.bluetooth.obex.ObexServerSockets;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
@@ -210,7 +208,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     @VisibleForTesting
     BluetoothOppService(AdapterService adapterService, BluetoothOppPreference oppPreference) {
-        super(BluetoothProfile.OPP, requireNonNull(adapterService));
+        super(BluetoothProfile.OPP, adapterService);
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);

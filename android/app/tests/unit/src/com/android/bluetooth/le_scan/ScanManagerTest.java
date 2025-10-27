@@ -117,7 +117,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -361,9 +361,8 @@ public class ScanManagerTest {
         ScanSettings scanSettings = createScanSettings(scanMode, isBatch, isAutoBatch);
         mClientId = mClientId + 1;
         ScanClient client = new ScanClient(appUid, mClientId, scanSettings, scanFilterList);
-        client.setAppScanStats(Optional.of(appScanStats));
-        client.getAppScanStats()
-                .get()
+        client.setAppScanStats(appScanStats);
+        Objects.requireNonNull(client.getAppScanStats())
                 .recordScanStart(scanSettings, scanFilterList, isFiltered, false, mClientId, null);
         return client;
     }
@@ -463,9 +462,8 @@ public class ScanManagerTest {
 
         final int appUid = 1234;
         ScanClient client = new ScanClient(appUid, id, scanSettings, scanFilterList);
-        client.setAppScanStats(Optional.of(mAppScanStats));
-        client.getAppScanStats()
-                .get()
+        client.setAppScanStats(mAppScanStats);
+        Objects.requireNonNull(client.getAppScanStats())
                 .recordScanStart(scanSettings, scanFilterList, isFiltered, false, id, null);
         return client;
     }
@@ -700,7 +698,7 @@ public class ScanManagerTest {
                     advanceTime(DEFAULT_SCAN_TIMEOUT);
                     mLooper.dispatchAll();
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
+                    assertThat(client.getAppScanStats().isScanTimeout(client.getScannerId()))
                             .isTrue();
                     // Turn off screen
                     setScreenOn(false);
@@ -741,7 +739,7 @@ public class ScanManagerTest {
                     doReturn(true).when(mAppScanStats).isScanningTooLong();
                     mLooper.dispatchAll();
                     assertThat(client.getSettings().getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
+                    assertThat(client.getAppScanStats().isScanTimeout(client.getScannerId()))
                             .isTrue();
                     // Turn off screen
                     setScreenOn(false);
@@ -804,8 +802,7 @@ public class ScanManagerTest {
             mLooper.dispatchAll();
             // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
             assertThat(client.getSettings().getScanMode()).isEqualTo(SCAN_MODE_OPPORTUNISTIC);
-            assertThat(client.getAppScanStats().get().isScanTimeout(client.getScannerId()))
-                    .isTrue();
+            assertThat(client.getAppScanStats().isScanTimeout(client.getScannerId())).isTrue();
         } else {
             Message nextMessage = mLooper.nextMessage();
             assertThat(nextMessage.what).isEqualTo(ScanManager.MSG_SCAN_TIMEOUT);
@@ -1347,7 +1344,7 @@ public class ScanManagerTest {
 
             advanceTime(scanTestDuration);
             // Record scan stop
-            client.getAppScanStats().get().recordScanStop(mClientId);
+            client.getAppScanStats().recordScanStop(mClientId);
             // Verify that the app scan stop is logged
             mInOrder.verify(mMetricsLogger)
                     .logAppScanStateChanged(
@@ -1920,7 +1917,7 @@ public class ScanManagerTest {
         assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
         assertThat(client.getSettings().getScanMode()).isEqualTo(SCAN_MODE_LOW_LATENCY);
         // Set AppScanStats to empty
-        client.setAppScanStats(Optional.empty());
+        client.setAppScanStats(null);
         // Set connecting state
         setConnectingState(true);
         // Since AppScanStats is null, no downgrade takes place for scan mode

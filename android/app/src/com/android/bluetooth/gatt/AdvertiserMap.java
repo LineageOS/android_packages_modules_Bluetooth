@@ -20,8 +20,6 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.content.AttributionSource;
-import android.content.Context;
-import android.os.Binder;
 import android.util.Log;
 
 import androidx.annotation.VisibleForTesting;
@@ -43,17 +41,10 @@ class AdvertiserMap {
             new BluetoothEventLogger(5, "Last Advertising");
 
     /** Add an entry to the stats map if it doesn't already exist. */
-    void addAppAdvertiseStats(int id, Context context, AttributionSource source) {
-        int appUid = Binder.getCallingUid();
-        String appName = context.getPackageManager().getNameForUid(appUid);
-        if (appName == null) {
-            // Assign an app name if one isn't found
-            appName = "Unknown App (UID: " + appUid + ")";
-        }
-
+    void addAppAdvertiseStats(int uid, String appName, int id, AttributionSource source) {
         synchronized (this) {
             if (!mAppAdvertiseStats.containsKey(id)) {
-                addAppAdvertiseStats(id, new AppAdvertiseStats(appUid, id, appName, source));
+                addAppAdvertiseStats(id, new AppAdvertiseStats(uid, id, appName, source));
             }
         }
     }

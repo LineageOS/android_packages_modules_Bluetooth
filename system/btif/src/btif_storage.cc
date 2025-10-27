@@ -38,6 +38,7 @@
 #include <cutils/multiuser.h>
 #endif
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/uuid.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +62,6 @@
 #include "main/shim/helpers.h"
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/bt_uuid16.h"
 #include "storage/config_keys.h"
 
@@ -889,7 +889,7 @@ static void remove_devices_with_sample_ltk() {
 
     if (btif_storage_get_ble_bonding_key(bd_addr, BTM_LE_KEY_PENC, reinterpret_cast<uint8_t*>(&key),
                                          sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) {
-      if (is_sample_ltk(key.penc_key.ltk)) {
+      if (key.penc_key.ltk == SAMPLE_LTK) {
         bad_ltk.push_back(bd_addr);
       }
     }

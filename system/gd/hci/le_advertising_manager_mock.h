@@ -35,18 +35,14 @@ public:
   MOCK_METHOD(int, GetAdvertiserRegId, (AdvertiserId advertiser_id), (override));
 
   MOCK_METHOD(void, ExtendedCreateAdvertiser,
-              (uint8_t client_id, int reg_id, const AdvertisingConfig config,
-               common::Callback<void(Address, AddressType)> scan_callback,
-               common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-               uint16_t duration, uint8_t max_extended_advertising_events, os::Handler* handler),
+              (uint8_t client_id, int reg_id, const AdvertisingConfig config, uint16_t duration,
+               uint8_t max_extended_advertising_events, os::Handler* handler),
               (override));
 
   MOCK_METHOD(void, StartAdvertising,
               (AdvertiserId advertiser_id, const AdvertisingConfig config, uint16_t duration,
                base::OnceCallback<void(uint8_t /* status */)> status_callback,
                base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
-               common::Callback<void(Address, AddressType)> scan_callback,
-               common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
                os::Handler* handler),
               (override));
 

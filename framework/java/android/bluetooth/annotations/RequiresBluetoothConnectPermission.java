@@ -16,6 +16,7 @@
 
 package android.bluetooth.annotations;
 
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
@@ -34,6 +35,6 @@ import java.lang.annotation.Target;
  */
 @Hide
 @Retention(SOURCE)
-@Target({METHOD, FIELD})
+@Target({METHOD, CONSTRUCTOR, FIELD})
 @SuppressWarnings("InvalidBlockTag")
 public @interface RequiresBluetoothConnectPermission {}

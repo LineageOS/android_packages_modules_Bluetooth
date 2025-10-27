@@ -48,7 +48,7 @@ import org.mockito.kotlin.whenever
 class ScannerMapTest {
     @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private lateinit var attributionSource: AttributionSource
+    @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var packageManager: PackageManager
     @Mock private lateinit var scannerCallback: IScannerCallback
@@ -71,7 +71,7 @@ class ScannerMapTest {
             scannerMap.addWithPendingIntent(
                 uuid,
                 mock(UserHandle::class.java),
-                attributionSource,
+                source,
                 info,
                 adapterService,
             )
@@ -96,7 +96,7 @@ class ScannerMapTest {
                 appPid,
                 APP_NAME,
                 uuid,
-                attributionSource,
+                source,
                 null,
                 scannerCallback,
                 adapterService,
@@ -123,7 +123,7 @@ class ScannerMapTest {
                 appPid,
                 APP_NAME,
                 uuid,
-                attributionSource,
+                source,
                 null,
                 scannerCallback,
                 adapterService,
@@ -147,7 +147,7 @@ class ScannerMapTest {
             appPid,
             APP_NAME,
             UUID.randomUUID(),
-            attributionSource,
+            source,
             null,
             scannerCallback,
             adapterService,

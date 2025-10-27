@@ -17,7 +17,6 @@
 package com.android.bluetooth;
 
 import android.annotation.NonNull;
-import android.annotation.SuppressLint;
 import android.app.ComponentCaller;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ContentProviderClient;
@@ -36,6 +35,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
+import android.provider.Settings;
 import android.provider.Telephony;
 import android.util.Log;
 
@@ -184,7 +184,6 @@ public class BluetoothMethodProxy {
     }
 
     /** Proxies {@link Context#sendBroadcast(Intent)}. */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // only intent is ACTION_OPEN
     public void contextSendBroadcast(Context context, Intent intent) {
         context.sendBroadcast(intent);
     }
@@ -248,5 +247,10 @@ public class BluetoothMethodProxy {
     /** Proxies {@link Context#getContentResolver()}. */
     public ContentResolver getContentResolver(Context context) {
         return context.getContentResolver();
+    }
+
+    /** Proxies {@link Settings.Secure#getString}. */
+    public String settingsSecureGetString(ContentResolver contentResolver, String name) {
+        return Settings.Secure.getString(contentResolver, name);
     }
 }

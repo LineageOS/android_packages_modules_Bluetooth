@@ -22,13 +22,13 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_octets.h>
 
 #include <cstdint>
 #include <string>
 
 #include "include/hardware/bluetooth.h"
 #include "macros.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/smp_status.h"
 
@@ -166,8 +166,8 @@ typedef struct {
 } tSMP_CMPL;
 
 typedef struct {
-  BT_OCTET32 x;
-  BT_OCTET32 y;
+  Octet32 x;
+  Octet32 y;
 } tSMP_PUBLIC_KEY;
 
 /* the data associated with the info sent to the peer via OOB interface */
@@ -177,7 +177,7 @@ typedef struct {
   Octet16 commitment;
 
   tBLE_BD_ADDR addr_sent_to;
-  BT_OCTET32 private_key_used; /* is used to calculate: */
+  Octet32 private_key_used; /* is used to calculate: */
   /* publ_key_used = P-256(private_key_used, curve_p256.G) - send it to the */
   /* other side */
   /* dhkey = P-256(private_key_used, publ key rcvd from the other side) */
@@ -205,14 +205,6 @@ typedef union {
   tSMP_LOC_OOB_DATA loc_oob_data;
   tBLE_BD_ADDR id_addr_with_type;
 } tSMP_EVT_DATA;
-
-/* AES Encryption output */
-typedef struct {
-  uint8_t status;
-  uint8_t param_len;
-  uint16_t opcode;
-  uint8_t param_buf[OCTET16_LEN];
-} tSMP_ENC;
 
 /* Security Manager events - Called by the stack when Security Manager related
  * events occur.*/

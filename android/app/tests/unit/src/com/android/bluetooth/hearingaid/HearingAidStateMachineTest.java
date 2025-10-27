@@ -26,6 +26,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.hearingaid.HearingAidStateMachine.MESSAGE_CONNECTION_STATE_CHANGED;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -98,13 +99,8 @@ public class HearingAidStateMachineTest {
     @Test
     public void incomingConnect_whenNotOkToConnect_isRejected() {
         doReturn(false).when(mService).okToConnect(any());
-
-        // Inject an event for when incoming connection is requested
-        HearingAidStackEvent connStCh =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mDevice;
-        connStCh.valueInt1 = STATE_CONNECTED;
-        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connStCh);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED);
+        mLooper.dispatchAll();
 
         verify(mService, never()).sendBroadcastAsUser(any(), any(), anyString(), any());
         assertThat(mStateMachine.getCurrentState())
@@ -113,12 +109,8 @@ public class HearingAidStateMachineTest {
 
     @Test
     public void incomingConnect_whenOkToConnect_isConnected() {
-        // Inject an event for when incoming connection is requested
-        HearingAidStackEvent connStCh =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mDevice;
-        connStCh.valueInt1 = STATE_CONNECTING;
-        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connStCh);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING);
+        mLooper.dispatchAll();
 
         verifyIntentSent(
                 hasAction(ACTION_CONNECTION_STATE_CHANGED),
@@ -127,12 +119,8 @@ public class HearingAidStateMachineTest {
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(HearingAidStateMachine.Connecting.class);
 
-        // Send a message to trigger connection completed
-        HearingAidStackEvent connCompletedEvent =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connCompletedEvent.device = mDevice;
-        connCompletedEvent.valueInt1 = STATE_CONNECTED;
-        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connCompletedEvent);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED);
+        mLooper.dispatchAll();
 
         verifyIntentSent(
                 hasAction(ACTION_CONNECTION_STATE_CHANGED), hasExtra(EXTRA_STATE, STATE_CONNECTED));
@@ -164,11 +152,8 @@ public class HearingAidStateMachineTest {
 
     @Test
     public void incomingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
-        HearingAidStackEvent connStCh =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mDevice;
-        connStCh.valueInt1 = STATE_CONNECTING;
-        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connStCh);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTING);
+        mLooper.dispatchAll();
 
         verifyIntentSent(
                 hasAction(ACTION_CONNECTION_STATE_CHANGED),

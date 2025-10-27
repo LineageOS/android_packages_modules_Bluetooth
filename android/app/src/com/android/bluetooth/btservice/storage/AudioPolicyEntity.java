@@ -22,7 +22,7 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 
 @Entity
-class AudioPolicyEntity {
+public class AudioPolicyEntity {
     @ColumnInfo(name = "call_establish_audio_policy")
     public int callEstablishAudioPolicy;
 

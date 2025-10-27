@@ -44,7 +44,7 @@ class AdvertiseBinderTest {
 
     @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private lateinit var attributionSource: AttributionSource
+    @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var advertiseManager: AdvertiseManager
 
@@ -83,7 +83,7 @@ class AdvertiseBinderTest {
             maxExtAdvEvents,
             serverCallback,
             callback,
-            attributionSource,
+            source,
         )
         verify(advertiseManager)
             .startAdvertisingSet(
@@ -96,7 +96,7 @@ class AdvertiseBinderTest {
                 maxExtAdvEvents,
                 serverCallback,
                 callback,
-                attributionSource,
+                source,
             )
     }
 
@@ -104,7 +104,7 @@ class AdvertiseBinderTest {
     fun stopAdvertisingSet() {
         val callback = mock(IAdvertisingSetCallback::class.java)
 
-        binder.stopAdvertisingSet(callback, attributionSource)
+        binder.stopAdvertisingSet(callback, source)
         verify(advertiseManager).stopAdvertisingSet(callback)
     }
 
@@ -113,7 +113,7 @@ class AdvertiseBinderTest {
         val advertiserId = 1
         val data = AdvertiseData.Builder().build()
 
-        binder.setAdvertisingData(advertiserId, data, attributionSource)
+        binder.setAdvertisingData(advertiserId, data, source)
         verify(advertiseManager).setAdvertisingData(advertiserId, data)
     }
 
@@ -122,7 +122,7 @@ class AdvertiseBinderTest {
         val advertiserId = 1
         val parameters = AdvertisingSetParameters.Builder().build()
 
-        binder.setAdvertisingParameters(advertiserId, parameters, attributionSource)
+        binder.setAdvertisingParameters(advertiserId, parameters, source)
         verify(advertiseManager).setAdvertisingParameters(advertiserId, parameters)
     }
 
@@ -131,7 +131,7 @@ class AdvertiseBinderTest {
         val advertiserId = 1
         val data = AdvertiseData.Builder().build()
 
-        binder.setPeriodicAdvertisingData(advertiserId, data, attributionSource)
+        binder.setPeriodicAdvertisingData(advertiserId, data, source)
         verify(advertiseManager).setPeriodicAdvertisingData(advertiserId, data)
     }
 
@@ -140,7 +140,7 @@ class AdvertiseBinderTest {
         val advertiserId = 1
         val enable = true
 
-        binder.setPeriodicAdvertisingEnable(advertiserId, enable, attributionSource)
+        binder.setPeriodicAdvertisingEnable(advertiserId, enable, source)
         verify(advertiseManager).setPeriodicAdvertisingEnable(advertiserId, enable)
     }
 
@@ -149,7 +149,7 @@ class AdvertiseBinderTest {
         val advertiserId = 1
         val parameters = PeriodicAdvertisingParameters.Builder().build()
 
-        binder.setPeriodicAdvertisingParameters(advertiserId, parameters, attributionSource)
+        binder.setPeriodicAdvertisingParameters(advertiserId, parameters, source)
         verify(advertiseManager).setPeriodicAdvertisingParameters(advertiserId, parameters)
     }
 
@@ -158,7 +158,7 @@ class AdvertiseBinderTest {
         val advertiserId = 1
         val data = AdvertiseData.Builder().build()
 
-        binder.setScanResponseData(advertiserId, data, attributionSource)
+        binder.setScanResponseData(advertiserId, data, source)
         verify(advertiseManager).setScanResponseData(advertiserId, data)
     }
 
@@ -166,7 +166,7 @@ class AdvertiseBinderTest {
     fun getOwnAddress() {
         val advertiserId = 1
 
-        binder.getOwnAddress(advertiserId, attributionSource)
+        binder.getOwnAddress(advertiserId, source)
         verify(advertiseManager).getOwnAddress(advertiserId)
     }
 
@@ -177,15 +177,9 @@ class AdvertiseBinderTest {
         val duration = 3
         val maxExtAdvEvents = 4
 
-        binder.enableAdvertisingSet(
-            advertiserId,
-            enable,
-            duration,
-            maxExtAdvEvents,
-            attributionSource,
-        )
+        binder.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents, source)
         verify(advertiseManager)
-            .enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents)
+            .enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents, source)
     }
 
     @Test

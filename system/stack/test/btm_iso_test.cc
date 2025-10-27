@@ -19,6 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <functional>
+
 #include "btm_iso_api.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
@@ -40,13 +42,11 @@ using testing::AnyNumber;
 using testing::AtLeast;
 using testing::Eq;
 using testing::Matcher;
+using testing::Mock;
 using testing::Return;
 using testing::SaveArg;
 using testing::StrictMock;
 using testing::Test;
-
-// for function pointer testing purpose
-bool IsIsoActive = false;
 
 BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
 void BTM_LogHistory(const std::string& /* tag */, const RawAddress& /* bd_addr */,
@@ -132,7 +132,6 @@ public:
 class IsoManagerTest : public Test {
 protected:
   void SetUp() override {
-    com::android::bluetooth::flags::provider_->reset_flags();
     bluetooth::shim::SetMockIsoInterface(&iso_interface_);
     hcic::SetMockHcicInterface(&hcic_interface_);
     bluetooth::shim::testing::hci_layer_set_interface(&bluetooth::shim::interface);
@@ -141,10 +140,11 @@ protected:
 
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->btm_iso_improve_canceling_iso(true);
+    com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
 
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
-    IsIsoActive = false;
+    is_iso_active_ = false;
 
     iso_sizes_.total_num_le_packets_ = 6;
     iso_sizes_.le_data_packet_length_ = 1024;
@@ -172,7 +172,7 @@ protected:
     iso_callbacks_ = {
             .cig_callbacks = cig_callbacks_.get(),
             .big_callbacks = big_callbacks_.get(),
-            .iso_traffic_active_callback = iso_active_callback,
+            .iso_traffic_active_callback = iso_traffic_active_callback_,
     };
     client_handle_ = manager_instance_->RegisterCallbacks(iso_callbacks_);
 
@@ -302,6 +302,17 @@ protected:
 
               std::move(cb).Run(buf.data(), buf.size());
             });
+
+    // Default mock RemoveCig action
+    ON_CALL(hcic_interface_, RemoveCig)
+            .WillByDefault([](auto cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+              uint8_t hci_mock_rsp_buffer[2];
+              uint8_t* p = hci_mock_rsp_buffer;
+              UINT8_TO_STREAM(p, HCI_SUCCESS);
+              UINT8_TO_STREAM(p, cig_id);
+              std::move(cb).Run(hci_mock_rsp_buffer, sizeof(hci_mock_rsp_buffer));
+              return 0;
+            });
   }
 
   virtual void CleanupIsoManager() {
@@ -331,7 +342,10 @@ protected:
   std::unique_ptr<MockBigCallbacks> big_callbacks_;
   std::unique_ptr<MockCigCallbacks> cig_callbacks_;
   bluetooth::hci::iso_manager::IsoManagerCallbacks iso_callbacks_;
-  void (*iso_active_callback)(bool) = [](bool active) { IsIsoActive = active; };
+  bool is_iso_active_ = false;
+  std::function<void(bool)> iso_traffic_active_callback_ = [this](bool active) {
+    is_iso_active_ = active;
+  };
 };
 
 const bluetooth::hci::iso_manager::cig_create_cmpl_evt IsoManagerTest::kDefaultCigParamsEvt = {
@@ -501,9 +515,154 @@ TEST_F(IsoManagerTest, RegisterCallbacks) {
   bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks = {
           .cig_callbacks = cig_callbacks_.get(),
           .big_callbacks = big_callbacks_.get(),
-          .iso_traffic_active_callback = iso_active_callback,
+          .iso_traffic_active_callback = iso_traffic_active_callback_,
   };
   iso_mgr->RegisterCallbacks(callbacks);
+}
+
+TEST_F(IsoManagerTest, MultiClientCig) {
+  // client_handle_ is the first client, registered in SetUp
+  ASSERT_NE(client_handle_, bluetooth::hci::iso_manager::kInvalidIsoClientHandle);
+
+  // Register a second client
+  auto cig_callbacks2 = std::make_unique<MockCigCallbacks>();
+  bluetooth::hci::iso_manager::IsoManagerCallbacks iso_callbacks2 = {
+          .cig_callbacks = cig_callbacks2.get(),
+          .big_callbacks = nullptr,
+          .iso_traffic_active_callback = nullptr,
+  };
+  auto client_handle2 = manager_instance_->RegisterCallbacks(iso_callbacks2);
+  ASSERT_NE(client_handle2, bluetooth::hci::iso_manager::kInvalidIsoClientHandle);
+  ASSERT_NE(client_handle_, client_handle2);
+
+  // CIG events should go to the right client
+  uint8_t cig_id1 = 1;
+  uint8_t cig_id2 = 2;
+
+  EXPECT_CALL(hcic_interface_, SetCigParams(cig_id1, _, _))
+          .WillOnce([&](auto cig_id, auto, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+            uint8_t hci_mock_rsp_buffer[3 + sizeof(uint16_t) * 2];
+            uint8_t* p = hci_mock_rsp_buffer;
+            UINT8_TO_STREAM(p, HCI_SUCCESS);
+            UINT8_TO_STREAM(p, cig_id);
+            UINT8_TO_STREAM(p, 2);
+            UINT16_TO_STREAM(p, 0x0EFF);
+            UINT16_TO_STREAM(p, 0x00FF);
+            std::move(cb).Run(hci_mock_rsp_buffer, sizeof(hci_mock_rsp_buffer));
+            return 0;
+          });
+  EXPECT_CALL(*cig_callbacks_, OnCigEvent(bluetooth::hci::iso_manager::kIsoEventCigOnCreateCmpl, _))
+          .Times(1);
+  EXPECT_CALL(*cig_callbacks2, OnCigEvent(bluetooth::hci::iso_manager::kIsoEventCigOnCreateCmpl, _))
+          .Times(0);
+  manager_instance_->CreateCig(client_handle_, cig_id1, kDefaultCigParams);
+
+  EXPECT_CALL(hcic_interface_, SetCigParams(cig_id2, _, _))
+          .WillOnce([&](auto cig_id, auto, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+            uint8_t hci_mock_rsp_buffer[3 + sizeof(uint16_t) * 2];
+            uint8_t* p = hci_mock_rsp_buffer;
+            UINT8_TO_STREAM(p, HCI_SUCCESS);
+            UINT8_TO_STREAM(p, cig_id);
+            UINT8_TO_STREAM(p, 2);
+            UINT16_TO_STREAM(p, 0x0EFE);
+            UINT16_TO_STREAM(p, 0x00FE);
+            std::move(cb).Run(hci_mock_rsp_buffer, sizeof(hci_mock_rsp_buffer));
+            return 0;
+          });
+  EXPECT_CALL(*cig_callbacks_, OnCigEvent(bluetooth::hci::iso_manager::kIsoEventCigOnCreateCmpl, _))
+          .Times(0);
+  EXPECT_CALL(*cig_callbacks2, OnCigEvent(bluetooth::hci::iso_manager::kIsoEventCigOnCreateCmpl, _))
+          .Times(1);
+  manager_instance_->CreateCig(client_handle2, cig_id2, kDefaultCigParams);
+
+  Mock::VerifyAndClearExpectations(cig_callbacks_.get());
+  Mock::VerifyAndClearExpectations(cig_callbacks2.get());
+
+  // Remove CIGs
+  EXPECT_CALL(hcic_interface_, RemoveCig(cig_id1, _)).Times(1);
+  manager_instance_->RemoveCig(cig_id1);
+  EXPECT_CALL(hcic_interface_, RemoveCig(cig_id2, _)).Times(1);
+  manager_instance_->RemoveCig(cig_id2);
+}
+
+TEST_F(IsoManagerTest, MultiClientBig) {
+  // client_handle_ is the first client, registered in SetUp
+  ASSERT_NE(client_handle_, bluetooth::hci::iso_manager::kInvalidIsoClientHandle);
+
+  // Register a second client
+  auto big_callbacks2 = std::make_unique<MockBigCallbacks>();
+  bluetooth::hci::iso_manager::IsoManagerCallbacks iso_callbacks2 = {
+          .cig_callbacks = nullptr,
+          .big_callbacks = big_callbacks2.get(),
+          .iso_traffic_active_callback = nullptr,
+  };
+  auto client_handle2 = manager_instance_->RegisterCallbacks(iso_callbacks2);
+  ASSERT_NE(client_handle2, bluetooth::hci::iso_manager::kInvalidIsoClientHandle);
+  ASSERT_NE(client_handle_, client_handle2);
+
+  // BIG events should go to the right client
+  uint8_t big_id1 = 1;
+  uint8_t big_id2 = 2;
+  EXPECT_CALL(hcic_interface_, CreateBig(big_id1, _)).WillOnce([&](auto big_id, auto big_params) {
+    std::vector<uint8_t> buf(big_params.num_bis * sizeof(uint16_t) + 18);
+    uint8_t* p = buf.data();
+    UINT8_TO_STREAM(p, HCI_SUCCESS);
+    UINT8_TO_STREAM(p, big_id);
+    UINT24_TO_STREAM(p, 0x0080de);
+    UINT24_TO_STREAM(p, 0x00cefe);
+    UINT8_TO_STREAM(p, big_params.phy);
+    UINT8_TO_STREAM(p, 4);
+    UINT8_TO_STREAM(p, 1);
+    UINT8_TO_STREAM(p, 0);
+    UINT8_TO_STREAM(p, 4);
+    UINT16_TO_STREAM(p, 108);
+    UINT16_TO_STREAM(p, 6);
+    UINT8_TO_STREAM(p, big_params.num_bis);
+    for (size_t i = 0; i < big_params.num_bis; ++i) {
+      UINT16_TO_STREAM(p, 0x0E01 + i);
+    }
+    IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, buf.data(), buf.size());
+  });
+  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+          .Times(1);
+  EXPECT_CALL(*big_callbacks2, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+          .Times(0);
+  manager_instance_->CreateBig(client_handle_, big_id1, kDefaultBigParams);
+
+  EXPECT_CALL(hcic_interface_, CreateBig(big_id2, _)).WillOnce([&](auto big_id, auto big_params) {
+    std::vector<uint8_t> buf(big_params.num_bis * sizeof(uint16_t) + 18);
+    uint8_t* p = buf.data();
+    UINT8_TO_STREAM(p, HCI_SUCCESS);
+    UINT8_TO_STREAM(p, big_id);
+    UINT24_TO_STREAM(p, 0x0080de);
+    UINT24_TO_STREAM(p, 0x00cefe);
+    UINT8_TO_STREAM(p, big_params.phy);
+    UINT8_TO_STREAM(p, 4);
+    UINT8_TO_STREAM(p, 1);
+    UINT8_TO_STREAM(p, 0);
+    UINT8_TO_STREAM(p, 4);
+    UINT16_TO_STREAM(p, 108);
+    UINT16_TO_STREAM(p, 6);
+    UINT8_TO_STREAM(p, big_params.num_bis);
+    for (size_t i = 0; i < big_params.num_bis; ++i) {
+      UINT16_TO_STREAM(p, 0x0F01 + i);
+    }
+    IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, buf.data(), buf.size());
+  });
+  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+          .Times(0);
+  EXPECT_CALL(*big_callbacks2, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+          .Times(1);
+  manager_instance_->CreateBig(client_handle2, big_id2, kDefaultBigParams);
+
+  Mock::VerifyAndClearExpectations(big_callbacks_.get());
+  Mock::VerifyAndClearExpectations(big_callbacks2.get());
+
+  // Terminate BIGs
+  EXPECT_CALL(hcic_interface_, TerminateBig(big_id1, _)).Times(1);
+  manager_instance_->TerminateBig(big_id1, 0x16);
+  EXPECT_CALL(hcic_interface_, TerminateBig(big_id2, _)).Times(1);
+  manager_instance_->TerminateBig(big_id2, 0x16);
 }
 
 // Verify hci layer being called by the Iso Manager
@@ -795,13 +954,12 @@ TEST_F(IsoManagerDeathTest, RemoveCigWithNoSuchCig) {
 }
 
 TEST_F(IsoManagerDeathTest, RemoveCigForceNoSuchCig) {
-  EXPECT_CALL(hcic_interface_, RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id, _)).Times(1);
-  IsoManager::GetInstance()->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id, true);
+  ASSERT_DEATH(
+          IsoManager::GetInstance()->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id, true),
+          "Invalid iso_client for cig");
 }
 
 TEST_F(IsoManagerDeathTest, DeregisterDuringCigCreation) {
-  com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
-
   base::OnceCallback<void(uint8_t*, uint16_t)> captured_callback;
   ON_CALL(hcic_interface_, SetCigParams)
           .WillByDefault([&](uint8_t, auto, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
@@ -830,8 +988,6 @@ TEST_F(IsoManagerDeathTest, DeregisterDuringCigCreation) {
 }
 
 TEST_F(IsoManagerDeathTest, DeregisterDuringBigCreation) {
-  com::android::bluetooth::flags::provider_->btm_multi_client_support(true);
-
   ON_CALL(hcic_interface_, CreateBig).WillByDefault([](auto, auto) {
     /* We override default mock. Nothing to do here */
   });
@@ -932,10 +1088,10 @@ TEST_F(IsoManagerTest, RemoveCigInvalidStatus) {
 TEST_F(IsoManagerTest, RemoveCigValid) {
   uint8_t hci_mock_rsp_buffer[] = {HCI_SUCCESS, volatile_test_cig_create_cmpl_evt_.cig_id};
 
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
   IsoManager::GetInstance()->CreateCig(client_handle_, volatile_test_cig_create_cmpl_evt_.cig_id,
                                        kDefaultCigParams);
-  ASSERT_EQ(IsIsoActive, true);
+  ASSERT_EQ(is_iso_active_, true);
 
   ON_CALL(hcic_interface_, RemoveCig)
           .WillByDefault(
@@ -954,7 +1110,7 @@ TEST_F(IsoManagerTest, RemoveCigValid) {
   IsoManager::GetInstance()->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id);
   ASSERT_EQ(evt.cig_id, volatile_test_cig_create_cmpl_evt_.cig_id);
   ASSERT_EQ(evt.status, HCI_SUCCESS);
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
 }
 
 TEST_F(IsoManagerTest, EstablishCisHciCall) {
@@ -1754,6 +1910,9 @@ TEST_F(IsoManagerDeathTest, CreateSameBigTwice) {
   ASSERT_EQ(evt.status, HCI_SUCCESS);
   ASSERT_EQ(evt.big_handle, 0x01);
   ASSERT_EQ(evt.conn_handles.size(), kDefaultBigParams.num_bis);
+
+  ASSERT_DEATH(IsoManager::GetInstance()->CreateBig(client_handle_, 0x01, kDefaultBigParams),
+               "already exists");
 }
 
 TEST_F(IsoManagerTest, TerminateBigHciCall) {
@@ -1846,10 +2005,10 @@ TEST_F(IsoManagerTest, TerminateBigValid) {
   const uint8_t big_handle = 0x22;
   const uint8_t reason = 0x16;  // Terminated by local host
   bluetooth::hci::iso_manager::big_terminate_cmpl_evt evt;
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
 
   IsoManager::GetInstance()->CreateBig(client_handle_, big_handle, kDefaultBigParams);
-  ASSERT_EQ(IsIsoActive, true);
+  ASSERT_EQ(is_iso_active_, true);
 
   EXPECT_CALL(*big_callbacks_,
               OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, _))
@@ -1861,7 +2020,7 @@ TEST_F(IsoManagerTest, TerminateBigValid) {
   IsoManager::GetInstance()->TerminateBig(big_handle, reason);
   ASSERT_EQ(evt.big_handle, big_handle);
   ASSERT_EQ(evt.reason, reason);
-  ASSERT_EQ(IsIsoActive, false);
+  ASSERT_EQ(is_iso_active_, false);
 }
 
 TEST_F(IsoManagerTest, SetupIsoDataPathValid) {
@@ -2839,7 +2998,7 @@ TEST_F(IsoManagerDeathTestNoCleanup, HandleApiCallsWhenStopped) {
   bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks = {
           .cig_callbacks = cig_callbacks_.get(),
           .big_callbacks = big_callbacks_.get(),
-          .iso_traffic_active_callback = iso_active_callback,
+          .iso_traffic_active_callback = iso_traffic_active_callback_,
   };
   auto client_handle = IsoManager::GetInstance()->RegisterCallbacks(callbacks);
 
@@ -2959,4 +3118,34 @@ TEST_F(IsoManagerTest, ReadIsoLinkQualityLateArrivingCallback) {
   UINT32_TO_STREAM(p, 0);
   UINT32_TO_STREAM(p, 0);
   std::move(iso_cb).Run(buf.data(), buf.size());
+}
+
+/**
+ * Test case to verify that SetBigChannelMapClassification forwards the call
+ * to the underlying implementation when the IsoManager is running.
+ *
+ * This test ensures that the IsoManager correctly delegates the operation
+ * to its implementation layer, which is the expected behavior under normal
+ * operating conditions.
+ */
+TEST_F(IsoManagerTest, SetBigChannelMapClassificationHciCall) {
+  // --- Test Data ---
+  // Define sample parameters for the function call.
+  uint8_t action = 1;
+  uint8_t big_handle = 2;
+  std::vector<uint16_t> handles = {0x0041, 0x0042};
+  uint8_t num_handles = handles.size();
+
+  // --- Expectations ---
+  // Expect that the LeSetBigChannelMapClassification HCI command is called once
+  // with the parameters we defined above. This verifies that the IsoManager
+  // correctly processes the request and sends the appropriate command to the controller.
+  EXPECT_CALL(hcic_interface_,
+              SetBigChannelMapClassificationByConnHandles(action, big_handle, num_handles, handles))
+          .Times(1);
+
+  // --- Execution ---
+  // Call the function on the IsoManager that we are testing.
+  IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
+                                                                         num_handles, handles);
 }

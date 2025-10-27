@@ -38,14 +38,12 @@
 using namespace bluetooth;
 
 static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uint16_t handle,
-                                      tHCI_ROLE role, bool is_in_security_db,
-                                      uint16_t conn_interval, uint16_t conn_latency,
+                                      tHCI_ROLE role, uint16_t conn_interval, uint16_t conn_latency,
                                       uint16_t conn_timeout,
                                       bool can_read_discoverable_characteristics) {
   // Allocate or update the security device record for this device
   btm_ble_connected(address_with_type.bda, handle, HCI_ENCRYPT_MODE_DISABLED, role,
-                    address_with_type.type, is_in_security_db,
-                    can_read_discoverable_characteristics);
+                    address_with_type.type, can_read_discoverable_characteristics);
 
   // Update the link topology information for our device
   btm_ble_increment_link_topology_mask(role);
@@ -58,7 +56,7 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
     return false;
   }
 
-  tAclLinkSpec link_spec = { .addrt = address_with_type, .transport = BT_TRANSPORT_LE};
+  AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
 
   /* Tell BTM Acl management about the link */
   btm_acl_created(link_spec, handle, role);
@@ -67,14 +65,13 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
 }
 
 void acl_ble_enhanced_connection_complete(const tBLE_BD_ADDR& address_with_type, uint16_t handle,
-                                          tHCI_ROLE role, bool match, uint16_t conn_interval,
+                                          tHCI_ROLE role, uint16_t conn_interval,
                                           uint16_t conn_latency, uint16_t conn_timeout,
                                           const RawAddress& /* local_rpa */,
                                           const RawAddress& peer_rpa, tBLE_ADDR_TYPE peer_addr_type,
                                           bool can_read_discoverable_characteristics) {
-  if (!acl_ble_common_connection(address_with_type, handle, role, match, conn_interval,
-                                 conn_latency, conn_timeout,
-                                 can_read_discoverable_characteristics)) {
+  if (!acl_ble_common_connection(address_with_type, handle, role, conn_interval, conn_latency,
+                                 conn_timeout, can_read_discoverable_characteristics)) {
     log::warn("Unable to create enhanced ble acl connection");
     return;
   }
@@ -99,13 +96,12 @@ void acl_ble_enhanced_connection_complete_from_shim(
         const RawAddress& local_rpa, const RawAddress& peer_rpa, tBLE_ADDR_TYPE peer_addr_type,
         bool can_read_discoverable_characteristics) {
   tBLE_BD_ADDR resolved_address_with_type;
-  const bool is_in_security_db =
-          maybe_resolve_received_address(address_with_type, &resolved_address_with_type);
+  maybe_resolve_received_address(address_with_type, &resolved_address_with_type);
 
   acl_set_locally_initiated(role == tHCI_ROLE::HCI_ROLE_CENTRAL);
-  acl_ble_enhanced_connection_complete(
-          resolved_address_with_type, handle, role, is_in_security_db, conn_interval, conn_latency,
-          conn_timeout, local_rpa, peer_rpa, peer_addr_type, can_read_discoverable_characteristics);
+  acl_ble_enhanced_connection_complete(resolved_address_with_type, handle, role, conn_interval,
+                                       conn_latency, conn_timeout, local_rpa, peer_rpa,
+                                       peer_addr_type, can_read_discoverable_characteristics);
 
   // The legacy stack continues the LE connection after the read remote
   // version complete has been received.
@@ -114,7 +110,7 @@ void acl_ble_enhanced_connection_complete_from_shim(
 
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* handle */,
                              bool /* enhanced */, tHCI_STATUS status) {
-  tAclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
+  AclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
   acl_set_locally_initiated(true);  // LE connection failures are always locally initiated
   btm_acl_create_failed(link_spec, status);
 

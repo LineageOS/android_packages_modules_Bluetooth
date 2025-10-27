@@ -52,13 +52,13 @@ import android.sysprop.BluetoothProperties;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.android.bluetooth.IObexConnectionHandler;
-import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.obex.IObexConnectionHandler;
+import com.android.bluetooth.obex.ObexServerSockets;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
@@ -170,7 +170,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     @VisibleForTesting
     BluetoothPbapService(
             AdapterService adapterService, NotificationManager notificationManager, Looper looper) {
-        super(BluetoothProfile.PBAP, requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP, adapterService);
         mNotificationManager = requireNonNull(notificationManager);
 
         IntentFilter userFilter = new IntentFilter();

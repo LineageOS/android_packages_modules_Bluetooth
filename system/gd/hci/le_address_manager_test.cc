@@ -16,16 +16,15 @@
 
 #include "hci/le_address_manager.h"
 
+#include <bluetooth/types/bt_octets.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
-#include "hci/octets.h"
 #include "os/mock_rand.h"
 #include "packet/raw_builder.h"
 
-using ::bluetooth::hci::Octet16;
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
 

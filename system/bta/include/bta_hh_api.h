@@ -19,6 +19,7 @@
 #define BTA_HH_API_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/acl_link_spec.h>
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/uuid.h>
 
@@ -207,7 +208,7 @@ typedef struct {
 
 /* callback event data for BTA_HH_OPEN_EVT */
 typedef struct {
-  tAclLinkSpec link_spec; /* HID device ACL link specification */
+  AclLinkSpec link_spec;  /* HID device ACL link specification */
   bthh_status_t status;   /* operation status         */
   uint8_t handle;         /* device handle            */
   bool scps_supported;    /* scan parameter service supported */
@@ -344,7 +345,7 @@ void BTA_HhDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhOpen(const tAclLinkSpec& link_spec, bool direct);
+void BTA_HhOpen(const AclLinkSpec& link_spec, bool direct);
 
 /*******************************************************************************
  *
@@ -465,7 +466,7 @@ void BTA_HhGetIdle(uint8_t dev_handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhSendData(uint8_t dev_handle, const tAclLinkSpec& link_spec, BT_HDR* p_buf);
+void BTA_HhSendData(uint8_t dev_handle, const AclLinkSpec& link_spec, BT_HDR* p_buf);
 
 /*******************************************************************************
  *
@@ -489,7 +490,7 @@ void BTA_HhGetDscpInfo(uint8_t dev_handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhAddDev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask, uint8_t sub_class,
+void BTA_HhAddDev(const AclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask, uint8_t sub_class,
                   uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info);
 /*******************************************************************************
  *

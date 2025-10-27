@@ -52,8 +52,6 @@ import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
-import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -533,12 +531,8 @@ public class HearingAidServiceTest {
         generateConnectionMessageFromNative(mLeftDevice, STATE_CONNECTED, STATE_CONNECTING);
 
         // Get hiSyncId for left device
-        HearingAidStackEvent hiSyncIdEvent =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
-        hiSyncIdEvent.device = mLeftDevice;
-        hiSyncIdEvent.valueInt1 = 0x02;
-        hiSyncIdEvent.valueLong2 = 0x0101;
-        messageFromNativeAndDispatch(hiSyncIdEvent);
+        mService.onDeviceAvailableFromNative(mLeftDevice, 0x02, 0x0101);
+        mLooper.dispatchAll();
 
         assertThat(mService.connect(mRightDevice)).isTrue();
         mLooper.dispatchAll();
@@ -554,11 +548,8 @@ public class HearingAidServiceTest {
         assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
 
         // Get hiSyncId for right device
-        hiSyncIdEvent = new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
-        hiSyncIdEvent.device = mRightDevice;
-        hiSyncIdEvent.valueInt1 = 0x02;
-        hiSyncIdEvent.valueLong2 = 0x0101;
-        messageFromNativeAndDispatch(hiSyncIdEvent);
+        mService.onDeviceAvailableFromNative(mRightDevice, 0x02, 0x0101);
+        mLooper.dispatchAll();
 
         assertThat(mService.getConnectionState(mRightDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getConnectionState(mLeftDevice)).isEqualTo(STATE_CONNECTED);
@@ -659,29 +650,18 @@ public class HearingAidServiceTest {
         mService.dump(new StringBuilder());
     }
 
-    private void messageFromNativeAndDispatch(HearingAidStackEvent event) {
-        mService.messageFromNative(event);
-        mLooper.dispatchAll();
-    }
-
     private void generateConnectionMessageFromNative(
             BluetoothDevice device, int newConnectionState, int oldConnectionState) {
-        HearingAidStackEvent stackEvent =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        stackEvent.device = device;
-        stackEvent.valueInt1 = newConnectionState;
-        messageFromNativeAndDispatch(stackEvent);
+        mService.onConnectionStateChangedFromNative(device, newConnectionState);
+        mLooper.dispatchAll();
         verifyConnectionStateIntent(device, newConnectionState, oldConnectionState);
         assertThat(mService.getConnectionState(device)).isEqualTo(newConnectionState);
     }
 
     private void generateUnexpectedConnectionMessageFromNative(
             BluetoothDevice device, int newConnectionState) {
-        HearingAidStackEvent stackEvent =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        stackEvent.device = device;
-        stackEvent.valueInt1 = newConnectionState;
-        messageFromNativeAndDispatch(stackEvent);
+        mService.onConnectionStateChangedFromNative(device, newConnectionState);
+        mLooper.dispatchAll();
         if (Flags.onlyBroadcastToLocalUser()) {
             mInOrder.verify(mAdapterService, never())
                     .sendBroadcast(
@@ -702,20 +682,11 @@ public class HearingAidServiceTest {
 
     // Emulate hiSyncId map update from native stack
     private void getHiSyncIdFromNative() {
-        HearingAidStackEvent event =
-                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
-        event.device = mLeftDevice;
-        event.valueInt1 = 0x02;
-        event.valueLong2 = 0x0101;
-        messageFromNativeAndDispatch(event);
-
-        event.device = mRightDevice;
-        event.valueInt1 = 0x03;
-        messageFromNativeAndDispatch(event);
-
-        event.device = mSingleDevice;
-        event.valueInt1 = 0x00;
-        event.valueLong2 = 0x0102;
-        messageFromNativeAndDispatch(event);
+        mService.onDeviceAvailableFromNative(mLeftDevice, 0x02, 0x0101);
+        mLooper.dispatchAll();
+        mService.onDeviceAvailableFromNative(mRightDevice, 0x03, 0x0101);
+        mLooper.dispatchAll();
+        mService.onDeviceAvailableFromNative(mSingleDevice, 0x00, 0x0102);
+        mLooper.dispatchAll();
     }
 }

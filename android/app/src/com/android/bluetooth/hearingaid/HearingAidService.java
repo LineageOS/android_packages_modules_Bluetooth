@@ -94,7 +94,7 @@ public class HearingAidService extends ConnectableProfile {
             AdapterService adapterService,
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
-        super(BluetoothProfile.HEARING_AID, requireNonNull(adapterService));
+        super(BluetoothProfile.HEARING_AID, adapterService);
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("HearingAidService.StateMachines");
@@ -503,42 +503,34 @@ public class HearingAidService extends ConnectableProfile {
         return activeDevices;
     }
 
-    void messageFromNative(HearingAidStackEvent stackEvent) {
-        requireNonNull(stackEvent.device);
-
-        if (stackEvent.type == HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE) {
-            BluetoothDevice device = stackEvent.device;
-            int capabilities = stackEvent.valueInt1;
-            long hiSyncId = stackEvent.valueLong2;
-            Log.d(
-                    TAG,
-                    ("Device available: device=" + device)
-                            + (" capabilities=" + capabilities)
-                            + (" hiSyncId=" + hiSyncId));
-            mDeviceCapabilitiesMap.put(device, capabilities);
-            mDeviceHiSyncIdMap.put(device, hiSyncId);
-            return;
-        }
-
+    void onConnectionStateChangedFromNative(BluetoothDevice device, int state) {
         synchronized (mStateMachines) {
-            BluetoothDevice device = stackEvent.device;
-            HearingAidStateMachine sm = mStateMachines.get(device);
-            if (sm == null) {
-                if (stackEvent.type == HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
-                    sm =
-                            switch (stackEvent.valueInt1) {
-                                case STATE_CONNECTED, STATE_CONNECTING ->
-                                        getOrCreateStateMachine(device);
-                                default -> null;
-                            };
-                }
-                if (sm == null) {
-                    Log.e(TAG, "Cannot process stack event: no state machine: " + stackEvent);
+            var stateMachine = mStateMachines.get(device);
+            if (stateMachine == null) {
+                stateMachine =
+                        switch (state) {
+                            case STATE_CONNECTED, STATE_CONNECTING ->
+                                    getOrCreateStateMachine(device);
+                            default -> null;
+                        };
+                if (stateMachine == null) {
+                    Log.e(TAG, "onConnectionStateChanged(): No state machine for " + device);
                     return;
                 }
             }
-            sm.sendMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, stackEvent);
+            stateMachine.sendMessage(
+                    HearingAidStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
         }
+    }
+
+    void onDeviceAvailableFromNative(BluetoothDevice device, int capabilities, long hiSyncId) {
+        Log.d(
+                TAG,
+                ("Device available: device=" + device)
+                        + (" capabilities=" + capabilities)
+                        + (" hiSyncId=" + hiSyncId));
+        mDeviceCapabilitiesMap.put(device, capabilities);
+        mDeviceHiSyncIdMap.put(device, hiSyncId);
     }
 
     private void notifyActiveDeviceChanged() {

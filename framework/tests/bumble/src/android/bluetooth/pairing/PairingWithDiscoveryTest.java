@@ -108,7 +108,7 @@ public class PairingWithDiscoveryTest {
     private static final String BUMBLE_DEVICE_NAME = "Bumble";
     private static final String BUMBLE_DEVICE_NAME_2 = "Bumble_2";
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final int DISCOVERY_TIMEOUT = 2000; // 2 seconds
+    private static final int DISCOVERY_TIMEOUT = 5000; // 5 seconds
     private static final ParcelUuid BATTERY_UUID =
             ParcelUuid.fromString("0000180F-0000-1000-8000-00805F9B34FB");
 

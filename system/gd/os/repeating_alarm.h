@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <base/functional/callback.h>
+
 #include <functional>
 #include <memory>
 #include <mutex>
 
-#include "common/callback.h"
 #include "os/thread.h"
 #include "os/utils.h"
 
@@ -42,13 +43,13 @@ public:
   ~RepeatingAlarm();
 
   // Schedule a repeating alarm with given period
-  void Schedule(common::Closure task, std::chrono::milliseconds period);
+  void Schedule(base::RepeatingClosure task, std::chrono::milliseconds period);
 
   // Cancel the alarm. No-op if it's not armed.
   void Cancel();
 
 private:
-  common::Closure task_;
+  base::RepeatingClosure task_;
   Thread* thread_;
   int fd_ = 0;
   Reactor::Reactable* token_;

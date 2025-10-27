@@ -600,11 +600,6 @@ void BtaAvCo::ProcessStart(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_ad
   *p_no_rtp_header = !add_rtp_header;
 }
 
-void BtaAvCo::ProcessStop(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address) {
-  log::verbose("peer {} bta_av_handle: 0x{:x}", peer_address, bta_av_handle);
-  // Nothing to do
-}
-
 BT_HDR* BtaAvCo::GetNextSourceDataPacket(const uint8_t* p_codec_info, uint32_t* p_timestamp) {
   BT_HDR* p_buf;
 
@@ -1437,7 +1432,8 @@ static bool bta_av_co_should_select_hardware_codec(
   // Prioritize LDAC, AptX HD and AptX over AAC and SBC offload codecs
   if (software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC ||
       software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD ||
-      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX) {
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX ||
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5) {
     log::verbose("select software codec: {}", A2DP_CodecIndexStr(software_codec_index));
     return false;
   }
@@ -1509,10 +1505,6 @@ void bta_av_co_audio_close(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_ad
 void bta_av_co_audio_start(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
                            const uint8_t* p_codec_info, bool* p_no_rtp_header) {
   bta_av_co_cb.ProcessStart(bta_av_handle, peer_address, p_codec_info, p_no_rtp_header);
-}
-
-void bta_av_co_audio_stop(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address) {
-  bta_av_co_cb.ProcessStop(bta_av_handle, peer_address);
 }
 
 BT_HDR* bta_av_co_audio_source_data_path(const uint8_t* p_codec_info, uint32_t* p_timestamp) {

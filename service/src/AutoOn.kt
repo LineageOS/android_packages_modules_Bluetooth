@@ -96,7 +96,7 @@ class AutoOn(
         val timeToSleep = now.until(target, ChronoUnit.NANOS).toDuration(DurationUnit.NANOSECONDS)
 
         if (timeToSleep.isNegative()) {
-            Log.i(TAG, "Starting immediately (${now}). Previous timer was scheduled for ${target}")
+            Log.i(TAG, "Starting immediately ($now). Previous timer was scheduled for $target")
             callback_on()
             resetStorage(contentResolver)
             return
@@ -117,7 +117,7 @@ class AutoOn(
         if (!isSupported()) {
             val defaultFeatureValue = true
             setEnabledUnchecked(defaultFeatureValue)
-            Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
+            Log.i(TAG, "Feature was set to its default value $defaultFeatureValue")
         } else {
             // When Bluetooth turned on state, any saved time will be obsolete.
             // This happen only when the phone reboot while Bluetooth is ON
@@ -178,7 +178,7 @@ class AutoOn(
                 this,
                 handler,
             )
-            Log.i(TAG, "[${this}]: Scheduling next Bluetooth restart")
+            Log.i(TAG, "[$this]: Scheduling next Bluetooth restart")
 
             context.registerReceiver(
                 receiver,
@@ -193,7 +193,7 @@ class AutoOn(
         }
 
         override fun onAlarm() {
-            Log.i(TAG, "[${this}]: Bluetooth restarting now")
+            Log.i(TAG, "[$this]: Bluetooth restarting now")
             callback_on()
             cancel()
             this@AutoOn.timer = null
@@ -201,7 +201,7 @@ class AutoOn(
 
         /** Save timer to storage and stop it */
         internal fun pause() {
-            Log.i(TAG, "[${this}]: Pausing timer")
+            Log.i(TAG, "[$this]: Pausing timer")
             context.unregisterReceiver(receiver)
             alarmManager.cancel(this)
             handler.removeCallbacksAndMessages(null)
@@ -210,7 +210,7 @@ class AutoOn(
         /** Stop timer and reset storage */
         @VisibleForTesting
         internal fun cancel() {
-            Log.i(TAG, "[${this}]: Cancelling timer")
+            Log.i(TAG, "[$this]: Cancelling timer")
             context.unregisterReceiver(receiver)
             alarmManager.cancel(this)
             handler.removeCallbacksAndMessages(null)
@@ -218,7 +218,7 @@ class AutoOn(
         }
 
         override fun toString() =
-            "Timer: scheduled at ${now}. expire at ${target}. (sleep for ${timeToSleep})."
+            "Timer: scheduled at $now. expire at $target. (sleep for $timeToSleep)."
     }
 
     private fun isEnabledUnchecked() =

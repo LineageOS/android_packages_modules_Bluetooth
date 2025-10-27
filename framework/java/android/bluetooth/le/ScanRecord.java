@@ -29,6 +29,8 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.util.SparseArray;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
@@ -343,6 +345,7 @@ public final class ScanRecord {
     @Nullable private final List<ParcelUuid> mServiceSolicitationUuids;
 
     private final SparseArray<byte[]> mManufacturerSpecificData;
+    private final SparseArray<List<Integer>> mManufacturerDataBlockStartIndices;
 
     private final Map<ParcelUuid, byte[]> mServiceData;
 
@@ -406,6 +409,23 @@ public final class ScanRecord {
             return null;
         }
         return mManufacturerSpecificData.get(manufacturerId);
+    }
+
+    /**
+     * Returns the starting indices of each manufacturer specific data block. Returns {@code null}
+     * if the {@code manufacturerId} is not found.
+     */
+    @Nullable
+    List<Integer> getManufacturerDataBlockStartIndices(int manufacturerId) {
+        if (Flags.useFilterForEachManufacturerDataBlock()) {
+            return null;
+        }
+
+        if (mManufacturerDataBlockStartIndices == null) {
+            return null;
+        }
+
+        return mManufacturerDataBlockStartIndices.get(manufacturerId);
     }
 
     /** Returns a map of service UUID and its corresponding service data. */
@@ -490,6 +510,7 @@ public final class ScanRecord {
             List<ParcelUuid> serviceUuids,
             List<ParcelUuid> serviceSolicitationUuids,
             SparseArray<byte[]> manufacturerData,
+            SparseArray<List<Integer>> manufacturerDataBlockStartIndices,
             Map<ParcelUuid, byte[]> serviceData,
             int advertiseFlags,
             int txPowerLevel,
@@ -500,6 +521,7 @@ public final class ScanRecord {
         mServiceSolicitationUuids = serviceSolicitationUuids;
         mServiceUuids = serviceUuids;
         mManufacturerSpecificData = manufacturerData;
+        mManufacturerDataBlockStartIndices = manufacturerDataBlockStartIndices;
         mServiceData = serviceData;
         mDeviceName = localName;
         mAdvertiseFlags = advertiseFlags;
@@ -534,6 +556,7 @@ public final class ScanRecord {
         int txPowerLevel = Integer.MIN_VALUE;
 
         SparseArray<byte[]> manufacturerData = new SparseArray<byte[]>();
+        SparseArray<List<Integer>> manufacturerDataBlockStartIndices = new SparseArray<>();
         Map<ParcelUuid, byte[]> serviceData = new ArrayMap<ParcelUuid, byte[]>();
         HashMap<Integer, byte[]> advertisingDataMap = new HashMap<Integer, byte[]>();
 
@@ -646,8 +669,22 @@ public final class ScanRecord {
                             buffer.put(firstValue);
                             buffer.put(manufacturerDataBytes);
                             manufacturerData.put(manufacturerId, buffer.array());
+
+                            if (Flags.useFilterForEachManufacturerDataBlock()) {
+                                // Store the starting indices of each manufacturer data block.
+                                List<Integer> dataBlockStartIndices =
+                                        manufacturerDataBlockStartIndices.get(manufacturerId);
+                                dataBlockStartIndices.add(firstValue.length);
+                            }
                         } else {
                             manufacturerData.put(manufacturerId, manufacturerDataBytes);
+
+                            if (Flags.useFilterForEachManufacturerDataBlock()) {
+                                List<Integer> dataBlockStartIndices = new ArrayList<>();
+                                dataBlockStartIndices.add(0);
+                                manufacturerDataBlockStartIndices.put(
+                                        manufacturerId, dataBlockStartIndices);
+                            }
                         }
                     }
                     case DATA_TYPE_TRANSPORT_DISCOVERY_DATA -> {
@@ -670,6 +707,7 @@ public final class ScanRecord {
                     serviceUuids,
                     serviceSolicitationUuids,
                     manufacturerData,
+                    manufacturerDataBlockStartIndices,
                     serviceData,
                     advertiseFlag,
                     txPowerLevel,
@@ -682,6 +720,7 @@ public final class ScanRecord {
             // As the record is invalid, ignore all the parsed results for this packet
             // and return an empty record with raw scanRecord bytes in results
             return new ScanRecord(
+                    null,
                     null,
                     null,
                     null,

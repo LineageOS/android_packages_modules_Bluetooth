@@ -35,11 +35,6 @@ namespace android {
 /// input object is null or invalid.
 RawAddress addressFromJByteArray(JNIEnv* env, jbyteArray object);
 
-/// Convert a bluetooth address encoded as jbyte array to the address
-/// type used in the native stack. Returns the none if the input
-/// input object is null.
-std::optional<RawAddress> addressFromNullableJByteArray(JNIEnv* env, jbyteArray object);
-
 JNIEnv* getCallbackEnv();
 bool isCallbackThread();
 

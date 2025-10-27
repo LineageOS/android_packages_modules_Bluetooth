@@ -71,6 +71,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -1379,7 +1380,7 @@ public class LeAudioBroadcastServiceTest {
         verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
 
         mLooper.dispatchAll();
-        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId2);
+        assertThat(mService.mBroadcastToUnicastFallbackGroup).isEqualTo(groupId2);
 
         verify(mLeAudioCallbacks).onBroadcastToUnicastFallbackGroupChanged(groupId2);
 
@@ -1433,7 +1434,7 @@ public class LeAudioBroadcastServiceTest {
         tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice2));
         tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice1));
 
-        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId);
+        assertThat(mService.mBroadcastToUnicastFallbackGroup).isEqualTo(groupId);
         tbsOrder.verify(mTbsService, times(1)).setInbandRingtoneSupport(eq(mDevice1));
 
         reset(mAudioManager);
@@ -1878,5 +1879,20 @@ public class LeAudioBroadcastServiceTest {
         /* Active group should become the one that was active before broadcasting */
         activeGroup = mService.getActiveGroupId();
         assertThat(activeGroup).isEqualTo(groupId);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testSetBigChannelMapClassification_noBroadcast() {
+        final int broadcastId = 1;
+        final int action = 3;
+        final BluetoothDevice sink = getTestDevice(0);
+
+        // Call the method to be tested without creating a broadcast first
+        mService.setBigChannelMapClassification(action, sink, broadcastId);
+
+        // Verify that the call is NOT forwarded to the native interface
+        verify(mLeAudioBroadcasterNativeInterface, never())
+                .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
     }
 }

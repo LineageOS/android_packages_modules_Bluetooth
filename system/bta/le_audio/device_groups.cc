@@ -944,12 +944,14 @@ BidirectionalPair<bool> LeAudioDeviceGroup::GetConfiguredDirections(void) {
 
 CodecManager::UnicastConfigurationRequirements
 LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextType ctx_type) const {
+  log::debug("context_type: {}", (static_cast<AudioContexts>(ctx_type)).to_string());
   auto new_req = CodecManager::UnicastConfigurationRequirements{
           .audio_context_type = ctx_type,
           .flags = CodecManager::Flags::NONE,
   };
 
   bool remote_has_gmap = false;
+  BidirectionalPair<bool> has_direction = GetDirectionSupport(ctx_type);
 
   // Define a requirement for each location. Knowing codec specific
   // capabilities (i.e. multiplexing capability) the config provider can
@@ -961,18 +963,18 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       continue;
     }
     BidirectionalPair<bool> has_location = {false, false};
-    BidirectionalPair<bool> has_direction = GetDirectionSupport(ctx_type);
 
     for (auto remote_direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
-      if (!device->audio_locations_.get(remote_direction)) {
-        log::debug("Device {} has no audio allocation for direction: {}", device->address_,
-                   (int)remote_direction);
-        continue;
-      }
-
       if (!has_direction.get(remote_direction)) {
         log::info("Skipping {} direction",
                   remote_direction == types::kLeAudioDirectionSource ? "Decoding" : "Encoding");
+        continue;
+      }
+
+      auto const& dev_locations = device->audio_locations_.get(remote_direction);
+      if (dev_locations == std::nullopt) {
+        log::debug("Device {} has no audio allocation for direction: {}", device->address_,
+                   (int)remote_direction);
         continue;
       }
 
@@ -998,13 +1000,6 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
           }
         }
       }
-
-      auto const& dev_locations = device->audio_locations_.get(remote_direction);
-      if (dev_locations == std::nullopt) {
-        log::warn("Device {} has no specified locations for direction: {}", device->address_,
-                  (int)remote_direction);
-      }
-
       has_location.get(remote_direction) = true;
       auto& direction_req = (remote_direction == types::kLeAudioDirectionSink)
                                     ? new_req.sink_requirements
@@ -1044,7 +1039,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         }
       }
       config_req.target_latency = utils::GetTargetLatencyForAudioContext(ctx_type);
-      log::warn("Device {} pushes requirement, location: {}, direction: {}", device->address_,
+      log::info("Device {} pushes requirement, location: {}, direction: {}", device->address_,
                 (int)locations, (int)remote_direction);
       direction_req->push_back(std::move(config_req));
     }
