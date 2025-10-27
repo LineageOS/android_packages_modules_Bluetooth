@@ -17,7 +17,10 @@
 package com.android.bluetooth.le_scan;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.le.ScanFilter;
 import android.os.ParcelUuid;
@@ -200,6 +203,42 @@ public class ScanFilterQueueTest {
 
         int numOfEntries = 7;
         assertThat(queue.toArray().length).isEqualTo(numOfEntries);
+    }
+
+    @Test
+    public void addScanFilter_withAddressTypeAndIrk_propagatesToEntry() {
+        // This test verifies that when a ScanFilter with a specific address type and IRK
+        // is added, the ScanFilterQueue correctly creates an Entry with those properties.
+        // This is important for ensuring that address resolution information is correctly
+        // passed down.
+        ScanFilterQueue queue = new ScanFilterQueue();
+        final String deviceAddress = "00:11:22:33:FF:EE";
+        final int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
+        final byte[] irk =
+                new byte[] {
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                    0x0E, 0x0F, 0x10
+                };
+
+        // Mock a ScanFilter since creating one with addressType and IRK requires SystemApi.
+        ScanFilter mockFilter = mock(ScanFilter.class);
+        when(mockFilter.getDeviceAddress()).thenReturn(deviceAddress);
+        when(mockFilter.getAddressType()).thenReturn(addressType);
+        when(mockFilter.getIrk()).thenReturn(irk);
+
+        // Add the mocked filter to the queue.
+        queue.addScanFilter(mockFilter);
+
+        // The queue should contain one entry for the device address.
+        ScanFilterQueue.Entry[] entries = queue.toArray();
+        assertThat(entries.length).isEqualTo(1);
+
+        // Verify the entry's properties match the mocked filter's properties.
+        ScanFilterQueue.Entry entry = entries[0];
+        assertThat(entry.type).isEqualTo(ScanFilterQueue.TYPE_DEVICE_ADDRESS);
+        assertThat(entry.address).isEqualTo(deviceAddress);
+        assertThat(entry.addr_type).isEqualTo((byte) addressType);
+        assertThat(entry.irk).isEqualTo(irk);
     }
 
     @Test
