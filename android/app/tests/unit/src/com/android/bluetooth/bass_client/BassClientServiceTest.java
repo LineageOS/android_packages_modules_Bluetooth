@@ -2137,35 +2137,9 @@ public class BassClientServiceTest {
     public void testAddRemoveMultipleSourcesForGroup() {
         prepareConnectedDeviceGroup();
 
-        // Add more room for the source broadcasts
+        // Set maximum source capacity to 2
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            if (sm.getDevice().equals(mCurrentDevice)) {
-                injectRemoteSourceStateSourceAdded(
-                        sm,
-                        mBroadcastMetadata1,
-                        TEST_SOURCE_ID + 1,
-                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
-                        mBroadcastMetadata1.isEncrypted()
-                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
-                                : BluetoothLeBroadcastReceiveState
-                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
-                        null,
-                        0L);
-                injectRemoteSourceStateRemoval(sm, TEST_SOURCE_ID + 1);
-            } else if (sm.getDevice().equals(mCurrentDevice1)) {
-                injectRemoteSourceStateSourceAdded(
-                        sm,
-                        mBroadcastMetadata1,
-                        TEST_SOURCE_ID,
-                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
-                        mBroadcastMetadata1.isEncrypted()
-                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
-                                : BluetoothLeBroadcastReceiveState
-                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
-                        null,
-                        0L);
-                injectRemoteSourceStateRemoval(sm, TEST_SOURCE_ID);
-            }
+            doReturn(2).when(sm).getMaximumSourceCapacity();
         }
 
         prepareSyncToSourceAndVerify();
@@ -5528,7 +5502,7 @@ public class BassClientServiceTest {
 
         // Establishment possible without register sync
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        verifyInitiatePaSyncTransferAndNoOthers();
+        verifyInitiatePaSyncTransferAndNoOthers(TEST_SYNC_HANDLE, TEST_SOURCE_ID);
     }
 
     @Test
@@ -5731,7 +5705,7 @@ public class BassClientServiceTest {
 
         // Synced
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        verifyInitiatePaSyncTransferAndNoOthers();
+        verifyInitiatePaSyncTransferAndNoOthers(TEST_SYNC_HANDLE, TEST_SOURCE_ID);
         assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
         assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
                 .isEqualTo(mSourceDevice);
@@ -6554,7 +6528,7 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.isLocalBroadcast(receiveState)).isTrue();
     }
 
-    private void verifyInitiatePaSyncTransferAndNoOthers() {
+    private void verifyInitiatePaSyncTransferAndNoOthers(int syncHandle, int sourceId) {
         expect.that(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -6568,8 +6542,8 @@ public class BassClientServiceTest {
                                                 (m.what
                                                                 == BassClientStateMachine
                                                                         .INITIATE_PA_SYNC_TRANSFER)
-                                                        && (m.arg1 == TEST_SYNC_HANDLE)
-                                                        && (m.arg2 == TEST_SOURCE_ID))
+                                                        && (m.arg1 == syncHandle)
+                                                        && (m.arg2 == sourceId))
                                 .count();
                 assertThat(count).isEqualTo(1);
                 count =
@@ -6589,8 +6563,8 @@ public class BassClientServiceTest {
                                                 (m.what
                                                                 == BassClientStateMachine
                                                                         .INITIATE_PA_SYNC_TRANSFER)
-                                                        && (m.arg1 == TEST_SYNC_HANDLE)
-                                                        && (m.arg2 == TEST_SOURCE_ID + 1))
+                                                        && (m.arg1 == syncHandle)
+                                                        && (m.arg2 == sourceId + 1))
                                 .count();
                 assertThat(count).isEqualTo(1);
                 count =
@@ -6620,7 +6594,7 @@ public class BassClientServiceTest {
 
         // Sync will INITIATE_PA_SYNC_TRANSFER
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        verifyInitiatePaSyncTransferAndNoOthers();
+        verifyInitiatePaSyncTransferAndNoOthers(TEST_SYNC_HANDLE, TEST_SOURCE_ID);
     }
 
     @Test
@@ -6642,9 +6616,9 @@ public class BassClientServiceTest {
         mBassClientService.syncRequestForPast(
                 mCurrentDevice1, TEST_BROADCAST_ID, TEST_SOURCE_ID + 1);
 
-        // Sync will send INITIATE_PA_SYNC_TRANSFER and remove pending source to add
+        // Sync will send INITIATE_PA_SYNC_TRANSFER
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        verifyInitiatePaSyncTransferAndNoOthers();
+        verifyInitiatePaSyncTransferAndNoOthers(TEST_SYNC_HANDLE, TEST_SOURCE_ID);
     }
 
     @Test
@@ -7122,13 +7096,10 @@ public class BassClientServiceTest {
     public void doNotAllowDuplicatesInAddSelectSource() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Sync request for past force add to select source
-        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        mBassClientService.addSelectSourceRequest(TEST_BROADCAST_ID, /* hasPriority */ true);
         verifyRegisterSyncCalled(mSourceDevice);
 
-        // Another sync request for past try add to select source again
-        mBassClientService.syncRequestForPast(
-                mCurrentDevice1, TEST_BROADCAST_ID, TEST_SOURCE_ID + 1);
+        mBassClientService.addSelectSourceRequest(TEST_BROADCAST_ID, /* hasPriority */ true);
 
         // On sync failed should be no more sync registration
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
@@ -8368,6 +8339,248 @@ public class BassClientServiceTest {
         injectRemoteSourceStateChanged(sm2, mBroadcastMetadata1, true, false);
         injectRemoteSourceStateChanged(sm2, mBroadcastMetadata1, false, false);
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_retriesDuringScanning() {
+        prepareSynchronizedPair();
+        onSyncLost();
+
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Not try again on sync failed because there is active scanning
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncNeverCalled();
+
+        // Try again on scan result even if already cached
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_retriesWithoutScanning() {
+        prepareSynchronizedPairAndStopSearching();
+
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Try again on sync failed
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncCalled(mSourceDevice);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_clearOnTimeout() {
+        prepareSynchronizedPairAndStopSearching();
+
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Not try again after timeout
+        mLooper.moveTimeForward(BassClientService.sPastResponseTimeout.toMillis());
+        mLooper.dispatchAll();
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncNeverCalled();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_clearOnDisconnect() {
+        prepareSynchronizedPairAndStopSearching();
+
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Not try again after disconnection
+        injectDeviceDisconnection(mCurrentDevice);
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncNeverCalled();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_clearOnReceiveStateChanged() {
+        prepareSynchronizedPairAndStopSearching();
+
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Not try again on sync failed
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Not try again after RS change
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncNeverCalled();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_multipleSourceId() {
+        prepareConnectedDeviceGroup();
+
+        // Set maximum source capacity to 2
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            doReturn(2).when(sm).getMaximumSourceCapacity();
+        }
+
+        prepareSyncToSourceAndVerify();
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        // Add another new broadcast source
+        onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
+        onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        addSourceAndVerify(mBroadcastMetadata2);
+        assertThat(mStateMachines).hasSize(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        mBroadcastMetadata2,
+                        TEST_SOURCE_ID + 2,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        mBroadcastMetadata2.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null,
+                        0L);
+            } else if (sm.getDevice().equals(mCurrentDevice1)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        mBroadcastMetadata2,
+                        TEST_SOURCE_ID + 3,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        mBroadcastMetadata2.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null,
+                        0L);
+            } else {
+                throw new AssertionError("Unexpected device");
+            }
+        }
+
+        mBassClientService.stopSearchingForSources();
+
+        // PAST request for first broadcaster
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        mBassClientService.syncRequestForPast(
+                mCurrentDevice1, TEST_BROADCAST_ID, TEST_SOURCE_ID + 1);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // PAST request for another broadcaster
+        mBassClientService.syncRequestForPast(
+                mCurrentDevice, TEST_BROADCAST_ID_2, TEST_SOURCE_ID + 2);
+        mBassClientService.syncRequestForPast(
+                mCurrentDevice1, TEST_BROADCAST_ID_2, TEST_SOURCE_ID + 3);
+        // It will be registered on first sync established (pass or fail)
+
+        // Try again on sync failed for both broadcasters
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyInitiatePaSyncTransferAndNoOthers(TEST_SYNC_HANDLE, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice2);
+        onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        verifyInitiatePaSyncTransferAndNoOthers(TEST_SYNC_HANDLE_2, TEST_SOURCE_ID + 2);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void syncRequestForPast_multipleSourceId_clearOnTimeout() {
+        prepareConnectedDeviceGroup();
+
+        // Set maximum source capacity to 2
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            doReturn(2).when(sm).getMaximumSourceCapacity();
+        }
+
+        prepareSyncToSourceAndVerify();
+        addSourceAndVerify(mBroadcastMetadata1);
+        injectRemoteSourceStateSourceAdded(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        // Add another new broadcast source
+        onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
+        onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        addSourceAndVerify(mBroadcastMetadata2);
+        assertThat(mStateMachines).hasSize(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        mBroadcastMetadata2,
+                        TEST_SOURCE_ID + 2,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        mBroadcastMetadata2.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null,
+                        0L);
+            } else if (sm.getDevice().equals(mCurrentDevice1)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        mBroadcastMetadata2,
+                        TEST_SOURCE_ID + 3,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        mBroadcastMetadata2.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null,
+                        0L);
+            } else {
+                throw new AssertionError("Unexpected device");
+            }
+        }
+
+        mBassClientService.stopSearchingForSources();
+
+        // PAST request for first broadcaster
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Move time forward half of time
+        mLooper.moveTimeForward(BassClientService.sPastResponseTimeout.toMillis() / 2);
+        mLooper.dispatchAll();
+
+        // PAST request for another broadcaster
+        mBassClientService.syncRequestForPast(
+                mCurrentDevice, TEST_BROADCAST_ID_2, TEST_SOURCE_ID + 2);
+        // It will be registered on first sync established (pass or fail)
+
+        // Try again on sync failed for both broadcasters
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncCalled(mSourceDevice2);
+        onSyncEstablishedFailed(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        verifyRegisterSyncCalled(mSourceDevice);
+
+        // Move time forward half of time, timeout for first brodacaser
+        mLooper.moveTimeForward(BassClientService.sPastResponseTimeout.toMillis() / 2);
+        mLooper.dispatchAll();
+
+        // Not try again on sync failed for first broadcaster but only for second
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        verifyRegisterSyncCalled(mSourceDevice2);
+        onSyncEstablishedFailed(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        verifyRegisterSyncCalled(mSourceDevice2);
+
+        // Move time forward, timeout for second brodacaser
+        mLooper.moveTimeForward(BassClientService.sPastResponseTimeout.toMillis());
+        mLooper.dispatchAll();
+
+        // Not try again on sync failed for second broadcaster
+        onSyncEstablishedFailed(mSourceDevice2, TEST_SYNC_HANDLE_2);
+        verifyRegisterSyncNeverCalled();
     }
 
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
