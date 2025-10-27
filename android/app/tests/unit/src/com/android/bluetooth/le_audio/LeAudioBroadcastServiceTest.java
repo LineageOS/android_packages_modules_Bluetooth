@@ -206,7 +206,6 @@ public class LeAudioBroadcastServiceTest {
         ExtendedMockito.doReturn(true)
                 .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
 
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
@@ -219,9 +218,10 @@ public class LeAudioBroadcastServiceTest {
                 new LeAudioService(
                         mAdapterService,
                         mStorage,
-                        mLooper.getLooper(),
                         mLeAudioNativeInterface,
-                        mLeAudioBroadcasterNativeInterface);
+                        mLeAudioBroadcasterNativeInterface,
+                        mActiveDeviceManager,
+                        mLooper.getLooper());
         mService.setAvailable(true);
 
         doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();

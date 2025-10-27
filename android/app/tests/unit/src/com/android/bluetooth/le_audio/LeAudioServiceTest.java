@@ -274,7 +274,6 @@ public class LeAudioServiceTest {
         ExtendedMockito.doReturn(true)
                 .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
 
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 
@@ -335,9 +334,10 @@ public class LeAudioServiceTest {
                 new LeAudioService(
                         mAdapterService,
                         mStorage,
-                        mLooper.getLooper(),
                         mNativeInterface,
-                        mLeAudioBroadcasterNativeInterface);
+                        mLeAudioBroadcasterNativeInterface,
+                        mActiveDeviceManager,
+                        mLooper.getLooper());
         mService.setAvailable(true);
 
         LeAudioStackEvent stackEvent =
@@ -415,9 +415,10 @@ public class LeAudioServiceTest {
                 new LeAudioService(
                                 mAdapterService,
                                 mStorage,
-                                mLooper.getLooper(),
                                 mNativeInterface,
-                                mLeAudioBroadcasterNativeInterface)
+                                mLeAudioBroadcasterNativeInterface,
+                                mActiveDeviceManager,
+                                mLooper.getLooper())
                         .getTmapRoleMask();
         assertThat(mask).isEqualTo(expectedMasks);
     }
