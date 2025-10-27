@@ -199,7 +199,6 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(new BluetoothSinkAudioPolicy.Builder().build())
                 .when(mAdapterService)
                 .getRequestedAudioPolicyAsSink(any(BluetoothDevice.class));
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         // Mock system interface
@@ -247,6 +246,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mStorage,
                         mNativeInterface,
                         mSystemInterface,
+                        mActiveDeviceManager,
                         mTestLooper.getLooper());
         mHeadsetService.setAvailable(true);
         if (android.media.audio.Flags.scoManagedByAudio()) {
