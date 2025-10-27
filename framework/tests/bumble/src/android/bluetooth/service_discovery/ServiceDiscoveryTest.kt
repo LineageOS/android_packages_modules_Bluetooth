@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,203 +14,201 @@
  * limitations under the License.
  */
 
-package android.bluetooth.service_discovery.pairing;
+package android.bluetooth.service_discovery.pairing
 
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.PandoraDevice
+import android.bluetooth.Utils
+import android.bluetooth.test_utils.EnableBluetoothRule
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.ParcelUuid
+import android.platform.test.flag.junit.DeviceFlagsValueProvider
+import android.util.Log
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.compatibility.common.util.AdoptShellPermissionsRule
+import com.google.common.truth.Truth.assertThat
+import java.time.Duration
+import org.hamcrest.Matcher
+import org.hamcrest.Matchers
+import org.hamcrest.core.AllOf
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.any
+import org.mockito.InOrder
+import org.mockito.Mock
+import org.mockito.Mockito.inOrder
+import org.mockito.Mockito.timeout
+import org.mockito.Mockito.verifyNoMoreInteractions
+import org.mockito.MockitoAnnotations
+import org.mockito.hamcrest.MockitoHamcrest
+import pandora.GattProto
+import pandora.HostProto.AdvertiseRequest
+import pandora.HostProto.OwnAddressType
 
-import static com.google.common.truth.Truth.assertThat;
+private const val TAG = "ServiceDiscoveryTest"
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+@RunWith(AndroidJUnit4::class)
+class ServiceDiscoveryTest {
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.PandoraDevice;
-import android.bluetooth.Utils;
-import android.bluetooth.test_utils.EnableBluetoothRule;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.ParcelUuid;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
-import android.util.Log;
+    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
+    @get:Rule(order = 2) val bumble = PandoraDevice()
 
-import com.android.compatibility.common.util.AdoptShellPermissionsRule;
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.core.AllOf;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.hamcrest.MockitoHamcrest;
+    @Mock private lateinit var receiver: BroadcastReceiver
 
-import pandora.GattProto;
-import pandora.HostProto.AdvertiseRequest;
-import pandora.HostProto.OwnAddressType;
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
-import java.time.Duration;
-
-@RunWith(AndroidJUnit4.class)
-public class ServiceDiscoveryTest {
-    private static final String TAG = ServiceDiscoveryTest.class.getSimpleName();
-
-    @Rule(order = 0)
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
-
-    @Rule(order = 1)
-    public final AdoptShellPermissionsRule mPermissionRule = new AdoptShellPermissionsRule();
-
-    @Rule(order = 2)
-    public final PandoraDevice mBumble = new PandoraDevice();
-
-    @Rule(order = 3)
-    public final EnableBluetoothRule mEnableBluetoothRule = new EnableBluetoothRule(false, true);
-
-    @Mock private BroadcastReceiver mReceiver;
-
-    private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final ParcelUuid BATTERY_UUID =
-            ParcelUuid.fromString("0000180F-0000-1000-8000-00805F9B34FB");
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
-
-    private InOrder mInOrder;
-    private BluetoothDevice mBumbleDevice;
+    private lateinit var inOrder: InOrder
+    private lateinit var bumbleDevice: BluetoothDevice
+    private lateinit var closeable: AutoCloseable
 
     @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+    @Throws(Exception::class)
+    fun setUp() {
+        closeable = MockitoAnnotations.openMocks(this)
 
-        mInOrder = inOrder(mReceiver);
-        mBumbleDevice = mBumble.getRemoteDevice();
+        inOrder = inOrder(receiver)
+        bumbleDevice = bumble.remoteDevice
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_UUID);
+        val filter =
+            IntentFilter().apply {
+                addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+                addAction(BluetoothDevice.ACTION_UUID)
+            }
 
-        mTargetContext.registerReceiver(mReceiver, filter);
-        Utils.setupIntentLogger(TAG, mReceiver);
+        context.registerReceiver(receiver, filter)
+        Utils.setupIntentLogger(TAG, receiver)
     }
 
     @After
-    public void tearDown() throws Exception {
-        Log.d(TAG, "start tearDown");
-        mTargetContext.unregisterReceiver(mReceiver);
+    @Throws(Exception::class)
+    fun tearDown() {
+        Log.d(TAG, "start tearDown")
+        context.unregisterReceiver(receiver)
+        closeable.close()
     }
 
     /**
      * Ensure that successful service discovery results in a single ACTION_UUID intent
      *
      * <p>Prerequisites:
-     *
      * <ol>
-     *   <li>Bumble and Android are not bonded
-     *   <li>Bumble has GATT services in addition to GAP and GATT services
+     * <li>Bumble and Android are not bonded
+     * <li>Bumble has GATT services in addition to GAP and GATT services
      * </ol>
      *
      * <p>Steps:
-     *
      * <ol>
-     *   <li>Bumble is discoverable and connectable over LE
-     *   <li>Android connects to Bumble over LE
-     *   <li>Android starts GATT service discovery
+     * <li>Bumble is discoverable and connectable over LE
+     * <li>Android connects to Bumble over LE
+     * <li>Android starts GATT service discovery
      * </ol>
      *
      * Expectation: A single ACTION_UUID intent is received The ACTION_UUID intent is not empty
      */
     @Test
-    public void testServiceDiscoveryBredr_SingleIntent() {
+    fun testServiceDiscoveryBredr_SingleIntent() {
         // Start GATT service discovery, this will establish BR/EDR
-        assertThat(mBumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+        assertThat(bumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_BREDR)).isTrue()
 
         // Wait for connection on Android
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
 
         // Wait for GATT service discovery to complete on Android
-        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID));
+        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID))
 
         // Ensure that no other ACTION_UUID intent is received
-        verifyNoMoreInteractions(mReceiver);
+        verifyNoMoreInteractions(receiver)
     }
 
     /**
      * Ensure that successful service discovery results in a single ACTION_UUID intent
      *
      * <p>Prerequisites:
-     *
      * <ol>
-     *   <li>Bumble and Android are not bonded
-     *   <li>Bumble has GATT services in addition to GAP and GATT services
+     * <li>Bumble and Android are not bonded
+     * <li>Bumble has GATT services in addition to GAP and GATT services
      * </ol>
      *
      * <p>Steps:
-     *
      * <ol>
-     *   <li>Bumble is discoverable and connectable over LE
-     *   <li>Android connects to Bumble over LE
-     *   <li>Android starts GATT service discovery
+     * <li>Bumble is discoverable and connectable over LE
+     * <li>Android connects to Bumble over LE
+     * <li>Android starts GATT service discovery
      * </ol>
      *
      * Expectation: A single ACTION_UUID intent is received The ACTION_UUID intent is not empty
      */
     @Test
-    public void testServiceDiscoveryLe_SingleIntent() {
+    fun testServiceDiscoveryLe_SingleIntent() {
         // Register some services on Bumble
-        for (int i = 0; i < 6; i++) {
-            mBumble.gattBlocking()
-                    .registerService(
-                            GattProto.RegisterServiceRequest.newBuilder()
-                                    .setService(
-                                            GattProto.GattServiceParams.newBuilder()
-                                                    .setUuid(BATTERY_UUID.toString())
-                                                    .build())
-                                    .build());
+        repeat(6) {
+            bumble
+                .gattBlocking()
+                .registerService(
+                    GattProto.RegisterServiceRequest.newBuilder()
+                        .setService(
+                            GattProto.GattServiceParams.newBuilder()
+                                .setUuid(BATTERY_UUID.toString())
+                                .build()
+                        )
+                        .build()
+                )
         }
 
         // Make Bumble connectable
-        mBumble.hostBlocking()
-                .advertise(
-                        AdvertiseRequest.newBuilder()
-                                .setLegacy(true)
-                                .setConnectable(true)
-                                .setOwnAddressType(OwnAddressType.PUBLIC)
-                                .build());
+        bumble
+            .hostBlocking()
+            .advertise(
+                AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(OwnAddressType.PUBLIC)
+                    .build()
+            )
 
         // Start GATT service discovery, this will establish LE ACL
-        assertThat(mBumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_LE)).isTrue();
+        assertThat(bumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_LE)).isTrue()
 
         // Wait for connection on Android
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+        )
 
         // Wait for GATT service discovery to complete on Android
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_UUID),
-                hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(BATTERY_UUID)));
+            hasAction(BluetoothDevice.ACTION_UUID),
+            hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(BATTERY_UUID)),
+        )
 
         // Ensure that no other ACTION_UUID intent is received
-        verifyNoMoreInteractions(mReceiver);
+        verifyNoMoreInteractions(receiver)
     }
 
-    @SafeVarargs
-    private void verifyIntentReceived(Matcher<Intent>... matchers) {
-        mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    private fun verifyIntentReceived(vararg matchers: Matcher<Intent>) {
+        inOrder
+            .verify(receiver, timeout(INTENT_TIMEOUT.toMillis()))
+            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
+    }
+
+    companion object {
+        private val INTENT_TIMEOUT = Duration.ofSeconds(10)
+        private val BATTERY_UUID = ParcelUuid.fromString("0000180F-0000-1000-8000-00805F9B34FB")
     }
 }
