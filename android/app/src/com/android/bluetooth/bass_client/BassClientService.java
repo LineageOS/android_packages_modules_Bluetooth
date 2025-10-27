@@ -265,10 +265,9 @@ public class BassClientService extends ConnectableProfile {
                 }
 
                 mScannerId = SCANNER_ID_INITIALIZING;
+                var source = getAttributionSource();
                 scanController.doOnScanThread(
-                        () ->
-                                scanController.registerScannerInternal(
-                                        this, null, getAttributionSource()));
+                        () -> scanController.registerScannerInternal(this, null, source));
             }
         }
 
