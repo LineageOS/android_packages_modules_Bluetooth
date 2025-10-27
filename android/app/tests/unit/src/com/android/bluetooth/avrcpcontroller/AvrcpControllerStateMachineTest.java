@@ -41,6 +41,7 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Looper;
@@ -91,6 +92,7 @@ public class AvrcpControllerStateMachineTest {
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
     @Mock private AvrcpCoverArtManager mCoverArtManager;
     @Mock private AudioManager mAudioManager;
+    @Mock private PackageManager mPackageManager;
 
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 100;
     private static final int KEY_DOWN = 0;
@@ -113,6 +115,10 @@ public class AvrcpControllerStateMachineTest {
         doReturn(15).when(mAudioManager).getStreamMaxVolume(anyInt());
         doReturn(8).when(mAudioManager).getStreamVolume(anyInt());
         doReturn(true).when(mAudioManager).isVolumeFixed();
+
+        // Absolute volume support (Utils.isAutomotive())
+        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
+        doReturn(false).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
 
         doReturn(true)
                 .when(mMockResources)
@@ -151,7 +157,7 @@ public class AvrcpControllerStateMachineTest {
     private AvrcpControllerStateMachine makeStateMachine(BluetoothDevice device) {
         AvrcpControllerStateMachine sm =
                 new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, device, mNativeInterface, false);
+                        mAdapterService, mAvrcpControllerService, device, mNativeInterface);
         sm.start();
         return sm;
     }
@@ -1007,7 +1013,46 @@ public class AvrcpControllerStateMachineTest {
 
     /** Test that Absolute Volume Registration is working */
     @Test
-    public void testRegisterAbsVolumeNotification() {
+    public void testRegisterAbsVolumeNotification_volumeIsFixed_getsAbsVolumeMax() {
+        byte label = 42;
+        setUpConnectedState(true, true);
+        mAvrcpStateMachine.sendMessage(
+                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION, label);
+        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                .sendRegisterAbsVolRsp(any(), anyByte(), eq(127), eq((int) label));
+    }
+
+    /** Test that Absolute Volume Registration is working */
+    @Test
+    public void testRegisterAbsVolumeNotification_volumeIsNotFixed_doesNotGetAbsVolumeMax() {
+        doReturn(false).when(mAudioManager).isVolumeFixed();
+        mAvrcpStateMachine =
+                new AvrcpControllerStateMachine(
+                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
+        mAvrcpStateMachine.start();
+        byte label = 42;
+        setUpConnectedState(true, true);
+        doReturn(100).when(mAudioManager).getStreamMaxVolume(eq(AudioManager.STREAM_MUSIC));
+        doReturn(25).when(mAudioManager).getStreamVolume(eq(AudioManager.STREAM_MUSIC));
+        mAvrcpStateMachine.sendMessage(
+                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION, label);
+        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                .sendRegisterAbsVolRsp(any(), anyByte(), eq(31), eq((int) label));
+    }
+
+    /** Test that Absolute Volume Registration is working */
+    @Test
+    public void
+            testRegisterAbsVolumeNotification_volumeIsNotFixedSinkAbsoluteVolumeEnabled_getsAbsVolumeMax() {
+        doReturn(false).when(mAudioManager).isVolumeFixed();
+
+        // Absolute volume support (Utils.isAutomotive())
+        doReturn(true).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
+
+        mAvrcpStateMachine =
+                new AvrcpControllerStateMachine(
+                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
+        mAvrcpStateMachine.start();
         byte label = 42;
         setUpConnectedState(true, true);
         mAvrcpStateMachine.sendMessage(
@@ -1018,7 +1063,7 @@ public class AvrcpControllerStateMachineTest {
 
     /** Test that set absolute volume is working */
     @Test
-    public void testSetAbsoluteVolume_volumeIsFixed_setsAbsVolumeBase() {
+    public void testSetAbsoluteVolume_volumeIsFixed_setsAbsVolumeMax() {
         byte label = 42;
         setUpConnectedState(true, true);
         mAvrcpStateMachine.sendMessage(
@@ -1029,11 +1074,11 @@ public class AvrcpControllerStateMachineTest {
 
     /** Test that set absolute volume is working */
     @Test
-    public void testSetAbsoluteVolume_volumeIsNotFixed_setsAbsVolumeBase() {
+    public void testSetAbsoluteVolume_volumeIsNotFixed_doesNotSetAbsVolumeMax() {
         doReturn(false).when(mAudioManager).isVolumeFixed();
         mAvrcpStateMachine =
                 new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface, false);
+                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
         mAvrcpStateMachine.start();
         byte label = 42;
         setUpConnectedState(true, true);
@@ -1050,12 +1095,15 @@ public class AvrcpControllerStateMachineTest {
 
     /** Test that set absolute volume is working */
     @Test
-    public void
-            testSetAbsoluteVolume_volumeIsNotFixedSinkAbsoluteVolumeEnabled_setsAbsVolumeBase() {
+    public void testSetAbsoluteVolume_volumeIsNotFixedSinkAbsoluteVolumeEnabled_setsAbsVolumeMax() {
         doReturn(false).when(mAudioManager).isVolumeFixed();
+
+        // Absolute volume support (Utils.isAutomotive())
+        doReturn(true).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
+
         mAvrcpStateMachine =
                 new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface, true);
+                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
         mAvrcpStateMachine.start();
         byte label = 42;
         setUpConnectedState(true, true);
