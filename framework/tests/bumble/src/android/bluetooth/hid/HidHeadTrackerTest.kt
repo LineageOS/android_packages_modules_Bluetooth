@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,256 +14,229 @@
  * limitations under the License.
  */
 
-package android.bluetooth.hid;
+package android.bluetooth.hid
 
-import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothHidHost
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTING
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.PandoraDevice
+import android.bluetooth.StreamObserverSpliterator
+import android.bluetooth.Utils
+import android.bluetooth.test_utils.EnableBluetoothRule
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.ParcelUuid
+import android.platform.test.flag.junit.DeviceFlagsValueProvider
+import android.util.Log
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.compatibility.common.util.AdoptShellPermissionsRule
+import com.google.common.truth.Truth.assertThat
+import java.time.Duration
+import java.util.concurrent.TimeUnit
+import org.hamcrest.CustomTypeSafeMatcher
+import org.hamcrest.Matcher
+import org.hamcrest.Matchers
+import org.hamcrest.Matchers.oneOf
+import org.hamcrest.core.AllOf
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
+import org.mockito.InOrder
+import org.mockito.Mock
+import org.mockito.Mockito.any
+import org.mockito.Mockito.eq
+import org.mockito.Mockito.inOrder
+import org.mockito.Mockito.timeout
+import org.mockito.Mockito.verify
+import org.mockito.MockitoAnnotations
+import org.mockito.hamcrest.MockitoHamcrest
+import pandora.GattProto
+import pandora.GattProto.GattCharacteristicParams
+import pandora.HIDGrpc
+import pandora.HidProto.HidServiceType
+import pandora.HidProto.ServiceRequest
+import pandora.HostProto.AdvertiseRequest
+import pandora.HostProto.AdvertiseResponse
+import pandora.HostProto.DiscoverabilityMode
+import pandora.HostProto.OwnAddressType
+import pandora.HostProto.SetDiscoverabilityModeRequest
+import pandora.SecurityProto.PairingEvent
+import pandora.SecurityProto.PairingEventAnswer
 
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+private const val TAG = "HidHeadTrackerTest"
 
-import static com.google.common.truth.Truth.assertThat;
+@RunWith(AndroidJUnit4::class)
+class HidHeadTrackerTest {
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
-import static org.hamcrest.Matchers.oneOf;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
+    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
 
-import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothA2dp;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothHidHost;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.PandoraDevice;
-import android.bluetooth.StreamObserverSpliterator;
-import android.bluetooth.Utils;
-import android.bluetooth.test_utils.EnableBluetoothRule;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.ParcelUuid;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
-import android.util.Log;
+    @get:Rule(order = 2) val bumble = PandoraDevice()
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-import com.android.compatibility.common.util.AdoptShellPermissionsRule;
+    @Mock private lateinit var receiver: BroadcastReceiver
+    @Mock private lateinit var serviceListener: BluetoothProfile.ServiceListener
 
-import io.grpc.stub.StreamObserver;
+    private val pairingEventStreamObserver = StreamObserverSpliterator<Void, PairingEvent>()
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
-import org.hamcrest.CustomTypeSafeMatcher;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.core.AllOf;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.hamcrest.MockitoHamcrest;
-
-import pandora.GattProto;
-import pandora.GattProto.GattCharacteristicParams;
-import pandora.HIDGrpc;
-import pandora.HidProto.HidServiceType;
-import pandora.HidProto.ServiceRequest;
-import pandora.HostProto.AdvertiseRequest;
-import pandora.HostProto.AdvertiseResponse;
-import pandora.HostProto.DiscoverabilityMode;
-import pandora.HostProto.OwnAddressType;
-import pandora.HostProto.SetDiscoverabilityModeRequest;
-import pandora.SecurityProto.PairingEvent;
-import pandora.SecurityProto.PairingEventAnswer;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
-@RunWith(AndroidJUnit4.class)
-public class HidHeadTrackerTest {
-    private static final String TAG = HidHeadTrackerTest.class.getSimpleName();
-
-    @Rule(order = 0)
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
-
-    @Rule(order = 1)
-    public final AdoptShellPermissionsRule mPermissionRule = new AdoptShellPermissionsRule();
-
-    @Rule(order = 2)
-    public final PandoraDevice mBumble = new PandoraDevice();
-
-    @Rule(order = 3)
-    public final EnableBluetoothRule mEnableBluetoothRule = new EnableBluetoothRule(false, true);
-
-    @Mock private BroadcastReceiver mReceiver;
-    @Mock private BluetoothProfile.ServiceListener mServiceListener;
-    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
-            new StreamObserverSpliterator<>();
-
-    private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final ParcelUuid HEADTRACKER_UUID =
-            ParcelUuid.fromString("109b862f-50e3-45cc-8ea1-ac62de4846d1");
-    private static final ParcelUuid HEADTRACKER_VERSION_CHARACTERISTIC_UUID =
-            ParcelUuid.fromString("b4eb9919-a910-46a2-a9dd-fec2525196fd");
-    private static final ParcelUuid HEADTRACKER_CONTROL_CHARACTERISTIC_UUID =
-            ParcelUuid.fromString("8584cbb5-2d58-45a3-ab9d-583e0958b067");
-    private static final ParcelUuid HEADTRACKER_REPORT_CHARACTERISTIC_UUID =
-            ParcelUuid.fromString("e66dd173-b2ae-4f5a-ae16-0162af8038ae");
-
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
-    private final BluetoothAdapter mAdapter =
-            mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
-
-    private HIDGrpc.HIDBlockingStub mHidBlockingStub;
-    private InOrder mInOrder;
-    private BluetoothDevice mBumbleDevice;
-    private BluetoothHidHost mHidService;
-    private BluetoothHeadset mHfpService;
-    private BluetoothA2dp mA2dpService;
+    private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub
+    private lateinit var inOrder: InOrder
+    private lateinit var bumbleDevice: BluetoothDevice
+    private lateinit var hidService: BluetoothHidHost
+    private lateinit var hfpService: BluetoothHeadset
+    private lateinit var a2dpService: BluetoothA2dp
 
     @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        mHidBlockingStub = mBumble.hidBlocking();
+    @Throws(Exception::class)
+    fun setUp() {
+        MockitoAnnotations.initMocks(this)
+        hidBlockingStub = bumble.hidBlocking()
 
-        mInOrder = inOrder(mReceiver);
-        mBumbleDevice = mBumble.getRemoteDevice();
+        inOrder = inOrder(receiver)
+        bumbleDevice = bumble.remoteDevice
         // Get profile proxies
-        mHidService = (BluetoothHidHost) connectToProfile(BluetoothProfile.HID_HOST);
-        mA2dpService = (BluetoothA2dp) connectToProfile(BluetoothProfile.A2DP);
-        mHfpService = (BluetoothHeadset) connectToProfile(BluetoothProfile.HEADSET);
+        hidService = connectToProfile(BluetoothProfile.HID_HOST) as BluetoothHidHost
+        a2dpService = connectToProfile(BluetoothProfile.A2DP) as BluetoothA2dp
+        hfpService = connectToProfile(BluetoothProfile.HEADSET) as BluetoothHeadset
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_UUID);
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED);
-        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
+        val filter =
+            IntentFilter().apply {
+                addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+                addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                addAction(BluetoothDevice.ACTION_UUID)
+                addAction(BluetoothDevice.ACTION_FOUND)
+                addAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED)
+                addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+            }
 
-        mTargetContext.registerReceiver(mReceiver, filter);
-        Utils.setupIntentLogger(TAG, mReceiver);
+        context.registerReceiver(receiver, filter)
+        Utils.setupIntentLogger(TAG, receiver)
     }
 
     @After
-    public void tearDown() throws Exception {
-        Log.d(TAG, "start tearDown");
-        if (mBumbleDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
-            removeBond(mBumbleDevice);
+    @Throws(Exception::class)
+    fun tearDown() {
+        Log.d(TAG, "start tearDown")
+        if (bumbleDevice.bondState == BluetoothDevice.BOND_BONDED) {
+            removeBond(bumbleDevice)
         }
-        mTargetContext.unregisterReceiver(mReceiver);
+        context.unregisterReceiver(receiver)
     }
 
     /**
      * Ensure that successful HID connection over LE Transport.
      *
      * <p>Prerequisites:
-     *
      * <ol>
-     *   <li>Bumble has Android Headtracker Service
-     *   <li>Bumble does not support HID and HOGP
-     *   <li>Bumble is connectable over LE
+     * <li>Bumble has Android Headtracker Service
+     * <li>Bumble does not support HID and HOGP
+     * <li>Bumble is connectable over LE
      * </ol>
      *
      * <p>Steps:
-     *
      * <ol>
-     *   <li>Android pairs with Bumble
-     *   <li>Android Bluetooth reports HID host connection
-     *   <li>Disconnect and reconnect
-     *   <li>Android Bluetooth reports HID host connection
+     * <li>Android pairs with Bumble
+     * <li>Android Bluetooth reports HID host connection
+     * <li>Disconnect and reconnect
+     * <li>Android Bluetooth reports HID host connection
      * </ol>
      *
      * Expectation: successful HID connection over LE Transport
      */
     @SuppressLint("MissingPermission")
     @Test
-    public void connectWithoutHidServiceTest() throws Exception {
-        pairAndConnect();
+    @Throws(Exception::class)
+    fun connectWithoutHidServiceTest() {
+        pairAndConnect()
 
-        assertThat(mBumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-        verifyConnectionState(TRANSPORT_LE, STATE_CONNECTING);
-        verifyConnectionState(TRANSPORT_LE, STATE_CONNECTED);
+        assertThat(bumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(TRANSPORT_LE, STATE_CONNECTING)
+        verifyConnectionState(TRANSPORT_LE, STATE_CONNECTED)
 
         // Disable a2dp and HFP connection policy
-
-        if (mA2dpService.getConnectionPolicy(mBumbleDevice) == CONNECTION_POLICY_ALLOWED) {
-            assertThat(mA2dpService.setConnectionPolicy(mBumbleDevice, CONNECTION_POLICY_FORBIDDEN))
-                    .isTrue();
+        if (a2dpService.getConnectionPolicy(bumbleDevice) == CONNECTION_POLICY_ALLOWED) {
+            assertThat(a2dpService.setConnectionPolicy(bumbleDevice, CONNECTION_POLICY_FORBIDDEN))
+                .isTrue()
         }
-        if (mHfpService.getConnectionPolicy(mBumbleDevice) == CONNECTION_POLICY_ALLOWED) {
-            assertThat(mHfpService.setConnectionPolicy(mBumbleDevice, CONNECTION_POLICY_FORBIDDEN))
-                    .isTrue();
+        if (hfpService.getConnectionPolicy(bumbleDevice) == CONNECTION_POLICY_ALLOWED) {
+            assertThat(hfpService.setConnectionPolicy(bumbleDevice, CONNECTION_POLICY_FORBIDDEN))
+                .isTrue()
         }
 
-        // Disconnect  and Reconnect
-        assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        // Disconnect and Reconnect
+        assertThat(bumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTING)
+        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTED)
 
-        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTING);
-        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTED);
         // Wait for ACL to get disconnected
         verifyIntentReceivedUnorderedAtLeast(
-                1,
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+            1,
+            hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+        )
         // Restart advertise
-        mBumble.hostBlocking()
-                .advertise(
-                        AdvertiseRequest.newBuilder()
-                                .setLegacy(true)
-                                .setConnectable(true)
-                                .setOwnAddressType(OwnAddressType.RANDOM)
-                                .build());
+        bumble
+            .hostBlocking()
+            .advertise(
+                AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(OwnAddressType.RANDOM)
+                    .build()
+            )
         // HOGP CONNECTING and ACL CONNECTED has race connection hence unordered here
         verifyIntentReceivedUnorderedAtLeast(
-                1,
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-        verifyConnectionState(TRANSPORT_LE, STATE_CONNECTED);
+            1,
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+        )
+        verifyConnectionState(TRANSPORT_LE, STATE_CONNECTED)
     }
 
     /**
      * Ensure that successful HID connection over BREDR Transport.
      *
      * <p>Prerequisites:
-     *
      * <ol>
-     *   <li>Bumble has Android Headtracker Service
-     *   <li>Bumble supports only HID but not HOGP
-     *   <li>Bumble is connectable over LE
+     * <li>Bumble has Android Headtracker Service
+     * <li>Bumble supports only HID but not HOGP
+     * <li>Bumble is connectable over LE
      * </ol>
      *
      * <p>Steps:
-     *
      * <ol>
-     *   <li>Android pairs with Bumble
-     *   <li>Android Bluetooth reports HID host connection
-     *   <li>Change the preferred transport to LE
-     *   <li>Android Bluetooth reports HID host connection over LE
+     * <li>Android pairs with Bumble
+     * <li>Android Bluetooth reports HID host connection
+     * <li>Change the preferred transport to LE
+     * <li>Android Bluetooth reports HID host connection over LE
      * </ol>
      *
      * Expectation: successful HID connection over BREDR Transport and Preferred transport selection
@@ -271,137 +244,155 @@ public class HidHeadTrackerTest {
      */
     @SuppressLint("MissingPermission")
     @Test
-    public void connectWithHidServiceTest() throws Exception {
-        mHidBlockingStub.registerService(
-                ServiceRequest.newBuilder()
-                        .setServiceType(HidServiceType.SERVICE_TYPE_HID)
-                        .build());
-        pairAndConnect();
+    @Throws(Exception::class)
+    fun connectWithHidServiceTest() {
+        hidBlockingStub.registerService(
+            ServiceRequest.newBuilder().setServiceType(HidServiceType.SERVICE_TYPE_HID).build()
+        )
+        pairAndConnect()
 
-        assertThat(mBumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-        verifyConnectionState(TRANSPORT_BREDR, STATE_CONNECTED);
+        assertThat(bumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(TRANSPORT_BREDR, STATE_CONNECTED)
         // Switch to LE Transport
-        mHidService.setPreferredTransport(mBumbleDevice, TRANSPORT_LE);
-        verifyTransportSwitch(mBumbleDevice, TRANSPORT_BREDR, TRANSPORT_LE);
-        // Disconnect
-        assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        hidService.setPreferredTransport(bumbleDevice, TRANSPORT_LE)
+        verifyTransportSwitch(bumbleDevice, TRANSPORT_BREDR, TRANSPORT_LE)
 
-        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTING);
-        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTED);
+        // Disconnect
+        assertThat(bumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)
+        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTING)
+        verifyConnectionState(TRANSPORT_LE, STATE_DISCONNECTED)
+
         // Wait for ACL to get disconnected
         verifyIntentReceivedUnorderedAtLeast(
-                1,
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+            1,
+            hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+        )
     }
 
-    private void pairAndConnect() throws Exception {
+    @Throws(Exception::class)
+    private fun pairAndConnect() {
         // Register Head tracker services on Bumble
-        GattCharacteristicParams characteristicVersion =
-                GattCharacteristicParams.newBuilder()
-                        .setProperties(
-                                BluetoothGattCharacteristic.PROPERTY_READ
-                                        | BluetoothGattCharacteristic.PROPERTY_WRITE)
-                        .setUuid(HEADTRACKER_VERSION_CHARACTERISTIC_UUID.toString())
-                        .build();
-
-        GattCharacteristicParams characteristicControl =
-                GattCharacteristicParams.newBuilder()
-                        .setProperties(
-                                BluetoothGattCharacteristic.PROPERTY_READ
-                                        | BluetoothGattCharacteristic.PROPERTY_WRITE)
-                        .setUuid(HEADTRACKER_CONTROL_CHARACTERISTIC_UUID.toString())
-                        .build();
-        GattCharacteristicParams characteristicReport =
-                GattCharacteristicParams.newBuilder()
-                        .setProperties(
-                                BluetoothGattCharacteristic.PROPERTY_READ
-                                        | BluetoothGattCharacteristic.PROPERTY_WRITE)
-                        .setUuid(HEADTRACKER_REPORT_CHARACTERISTIC_UUID.toString())
-                        .build();
-        mBumble.gattBlocking()
-                .registerService(
-                        GattProto.RegisterServiceRequest.newBuilder()
-                                .setService(
-                                        GattProto.GattServiceParams.newBuilder()
-                                                .addCharacteristics(characteristicVersion)
-                                                .addCharacteristics(characteristicControl)
-                                                .addCharacteristics(characteristicReport)
-                                                .setUuid(HEADTRACKER_UUID.toString())
-                                                .build())
-                                .build());
+        val characteristicVersion =
+            GattCharacteristicParams.newBuilder()
+                .setProperties(
+                    BluetoothGattCharacteristic.PROPERTY_READ or
+                        BluetoothGattCharacteristic.PROPERTY_WRITE
+                )
+                .setUuid(HEADTRACKER_VERSION_CHARACTERISTIC_UUID.toString())
+                .build()
+        val characteristicControl =
+            GattCharacteristicParams.newBuilder()
+                .setProperties(
+                    BluetoothGattCharacteristic.PROPERTY_READ or
+                        BluetoothGattCharacteristic.PROPERTY_WRITE
+                )
+                .setUuid(HEADTRACKER_CONTROL_CHARACTERISTIC_UUID.toString())
+                .build()
+        val characteristicReport =
+            GattCharacteristicParams.newBuilder()
+                .setProperties(
+                    BluetoothGattCharacteristic.PROPERTY_READ or
+                        BluetoothGattCharacteristic.PROPERTY_WRITE
+                )
+                .setUuid(HEADTRACKER_REPORT_CHARACTERISTIC_UUID.toString())
+                .build()
+        bumble
+            .gattBlocking()
+            .registerService(
+                GattProto.RegisterServiceRequest.newBuilder()
+                    .setService(
+                        GattProto.GattServiceParams.newBuilder()
+                            .addCharacteristics(characteristicVersion)
+                            .addCharacteristics(characteristicControl)
+                            .addCharacteristics(characteristicReport)
+                            .setUuid(HEADTRACKER_UUID.toString())
+                            .build()
+                    )
+                    .build()
+            )
 
         // Make Bumble discoverable over BR/EDR
-        mBumble.hostBlocking()
-                .setDiscoverabilityMode(
-                        SetDiscoverabilityModeRequest.newBuilder()
-                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
-                                .build());
+        bumble
+            .hostBlocking()
+            .setDiscoverabilityMode(
+                SetDiscoverabilityModeRequest.newBuilder()
+                    .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                    .build()
+            )
         // Start Discovery
-        assertThat(mAdapter.startDiscovery()).isTrue();
+        assertThat(adapter.startDiscovery()).isTrue()
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_FOUND),
-                hasExtra(BluetoothDevice.EXTRA_NAME, Utils.BUMBLE_DEVICE_NAME),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-        assertThat(mAdapter.cancelDiscovery()).isTrue();
+            hasAction(BluetoothDevice.ACTION_FOUND),
+            hasExtra(BluetoothDevice.EXTRA_NAME, Utils.BUMBLE_DEVICE_NAME),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+        )
+        assertThat(adapter.cancelDiscovery()).isTrue()
         // Create Bond
-        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
-                mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                        .onPairing(mPairingEventStreamObserver);
+        val pairingEventAnswerObserver =
+            bumble
+                .security()
+                .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                .onPairing(pairingEventStreamObserver)
 
         // Start pairing from Android with Auto transport
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
+        assertThat(bumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue()
 
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR),
+        )
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(
-                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
-                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
 
         // Approve pairing from Android
-        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+        assertThat(bumbleDevice.setPairingConfirmation(true)).isTrue()
 
-        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
-        assertThat(pairingEvent.hasJustWorks()).isTrue();
+        val pairingEvent = pairingEventStreamObserver.iterator().next()
+        assertThat(pairingEvent.hasJustWorks()).isTrue()
         pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
+            PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build()
+        )
         // Make Bumble connectable with some delay
-        Thread.sleep(300);
-        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
-                new StreamObserverSpliterator<>();
-        mBumble.host()
-                .advertise(
-                        AdvertiseRequest.newBuilder()
-                                .setLegacy(true)
-                                .setConnectable(true)
-                                .setOwnAddressType(OwnAddressType.RANDOM)
-                                .build(),
-                        responseObserver);
+        Thread.sleep(300)
+        val responseObserver = StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse>()
+        bumble
+            .host()
+            .advertise(
+                AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(OwnAddressType.RANDOM)
+                    .build(),
+                responseObserver,
+            )
         // Verify  ACL connection on classic transport first and then LE transport
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
-        responseObserver.cancel("Canceling advertise request");
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE),
+        )
+        responseObserver.cancel("Canceling advertise request")
         // Ensure that pairing succeeds
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
         verifyIntentReceivedUnorderedAtLeast(
-                1,
-                hasAction(BluetoothDevice.ACTION_UUID),
-                hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(HEADTRACKER_UUID)));
+            1,
+            hasAction(BluetoothDevice.ACTION_UUID),
+            hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(HEADTRACKER_UUID)),
+        )
     }
 
     /**
@@ -421,81 +412,101 @@ public class HidHeadTrackerTest {
      * @param fromTransport from which transport
      * @param toTransport to which transport
      */
-    private void verifyTransportSwitch(BluetoothDevice device, int fromTransport, int toTransport) {
-        assertThat(fromTransport).isNotEqualTo(toTransport);
+    private fun verifyTransportSwitch(
+        device: BluetoothDevice,
+        fromTransport: Int,
+        toTransport: Int,
+    ) {
+        assertThat(fromTransport).isNotEqualTo(toTransport)
 
         class Wrapper {
-            int mState;
-            int mTransport;
+            var state = 0
+            var transport = 0
         }
-        final Wrapper wrap = new Wrapper();
+        val wrap = Wrapper()
 
         verifyIntentReceived(
-                hasAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, oneOf(fromTransport, toTransport)),
-                hasExtra(BluetoothProfile.EXTRA_STATE, oneOf(STATE_CONNECTING, STATE_DISCONNECTED)),
-                new CustomTypeSafeMatcher<Intent>("retrieve state & transport") {
-                    public boolean matchesSafely(Intent intent) {
-                        wrap.mState =
-                                intent.getIntExtra(BluetoothProfile.EXTRA_STATE, STATE_CONNECTED);
-                        wrap.mTransport =
-                                intent.getIntExtra(
-                                        BluetoothDevice.EXTRA_TRANSPORT,
-                                        BluetoothDevice.TRANSPORT_AUTO);
-                        return true;
-                    }
-                });
-        int state = wrap.mState;
-        int transport = wrap.mTransport;
-        assertThat(state).isAnyOf(STATE_CONNECTING, STATE_DISCONNECTED);
-        assertThat(transport).isAnyOf(TRANSPORT_BREDR, TRANSPORT_LE);
+            hasAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, oneOf(fromTransport, toTransport)),
+            hasExtra(BluetoothProfile.EXTRA_STATE, oneOf(STATE_CONNECTING, STATE_DISCONNECTED)),
+            object : CustomTypeSafeMatcher<Intent>("retrieve state & transport") {
+                override fun matchesSafely(intent: Intent): Boolean {
+                    wrap.state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, STATE_CONNECTED)
+                    wrap.transport =
+                        intent.getIntExtra(
+                            BluetoothDevice.EXTRA_TRANSPORT,
+                            BluetoothDevice.TRANSPORT_AUTO,
+                        )
+                    return true
+                }
+            },
+        )
+        val state = wrap.state
+        val transport = wrap.transport
+        assertThat(state).isAnyOf(STATE_CONNECTING, STATE_DISCONNECTED)
+        assertThat(transport).isAnyOf(TRANSPORT_BREDR, TRANSPORT_LE)
 
         // Conditionally verify the next intent
         if (transport == fromTransport) {
-            assertThat(state).isEqualTo(STATE_DISCONNECTED);
-            verifyConnectionState(toTransport, STATE_CONNECTING);
+            assertThat(state).isEqualTo(STATE_DISCONNECTED)
+            verifyConnectionState(toTransport, STATE_CONNECTING)
         } else {
-            assertThat(state).isEqualTo(STATE_CONNECTING);
-            verifyConnectionState(fromTransport, STATE_DISCONNECTED);
+            assertThat(state).isEqualTo(STATE_CONNECTING)
+            verifyConnectionState(fromTransport, STATE_DISCONNECTED)
         }
-        verifyConnectionState(toTransport, STATE_CONNECTED);
+        verifyConnectionState(toTransport, STATE_CONNECTED)
     }
 
-    @SafeVarargs
-    private void verifyIntentReceived(Matcher<Intent>... matchers) {
-        mInOrder.verify(mReceiver, timeout(BOND_INTENT_TIMEOUT.toMillis()))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    private fun verifyIntentReceived(vararg matchers: Matcher<Intent>) {
+        inOrder
+            .verify(receiver, timeout(BOND_INTENT_TIMEOUT.toMillis()))
+            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
-    @SafeVarargs
-    private void verifyIntentReceivedUnorderedAtLeast(int atLeast, Matcher<Intent>... matchers) {
-        verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()).atLeast(atLeast))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    private fun verifyIntentReceivedUnorderedAtLeast(
+        atLeast: Int,
+        vararg matchers: Matcher<Intent>,
+    ) {
+        verify(receiver, timeout(INTENT_TIMEOUT.toMillis()).atLeast(atLeast))
+            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
-    private void verifyConnectionState(int transport, int state) {
+    private fun verifyConnectionState(transport: Int, state: Int) {
         verifyIntentReceived(
-                hasAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport),
-                hasExtra(BluetoothProfile.EXTRA_STATE, state));
+            hasAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport),
+            hasExtra(BluetoothProfile.EXTRA_STATE, state),
+        )
     }
 
-    private BluetoothProfile connectToProfile(int profile) {
-        mAdapter.getProfileProxy(mTargetContext, mServiceListener, profile);
-        ArgumentCaptor<BluetoothProfile> proxyCaptor =
-                ArgumentCaptor.forClass(BluetoothProfile.class);
-        verify(mServiceListener, timeout(INTENT_TIMEOUT.toMillis()))
-                .onServiceConnected(eq(profile), proxyCaptor.capture());
-        return proxyCaptor.getValue();
+    private fun connectToProfile(profile: Int): BluetoothProfile {
+        adapter.getProfileProxy(context, serviceListener, profile)
+        val proxyCaptor = ArgumentCaptor.forClass(BluetoothProfile::class.java)
+        verify(serviceListener, timeout(INTENT_TIMEOUT.toMillis()))
+            .onServiceConnected(eq(profile), proxyCaptor.capture())
+        return proxyCaptor.value
     }
 
-    private void removeBond(BluetoothDevice device) {
-        assertThat(device.removeBond()).isTrue();
+    private fun removeBond(device: BluetoothDevice) {
+        assertThat(device.removeBond()).isTrue()
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE),
+        )
+    }
+
+    companion object {
+        private val BOND_INTENT_TIMEOUT = Duration.ofSeconds(10)
+        private val INTENT_TIMEOUT = Duration.ofSeconds(10)
+        private val HEADTRACKER_UUID = ParcelUuid.fromString("109b862f-50e3-45cc-8ea1-ac62de4846d1")
+        private val HEADTRACKER_VERSION_CHARACTERISTIC_UUID =
+            ParcelUuid.fromString("b4eb9919-a910-46a2-a9dd-fec2525196fd")
+        private val HEADTRACKER_CONTROL_CHARACTERISTIC_UUID =
+            ParcelUuid.fromString("8584cbb5-2d58-45a3-ab9d-583e0958b067")
+        private val HEADTRACKER_REPORT_CHARACTERISTIC_UUID =
+            ParcelUuid.fromString("e66dd173-b2ae-4f5a-ae16-0162af8038ae")
     }
 }
