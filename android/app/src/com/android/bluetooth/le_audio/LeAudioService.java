@@ -84,6 +84,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.bass_client.BassClientService.SetBigChannelMapClassificationAction;
+import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.MetricsLogger;
@@ -161,6 +162,7 @@ public class LeAudioService extends ConnectableProfile {
     private final ArrayDeque<BluetoothLeBroadcastSettings> mCreateBroadcastQueue =
             new ArrayDeque<>();
 
+    private final ActiveDeviceManager mActiveDeviceManager;
     private final LeAudioNativeInterface mNativeInterface;
     private final HandlerThread mStateMachinesThread;
     private final LeAudioCodecConfig mLeAudioCodecConfig;
@@ -215,22 +217,27 @@ public class LeAudioService extends ConnectableProfile {
     final RemoteCallbackList<IBluetoothLeAudioCallback> mLeAudioCallbacks =
             new RemoteCallbackList<>();
 
-    public LeAudioService(AdapterService adapterService, BluetoothStorageManager storage) {
-        this(adapterService, storage, null, null, null);
+    public LeAudioService(
+            AdapterService adapterService,
+            BluetoothStorageManager storage,
+            ActiveDeviceManager activeDeviceManager) {
+        this(adapterService, storage, null, null, activeDeviceManager, null);
     }
 
     @VisibleForTesting
     LeAudioService(
             AdapterService adapterService,
             BluetoothStorageManager storage,
-            Looper looper,
             LeAudioNativeInterface nativeInterface,
-            LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface) {
+            LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface,
+            ActiveDeviceManager activeDeviceManager,
+            Looper looper) {
         super(BluetoothProfile.LE_AUDIO, adapterService, storage);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
+        mActiveDeviceManager = activeDeviceManager;
 
         if (looper == null) {
             mHandler = new Handler(Looper.getMainLooper());
@@ -1958,9 +1965,7 @@ public class LeAudioService extends ConnectableProfile {
 
         mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, prevState, newState);
         mAdapterService.handleProfileConnectionStateChange(mProfileId, device, prevState, newState);
-        mAdapterService
-                .getActiveDeviceManager()
-                .profileConnectionStateChanged(mProfileId, device, prevState, newState);
+        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, prevState, newState);
         mAdapterService.updateProfileConnectionAdapterProperties(
                 device, mProfileId, newState, prevState);
 
