@@ -584,7 +584,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void volumeCache() {
+    public void volumeCache_groupAndDevices() {
         int groupVolume = 6;
         int devOneVolume = 20;
         int devTwoVolume = 30;
@@ -637,6 +637,195 @@ public class VolumeControlServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_VCP_STORE_VOLUME_PER_STREAM_TYPE)
+    public void volumeCache_multipleDevicesAndStreamTypes() {
+        int group1_mediaVolume = 5;
+        int group1_callVolume = 10;
+        int dev1_g1_mediaVolume = 15;
+        int dev2_g1_callVolume = 20;
+
+        BluetoothDevice device1_g2 = getRealDevice(101);
+        BluetoothDevice device2_g2 = getRealDevice(102);
+        int group2_mediaVolume = 55;
+        int group2_callVolume = 60;
+        int dev1_g2_mediaVolume = 65;
+        int dev2_g2_callVolume = 70;
+
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice1, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDevice2, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice1, mDevice2));
+            when(mCsipService.getGroupId(device1_g2, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
+            when(mCsipService.getGroupId(device2_g2, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID_2))
+                    .thenReturn(Arrays.asList(device1_g2, device2_g2));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice1, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDevice2, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(device1_g2, GROUP_ID_2, 1, 1);
+            generateDeviceAvailableMessageFromNative(device2_g2, GROUP_ID_2, 1, 1);
+        }
+
+        // Calculated audio volume will be the same as ble volume
+        doReturn(BT_LE_AUDIO_MAX_VOL).when(mAudioManager).getStreamMaxVolume(anyInt());
+
+        // Group 1 active
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID);
+        mService.setGroupActive(GROUP_ID, true);
+        InOrder inOrderAudio = inOrder(mAudioManager);
+        inOrderAudio.verify(mAudioManager, never()).setStreamVolume(anyInt(), anyInt(), anyInt());
+
+        // MEDIA (MODE_NORMAL/STREAM_MUSIC)
+        doReturn(AudioManager.MODE_NORMAL).when(mAudioManager).getMode();
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+
+        // Set group 1 volume during media
+        mService.setGroupVolume(GROUP_ID, group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+
+        // Set dev1_g1 volume during media
+        mService.setDeviceVolume(mDevice1, dev1_g1_mediaVolume, false);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(dev1_g1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+
+        // Group 2 active, cached volume not changed
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID_2);
+        mService.setGroupActive(GROUP_ID_2, true);
+        inOrderAudio.verify(mAudioManager, never()).setStreamVolume(anyInt(), anyInt(), anyInt());
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(dev1_g1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+
+        // Set group 2 volume during media
+        mService.setGroupVolume(GROUP_ID_2, group2_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(dev1_g1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(group2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(group2_mediaVolume);
+
+        // Set dev2_g1 volume during media
+        mService.setDeviceVolume(device1_g2, dev1_g2_mediaVolume, false);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(dev1_g1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(dev1_g2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(group2_mediaVolume);
+
+        // CALL (MODE_IN_CALL/STREAM_VOICE_CALL)
+        doReturn(AudioManager.MODE_IN_CALL).when(mAudioManager).getMode();
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+
+        // Set group 2 volume during call
+        mService.setGroupVolume(GROUP_ID_2, group2_callVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(group2_callVolume);
+
+        // Set dev2_g2 volume during call
+        mService.setDeviceVolume(device2_g2, dev2_g2_callVolume, false);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(dev2_g2_callVolume);
+
+        // Group 1 active, updated AF but cached volume not changed
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID);
+        mService.setGroupActive(GROUP_ID, true);
+        inOrderAudio
+                .verify(mAudioManager)
+                .setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        group1_mediaVolume,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(dev2_g2_callVolume);
+
+        // Set group 1 volume during call
+        mService.setGroupVolume(GROUP_ID, group1_callVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_callVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(group1_callVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_callVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(dev2_g2_callVolume);
+
+        // Set dev2_g1 volume during call
+        mService.setDeviceVolume(mDevice2, dev2_g1_callVolume, false);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_callVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(group1_callVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(dev2_g1_callVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(group2_callVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(dev2_g2_callVolume);
+
+        // MEDIA (MODE_NORMAL/STREAM_MUSIC)
+        doReturn(AudioManager.MODE_NORMAL).when(mAudioManager).getMode();
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(dev1_g1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(dev1_g2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(group2_mediaVolume);
+
+        // Group 2 active, updated AF but cached volume not changed
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID_2);
+        mService.setGroupActive(GROUP_ID_2, true);
+        inOrderAudio
+                .verify(mAudioManager)
+                .setStreamVolume(
+                        AudioManager.STREAM_VOICE_CALL,
+                        group2_callVolume,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
+        inOrderAudio
+                .verify(mAudioManager)
+                .setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        group2_mediaVolume,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
+        assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice1)).isEqualTo(dev1_g1_mediaVolume);
+        assertThat(mService.getDeviceVolume(mDevice2)).isEqualTo(group1_mediaVolume);
+        assertThat(mService.getGroupVolume(GROUP_ID_2)).isEqualTo(group2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device1_g2)).isEqualTo(dev1_g2_mediaVolume);
+        assertThat(mService.getDeviceVolume(device2_g2)).isEqualTo(group2_mediaVolume);
+    }
+
+    @Test
     public void activeGroupChange() {
         int volumeGroup_1 = 6;
         int volumeGroup_2 = 20;
@@ -665,7 +854,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void muteCache() {
+    public void muteCache_groupAndDevices() {
         int groupVolume = 6;
 
         // Both devices are in the same group
@@ -720,6 +909,199 @@ public class VolumeControlServiceTest {
         assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
         assertThat(mService.getMute(mDevice1)).isFalse();
         assertThat(mService.getMute(mDevice2)).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_VCP_STORE_VOLUME_PER_STREAM_TYPE)
+    public void muteCache_multipleDevicesAndStreamTypes() {
+        BluetoothDevice device1_g2 = getRealDevice(101);
+        BluetoothDevice device2_g2 = getRealDevice(102);
+
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice1, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDevice2, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice1, mDevice2));
+            when(mCsipService.getGroupId(device1_g2, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
+            when(mCsipService.getGroupId(device2_g2, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID_2))
+                    .thenReturn(Arrays.asList(device1_g2, device2_g2));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice1, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDevice2, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(device1_g2, GROUP_ID_2, 1, 1);
+            generateDeviceAvailableMessageFromNative(device2_g2, GROUP_ID_2, 1, 1);
+        }
+
+        // Stream is always unmuted
+        doReturn(false).when(mAudioManager).isStreamMute(anyInt());
+
+        // Group 1 active
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID);
+        mService.setGroupActive(GROUP_ID, true);
+        InOrder inOrderAudio = inOrder(mAudioManager);
+        inOrderAudio
+                .verify(mAudioManager, never())
+                .adjustStreamVolume(anyInt(), anyInt(), anyInt());
+
+        // MEDIA (MODE_NORMAL/STREAM_MUSIC)
+        doReturn(AudioManager.MODE_NORMAL).when(mAudioManager).getMode();
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isFalse();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Mute group 1 during media
+        mService.muteGroup(GROUP_ID);
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isTrue();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isFalse();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Unmute dev1_g1 during media
+        mService.unmute(mDevice1);
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isFalse();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Group 2 active, cached mute not changed
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID_2);
+        mService.setGroupActive(GROUP_ID_2, true);
+        inOrderAudio
+                .verify(mAudioManager, never())
+                .adjustStreamVolume(anyInt(), anyInt(), anyInt());
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isFalse();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Mute group 2 during media
+        mService.muteGroup(GROUP_ID_2);
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isTrue();
+
+        // Unmute dev1_g2 during media
+        mService.unmute(device1_g2);
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isTrue();
+
+        // CALL (MODE_IN_CALL/STREAM_VOICE_CALL)
+        doReturn(AudioManager.MODE_IN_CALL).when(mAudioManager).getMode();
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isFalse();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Mute group 2 during call
+        mService.muteGroup(GROUP_ID_2);
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isTrue();
+
+        // Unmute dev2_g2 during media
+        mService.unmute(device2_g2);
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Group 1 active, updated AF but cached mute not changed
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID);
+        mService.setGroupActive(GROUP_ID, true);
+        inOrderAudio
+                .verify(mAudioManager)
+                .adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_MUTE,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Unmute group 1 during call to store values
+        mService.unmuteGroup(GROUP_ID);
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Mute dev1_g1 during call
+        mService.mute(mDevice1);
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isTrue();
+        assertThat(mService.getMute(mDevice2)).isFalse();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // Mute dev2_g1 during call
+        mService.mute(mDevice2);
+        assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
+        assertThat(mService.getMute(mDevice1)).isTrue();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isTrue();
+        assertThat(mService.getMute(device2_g2)).isFalse();
+
+        // MEDIA (MODE_NORMAL/STREAM_MUSIC)
+        doReturn(AudioManager.MODE_NORMAL).when(mAudioManager).getMode();
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isTrue();
+
+        // Group 2 active, updated AF but cached mute not changed
+        when(mLeAudioService.getActiveGroupId()).thenReturn(GROUP_ID_2);
+        mService.setGroupActive(GROUP_ID_2, true);
+        inOrderAudio
+                .verify(mAudioManager)
+                .adjustStreamVolume(
+                        AudioManager.STREAM_VOICE_CALL,
+                        AudioManager.ADJUST_MUTE,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
+        inOrderAudio
+                .verify(mAudioManager)
+                .adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_MUTE,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
+        assertThat(mService.getGroupMute(GROUP_ID)).isTrue();
+        assertThat(mService.getMute(mDevice1)).isFalse();
+        assertThat(mService.getMute(mDevice2)).isTrue();
+        assertThat(mService.getGroupMute(GROUP_ID_2)).isTrue();
+        assertThat(mService.getMute(device1_g2)).isFalse();
+        assertThat(mService.getMute(device2_g2)).isTrue();
     }
 
     /** Test Volume Control with muted stream. */
