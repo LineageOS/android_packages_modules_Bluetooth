@@ -56,11 +56,12 @@ using testing::WithParamInterface;
 
 namespace {
 static constexpr auto kTimeout = std::chrono::seconds(1);
+static constexpr uint8_t kMaxRetryCounterForReadRemoteCapability = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
+static constexpr uint8_t kMaxRetryCounterForSetProcedureParameter = 0x0a;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint8_t kConnInterval = 24;
 static constexpr uint16_t kMinProcedureInterval = 0x01;
-static constexpr uint8_t kMaxRetryCounterForReadRemoteCapability = 0x03;
 static constexpr uint16_t kCommandRetryIntervalMs = 300;
 }  // namespace
 
@@ -864,6 +865,36 @@ TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete_in_wrong_stat
   cs_requester_.sync_client_handler();
 
   cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+}
+
+TEST_F(DistanceMeasurementManagerTest, fail_set_procedure_parameters_with_retry) {
+  auto dm_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillSecurityEnable(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .WillOnce([this](const Address& /*address*/, DistanceMeasurementErrorCode /*error_code*/,
+                           DistanceMeasurementMethod /*method*/) {
+            ASSERT_NE(cs_requester_.dm_session_promise_, nullptr);
+            cs_requester_.dm_session_promise_->set_value();
+            cs_requester_.dm_session_promise_.reset();
+          });
+
+  for (int i = 0; i <= kMaxRetryCounterForSetProcedureParameter; i++) {
+    cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
+    cs_requester_.test_hci_layer_->IncomingEvent(LeCsSetProcedureParametersCompleteBuilder::Create(
+            /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE),
+            ErrorCode::INVALID_HCI_COMMAND_PARAMETERS, params.connection_handle));
+    if (i < kMaxRetryCounterForSetProcedureParameter) {
+      auto future = cs_requester_.fake_timer_advance(kCommandRetryIntervalMs);
+      future.wait_for(kTimeout);
+    }
+  }
+  dm_session_future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
 }
 
 TEST_F(DistanceMeasurementManagerTest, fail_security_enable_complete) {
