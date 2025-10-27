@@ -70,6 +70,7 @@ import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
@@ -101,6 +102,7 @@ public class HapClientServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private HapClientNativeInterface mNativeInterface;
     @Mock private CsipSetCoordinatorService mCsipService;
     @Mock private IBluetoothHapClientCallback mFrameworkCallback;
@@ -175,7 +177,12 @@ public class HapClientServiceTest {
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();
 
-        mService = new HapClientService(mAdapterService, mLooper.getLooper(), mNativeInterface);
+        mService =
+                new HapClientService(
+                        mAdapterService,
+                        mActiveDeviceManager,
+                        mLooper.getLooper(),
+                        mNativeInterface);
         mService.setAvailable(true);
 
         synchronized (mService.mCallbacks) {
