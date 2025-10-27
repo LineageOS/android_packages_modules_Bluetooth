@@ -83,7 +83,21 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         btm_find_dev_by_handle
+ * Function         btm_get_dev_by_handle (read/write version)
+ *
+ * Description      Look for the record in the device database for the record
+ *                  with specified handle
+ * Note: This is a blocking call, as it will post the get to the main thread (if not already in the
+ * main thread), and then wait for it to complete.
+ *
+ * Returns          Pointer to the record or NULL
+ *
+ ******************************************************************************/
+BtmDevice* btm_get_dev_by_handle(uint16_t handle);
+
+/*******************************************************************************
+ *
+ * Function         btm_find_dev_by_handle (read-only version of btm_get_dev_by_handle)
  *
  * Description      Look for the record in the device database for the record
  *                  with specified handle
@@ -91,7 +105,7 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-BtmDevice* btm_find_dev_by_handle(uint16_t handle);
+const BtmDevice* btm_find_dev_by_handle(uint16_t handle);
 
 /*******************************************************************************
  *

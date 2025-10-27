@@ -127,7 +127,7 @@ void acl_ble_update_event_received(tHCI_STATUS status, uint16_t handle, uint16_t
                                    uint16_t latency, uint16_t timeout) {
   l2cble_process_conn_update_evt(handle, status, interval, latency, timeout);
 
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  const BtmDevice* p_device = btm_find_dev_by_handle(handle);
 
   if (!p_device) {
     return;

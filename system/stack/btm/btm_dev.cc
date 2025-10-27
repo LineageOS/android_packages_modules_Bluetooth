@@ -335,7 +335,7 @@ static bool is_handle_equal(void* data, void* context) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
+static BtmDevice* btm_find_dev_by_handle_(uint16_t handle) {
   if (handle == HCI_INVALID_HANDLE) {
     return nullptr;
   }
@@ -355,6 +355,18 @@ BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
   }
 
   return nullptr;
+}
+
+const BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
+  return btm_find_dev_by_handle_(handle);
+}
+
+BtmDevice* btm_get_dev_by_handle(uint16_t handle) {
+  if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+    return btm_find_dev_by_handle_(handle); // non-const return
+  }
+
+  return get_main_thread()->DoInThreadSynchronously(&btm_find_dev_by_handle_, handle);
 }
 
 static bool is_not_same_identity_or_pseudo_address(void* data, void* context) {

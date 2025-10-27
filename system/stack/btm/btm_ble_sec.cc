@@ -918,7 +918,7 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
  ******************************************************************************/
 void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv) {
   tBTM_SEC_CB* p_cb = &btm_sec_cb;
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  const BtmDevice* p_device = btm_find_dev_by_handle(handle);
 
   p_cb->ediv = ediv;
   p_cb->enc_rand = rand;
@@ -1828,7 +1828,7 @@ void btm_ble_reset_id(void) {
  ******************************************************************************/
 bool btm_ble_get_acl_remote_addr(uint16_t hci_handle, RawAddress& conn_addr,
                                  tBLE_ADDR_TYPE* p_addr_type) {
-  BtmDevice* p_device = btm_find_dev_by_handle(hci_handle);
+  const BtmDevice* p_device = btm_find_dev_by_handle(hci_handle);
   if (p_device == nullptr) {
     log::warn("Unable to find security device record hci_handle:{}", hci_handle);
     // TODO Release acl resource

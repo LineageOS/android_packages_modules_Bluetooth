@@ -404,7 +404,7 @@ struct iso_impl {
 
       stream_ptr->state_flags |= kStateFlagIsConnecting;
 
-      BtmDevice* p_device = btm_find_dev_by_handle(el.acl_conn_handle);
+      const BtmDevice* p_device = btm_find_dev_by_handle(el.acl_conn_handle);
       if (p_device) {
         cis_hdl_to_addr[el.cis_conn_handle] = p_device->ble.pseudo_addr;
         BTM_LogHistory(kBtmLogTag, p_device->ble.pseudo_addr, "Establish CIS",
