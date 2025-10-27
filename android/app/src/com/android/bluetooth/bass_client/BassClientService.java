@@ -1500,14 +1500,15 @@ public class BassClientService extends ConnectableProfile {
                 if (isAllReceiversActive(broadcastId) && mPausedBroadcastSinks.isEmpty()) {
                     stopBroadcastMonitoring(broadcastId, /* hostInitiated */ false);
                 }
-                // If broadcast not paused (monitored) yet
+                // If broadcast not local and sink not requested for PAST
             } else if ((!isLocalBroadcast(receiveState)
                     && receiveState.getPaSyncState()
-                            != BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST
-                    && !mPausedBroadcastIds.containsKey(broadcastId))) {
-                // And BASS has data to start synchronization
-                if (leaudioBroadcastImproveSourceOperations()
-                        || mCachedBroadcasts.containsKey(broadcastId)) {
+                            != BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST)) {
+
+                // If broadcast not paused yet and BASS has data to start synchronization
+                if (!leaudioBroadcastImproveSourceOperations()
+                        && !mPausedBroadcastIds.containsKey(broadcastId)
+                        && mCachedBroadcasts.containsKey(broadcastId)) {
                     // Try to sync to it and start BIG monitoring
                     cacheSuspendingSources(broadcastId);
                     mPausedBroadcastIds.put(broadcastId, PauseReason.BIG_MONITORING);
@@ -1516,6 +1517,27 @@ public class BassClientService extends ConnectableProfile {
                     mTimeoutHandler.start(
                             broadcastId, MESSAGE_BIG_MONITOR_TIMEOUT, sBigMonitorTimeout);
                     addSelectSourceRequest(broadcastId, /* hasPriority */ true);
+                    // If sink synchronization not advancing
+                } else if (leaudioBroadcastImproveSourceOperations() && !broadcastSyncIsAdvancing) {
+                    // Add sink to monitor and start BIG monitoring if not started yet to
+                    // automatically resume it when possible
+                    boolean newPausedSinkAdded = false;
+                    if (!mPausedBroadcastSinks.contains(sink)) {
+                        mPausedBroadcastSinks.add(sink);
+                        newPausedSinkAdded = true;
+                    }
+                    if (!mPausedBroadcastIds.containsKey(broadcastId)) {
+                        mPausedBroadcastIds.put(broadcastId, PauseReason.BIG_MONITORING);
+                        mTimeoutHandler.stop(broadcastId, MESSAGE_BIG_MONITOR_TIMEOUT);
+                        mTimeoutHandler.start(
+                                broadcastId, MESSAGE_BIG_MONITOR_TIMEOUT, sBigMonitorTimeout);
+                        addSelectSourceRequest(broadcastId, /* hasPriority */ true);
+                    }
+                    logPausedBroadcastsAndSinks();
+                    // If new paused sink, call resume in case that it is already in resume state
+                    if (newPausedSinkAdded && isResumingPauseReason(broadcastId)) {
+                        resumeReceiversSourceSynchronization();
+                    }
                 }
             }
             // If paused by host then stop active sync, it could be not stopped, if during previous
@@ -4834,6 +4856,11 @@ public class BassClientService extends ConnectableProfile {
     private boolean isOorMonitoringPauseReason(int broadcastId) {
         return (mPausedBroadcastIds.containsKey(broadcastId)
                 && mPausedBroadcastIds.get(broadcastId).equals(PauseReason.OOR_MONITORING));
+    }
+
+    private boolean isResumingPauseReason(int broadcastId) {
+        return (mPausedBroadcastIds.containsKey(broadcastId)
+                && mPausedBroadcastIds.get(broadcastId).equals(PauseReason.RESUMING));
     }
 
     private boolean isMonitoringOrResumingPauseReason(int broadcastId) {

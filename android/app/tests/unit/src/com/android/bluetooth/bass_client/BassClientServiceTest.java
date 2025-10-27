@@ -5027,6 +5027,8 @@ public class BassClientServiceTest {
 
     private void checkNotAllowBroadcastMonitoring() {
         injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         verifyRegisterSyncNeverCalled();
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
@@ -5034,6 +5036,8 @@ public class BassClientServiceTest {
     }
 
     private void checkAllowBroadcastMonitoring() {
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
@@ -8281,6 +8285,89 @@ public class BassClientServiceTest {
         mBassClientService.notifyLeAudioGroupAutonomousInactivated(mCurrentDevice);
         verify(mLeAudioService, never()).setActiveDevice(any());
         verify(mLeAudioService, never()).setGroupAllowedContextMask(anyInt(), anyInt(), anyInt());
+    }
+
+    /**
+     * Test that when adding a source for a group while not scanning, the Periodic Advertising (PA)
+     * sync is maintained as long as the remote devices have not fully synchronized to the PA. Once
+     * the remote devices reports being PA synced, the BASS client will unregister from the PA sync.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void addSourceForGroup_noScanning_keepSync() {
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+        mBassClientService.stopSearchingForSources();
+
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
+        verifyRegisterSyncCalled(mSourceDevice);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        injectRemoteSourceStateSourceAdded(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        verifyUnregisterSyncNeverCalled();
+
+        injectRemoteSourceStateSourceAdded(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+        verifyUnregisterSyncCalled();
+    }
+
+    /**
+     * Test that when two sinks lose BIS and PA sync one after another, both are correctly added to
+     * monitoring and can be resumed. This covers a scenario where the second sink might have been
+     * incorrectly considered synced after losing BIS sync, preventing proper monitoring.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void bigMonitoring_addSinksSeparately() {
+        prepareSynchronizedPair();
+
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+
+        injectRemoteSourceStateChanged(sm1, mBroadcastMetadata1, true, false);
+        injectRemoteSourceStateChanged(sm1, mBroadcastMetadata1, false, false);
+
+        injectRemoteSourceStateChanged(sm2, mBroadcastMetadata1, true, false);
+        injectRemoteSourceStateChanged(sm2, mBroadcastMetadata1, false, false);
+
+        mBassClientService.resumeReceiversSourceSynchronization();
+        verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
+    }
+
+    /**
+     * Test that when two sinks lose sync sequentially, and a resume operation is triggered for the
+     * first one, a subsequent sync loss on the second sink during the resume process correctly
+     * re-triggers the resume operation. This ensures that the newly paused sink is also covered by
+     * the resume logic.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
+    public void bigMonitoring_addSinksSeparately_reasumingInTheMiddle() {
+        prepareSynchronizedPair();
+
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+
+        injectRemoteSourceStateChanged(sm1, mBroadcastMetadata1, true, false);
+        injectRemoteSourceStateChanged(sm1, mBroadcastMetadata1, false, false);
+
+        mBassClientService.resumeReceiversSourceSynchronization();
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        Optional<Message> msg;
+        verify(sm1).sendMessage(messageCaptor.capture());
+        msg =
+                messageCaptor.getAllValues().stream()
+                        .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
+                        .findFirst();
+        expect.that(msg.isPresent()).isTrue();
+        expect.that(msg.orElse(null)).isNotNull();
+        clearInvocations(sm1);
+        verify(sm2, never()).sendMessage(any());
+
+        injectRemoteSourceStateChanged(sm2, mBroadcastMetadata1, true, false);
+        injectRemoteSourceStateChanged(sm2, mBroadcastMetadata1, false, false);
+        verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
