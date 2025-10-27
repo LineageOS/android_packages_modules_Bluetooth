@@ -8639,8 +8639,9 @@ public class BassClientServiceTest {
         BluetoothLeBroadcastMetadata emptyMetadata =
                 new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
                         .setSourceDevice(
-                        getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_PUBLIC),
-                        ADDRESS_TYPE_PUBLIC).build();
+                                getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_PUBLIC),
+                                ADDRESS_TYPE_PUBLIC)
+                        .build();
 
         // Inject a state change using the empty metadata
         // This should cause `isEmptyBluetoothDevice` to be true, and `newSyncStatus` to be
@@ -8651,8 +8652,9 @@ public class BassClientServiceTest {
         // Verify that setBigChannelMapClassification is called with DELETE action
         verify(mLeAudioService)
                 .setBigChannelMapClassification(
-                        eq(BassClientService.SetBigChannelMapClassificationAction.DELETE
-                                                                                .getValue()),
+                        eq(
+                                BassClientService.SetBigChannelMapClassificationAction.DELETE
+                                        .getValue()),
                         eq(mCurrentDevice),
                         eq(mBroadcastMetadata1.getBroadcastId()));
     }
