@@ -60,6 +60,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
@@ -132,6 +133,7 @@ public class HeadsetService extends ConnectableProfile {
     private final HandlerThread mStateMachinesThread;
     // This is also used as a lock for shared data in HeadsetService
     private final HeadsetSystemInterface mSystemInterface;
+    private final ActiveDeviceManager mActiveDeviceManager;
 
     private int mMaxHeadsetConnections = 1;
     // Active device that is exposed to external modules
@@ -163,17 +165,11 @@ public class HeadsetService extends ConnectableProfile {
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
     @VisibleForTesting boolean mIsAptXSwbPmEnabled = false;
 
-    public HeadsetService(AdapterService adapterService, BluetoothStorageManager storage) {
-        this(adapterService, storage, null, null);
-    }
-
-    @VisibleForTesting
-    HeadsetService(
+    public HeadsetService(
             AdapterService adapterService,
             BluetoothStorageManager storage,
-            HeadsetNativeInterface nativeInterface,
-            HeadsetSystemInterface systemInterface) {
-        this(adapterService, storage, nativeInterface, systemInterface, null);
+            ActiveDeviceManager activeDeviceManager) {
+        this(adapterService, storage, null, null, activeDeviceManager);
     }
 
     @VisibleForTesting
@@ -182,6 +178,17 @@ public class HeadsetService extends ConnectableProfile {
             BluetoothStorageManager storage,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface,
+            ActiveDeviceManager activeDeviceManager) {
+        this(adapterService, storage, nativeInterface, systemInterface, activeDeviceManager, null);
+    }
+
+    @VisibleForTesting
+    HeadsetService(
+            AdapterService adapterService,
+            BluetoothStorageManager storage,
+            HeadsetNativeInterface nativeInterface,
+            HeadsetSystemInterface systemInterface,
+            ActiveDeviceManager activeDeviceManager,
             Looper looper) {
         super(BluetoothProfile.HEADSET, adapterService, storage);
         var nativeCallback = new HeadsetNativeCallback(mAdapterService, this);
@@ -189,6 +196,7 @@ public class HeadsetService extends ConnectableProfile {
                 requireNonNullElseGet(
                         nativeInterface,
                         () -> new HeadsetNativeInterface(nativeCallback, mAdapterService));
+        mActiveDeviceManager = activeDeviceManager;
         if (looper != null) {
             mHandler = new Handler(looper);
             mStateMachinesThread = null;
@@ -2010,9 +2018,7 @@ public class HeadsetService extends ConnectableProfile {
             }
         }
 
-        mAdapterService
-                .getActiveDeviceManager()
-                .profileConnectionStateChanged(mProfileId, device, fromState, toState);
+        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
         mAdapterService
                 .getSilenceDeviceManager()
                 .hfpConnectionStateChanged(device, fromState, toState);
