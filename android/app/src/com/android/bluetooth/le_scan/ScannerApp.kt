@@ -17,6 +17,9 @@
 package com.android.bluetooth.le_scan
 
 import android.bluetooth.le.IScannerCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
+import android.content.AttributionSource
 import android.os.RemoteException
 import android.os.UserHandle
 import android.util.Log
@@ -30,7 +33,11 @@ class ScannerApp(
     val userHandle: UserHandle?, // User handle of the scanning app
     val attributionTag: String?, // Final attribution tag in chain
     val callback: IScannerCallback?,
+    val settings: ScanSettings? = null, // TODO(b/455057044) Remove nullable on cleanup
+    val filters: List<ScanFilter>? = null, // TODO(b/455057044) Remove nullable on cleanup
+    val source: AttributionSource,
     val info: ScanController.PendingIntentInfo?, // Context information
+    val isInternal: Boolean,
 ) {
     var id = 0
     var hasLocationPermission = false
