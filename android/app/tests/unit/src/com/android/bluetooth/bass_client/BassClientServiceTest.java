@@ -432,20 +432,38 @@ public class BassClientServiceTest {
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
 
         mBassScanCallbackCaptor = ArgumentCaptor.forClass(IScannerCallback.class);
-        doAnswer(
-                        invocation -> {
-                            try {
-                                int scannerId = 1;
-                                mBassScanCallbackCaptor
-                                        .getValue()
-                                        .onScannerRegistered(0, scannerId);
-                            } catch (RemoteException e) {
-                                // the mocked onScannerRegistered doesn't throw RemoteException
-                            }
-                            return null;
-                        })
-                .when(mScanController)
-                .registerScannerInternal(mBassScanCallbackCaptor.capture(), any(), any());
+        if (Flags.scanRegisterAndStart()) {
+            doAnswer(
+                            invocation -> {
+                                try {
+                                    int scannerId = 1;
+                                    mBassScanCallbackCaptor
+                                            .getValue()
+                                            .onScannerRegistered(0, scannerId);
+                                } catch (RemoteException e) {
+                                    // the mocked onScannerRegistered doesn't throw RemoteException
+                                }
+                                return null;
+                            })
+                    .when(mScanController)
+                    .registerAndStartScanInternal(
+                            mBassScanCallbackCaptor.capture(), any(), any(), any());
+        } else {
+            doAnswer(
+                            invocation -> {
+                                try {
+                                    int scannerId = 1;
+                                    mBassScanCallbackCaptor
+                                            .getValue()
+                                            .onScannerRegistered(0, scannerId);
+                                } catch (RemoteException e) {
+                                    // the mocked onScannerRegistered doesn't throw RemoteException
+                                }
+                                return null;
+                            })
+                    .when(mScanController)
+                    .registerScannerInternal(mBassScanCallbackCaptor.capture(), any(), any());
+        }
 
         when(mCallback.asBinder()).thenReturn(mBinder);
         mBassClientService.registerCallback(mCallback);
@@ -581,11 +599,18 @@ public class BassClientServiceTest {
 
         assertThat(mBassClientService.isSearchInProgress()).isFalse();
         mBassClientService.startSearchingForSources(scanFilters);
-
-        mInOrderScanController.verify(mScanController).registerScannerInternal(any(), any(), any());
-        mInOrderScanController
-                .verify(mScanController)
-                .startScanInternal(eq(scannerId), any(), any());
+        if (Flags.scanRegisterAndStart()) {
+            mInOrderScanController
+                    .verify(mScanController)
+                    .registerAndStartScanInternal(any(), any(), any(), any());
+        } else {
+            mInOrderScanController
+                    .verify(mScanController)
+                    .registerScannerInternal(any(), any(), any());
+            mInOrderScanController
+                    .verify(mScanController)
+                    .startScanInternal(eq(scannerId), any(), any());
+        }
         assertThat(mBassClientService.isSearchInProgress()).isTrue();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm).sendMessage(BassClientStateMachine.START_SCAN_OFFLOAD);
@@ -655,10 +680,18 @@ public class BassClientServiceTest {
         if (device != null) {
             verifyRegisterSyncCalled(device);
         }
-        mInOrderScanController.verify(mScanController).registerScannerInternal(any(), any(), any());
-        mInOrderScanController
-                .verify(mScanController)
-                .startScanInternal(eq(scannerId), any(), any());
+        if (Flags.scanRegisterAndStart()) {
+            mInOrderScanController
+                    .verify(mScanController)
+                    .registerAndStartScanInternal(any(), any(), any(), any());
+        } else {
+            mInOrderScanController
+                    .verify(mScanController)
+                    .registerScannerInternal(any(), any(), any());
+            mInOrderScanController
+                    .verify(mScanController)
+                    .startScanInternal(eq(scannerId), any(), any());
+        }
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm).sendMessage(BassClientStateMachine.START_SCAN_OFFLOAD);
         }
@@ -8314,7 +8347,7 @@ public class BassClientServiceTest {
      */
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_IMPROVE_SOURCE_OPERATIONS)
-    public void bigMonitoring_addSinksSeparately_reasumingInTheMiddle() {
+    public void bigMonitoring_addSinksSeparately_resumingInTheMiddle() {
         prepareSynchronizedPair();
 
         BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
@@ -8564,7 +8597,7 @@ public class BassClientServiceTest {
         onSyncEstablishedFailed(mSourceDevice2, TEST_SYNC_HANDLE_2);
         verifyRegisterSyncCalled(mSourceDevice);
 
-        // Move time forward half of time, timeout for first brodacaser
+        // Move time forward half of time, timeout for first broadcaster
         mLooper.moveTimeForward(BassClientService.sPastResponseTimeout.toMillis() / 2);
         mLooper.dispatchAll();
 
@@ -8574,7 +8607,7 @@ public class BassClientServiceTest {
         onSyncEstablishedFailed(mSourceDevice2, TEST_SYNC_HANDLE_2);
         verifyRegisterSyncCalled(mSourceDevice2);
 
-        // Move time forward, timeout for second brodacaser
+        // Move time forward, timeout for second broadcaster
         mLooper.moveTimeForward(BassClientService.sPastResponseTimeout.toMillis());
         mLooper.dispatchAll();
 
