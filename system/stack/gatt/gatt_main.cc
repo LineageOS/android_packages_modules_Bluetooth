@@ -691,7 +691,7 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
 }
 
 void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle, uint8_t tx_phy, uint8_t rx_phy) {
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  const BtmDevice* p_device = btm_find_dev_by_handle(handle);
   if (!p_device) {
     log::warn("No Device Found!");
     return;
@@ -732,7 +732,7 @@ void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval, uint16
 
 void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16_t latency,
                                 uint16_t cont_num, uint16_t timeout, uint8_t status) {
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  const BtmDevice* p_device = btm_find_dev_by_handle(handle);
   if (!p_device) {
     log::warn("No Device Found!");
     return;

@@ -238,12 +238,12 @@ public:
 
     auto promise = std::make_shared<promiseType>();
     std::future<resultType> future = promise->get_future();
-    auto task = [](Functor&& func, std::shared_ptr<promiseType> p, Args&&... a) {
+    auto task = [](Functor&& func, std::shared_ptr<promiseType> p, std::decay_t<Args>... a) {
       if constexpr (std::is_void_v<resultType>) {
-        std::move(func)(std::forward<Args>(a)...);
+        std::move(func)(std::move(a)...);
         p->set_value();
       } else {
-        p->set_value(std::move(func)(std::forward<Args>(a)...));
+        p->set_value(std::move(func)(std::move(a)...));
       }
     };
 

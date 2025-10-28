@@ -48,7 +48,7 @@ using testing::SaveArg;
 using testing::StrictMock;
 using testing::Test;
 
-BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
+const BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) { return nullptr; }
 void BTM_LogHistory(const std::string& /* tag */, const RawAddress& /* bd_addr */,
                     const std::string& /* msg */, const std::string& /* extra */) {}
 

@@ -2878,7 +2878,7 @@ static void btm_sec_auth_collision(uint16_t handle) {
         p_device = btm_sec_find_dev_by_sec_state(tSECURITY_STATE::ENCRYPTING);
       }
     } else {
-      p_device = btm_find_dev_by_handle(handle);
+      p_device = btm_get_dev_by_handle(handle);
     }
 
     if (p_device != NULL) {
@@ -2908,7 +2908,7 @@ static void btm_sec_auth_collision(uint16_t handle) {
  *
  *****************************************************************************/
 static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (!p_device) {
     return false;
   }
@@ -2944,7 +2944,7 @@ static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
 
 void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   tBTM_PAIRING_STATE old_state = btm_sec_cb.pairing_state;
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   bool are_bonding = false;
   bool was_authenticating = false;
 
@@ -3222,7 +3222,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   }
   btm_sec_cb.collision_start_time = 0;
 
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     log::warn(
             "Received encryption change for unknown device handle:0x{:04x} "
@@ -3810,7 +3810,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
 }
 
 tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason, std::string comment) {
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
 
   /* In some weird race condition we may not have a record */
   if (!p_device) {
@@ -3839,7 +3839,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
               hci_error_code_text(reason), handle, comment);
   }
 
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     log::warn("Got disconnect for unknown device record handle:0x{:04x}", handle);
     return;
@@ -3888,7 +3888,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
 
     NotifyBondingChange(*p_device, status);
 
-    p_device = btm_find_dev_by_handle(handle);
+    p_device = btm_get_dev_by_handle(handle);
     if (p_device == nullptr) {
       // |btm_sec_cb.api.p_auth_complete_callback| may cause |p_device| to be
       // deallocated.
@@ -4464,7 +4464,7 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   BtmDevice* p_device;
   tBTM_INQ_INFO* p_inq_info;
 
-  p_device = btm_find_dev_by_handle(handle);
+  p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     return;
   }
@@ -5102,7 +5102,7 @@ static bool btm_sec_use_smp_br_chnl(BtmDevice* p_device) {
 void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
                                bool controller_sc_supported, bool hci_role_switch_supported,
                                bool br_edr_supported, bool le_supported) {
-  BtmDevice* p_device = btm_find_dev_by_handle(hci_handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(hci_handle);
   if (p_device == nullptr) {
     return;
   }
