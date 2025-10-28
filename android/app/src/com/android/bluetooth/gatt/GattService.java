@@ -60,6 +60,7 @@ import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -918,7 +919,7 @@ public class GattService extends ProfileService {
                 TAG,
                 ("registerClient(): UUID=" + uuid + " name=" + name)
                         + (" transport=" + transportToString(transport)));
-        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        var appName = Util.appNameOrUnknown(mAdapterService, uid);
         mClientMap.add(uid, appName, uuid, callback, transport, tag);
         mNativeInterface.gattClientRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), name, eattSupport);
@@ -2013,7 +2014,7 @@ public class GattService extends ProfileService {
                 ("registerServer(): UUID=" + uuid + " name=" + name)
                         + (" transport=" + transportToString(transport)));
         int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
-        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        var appName = Util.appNameOrUnknown(mAdapterService, uid);
         mServerMap.add(uid, appName, uuid, callback, transport, tag);
         mNativeInterface.gattServerRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), eattSupport);

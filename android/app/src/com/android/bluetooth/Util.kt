@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth
 
-import android.app.Application;
-import android.util.Log;
+import com.android.bluetooth.btservice.AdapterService
 
-import com.android.bluetooth.Util;
+object Util {
+    const val BT_PREFIX = "Bluetooth"
 
-public class AdapterApp extends Application {
-    private static final String TAG = Util.BT_PREFIX + AdapterApp.class.getSimpleName();
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "onCreate");
-    }
+    @JvmStatic
+    fun AdapterService.appNameOrUnknown(uid: Int) =
+        packageManager.getNameForUid(uid) ?: "Unknown App (UID: $uid)"
 }

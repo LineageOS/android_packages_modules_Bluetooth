@@ -126,6 +126,7 @@ import android.util.SparseArray;
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
@@ -216,7 +217,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class AdapterService extends Service {
-    private static final String TAG = Utils.BT_PREFIX + AdapterService.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterService.class.getSimpleName();
 
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;

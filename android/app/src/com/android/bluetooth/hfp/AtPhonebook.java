@@ -36,6 +36,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.util.DevicePolicyUtils;
@@ -46,7 +47,7 @@ import java.util.HashMap;
 
 /** Helper for managing phonebook presentation over AT commands */
 public class AtPhonebook {
-    private static final String TAG = Utils.BT_PREFIX + AtPhonebook.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AtPhonebook.class.getSimpleName();
 
     /**
      * The projection to use when querying the call log database in response to AT+CPBR for the MC,

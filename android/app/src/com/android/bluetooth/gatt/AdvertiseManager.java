@@ -36,6 +36,7 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -309,7 +310,7 @@ public class AdvertiseManager {
         }
 
         int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
-        var appName = GattUtil.appNameOrUnknown(mAdapterService, uid);
+        var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var deathRecipient = new AdvertisingSetDeathRecipient(callback, appName);
         final var binder = callback.asBinder();
         try {

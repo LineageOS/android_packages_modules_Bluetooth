@@ -52,6 +52,7 @@ import android.util.Pair;
 
 import androidx.annotation.VisibleForTesting;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
@@ -66,7 +67,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AdapterProperties {
-    private static final String TAG = Utils.BT_PREFIX + AdapterProperties.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterProperties.class.getSimpleName();
 
     private static final String MAX_CONNECTED_AUDIO_DEVICES_PROPERTY =
             "persist.bluetooth.maxconnectedaudiodevices";

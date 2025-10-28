@@ -23,7 +23,7 @@ import android.os.Message;
 import android.os.SystemProperties;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -73,7 +73,7 @@ import com.android.internal.util.StateMachine;
 //            ON ➤─────────────────╯
 //
 final class AdapterState extends StateMachine {
-    private static final String TAG = Utils.BT_PREFIX + AdapterState.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterState.class.getSimpleName();
 
     static final int USER_TURN_ON = 1;
     static final int USER_TURN_OFF = 2;

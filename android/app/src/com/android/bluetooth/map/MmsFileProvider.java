@@ -24,7 +24,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.Telephony.Mms;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 
 import com.google.android.mms.MmsException;
 import com.google.android.mms.pdu.GenericPdu;
@@ -40,7 +40,7 @@ import java.io.IOException;
  * for missing access to sendStoredMessage().
  */
 public class MmsFileProvider extends ContentProvider {
-    private static final String TAG = Utils.BT_PREFIX + MmsFileProvider.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + MmsFileProvider.class.getSimpleName();
 
     private final PipeWriter mPipeWriter = new PipeWriter();
 
