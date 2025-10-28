@@ -91,9 +91,6 @@ object ScanUtil {
     @JvmStatic fun findById(clients: Set<ScanClient>, id: Int) = clients.find { it.scannerId == id }
 
     @JvmStatic
-    fun appNameOrUnknown(appName: String?, uid: Int) = appName ?: "Unknown App (UID: $uid)"
-
-    @JvmStatic
     fun hasScanResultPermission(adapterService: AdapterService, client: ScanClient) =
         when {
             // Bypass permission check for internal clients

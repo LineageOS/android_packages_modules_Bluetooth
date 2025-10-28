@@ -25,7 +25,6 @@ import android.os.UserHandle
 import android.os.WorkSource
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.le_scan.ScanUtil.appNameOrUnknown
 import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.getLastAttributionTag
@@ -74,6 +73,7 @@ class ScannerMap {
         )
 
     fun addWithPendingIntent(
+        appName: String,
         uuid: UUID,
         userHandle: UserHandle,
         source: AttributionSource,
@@ -85,7 +85,7 @@ class ScannerMap {
         add(
             appUid = piInfo.callingUid(),
             appPid = piInfo.callingPid(),
-            appName = appNameOrUnknown(piInfo.callingPackage(), piInfo.callingUid()),
+            appName = appName,
             uuid = uuid,
             userHandle = userHandle,
             source = source,

@@ -57,6 +57,7 @@ import android.text.format.DateUtils;
 import android.util.Log;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -1081,9 +1082,7 @@ public class ScanController {
         enforceScanThread();
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         final int pid = Flags.scanControllerThread() ? source.getPid() : Binder.getCallingPid();
-        final var appName =
-                ScanUtil.appNameOrUnknown(
-                        mAdapterService.getPackageManager().getNameForUid(uid), uid);
+        final var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var uuid = UUID.randomUUID();
         Log.d(
                 TAG,
@@ -1114,9 +1113,7 @@ public class ScanController {
             List<ScanFilter> filters,
             boolean isInternal) {
         final int pid = Flags.scanControllerThread() ? source.getPid() : Binder.getCallingPid();
-        final var appName =
-                ScanUtil.appNameOrUnknown(
-                        mAdapterService.getPackageManager().getNameForUid(uid), uid);
+        final var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var uuid = UUID.randomUUID();
         Log.d(
                 TAG,
@@ -1290,6 +1287,7 @@ public class ScanController {
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         ScannerApp app =
                 mScannerMap.addWithPendingIntent(
+                        Util.appNameOrUnknown(mAdapterService, callingUid),
                         uuid,
                         UserHandle.getUserHandleForUid(uid),
                         source,

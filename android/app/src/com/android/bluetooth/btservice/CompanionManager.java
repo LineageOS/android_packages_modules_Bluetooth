@@ -31,7 +31,7 @@ import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 
 import java.util.Optional;
 
@@ -52,7 +52,7 @@ import java.util.Optional;
  * </ul>
  */
 public class CompanionManager {
-    private static final String TAG = Utils.BT_PREFIX + CompanionManager.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + CompanionManager.class.getSimpleName();
 
     public static final String TYPE_PRIMARY_STRING = "COMPANION_PRIMARY";
     public static final String TYPE_SECONDARY_STRING = "COMPANION_SECONDARY";

@@ -73,6 +73,7 @@ class ScannerMapTest {
         val filters = listOf(ScanFilter.Builder().build())
         val app =
             scannerMap.addWithPendingIntent(
+                APP_NAME,
                 uuid,
                 mock(UserHandle::class.java),
                 source,
