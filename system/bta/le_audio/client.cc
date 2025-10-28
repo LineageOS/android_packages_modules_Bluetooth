@@ -1299,6 +1299,15 @@ public:
     }
 
     groupStateMachine_->StopStream(group);
+    if (com_android_bluetooth_flags_leaudio_fix_stop_stream_race() && group->IsReleasing()) {
+      if (audio_sender_state_ != AudioState::IDLE) {
+        audio_sender_state_ = AudioState::RELEASING;
+      }
+
+      if (audio_receiver_state_ != AudioState::IDLE) {
+        audio_receiver_state_ = AudioState::RELEASING;
+      }
+    }
   }
 
   void GroupDestroy(const int group_id) override {
