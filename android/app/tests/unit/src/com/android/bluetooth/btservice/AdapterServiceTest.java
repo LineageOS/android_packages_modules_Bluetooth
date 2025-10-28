@@ -409,7 +409,7 @@ public class AdapterServiceTest {
             syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
         }
 
-        verify(mNativeInterface).enable();
+        verify(mNativeInterface).enable(any());
         mAdapter.stateChangeCallback(AbstractionLayer.BT_STATE_ON);
         syncHandler(AdapterState.BLE_STARTED);
         verifyStateChange(STATE_BLE_TURNING_ON, STATE_BLE_ON);

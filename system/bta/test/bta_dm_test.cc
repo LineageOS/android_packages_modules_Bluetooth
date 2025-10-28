@@ -453,14 +453,14 @@ TEST_F(BtaWithContextTest, sniff_offload_feature__test_sysprop) {
   // Expect not to trigger bta_dm_init_pm due to sysprop enabled
   // and reset the value of .srvc_id.
   test::mock::osi_properties::osi_property_get_bool.return_value = true;
-  BTA_dm_on_hw_on();
+  BTA_dm_on_hw_on("test_name");
   EXPECT_EQ(0, bta_dm_cb.pm_timer[0].srvc_id[0]);
   BTA_dm_on_hw_off();
 
   // Expect to trigger bta_dm_init_pm and init the value of .srvc_id to
   // BTA_ID_MAX due to sysprop disabled.
   test::mock::osi_properties::osi_property_get_bool.return_value = false;
-  BTA_dm_on_hw_on();
+  BTA_dm_on_hw_on("test_name");
   EXPECT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
   BTA_dm_on_hw_off();
 

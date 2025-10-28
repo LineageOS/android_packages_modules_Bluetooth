@@ -1248,7 +1248,7 @@ public class AdapterService extends Service {
                         mScanNativeInterface,
                         mPeriodicScanNativeInterface,
                         mCompanionDeviceManager);
-        mNativeInterface.enable();
+        mNativeInterface.enable("Name is not set");
     }
 
     private void startGattProfileService() {

@@ -125,7 +125,7 @@ bool btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg);
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable);
 
 void BTIF_dm_disable();
-void BTIF_dm_enable();
+void BTIF_dm_enable(const std::string local_name);
 void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE inquiry_state);
 
 typedef struct {

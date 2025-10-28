@@ -2320,9 +2320,12 @@ void btif_remove_local_irk_from_resolving_list() {
   }
 }
 
-void BTIF_dm_enable() {
+void BTIF_dm_enable(const std::string local_name) {
   btif_storage_prune_devices();
 
+  if (false) {
+    log::debug("Adapter local name is {}", local_name);
+  }
   BD_NAME bdname;
   bt_property_t prop{
           .type = BT_PROPERTY_BDNAME,
