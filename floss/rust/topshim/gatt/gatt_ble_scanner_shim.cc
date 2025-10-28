@@ -279,8 +279,9 @@ void BleScannerIntf::BatchScanReadReports(uint8_t scanner_id, int32_t scan_mode)
   scanner_intf_->BatchScanReadReports(scanner_id, scan_mode);
 }
 
-void BleScannerIntf::StartSync(uint8_t sid, RawAddress addr, uint16_t skip, uint16_t timeout) {
-  scanner_intf_->StartSync(sid, addr, skip, timeout, 0 /* place holder */);
+void BleScannerIntf::StartSync(uint8_t sid, RawAddress addr, uint8_t addr_type, uint16_t skip,
+                               uint16_t timeout) {
+  scanner_intf_->StartSync(sid, addr, addr_type, skip, timeout, 0 /* place holder */);
 }
 
 void BleScannerIntf::StopSync(uint16_t handle) { scanner_intf_->StopSync(handle); }
