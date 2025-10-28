@@ -731,10 +731,6 @@ public class AdapterService extends Service {
         Log.d(TAG, "onDestroy()");
     }
 
-    public ActiveDeviceManager getActiveDeviceManager() {
-        return mActiveDeviceManager;
-    }
-
     public RemoteDevices getRemoteDevices() {
         return mRemoteDevices;
     }
