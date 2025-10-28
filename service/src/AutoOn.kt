@@ -234,6 +234,9 @@ class AutoOn(
                 .setDeferralPolicy(BroadcastOptions.DEFERRAL_POLICY_UNTIL_ACTIVE)
                 .toBundle(),
         )
+
+        Log.i(TAG, "Triggering data backup")
+        BackupHelper.sendBroadcast(context)
     }
 
     companion object {

@@ -84,6 +84,7 @@ class AutoOnTest {
         callback_count = 0
         autoOn = AutoOn(looper, context, user, state, this::callback_on, this::is_airplane_mode_on)
         enableSetting()
+        BluetoothComponentTest.setup()
     }
 
     @After

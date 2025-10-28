@@ -45,6 +45,7 @@ import com.android.server.bluetooth.airplane.isOnOverrode
 import com.android.server.bluetooth.airplane.notifyUserToggledBluetooth
 import com.android.server.bluetooth.airplane.setIsMediaProfileConnected
 import com.android.server.bluetooth.airplane.setWatchConnectionState
+import com.android.server.bluetooth.test.BluetoothComponentTest
 import com.android.server.bluetooth.test.disableMode
 import com.android.server.bluetooth.test.disableSensitive
 import com.android.server.bluetooth.test.enableMode
@@ -94,6 +95,7 @@ class ModeListenerTest(private val flags: FlagsWrapper) {
         setIsMediaProfileConnected(false)
         mode = ArrayList()
         notification = ArrayList()
+        BluetoothComponentTest.setup()
     }
 
     private fun initializeAirplane() {
