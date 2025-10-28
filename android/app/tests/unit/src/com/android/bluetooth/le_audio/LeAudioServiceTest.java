@@ -2966,7 +2966,12 @@ public class LeAudioServiceTest {
         injectAndVerifyDeviceConnected(mLeftDevice);
         injectAudioConfChanged(mSingleDevice, TEST_GROUP_ID, availableContexts, direction);
 
-        verify(mScanController).registerScannerInternal(scanCallbacks.capture(), any(), any());
+        if (Flags.scanRegisterAndStart()) {
+            verify(mScanController)
+                    .registerAndStartScanInternal(scanCallbacks.capture(), any(), any(), any());
+        } else {
+            verify(mScanController).registerScannerInternal(scanCallbacks.capture(), any(), any());
+        }
 
         ScanResult scanResult = new ScanResult(mRightDevice, null, 0, 0);
 
