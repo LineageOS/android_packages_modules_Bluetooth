@@ -47,7 +47,6 @@ RemoteNameRequestModuleImpl::~RemoteNameRequestModuleImpl() {
   hci_layer_.UnregisterEventHandler(EventCode::REMOTE_NAME_REQUEST_COMPLETE);
   if (com_android_bluetooth_flags_rnr_multiple_name_request()) {
     requests_.clear();
-    remote_host_supported_features_callbacks_.clear();
     on_remote_host_supported_features_notification_ = RemoteHostSupportedFeaturesCallback();
     on_remote_name_complete_ = RemoteNameCallback();
   }
@@ -97,20 +96,36 @@ void RemoteNameRequestModuleImpl::ReportRemoteNameRequestCancellation(Address ad
                    address);
 }
 
-void RemoteNameRequestModuleImpl::ReportRemoteNameRequestCancellationImpl(Address address) {
-  if ((com_android_bluetooth_flags_rnr_multiple_name_request() && requests_.contains(address)) ||
-      (!com_android_bluetooth_flags_rnr_multiple_name_request() && pending_)) {
+// TODO(b/445714747): Remove when rnr_multiple_name_request is shipped
+void RemoteNameRequestModuleImpl::ReportRemoteNameRequestCancellationImpl_(Address address) {
+  if (pending_) {
     log::info(
             "Received CONNECTION_COMPLETE (corresponding INCORRECTLY to an RNR cancellation) "
             "from {}",
             address.ToRedactedStringForLogging());
-    if (com_android_bluetooth_flags_rnr_multiple_name_request()) {
-      requests_.at(address)(ErrorCode::UNKNOWN_CONNECTION, {});
-      requests_.erase(address);
-    } else {
-      pending_ = false;
-      on_remote_name_complete_(ErrorCode::UNKNOWN_CONNECTION, {});
-    }
+    pending_ = false;
+    on_remote_name_complete_(ErrorCode::UNKNOWN_CONNECTION, {});
+    acl_scheduler_.ReportRemoteNameRequestCompletion(address);
+  } else {
+    log::error(
+            "Received unexpected CONNECTION_COMPLETE when no Remote Name Request OR ACL "
+            "connection is outstanding");
+  }
+}
+
+void RemoteNameRequestModuleImpl::ReportRemoteNameRequestCancellationImpl(Address address) {
+  if (!com_android_bluetooth_flags_rnr_multiple_name_request()) {
+    ReportRemoteNameRequestCancellationImpl_(address);
+    return;
+  }
+
+  if (requests_.contains(address)) {
+    log::info(
+            "Received CONNECTION_COMPLETE (corresponding INCORRECTLY to an RNR cancellation) "
+            "from {}",
+            address.ToRedactedStringForLogging());
+    requests_.at(address).on_remote_name_complete(ErrorCode::UNKNOWN_CONNECTION, {});
+    requests_.erase(address);
     acl_scheduler_.ReportRemoteNameRequestCompletion(address);
   } else {
     log::error(
@@ -127,9 +142,11 @@ void RemoteNameRequestModuleImpl::actually_start_remote_name_request(
   log::info("Starting remote name request to {}", address.ToRedactedStringForLogging());
   if (com_android_bluetooth_flags_rnr_multiple_name_request()) {
     log::assert_that(!requests_.contains(address), "assert failed: !requests_.contains(address)");
-    requests_.insert({address, std::move(*on_remote_name_complete_ptr.get())});
-    remote_host_supported_features_callbacks_.insert(
-            {address, std::move(on_remote_host_supported_features_notification)});
+    RemoteNameCallbacks callbacks = {
+            .on_remote_name_complete = std::move(*on_remote_name_complete_ptr.get()),
+            .on_remote_host_supported_features_notification =
+                    std::move(on_remote_host_supported_features_notification)};
+    requests_.insert({address, std::move(callbacks)});
   } else {
     log::assert_that(pending_ == false, "assert failed: pending_ == false");
     pending_ = true;
@@ -145,25 +162,37 @@ void RemoteNameRequestModuleImpl::actually_start_remote_name_request(
                                address, std::move(on_completion)));
 }
 
-void RemoteNameRequestModuleImpl::on_start_remote_name_request_status(
+// TODO(b/445714747): Remove when rnr_multiple_name_request is shipped
+void RemoteNameRequestModuleImpl::on_start_remote_name_request_status_(
         Address address, CompletionCallback on_completion, CommandStatusView status) {
-  if (com_android_bluetooth_flags_rnr_multiple_name_request()) {
-    log::assert_that(requests_.contains(address), "assert failed: requests_.contains(address)");
-  } else {
-    log::assert_that(pending_ == true, "assert failed: pending_ == true");
-  }
+  log::assert_that(pending_ == true, "assert failed: pending_ == true");
   log::assert_that(status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST,
                    "assert failed: status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST");
   log::info("Started remote name request peer:{} status:{}", address.ToRedactedStringForLogging(),
             ErrorCodeText(status.GetStatus()));
   on_completion(status.GetStatus());
   if (status.GetStatus() != ErrorCode::SUCCESS /* pending */) {
-    if (com_android_bluetooth_flags_rnr_multiple_name_request()) {
-      // Here callback is not called. Just call it to remove request
-      requests_.erase(address);
-    } else {
-      pending_ = false;
-    }
+    pending_ = false;
+    acl_scheduler_.ReportRemoteNameRequestCompletion(address);
+  }
+}
+
+void RemoteNameRequestModuleImpl::on_start_remote_name_request_status(
+        Address address, CompletionCallback on_completion, CommandStatusView status) {
+  if (!com_android_bluetooth_flags_rnr_multiple_name_request()) {
+    on_start_remote_name_request_status_(address, std::move(on_completion), status);
+    return;
+  }
+
+  log::assert_that(requests_.contains(address), "assert failed: requests_.contains(address)");
+  log::assert_that(status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST,
+                   "assert failed: status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST");
+  log::info("Started remote name request peer:{} status:{}", address.ToRedactedStringForLogging(),
+            ErrorCodeText(status.GetStatus()));
+  on_completion(status.GetStatus());
+  if (status.GetStatus() != ErrorCode::SUCCESS /* pending */) {
+    // Here callback is not called. Just call it to remove request
+    requests_.erase(address);
     acl_scheduler_.ReportRemoteNameRequestCompletion(address);
   }
 }
@@ -181,31 +210,17 @@ void RemoteNameRequestModuleImpl::actually_cancel_remote_name_request(Address ad
   }
 }
 
-void RemoteNameRequestModuleImpl::on_remote_host_supported_features_notification(EventView view) {
+// TODO(b/445714747): Remove when rnr_multiple_name_request is shipped
+void RemoteNameRequestModuleImpl::on_remote_host_supported_features_(EventView view) {
   auto packet = RemoteHostSupportedFeaturesNotificationView::Create(view);
   log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
-  log::info(" RRR {}, {}", requests_.contains(packet.GetBdAddr()),
-            remote_host_supported_features_callbacks_.contains(packet.GetBdAddr()));
-  if ((com_android_bluetooth_flags_rnr_multiple_name_request() &&
-       requests_.contains(packet.GetBdAddr()) &&
-       remote_host_supported_features_callbacks_.contains(packet.GetBdAddr())) ||
-      (!com_android_bluetooth_flags_rnr_multiple_name_request() && pending_ &&
-       on_remote_host_supported_features_notification_)) {
+  if (pending_ && on_remote_host_supported_features_notification_) {
     log::info("Received REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION from {}",
               packet.GetBdAddr().ToRedactedStringForLogging());
-
-    if (!com_android_bluetooth_flags_rnr_multiple_name_request()) {
-      on_remote_host_supported_features_notification_(packet.GetHostSupportedFeatures());
-      // Remove the callback so that we won't call it again.
-      on_remote_host_supported_features_notification_ = RemoteHostSupportedFeaturesCallback();
-    } else {
-      remote_host_supported_features_callbacks_.at(packet.GetBdAddr())(
-              packet.GetHostSupportedFeatures());
-      remote_host_supported_features_callbacks_.erase(packet.GetBdAddr());
-    }
-  } else if ((com_android_bluetooth_flags_rnr_multiple_name_request() &&
-              !requests_.contains(packet.GetBdAddr())) ||
-             (!com_android_bluetooth_flags_rnr_multiple_name_request() && !pending_)) {
+    on_remote_host_supported_features_notification_(packet.GetHostSupportedFeatures());
+    // Remove the callback so that we won't call it again.
+    on_remote_host_supported_features_notification_ = RemoteHostSupportedFeaturesCallback();
+  } else if (!pending_) {
     log::error(
             "Received unexpected REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION when no Remote Name "
             "Request is outstanding");
@@ -216,20 +231,55 @@ void RemoteNameRequestModuleImpl::on_remote_host_supported_features_notification
   }
 }
 
-void RemoteNameRequestModuleImpl::completed(ErrorCode status, std::array<uint8_t, 248> name,
-                                            Address address) {
-  if ((com_android_bluetooth_flags_rnr_multiple_name_request() && requests_.contains(address)) ||
-      (!com_android_bluetooth_flags_rnr_multiple_name_request() && pending_)) {
+void RemoteNameRequestModuleImpl::on_remote_host_supported_features_notification(EventView view) {
+  if (!com_android_bluetooth_flags_rnr_multiple_name_request()) {
+    on_remote_host_supported_features_(std::move(view));
+    return;
+  }
+
+  auto packet = RemoteHostSupportedFeaturesNotificationView::Create(view);
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+
+  const Address& address = packet.GetBdAddr();
+  if (requests_.contains(address)) {
+    log::info("Received REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION from {}",
+              address.ToRedactedStringForLogging());
+    requests_.at(address).on_remote_host_supported_features_notification(
+            packet.GetHostSupportedFeatures());
+  } else {
+    log::error(
+            "Received unexpected REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION when no Remote Name "
+            "Request is outstanding");
+  }
+}
+
+// TODO(b/445714747): Remove when rnr_multiple_name_request is shipped
+void RemoteNameRequestModuleImpl::completed_(ErrorCode status, std::array<uint8_t, 248> name,
+                                             Address address) {
+  if (pending_) {
     log::info("Received REMOTE_NAME_REQUEST_COMPLETE from {} with status {}",
               address.ToRedactedStringForLogging(), ErrorCodeText(status));
-    if (com_android_bluetooth_flags_rnr_multiple_name_request()) {
-      requests_.at(address)(status, name);
-      requests_.erase(address);
-    } else {
-      pending_ = false;
-      on_remote_name_complete_(status, name);
-    }
+    pending_ = false;
+    on_remote_name_complete_(status, name);
+    acl_scheduler_.ReportRemoteNameRequestCompletion(address);
+  } else {
+    log::error("Received unexpected REMOTE_NAME_REQUEST_COMPLETE from {} with status {}",
+               address.ToRedactedStringForLogging(), ErrorCodeText(status));
+  }
+}
 
+void RemoteNameRequestModuleImpl::completed(ErrorCode status, std::array<uint8_t, 248> name,
+                                            Address address) {
+  if (!com_android_bluetooth_flags_rnr_multiple_name_request()) {
+    completed_(status, name, address);
+    return;
+  }
+
+  if (requests_.contains(address)) {
+    log::info("Received REMOTE_NAME_REQUEST_COMPLETE from {} with status {}",
+              address.ToRedactedStringForLogging(), ErrorCodeText(status));
+    requests_.at(address).on_remote_name_complete(status, name);
+    requests_.erase(address);
     acl_scheduler_.ReportRemoteNameRequestCompletion(address);
   } else {
     log::error("Received unexpected REMOTE_NAME_REQUEST_COMPLETE from {} with status {}",
