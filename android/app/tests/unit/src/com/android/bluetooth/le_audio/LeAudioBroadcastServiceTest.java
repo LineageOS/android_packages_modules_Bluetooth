@@ -50,6 +50,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeAudioCodecConfig;
@@ -66,6 +67,7 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothLeAudioCallback;
 import android.bluetooth.IBluetoothLeBroadcastCallback;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.Binder;
@@ -141,6 +143,8 @@ public class LeAudioBroadcastServiceTest {
     @Mock private IBluetoothLeBroadcastCallback mCallbacks;
     @Mock private IBluetoothLeAudioCallback mLeAudioCallbacks;
     @Mock private IBinder mBinder;
+    @Mock private ActivityManager mActivityManager;
+    @Mock private PackageManager mPackageManager;
 
     @Spy private LeAudioObjectsFactory mObjectsFactory = LeAudioObjectsFactory.getInstance();
 
@@ -241,7 +245,9 @@ public class LeAudioBroadcastServiceTest {
                         mLeAudioNativeInterface,
                         mLeAudioBroadcasterNativeInterface,
                         mActiveDeviceManager,
-                        mLooper.getLooper());
+                        mLooper.getLooper(),
+                        mActivityManager,
+                        mPackageManager);
         mService.setAvailable(true);
 
         doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();

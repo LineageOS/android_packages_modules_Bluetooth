@@ -473,6 +473,9 @@ public:
 
   /* Confirm group is active */
   virtual void GroupConfirmActive(int group_id) = 0;
+
+  /* Set Game mode */
+  virtual void SetInGame(bool game_mode) = 0;
 };
 
 /* Represents the broadcast source state. */
