@@ -1231,7 +1231,7 @@ public class RemoteDevices {
             return;
         }
 
-        boolean uuids_updated = false;
+        boolean uuidsUpdated = false;
 
         for (int j = 0; j < types.length; j++) {
             type = types[j];
@@ -1318,7 +1318,7 @@ public class RemoteDevices {
                             }
                             deviceProperties.setUuidsLe(newUuidsLe);
                         }
-                        uuids_updated = true;
+                        uuidsUpdated = true;
                     }
                     case AbstractionLayer.BT_PROPERTY_TYPE_OF_DEVICE -> {
                         if (deviceProperties.isConsolidated()) {
@@ -1410,24 +1410,24 @@ public class RemoteDevices {
             }
         }
 
-        if (!uuids_updated) {
-            return;
+        if (uuidsUpdated) {
+            // Broadcast UUID update only once even if LE and BREDR UUIDs are received separately
+            uuidsUpdated(deviceProperties);
         }
+    }
 
-        /* uuids_updated == true
-         * We might have received LE and BREDR UUIDS separately, ensure that UUID intent is sent
-         * just once */
-
+    private void uuidsUpdated(DeviceProperties deviceProperties) {
+        BluetoothDevice device = deviceProperties.getDevice();
         if (mAdapterService.getState() == BluetoothAdapter.STATE_ON) {
             // SDP Adding UUIDs to property cache and sending intent
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT, 1);
-            mAdapterService.deviceUuidUpdated(bdDevice);
-            sendUuidIntent(bdDevice, deviceProperties, true);
+            mAdapterService.deviceUuidUpdated(device);
+            sendUuidIntent(device, deviceProperties, true);
         } else if (mAdapterService.getState() == BluetoothAdapter.STATE_BLE_ON) {
             // SDP Adding UUIDs to property cache but with no intent
             MetricsLogger.getInstance()
                     .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
-            mAdapterService.deviceUuidUpdated(bdDevice);
+            mAdapterService.deviceUuidUpdated(device);
         } else {
             // SDP Silently dropping UUIDs and with no intent
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
