@@ -24,3 +24,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.le_audio.iso_interleaved_packing.enabled"
 }
+
+prop {
+    api_name: "is_peripheral_caching_supported"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.le_audio.peripheral.caching.enabled"
+}
