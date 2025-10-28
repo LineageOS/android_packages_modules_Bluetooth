@@ -1015,10 +1015,12 @@ bt_status_t btif_storage_load_bonded_devices(void) {
       num_props++;
     }
 
-    /* BD_NAME */
-    btif_storage_get_adapter_prop(BT_PROPERTY_BDNAME, &name, sizeof(name),
-                                  &adapter_props[num_props]);
-    num_props++;
+    if (!com_android_bluetooth_flags_set_name_in_system_server()) {
+      /* BD_NAME */
+      btif_storage_get_adapter_prop(BT_PROPERTY_BDNAME, &name, sizeof(name),
+                                    &adapter_props[num_props]);
+      num_props++;
+    }
 
     /* DISC_TIMEOUT */
     btif_storage_get_adapter_prop(BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT, &disc_timeout,

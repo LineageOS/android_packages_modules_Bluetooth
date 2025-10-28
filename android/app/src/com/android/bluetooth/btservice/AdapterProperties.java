@@ -971,7 +971,11 @@ public class AdapterProperties {
 
     protected void dump(PrintWriter writer) {
         writer.println(TAG);
-        writer.println("  " + "Name: " + getName());
+        if (Flags.setNameInSystemServer()) {
+            writer.println("  " + "Name: " + mService.getName());
+        } else {
+            writer.println("  " + "Name: " + getName());
+        }
         writer.println("  " + "Address: " + Utils.getRedactedAddressStringFromByte(mAddress));
         writer.println("  " + "ConnectionState: " + dumpConnectionState(getConnectionState()));
         writer.println("  " + "State: " + BluetoothAdapter.nameForState(getState()));
