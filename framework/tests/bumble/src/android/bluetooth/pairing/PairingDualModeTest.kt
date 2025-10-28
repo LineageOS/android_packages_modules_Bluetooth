@@ -14,118 +14,107 @@
  * limitations under the License.
  */
 
-package android.bluetooth.pairing;
+package android.bluetooth.pairing
 
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.PandoraDevice
+import android.bluetooth.StreamObserverSpliterator
+import android.bluetooth.Utils
+import android.bluetooth.pairing.utils.IntentReceiver
+import android.bluetooth.pairing.utils.TestUtil
+import android.bluetooth.test_utils.BlockingBluetoothAdapter
+import android.bluetooth.test_utils.EnableBluetoothRule
+import android.content.Context
+import android.os.ParcelUuid
+import android.util.Log
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import com.android.compatibility.common.util.AdoptShellPermissionsRule
+import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.ByteString
+import com.google.protobuf.Empty
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
+import pandora.HostProto
+import pandora.HostProto.AdvertiseRequest
+import pandora.HostProto.AdvertiseResponse
+import pandora.SecurityProto
 
-import static com.google.common.truth.Truth.assertThat;
+private const val TAG = "PairingDualModeTest"
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothClass;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.PandoraDevice;
-import android.bluetooth.StreamObserverSpliterator;
-import android.bluetooth.Utils;
-import android.bluetooth.pairing.utils.IntentReceiver;
-import android.bluetooth.pairing.utils.TestUtil;
-import android.bluetooth.test_utils.BlockingBluetoothAdapter;
-import android.bluetooth.test_utils.EnableBluetoothRule;
-import android.content.Context;
-import android.os.ParcelUuid;
-import android.util.Log;
+@RunWith(TestParameterInjector::class)
+class PairingDualModeTest {
+    @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
 
-import androidx.test.platform.app.InstrumentationRegistry;
+    @get:Rule(order = 1) val bumble = PandoraDevice()
 
-import com.android.compatibility.common.util.AdoptShellPermissionsRule;
+    @get:Rule(order = 2) val secondBumble = PandoraDevice.createSecondPandoraDevice()
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Empty;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+    @Mock private lateinit var mProfileServiceListener: BluetoothProfile.ServiceListener
 
-import pandora.HostProto;
-import pandora.HostProto.AdvertiseRequest;
-import pandora.HostProto.AdvertiseResponse;
-import pandora.SecurityProto;
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
-@RunWith(TestParameterInjector.class)
-public class PairingTestDualMode {
-    @Rule(order = 0)
-    public final AdoptShellPermissionsRule mPermissionRule = new AdoptShellPermissionsRule();
-
-    @Rule(order = 1)
-    public final PandoraDevice mBumble = new PandoraDevice();
-
-    @Rule(order = 2)
-    public final PandoraDevice mSecondBumble = PandoraDevice.createSecondPandoraDevice();
-
-    @Rule(order = 3)
-    public final EnableBluetoothRule mEnableBluetoothRule =
-            new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
-
-    @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
-
-    private static final String TAG = PairingTestDualMode.class.getSimpleName();
-    private static final String BUMBLE_ALIAS = "Bumble";
-    private static boolean sToggleDevice = true;
-
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
-    private final BluetoothAdapter mAdapter =
-            mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
-
-    private TestUtil mUtil;
-    private BluetoothDevice mBumbleDevice;
-    private BluetoothDevice mRemoteLeDevice;
-    private PandoraDevice mCurrentDevice;
+    private lateinit var util: TestUtil
+    private lateinit var bumbleDevice: BluetoothDevice
+    private lateinit var remoteLeDevice: BluetoothDevice
+    private lateinit var currentDevice: PandoraDevice
 
     @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        mUtil =
-                new TestUtil.Builder(mTargetContext)
-                        .setProfileServiceListener(mProfileServiceListener)
-                        .setBluetoothAdapter(mAdapter)
-                        .build();
+    @Throws(Exception::class)
+    fun setUp() {
+        MockitoAnnotations.openMocks(this)
+        util =
+            TestUtil.Builder(context)
+                .setProfileServiceListener(mProfileServiceListener)
+                .setBluetoothAdapter(adapter)
+                .build()
         // switch the bumble devices to avoid profile connection interference
         // caused by settings and system UI
-        if (sToggleDevice) {
-            mCurrentDevice = mBumble;
-            mRemoteLeDevice =
-                    mAdapter.getRemoteLeDevice(
-                            Utils.BUMBLE_RANDOM_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        if (toggleDevice) {
+            currentDevice = bumble
+            remoteLeDevice =
+                adapter.getRemoteLeDevice(
+                    Utils.BUMBLE_RANDOM_ADDRESS,
+                    BluetoothDevice.ADDRESS_TYPE_RANDOM,
+                )
         } else {
-            mCurrentDevice = mSecondBumble;
-            mRemoteLeDevice =
-                    mAdapter.getRemoteLeDevice(
-                            Utils.BUMBLE_RANDOM_ADDRESS_2, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+            currentDevice = secondBumble
+            remoteLeDevice =
+                adapter.getRemoteLeDevice(
+                    Utils.BUMBLE_RANDOM_ADDRESS_2,
+                    BluetoothDevice.ADDRESS_TYPE_RANDOM,
+                )
         }
-        sToggleDevice = !sToggleDevice;
+        toggleDevice = !toggleDevice
         // Always read fresh address
-        HostProto.ReadLocalAddressResponse readLocalAddressResponse =
-                mCurrentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance());
-        mBumbleDevice =
-                mAdapter.getRemoteDevice(
-                        Utils.addressStringFromByteString(readLocalAddressResponse.getAddress()));
-        Log.d(TAG, "Bumble Device: " + mBumbleDevice);
-        Log.d(TAG, "Bumble LE Device: " + mRemoteLeDevice);
+        val readLocalAddressResponse =
+            currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
+        bumbleDevice =
+            adapter.getRemoteDevice(
+                Utils.addressStringFromByteString(readLocalAddressResponse.address)
+            )
+        Log.d(TAG, "Bumble Device: $bumbleDevice")
+        Log.d(TAG, "Bumble LE Device: $remoteLeDevice")
     }
 
     @After
-    public void tearDown() throws Exception {
-        Log.i(TAG, "Tearing Down");
-        for (BluetoothDevice device : mAdapter.getBondedDevices()) {
-            mUtil.removeBond(null, device);
+    @Throws(Exception::class)
+    fun tearDown() {
+        Log.i(TAG, "Tearing Down")
+        for (device in adapter.bondedDevices) {
+            util.removeBond(null, device)
         }
     }
 
@@ -133,534 +122,517 @@ public class PairingTestDualMode {
      * Test the scenario where bonding is initiated over BR/EDR, When the DUT and REF is bonded over
      * LE
      *
-     * <p>Prerequisites:
+     * Prerequisites:
+     * 1. Bumble is advertising over LE with a random address and is connectable.
      *
-     * <ol>
-     *   <li>Bumble is advertising over LE with a random address and is connectable.
-     * </ol>
+     * Steps:
+     * 1. Create bonding with the Bumble LE device (`remoteLeDevice`) over the LE transport.
+     * 2. Verify that the list of bonded devices on the Android adapter now includes
+     *    `remoteLeDevice`.
+     * 3. Initiate bonding with the Bumble device (`bumbleDevice`) over the BR/EDR transport.
+     * 4. Verify the bonding intents received during the BR/EDR bonding process using
+     *    [testStep_VerifyBondIntents].
+     * 5. Ensure that the BR/EDR bonding succeeds by checking for the
+     *    [BluetoothDevice.ACTION_BOND_STATE_CHANGED] intent with the [BluetoothDevice.BOND_BONDED]
+     *    state for `bumbleDevice`.
+     * 6. Verify that the list of bonded devices on the Android adapter now includes `bumbleDevice`.
      *
-     * <p>Steps:
-     *
-     * <ol>
-     *   <li>Create bonding with the Bumble LE device ({@code mRemoteLeDevice}) over the LE
-     *       transport.
-     *   <li>Verify that the list of bonded devices on the Android adapter now includes {@code
-     *       mRemoteLeDevice}.
-     *   <li>Initiate bonding with the Bumble device ({@code mBumbleDevice}) over the BR/EDR
-     *       transport.
-     *   <li>Verify the bonding intents received during the BR/EDR bonding process using {@link
-     *       #testStep_VerifyBondIntents(IntentReceiver, BluetoothDevice, int)}.
-     *   <li>Ensure that the BR/EDR bonding succeeds by checking for the {@link
-     *       BluetoothDevice#ACTION_BOND_STATE_CHANGED} intent with the {@link
-     *       BluetoothDevice#BOND_BONDED} state for {@code mBumbleDevice}.
-     *   <li>Verify that the list of bonded devices on the Android adapter now includes {@code
-     *       mBumbleDevice}.
-     * </ol>
-     *
-     * <p>Expectation:
-     *
-     * <ul>
-     *   <li>Bonding with the Bumble device over BR/EDR succeeds after the LE bonding.
-     * </ul>
+     * Expectation: Bonding with the Bumble device over BR/EDR succeeds after the LE bonding.
      */
     @Test
-    public void testBondLe_InitiateBrEdrPairingFromDUT() {
-        IntentReceiver intentReceiver =
-                new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_ACL_CONNECTED,
-                                BluetoothDevice.ACTION_PAIRING_REQUEST)
-                        .build();
-        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
-                new StreamObserverSpliterator<>();
+    fun testBondLe_InitiateBrEdrPairingFromDUT() {
+        val intentReceiver =
+            IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                )
+                .build()
+        val responseObserver = StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse>()
         // Start advertising for LE
-        mCurrentDevice
-                .host()
-                .advertise(
-                        HostProto.AdvertiseRequest.newBuilder()
-                                .setLegacy(true)
-                                .setConnectable(true)
-                                .setOwnAddressType(HostProto.OwnAddressType.RANDOM)
-                                .build(),
-                        responseObserver);
+        currentDevice
+            .host()
+            .advertise(
+                HostProto.AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(HostProto.OwnAddressType.RANDOM)
+                    .build(),
+                responseObserver,
+            )
         // Create bond over LE transport
-        assertThat(mRemoteLeDevice.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue();
+        assertThat(remoteLeDevice.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue()
 
         // Verify bonding intents
-        testStep_VerifyBondIntents(intentReceiver, mRemoteLeDevice, BluetoothDevice.TRANSPORT_LE);
-        responseObserver.cancel("Canceling advertise request");
+        testStep_VerifyBondIntents(intentReceiver, remoteLeDevice, BluetoothDevice.TRANSPORT_LE)
+        responseObserver.cancel("Canceling advertise request")
 
         // Approve pairing from Android
-        assertThat(mRemoteLeDevice.setPairingConfirmation(true)).isTrue();
+        assertThat(remoteLeDevice.setPairingConfirmation(true)).isTrue()
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteLeDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, remoteLeDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
 
         // Check if bonded device's list contains REF device
-        assertThat(mAdapter.getBondedDevices()).contains(mRemoteLeDevice);
+        assertThat(adapter.bondedDevices).contains(remoteLeDevice)
 
         // Create bond over BR/EDR
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+        assertThat(bumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue()
 
         // Verify bonding intents
-        testStep_VerifyBondIntents(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
+        testStep_VerifyBondIntents(intentReceiver, bumbleDevice, BluetoothDevice.TRANSPORT_BREDR)
 
         // Approve pairing from Android
-        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+        assertThat(bumbleDevice.setPairingConfirmation(true)).isTrue()
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
 
         // Check if bonded device's list contains REF device
-        assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
-        intentReceiver.close();
+        assertThat(adapter.bondedDevices).contains(bumbleDevice)
+        intentReceiver.close()
     }
 
     /**
      * Test the scenario where DUT is bonded with Bumble REF over LE, Pairing initiated by REF
      * device over BR/EDR.
      *
-     * <p>Prerequisites:
+     * Prerequisites:
+     * 1. No existing bond between Android and Bumble or `remoteLeDevice`.
      *
-     * <ol>
-     *   <li>No existing bond between Android and Bumble or {@code mRemoteLeDevice}.
-     * </ol>
+     * Steps:
+     * 1. Create bonding with the remote LE device (`remoteLeDevice`) over the LE transport from the
+     *    DUT.
+     * 2. Verify that the list of bonded devices on the Android adapter now includes
+     *    `remoteLeDevice`.
+     * 3. Initiate bonding with the Bumble device (`bumbleDevice`) over the BR/EDR transport from
+     *    the remote (Bumble) side using
+     * 4. Ensure that the BR/EDR bonding succeeds by checking for the
+     *    [BluetoothDevice.ACTION_BOND_STATE_CHANGED] intent with the [BluetoothDevice.BOND_BONDED]
+     *    state for `bumbleDevice`.
+     * 5. Verify that the list of bonded devices on the Android adapter now includes `bumbleDevice`.
      *
-     * <p>Steps:
-     *
-     * <ol>
-     *   <li>Create bonding with the remote LE device ({@code mRemoteLeDevice}) over the LE
-     *       transport from the DUT.
-     *   <li>Verify that the list of bonded devices on the Android adapter now includes {@code
-     *       mRemoteLeDevice}.
-     *   <li>Initiate bonding with the Bumble device ({@code mBumbleDevice}) over the BR/EDR
-     *       transport from the remote (Bumble) side using
-     *   <li>Ensure that the BR/EDR bonding succeeds by checking for the {@link
-     *       BluetoothDevice#ACTION_BOND_STATE_CHANGED} intent with the {@link
-     *       BluetoothDevice#BOND_BONDED} state for {@code mBumbleDevice}.
-     *   <li>Verify that the list of bonded devices on the Android adapter now includes {@code
-     *       mBumbleDevice}.
-     * </ol>
-     *
-     * <p>Expectation:
-     *
-     * <ul>
-     *   <li>Bonding with the Bumble device over BR/EDR initiated by the remote succeeds after the
-     *       LE bonding.
-     * </ul>
+     * Expectation: Bonding with the Bumble device over BR/EDR initiated by the remote succeeds
+     * after the LE bonding.
      */
     @Test
-    public void testBondLe_InitiateBrEdrPairingFromREF() {
-        IntentReceiver intentReceiver =
-                new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_ACL_CONNECTED,
-                                BluetoothDevice.ACTION_PAIRING_REQUEST)
-                        .build();
-        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
-                new StreamObserverSpliterator<>();
+    fun testBondLe_InitiateBrEdrPairingFromREF() {
+        val intentReceiver =
+            IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                )
+                .build()
+        val responseObserver = StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse>()
         // Start advertising for LE
-        mCurrentDevice
-                .host()
-                .advertise(
-                        HostProto.AdvertiseRequest.newBuilder()
-                                .setLegacy(true)
-                                .setConnectable(true)
-                                .setOwnAddressType(HostProto.OwnAddressType.RANDOM)
-                                .build(),
-                        responseObserver);
+        currentDevice
+            .host()
+            .advertise(
+                HostProto.AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(HostProto.OwnAddressType.RANDOM)
+                    .build(),
+                responseObserver,
+            )
 
         // Create bond over LE transport
-        assertThat(mRemoteLeDevice.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue();
+        assertThat(remoteLeDevice.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue()
 
         // Verify bonding intents
-        testStep_VerifyBondIntents(intentReceiver, mRemoteLeDevice, BluetoothDevice.TRANSPORT_LE);
-        responseObserver.cancel("Canceling advertise request");
+        testStep_VerifyBondIntents(intentReceiver, remoteLeDevice, BluetoothDevice.TRANSPORT_LE)
+        responseObserver.cancel("Canceling advertise request")
 
         // Approve pairing from Android
-        assertThat(mRemoteLeDevice.setPairingConfirmation(true)).isTrue();
+        assertThat(remoteLeDevice.setPairingConfirmation(true)).isTrue()
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteLeDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, remoteLeDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
 
         // verify that devices is the bonded list
-        assertThat(mAdapter.getBondedDevices()).contains(mRemoteLeDevice);
+        assertThat(adapter.bondedDevices).contains(remoteLeDevice)
 
         // Start bonding from remote side
-        testStep_BondBredrFromRemote(intentReceiver);
+        testStep_BondBredrFromRemote(intentReceiver)
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
 
-        assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
+        assertThat(adapter.bondedDevices).contains(bumbleDevice)
 
-        intentReceiver.close();
+        intentReceiver.close()
     }
 
     /**
      * Test the reconnection over BR/EDR transport after a Bluetooth restart and verify link
      * encryption.
      *
-     * <p>Steps:
+     * Steps:
+     * 1. Bond Android and Bumble over BR/EDR
+     * 2. Verify that the link is encrypted
+     * 3. Restart the Bluetooth adapter using the [testStep_restartBt] helper method.
+     * 4. Initiate a connection from the Bumble side to the Android device.
+     * 5. Verify that the link is encrypted
      *
-     * <ol>
-     *   <li>Bond Android and Bumble over BR/EDR
-     *   <li>Verify that the link is encrypted
-     *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
-     *   <li>Initiate a connection from the Bumble side to the Android device.
-     *   <li>Verify that the link is encrypted
-     * </ol>
-     *
-     * <p>Expectation:
-     *
-     * <ul>
-     *   <li>After a Bluetooth restart, Bumble can successfully reconnect to the Android device over
-     *       BR/EDR.
-     *   <li>After restart link is encryption.
-     * </ul>
+     * Expectation: After a Bluetooth restart, Bumble can successfully reconnect to the Android
+     * device over BR/EDR. After restart link is encryption.
      */
     @Test
-    public void testReconnection_OverTransportBrEdr() throws Exception {
+    @Throws(Exception::class)
+    fun testReconnection_OverTransportBrEdr() {
+        val intentReceiver =
+            IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                )
+                .build()
 
-        IntentReceiver intentReceiver =
-                new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
-                                BluetoothDevice.ACTION_ACL_CONNECTED,
-                                BluetoothDevice.ACTION_PAIRING_REQUEST)
-                        .build();
+        assertThat(bumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue()
 
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+        testStep_VerifyBondIntents(intentReceiver, bumbleDevice, BluetoothDevice.TRANSPORT_BREDR)
 
-        testStep_VerifyBondIntents(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
-
-        mBumbleDevice.setPairingConfirmation(true);
+        bumbleDevice.setPairingConfirmation(true)
 
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
-                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, 0),
-                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true));
+            hasAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+            hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, 0),
+            hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true),
+        )
 
         intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
 
-        testStep_restartBt();
+        testStep_restartBt()
 
         // Create connection from Bumble side
-        ByteString address =
-                ByteString.copyFrom(Utils.addressBytesFromString(mAdapter.getAddress()));
-        HostProto.ConnectRequest connectionRequest =
-                HostProto.ConnectRequest.newBuilder().setAddress(address).build();
-        HostProto.ConnectResponse response =
-                mCurrentDevice.hostBlocking().connect(connectionRequest);
+        val address = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+        val connectionRequest = HostProto.ConnectRequest.newBuilder().setAddress(address).build()
+        val response = currentDevice.hostBlocking().connect(connectionRequest)
 
-        assertThat(response.hasConnection()).isTrue();
+        assertThat(response.hasConnection()).isTrue()
 
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
 
         // Verify the link encryption after restart
         intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
-                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, 0),
-                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true));
+            hasAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+            hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, 0),
+            hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true),
+        )
 
-        intentReceiver.close();
+        intentReceiver.close()
     }
 
     /**
      * Test that the properties of a bonded BR/EDR device remain intact after a Bluetooth restart.
      *
-     * <p>Steps:
+     * Steps:
+     * 1. Bond Android and Bumble over BR/EDR using the [testStep_BondBrEdr] helper method.
+     * 2. Retrieve and store the following properties of the bonded Bumble device: Device type
+     *    ([BluetoothDevice.getType]) Device name ([BluetoothDevice.getName]) Device address
+     *    ([BluetoothDevice.getAddress]) Device address type ([BluetoothDevice.getAddressType])
+     *    Active audio device policy ([BluetoothDevice.getActiveAudioDevicePolicy]) Bond state
+     *    ([BluetoothDevice.getBondState]) UUIDs ([BluetoothDevice.getUuids]) identityAddress
+     *    ([BluetoothDevice.getIdentityAddress]) identityAddressWithType
+     *    ([BluetoothDevice.getIdentityAddressWithType]) class of device
+     *    ([BluetoothDevice.getBluetoothClass]) alias
+     * 3. Restart the Bluetooth adapter using the [testStep_restartBt] helper method.
+     * 4. Retrieve the properties of the Bumble device again after the restart.
      *
-     * <ol>
-     *   <li>Bond Android and Bumble over BR/EDR using the {@link
-     *       #testStep_BondBrEdr(IntentReceiver)} helper method.
-     *   <li>Retrieve and store the following properties of the bonded Bumble device:
-     *       <ul>
-     *         <li>Device type ({@link BluetoothDevice#getType()})
-     *         <li>Device name ({@link BluetoothDevice#getName()})
-     *         <li>Device address ({@link BluetoothDevice#getAddress()})
-     *         <li>Device address type ({@link BluetoothDevice#getAddressType()})
-     *         <li>Active audio device policy ({@link BluetoothDevice#getActiveAudioDevicePolicy()})
-     *         <li>Bond state ({@link BluetoothDevice#getBondState()})
-     *         <li>UUIDs ({@link BluetoothDevice#getUuids()})
-     *         <li>identityAddress ({@link BluetoothDevice#getIdentityAddress()})
-     *         <li>identityAddressWithType ({@link BluetoothDevice#getIdentityAddressWithType()})
-     *         <li>class of device ({@link BluetoothDevice#getBluetoothClass()})
-     *         <li>alias
-     *       </ul>
-     *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
-     *   <li>Retrieve the properties of the Bumble device again after the restart.
-     * </ol>
-     *
-     * <p>Expectation:
-     *
-     * <ul>
-     *   <li>All retrieved properties of the bonded Bumble device (type, name, address, address
-     *       type, active audio device policy, bond state, and UUIDs) remain the same after the
-     *       Bluetooth restart.
-     * </ul>
+     * Expectation: All retrieved properties of the bonded Bumble device (type, name, address,
+     * address type, active audio device policy, bond state, and UUIDs) remain the same after the
+     * Bluetooth restart.
      */
     @Test
-    public void testProperties_IntactAfterRestart() throws Exception {
-        IntentReceiver intentReceiver =
-                new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_ACL_CONNECTED)
-                        .build();
+    @Throws(Exception::class)
+    fun testProperties_IntactAfterRestart() {
+        val intentReceiver =
+            IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                )
+                .build()
 
-        testStep_BondBrEdr(intentReceiver);
+        testStep_BondBrEdr(intentReceiver)
         // Retrieve all the properties from remote device
-        int type = mBumbleDevice.getType();
-        String name = mBumbleDevice.getName();
-        String address = mBumbleDevice.getAddress();
-        int addressType = mBumbleDevice.getAddressType();
-        int deviceAudioPolicy = mBumbleDevice.getActiveAudioDevicePolicy();
-        int bondState = mBumbleDevice.getBondState();
-        ParcelUuid[] uuids = mBumbleDevice.getUuids();
-        String identityAddress = mBumbleDevice.getIdentityAddress();
-        BluetoothDevice.BluetoothAddress identityAddressWithType =
-                mBumbleDevice.getIdentityAddressWithType();
-        BluetoothClass cod = mBumbleDevice.getBluetoothClass();
-        mBumbleDevice.setAlias(BUMBLE_ALIAS);
+        val type = bumbleDevice.type
+        val name = bumbleDevice.name
+        val address = bumbleDevice.address
+        val addressType = bumbleDevice.addressType
+        val deviceAudioPolicy = bumbleDevice.activeAudioDevicePolicy
+        val bondState = bumbleDevice.bondState
+        val uuids: Array<ParcelUuid>? = bumbleDevice.uuids
+        val identityAddress = bumbleDevice.identityAddress
+        val identityAddressWithType = bumbleDevice.identityAddressWithType
+        val cod = bumbleDevice.bluetoothClass
+        bumbleDevice.alias = BUMBLE_ALIAS
 
-        testStep_restartBt();
-        assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
+        testStep_restartBt()
+        assertThat(adapter.bondedDevices).contains(bumbleDevice)
 
         // Verify properties after restart
-        assertThat(type).isEqualTo(mBumbleDevice.getType());
-        assertThat(name).isEqualTo(mBumbleDevice.getName());
-        assertThat(address).isEqualTo(mBumbleDevice.getAddress());
-        assertThat(addressType).isEqualTo(mBumbleDevice.getAddressType());
-        assertThat(deviceAudioPolicy).isEqualTo(mBumbleDevice.getActiveAudioDevicePolicy());
-        assertThat(bondState).isEqualTo(mBumbleDevice.getBondState());
-        assertThat(uuids).isEqualTo(mBumbleDevice.getUuids());
-        assertThat(identityAddress).isEqualTo(mBumbleDevice.getIdentityAddress());
-        assertThat(identityAddressWithType.getAddressType())
-                .isEqualTo(mBumbleDevice.getIdentityAddressWithType().getAddressType());
-        assertThat(identityAddressWithType.getAddress())
-                .isEqualTo(mBumbleDevice.getIdentityAddressWithType().getAddress());
-        assertThat(cod).isEqualTo(mBumbleDevice.getBluetoothClass());
-        assertThat(mBumbleDevice.getAlias()).isEqualTo(BUMBLE_ALIAS);
+        assertThat(type).isEqualTo(bumbleDevice.type)
+        assertThat(name).isEqualTo(bumbleDevice.name)
+        assertThat(address).isEqualTo(bumbleDevice.address)
+        assertThat(addressType).isEqualTo(bumbleDevice.addressType)
+        assertThat(deviceAudioPolicy).isEqualTo(bumbleDevice.activeAudioDevicePolicy)
+        assertThat(bondState).isEqualTo(bumbleDevice.bondState)
+        assertThat(uuids).isEqualTo(bumbleDevice.uuids)
+        assertThat(identityAddress).isEqualTo(bumbleDevice.identityAddress)
+        assertThat(identityAddressWithType.addressType)
+            .isEqualTo(bumbleDevice.identityAddressWithType.addressType)
+        assertThat(identityAddressWithType.address)
+            .isEqualTo(bumbleDevice.identityAddressWithType.address)
+        assertThat(cod).isEqualTo(bumbleDevice.bluetoothClass)
+        assertThat(bumbleDevice.alias).isEqualTo(BUMBLE_ALIAS)
 
-        intentReceiver.close();
+        intentReceiver.close()
     }
 
     /**
      * Tests that a bonded device's bond state remains bonded even after an immediate disconnection
      * from Bumble.
      *
-     * <p>steps:
+     * steps:
+     * 1. Initiates a BR/EDR bonding with Bumble
+     * 2. Disconnects from Bumble device
+     * 3. Reconnect from Bumble side
+     * 4. Disconnect from Bumble
      *
-     * <ol>
-     *   <li>Initiates a BR/EDR bonding with Bumble
-     *   <li>Disconnects from Bumble device
-     *   <li>Reconnect from Bumble side
-     *   <li>Disconnect from Bumble
-     * </ol>
-     *
-     * <p>Expectation:
-     *
-     * <ul>
-     *   <li>After immediate disconnection Bumble should still be bonded
-     * </ul>
+     * Expectation: After immediate disconnection Bumble should still be bonded
      */
     @Test
-    public void testBondState_OnImmediateDisconnectionFromRef() throws Exception {
-        IntentReceiver intentReceiver =
-                new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_ACL_CONNECTED,
-                                BluetoothDevice.ACTION_PAIRING_REQUEST,
-                                BluetoothDevice.ACTION_ACL_DISCONNECTED)
-                        .build();
+    @Throws(Exception::class)
+    fun testBondState_OnImmediateDisconnectionFromRef() {
+        val intentReceiver =
+            IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                    BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                )
+                .build()
 
-        HostProto.ConnectResponse response =
-                mBumble.hostBlocking()
-                        .connect(
-                                HostProto.ConnectRequest.newBuilder()
-                                        .setAddress(
-                                                ByteString.copyFrom(
-                                                        Utils.addressBytesFromString(
-                                                                mAdapter.getAddress())))
-                                        .build());
+        val response =
+            bumble
+                .hostBlocking()
+                .connect(
+                    HostProto.ConnectRequest.newBuilder()
+                        .setAddress(
+                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+                        )
+                        .build()
+                )
 
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
         // Create bond over BR/EDR
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+        assertThat(bumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue()
 
         intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
 
         intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(
-                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
-                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
         // Approve pairing from Android
-        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+        assertThat(bumbleDevice.setPairingConfirmation(true)).isTrue()
 
         // Ensure that pairing succeeds
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
 
         // Disconnect Bumble
-        mBumble.hostBlocking()
-                .disconnect(
-                        HostProto.DisconnectRequest.newBuilder()
-                                .setConnection(response.getConnection())
-                                .build());
+        bumble
+            .hostBlocking()
+            .disconnect(
+                HostProto.DisconnectRequest.newBuilder().setConnection(response.connection).build()
+            )
 
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
 
-        HostProto.ConnectResponse secondResponse =
-                mBumble.hostBlocking()
-                        .connect(
-                                HostProto.ConnectRequest.newBuilder()
-                                        .setAddress(
-                                                ByteString.copyFrom(
-                                                        Utils.addressBytesFromString(
-                                                                mAdapter.getAddress())))
-                                        .build());
+        val secondResponse =
+            bumble
+                .hostBlocking()
+                .connect(
+                    HostProto.ConnectRequest.newBuilder()
+                        .setAddress(
+                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+                        )
+                        .build()
+                )
 
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
 
         // Disconnect Bumble
-        mBumble.hostBlocking()
-                .disconnect(
-                        HostProto.DisconnectRequest.newBuilder()
-                                .setConnection(secondResponse.getConnection())
-                                .build());
+        bumble
+            .hostBlocking()
+            .disconnect(
+                HostProto.DisconnectRequest.newBuilder()
+                    .setConnection(secondResponse.connection)
+                    .build()
+            )
 
         intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+        )
 
-        assertThat(mBumbleDevice.getBondState()).isEqualTo(BluetoothDevice.BOND_BONDED);
+        assertThat(bumbleDevice.bondState).isEqualTo(BluetoothDevice.BOND_BONDED)
     }
 
-    private static void testStep_VerifyBondIntents(
-            IntentReceiver intentReceiver, BluetoothDevice device, int transport) {
+    private fun testStep_BondBrEdr(parentIntentReceiver: IntentReceiver) {
+        val intentReceiver =
+            IntentReceiver.update(
+                parentIntentReceiver,
+                IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                ),
+            )
+
+        assertThat(bumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue()
+
+        testStep_VerifyBondIntents(intentReceiver, bumbleDevice, BluetoothDevice.TRANSPORT_BREDR)
+
+        bumbleDevice.setPairingConfirmation(true)
         intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
-
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport));
-
-        intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-                hasExtra(
-                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
-                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
     }
 
-    private static void testStep_restartBt() {
-        assertThat(BlockingBluetoothAdapter.disable(true)).isTrue();
-        assertThat(BlockingBluetoothAdapter.enable()).isTrue();
-    }
-
-    private void testStep_BondBrEdr(IntentReceiver parentIntentReceiver) {
-        IntentReceiver intentReceiver =
-                IntentReceiver.update(
-                        parentIntentReceiver,
-                        new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_ACL_CONNECTED,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_PAIRING_REQUEST));
-
-        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
-
-        testStep_VerifyBondIntents(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
-
-        mBumbleDevice.setPairingConfirmation(true);
-        intentReceiver.verifyReceived(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
-    }
-
-    private void testStep_BondBredrFromRemote(IntentReceiver parentIntentReceiver) {
-        IntentReceiver intentReceiver =
-                IntentReceiver.update(
-                        parentIntentReceiver,
-                        new IntentReceiver.Builder(
-                                mTargetContext,
-                                BluetoothDevice.ACTION_ACL_CONNECTED,
-                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                                BluetoothDevice.ACTION_PAIRING_REQUEST));
-        HostProto.ConnectResponse response =
-                mCurrentDevice
-                        .hostBlocking()
-                        .connect(
-                                HostProto.ConnectRequest.newBuilder()
-                                        .setAddress(
-                                                ByteString.copyFrom(
-                                                        Utils.addressBytesFromString(
-                                                                mAdapter.getAddress())))
-                                        .build());
+    private fun testStep_BondBredrFromRemote(parentIntentReceiver: IntentReceiver) {
+        val intentReceiver =
+            IntentReceiver.update(
+                parentIntentReceiver,
+                IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                ),
+            )
+        val response =
+            currentDevice
+                .hostBlocking()
+                .connect(
+                    HostProto.ConnectRequest.newBuilder()
+                        .setAddress(
+                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+                        )
+                        .build()
+                )
         // Start pairing from Bumble
-        StreamObserverSpliterator<SecurityProto.SecureRequest, SecurityProto.SecureResponse>
-                responseObserver = new StreamObserverSpliterator<>();
-        mCurrentDevice
-                .security()
-                .secure(
-                        SecurityProto.SecureRequest.newBuilder()
-                                .setConnection(response.getConnection())
-                                .setClassic(SecurityProto.SecurityLevel.LEVEL4)
-                                .build(),
-                        responseObserver);
+        val responseObserver =
+            StreamObserverSpliterator<SecurityProto.SecureRequest, SecurityProto.SecureResponse>()
+        currentDevice
+            .security()
+            .secure(
+                SecurityProto.SecureRequest.newBuilder()
+                    .setConnection(response.connection)
+                    .setClassic(SecurityProto.SecurityLevel.LEVEL4)
+                    .build(),
+                responseObserver,
+            )
 
-        testStep_VerifyBondIntents(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
+        testStep_VerifyBondIntents(intentReceiver, bumbleDevice, BluetoothDevice.TRANSPORT_BREDR)
         // Approve pairing from Android
-        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+        assertThat(bumbleDevice.setPairingConfirmation(true)).isTrue()
 
-        intentReceiver.close();
+        intentReceiver.close()
+    }
+
+    private fun testStep_VerifyBondIntents(
+        intentReceiver: IntentReceiver,
+        device: BluetoothDevice,
+        transport: Int,
+    ) {
+        intentReceiver.verifyReceived(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
+
+        intentReceiver.verifyReceivedOrdered(
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport),
+        )
+
+        intentReceiver.verifyReceived(
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
+    }
+
+    private fun testStep_restartBt() {
+        assertThat(BlockingBluetoothAdapter.disable(true)).isTrue()
+        assertThat(BlockingBluetoothAdapter.enable()).isTrue()
+    }
+
+    companion object {
+        private const val BUMBLE_ALIAS = "Bumble"
+
+        private var toggleDevice = true
     }
 }
