@@ -9,16 +9,6 @@ flag {
 }
 
 flag {
-    name: "asha_postpone_connection_update"
-    namespace: "bluetooth"
-    description: "When Connection Parameters are locked by another module, postpone connection update from ASHA side until previous one completes"
-    bug: "445363979"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "asha_retry_reconnect_when_in_set"
     namespace: "bluetooth"
     description: "When one of the hearing aids in set connects and the other fails, retry reconnect"
