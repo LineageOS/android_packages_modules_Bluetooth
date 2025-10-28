@@ -69,6 +69,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_game_detector"
+    namespace: "bluetooth"
+    description: "LeAudio starts detects game applications."
+    bug: "454841160"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_fix_allocation_in_codec_config"
     namespace: "bluetooth"
     description: "Fix not setting allocation LTV in CodecConfig for mono allication"
