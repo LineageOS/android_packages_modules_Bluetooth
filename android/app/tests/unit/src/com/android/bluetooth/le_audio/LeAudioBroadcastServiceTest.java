@@ -1175,6 +1175,7 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         devices.add(mDevice1);
         prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
@@ -1378,6 +1379,7 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice2).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         synchronized (mService.mLeAudioCallbacks) {
             mService.mLeAudioCallbacks.register(mLeAudioCallbacks);
@@ -1443,6 +1445,7 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         initializeNative();
         devices.add(mDevice1);
@@ -1511,6 +1514,7 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         /* If no connected devices - no fallback device */
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
@@ -1549,6 +1553,7 @@ public class LeAudioBroadcastServiceTest {
         mLooper.dispatchAll();
 
         /* Disconnected last device from fallback should trigger set default group 1 -> -1 */
+        doReturn(null).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
         disconnectDevice(mDevice1);
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
                 .isEqualTo(LE_AUDIO_GROUP_ID_INVALID);
@@ -1841,6 +1846,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
         devices.add(mDevice1);
 
         initializeNative();
