@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.State;
 import android.os.Build;
 import android.os.Looper;
 import android.os.Message;
@@ -25,20 +26,19 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
-import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
-// This state machine handles Bluetooth Adapter State.
+// This state machine handles Bluetooth Adapter states.
 // Stable States:
-//      {@link OffState}: Initial State
-//      {@link BleOnState} : Bluetooth Low Energy, Including GATT, is on
-//      {@link OnState} : Bluetooth is on (All supported profiles)
+//      {@link Off}: Initial State
+//      {@link BleOn} : Bluetooth Low Energy, Including GATT, is on
+//      {@link On} : Bluetooth is on (All supported profiles)
 //
 // Transition States:
-//      {@link TurningBleOnState} : OffState to BleOnState
-//      {@link TurningBleOffState} : BleOnState to OffState
-//      {@link TurningOnState} : BleOnState to OnState
-//      {@link TurningOffState} : OnState to BleOnState
+//      {@link TurningBleOn} : Off to BleOn
+//      {@link TurningBleOff} : BleOn to Off
+//      {@link TurningOn} : BleOn to On
+//      {@link TurningOff} : On to BleOn
 //
 //        +------   Off  <-----+
 //        |                    |
@@ -56,7 +56,7 @@ import com.android.internal.util.StateMachine;
 //        +----->   On   ------+
 //
 // Once skip_ble_on_when_turning_off is released it will be:
-//      {@link TurningOffState} : OnState to TurningBleOffState
+//      {@link TurningOff} : On to TurningBleOff
 //
 //           OFF ⮜─────────────────╮
 //             ⮟                   │
@@ -144,27 +144,27 @@ final class AdapterState extends StateMachine {
     }
 
     private AdapterService mAdapterService;
-    private final TurningOnState mTurningOnState = new TurningOnState();
-    private final TurningBleOnState mTurningBleOnState = new TurningBleOnState();
-    private final TurningOffState mTurningOffState = new TurningOffState();
-    private final TurningBleOffState mTurningBleOffState = new TurningBleOffState();
-    private final OnState mOnState = new OnState();
-    private final OffState mOffState = new OffState();
-    private final BleOnState mBleOnState = new BleOnState();
+    private final TurningOn mTurningOn = new TurningOn(State.TURNING_ON);
+    private final TurningBleOn mTurningBleOn = new TurningBleOn(State.BLE_TURNING_ON);
+    private final TurningOff mTurningOff = new TurningOff(State.TURNING_OFF);
+    private final TurningBleOff mTurningBleOff = new TurningBleOff(State.BLE_TURNING_OFF);
+    private final On mOn = new On(State.ON);
+    private final Off mOff = new Off(State.OFF);
+    private final BleOn mBleOn = new BleOn(State.BLE_ON);
 
-    private int mPrevState = BluetoothAdapter.STATE_OFF;
+    private int mPrevState = State.OFF;
 
     AdapterState(AdapterService service, Looper looper) {
         super(TAG, looper);
-        addState(mOnState);
-        addState(mBleOnState);
-        addState(mOffState);
-        addState(mTurningOnState);
-        addState(mTurningOffState);
-        addState(mTurningBleOnState);
-        addState(mTurningBleOffState);
+        addState(mOn);
+        addState(mBleOn);
+        addState(mOff);
+        addState(mTurningOn);
+        addState(mTurningOff);
+        addState(mTurningBleOn);
+        addState(mTurningBleOff);
         mAdapterService = service;
-        setInitialState(mOffState);
+        setInitialState(mOff);
         start();
     }
 
@@ -206,32 +206,33 @@ final class AdapterState extends StateMachine {
         return messageString(msg.what);
     }
 
-    private abstract class BaseAdapterState extends State {
+    private abstract class BaseAdapterState extends com.android.internal.util.State {
+        private final int mStateValue;
 
-        abstract int getStateValue();
+        BaseAdapterState(int state) {
+            mStateValue = state;
+        }
 
         @Override
         public void enter() {
-            int currState = getStateValue();
+            int currState = mStateValue;
             infoLog("entered ");
             mAdapterService.updateAdapterState(mPrevState, currState);
             mPrevState = currState;
         }
 
         void infoLog(String msg) {
-            Log.i(TAG, BluetoothAdapter.nameForState(getStateValue()) + " : " + msg);
+            Log.i(TAG, State.$.toString(mStateValue) + " : " + msg);
         }
 
         void errorLog(String msg) {
-            Log.e(TAG, BluetoothAdapter.nameForState(getStateValue()) + " : " + msg);
+            Log.e(TAG, State.$.toString(mStateValue) + " : " + msg);
         }
     }
 
-    private class OffState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_OFF;
+    private class Off extends BaseAdapterState {
+        Off(int state) {
+            super(state);
         }
 
         @Override
@@ -246,7 +247,7 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BLE_TURN_ON -> transitionTo(mTurningBleOnState);
+                case BLE_TURN_ON -> transitionTo(mTurningBleOn);
                 default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
@@ -256,18 +257,16 @@ final class AdapterState extends StateMachine {
         }
     }
 
-    private class BleOnState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_BLE_ON;
+    private class BleOn extends BaseAdapterState {
+        BleOn(int state) {
+            super(state);
         }
 
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case USER_TURN_ON -> transitionTo(mTurningOnState);
-                case BLE_TURN_OFF -> transitionTo(mTurningBleOffState);
+                case USER_TURN_ON -> transitionTo(mTurningOn);
+                case BLE_TURN_OFF -> transitionTo(mTurningBleOff);
                 default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
@@ -277,17 +276,15 @@ final class AdapterState extends StateMachine {
         }
     }
 
-    private class OnState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_ON;
+    private class On extends BaseAdapterState {
+        On(int state) {
+            super(state);
         }
 
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case USER_TURN_OFF -> transitionTo(mTurningOffState);
+                case USER_TURN_OFF -> transitionTo(mTurningOff);
                 default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
@@ -297,11 +294,9 @@ final class AdapterState extends StateMachine {
         }
     }
 
-    private class TurningBleOnState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_BLE_TURNING_ON;
+    private class TurningBleOn extends BaseAdapterState {
+        TurningBleOn(int state) {
+            super(state);
         }
 
         @Override
@@ -321,11 +316,11 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BLE_STARTED -> transitionTo(mBleOnState);
+                case BLE_STARTED -> transitionTo(mBleOn);
 
                 case BLE_START_TIMEOUT -> {
                     errorLog(messageString(msg.what));
-                    transitionTo(mTurningBleOffState);
+                    transitionTo(mTurningBleOff);
                 }
                 default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
@@ -336,11 +331,9 @@ final class AdapterState extends StateMachine {
         }
     }
 
-    private class TurningOnState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_TURNING_ON;
+    private class TurningOn extends BaseAdapterState {
+        TurningOn(int state) {
+            super(state);
         }
 
         @Override
@@ -359,11 +352,11 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BREDR_STARTED -> transitionTo(mOnState);
+                case BREDR_STARTED -> transitionTo(mOn);
 
                 case BREDR_START_TIMEOUT -> {
                     errorLog(messageString(msg.what));
-                    transitionTo(mTurningOffState);
+                    transitionTo(mTurningOff);
                 }
 
                 default -> {
@@ -375,11 +368,9 @@ final class AdapterState extends StateMachine {
         }
     }
 
-    private class TurningOffState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_TURNING_OFF;
+    private class TurningOff extends BaseAdapterState {
+        TurningOff(int state) {
+            super(state);
         }
 
         @Override
@@ -405,15 +396,15 @@ final class AdapterState extends StateMachine {
             switch (msg.what) {
                 case BREDR_STOPPED -> {
                     if (Flags.skipBleOnWhenTurningOff()) {
-                        transitionTo(mTurningBleOffState);
+                        transitionTo(mTurningBleOff);
                     } else {
-                        transitionTo(mBleOnState);
+                        transitionTo(mBleOn);
                     }
                 }
 
                 case BREDR_STOP_TIMEOUT -> {
                     errorLog(messageString(msg.what));
-                    transitionTo(mTurningBleOffState);
+                    transitionTo(mTurningBleOff);
                 }
 
                 default -> {
@@ -425,11 +416,9 @@ final class AdapterState extends StateMachine {
         }
     }
 
-    private class TurningBleOffState extends BaseAdapterState {
-
-        @Override
-        int getStateValue() {
-            return BluetoothAdapter.STATE_BLE_TURNING_OFF;
+    private class TurningBleOff extends BaseAdapterState {
+        TurningBleOff(int state) {
+            super(state);
         }
 
         @Override
@@ -449,11 +438,11 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BLE_STOPPED -> transitionTo(mOffState);
+                case BLE_STOPPED -> transitionTo(mOff);
 
                 case BLE_STOP_TIMEOUT -> {
                     errorLog(messageString(msg.what));
-                    transitionTo(mOffState);
+                    transitionTo(mOff);
                 }
 
                 default -> {
