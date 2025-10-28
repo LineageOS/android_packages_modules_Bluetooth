@@ -318,6 +318,10 @@ public class HfpClientConnectionService extends ConnectionService {
         }
 
         HfpClientDeviceBlock block = findBlockForDevice(bd1);
+        if (block == null) {
+            Log.w(TAG, "Conference changed but no block for device=" + bd1);
+            return;
+        }
         block.onConference(connection1, connection2);
     }
 
