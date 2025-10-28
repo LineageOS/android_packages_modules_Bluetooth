@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/hci_interface.h"
 #include "hci/remote_name_request.h"
@@ -67,6 +69,10 @@ private:
   HciInterface& hci_layer_;
   acl_manager::AclScheduler& acl_scheduler_;
 
+  std::map<Address, RemoteNameCallback> requests_;
+  std::map<Address, RemoteHostSupportedFeaturesCallback> remote_host_supported_features_callbacks_;
+
+  // TODO(b/445714747): Remove when rnr_multiple_name_request is shipped
   bool pending_ = false;
   RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification_;
   RemoteNameCallback on_remote_name_complete_;
