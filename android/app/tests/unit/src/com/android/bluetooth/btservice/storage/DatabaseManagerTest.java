@@ -48,6 +48,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -147,6 +148,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testMetadataDefault() {
         Metadata data = new Metadata(mDevice1.getAddress());
         mDatabase.insert(data);
@@ -177,6 +179,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void setInvalidPolicy_onNewDevice_canNotSet() {
         assertThat(setConnectionPolicy(-100)).isFalse();
         assertThat(getConnectionPolicy()).isEqualTo(CONNECTION_POLICY_UNKNOWN);
@@ -186,6 +189,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void setUnknownPolicy_onNewDevice_canSet() {
         assertThat(setConnectionPolicy(CONNECTION_POLICY_UNKNOWN)).isTrue();
         assertThat(getConnectionPolicy()).isEqualTo(CONNECTION_POLICY_UNKNOWN);
@@ -195,6 +199,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void setValidPolicy_onNewDevice_canSet() {
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_ALLOWED)) {
             assertThat(setConnectionPolicy(policy)).isTrue();
@@ -210,6 +215,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void setInvalidPolicy_onKnownDevice_canNotSet() {
         Metadata data = new Metadata(mDevice1.getAddress());
         mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), data);
@@ -227,6 +233,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void setValidPolicy_onKnownDevice_canSet() {
         Metadata data = new Metadata(mDevice1.getAddress());
         mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), data);
@@ -250,6 +257,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetGetA2dpSupportsOptionalCodecs() {
         int badValue = -100;
 
@@ -299,6 +307,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetGetA2dpOptionalCodecsEnabled() {
         int badValue = -100;
 
@@ -348,6 +357,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testRemoveUnusedMetadata_WithSingleBondedDevice() {
         // Insert two devices to database and cache, only mDevice1 is in the bonded list
         Metadata otherData = new Metadata(mDevice2.getAddress());
@@ -378,6 +388,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testRemoveUnusedMetadata_WithMultiBondedDevices() {
         // Insert three devices to database and cache, mDevice1 and mDevice2 are in the bonded list
 
@@ -422,6 +433,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     @EnableFlags(Flags.FLAG_SUPPORT_ZOOMED_IN_ICON_METADATA)
     public void testSetGetCustomMeta() {
         int badKey = 100;
@@ -525,6 +537,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetGetAudioPolicyMetaData() {
         BluetoothSinkAudioPolicy value =
                 new BluetoothSinkAudioPolicy.Builder()
@@ -541,6 +554,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetConnectionHeadset() {
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
@@ -588,6 +602,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetConnection() {
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
@@ -746,6 +761,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testSetGetPreferredAudioProfiles() {
         Bundle preferences = new Bundle();
         preferences.putInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY, BluetoothProfile.LE_AUDIO);
@@ -775,6 +791,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_100_101() throws IOException {
         // Create a database with version 100
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 100);
@@ -795,6 +812,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_101_102() throws IOException {
         // Create a database with version 101
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 101);
@@ -886,6 +904,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_102_103() throws IOException {
         // Create a database with version 102
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 102);
@@ -997,6 +1016,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_103_104() throws IOException {
         // Create a database with version 103
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 103);
@@ -1023,6 +1043,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_104_105() throws IOException {
         // Create a database with version 104
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 104);
@@ -1062,6 +1083,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_105_106() throws IOException {
         // Create a database with version 105
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 105);
@@ -1086,6 +1108,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_106_107() throws IOException {
         // Create a database with version 106
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 106);
@@ -1110,6 +1133,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_107_108() throws IOException {
         // Create a database with version 107
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 107);
@@ -1134,6 +1158,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_108_109() throws IOException {
         // Create a database with version 108
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 108);
@@ -1158,6 +1183,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_109_110() throws IOException {
         // Create a database with version 109
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 109);
@@ -1182,6 +1208,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_110_111() throws IOException {
         // Create a database with version 110
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 110);
@@ -1206,6 +1233,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_111_112() throws IOException {
         // Create a database with version 111
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 111);
@@ -1230,6 +1258,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_112_113() throws IOException {
         // Create a database with version 112
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 112);
@@ -1256,6 +1285,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_113_114() throws IOException {
         // Create a database with version 113
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 113);
@@ -1280,6 +1310,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_114_115() throws IOException {
         // Create a database with version 114
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 114);
@@ -1308,6 +1339,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_115_116() throws IOException {
         // Create a database with version 115
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 115);
@@ -1334,6 +1366,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_116_117() throws IOException {
         // Create a database with version 116
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 116);
@@ -1360,6 +1393,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_117_118() throws IOException {
         // Create a database with version 117
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 117);
@@ -1384,6 +1418,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_118_119() throws IOException {
         // Create a database with version 118
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 118);
@@ -1408,6 +1443,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_119_120() throws IOException {
         // Create a database with version 119
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 119);
@@ -1432,6 +1468,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_120_121() throws IOException {
         // Create a database with version 120
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 120);
@@ -1456,6 +1493,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_121_122() throws IOException {
         // Create a database with version 121
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 121);
@@ -1478,6 +1516,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_122_123() throws IOException {
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 122);
 
@@ -1495,6 +1534,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseRollbackMigration_123_122() throws IOException {
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 123);
 
@@ -1511,6 +1551,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_123_124() throws IOException {
         // Create a database with version 123
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 123);
@@ -1533,6 +1574,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testDatabaseMigration_124_125() throws IOException {
         SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 124);
 
@@ -1966,6 +2008,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void setCustomMetadata_reentrantCallback_noDeadLock() throws Exception {
         final int key = 3;
         final byte[] newValue = new byte[2];
@@ -1993,6 +2036,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     @EnableFlags(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public void testSetGetLeAudioUnicastInputOutputCodecPreferenceList() {
         Metadata data = new Metadata(mDevice1.getAddress());
