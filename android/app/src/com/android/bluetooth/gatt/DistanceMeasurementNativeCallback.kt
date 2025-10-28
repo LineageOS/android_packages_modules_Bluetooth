@@ -19,17 +19,18 @@ package com.android.bluetooth.gatt
 import android.bluetooth.BluetoothStatusCodes
 import com.android.bluetooth.profile.NativeCallback
 
-class DistanceMeasurementNativeCallback(val manager: DistanceMeasurementManager) : NativeCallback {
+class DistanceMeasurementNativeCallback(private val manager: DistanceMeasurementManager) :
+    NativeCallback {
 
-    fun onDistanceMeasurementStarted(address: String, method: Int) {
-        postOnDistanceMeasurementThread { onDistanceMeasurementStarted(address, method) }
-    }
+    fun onDistanceMeasurementStarted(address: String, method: Int) =
+        postOnDistanceMeasurementThread {
+            onDistanceMeasurementStarted(address, method)
+        }
 
-    fun onDistanceMeasurementStopped(address: String, reason: Int, method: Int) {
+    fun onDistanceMeasurementStopped(address: String, reason: Int, method: Int) =
         postOnDistanceMeasurementThread {
             onDistanceMeasurementStopped(address, convertErrorCode(reason), method)
         }
-    }
 
     fun onDistanceMeasurementResult(
         address: String,
@@ -45,27 +46,25 @@ class DistanceMeasurementNativeCallback(val manager: DistanceMeasurementManager)
         detectedAttackLevel: Int,
         velocityMetersPerSecond: Double,
         method: Int,
-    ) {
-        postOnDistanceMeasurementThread {
-            onDistanceMeasurementResult(
-                address,
-                centimeter,
-                errorCentimeter,
-                azimuthAngle,
-                errorAzimuthAngle,
-                altitudeAngle,
-                errorAltitudeAngle,
-                elapsedRealtimeNanos,
-                confidenceLevel,
-                delayedSpreadMeters,
-                detectedAttackLevel,
-                velocityMetersPerSecond,
-                method,
-            )
-        }
+    ) = postOnDistanceMeasurementThread {
+        onDistanceMeasurementResult(
+            address,
+            centimeter,
+            errorCentimeter,
+            azimuthAngle,
+            errorAzimuthAngle,
+            altitudeAngle,
+            errorAltitudeAngle,
+            elapsedRealtimeNanos,
+            confidenceLevel,
+            delayedSpreadMeters,
+            detectedAttackLevel,
+            velocityMetersPerSecond,
+            method,
+        )
     }
 
-    private fun convertErrorCode(errorCode: Int): Int =
+    private fun convertErrorCode(errorCode: Int) =
         when (errorCode) {
             REASON_FEATURE_NOT_SUPPORTED_LOCAL -> BluetoothStatusCodes.FEATURE_NOT_SUPPORTED
             REASON_FEATURE_NOT_SUPPORTED_REMOTE ->
@@ -79,9 +78,8 @@ class DistanceMeasurementNativeCallback(val manager: DistanceMeasurementManager)
             else -> BluetoothStatusCodes.ERROR_UNKNOWN
         }
 
-    private fun postOnDistanceMeasurementThread(block: DistanceMeasurementManager.() -> Unit) {
+    private fun postOnDistanceMeasurementThread(block: DistanceMeasurementManager.() -> Unit) =
         manager.postOnDistanceMeasurementThread { manager.block() }
-    }
 
     companion object {
         /**
