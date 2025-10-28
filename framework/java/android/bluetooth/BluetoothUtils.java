@@ -345,6 +345,24 @@ public final class BluetoothUtils {
         }
     }
 
+    /**
+     * Utility class for keeping compatibility with old API that doesn't force the executor and
+     * doesn't document that the fallback is to use the main looper.
+     *
+     * <p>See more https://source.android.com/docs/setup/contribute/api-guidelines#provide-executor
+     *
+     * @deprecated Use a provided executor or post even on the main looper
+     */
+    @Hide
+    @Deprecated
+    public static class SynchronousExecutor implements Executor {
+        @RequiresNoPermission
+        @Override
+        public void execute(Runnable r) {
+            r.run();
+        }
+    }
+
     /** A {@link Runnable} that automatically logs {@link RemoteException} */
     @Hide
     @FunctionalInterface
