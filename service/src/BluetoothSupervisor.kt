@@ -23,6 +23,7 @@ import android.os.Looper
 import android.os.UserHandle
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.util.TimeProvider
+import com.android.server.bluetooth.satellite.initialize as initializeSatelliteMode
 import java.io.FileDescriptor
 import java.io.PrintWriter
 
@@ -30,7 +31,7 @@ private const val TAG = "BluetoothSupervisor"
 
 class BluetoothSupervisor(
     context: Context,
-    val looper: Looper,
+    private val looper: Looper,
     bluetoothComponent: BluetoothComponent,
 ) {
     private val bms: BluetoothManagerService
@@ -53,12 +54,23 @@ class BluetoothSupervisor(
                 bluetoothComponent,
                 TimeProvider.systemClock,
             )
+
+        initializeSatelliteMode(looper, context.contentResolver, this::onSatelliteModeChanged)
         Log.i(TAG, "Created BluetoothSupervisor")
     }
 
     fun onBluetoothDisallowed() {
         enforceCorrectThread()
         bms.onBluetoothDisallowed()
+    }
+
+    fun onSatelliteModeChanged(isSatelliteModeOn: Boolean) {
+        enforceCorrectThread()
+        if (!mInitialized) {
+            Log.i(TAG, "onSatelliteModeChanged before initialization - skipping")
+            return
+        }
+        bms.onSatelliteModeChanged(isSatelliteModeOn)
     }
 
     fun onUserStarting(userHandle: UserHandle) {

@@ -395,7 +395,6 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    @VisibleForTesting
     Unit onSatelliteModeChanged(boolean isSatelliteModeOn) {
         delayModeChangedIfNeeded(
                 ON_SATELLITE_MODE_CHANGED_TOKEN,
@@ -1026,8 +1025,6 @@ class BluetoothManagerService {
                 this::sendToggleNotification,
                 this::getUserContext,
                 TimeSource.Monotonic.INSTANCE);
-
-        SatelliteModeListener.initialize(mLooper, mContentResolver, this::onSatelliteModeChanged);
 
         mSharingRestriction =
                 new SharingRestriction(mUserContext, mLooper, mBluetoothComponent, mUser);
