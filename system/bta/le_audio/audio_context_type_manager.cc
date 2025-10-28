@@ -161,12 +161,12 @@ public:
 
   void SetInCall(bool in_call) {
     log::info("{}", in_call);
-    inCallState = in_call;
+    in_call_ = in_call;
     printCurrentState("SetInCall");
   }
 
-  bool IsInCall(void) { return inCallState; }
-  bool IsInVoip(void) { return inVoipState; }
+  bool IsInCall(void) { return in_call_; }
+  bool IsInVoip(void) { return in_voip_; }
 
   bool IsAnyMetadataSet(
           uint8_t local_directions = bluetooth::le_audio::types::kLeAudioDirectionBoth) {
@@ -254,10 +254,10 @@ public:
     }
 
     log::info(
-            "inCallState: {}, local_encoding_contexts_types_.source: {}, "
+            "IsInCall: {}, IsInVoip: {}, local_encoding_contexts_types_.source: {}, "
             "local_encoding_contexts_types_.sink: {}, "
             "local_decoding_context_types_: {}, remote_directions: {}",
-            inCallState, ToString(local_encoding_contexts_types_.source),
+            IsInCall(), IsInVoip(), ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_),
             ToString(remote_directions));
 
@@ -299,7 +299,7 @@ public:
             copy_local_encoding_ctxs.source.test(LeAudioContextType::GAME))) {
         configuration_context_type = LeAudioContextType::CONVERSATIONAL;
       }
-      log::info("Adding local sink: {} source: {}, isInCall: {}, inInVoip: {}",
+      log::info("Adding local sink: {} source: {}, IsInCall: {}, IsInVoip: {}",
                 ToString(additional_local_contexts_based_on_states.sink),
                 ToString(additional_local_contexts_based_on_states.source), IsInCall(), IsInVoip());
     }
@@ -396,10 +396,10 @@ public:
     std::stringstream stream;
 
     stream << std::format(
-            "AudioContextTypeManager: \n inCallState: {}, inVoipState: {}\n, "
+            "AudioContextTypeManager: \n IsInCall: {}, IsInVoip: {}\n, "
             "local_encoding_contexts_types_.source: {}, local_encoding_contexts_types_.sink: {}\n, "
             "local_decoding_context_types_(sink): {} \n",
-            inCallState, inVoipState, ToString(local_encoding_contexts_types_.source),
+            IsInCall(), IsInVoip(), ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_));
     dprintf(fd, "%s\n", stream.str().c_str());
   }
@@ -440,20 +440,20 @@ private:
     constexpr AudioContexts possible_voip_contexts =
             LeAudioContextType::RINGTONE | LeAudioContextType::CONVERSATIONAL;
     if (local_encoding_contexts_types_.source.test_any(possible_voip_contexts)) {
-      if (!inCallState) {
+      if (!in_call_) {
         /* Consider VOIP call */
-        inVoipState = true;
+        in_voip_ = true;
       }
-    } else if (inVoipState) {
-      inVoipState = false;
+    } else if (in_voip_) {
+      in_voip_ = false;
     }
   }
   void printCurrentState(std::string prefix) {
     log::info(
-            "{}: inCallState: {}, inVoipState: {}, local_encoding_contexts_types_.source: {}, "
+            "{}: IsInCall: {}, IsInVoip: {}, local_encoding_contexts_types_.source: {}, "
             "local_encoding_contexts_types_.sink: {}, "
             "local_decoding_context_types_(sink): {}",
-            prefix, inCallState, inVoipState, ToString(local_encoding_contexts_types_.source),
+            prefix, IsInCall(), IsInVoip(), ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_));
   }
 
@@ -477,8 +477,8 @@ private:
   /* local_decoding_context_types_ -> audio context type based on the decoding session metadata */
   AudioContexts local_decoding_context_types_;
 
-  bool inCallState = false;
-  bool inVoipState = false;
+  bool in_call_ = false;
+  bool in_voip_ = false;
 };
 }  // namespace
 
