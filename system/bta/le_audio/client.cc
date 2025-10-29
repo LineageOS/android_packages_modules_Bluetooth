@@ -2804,7 +2804,7 @@ public:
     };
   }
 
-  void OnGattConnected(tGATT_STATUS status, tCONN_ID conn_id, tGATT_IF /*client_if*/,
+  void OnGattConnected(tGATT_STATUS status, tCONN_ID conn_id, tGATT_IF client_if,
                        RawAddress address, tBT_TRANSPORT transport, uint16_t mtu) {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
 
@@ -2871,6 +2871,7 @@ public:
       }
     }
 
+    leAudioDevice->client_if_ = client_if;
     leAudioDevice->conn_id_ = conn_id;
     leAudioDevice->mtu_ = mtu;
 

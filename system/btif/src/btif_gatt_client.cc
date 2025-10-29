@@ -252,7 +252,7 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       HAL_CBACK(callbacks, client->subrate_chg_cb, static_cast<int>(p_data->subrate_chg.conn_id),
                 p_data->subrate_chg.subrate_factor, p_data->subrate_chg.latency,
                 p_data->subrate_chg.cont_num, p_data->subrate_chg.timeout,
-                p_data->subrate_chg.status);
+                p_data->subrate_chg.subrate_mode, p_data->subrate_chg.status);
       break;
 
     case BTA_GATTC_CHARACTERISTICS_UNOFFLOADED_EVT:
@@ -668,6 +668,22 @@ static bt_status_t btif_gattc_subrate_request(const RawAddress& bd_addr, int sub
                                subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
 
+static void btif_gattc_subrate_mode_request_impl(int client_if, const RawAddress& addr,
+                                                 tGATT_SUBRATE_MODE subrate_mode) {
+  if (BTA_DmGetConnectionState(addr)) {
+    log::info("client_if={}, bd_addr={}, subrate_mode={}", client_if, addr, subrate_mode);
+    BTA_GATTC_SubrateModeRequest(client_if, addr, subrate_mode);
+  }
+}
+
+static bt_status_t btif_gattc_subrate_mode_request(int client_if, const RawAddress& bd_addr,
+                                                   uint8_t subrate_mode) {
+  CHECK_BTGATT_INIT();
+  tGATT_SUBRATE_MODE mode = (tGATT_SUBRATE_MODE) subrate_mode;
+  return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_subrate_mode_request_impl),
+                                                  client_if, bd_addr, mode));
+}
+
 static bt_status_t btif_gattc_offload_characteristics(int conn_id, btgatt_db_element_t* service,
                                                       size_t elements_count, uint64_t endpoint_id,
                                                       uint64_t hub_id,
@@ -726,6 +742,7 @@ const btgatt_client_interface_t btgattClientInterface = {
         btif_gattc_set_preferred_phy,
         btif_gattc_read_phy,
         btif_gattc_subrate_request,
+        btif_gattc_subrate_mode_request,
         btif_gattc_offload_characteristics,
         btif_gattc_unoffload_characteristics,
 };

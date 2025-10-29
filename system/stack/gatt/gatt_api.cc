@@ -1769,6 +1769,37 @@ bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if, const RawAddress& bd_addr, tCON
   return status;
 }
 
+void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode,
+                              uint16_t subrate_max, uint16_t subrate_min,
+                              uint16_t cont_num) {
+  if (!gatt_cb.subrate_mode_config.contains(subrate_mode)) {
+    log::warn ("This is a unknown subrate mode to update: {}", subrate_mode);
+    return;
+  }
+  if (subrate_min > subrate_max || cont_num >= subrate_max || subrate_min > 500 ||
+      subrate_max > 500) {
+    log::error("Invalid subrate parameter to update: {} {} {} {}",
+               subrate_mode, subrate_max, subrate_min, cont_num);
+    return;
+  }
+  log::debug("Update subrate mode config: {} {} {} {}",
+              subrate_mode, subrate_max, subrate_min, cont_num);
+  gatt_cb.subrate_mode_config[subrate_mode].subrate_max = subrate_max;
+  gatt_cb.subrate_mode_config[subrate_mode].subrate_min = subrate_min;
+  gatt_cb.subrate_mode_config[subrate_mode].cont_num = cont_num;
+}
+
+bool GATT_SubrateRequest(tGATT_IF client_if, const RawAddress& bd_addr,
+                         tGATT_SUBRATE_MODE subrate_mode) {
+
+  log::debug("client_if:{} addr:{}, subrate_mode:{}", client_if, bd_addr, subrate_mode);
+  if(!gatt_register_subrate_config (client_if, bd_addr, subrate_mode)) {
+    return false;
+  }
+  return true;
+}
+
+
 static void gatt_bonded_check_add_address(const RawAddress& bda) {
   if (!gatt_is_bda_in_the_srv_chg_clt_list(bda)) {
     gatt_add_a_bonded_dev_for_srv_chg(bda);

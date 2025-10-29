@@ -169,7 +169,8 @@ typedef void (*service_changed_callback)(int conn_id);
 /** Callback invoked when the subrate change event for a given connection
  * is received */
 typedef void (*subrate_change_callback)(int conn_id, uint16_t subrate_factor, uint16_t latency,
-                                        uint16_t cont_num, uint16_t timeout, uint8_t status);
+                                        uint16_t cont_num, uint16_t timeout, uint8_t subrate_mode,
+                                        uint8_t status);
 
 /** Callback invoked when the characteristics unoffloaded event for a given connection is received
  */
@@ -285,6 +286,10 @@ typedef struct {
   /** Request a BLE subrate request procedure */
   bt_status_t (*subrate_request)(const RawAddress& bd_addr, int subrate_min, int subrate_max,
                                  int max_latency, int cont_num, int timeout);
+
+  /** Request a BLE subrate mode request procedure */
+  bt_status_t (*subrate_mode_request)(int client_if, const RawAddress& bd_addr,
+                                      uint8_t subrate_mode);
 
   /** Offload GATT characteristics */
   bt_status_t (*offload_characteristics)(int conn_id, btgatt_db_element_t* service,

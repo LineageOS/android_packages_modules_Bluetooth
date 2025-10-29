@@ -59,6 +59,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/internal/btm_api.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/ble_scanner.h"
@@ -1944,6 +1945,14 @@ void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length) {
     if (!acl_set_peer_le_features_from_handle(handle, p)) {
       log::error("Unable to find existing connection after read remote features");
       return;
+    }
+
+    if (com::android::bluetooth::flags::le_subrate_manager()) {
+      const BtmDevice* p_device = btm_find_dev_by_handle(handle);
+      if (p_device) {
+          // init when acl connected & remote_feature received
+          gatt_init_subrate_cb(p_device->ble.pseudo_addr);
+      }
     }
   }
 

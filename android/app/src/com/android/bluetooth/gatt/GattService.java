@@ -547,10 +547,12 @@ public class GattService extends ProfileService {
     }
 
     void onClientSubrateChangeFromNative(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
+            int connId, int subrateFactor, int latency, int contNum, int timeout,
+            int mode, int status) {
         Log.d(
                 TAG,
                 "onClientSubrateChange(): connId=" + connId + ", status=" + statusToString(status));
+
 
         int subrateMode;
 
@@ -565,7 +567,12 @@ public class GattService extends ProfileService {
         }
 
         if (status == BluetoothStatusCodes.SUCCESS) {
-            subrateMode = verifyGattSubratingMode(device, subrateFactor, latency, contNum);
+            // Confirm flag config
+            if (Flags.leSubrateManager()) {
+                subrateMode = updateGattSubratingMode(mode);
+            } else {
+                subrateMode = verifyGattSubratingMode(device, subrateFactor, latency, contNum);
+            }
         } else {
             subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED;
         }
@@ -1435,21 +1442,33 @@ public class GattService extends ProfileService {
 
         int supervisionTimeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
 
-        Log.d(
+        // Confirm flag config
+        if (Flags.leSubrateManager()) {
+            Log.d(
+                TAG,
+                ("subrateModeRequest(" + device + ", " + subrateMode + ") - "));
+
+            return mNativeInterface.gattSubrateModeRequest(
+                    clientIf,
+                    device,
+                    subrateMode);
+        } else {
+            Log.d(
                 TAG,
                 ("subrateModeRequest(" + device + ", " + subrateMode + "): ")
                         + (" subrate min/max=" + subrateMin + "/" + subrateMax)
                         + (", maxLatency=" + maxLatency + ", continuationNumber=" + contNumber)
                         + (", timeout=" + supervisionTimeout));
 
-        return mNativeInterface.gattSubrateRequest(
-                clientIf,
-                device,
-                subrateMin,
-                subrateMax,
-                maxLatency,
-                contNumber,
-                supervisionTimeout);
+            return mNativeInterface.gattSubrateRequest(
+                    clientIf,
+                    device,
+                    subrateMin,
+                    subrateMax,
+                    maxLatency,
+                    contNumber,
+                    supervisionTimeout);
+        }
     }
 
     /**************************************************************************
@@ -1696,7 +1715,8 @@ public class GattService extends ProfileService {
     }
 
     void onServerSubrateChangeFromNative(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
+            int connId, int subrateFactor, int latency, int contNum,
+            int timeout, int mode, int status) {
         Log.d(
                 TAG,
                 "onServerSubrateChange(): connId=" + connId + ", status=" + statusToString(status));
@@ -1714,7 +1734,12 @@ public class GattService extends ProfileService {
         }
 
         if (status == BluetoothStatusCodes.SUCCESS) {
-            subrateMode = verifyGattSubratingMode(device, subrateFactor, latency, contNum);
+            // Confirm flag config
+            if (Flags.leSubrateManager()) {
+                subrateMode = updateGattSubratingMode(mode);
+            } else {
+                subrateMode = verifyGattSubratingMode(device, subrateFactor, latency, contNum);
+            }
         } else {
             subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED;
         }
@@ -2511,6 +2536,18 @@ public class GattService extends ProfileService {
         for (Integer handle : handleList) {
             mNativeInterface.gattServerDeleteService(serverIf, handle);
         }
+    }
+
+   /**
+     * Updates the GATT connection subrating mode of the device
+     *
+     * @param subrateMode for this LE connection.
+     * @return the connection subrating priority in integer defined in GATT framework
+     */
+    public int updateGattSubratingMode(int subrateMode) {
+        int returnSubrateMode = BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE;
+        if (subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH) returnSubrateMode = subrateMode;
+        return returnSubrateMode;
     }
 
     /**

@@ -124,6 +124,7 @@ source_set("stack") {
     "eatt/eatt.cc",
     "gap/gap_ble.cc",
     "gap/gap_conn.cc",
+    "gatt/gatt_subrate_manager.cc",
     "gatt/att_protocol.cc",
     "gatt/gatt_api.cc",
     "gatt/gatt_attr.cc",
