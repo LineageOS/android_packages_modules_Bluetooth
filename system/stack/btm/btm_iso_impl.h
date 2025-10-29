@@ -366,7 +366,7 @@ struct iso_impl {
       auto stream_ptr = GetStream(cis_param.cis_conn_handle);
       log::assert_that(stream_ptr != nullptr, "No such cis: {}", cis_param.cis_conn_handle);
 
-      auto device_address = cis_hdl_to_addr[evt.cis_conn_hdl];
+      auto device_address = cis_hdl_to_addr[cis_param.cis_conn_handle];
 
       if (status != HCI_SUCCESS) {
         evt.status = status;
