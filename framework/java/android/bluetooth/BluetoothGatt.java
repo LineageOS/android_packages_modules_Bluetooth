@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothUtils.logRemoteException;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntDef;
@@ -37,7 +38,6 @@ import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelUuid;
@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 
 /**
  * Public API for the Bluetooth GATT Profile.
@@ -71,7 +72,7 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private final IBluetoothGatt mService;
     private volatile BluetoothGattCallback mCallback;
-    private final Handler mHandler;
+    private final Executor mExecutor;
     private final BluetoothDevice mDevice;
     private final boolean mAutoConnect;
     private boolean mClientRegistered;
@@ -253,18 +254,7 @@ public final class BluetoothGatt implements BluetoothProfile {
          * immediately if no Handler was provided.
          */
         private void runOrQueueCallback(final Runnable cb) {
-            if (mHandler != null) {
-                executeFromBinder(mHandler::post, cb);
-                return;
-            }
-            final long identity = Binder.clearCallingIdentity();
-            try {
-                cb.run();
-            } catch (Exception ex) {
-                Log.w(TAG, "Unhandled exception in callback", ex);
-            } finally {
-                Binder.restoreCallingIdentity(identity);
-            }
+            executeFromBinder(mExecutor, cb);
         }
 
         /** Application interface registered - app is ready to go */
@@ -931,7 +921,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             AttributionSource source,
             boolean autoConnect,
             BluetoothGattCallback callback,
-            Handler handler) {
+            @CallbackExecutor Executor executor) {
         mService = iGatt;
         mDevice = device;
         mTransport = transport;
@@ -940,7 +930,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         mOpportunistic = opportunistic;
         mAttributionSource = source;
         mCallback = callback;
-        mHandler = handler;
+        mExecutor = executor;
         UUID uuid = UUID.randomUUID();
         Log.d(TAG, "BluetoothGatt() UUID=" + uuid);
         try {
