@@ -981,29 +981,24 @@ public class AdapterService extends Service {
         // Enforce the user restriction for disallowing Bluetooth if it was set.
         if (mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
-            Log.d(TAG, "offToBleOn() called when Bluetooth was disallowed");
+            Log.d(TAG, "offToBleOn(): Called when Bluetooth was disallowed");
             return;
         }
         mQuietMode = quietMode;
         // The call to init must be done on the main thread
         mHandler.post(() -> init(hciInstanceName));
-        Log.i(
-                TAG,
-                "offToBleOn() - Enable called with quiet mode status =  "
-                        + mQuietMode
-                        + " hci_instance_name = "
-                        + hciInstanceName);
+        Log.i(TAG, "offToBleOn(quietMode=" + quietMode + ", instance=" + hciInstanceName + ")");
 
         mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_ON);
     }
 
     void onToBleOn() {
-        Log.d(TAG, "onToBleOn() called with mRunningProfiles.size() = " + mRunningProfiles.size());
+        Log.d(TAG, "onToBleOn(): Called with mRunningProfiles.size()=" + mRunningProfiles.size());
         mAdapterStateMachine.sendMessage(AdapterState.USER_TURN_OFF);
     }
 
     private void init(String hciInstanceName) {
-        Log.d(TAG, "init() instance = " + hciInstanceName);
+        Log.d(TAG, "init(instance=" + hciInstanceName + ")");
 
         if (!Flags.mainlineBetaStorage()) {
             factoryResetIfNeeded();
@@ -1211,7 +1206,7 @@ public class AdapterService extends Service {
         mRemoteDevices.reset();
         mAdapterProperties.init();
 
-        Log.d(TAG, "bleOnProcessStart() - Make Bond State Machine");
+        Log.d(TAG, "bleOnProcessStart(): Make Bond State Machine");
         mBondStateMachine =
                 Flags.bondStateMachineLooper()
                         ? new BondStateMachine(this, mLooper, mAdapterProperties, mRemoteDevices)
@@ -1244,7 +1239,7 @@ public class AdapterService extends Service {
     }
 
     private void startScanController() {
-        Log.i(TAG, "startScanController() called");
+        Log.i(TAG, "startScanController()");
         mScanController =
                 new ScanController(
                         this,
@@ -1255,7 +1250,7 @@ public class AdapterService extends Service {
     }
 
     private void startGattProfileService() {
-        Log.i(TAG, "startGattProfileService() called");
+        Log.i(TAG, "startGattProfileService()");
         constructProfile(BluetoothProfile.GATT);
         mStartedProfiles.put(BluetoothProfile.GATT, mGattService);
         addProfile(mGattService);
@@ -1435,7 +1430,7 @@ public class AdapterService extends Service {
     }
 
     private void stopScanController() {
-        Log.i(TAG, "stopScanController() called");
+        Log.i(TAG, "stopScanController()");
         setScanMode(SCAN_MODE_NONE, "stopScanController");
         final var scanController = getBluetoothScanController();
         if (scanController != null) {
@@ -1446,7 +1441,7 @@ public class AdapterService extends Service {
     }
 
     private void stopGattProfileService() {
-        Log.i(TAG, "stopGattProfileService() called");
+        Log.i(TAG, "stopGattProfileService()");
         setScanMode(SCAN_MODE_NONE, "stopGattProfileService");
 
         mStartedProfiles.remove(BluetoothProfile.GATT);
@@ -1483,7 +1478,7 @@ public class AdapterService extends Service {
                     && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
                 Log.d(
                         TAG,
-                        "stopProfileServices() - No profiles services to stop or already stopped.");
+                        "stopProfileServices(): No profiles services to stop or already stopped.");
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
             } else {
                 setAllProfileServiceStates(supportedProfiles, BluetoothAdapter.STATE_OFF);
@@ -1495,7 +1490,7 @@ public class AdapterService extends Service {
     void cleanup() {
         Log.i(TAG, "cleanup()");
         if (mCleaningUp) {
-            Log.e(TAG, "cleanup() - Service already starting to cleanup, ignoring request...");
+            Log.e(TAG, "cleanup(): Service already starting to cleanup, ignoring request…");
             return;
         }
 
@@ -1541,7 +1536,7 @@ public class AdapterService extends Service {
         mSdpManager = Optional.empty();
 
         if (mNativeAvailable) {
-            Log.d(TAG, "cleanup() - Cleaning up adapter native");
+            Log.d(TAG, "cleanup(): Cleaning up adapter native");
             mNativeInterface.cleanup();
             mNativeAvailable = false;
         }
@@ -1625,16 +1620,12 @@ public class AdapterService extends Service {
         long socketAcceptanceLatencyMillis = currentTime - socketConnectionTimeMillis;
         Log.i(
                 TAG,
-                "Statslog L2capcoc server connection."
-                        + (" metricId " + metricId)
-                        + (" port " + port)
-                        + (" isSecured " + isSecured)
-                        + (" result " + result)
-                        + (" endToEndLatencyMillis " + endToEndLatencyMillis)
-                        + (" socketCreationLatencyMillis " + socketCreationLatencyMillis)
-                        + (" socketAcceptanceLatencyMillis " + socketAcceptanceLatencyMillis)
-                        + (" timeout set by app " + timeoutMillis)
-                        + (" appUid " + appUid));
+                ("Statslog L2capcoc server connection. metricId " + metricId + ", port " + port)
+                        + (", isSecured " + isSecured + ", result " + result)
+                        + (", endToEndLatencyMillis " + endToEndLatencyMillis)
+                        + (", socketCreationLatencyMillis " + socketCreationLatencyMillis)
+                        + (", socketAcceptanceLatencyMillis " + socketAcceptanceLatencyMillis)
+                        + (", timeout set by app " + timeoutMillis + ", appUid " + appUid));
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_L2CAP_COC_SERVER_CONNECTION,
                 metricId,
@@ -1674,15 +1665,12 @@ public class AdapterService extends Service {
         long socketConnectionLatencyMillis = (currentTime - socketConnectionTimeNanos) / 1000000;
         Log.i(
                 TAG,
-                "Statslog L2capcoc client connection."
-                        + (" metricId " + metricId)
-                        + (" port " + port)
-                        + (" isSecured " + isSecured)
-                        + (" result " + result)
-                        + (" endToEndLatencyMillis " + endToEndLatencyMillis)
-                        + (" socketCreationLatencyMillis " + socketCreationLatencyMillis)
-                        + (" socketConnectionLatencyMillis " + socketConnectionLatencyMillis)
-                        + (" appUid " + appUid));
+                ("Statslog L2capcoc client connection. metricId " + metricId + ", port " + port)
+                        + (", isSecured " + isSecured + ", result " + result)
+                        + (", endToEndLatencyMillis " + endToEndLatencyMillis)
+                        + (", socketCreationLatencyMillis " + socketCreationLatencyMillis)
+                        + (", socketConnectionLatencyMillis " + socketConnectionLatencyMillis)
+                        + (", appUid " + appUid));
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_L2CAP_COC_CLIENT_CONNECTION,
                 metricId,
@@ -1740,7 +1728,7 @@ public class AdapterService extends Service {
     private void broadcastToSystemServerCallbacks(
             String logAction, RemoteExceptionIgnoringConsumer<IBluetoothCallback> action) {
         final int itemCount = mSystemServerCallbacks.beginBroadcast();
-        Log.d(TAG, "Broadcasting [" + logAction + "] to " + itemCount + " receivers.");
+        Log.d(TAG, "Broadcasting [" + logAction + "] to " + itemCount + " receivers");
         for (int i = 0; i < itemCount; i++) {
             action.accept(mSystemServerCallbacks.getBroadcastItem(i));
         }
@@ -1791,12 +1779,11 @@ public class AdapterService extends Service {
                         TAG,
                         "No BluetoothInCallService while trying to send BQR."
                                 + (" timestamp: " + timestamp)
-                                + (" reportId: " + reportId)
-                                + (" rssi: " + rssi)
-                                + (" snr: " + snr)
-                                + (" retransmissionCount: " + retransmissionCount)
-                                + (" packetsNotReceiveCount: " + packetsNotReceiveCount)
-                                + (" negativeAcknowledgementCount: "
+                                + (", reportId: " + reportId + ", rssi: " + rssi)
+                                + (", snr: " + snr)
+                                + (", retransmissionCount: " + retransmissionCount)
+                                + (", packetsNotReceiveCount: " + packetsNotReceiveCount)
+                                + (", negativeAcknowledgementCount: "
                                         + negativeAcknowledgementCount));
                 return;
             }
@@ -1824,10 +1811,8 @@ public class AdapterService extends Service {
             int n = mBluetoothQualityReportReadyCallbacks.beginBroadcast();
             Log.d(
                     TAG,
-                    "bluetoothQualityReportReadyCallback() - "
-                            + "Broadcasting Bluetooth Quality Report to "
-                            + n
-                            + " receivers.");
+                    "bluetoothQualityReportReadyCallback(): "
+                            + ("Broadcasting Bluetooth Quality Report to " + n + " receivers."));
             for (int i = 0; i < n; i++) {
                 try {
                     mBluetoothQualityReportReadyCallbacks
@@ -1837,11 +1822,8 @@ public class AdapterService extends Service {
                 } catch (RemoteException e) {
                     Log.d(
                             TAG,
-                            "bluetoothQualityReportReadyCallback() - Callback #"
-                                    + i
-                                    + " failed ("
-                                    + e
-                                    + ")");
+                            "bluetoothQualityReportReadyCallback(): "
+                                    + ("Callback #" + i + " failed (" + e + ")"));
                 }
             }
             mBluetoothQualityReportReadyCallbacks.finishBroadcast();
@@ -1852,11 +1834,9 @@ public class AdapterService extends Service {
 
     void switchBufferSizeCallback(boolean isLowLatencyBufferSize) {
         List<BluetoothDevice> activeDevices = getActiveDevices(BluetoothProfile.A2DP);
-        if (activeDevices.size() != 1) {
-            Log.e(
-                    TAG,
-                    "Cannot switch buffer size. The number of A2DP active devices is "
-                            + activeDevices.size());
+        int size = activeDevices.size();
+        if (size != 1) {
+            Log.e(TAG, "Cannot switch buffer size. The number of A2DP active devices is " + size);
             return;
         }
 
@@ -1877,11 +1857,9 @@ public class AdapterService extends Service {
 
     void switchCodecCallback(boolean isLowLatencyBufferSize) {
         List<BluetoothDevice> activeDevices = getActiveDevices(BluetoothProfile.A2DP);
-        if (activeDevices.size() != 1) {
-            Log.e(
-                    TAG,
-                    "Cannot switch buffer size. The number of A2DP active devices is "
-                            + activeDevices.size());
+        int size = activeDevices.size();
+        if (size != 1) {
+            Log.e(TAG, "Cannot switch buffer size. The number of A2DP active devices is " + size);
             return;
         }
         getA2dpService()
@@ -2020,7 +1998,7 @@ public class AdapterService extends Service {
                 .filter(prof -> prof.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN)
                 .ifPresent(
                         profile -> {
-                            Log.i(TAG, "connectEnabledProfile: Connecting " + profile);
+                            Log.i(TAG, "connectEnabledProfile(" + profile + ")");
                             profile.connect(device);
                         });
     }
@@ -2036,7 +2014,7 @@ public class AdapterService extends Service {
             return true;
         }
 
-        Log.e(TAG, "profileServicesRunning: One or more supported services not running");
+        Log.e(TAG, "profileServicesRunning(): One or more supported services not running");
         return false;
     }
 
