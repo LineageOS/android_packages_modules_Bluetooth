@@ -545,25 +545,25 @@ static int set_adapter_property(const bt_property_t* property) {
   return BT_STATUS_SUCCESS;
 }
 
-static int get_remote_device_properties(RawAddress* remote_addr) {
+static int get_remote_device_properties(RawAddress remote_addr) {
   if (!btif_is_enabled()) {
     return BT_STATUS_NOT_READY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_get_remote_device_properties, *remote_addr));
+  do_in_main_thread(base::BindOnce(btif_get_remote_device_properties, remote_addr));
   return BT_STATUS_SUCCESS;
 }
 
-static int get_remote_device_property(RawAddress* remote_addr, bt_property_type_t type) {
+static int get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) {
   if (!btif_is_enabled()) {
     return BT_STATUS_NOT_READY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_get_remote_device_property, *remote_addr, type));
+  do_in_main_thread(base::BindOnce(btif_get_remote_device_property, remote_addr, type));
   return BT_STATUS_SUCCESS;
 }
 
-static int set_remote_device_property(RawAddress* remote_addr, const bt_property_t* property) {
+static int set_remote_device_property(RawAddress remote_addr, const bt_property_t* property) {
   if (!btif_is_enabled()) {
     return BT_STATUS_NOT_READY;
   }
@@ -573,17 +573,17 @@ static int set_remote_device_property(RawAddress* remote_addr, const bt_property
             btif_set_remote_device_property(&remote_addr, property);
             osi_free(property);
           },
-          *remote_addr, property_deep_copy(property)));
+          remote_addr, property_deep_copy(property)));
   return BT_STATUS_SUCCESS;
 }
 
-static int get_remote_services(RawAddress* remote_addr, int transport) {
+static int get_remote_services(RawAddress remote_addr, int transport) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
 
   do_in_main_thread(
-          base::BindOnce(btif_dm_get_remote_services, *remote_addr, to_bt_transport(transport)));
+          base::BindOnce(btif_dm_get_remote_services, remote_addr, to_bt_transport(transport)));
   return BT_STATUS_SUCCESS;
 }
 
@@ -605,7 +605,7 @@ static int cancel_discovery(void) {
   return BT_STATUS_SUCCESS;
 }
 
-static int create_bond(const RawAddress* bd_addr, int transport) {
+static int create_bond(const RawAddress bd_addr, int transport) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
@@ -613,11 +613,11 @@ static int create_bond(const RawAddress* bd_addr, int transport) {
     return BT_STATUS_BUSY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_dm_create_bond, *bd_addr, to_bt_transport(transport)));
+  do_in_main_thread(base::BindOnce(btif_dm_create_bond, bd_addr, to_bt_transport(transport)));
   return BT_STATUS_SUCCESS;
 }
 
-static int create_bond_le(const RawAddress* bd_addr, uint8_t addr_type) {
+static int create_bond_le(const RawAddress bd_addr, uint8_t addr_type) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
@@ -625,11 +625,11 @@ static int create_bond_le(const RawAddress* bd_addr, uint8_t addr_type) {
     return BT_STATUS_BUSY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_dm_create_bond_le, *bd_addr, addr_type));
+  do_in_main_thread(base::BindOnce(btif_dm_create_bond_le, bd_addr, addr_type));
   return BT_STATUS_SUCCESS;
 }
 
-static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
+static int create_bond_out_of_band(const RawAddress bd_addr, int transport,
                                    const bt_oob_data_t* p192_data, const bt_oob_data_t* p256_data) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
@@ -638,7 +638,7 @@ static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
     return BT_STATUS_BUSY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_dm_create_bond_out_of_band, *bd_addr,
+  do_in_main_thread(base::BindOnce(btif_dm_create_bond_out_of_band, bd_addr,
                                    to_bt_transport(transport), *p192_data, *p256_data));
   return BT_STATUS_SUCCESS;
 }
@@ -652,18 +652,18 @@ static int generate_local_oob_data(tBT_TRANSPORT transport) {
   return do_in_main_thread(base::BindOnce(btif_dm_generate_local_oob_data, transport));
 }
 
-static int cancel_bond(const RawAddress* bd_addr) {
+static int cancel_bond(const RawAddress bd_addr) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_dm_cancel_bond, *bd_addr));
+  do_in_main_thread(base::BindOnce(btif_dm_cancel_bond, bd_addr));
   return BT_STATUS_SUCCESS;
 }
 
-static int remove_bond(const RawAddress* bd_addr) {
+static int remove_bond(const RawAddress bd_addr) {
   if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr)) {
-    log::info("{} cannot be removed in restricted mode", *bd_addr);
+    log::info("{} cannot be removed in restricted mode", bd_addr);
     return BT_STATUS_SUCCESS;
   }
 
@@ -671,7 +671,7 @@ static int remove_bond(const RawAddress* bd_addr) {
     return BT_STATUS_NOT_READY;
   }
 
-  do_in_main_thread(base::BindOnce(btif_dm_remove_bond, *bd_addr));
+  do_in_main_thread(base::BindOnce(btif_dm_remove_bond, bd_addr));
   return BT_STATUS_SUCCESS;
 }
 
@@ -683,19 +683,15 @@ static bool pairing_is_busy() {
   return false;
 }
 
-static int get_connection_state(const RawAddress* bd_addr) {
+static int get_connection_state(const RawAddress bd_addr) {
   if (!interface_ready()) {
     return 0;
   }
 
-  if (bd_addr == nullptr) {
-    return 0;
-  }
-
-  return btif_dm_get_connection_state(*bd_addr);
+  return btif_dm_get_connection_state(bd_addr);
 }
 
-static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
+static int pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len,
                      bt_pin_code_t* pin_code) {
   bt_pin_code_t tmp_pin_code;
   if (!interface_ready()) {
@@ -707,11 +703,11 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
 
   memcpy(&tmp_pin_code, pin_code, pin_len);
 
-  do_in_main_thread(base::BindOnce(btif_dm_pin_reply, *bd_addr, accept, pin_len, tmp_pin_code));
+  do_in_main_thread(base::BindOnce(btif_dm_pin_reply, bd_addr, accept, pin_len, tmp_pin_code));
   return BT_STATUS_SUCCESS;
 }
 
-static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant, uint8_t accept,
+static int ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept,
                      uint32_t /* passkey */) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
@@ -720,7 +716,7 @@ static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant, uint8_
     return BT_STATUS_PARM_INVALID;
   }
 
-  do_in_main_thread(base::BindOnce(btif_dm_ssp_reply, *bd_addr, variant, accept));
+  do_in_main_thread(base::BindOnce(btif_dm_ssp_reply, bd_addr, variant, accept));
   return BT_STATUS_SUCCESS;
 }
 

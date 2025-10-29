@@ -800,19 +800,19 @@ typedef struct {
   int (*set_adapter_property)(const bt_property_t* property);
 
   /** Get all Remote Device properties */
-  int (*get_remote_device_properties)(RawAddress* remote_addr);
+  int (*get_remote_device_properties)(RawAddress remote_addr);
 
   /** Get Remote Device property of 'type' */
-  int (*get_remote_device_property)(RawAddress* remote_addr, bt_property_type_t type);
+  int (*get_remote_device_property)(RawAddress remote_addr, bt_property_type_t type);
 
   /** Set Remote Device property of 'type' */
-  int (*set_remote_device_property)(RawAddress* remote_addr, const bt_property_t* property);
+  int (*set_remote_device_property)(RawAddress remote_addr, const bt_property_t* property);
 
   /** Get Remote Device's service record  for the given UUID */
   int (*get_remote_service_record)(const RawAddress& remote_addr, const bluetooth::Uuid& uuid);
 
   /** Start service discovery with transport to get remote services */
-  int (*get_remote_services)(RawAddress* remote_addr, int transport);
+  int (*get_remote_services)(RawAddress remote_addr, int transport);
 
   /** Start Discovery */
   int (*start_discovery)(void);
@@ -821,20 +821,20 @@ typedef struct {
   int (*cancel_discovery)(void);
 
   /** Create Bluetooth Bonding */
-  int (*create_bond)(const RawAddress* bd_addr, int transport);
+  int (*create_bond)(RawAddress bd_addr, int transport);
 
   /** Create Bluetooth Bonding over le transport */
-  int (*create_bond_le)(const RawAddress* bd_addr, uint8_t addr_type);
+  int (*create_bond_le)(RawAddress bd_addr, uint8_t addr_type);
 
   /** Create Bluetooth Bond using out of band data */
-  int (*create_bond_out_of_band)(const RawAddress* bd_addr, int transport,
-                                 const bt_oob_data_t* p192_data, const bt_oob_data_t* p256_data);
+  int (*create_bond_out_of_band)(RawAddress bd_addr, int transport, const bt_oob_data_t* p192_data,
+                                 const bt_oob_data_t* p256_data);
 
   /** Remove Bond */
-  int (*remove_bond)(const RawAddress* bd_addr);
+  int (*remove_bond)(RawAddress bd_addr);
 
   /** Cancel Bond */
-  int (*cancel_bond)(const RawAddress* bd_addr);
+  int (*cancel_bond)(RawAddress bd_addr);
 
   bool (*pairing_is_busy)();
 
@@ -843,20 +843,18 @@ typedef struct {
    * return value of 0 means the device is not connected,
    * non-zero return status indicates an active connection.
    */
-  int (*get_connection_state)(const RawAddress* bd_addr);
+  int (*get_connection_state)(RawAddress bd_addr);
 
   /** BT Legacy PinKey Reply */
   /** If accept==FALSE, then pin_len and pin_code shall be 0x0 */
-  int (*pin_reply)(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
-                   bt_pin_code_t* pin_code);
+  int (*pin_reply)(RawAddress bd_addr, uint8_t accept, uint8_t pin_len, bt_pin_code_t* pin_code);
 
   /** BT SSP Reply - Just Works, Numeric Comparison and Passkey
    * passkey shall be zero for BT_SSP_VARIANT_PASSKEY_COMPARISON &
    * BT_SSP_VARIANT_CONSENT
    * For BT_SSP_VARIANT_PASSKEY_ENTRY, if accept==FALSE, then passkey
    * shall be zero */
-  int (*ssp_reply)(const RawAddress* bd_addr, bt_ssp_variant_t variant, uint8_t accept,
-                   uint32_t passkey);
+  int (*ssp_reply)(RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept, uint32_t passkey);
 
   /** Get Bluetooth profile interface */
   const void* (*get_profile_interface)(const char* profile_id);

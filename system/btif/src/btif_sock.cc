@@ -48,7 +48,7 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name, c
                                  int channel, int* sock_fd, int flags, int app_uid,
                                  btsock_data_path_t data_path, const char* socket_name,
                                  uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
-static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type, const Uuid* uuid,
+static bt_status_t btsock_connect(const RawAddress bd_addr, btsock_type_t type, const Uuid* uuid,
                                   int channel, int* sock_fd, int flags, int app_uid,
                                   btsock_data_path_t data_path, const char* socket_name,
                                   uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
@@ -205,41 +205,40 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
   return status;
 }
 
-static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type, const Uuid* uuid,
+static bt_status_t btsock_connect(const RawAddress bd_addr, btsock_type_t type, const Uuid* uuid,
                                   int channel, int* sock_fd, int flags, int app_uid,
                                   btsock_data_path_t data_path, const char* socket_name,
                                   uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
-  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
   log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
 
   log::info(
           "Attempting socket connection for device: {}, type: {}, channel: {}, "
           "app_uid: {}, data_path: {}, hub_id: {}, endpoint_id: {}, max_rx_packet_size: {}",
-          *bd_addr, type, channel, app_uid, data_path, hub_id, endpoint_id, max_rx_packet_size);
+          bd_addr, type, channel, app_uid, data_path, hub_id, endpoint_id, max_rx_packet_size);
 
   *sock_fd = INVALID_FD;
   bt_status_t status = BT_STATUS_SOCKET_ERROR;
 
   btif_sock_connection_logger(
-          *bd_addr, 0, type, SOCKET_CONNECTION_STATE_CONNECTING, SOCKET_ROLE_CONNECTION, app_uid,
+          bd_addr, 0, type, SOCKET_CONNECTION_STATE_CONNECTING, SOCKET_ROLE_CONNECTION, app_uid,
           channel, 0, 0, uuid ? uuid->ToString().c_str() : "", 0, BTSOCK_ERROR_NONE, data_path);
   switch (type) {
     case BTSOCK_RFCOMM:
-      status = btsock_rfc_connect(bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path,
+      status = btsock_rfc_connect(&bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path,
                                   socket_name, hub_id, endpoint_id, max_rx_packet_size);
       break;
 
     case BTSOCK_L2CAP:
-      status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid, data_path,
+      status = btsock_l2cap_connect(&bd_addr, channel, sock_fd, flags, app_uid, data_path,
                                     socket_name, hub_id, endpoint_id, max_rx_packet_size);
       break;
     case BTSOCK_L2CAP_LE:
       status =
-              btsock_l2cap_connect(bd_addr, channel, sock_fd, (flags | BTSOCK_FLAG_LE_COC), app_uid,
+              btsock_l2cap_connect(&bd_addr, channel, sock_fd, flags | BTSOCK_FLAG_LE_COC, app_uid,
                                    data_path, socket_name, hub_id, endpoint_id, max_rx_packet_size);
       break;
     case BTSOCK_SCO:
-      status = btsock_sco_connect(bd_addr, sock_fd, flags);
+      status = btsock_sco_connect(&bd_addr, sock_fd, flags);
       break;
 
     default:
@@ -248,11 +247,9 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       break;
   }
   if (status != BT_STATUS_SUCCESS) {
-    log::error(
-            "Socket connection failed for device: {}, type: {}, channel: {}, "
-            "app_uid: {}",
-            *bd_addr, type, channel, app_uid);
-    btif_sock_connection_logger(*bd_addr, 0, type, SOCKET_CONNECTION_STATE_DISCONNECTED,
+    log::error("Socket connection failed for device: {}, type: {}, channel: {}, app_uid: {}",
+               bd_addr, type, channel, app_uid);
+    btif_sock_connection_logger(bd_addr, 0, type, SOCKET_CONNECTION_STATE_DISCONNECTED,
                                 SOCKET_ROLE_CONNECTION, app_uid, channel, 0, 0,
                                 uuid ? uuid->ToString().c_str() : "", 0,
                                 BTSOCK_ERROR_CONNECTION_FAILURE, data_path);

@@ -22,6 +22,7 @@
 #include <bluetooth/types/address.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
+#include <nativehelper/ScopedLocalRef.h>
 #include <nativehelper/scoped_local_ref.h>
 
 namespace android {
@@ -32,6 +33,16 @@ RawAddress addressFromJByteArray(JNIEnv* env, jbyteArray object) {
   RawAddress address = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(address_bytes));
   env->ReleaseByteArrayElements(object, address_bytes, 0);
   return address;
+}
+
+ScopedLocalRef<jbyteArray> addressToJByteArray(JNIEnv* env, RawAddress address) {
+  ScopedLocalRef<jbyteArray> object(env, env->NewByteArray(RawAddress::kLength));
+  log::assert_that(object.get() != nullptr, "null jbyte array allocation");
+  // SetByteArrayRegion performs a copy of the original buffer and is safe
+  // to use with a local reference to the address data.
+  env->SetByteArrayRegion(object.get(), 0, RawAddress::kLength,
+                          reinterpret_cast<jbyte*>(address.address.data()));
+  return object;
 }
 
 }  // namespace android
