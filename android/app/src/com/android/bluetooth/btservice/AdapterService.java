@@ -4467,6 +4467,9 @@ public class AdapterService extends Service {
      * for a given {@code transport}.
      */
     public void notifyAclDisconnected(BluetoothDevice device, int transport) {
+        if (Flags.leHidConnectionPolicySuspend() && Flags.adapterSuspendMgmt()) {
+            mAdapterSuspend.aclDisconnected(device, transport);
+        }
         getMapService().ifPresent(profile -> profile.aclDisconnected(device));
         getMapClientService().ifPresent(profile -> profile.aclDisconnected(device, transport));
         getSapService().ifPresent(profile -> profile.aclDisconnected(device));

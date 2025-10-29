@@ -100,6 +100,10 @@ public class RemoteDevices {
             new HashMap<>(); // Identity address to pseudo address map
     private final WatchConnectionStateListener mWatchConnectionStateListener;
 
+    record AclLinkSpec(BluetoothDevice device, int transport) {}
+
+    private final Set<AclLinkSpec> mConnectedDevices = new HashSet<AclLinkSpec>();
+
     /**
      * Bluetooth HFP v1.8 specifies the Battery Charge indicator of AG can take values from {@code
      * 0} to {@code 5}, but it does not specify how to map the values back to percentages. The
@@ -228,6 +232,7 @@ public class RemoteDevices {
         }
 
         mAddressMap.clear();
+        mConnectedDevices.clear();
     }
 
     @Override
@@ -248,6 +253,10 @@ public class RemoteDevices {
             }
             return mDevices.get(address);
         }
+    }
+
+    Set<AclLinkSpec> getConnectedDevices() {
+        return Collections.unmodifiableSet(mConnectedDevices);
     }
 
     int getBondState(BluetoothDevice device) {
@@ -1707,6 +1716,10 @@ public class RemoteDevices {
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
             deviceProperties.setConnected(transport, handle);
+            if (Flags.leHidConnectionPolicySuspend()) {
+                mConnectedDevices.add(new AclLinkSpec(device, transport));
+            }
+
             if (Flags.fixIntentSelectionForAcl()
                     || state == State.ON
                     || state == State.TURNING_ON) {
@@ -1729,6 +1742,9 @@ public class RemoteDevices {
                     "");
         } else {
             deviceProperties.setDisconnected(transport);
+            if (Flags.leHidConnectionPolicySuspend()) {
+                mConnectedDevices.remove(new AclLinkSpec(device, transport));
+            }
             if (getBondState(device) == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);

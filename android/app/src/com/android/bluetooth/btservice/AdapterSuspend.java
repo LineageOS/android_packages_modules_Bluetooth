@@ -71,6 +71,7 @@ public class AdapterSuspend {
     enum SuspendTasks {
         PROFILE_DISCONNECTION,
         ADVERTISEMENT,
+        ACL_DISCONNECTION,
     }
 
     @VisibleForTesting
@@ -231,6 +232,21 @@ public class AdapterSuspend {
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
     }
 
+    void aclDisconnected(BluetoothDevice device, int transport) {
+        if (!mDelayedSuspendTasks.contains(SuspendTasks.ACL_DISCONNECTION)) {
+            return;
+        }
+
+        Log.d(TAG, "Device ACL disconnected=" + device);
+        Set<RemoteDevices.AclLinkSpec> connectedDevices =
+                mAdapterService.getRemoteDevices().getConnectedDevices();
+        if (connectedDevices.isEmpty()) {
+            onSuspendTaskCompleted(SuspendTasks.ACL_DISCONNECTION);
+        } else {
+            Log.d(TAG, "Remaining device ACLs to disconnect=" + connectedDevices);
+        }
+    }
+
     void profileConnectionStateChanged(
             int profile, BluetoothDevice device, int fromState, int toState) {
         // The profile in this function matches with profiles in DISCONNECT_PROFILES.
@@ -283,7 +299,9 @@ public class AdapterSuspend {
             mAdapterService
                     .getLeAudioService()
                     .ifPresent(leAudio -> leAudio.setSystemSuspended(true));
-            mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+            if (!Flags.leHidConnectionPolicySuspend()) {
+                mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+            }
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.clearFilterAcceptList();
             storeActiveAudioDevices();
@@ -320,7 +338,10 @@ public class AdapterSuspend {
             mAdapterService
                     .getLeAudioService()
                     .ifPresent(leAudio -> leAudio.setSystemSuspended(false));
-            mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+
+            if (!Flags.leHidConnectionPolicySuspend()) {
+                mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+            }
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.restoreFilterAcceptList();
 
@@ -358,7 +379,7 @@ public class AdapterSuspend {
         }
     }
 
-    void storeActiveAudioDevices() {
+    private void storeActiveAudioDevices() {
         // handleSuspend can be called more than once in some condition. If so, we shouldn't store
         // the devices the second time to handle the possibility where they have been disconnected.
         if (!mLastActiveAudioDevices.isEmpty()) {
@@ -379,7 +400,7 @@ public class AdapterSuspend {
         }
     }
 
-    void getDisconnectProfileDevices() {
+    private void getDisconnectProfileDevices() {
         if (!mDisconnectProfileDevices.isEmpty()) {
             Log.w(TAG, "Disconnect devices have been collected=" + mDisconnectProfileDevices);
             return;
@@ -420,6 +441,10 @@ public class AdapterSuspend {
             Log.w(TAG, "Task " + task + " is completed after wakelock was released");
             return;
         }
+        if (!mDelayedSuspendTasks.contains(task)) {
+            Log.w(TAG, "Task " + task + " is not scheduled");
+            return;
+        }
 
         mDelayedSuspendTasks.remove(task);
         Log.v(TAG, "Suspend remaining tasks=" + mDelayedSuspendTasks);
@@ -430,9 +455,20 @@ public class AdapterSuspend {
     }
 
     private void disconnectAllAcls() {
-        mAdapterNativeInterface.disconnectAllAcls();
-        if (mAllowWakeByHid) {
-            mAdapterNativeInterface.allowWakeByHid();
+        if (!Flags.leHidConnectionPolicySuspend()) {
+            mAdapterNativeInterface.disconnectAllAcls();
+            if (mAllowWakeByHid) {
+                mAdapterNativeInterface.allowWakeByHid();
+            }
+            return;
+        }
+
+        Set<RemoteDevices.AclLinkSpec> connectedDevices =
+                mAdapterService.getRemoteDevices().getConnectedDevices();
+        if (!connectedDevices.isEmpty()) {
+            Log.i(TAG, "disconnect acls for devices: " + connectedDevices);
+            mDelayedSuspendTasks.add(SuspendTasks.ACL_DISCONNECTION);
+            mAdapterNativeInterface.disconnectAllAcls();
         }
     }
 
