@@ -372,13 +372,20 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      * in the UI while we wait on the remote device to accept our playback command.
      */
     static synchronized void onAudioFocusStateChanged(int state) {
-        if (state != AudioManager.AUDIOFOCUS_GAIN) {
-            return;
-        }
-
         BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
         if (service == null) {
             Log.w(TAG, "onAudioFocusStateChanged(state=" + state + "): Service not available");
+            return;
+        }
+
+        Log.i(TAG, "onAudioFocusStateChanged(state=" + state);
+
+        if (state == AudioManager.AUDIOFOCUS_LOSS) {
+            service.setActive(false);
+            return;
+        }
+
+        if (state != AudioManager.AUDIOFOCUS_GAIN) {
             return;
         }
 
@@ -386,7 +393,9 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                 TAG,
                 "onAudioFocusStateChanged(state="
                         + state
-                        + "): Focus gained, briefly signal connecting");
+                        + "): Focus gained, become active and briefly signal connecting");
+
+        service.setActive(true);
 
         MediaSessionCompat session = service.getSession();
         MediaControllerCompat controller = session.getController();
@@ -431,30 +440,19 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
 
     // Active State
 
-    /** Set Media session active whenever we have Focus of any kind */
-    public static synchronized void setActive(boolean active) {
-        BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
-        if (service == null) {
-            Log.w(TAG, "setActive(active=" + active + "): Service not available");
-            return;
-        }
-        Log.d(TAG, "Setting the session active state to:" + active);
-        service.mSession.setActive(active);
-    }
-
     /**
      * Checks if the media session is active or not.
      *
      * @return true if media session is active, false otherwise.
      */
-    @VisibleForTesting
-    public static synchronized boolean isActive() {
-        BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
-        if (service == null) {
-            Log.w(TAG, "isActive(): Service not available");
-            return false;
-        }
-        return service.mSession.isActive();
+    public synchronized boolean isActive() {
+        return mSession.isActive();
+    }
+
+    /** Set Media session active whenever we have Focus of any kind */
+    private synchronized void setActive(boolean active) {
+        Log.d(TAG, "setActive(active=" + active + ")");
+        mSession.setActive(active);
     }
 
     // Playback State
@@ -592,7 +590,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                     .append(AvrcpControllerUtils.playbackStateCompatToString(playbackState));
             sb.append("\n    queue=").append(queue);
             sb.append("\n    internal_queue=").append(service.mMediaQueue);
-            sb.append("\n    session active state=").append(isActive());
+            sb.append("\n    session active state=").append(service.isActive());
         } else {
             Log.w(TAG, "dump Unavailable");
             sb.append(" null");

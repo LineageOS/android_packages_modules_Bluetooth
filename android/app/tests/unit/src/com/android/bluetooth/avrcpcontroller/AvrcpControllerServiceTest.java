@@ -317,7 +317,6 @@ public class AvrcpControllerServiceTest {
         mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice1);
 
         verify(mStateMachine).connect(eq(remoteControlConnected), eq(browsingConnected));
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -326,7 +325,6 @@ public class AvrcpControllerServiceTest {
         boolean browsingConnected = false; // Calls disconnect when both of them are false.
 
         mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice1);
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
         verify(mStateMachine).disconnect();
     }
 
@@ -469,14 +467,18 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void testOnFocusChange_audioGainDeviceActive_sessionActivated() {
+        mService.setActiveDevice(mDevice1);
         mService.onAudioFocusStateChanged(AudioManager.AUDIOFOCUS_GAIN);
-        assertThat(BluetoothMediaBrowserService.isActive()).isTrue();
+        verify(mStateMachine).sendMessage(eq(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE),
+                eq(AudioManager.AUDIOFOCUS_GAIN));
     }
 
     @Test
     public void testOnFocusChange_audioLoss_sessionDeactivated() {
+        mService.setActiveDevice(mDevice1);
         mService.onAudioFocusStateChanged(AudioManager.AUDIOFOCUS_LOSS);
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
+        verify(mStateMachine).sendMessage(eq(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE),
+                eq(AudioManager.AUDIOFOCUS_LOSS));
     }
 
     /**
