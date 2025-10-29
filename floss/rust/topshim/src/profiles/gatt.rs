@@ -612,7 +612,7 @@ pub enum GattServerCallbacks {
     PhyUpdated(i32, u8, u8, GattStatus),
     ConnUpdated(i32, u16, u16, u16, GattStatus),
     ReadPhy(i32, RawAddress, u8, u8, GattStatus),
-    SubrateChanged(i32, u16, u16, u16, u16, GattStatus),
+    SubrateChanged(i32, u16, u16, u16, u16, u8, GattStatus),
 }
 
 pub struct GattClientCallbacksDispatcher {
@@ -883,7 +883,7 @@ cb_variant!(
 cb_variant!(
     GattServerCb,
     gs_subrate_chg_cb -> GattServerCallbacks::SubrateChanged,
-    i32, u16, u16, u16, u16, u8 -> GattStatus, {}
+    i32, u16, u16, u16, u16, u8, u8 -> GattStatus, {}
 );
 
 /// Scanning callbacks used by the GD implementation of BleScannerInterface.

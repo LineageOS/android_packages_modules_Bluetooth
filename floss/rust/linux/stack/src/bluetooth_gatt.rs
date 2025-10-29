@@ -3251,6 +3251,7 @@ pub(crate) trait BtifGattServerCallbacks {
         latency: u16,
         cont_num: u16,
         timeout: u16,
+        subrate_mode: u8,
         status: GattStatus,
     );
 }
@@ -3614,6 +3615,7 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         latency: u16,
         cont_num: u16,
         timeout: u16,
+        subrate_mode: u8,
         status: GattStatus,
     ) {
         (|| {
