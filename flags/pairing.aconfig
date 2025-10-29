@@ -242,3 +242,13 @@ flag {
     description: "Permission improvements for pairing in 26Q2"
     bug: "449010608"
 }
+
+flag {
+    name: "enable_autonomous_repairing"
+    namespace: "bluetooth"
+    description: "Enable autonomous re-pairing when bond loss is detected."
+    bug: "442712426"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
