@@ -84,6 +84,26 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         return service;
     }
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private GattServerManager getServerManagerAndEnforceConnect(AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
+        if (service == null) {
+            return null;
+        }
+        return service.getServerManager();
+    }
+
+    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+    private GattServerManager getServerManagerAndEnforceConnectAndPrivileged(
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
+        if (service == null) {
+            return null;
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        return service.getServerManager();
+    }
+
     @Override
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(
             int[] states, AttributionSource source) {
@@ -469,20 +489,20 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             boolean eattSupport,
             int transport,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.registerServer(uuid.getUuid(), callback, eattSupport, transport, source);
+        serverManager.registerServer(uuid.getUuid(), callback, eattSupport, transport, source);
     }
 
     @Override
     public void unregisterServer(IBluetoothGattServerCallback callback, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.unregisterServer(callback);
+        serverManager.unregisterServer(callback);
     }
 
     @Override
@@ -493,11 +513,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             boolean isDirect,
             int transport,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.serverConnect(callback, device, addressType, isDirect, transport, source);
+        serverManager.serverConnect(callback, device, addressType, isDirect, transport, source);
     }
 
     @Override
@@ -505,11 +525,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             IBluetoothGattServerCallback callback,
             BluetoothDevice device,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.serverDisconnect(callback, device);
+        serverManager.serverDisconnect(callback, device);
     }
 
     @Override
@@ -520,11 +540,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             int rxPhy,
             int phyOptions,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions);
+        serverManager.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions);
     }
 
     @Override
@@ -532,11 +552,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             IBluetoothGattServerCallback callback,
             BluetoothDevice device,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.serverReadPhy(callback, device);
+        serverManager.serverReadPhy(callback, device);
     }
 
     @Override
@@ -544,30 +564,30 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             IBluetoothGattServerCallback callback,
             BluetoothGattService svc,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.addService(callback, svc);
+        serverManager.addService(callback, svc);
     }
 
     @Override
     public void removeService(
             IBluetoothGattServerCallback callback, int handle, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.removeService(callback, handle);
+        serverManager.removeService(callback, handle);
     }
 
     @Override
     public void clearServices(IBluetoothGattServerCallback callback, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.clearServices(callback);
+        serverManager.clearServices(callback);
     }
 
     @Override
@@ -579,11 +599,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             int offset,
             byte[] value,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return;
         }
-        service.sendResponse(callback, device, requestId, status, offset, value);
+        serverManager.sendResponse(callback, device, requestId, status, offset, value);
     }
 
     @Override
@@ -594,11 +614,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             boolean confirm,
             byte[] value,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnect(source);
+        if (serverManager == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        return service.sendNotification(callback, device, handle, confirm, value);
+        return serverManager.sendNotification(callback, device, handle, confirm, value);
     }
 
     @Override
@@ -619,12 +639,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             long endpointId,
             long hubId,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+        if (serverManager == null) {
             throw new IllegalArgumentException("Service is null");
         }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.offloadClientCharacteristics(
+        return serverManager.offloadClientCharacteristics(
                 callback, device, gattService, characteristics, endpointId, hubId);
     }
 
@@ -634,12 +653,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             BluetoothDevice device,
             int sessionId,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+        if (serverManager == null) {
             throw new IllegalArgumentException("Service is null");
         }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        service.unoffloadClientCharacteristics(callback, device, sessionId);
+        serverManager.unoffloadClientCharacteristics(callback, device, sessionId);
     }
 
     @Override
@@ -651,12 +669,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             long endpointId,
             long hubId,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+        if (serverManager == null) {
             throw new IllegalArgumentException("Service is null");
         }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.offloadServerCharacteristics(
+        return serverManager.offloadServerCharacteristics(
                 callback, device, gattService, characteristics, endpointId, hubId);
     }
 
@@ -666,12 +683,11 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             BluetoothDevice device,
             int sessionId,
             AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
-        if (service == null) {
+        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+        if (serverManager == null) {
             throw new IllegalArgumentException("Service is null");
         }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        service.unoffloadServerCharacteristics(callback, device, sessionId);
+        serverManager.unoffloadServerCharacteristics(callback, device, sessionId);
     }
 
     private static void enforcePrivilegedPermissionIfNeededForHandle(

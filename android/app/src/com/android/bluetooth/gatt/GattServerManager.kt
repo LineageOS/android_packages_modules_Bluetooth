@@ -1,0 +1,1096 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.bluetooth.gatt
+
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothProtoEnums
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.GattOffloadSession
+import android.bluetooth.IBluetoothGattCallback
+import android.bluetooth.IBluetoothGattServerCallback
+import android.content.AttributionSource
+import android.content.pm.PackageManager
+import android.os.Binder
+import android.os.IBinder
+import android.util.Log
+import com.android.bluetooth.Util.appNameOrUnknown
+import com.android.bluetooth.Utils.callbackToApp
+import com.android.bluetooth.Utils.transportToString
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.gatt.GattUtil.statusToString
+import com.android.bluetooth.gatt.GattUtil.translateHciCode
+import com.android.bluetooth.util.getLastAttributionTag
+import java.util.UUID
+
+private const val TAG = "GattServerManager"
+
+class GattServerManager(
+    private val adapterService: AdapterService,
+    private val service: GattService,
+    val serverMap: ContextMap<IBluetoothGattServerCallback>,
+    private val metricsReporter: GattMetricsReporter,
+) {
+    internal val handleMap = HandleMap()
+    private val nativeInterface: GattNativeInterface
+        get() = service.nativeInterface
+
+    fun clear() {
+        serverMap.clear()
+        handleMap.clear()
+    }
+
+    private inner class ServerDeathRecipient(
+        private val callback: IBluetoothGattServerCallback,
+        private val appName: String,
+    ) : IBinder.DeathRecipient {
+        override fun binderDied() {
+            Log.d(TAG, "binderDied(): Unregistering server for app=$appName, callback=$callback")
+            unregisterServer(callback)
+        }
+    }
+
+    fun onServerRegisteredFromNative(status: Int, serverIf: Int, uuid: UUID) {
+        Log.d(TAG, "onServerRegistered(${statusToString(status)}, serverIf=$serverIf, uuid=$uuid)")
+        val app = serverMap.getByUuid(uuid) ?: return
+        app.id = serverIf
+        app.linkToDeath(ServerDeathRecipient(app.callback, app.name))
+        callbackToApp { app.callback.onServerRegistered(status) }
+    }
+
+    fun onServiceAddedFromNative(status: Int, serverIf: Int, service: List<GattDbElement>) {
+        Log.d(
+            TAG,
+            "onServiceAdded(${statusToString(status)}, serverIf=$serverIf, service=$service)",
+        )
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            return
+        }
+
+        val svcEl = service[0]
+        val srvcHandle = svcEl.attributeHandle
+
+        var svc: BluetoothGattService? = null
+        for (el in service) {
+            when (el.type) {
+                GattDbElement.TYPE_PRIMARY_SERVICE -> {
+                    handleMap.addService(
+                        serverIf,
+                        el.attributeHandle,
+                        el.uuid,
+                        BluetoothGattService.SERVICE_TYPE_PRIMARY,
+                        0,
+                        false,
+                    )
+                    svc =
+                        BluetoothGattService(
+                            svcEl.uuid,
+                            svcEl.attributeHandle,
+                            BluetoothGattService.SERVICE_TYPE_PRIMARY,
+                        )
+                }
+                GattDbElement.TYPE_SECONDARY_SERVICE -> {
+                    handleMap.addService(
+                        serverIf,
+                        el.attributeHandle,
+                        el.uuid,
+                        BluetoothGattService.SERVICE_TYPE_SECONDARY,
+                        0,
+                        false,
+                    )
+                    svc =
+                        BluetoothGattService(
+                            svcEl.uuid,
+                            svcEl.attributeHandle,
+                            BluetoothGattService.SERVICE_TYPE_SECONDARY,
+                        )
+                }
+                GattDbElement.TYPE_CHARACTERISTIC -> {
+                    handleMap.addCharacteristic(serverIf, el.attributeHandle, el.uuid, srvcHandle)
+                    svc?.addCharacteristic(
+                        BluetoothGattCharacteristic(
+                            el.uuid,
+                            el.attributeHandle,
+                            el.properties,
+                            el.permissions,
+                        )
+                    )
+                }
+                GattDbElement.TYPE_DESCRIPTOR -> {
+                    handleMap.addDescriptor(serverIf, el.attributeHandle, el.uuid, srvcHandle)
+                    svc?.characteristics?.let { chars ->
+                        chars[chars.size - 1].addDescriptor(
+                            BluetoothGattDescriptor(el.uuid, el.attributeHandle, el.permissions)
+                        )
+                    }
+                }
+            }
+        }
+        handleMap.setStarted(serverIf, srvcHandle, true)
+
+        val app = serverMap.getById(serverIf) ?: return
+        callbackToApp { app.callback.onServiceAdded(status, svc) }
+    }
+
+    fun onServiceStoppedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
+        Log.d(
+            TAG,
+            "onServiceStopped(${statusToString(status)}, serverIf=$serverIf" +
+                ", srvcHandle=$srvcHandle)",
+        )
+        if (status == BluetoothGatt.GATT_SUCCESS) {
+            handleMap.setStarted(serverIf, srvcHandle, false)
+        }
+        stopNextService(serverIf, status)
+    }
+
+    fun onServiceDeletedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
+        Log.d(
+            TAG,
+            "onServiceDeleted(${statusToString(status)}, serverIf=$serverIf" +
+                ", srvcHandle=$srvcHandle)",
+        )
+        handleMap.deleteService(serverIf, srvcHandle)
+    }
+
+    fun onClientConnectedFromNative(
+        device: BluetoothDevice,
+        transport: Int,
+        connected: Boolean,
+        connId: Int,
+        serverIf: Int,
+    ) {
+        val header =
+            "onClientConnected($device, ${transportToString(transport)}" +
+                ", connected=$connected, connId=$connId, serverIf=$serverIf):"
+        val app = serverMap.getById(serverIf)
+        if (app == null) {
+            Log.w(TAG, "$header Received connection event for unregistered app")
+            return
+        }
+        Log.d(TAG, header)
+
+        // The native stack reports connection state changes for *all* bearer connections,
+        // multiplexed across all applications. It's possible for an app to have more than one
+        // bearer with a remote device. Since we don't expose per-bearer information to the
+        // applications, we need to abstract this info away. We send "connected" when we grow from
+        // zero to one connection, and disconnected when there are *no more* connections.
+
+        // Are we connected currently?
+        val previouslyConnected = !serverMap.getConnectionsByDevice(serverIf, device).isEmpty()
+
+        // Add or remove a connection from our records
+        if (connected) {
+            serverMap.addConnection(serverIf, connId, transport, device)
+        } else {
+            Log.d(TAG, "Reset server congestion connId=$connId")
+            onServerCongestionFromNative(connId, false)
+            serverMap.removeConnection(serverIf, connId)
+        }
+
+        // Look at new set of connections to determine overall connection state to share outward
+        val connectionState: Int
+        val stateToReport: Boolean
+        if (Flags.gattMultiBearerConnections()) {
+            val currentlyConnected = !serverMap.getConnectionsByDevice(serverIf, device).isEmpty()
+            if (!previouslyConnected && currentlyConnected) {
+                Log.i(TAG, "$header Has its first bearer and is now connected")
+                stateToReport = true
+                connectionState = BluetoothProtoEnums.CONNECTION_STATE_CONNECTED
+            } else if (previouslyConnected && !currentlyConnected) {
+                Log.i(TAG, "$header Has no more bearers and is disconnected")
+                stateToReport = false
+                connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED
+            } else {
+                Log.d(
+                    TAG,
+                    "$header Event dropped, previouslyConnected=$previouslyConnected" +
+                        ", currentlyConnected=$currentlyConnected",
+                )
+                return
+            }
+        } else {
+            stateToReport = connected
+            connectionState =
+                if (connected) BluetoothProtoEnums.CONNECTION_STATE_CONNECTED
+                else BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED
+        }
+
+        var applicationUid = -1
+        try {
+            applicationUid =
+                adapterService.packageManager.getPackageUid(
+                    app.name,
+                    PackageManager.PackageInfoFlags.of(0),
+                )
+        } catch (_: PackageManager.NameNotFoundException) {
+            Log.d(TAG, "$header uid_not_found=${app.name}")
+        }
+
+        callbackToApp { app.callback.onServerConnectionState(0, stateToReport, device) }
+        metricsReporter.logAppPackage(serverIf, device, applicationUid)
+        metricsReporter.logGattConnectionStateChange(device, serverIf, connectionState, -1)
+    }
+
+    fun onServerPhyUpdateFromNative(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
+        Log.d(
+            TAG,
+            "onServerPhyUpdateFromNative(connId=$connId, txPhy=$txPhy, rxPhy=$rxPhy" +
+                ", ${statusToString(status)})",
+        )
+        val device = serverMap.deviceByConnId(connId) ?: return
+        val app = serverMap.getByConnId(connId) ?: return
+        callbackToApp { app.callback.onPhyUpdate(device, txPhy, rxPhy, status) }
+    }
+
+    fun onServerPhyReadFromNative(
+        serverIf: Int,
+        device: BluetoothDevice,
+        txPhy: Int,
+        rxPhy: Int,
+        status: Int,
+    ) {
+        Log.d(TAG, "onServerPhyRead(): $device, ${statusToString(status)}")
+
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
+        val connId = if (connections.isEmpty()) null else connections[0].connId
+        if (connId == null) {
+            Log.d(TAG, "onServerPhyRead(): No connection to $device")
+            return
+        }
+
+        val app = serverMap.getByConnId(connId)
+        if (app == null) {
+            Log.w(TAG, "onServerPhyRead(): Received phy read for unregistered app")
+            return
+        }
+
+        callbackToApp { app.callback.onPhyRead(device, txPhy, rxPhy, status) }
+    }
+
+    fun onServerConnUpdateFromNative(
+        connId: Int,
+        interval: Int,
+        latency: Int,
+        timeout: Int,
+        status: Int,
+    ) {
+        Log.d(TAG, "onServerConnUpdate(): connId=$connId, ${statusToString(status)}")
+
+        val device = serverMap.deviceByConnId(connId) ?: return
+        val app = serverMap.getByConnId(connId) ?: return
+
+        service.mCachedPeripheralLatency[device] = latency // cache new peripheral latency
+
+        callbackToApp {
+            app.callback.onConnectionUpdated(device, interval, latency, timeout, status)
+        }
+    }
+
+    fun onServerSubrateChangeFromNative(
+        connId: Int,
+        subrateFactor: Int,
+        latency: Int,
+        contNum: Int,
+        timeout: Int,
+        mode: Int,
+        status: Int,
+    ) {
+        Log.d(TAG, "onServerSubrateChange(): connId=$connId, ${statusToString(status)}")
+
+        val subrateMode: Int
+
+        val device: BluetoothDevice = serverMap.deviceByConnId(connId) ?: return
+        val app: ContextApp<IBluetoothGattServerCallback> = serverMap.getByConnId(connId) ?: return
+
+        if (status == BluetoothStatusCodes.SUCCESS) {
+            // Confirm flag config
+            if (Flags.leSubrateManager()) {
+                subrateMode = service.updateGattSubratingMode(mode)
+            } else {
+                subrateMode =
+                    service.verifyGattSubratingMode(device, subrateFactor, latency, contNum)
+            }
+        } else {
+            subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED
+        }
+        callbackToApp {
+            app.callback.onSubrateChange(device, subrateMode, translateHciCode(status))
+        }
+    }
+
+    fun onServerReadCharacteristicFromNative(
+        device: BluetoothDevice,
+        connId: Int,
+        transId: Int,
+        handle: Int,
+        offset: Int,
+        isLong: Boolean,
+    ) {
+        Log.v(
+            TAG,
+            "onServerReadCharacteristic(): $device, connId=$connId, transId=$transId" +
+                ", handle=$handle, offset=$offset",
+        )
+        val entry = handleMap.getByHandle(handle) ?: return
+
+        val requestId: Int
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+        } else {
+            requestId = transId
+            handleMap.addRequest(connId, transId, handle)
+        }
+
+        val app = serverMap.getById(entry.mServerIf) ?: return
+
+        callbackToApp {
+            app.callback.onCharacteristicReadRequest(device, requestId, offset, isLong, handle)
+        }
+    }
+
+    fun onServerReadDescriptorFromNative(
+        device: BluetoothDevice,
+        connId: Int,
+        transId: Int,
+        handle: Int,
+        offset: Int,
+        isLong: Boolean,
+    ) {
+        Log.v(
+            TAG,
+            "onServerReadDescriptor(): $device, connId=$connId, transId=$transId" +
+                ", handle=$handle, offset=$offset",
+        )
+
+        val entry = handleMap.getByHandle(handle) ?: return
+
+        val requestId: Int
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+        } else {
+            requestId = transId
+            handleMap.addRequest(connId, transId, handle)
+        }
+
+        val app = serverMap.getById(entry.mServerIf) ?: return
+
+        callbackToApp {
+            app.callback.onDescriptorReadRequest(device, requestId, offset, isLong, handle)
+        }
+    }
+
+    fun onServerWriteCharacteristicFromNative(
+        device: BluetoothDevice,
+        connId: Int,
+        transId: Int,
+        handle: Int,
+        offset: Int,
+        length: Int,
+        needRsp: Boolean,
+        isPrep: Boolean,
+        data: ByteArray?,
+    ) {
+        Log.v(
+            TAG,
+            "onServerWriteCharacteristic(): $device, connId=$connId, transId=$transId" +
+                ", handle=$handle, offset=$offset, isPrep=$isPrep",
+        )
+
+        val entry = handleMap.getByHandle(handle) ?: return
+
+        val requestId: Int
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+        } else {
+            requestId = transId
+            handleMap.addRequest(connId, transId, handle)
+        }
+
+        val app = serverMap.getById(entry.mServerIf) ?: return
+
+        callbackToApp {
+            app.callback.onCharacteristicWriteRequest(
+                device,
+                requestId,
+                offset,
+                length,
+                isPrep,
+                needRsp,
+                handle,
+                data,
+            )
+        }
+    }
+
+    fun onServerWriteDescriptorFromNative(
+        device: BluetoothDevice,
+        connId: Int,
+        transId: Int,
+        handle: Int,
+        offset: Int,
+        length: Int,
+        needRsp: Boolean,
+        isPrep: Boolean,
+        data: ByteArray?,
+    ) {
+        Log.v(
+            TAG,
+            "onServerWriteDescriptor(): $device, connId=$connId, transId=$transId, handle=$handle" +
+                ", offset=$offset, isPrep=$isPrep",
+        )
+
+        val entry = handleMap.getByHandle(handle) ?: return
+
+        val requestId: Int
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+        } else {
+            requestId = transId
+            handleMap.addRequest(connId, transId, handle)
+        }
+
+        val app = serverMap.getById(entry.mServerIf) ?: return
+
+        callbackToApp {
+            app.callback.onDescriptorWriteRequest(
+                device,
+                requestId,
+                offset,
+                length,
+                isPrep,
+                needRsp,
+                handle,
+                data,
+            )
+        }
+    }
+
+    fun onExecuteWriteFromNative(
+        device: BluetoothDevice,
+        connId: Int,
+        transId: Int,
+        execWrite: Int,
+    ) {
+        val operation = if (execWrite == 1) "WRITE" else "CANCEL"
+        Log.d(
+            TAG,
+            "onExecuteWrite(): $device, connId=$connId, transId=$transId, operation=$operation",
+        )
+
+        val app = serverMap.getByConnId(connId) ?: return
+
+        val requestId: Int
+        val handle = HandleMap.HANDLE_PREPARED_WRITE
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = handleMap.addRequestContext(app.id, connId, transId, handle)
+        } else {
+            requestId = transId
+            handleMap.addRequest(connId, transId, handle)
+        }
+
+        callbackToApp { app.callback.onExecuteWrite(device, requestId, execWrite == 1) }
+    }
+
+    fun onResponseSendCompletedFromNative(status: Int, attrHandle: Int) {
+        Log.d(TAG, "onResponseSendCompleted(handle=$attrHandle)")
+    }
+
+    fun onNotificationSentFromNative(connId: Int, status: Int) {
+        Log.v(TAG, "onNotificationSent(connId=$connId, ${statusToString(status)})")
+
+        val device = serverMap.deviceByConnId(connId) ?: return
+        val app = serverMap.getByConnId(connId) ?: return
+
+        if (!app.isCongested) {
+            callbackToApp { app.callback.onNotificationSent(device, status) }
+        } else {
+            var queuedStatus = status
+            if (queuedStatus == BluetoothGatt.GATT_CONNECTION_CONGESTED) {
+                queuedStatus = BluetoothGatt.GATT_SUCCESS
+            }
+            app.queueCallback(ContextApp.CallbackInfo(device, queuedStatus))
+        }
+    }
+
+    fun onServerCongestionFromNative(connId: Int, congested: Boolean) {
+        Log.d(TAG, "onServerCongestion(connId=$connId, congested=$congested)")
+        val app = serverMap.getByConnId(connId) ?: return
+        app.isCongested = congested
+        while (!app.isCongested) {
+            val callbackInfo = app.popQueuedCallback() ?: return
+            callbackToApp {
+                app.callback.onNotificationSent(callbackInfo.device, callbackInfo.status)
+            }
+        }
+    }
+
+    fun onMtuChangedFromNative(connId: Int, mtu: Int) {
+        Log.d(TAG, "onMtuChanged(connId=$connId, mtu=$mtu)")
+
+        val device = serverMap.deviceByConnId(connId) ?: return
+        val app = serverMap.getByConnId(connId) ?: return
+
+        callbackToApp { app.callback.onMtuChanged(device, mtu) }
+    }
+
+    fun onServerCharacteristicsUnoffloadedFromNative(connId: Int, sessionId: Int, status: Int) {
+        Log.d(
+            TAG,
+            "onServerCharacteristicsUnoffloaded(): connId=$connId, sessionId=$sessionId" +
+                ", status=$status",
+        )
+
+        val device = serverMap.deviceByConnId(connId) ?: return
+        val app = serverMap.getByConnId(connId) ?: return
+
+        callbackToApp { app.callback.onCharacteristicsUnoffloaded(device, sessionId, status) }
+    }
+
+    fun registerServer(
+        uuid: UUID,
+        callback: IBluetoothGattServerCallback,
+        eattSupport: Boolean,
+        transport: Int,
+        source: AttributionSource,
+    ) {
+        var name = source.packageName
+        val tag = source.getLastAttributionTag()
+        val myPackage = AttributionSource.myAttributionSource().packageName
+        if (myPackage == name && tag != null) {
+            /* For servers created by Bluetooth stack, use just tag as name */
+            name = tag
+        } else if (tag != null) {
+            name = "$name[$tag]"
+        }
+
+        Log.d(TAG, "registerServer(): UUID=$uuid, name=$name, ${transportToString(transport)}")
+        val uid = if (Flags.gattThread()) source.uid else Binder.getCallingUid()
+        val appName = adapterService.appNameOrUnknown(uid)
+        serverMap.add(uid, appName, uuid, callback, transport, tag)
+        nativeInterface.gattServerRegisterApp(
+            uuid.leastSignificantBits,
+            uuid.mostSignificantBits,
+            eattSupport,
+        )
+    }
+
+    fun unregisterServer(callback: IBluetoothGattServerCallback) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "unregisterServer($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        Log.d(TAG, "unregisterServer(): serverIf=$serverIf")
+
+        deleteServices(serverIf)
+
+        serverMap.remove(serverIf, ContextMap.RemoveReason.REASON_UNREGISTER_SERVER)
+        nativeInterface.gattServerUnregisterApp(serverIf)
+    }
+
+    fun serverConnect(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        addressType: Int,
+        isDirect: Boolean,
+        transport: Int,
+        source: AttributionSource,
+    ) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "serverConnect($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        Log.d(TAG, "serverConnect(): $device, ${transportToString(transport)}")
+
+        metricsReporter.logServerForegroundInfo(source.uid, isDirect)
+        nativeInterface.gattServerConnect(serverIf, device, addressType, isDirect, transport)
+    }
+
+    fun serverDisconnect(callback: IBluetoothGattServerCallback, device: BluetoothDevice) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "serverDisconnect($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        if (Flags.gattMultiBearerConnections()) {
+            val connections = serverMap.getConnectionsByDevice(serverIf, device)
+
+            // If we don't have any known connection IDs, we could have a pending connection. We can
+            // use connId => 0 to cancel all pending connections with the given device. Otherwise,
+            // disconnect all bearers
+            if (connections.isEmpty()) {
+                Log.d(TAG, "serverDisconnect(): Cancel pending connections for $device")
+                nativeInterface.gattServerDisconnect(serverIf, device, 0)
+            } else {
+                for (connection in connections) {
+                    val id = connection.connId
+                    Log.d(TAG, "serverDisconnect(): $device, connId=$id")
+                    nativeInterface.gattServerDisconnect(serverIf, device, id)
+                }
+            }
+        } else {
+            val connections = serverMap.getConnectionsByDevice(serverIf, device)
+            val connId = if (connections.isEmpty()) null else connections[0].connId
+            Log.d(TAG, "serverDisconnect(): $device, connId=$connId")
+            nativeInterface.gattServerDisconnect(serverIf, device, connId ?: 0)
+        }
+    }
+
+    fun serverSetPreferredPhy(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        txPhy: Int,
+        rxPhy: Int,
+        phyOptions: Int,
+    ) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "serverSetPreferredPhy($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
+        if (connections.isEmpty()) {
+            Log.d(TAG, "serverSetPreferredPhy(): No connection to $device")
+            return
+        }
+
+        Log.d(TAG, "serverSetPreferredPhy() $device, connections=$connections")
+        nativeInterface.gattServerSetPreferredPhy(serverIf, device, txPhy, rxPhy, phyOptions)
+    }
+
+    fun serverReadPhy(callback: IBluetoothGattServerCallback, device: BluetoothDevice) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "serverReadPhy($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
+        if (connections.isEmpty()) {
+            Log.d(TAG, "serverReadPhy(): No connection to $device")
+            return
+        }
+
+        Log.d(TAG, "serverReadPhy(): $device, connections=$connections")
+        nativeInterface.gattServerReadPhy(serverIf, device)
+    }
+
+    fun addService(callback: IBluetoothGattServerCallback, service: BluetoothGattService) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "addService($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        Log.d(TAG, "addService(): uuid=${service.uuid}")
+
+        val db = mutableListOf<GattDbElement>()
+        if (service.type == BluetoothGattService.SERVICE_TYPE_PRIMARY) {
+            db.add(GattDbElement.createPrimaryService(service.uuid))
+        } else {
+            db.add(GattDbElement.createSecondaryService(service.uuid))
+        }
+
+        for (includedService in service.includedServices) {
+            val inclSrvcHandle = includedService.instanceId
+
+            if (handleMap.checkServiceExists(includedService.uuid, inclSrvcHandle)) {
+                db.add(GattDbElement.createIncludedService(inclSrvcHandle))
+            } else {
+                Log.e(TAG, "Included service with UUID ${includedService.uuid} not found!")
+            }
+        }
+
+        for (characteristic in service.characteristics) {
+            val permissionEncodingKeySize = (characteristic.keySize - 7) shl 12
+            var permission = permissionEncodingKeySize + characteristic.permissions
+            db.add(
+                GattDbElement.createCharacteristic(
+                    characteristic.uuid,
+                    characteristic.properties,
+                    permission,
+                )
+            )
+
+            for (descriptor in characteristic.descriptors) {
+                permission = permissionEncodingKeySize + descriptor.permissions
+                db.add(GattDbElement.createDescriptor(descriptor.uuid, permission))
+            }
+        }
+
+        nativeInterface.gattServerAddService(serverIf, db)
+    }
+
+    fun removeService(callback: IBluetoothGattServerCallback, handle: Int) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "removeService($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        Log.d(TAG, "removeService(): handle=$handle")
+        nativeInterface.gattServerDeleteService(serverIf, handle)
+    }
+
+    fun clearServices(callback: IBluetoothGattServerCallback) {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "clearServices($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+        Log.d(TAG, "clearServices()")
+        deleteServices(serverIf)
+    }
+
+    fun sendResponse(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        requestId: Int,
+        status: Int,
+        offset: Int,
+        value: ByteArray?,
+    ) {
+        Log.v(TAG, "sendResponse($device, requestId=$requestId, ${statusToString(status)})")
+
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "sendResponse($callback): App not registered")
+            return
+        }
+        val serverIf = serverApp.id
+
+        var handle = 0
+        var connId = 0
+        var transId = -1
+
+        var requestContext: HandleMap.RequestContext? = null
+        var requestData: HandleMap.RequestData? = null
+
+        if (Flags.gattMultiBearerTransactions()) {
+            requestContext = handleMap.getRequestContext(serverIf, requestId)
+            if (requestContext != null) {
+                connId = requestContext.fetchConnId()
+                transId = requestContext.fetchTransactionId()
+                handle = requestContext.fetchHandle()
+            }
+        } else {
+            transId = requestId
+            requestData = handleMap.getRequestDataByRequestId(requestId)
+            if (requestData != null) {
+                handle = requestData.fetchHandle()
+                connId = requestData.fetchConnId()
+            }
+        }
+
+        if (requestContext == null && requestData == null) {
+            Log.w(TAG, "sendResponse($callback): No record of request we're responding to")
+            if (Flags.gattMultiBearerTransactions()) {
+                return
+            } else {
+                val connections = serverMap.getConnectionsByDevice(serverIf, device)
+                connId = if (connections.isEmpty()) 0 else connections[0].connId
+            }
+        }
+
+        nativeInterface.gattServerSendResponse(
+            serverIf,
+            connId,
+            transId,
+            status,
+            handle,
+            offset,
+            value,
+            0,
+        )
+
+        if (Flags.gattMultiBearerTransactions()) {
+            handleMap.deleteRequestContext(serverIf, requestId)
+        } else {
+            handleMap.deleteRequest(requestId)
+        }
+    }
+
+    fun sendNotification(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        confirm: Boolean,
+        value: ByteArray,
+    ): Int {
+        val serverApp = serverMap.getByCallbackId(callback)
+        if (serverApp == null) {
+            Log.w(TAG, "sendNotification($callback): App not registered")
+            return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED
+        }
+        val serverIf = serverApp.id
+        val transportPreference = serverApp.transport
+
+        Log.v(TAG, "sendNotification($device, handle=$handle, transport=$transportPreference)")
+
+        // The specifications do not insist that we must use the same bearer that wrote to the CCCD
+        // to request notifications or indications. We only need to send to the same client.
+        // We pick the first connection that matches the transport preference of the server, or the
+        // oldest connection when transport is AUTO
+        var connId: Int? = null
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
+
+        if (Flags.gattMultiBearerConnections()) {
+            // The list is sorted by oldest first. Grab the oldest bearer that matches our transport
+            // preference. If the transport is AUTO then use the oldest bearer available
+            for (connection in connections) {
+                if (
+                    transportPreference == BluetoothDevice.TRANSPORT_AUTO ||
+                        transportPreference == connection.transport
+                ) {
+                    connId = connection.connId
+                    break
+                }
+            }
+
+            // If there was no transport that matches the preference, use the oldest bearer
+            if (connId == null && !connections.isEmpty()) {
+                connId = connections.get(0).connId
+            }
+        } else {
+            if (!connections.isEmpty()) {
+                connId = connections.get(0).connId
+            }
+        }
+
+        if (connId == null || connId == 0) {
+            Log.d(TAG, "sendNotification(): no connection to $device")
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED
+        }
+
+        Log.d(TAG, "sendNotification(): $device, handle=$handle, connId=$connId, confirm=$confirm")
+
+        if (confirm) {
+            nativeInterface.gattServerSendIndication(serverIf, handle, connId, value)
+        } else {
+            nativeInterface.gattServerSendNotification(serverIf, handle, connId, value)
+        }
+
+        return BluetoothStatusCodes.SUCCESS
+    }
+
+    fun offloadClientCharacteristics(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        srvc: BluetoothGattService,
+        characteristics: MutableList<BluetoothGattCharacteristic>,
+        endpointId: Long,
+        hubId: Long,
+    ): GattOffloadSession.InnerParcel? {
+        check(isGattClientOffloadSupported()) { "GATT client offload is not supported" }
+        val clientApp = service.mClientMap.getByCallbackId(callback)
+        requireNotNull(clientApp) { "$callback: App not registered" }
+        val clientIf = clientApp.id
+        Log.v(
+            TAG,
+            "offloadClientCharacteristics(): clientIf=$clientIf, $device" +
+                ", service uuid=${srvc.uuid}, endpointId=$endpointId, hubId=$hubId",
+        )
+
+        val connId = service.getFirstConnectionIdForDevice(clientIf, device)
+        requireNotNull(connId) { "No connection to $device" }
+
+        synchronized(service.mOffloadLock) {
+            return nativeInterface.gattClientOffloadCharacteristics(
+                connId,
+                getGattDatabaseForOffload(srvc, characteristics),
+                endpointId,
+                hubId,
+            )
+        }
+    }
+
+    fun unoffloadClientCharacteristics(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        sessionId: Int,
+    ) {
+        check(isGattClientOffloadSupported()) { "GATT client offload is not supported" }
+        val clientApp = service.mClientMap.getByCallbackId(callback)
+        requireNotNull(clientApp) { "$callback: App not registered" }
+        val clientIf = clientApp.id
+        Log.v(
+            TAG,
+            "unoffloadClientCharacteristics(clientIf=$clientIf, $device, sessionId=$sessionId)",
+        )
+
+        val connId = service.getFirstConnectionIdForDevice(clientIf, device)
+        requireNotNull(connId) { "No connection to $device" }
+        synchronized(service.mOffloadLock) {
+            nativeInterface.gattClientUnoffloadCharacteristics(connId, sessionId)
+        }
+    }
+
+    fun offloadServerCharacteristics(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        srvc: BluetoothGattService,
+        characteristics: MutableList<BluetoothGattCharacteristic>,
+        endpointId: Long,
+        hubId: Long,
+    ): GattOffloadSession.InnerParcel? {
+        check(isGattServerOffloadSupported()) { "GATT server offload is not supported" }
+        val serverApp = serverMap.getByCallbackId(callback)
+        requireNotNull(serverApp) { "$callback: App not registered" }
+        val serverIf = serverApp.id
+        Log.v(
+            TAG,
+            "offloadServerCharacteristics(serverIf=$serverIf, $device" +
+                ", service uuid=${srvc.uuid}, endpointId=$endpointId, hubId=$hubId",
+        )
+
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
+        val connId = (if (connections.isEmpty()) null else connections[0].connId)
+        requireNotNull(connId) { "No connection to $device" }
+
+        // Lock the thread until onServerCharacteristicsOffloaded comes back.
+        synchronized(service.mOffloadLock) {
+            return nativeInterface.gattServerOffloadCharacteristics(
+                connId,
+                getGattDatabaseForOffload(srvc, characteristics),
+                endpointId,
+                hubId,
+            )
+        }
+    }
+
+    fun unoffloadServerCharacteristics(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        sessionId: Int,
+    ) {
+        check(isGattServerOffloadSupported()) { "GATT server offload is not supported" }
+        val serverApp = serverMap.getByCallbackId(callback)
+        requireNotNull(serverApp) { "$callback: App not registered" }
+        val serverIf = serverApp.id
+        Log.v(
+            TAG,
+            "unoffloadServerCharacteristics(serverIf=$serverIf, $device, sessionId=$sessionId)",
+        )
+
+        val connections = serverMap.getConnectionsByDevice(serverIf, device)
+        val connId = (if (connections.isEmpty()) null else connections.get(0).connId)
+        requireNotNull(connId) { "No connection to $device" }
+        synchronized(service.mOffloadLock) {
+            nativeInterface.gattServerUnoffloadCharacteristics(connId, sessionId)
+        }
+    }
+
+    private fun isGattClientOffloadSupported(): Boolean {
+        return adapterService.isGattClientOffloadSupported()
+    }
+
+    private fun isGattServerOffloadSupported(): Boolean {
+        return adapterService.isGattServerOffloadSupported()
+    }
+
+    private fun stopNextService(serverIf: Int, status: Int) {
+        Log.d(TAG, "stopNextService(serverIf=$serverIf, ${statusToString(status)})")
+
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            return
+        }
+        for (entry in handleMap.entries) {
+            if (
+                entry.mType != HandleMap.Type.SERVICE ||
+                    entry.mServerIf != serverIf ||
+                    !entry.mStarted
+            ) {
+                continue
+            }
+
+            nativeInterface.gattServerStopService(serverIf, entry.mHandle)
+            return
+        }
+    }
+
+    private fun deleteServices(serverIf: Int) {
+        Log.d(TAG, "deleteServices(serverIf=$serverIf)")
+
+        /*
+         * Figure out which handles to delete.
+         * The handles are copied into a new list to avoid race conditions.
+         */
+        val handleList = mutableListOf<Int>()
+        for (entry in handleMap.entries) {
+            if (entry.mType != HandleMap.Type.SERVICE || entry.mServerIf != serverIf) {
+                continue
+            }
+            handleList.add(entry.mHandle)
+        }
+
+        /* Now actually delete the services.... */
+        for (handle in handleList) {
+            nativeInterface.gattServerDeleteService(serverIf, handle)
+        }
+    }
+
+    private fun getGattDatabaseForOffload(
+        service: BluetoothGattService,
+        characteristics: MutableList<BluetoothGattCharacteristic>,
+    ): MutableList<GattDbElement> {
+        val db = mutableListOf<GattDbElement>()
+        db.add(GattDbElement.createPrimaryService(service.uuid))
+
+        for (characteristic in characteristics) {
+            val permissionEncodingKeySize = (characteristic.keySize - 7) shl 12
+            val permissions = permissionEncodingKeySize + characteristic.permissions
+            db.add(
+                GattDbElement.createCharacteristic(
+                    characteristic.uuid,
+                    characteristic.properties,
+                    permissions,
+                    characteristic.instanceId,
+                )
+            )
+        }
+
+        val builder = StringBuilder("getGattDatabaseForOffload{")
+        builder.append("database size=").append(db.size)
+        for (element in db) {
+            builder
+                .append(", type=")
+                .append(element.type)
+                .append(", attributeHandle=")
+                .append(element.attributeHandle)
+                .append(", uuid=")
+                .append(element.uuid)
+                .append(", properties=")
+                .append(element.properties)
+                .append(", permissions=")
+                .append(element.permissions)
+        }
+        builder.append("}")
+        Log.d(TAG, builder.toString())
+        return db
+    }
+}

@@ -19,7 +19,6 @@ package com.android.bluetooth.gatt
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.IBluetoothGattCallback
-import android.bluetooth.IBluetoothGattServerCallback
 import android.os.IInterface
 import com.android.bluetooth.Utils.transportToString
 import com.android.bluetooth.flags.Flags
@@ -169,23 +168,22 @@ object GattUtil {
     fun dump(
         advertiseManager: AdvertiseManager,
         clientMap: ContextMap<IBluetoothGattCallback>,
-        serverMap: ContextMap<IBluetoothGattServerCallback>,
-        handleMap: HandleMap,
+        serverManager: GattServerManager,
     ) = buildString {
         appendLine("Registered App:")
         appendLine("  Client:")
         dumpMapDetails(clientMap)
         appendLine("  Server:")
-        dumpMapDetails(serverMap)
+        dumpMapDetails(serverManager.serverMap)
         appendLine()
         appendLine("GATT Advertiser Map:")
         advertiseManager.dump(this)
         appendLine("GATT Client Map:")
         clientMap.dump(this)
         appendLine("GATT Server Map:")
-        serverMap.dump(this)
+        serverManager.serverMap.dump(this)
         appendLine("GATT Handle Map:")
-        handleMap.dump(this)
+        serverManager.handleMap.dump(this)
     }
 
     private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
