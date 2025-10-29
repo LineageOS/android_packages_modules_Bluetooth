@@ -109,4 +109,12 @@ void btif_a2dp_codec_debug_dump(int fd);
  */
 uint8_t* bta_av_co_get_codec_config(const RawAddress& peer_address);
 
+/**
+ * Report the codec configuration change for a specific peer.
+ * This can be used to trigger a codec configuration update to the upper layers.
+ * @param peer_address peer address of the remote device.
+ * @return true on success, otherwise false.
+ */
+bool bta_av_co_report_codec_config_changed(const RawAddress& peer_address);
+
 #endif  // BTIF_AV_CO_H
