@@ -21,6 +21,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.ScanSettings.CALLBACK_TYPE_ALL_MATCHES
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -70,9 +71,8 @@ class LeScanningTest {
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-    private val bluetoothAdapter = bluetoothManager.adapter
-    private val leScanner: BluetoothLeScanner? = bluetoothAdapter.bluetoothLeScanner
+    private val leScanner =
+        context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner
 
     @Test
     fun startBleScan_withCallbackTypeAllMatches() {
@@ -81,7 +81,7 @@ class LeScanningTest {
         val scanFilter =
             ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].scanRecord!!.serviceUuids[0])
@@ -103,7 +103,7 @@ class LeScanningTest {
                 )
                 .build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotEmpty()
         assertThat(results!![0].device.address).isEqualTo(TEST_ADDRESS_RANDOM_STATIC)
@@ -113,15 +113,13 @@ class LeScanningTest {
     fun startBleScan_withCallbackTypeFirstMatchSilentlyFails() {
         advertiseWithBumble(TEST_UUID_STRING, OwnAddressType.PUBLIC)
 
+        val scanFilter =
+            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
         val scanSettings =
             ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
                 .build()
-
-        val scanFilter =
-            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
-
         val mockScanCallback = mock(ScanCallback::class.java)
 
         leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
@@ -133,15 +131,13 @@ class LeScanningTest {
     fun startBleScan_withCallbackTypeMatchLostSilentlyFails() {
         advertiseWithBumble(TEST_UUID_STRING, OwnAddressType.PUBLIC)
 
+        val scanFilter =
+            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
         val scanSettings =
             ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_MATCH_LOST)
                 .build()
-
-        val scanFilter =
-            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
-
         val mockScanCallback = mock(ScanCallback::class.java)
 
         leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
@@ -157,15 +153,13 @@ class LeScanningTest {
 
         advertiseWithBumble(TEST_UUID_STRING, OwnAddressType.PUBLIC)
 
+        val scanFilter =
+            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
         val scanSettings =
             ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setCallbackType(CALLBACK_TYPE_ALL_MATCHES)
                 .build()
-
-        val scanFilter =
-            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
-
         // NOTE: Intent.setClass() must not be called, or else scan results won't be received.
         val scanIntent = Intent(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT)
         val pendingIntent =
@@ -188,7 +182,7 @@ class LeScanningTest {
 
         assertThat(intent.value.action).isEqualTo(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT)
         assertThat(intent.value.getIntExtra(BluetoothLeScanner.EXTRA_CALLBACK_TYPE, -1))
-            .isEqualTo(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .isEqualTo(CALLBACK_TYPE_ALL_MATCHES)
 
         val results =
             intent.value.getParcelableArrayListExtra(
@@ -207,20 +201,16 @@ class LeScanningTest {
     fun startBleScan_withPendingIntentAndStaticReceiverAndCallbackTypeAllMatches() {
         advertiseWithBumble(TEST_UUID_STRING, OwnAddressType.PUBLIC)
 
+        val scanFilter =
+            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
         val scanSettings =
             ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setCallbackType(CALLBACK_TYPE_ALL_MATCHES)
                 .build()
-
-        val scanFilters = ArrayList<ScanFilter>()
-        val scanFilter =
-            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
-        scanFilters.add(scanFilter)
-
         val pendingIntent = PendingIntentScanReceiver.newBroadcastPendingIntent(context, 0)
 
-        leScanner?.startScan(scanFilters, scanSettings, pendingIntent)
+        leScanner?.startScan(listOf(scanFilter), scanSettings, pendingIntent)
         val results =
             PendingIntentScanReceiver.nextScanResult()
                 .completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS)
@@ -239,17 +229,14 @@ class LeScanningTest {
         val maxNumScans = 32
         advertiseWithBumble(TEST_UUID_STRING, OwnAddressType.PUBLIC)
 
+        val scanFilter =
+            ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
+        val scanFilters = listOf(scanFilter)
         val scanSettings =
             ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setCallbackType(CALLBACK_TYPE_ALL_MATCHES)
                 .build()
-
-        val scanFilters =
-            listOf(
-                ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING)).build()
-            )
-
         val scanCallbacks =
             (1..maxNumScans).map {
                 val mockScanCallback = mock(ScanCallback::class.java)
@@ -264,7 +251,7 @@ class LeScanningTest {
         // We expect an error only for the last scan, which was over the maximum active scans limit.
         for (mockScanCallback in scanCallbacks) {
             verify(mockScanCallback, timeout(TIMEOUT_SCANNING_MS).atLeast(1))
-                .onScanResult(eq(ScanSettings.CALLBACK_TYPE_ALL_MATCHES), any())
+                .onScanResult(eq(CALLBACK_TYPE_ALL_MATCHES), any())
             verify(mockScanCallback, never()).onScanFailed(anyInt())
             leScanner?.stopScan(mockScanCallback)
         }
@@ -283,7 +270,7 @@ class LeScanningTest {
 
         val scanFilter = ScanFilter.Builder().setDeviceAddress(bumble.remoteDevice.address).build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].isConnectable).isFalse()
@@ -308,7 +295,7 @@ class LeScanningTest {
 
         val scanFilter = ScanFilter.Builder().setDeviceAddress(bumble.remoteDevice.address).build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].isConnectable).isFalse()
@@ -344,7 +331,7 @@ class LeScanningTest {
 
         // Set the filter on manufacturer data in scan response
         val scanFilter = ScanFilter.Builder().setManufacturerData(0xE0, payloadInScanRsp).build()
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].scanRecord!!.getManufacturerSpecificData(0x00E0))
@@ -380,7 +367,7 @@ class LeScanningTest {
 
         // Set the filter on manufacturer data in advertising data
         val scanFilter = ScanFilter.Builder().setManufacturerData(0xE0, payloadInAdvData).build()
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].scanRecord!!.getManufacturerSpecificData(0x00E0))
@@ -417,7 +404,7 @@ class LeScanningTest {
         // Set the filter on concatenated manufacturer data (Advertising data + Scan response)
         val concatenatedPayload = byteArrayOf(0x01, 0x02, 0x03, 0x04)
         val scanFilter = ScanFilter.Builder().setManufacturerData(0xE0, concatenatedPayload).build()
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, true)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, true)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].scanRecord!!.getManufacturerSpecificData(0x00E0))
@@ -434,7 +421,7 @@ class LeScanningTest {
                 .setServiceData(ParcelUuid.fromString(TEST_UUID_STRING), TEST_SERVICE_DATA)
                 .build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, false)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, false)
 
         assertThat(results).isNotNull()
         assertThat(results!![0].scanRecord!!.serviceUuids[0])
@@ -455,7 +442,7 @@ class LeScanningTest {
                 .setServiceData(ParcelUuid.fromString(uuid + TEST_UUID_SUFFIX), TEST_SERVICE_DATA)
                 .build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, false)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, false)
 
         assertThat(results).isNull()
     }
@@ -474,7 +461,7 @@ class LeScanningTest {
                 .setServiceData(ParcelUuid.fromString(TEST_UUID_STRING), TEST_SERVICE_DATA)
                 .build()
 
-        val results = startScanning(scanFilter, ScanSettings.CALLBACK_TYPE_ALL_MATCHES, false, phy)
+        val results = startScanning(scanFilter, CALLBACK_TYPE_ALL_MATCHES, false, phy)
 
         if (advertiseCoded && phy == BluetoothDevice.PHY_LE_1M) {
             assertThat(results).isNull()
@@ -514,7 +501,7 @@ class LeScanningTest {
         val results =
             startScanning(
                 scanFilter,
-                ScanSettings.CALLBACK_TYPE_ALL_MATCHES,
+                CALLBACK_TYPE_ALL_MATCHES,
                 true,
                 BluetoothDevice.PHY_LE_1M,
                 if (isActive) ScanSettings.SCAN_TYPE_ACTIVE else ScanSettings.SCAN_TYPE_PASSIVE,
@@ -558,14 +545,12 @@ class LeScanningTest {
                 override fun onScanResult(callbackType: Int, result: ScanResult) {
                     Log.i(
                         TAG,
-                        "onScanResult address: ${result.device.address}, connectable: ${result.isConnectable}, callbackType: $callbackType, service uuids: ${result.scanRecord?.serviceUuids}",
+                        "onScanResult address: ${result.device.address}" +
+                            ", connectable: ${result.isConnectable}, callbackType: $callbackType" +
+                            ", service uuids: ${result.scanRecord?.serviceUuids}",
                     )
-
                     scanResults.add(result)
-                    if (
-                        callbackType != ScanSettings.CALLBACK_TYPE_ALL_MATCHES ||
-                            scanResults.size > 1
-                    ) {
+                    if (callbackType != CALLBACK_TYPE_ALL_MATCHES || scanResults.size > 1) {
                         future.complete(scanResults)
                     }
                 }
@@ -577,10 +562,8 @@ class LeScanningTest {
             }
 
         leScanner?.startScan(listOf(scanFilter), scanSettings, scanCallback)
-
         val result =
             future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
-
         leScanner?.stopScan(scanCallback)
 
         return result
