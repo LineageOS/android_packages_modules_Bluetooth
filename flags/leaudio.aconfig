@@ -22,6 +22,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_fix_stop_stream_race"
+    namespace: "bluetooth"
+    description: "Fix race when resume is called just after stream release"
+    bug: "455775663"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_software_bt_request_lock_fix"
     namespace: "bluetooth"
     description: "Fix minor locking issue"
