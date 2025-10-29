@@ -33,6 +33,13 @@ import org.mockito.kotlin.whenever
 fun Intent.getBluetoothDeviceExtra(): BluetoothDevice =
     this.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)!!
 
+// Prevents `ClassCastException` that occurs when the extra contains an empty list
+fun Intent.getParcelUuidArray(key: String): Array<ParcelUuid> {
+    @Suppress("DEPRECATION") val extras = getParcelableArrayExtra(key)
+    if (extras == null || extras.isEmpty()) return emptyArray()
+    return extras.mapNotNull { it as? ParcelUuid }.toTypedArray()
+}
+
 object Utils {
     const val TAG = "Utils"
 
@@ -122,11 +129,7 @@ object Utils {
                 Log.d("intentLogger", "$tag/$action: $device")
             }
             BluetoothDevice.ACTION_UUID -> {
-                val uuids: Array<ParcelUuid> =
-                    intent.getParcelableArrayExtra(
-                        BluetoothDevice.EXTRA_UUID,
-                        ParcelUuid::class.java,
-                    )!!
+                val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID)
                 Log.d("intentLogger", "$tag/$action: Uuid=${uuids.contentToString()}")
             }
             BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> {
