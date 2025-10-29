@@ -49,6 +49,7 @@ import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
+import com.google.protobuf.ByteString.copyFrom
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -92,15 +93,14 @@ class PairingWithDiscoveryTest {
 
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    @get:Rule(order = 3) val secondBumble = PandoraDevice()
+    @get:Rule(order = 3) val secondBumble = PandoraDevice.createSecondPandoraDevice()
 
     @get:Rule(order = 4) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val manager = context.getSystemService(BluetoothManager::class.java)
-    private val adapter = manager.adapter
+    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val actionRegistrationCounts = HashMap<String, Int>()
     private val leScanner = adapter.bluetoothLeScanner
 
@@ -113,7 +113,7 @@ class PairingWithDiscoveryTest {
     private lateinit var cfName: String
 
     @SuppressLint("MissingPermission")
-    private val mIntentHandler =
+    private val intentHandler =
         Answer<Unit?> { inv ->
             Log.i(TAG, "onReceive(): intent=${inv.arguments.contentToString()}")
             val intent = inv.getArgument<Intent>(1)
@@ -148,7 +148,7 @@ class PairingWithDiscoveryTest {
     @Throws(Exception::class)
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        doAnswer(mIntentHandler).whenever(receiver).onReceive(any(), any())
+        doAnswer(intentHandler).whenever(receiver).onReceive(any(), any())
 
         inOrder = inOrder(receiver)
         cfName = adapter.name
@@ -231,9 +231,7 @@ class PairingWithDiscoveryTest {
         )
 
         val device =
-            deviceFound
-                .completeOnTimeout(null, DISCOVERY_TIMEOUT.toLong(), TimeUnit.MILLISECONDS)
-                .join()
+            deviceFound.completeOnTimeout(null, DISCOVERY_TIMEOUT, TimeUnit.MILLISECONDS).join()
         // Verify address
         assertThat(device.address).isEqualTo(bumbleDevice?.address)
         // Verify address type
@@ -357,9 +355,7 @@ class PairingWithDiscoveryTest {
                 .connect(
                     HostProto.ConnectRequest.newBuilder()
                         .apply {
-                            setAddress(
-                                ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                            )
+                            setAddress(copyFrom(Utils.addressBytesFromString(adapter.address)))
                         }
                         .build()
                 )
@@ -991,7 +987,7 @@ class PairingWithDiscoveryTest {
                         setConnectable(true)
                         setOwnAddressType(OwnAddressType.RESOLVABLE_OR_RANDOM)
                         setData(dataTypeBuilder.build())
-                        setRandomAddress(ByteString.copyFrom(Utils.addressBytesFromString(rpa)))
+                        setRandomAddress(copyFrom(Utils.addressBytesFromString(rpa)))
                     }
                     .build()
             )
@@ -1199,18 +1195,17 @@ class PairingWithDiscoveryTest {
         return actionRegistrationCounts.values.sum()
     }
 
+    private fun testStep_restartBt() {
+        assertThat(BlockingBluetoothAdapter.disable(true)).isTrue()
+        assertThat(BlockingBluetoothAdapter.enable()).isTrue()
+    }
+
     companion object {
         private const val BUMBLE_DEVICE_NAME = "Bumble"
         private const val BUMBLE_DEVICE_NAME_2 = "Bumble_2"
         private val BOND_INTENT_TIMEOUT = Duration.ofSeconds(10)
-        private const val DISCOVERY_TIMEOUT = 5000 // 5 seconds
+        private const val DISCOVERY_TIMEOUT = 5000L
         private val BATTERY_UUID = ParcelUuid.fromString("0000180F-0000-1000-8000-00805F9B34FB")
-
         private val HOGP_UUID = ParcelUuid.fromString("00001812-0000-1000-8000-00805F9B34FB")
-
-        private fun testStep_restartBt() {
-            assertThat(BlockingBluetoothAdapter.disable(true)).isTrue()
-            assertThat(BlockingBluetoothAdapter.enable()).isTrue()
-        }
     }
 }
