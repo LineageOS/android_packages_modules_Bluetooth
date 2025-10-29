@@ -102,11 +102,6 @@ class PairingTest {
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
-
-    private lateinit var deviceName: String
-
     /* Util instance for common test steps with current Context reference */
     private lateinit var util: TestUtil
     private lateinit var bumbleDevice: BluetoothDevice
@@ -2063,6 +2058,9 @@ class PairingTest {
         private const val SERIAL_PORT_UUID = "00001101-0000-1000-8000-00805F9B34FB"
         private const val TEST_SERVER_NAME = "RFCOMM Server"
 
+        private val context = ApplicationProvider.getApplicationContext<Context>()
+        private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
+        private lateinit var deviceName: String
         private var toggleDevice = true
     }
 }
