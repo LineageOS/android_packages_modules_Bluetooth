@@ -266,6 +266,39 @@ struct GATTS_StopService {
 };
 extern struct GATTS_StopService GATTS_StopService;
 
+// Name: GATT_UpdateSubrateConfig
+// Params: GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
+//         uint16_t subrate_min, uint16_t cont_num
+// Return: void
+struct GATT_UpdateSubrateConfig {
+  std::function<void(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                     uint16_t subrate_min, uint16_t cont_num)>
+          body{[](tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
+                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) {}};
+  void operator()(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                  uint16_t subrate_min, uint16_t cont_num) {
+    body(subrate_mode, subrate_max, subrate_min, cont_num);
+  }
+};
+extern struct GATT_UpdateSubrateConfig GATT_UpdateSubrateConfig;
+
+// Name: GATT_SubrateRequest
+// Params: tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode
+// Return: bool
+struct GATT_SubrateRequest {
+  static bool return_value;
+  std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                     tGATT_SUBRATE_MODE subrate_mode)>
+          body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
+                  tGATT_SUBRATE_MODE /* subrate_mode */) {
+            return return_value;
+          }};
+  bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode) {
+    return body(gatt_if, bd_addr, subrate_mode);
+  }
+};
+extern struct GATT_SubrateRequest GATT_SubrateRequest;
+
 // Name: GATT_CancelConnect
 // Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct
 // Return: bool

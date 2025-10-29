@@ -60,6 +60,8 @@ struct GATTS_SendRsp GATTS_SendRsp;
 struct GATTS_StopService GATTS_StopService;
 struct GATTS_OffloadCharacteristics GATTS_OffloadCharacteristics;
 struct GATTS_UnoffloadCharacteristics GATTS_UnoffloadCharacteristics;
+struct GATT_UpdateSubrateConfig GATT_UpdateSubrateConfig;
+struct GATT_SubrateRequest GATT_SubrateRequest;
 struct GATT_CancelConnect GATT_CancelConnect;
 struct GATT_Connect GATT_Connect;
 struct GATT_Deregister GATT_Deregister;
@@ -94,6 +96,7 @@ tGATT_STATUS GATTS_HandleValueIndication::return_value = GATT_SUCCESS;
 tGATT_STATUS GATTS_HandleValueNotification::return_value = GATT_SUCCESS;
 bool GATTS_NVRegister::return_value = false;
 tGATT_STATUS GATTS_SendRsp::return_value = GATT_SUCCESS;
+bool GATT_SubrateRequest::return_value = false;
 bool GATT_CancelConnect::return_value = false;
 bool GATT_Connect::return_value = false;
 tGATT_STATUS GATT_Disconnect::return_value = GATT_SUCCESS;
@@ -181,6 +184,18 @@ tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS sta
 void GATTS_StopService(uint16_t service_handle) {
   inc_func_call_count(__func__);
   test::mock::stack_gatt_api::GATTS_StopService(service_handle);
+}
+void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode,
+                                    uint16_t subrate_max, uint16_t subrate_min,
+                                    uint16_t cont_num) {
+  inc_func_call_count(__func__);
+  test::mock::stack_gatt_api::GATT_UpdateSubrateConfig(subrate_mode, subrate_max,
+                                                             subrate_min, cont_num);
+}
+bool GATT_SubrateRequest(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                         tGATT_SUBRATE_MODE subrate_mode) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_gatt_api::GATT_SubrateRequest(gatt_if, bd_addr, subrate_mode);
 }
 bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct) {
   inc_func_call_count(__func__);
