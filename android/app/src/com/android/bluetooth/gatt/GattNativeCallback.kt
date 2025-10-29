@@ -22,8 +22,11 @@ import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 import java.util.UUID
 
-class GattNativeCallback(val adapterService: AdapterService, val service: GattService) :
-    NativeCallback {
+class GattNativeCallback(
+    private val adapterService: AdapterService,
+    private val service: GattService,
+    private val gattServer: GattServerManager,
+) : NativeCallback {
 
     fun onClientRegistered(status: Int, clientIf: Int, uuidLsb: Long, uuidMsb: Long) {
         service.onClientRegisteredFromNative(status, clientIf, UUID(uuidMsb, uuidLsb))
@@ -74,15 +77,15 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
     }
 
     fun onServerPhyUpdate(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
-        service.onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status)
+        gattServer.onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status)
     }
 
     fun onServerPhyRead(serverIf: Int, address: String, txPhy: Int, rxPhy: Int, status: Int) {
-        service.onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status)
+        gattServer.onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status)
     }
 
     fun onServerConnUpdate(connId: Int, interval: Int, latency: Int, timeout: Int, status: Int) {
-        service.onServerConnUpdateFromNative(connId, interval, latency, timeout, status)
+        gattServer.onServerConnUpdateFromNative(connId, interval, latency, timeout, status)
     }
 
     fun onServerSubrateChange(
@@ -94,7 +97,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         subrateMode: Int,
         status: Int,
     ) {
-        service.onServerSubrateChangeFromNative(
+        gattServer.onServerSubrateChangeFromNative(
             connId,
             subrateFactor,
             latency,
@@ -158,19 +161,19 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
     /* Server callbacks */
 
     fun onServerRegistered(status: Int, serverIf: Int, uuidLsb: Long, uuidMsb: Long) {
-        service.onServerRegisteredFromNative(status, serverIf, UUID(uuidMsb, uuidLsb))
+        gattServer.onServerRegisteredFromNative(status, serverIf, UUID(uuidMsb, uuidLsb))
     }
 
     fun onServiceAdded(status: Int, serverIf: Int, serviceAdded: List<GattDbElement>) {
-        service.onServiceAddedFromNative(status, serverIf, serviceAdded)
+        gattServer.onServiceAddedFromNative(status, serverIf, serviceAdded)
     }
 
     fun onServiceStopped(status: Int, serverIf: Int, srvcHandle: Int) {
-        service.onServiceStoppedFromNative(status, serverIf, srvcHandle)
+        gattServer.onServiceStoppedFromNative(status, serverIf, srvcHandle)
     }
 
     fun onServiceDeleted(status: Int, serverIf: Int, srvcHandle: Int) {
-        service.onServiceDeletedFromNative(status, serverIf, srvcHandle)
+        gattServer.onServiceDeletedFromNative(status, serverIf, srvcHandle)
     }
 
     fun onClientConnected(
@@ -180,7 +183,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         connId: Int,
         serverIf: Int,
     ) {
-        service.onClientConnectedFromNative(
+        gattServer.onClientConnectedFromNative(
             getDevice(address),
             transport,
             connected,
@@ -197,7 +200,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         offset: Int,
         isLong: Boolean,
     ) {
-        service.onServerReadCharacteristicFromNative(
+        gattServer.onServerReadCharacteristicFromNative(
             getDevice(address),
             connId,
             transId,
@@ -215,7 +218,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         offset: Int,
         isLong: Boolean,
     ) {
-        service.onServerReadDescriptorFromNative(
+        gattServer.onServerReadDescriptorFromNative(
             getDevice(address),
             connId,
             transId,
@@ -236,7 +239,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         isPrep: Boolean,
         data: ByteArray,
     ) {
-        service.onServerWriteCharacteristicFromNative(
+        gattServer.onServerWriteCharacteristicFromNative(
             getDevice(address),
             connId,
             transId,
@@ -260,7 +263,7 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
         isPrep: Boolean,
         data: ByteArray,
     ) {
-        service.onServerWriteDescriptorFromNative(
+        gattServer.onServerWriteDescriptorFromNative(
             getDevice(address),
             connId,
             transId,
@@ -274,27 +277,27 @@ class GattNativeCallback(val adapterService: AdapterService, val service: GattSe
     }
 
     fun onExecuteWrite(address: String, connId: Int, transId: Int, execWrite: Int) {
-        service.onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite)
+        gattServer.onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite)
     }
 
     fun onResponseSendCompleted(status: Int, attrHandle: Int) {
-        service.onResponseSendCompletedFromNative(status, attrHandle)
+        gattServer.onResponseSendCompletedFromNative(status, attrHandle)
     }
 
     fun onNotificationSent(connId: Int, status: Int) {
-        service.onNotificationSentFromNative(connId, status)
+        gattServer.onNotificationSentFromNative(connId, status)
     }
 
     fun onServerCongestion(connId: Int, congested: Boolean) {
-        service.onServerCongestionFromNative(connId, congested)
+        gattServer.onServerCongestionFromNative(connId, congested)
     }
 
     fun onMtuChanged(connId: Int, mtu: Int) {
-        service.onMtuChangedFromNative(connId, mtu)
+        gattServer.onMtuChangedFromNative(connId, mtu)
     }
 
     fun onServerCharacteristicsUnoffloaded(connId: Int, sessionId: Int, status: Int) {
-        service.onServerCharacteristicsUnoffloadedFromNative(connId, sessionId, status)
+        gattServer.onServerCharacteristicsUnoffloadedFromNative(connId, sessionId, status)
     }
 
     private fun getDevice(address: String): BluetoothDevice {

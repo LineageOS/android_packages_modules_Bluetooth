@@ -140,7 +140,16 @@ public class HandleMap {
         }
     }
 
-    record RequestData(int connId, int handle) {}
+    record RequestData(int connId, int handle) {
+        // TODO(b/441794572) Workaround for old lint version
+        int fetchConnId() {
+            return connId;
+        }
+
+        int fetchHandle() {
+            return handle;
+        }
+    }
 
     /*
      * Represents an in-flight request from a client, that's being processed by a server app
@@ -157,7 +166,20 @@ public class HandleMap {
      * that requested them. Once a request context is created and an ID given out, other server apps
      * are not allowed to get or delete another server's request contexts.
      */
-    record RequestContext(int serverIf, int requestId, int connId, int transactionId, int handle) {}
+    record RequestContext(int serverIf, int requestId, int connId, int transactionId, int handle) {
+        // TODO(b/441794572) Workaround for old lint version
+        int fetchConnId() {
+            return connId;
+        }
+
+        int fetchTransactionId() {
+            return transactionId;
+        }
+
+        int fetchHandle() {
+            return handle;
+        }
+    }
 
     List<Entry> getEntries() {
         return mEntries;
