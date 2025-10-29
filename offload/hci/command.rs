@@ -48,6 +48,8 @@ pub enum Command {
 pub enum ReturnParameters {
     /// 7.3.2 Reset Command
     Reset(ResetComplete),
+    /// 7.4.5 Read Buffer Size
+    ReadBufferSize(ReadBufferSizeComplete),
     /// 7.8.2 LE Read Buffer Size [V1]
     LeReadBufferSizeV1(LeReadBufferSizeV1Complete),
     /// 7.8.2 LE Read Buffer Size [V2]
@@ -186,6 +188,37 @@ fn test_reset_complete() {
     let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
     let ReturnParameters::Reset(ref p) = e.return_parameters else { panic!() };
     assert_eq!(p.status, Status::Success);
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
+
+// 7.4.5 Read Buffer Size
+
+impl CommandOpCode for ReadBufferSize {
+    const OPCODE: OpCode = OpCode::from(0x04, 0x0005);
+}
+
+#[derive(Debug)]
+pub struct ReadBufferSize;
+
+#[derive(Debug, Read, Write)]
+pub struct ReadBufferSizeComplete {
+    pub status: Status,
+    pub acl_data_packet_length: u16,
+    pub synchronous_data_packet_length: u8,
+    pub total_num_acl_data_packets: u16,
+    pub total_num_synchronous_data_packets: u16,
+}
+
+#[test]
+fn test_read_buffer_size_complete() {
+    let dump = [0x0e, 0x0b, 0x01, 0x05, 0x10, 0x00, 0xff, 0x03, 0xff, 0x0a, 0x00, 0x0a, 0x00];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::ReadBufferSize(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.status, Status::Success);
+    assert_eq!(p.acl_data_packet_length, 1023);
+    assert_eq!(p.synchronous_data_packet_length, 255);
+    assert_eq!(p.total_num_acl_data_packets, 10);
+    assert_eq!(p.total_num_synchronous_data_packets, 10);
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 
