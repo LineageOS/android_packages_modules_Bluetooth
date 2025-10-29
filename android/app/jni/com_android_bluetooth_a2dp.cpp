@@ -101,15 +101,7 @@ static void bta2dp_connection_state_callback(const RawAddress& bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   reinterpret_cast<const jbyte*>(bd_addr.address.data()));
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj,
                                android_bluetooth_A2dpNativeCallback.onConnectionStateChanged,
                                addr.get(), (jint)state, (jint)error.error_code);
@@ -124,15 +116,7 @@ static void bta2dp_audio_state_callback(const RawAddress& bd_addr, btav_audio_st
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   reinterpret_cast<const jbyte*>(bd_addr.address.data()));
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj,
                                android_bluetooth_A2dpNativeCallback.onAudioStateChanged, addr.get(),
                                (jint)state);
@@ -195,15 +179,7 @@ static void bta2dp_audio_config_callback(
     sCallbackEnv->DeleteLocalRef(capObj);
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(RawAddress::kLength));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr");
-    return;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, RawAddress::kLength,
-                                   reinterpret_cast<const jbyte*>(bd_addr.address.data()));
-
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(
           mCallbacksObj, android_bluetooth_A2dpNativeCallback.onCodecConfigChanged, addr.get(),
           codecConfigObj, local_capabilities_array, selectable_capabilities_array);
@@ -218,14 +194,7 @@ static bool bta2dp_mandatory_codec_preferred_callback(const RawAddress& bd_addr)
     return false;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(RawAddress::kLength));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr");
-    return false;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, RawAddress::kLength,
-                                   reinterpret_cast<const jbyte*>(bd_addr.address.data()));
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   return sCallbackEnv->CallBooleanMethod(
           mCallbacksObj, android_bluetooth_A2dpNativeCallback.isMandatoryCodecPreferred,
           addr.get());
@@ -240,14 +209,7 @@ static void bta2dp_audio_delay_reported_callback(const RawAddress& bd_addr, int 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(RawAddress::kLength));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr");
-    return;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, RawAddress::kLength,
-                                   reinterpret_cast<const jbyte*>(bd_addr.address.data()));
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj,
                                android_bluetooth_A2dpNativeCallback.onAudioDelayReported,
                                addr.get(), (jint)delay);
