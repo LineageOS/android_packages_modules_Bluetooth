@@ -252,3 +252,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "detect_bondloss_legacy_bredr_pairing"
+    namespace: "bluetooth"
+    description: "Detect bond loss during legacy BR/EDR pairing"
+    bug: "455785260"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
