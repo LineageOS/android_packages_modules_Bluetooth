@@ -44,21 +44,6 @@ static const bthd_interface_t* sHiddIf = NULL;
 static jobject mCallbacksObj = NULL;
 static jfieldID sCallbacksField;
 
-static jbyteArray marshall_bda(RawAddress* bd_addr) {
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid()) {
-    return NULL;
-  }
-
-  jbyteArray addr = sCallbackEnv->NewByteArray(sizeof(RawAddress));
-  if (!addr) {
-    log::error("Fail to new jbyteArray bd addr");
-    return NULL;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr, 0, sizeof(RawAddress), (jbyte*)bd_addr);
-  return addr;
-}
-
 static void application_state_callback(RawAddress* bd_addr, bthd_application_state_t state) {
   jboolean registered = JNI_FALSE;
 
@@ -68,30 +53,20 @@ static void application_state_callback(RawAddress* bd_addr, bthd_application_sta
     registered = JNI_TRUE;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), NULL);
+  ScopedLocalRef<jbyteArray> jaddr =
+          bd_addr ? addressToJByteArray(sCallbackEnv.get(), *bd_addr)
+                  : ScopedLocalRef<jbyteArray>(sCallbackEnv.get(), nullptr);
 
-  if (bd_addr) {
-    addr.reset(marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("failed to allocate storage for bt_addr");
-      return;
-    }
-  }
-
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onApplicationStateChanged, addr.get(),
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onApplicationStateChanged, jaddr.get(),
                                registered);
 }
 
 static void connection_state_callback(RawAddress* bd_addr, bthd_connection_state_t state) {
   CallbackEnv sCallbackEnv(__func__);
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("failed to allocate storage for bt_addr");
-    return;
-  }
-
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, addr.get(),
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, jaddr.get(),
                                (jint)state);
 }
 

@@ -118,18 +118,13 @@ static void sdp_search_callback(bt_status_t status, const RawAddress& bd_addr, c
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-  if (!addr.get()) {
-    return;
-  }
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
   ScopedLocalRef<jbyteArray> uuid(sCallbackEnv.get(), sCallbackEnv->NewByteArray(sizeof(Uuid)));
   if (!uuid.get()) {
     return;
   }
 
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (const jbyte*)&bd_addr);
   sCallbackEnv->SetByteArrayRegion(uuid.get(), 0, sizeof(Uuid),
                                    (const jbyte*)uuid_in.To128BitBE().data());
 

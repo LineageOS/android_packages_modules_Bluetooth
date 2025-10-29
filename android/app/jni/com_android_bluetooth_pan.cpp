@@ -37,21 +37,6 @@ static const btpan_interface_t* sPanIf = NULL;
 static jobject mCallbacksObj = NULL;
 static jfieldID sCallbacksField;
 
-static jbyteArray marshall_bda(const RawAddress* bd_addr) {
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid()) {
-    return NULL;
-  }
-
-  jbyteArray addr = sCallbackEnv->NewByteArray(sizeof(RawAddress));
-  if (!addr) {
-    log::error("Fail to new jbyteArray bd addr");
-    return NULL;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr, 0, sizeof(RawAddress), (jbyte*)bd_addr);
-  return addr;
-}
-
 static void control_state_callback(btpan_control_state_t state, int local_role, BtStatus error,
                                    const char* ifname) {
   log::debug("state:{}, local_role:{}, ifname:{}", state, local_role, ifname);
@@ -75,17 +60,16 @@ static void connection_state_callback(btpan_connection_state_t state, BtStatus e
     log::error("Callbacks Obj is NULL");
     return;
   }
+
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) {
     return;
   }
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for PAN channel state");
-    return;
-  }
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, addr.get(), (jint)state,
-                               (jint)error, (jint)local_role, (jint)remote_role);
+
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, jaddr.get(),
+                               (jint)state, (jint)error, (jint)local_role, (jint)remote_role);
 }
 
 static btpan_callbacks_t sBluetoothPanCallbacks = {
