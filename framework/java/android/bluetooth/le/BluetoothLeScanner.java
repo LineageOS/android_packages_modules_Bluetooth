@@ -596,16 +596,28 @@ public final class BluetoothLeScanner {
         /** Application interface registered - app is ready to go */
         @Override
         public void onScannerRegistered(int status, int scannerId) {
-            Log.d(
-                    TAG,
-                    ("onScannerRegistered(): status=" + status + ", scannerId=" + scannerId)
-                            + (", mScannerId=" + mScannerId));
+            String header =
+                    "onScannerRegistered(status=" + status + ", scannerId=" + scannerId + "): ";
+            Log.d(TAG, header + "mScannerId=" + mScannerId);
             synchronized (this) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    if (Flags.scanRegisterAndStart()) {
+                if (Flags.scanRegisterAndStart()) {
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
                         mScannerId = scannerId;
-                        return;
+                    } else {
+                        // If scanning too frequently, don't report anything to the app.
+                        if (scannerId == -2) {
+                            Log.e(TAG, header + "Failed. App is scanning too frequently");
+                        } else {
+                            postCallbackError(
+                                    mCallback,
+                                    ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED);
+                        }
+                        mLeScanClients.remove(mCallback);
                     }
+                    return;
+                }
+
+                if (status == BluetoothGatt.GATT_SUCCESS) {
                     try {
                         if (mScannerId == -1) {
                             // Registration succeeds after timeout, unregister scanner.
@@ -615,23 +627,15 @@ public final class BluetoothLeScanner {
                             mScan.startScan(mScannerId, mSettings, mFilters, mSource);
                         }
                     } catch (RemoteException e) {
-                        Log.e(TAG, "onScannerRegistered(): Failed to start scan" + e);
+                        Log.e(TAG, header + "Failed to start scan" + e);
                         mScannerId = -1;
                     }
                 } else if (status == ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY) {
-                    if (Flags.scanRegisterAndStart()) {
-                        mLeScanClients.remove(mCallback);
-                    }
                     mScannerId = -2; // Application was scanning too frequently
                 } else {
-                    if (Flags.scanRegisterAndStart()) {
-                        mLeScanClients.remove(mCallback);
-                    }
                     mScannerId = -1; // Registration failed
                 }
-                if (!Flags.scanRegisterAndStart()) {
-                    notifyAll();
-                }
+                notifyAll();
             }
         }
 
