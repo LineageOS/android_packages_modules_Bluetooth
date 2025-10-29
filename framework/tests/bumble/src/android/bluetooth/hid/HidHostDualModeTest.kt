@@ -90,6 +90,7 @@ import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.kotlin.whenever
 import org.mockito.stubbing.Answer
 import pandora.HIDGrpc
 import pandora.HidProto.HidServiceType
@@ -205,7 +206,7 @@ class HidHostDualModeTest {
     fun setUp() {
         MockitoAnnotations.initMocks(this)
 
-        doAnswer(intentHandler).`when`(receiver).onReceive(any(), any())
+        doAnswer(intentHandler).whenever(receiver).onReceive(any(), any())
 
         inOrder = inOrder(receiver)
 
