@@ -85,9 +85,7 @@ class BluetoothSupervisor(
 
     fun onUserSwitching(userHandle: UserHandle) {
         enforceCorrectThread()
-        if (!mInitialized) {
-            throw IllegalStateException("Initialize did not happen")
-        }
+        check(mInitialized) { "Initialize did not happen" }
         bms.onUserSwitching(userHandle)
     }
 
