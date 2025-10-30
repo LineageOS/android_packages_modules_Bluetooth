@@ -93,6 +93,12 @@
 #define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_REPLY 14
 #define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_NEG_REPLY 3
 
+#define HCIC_PARAM_SIZE_SET_CIG_PARAMS_BASE_LEN 15
+#define HCIC_PARAM_SIZE_SET_CIG_PARAMS_PER_CIS_LEN 9
+#define HCIC_PARAM_SIZE_CREATE_CIS_BASE_LEN 1
+#define HCIC_PARAM_SIZE_CREATE_CIS_PER_CIS_LEN 4
+#define HCIC_PARAM_SIZE_BLE_SETUP_ISO_DATA_PATH_BASE_LEN 13
+
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC 14
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL 0
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_TERMINATE_SYNC 2
@@ -367,7 +373,8 @@ void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32
                                    uint16_t max_trans_lat_stom, uint16_t max_trans_lat_mtos,
                                    uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
                                    base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  const int params_len = 15 + cis_cnt * 9;
+  const int params_len = HCIC_PARAM_SIZE_SET_CIG_PARAMS_BASE_LEN +
+                         cis_cnt * HCIC_PARAM_SIZE_SET_CIG_PARAMS_PER_CIS_LEN;
   bluetooth::log::assert_that(params_len <= kMaxParametersSize,
                               "assert failed: params_len={} <= kMaxParametersSize={}", params_len,
                               kMaxParametersSize);
@@ -399,7 +406,8 @@ void btsnd_hcic_ble_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32
 
 void btsnd_hcic_ble_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
                                base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  const int params_len = 1 + num_cis * 4;
+  const int params_len =
+          HCIC_PARAM_SIZE_CREATE_CIS_BASE_LEN + num_cis * HCIC_PARAM_SIZE_CREATE_CIS_PER_CIS_LEN;
   bluetooth::log::assert_that(params_len <= kMaxParametersSize,
                               "assert failed: params_len={} <= kMaxParametersSize={}", params_len,
                               kMaxParametersSize);
@@ -495,7 +503,7 @@ void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_d
                                         uint16_t codec_id_company, uint16_t codec_id_vendor,
                                         uint32_t controller_delay, std::vector<uint8_t> codec_conf,
                                         base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  const int params_len = 13 + codec_conf.size();
+  const int params_len = HCIC_PARAM_SIZE_BLE_SETUP_ISO_DATA_PATH_BASE_LEN + codec_conf.size();
   bluetooth::log::assert_that(params_len <= kMaxParametersSize,
                               "assert failed: params_len={} <= kMaxParametersSize={}", params_len,
                               kMaxParametersSize);
