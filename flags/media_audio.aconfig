@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "media_audio_server"
+    namespace: "bluetooth"
+    description: "Create a central Media/Audio server abstraction that can server Classic and LE Audio media experiences"
+    bug: "456487418"
+}

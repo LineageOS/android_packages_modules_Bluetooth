@@ -39,6 +39,7 @@ aconfig_declarations {
         "le_scanning.aconfig",
         "leaudio.aconfig",
         "mapclient.aconfig",
+        "media_audio.aconfig",
         "metric.aconfig",
         "native.aconfig",
         "opp.aconfig",
