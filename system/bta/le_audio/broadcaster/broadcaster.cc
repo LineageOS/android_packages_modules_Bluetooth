@@ -973,13 +973,11 @@ public:
     }
     std::vector<uint16_t> handles = {conn_handle};
 
-    log::info(
-            "Issuing SetBigChannelMapClassificationVSC: action={}, big_handle={}, num_handles = "
-            "{}, conn_handle={}",
-            action, big_handle, handles.size(), conn_handle);
+    log::info("Issuing SetBigChannelMapClassificationVSC: action={}, big_handle={}, conn_handle={}",
+              action, big_handle, conn_handle);
 
     IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
-                                                                           handles.size(), handles);
+                                                                           handles);
   }
 
 private:

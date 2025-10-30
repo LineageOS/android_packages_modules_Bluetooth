@@ -65,7 +65,6 @@ public:
   MOCK_METHOD((void), Start, ());
   MOCK_METHOD((void), Stop, ());
 
-  MOCK_METHOD(void, SetBigChannelMapClassificationByConnHandles,
-              (uint8_t action, uint8_t big_handle, uint8_t num_handles,
-               const std::vector<uint16_t>& handles));
+  MOCK_METHOD((void), SetBigChannelMapClassificationByConnHandles,
+              (uint8_t action, uint8_t big_handle, const std::vector<uint16_t>& handles));
 };

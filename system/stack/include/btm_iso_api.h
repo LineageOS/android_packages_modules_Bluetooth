@@ -231,11 +231,9 @@ public:
    *
    * @param action The action to perform (ADD, DELETE, CLEAR).
    * @param big_handle The handle of the BIG to be affected.
-   * @param num_handles The number of handles in the list.
    * @param handles A list of connection handles to be added or deleted.
    */
   virtual void SetBigChannelMapClassificationByConnHandles(uint8_t action, uint8_t big_handle,
-                                                           uint8_t num_handles,
                                                            const std::vector<uint16_t>& handles);
 
   /**

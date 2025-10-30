@@ -3134,18 +3134,17 @@ TEST_F(IsoManagerTest, SetBigChannelMapClassificationHciCall) {
   uint8_t action = 1;
   uint8_t big_handle = 2;
   std::vector<uint16_t> handles = {0x0041, 0x0042};
-  uint8_t num_handles = handles.size();
 
   // --- Expectations ---
   // Expect that the LeSetBigChannelMapClassification HCI command is called once
   // with the parameters we defined above. This verifies that the IsoManager
   // correctly processes the request and sends the appropriate command to the controller.
   EXPECT_CALL(hcic_interface_,
-              SetBigChannelMapClassificationByConnHandles(action, big_handle, num_handles, handles))
+              SetBigChannelMapClassificationByConnHandles(action, big_handle, handles))
           .Times(1);
 
   // --- Execution ---
   // Call the function on the IsoManager that we are testing.
   IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
-                                                                         num_handles, handles);
+                                                                         handles);
 }

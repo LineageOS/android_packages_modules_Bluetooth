@@ -687,13 +687,12 @@ void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
 }
 
 void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
-                                                       uint8_t num_handles,
-                                                       const std::vector<uint16_t>& handles) {
+                                                           const std::vector<uint16_t>& handles) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
   const uint8_t param_len =
-      HCIC_PARAM_SIZE_SET_BIG_CHANNEL_MAP_CLASSIFICATION_VSC_BASE + (num_handles * 2);
+          HCIC_PARAM_SIZE_SET_BIG_CHANNEL_MAP_CLASSIFICATION_VSC_BASE + (handles.size() * 2);
   p->len = HCIC_PREAMBLE_SIZE + param_len;
   p->offset = 0;
 
@@ -703,8 +702,8 @@ void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8
   UINT8_TO_STREAM(pp, SET_BIG_MAP_BY_CONNECTION_HANDLE);
   UINT8_TO_STREAM(pp, action);
   UINT8_TO_STREAM(pp, big_handle);
-  UINT8_TO_STREAM(pp, num_handles);
-  ARRAY_TO_STREAM(pp, handles.data(), static_cast<int>(num_handles * 2));
+  UINT8_TO_STREAM(pp, handles.size());
+  ARRAY_TO_STREAM(pp, handles.data(), static_cast<int>(handles.size() * 2));
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
