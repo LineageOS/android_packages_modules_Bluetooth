@@ -528,10 +528,11 @@ package android.bluetooth {
 
   public final class BluetoothDevice implements android.os.Parcelable {
     method @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public boolean cancelBondProcess();
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int, android.os.Handler);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int, android.os.Handler);
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(@NonNull android.bluetooth.BluetoothGattConnectionSettings);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBond();
     method @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBond(int);
     method @NonNull public android.bluetooth.BluetoothSocket createInsecureL2capChannel(int) throws java.io.IOException;
@@ -760,6 +761,22 @@ package android.bluetooth {
     field public static final int WRITE_TYPE_NO_RESPONSE = 1; // 0x1
     field public static final int WRITE_TYPE_SIGNED = 4; // 0x4
     field protected java.util.List<android.bluetooth.BluetoothGattDescriptor> mDescriptors;
+  }
+
+  @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") public final class BluetoothGattConnectionSettings {
+    method @NonNull public android.bluetooth.BluetoothGattCallback getBluetoothGattCallback();
+    method @NonNull public java.util.concurrent.Executor getBluetoothGattCallbackExecutor();
+    method public int getTransport();
+    method public boolean isAutoConnectEnabled();
+    method public boolean isOpportunisticEnabled();
+  }
+
+  public static final class BluetoothGattConnectionSettings.Builder {
+    ctor public BluetoothGattConnectionSettings.Builder(@NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.BluetoothGattCallback);
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings build();
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setAutoConnectEnabled(boolean);
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setOpportunisticEnabled(boolean);
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setTransport(int);
   }
 
   public class BluetoothGattDescriptor implements android.os.Parcelable {
