@@ -201,6 +201,7 @@ pub mod ffi {
             self: Pin<&mut BleScannerIntf>,
             sid: u8,
             address: RawAddress,
+            address_type: u8,
             skip: u16,
             timeout: u16,
         );
@@ -1702,8 +1703,15 @@ impl BleScanner {
     }
 
     #[log_args]
-    pub fn start_sync(&mut self, sid: u8, addr: RawAddress, skip: u16, timeout: u16) {
-        mutcxxcall!(self, StartSync, sid, addr, skip, timeout);
+    pub fn start_sync(
+        &mut self,
+        sid: u8,
+        addr: RawAddress,
+        addr_type: u8,
+        skip: u16,
+        timeout: u16,
+    ) {
+        mutcxxcall!(self, StartSync, sid, addr, addr_type, skip, timeout);
     }
 
     #[log_args]
