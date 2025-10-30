@@ -441,7 +441,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     com::android::bluetooth::flags::provider_->vcp_skip_redundant_operation_writes(true);
 
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
@@ -1288,11 +1287,7 @@ protected:
 
 TEST_F(VolumeControlCallbackTest, test_volume_state_changed_stress) {
   std::vector<uint8_t> value({0x03, 0x01, 0x02});
-  if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
-    EXPECT_CALL(callbacks, OnVolumeStateChanged(test_address, 0x03, true, _, true));
-  } else {
-    EXPECT_CALL(callbacks, OnGroupVolumeStateChanged(group_id, 0x03, true, true));
-  }
+  EXPECT_CALL(callbacks, OnGroupVolumeStateChanged(group_id, 0x03, true, true));
   GetNotificationEvent(0x0021, value);
 }
 
@@ -2096,17 +2091,6 @@ protected:
   void SetUp(void) override {
     VolumeControlTest::SetUp();
 
-    if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
-      ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
-
-      // Report working CSIS
-      ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
-
-      ON_CALL(mock_csis_client_module_, GetDeviceList(_)).WillByDefault(Return(csis_group));
-
-      ON_CALL(mock_csis_client_module_, GetGroupId(_, _)).WillByDefault(Return(group_id));
-    }
-
     SetSampleDatabase(conn_id_1);
     SetSampleDatabase(conn_id_2);
 
@@ -2191,8 +2175,6 @@ TEST_F(VolumeControlGroupId, test_set_volume_device_not_ready_no_respond) {
 }
 
 TEST_F(VolumeControlGroupId, test_set_volume_device_not_ready_no_group) {
-  com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
-
   // Simulate late group adding
   ON_CALL(mock_groups_module_, GetGroupId(_, _))
           .WillByDefault(Return(bluetooth::groups::kGroupUnknown));

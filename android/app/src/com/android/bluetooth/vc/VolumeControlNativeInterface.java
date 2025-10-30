@@ -17,8 +17,6 @@
 
 package com.android.bluetooth.vc;
 
-import static com.android.bluetooth.flags.Flags.vcpHandleGroupIdInternally;
-
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
@@ -86,10 +84,6 @@ public class VolumeControlNativeInterface extends NativeInterface<VolumeControlN
     }
 
     boolean setExtAudioOutVolumeOffset(BluetoothDevice device, int externalOutputId, int offset) {
-        if (!vcpHandleGroupIdInternally() && Utils.isPtsTestMode()) {
-            setVolumeNative(getByteAddress(device), offset);
-            return true;
-        }
         return setExtAudioOutVolumeOffsetNative(getByteAddress(device), externalOutputId, offset);
     }
 

@@ -496,12 +496,8 @@ void VolumeControlDevice::EnqueueRemainingRequests(tGATT_IF /*gatt_if*/,
 }
 
 bool VolumeControlDevice::VerifyReady() {
-  if (com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
-    device_ready = requests_initiated && (handles_pending.size() == 0) &&
-                   (group_id != bluetooth::groups::kGroupUnknown);
-  } else {
-    device_ready = requests_initiated && (handles_pending.size() == 0);
-  }
+  device_ready = requests_initiated && (handles_pending.size() == 0) &&
+                 (group_id != bluetooth::groups::kGroupUnknown);
 
   log::debug("{}, requests_initiated={}, handles_pending size={}, group_id={}", address,
              requests_initiated, handles_pending.size(), group_id);
