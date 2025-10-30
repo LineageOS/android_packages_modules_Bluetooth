@@ -975,6 +975,13 @@ public class AdapterService extends Service {
         return Optional.ofNullable(mStartedProfiles.get(id));
     }
 
+    Optional<String> getCallingPackageName(String address) {
+        if (mBondAttemptCallerInfo.get(address) == null) {
+            return Optional.empty();
+        }
+        return Optional.of(mBondAttemptCallerInfo.get(address).callerPackageName());
+    }
+
     /**
      * Initialize AdapterService with necessary configuration parameters and progress AdapterService
      * state from OFF to BLE ON.

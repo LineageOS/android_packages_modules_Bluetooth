@@ -1803,6 +1803,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
+    // FlaggedApi checker triggers on createBond(int), but this used to be a system API -- the new
+    // check is weaker and should not pose any functional problems.
+    @SuppressLint("FlaggedApi")
     public boolean createBond() {
         return createBond(TRANSPORT_AUTO);
     }
@@ -1821,12 +1824,11 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return false on immediate error, true if bonding will begin
      * @throws IllegalArgumentException if an invalid transport was specified
      */
-    @Hide
-    @SystemApi
+    @FlaggedApi(Flags.FLAG_APAIRING_26Q2_PERMISSION_IMPROVEMENTS)
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public boolean createBond(int transport) {
+    public boolean createBond(@Transport int transport) {
         if (DBG) log("createBond()");
         final IBluetooth service = getService();
         if (service == null || !isBluetoothEnabled()) {
@@ -1868,7 +1870,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean createBondOutOfBand(
-            int transport, @Nullable OobData remoteP192Data, @Nullable OobData remoteP256Data) {
+            @Transport int transport,
+            @Nullable OobData remoteP192Data,
+            @Nullable OobData remoteP256Data) {
         if (DBG) log("createBondOutOfBand()");
         final IBluetooth service = getService();
 
@@ -1921,12 +1925,15 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /**
      * Cancel an in-progress bonding request started with {@link #createBond}.
      *
+     * <p>BLUETOOTH_PRIVILEGED is enforced only if the calling app didn't initiate bonding.
+     *
      * @return true on success, false on error
      */
-    @Hide
-    @SystemApi
+    @FlaggedApi(Flags.FLAG_APAIRING_26Q2_PERMISSION_IMPROVEMENTS)
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
     public boolean cancelBondProcess() {
         if (DBG) log("cancelBondProcess()");
         final IBluetooth service = getService();
@@ -1955,12 +1962,17 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * <p>Delete the link key associated with the remote device, and immediately terminate
      * connections to that device that require authentication and encryption.
      *
+     * <p>When the calling application targets API level 37 or higher, {@link
+     * android.Manifest.permission#BLUETOOTH_PRIVILEGED} is required.
+     *
      * @return true on success, false on error
      */
     @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
     public boolean removeBond() {
         if (DBG) log("removeBond()");
         final IBluetooth service = getService();
@@ -2449,11 +2461,20 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /**
      * Set the pin during pairing when the pairing method is {@link #PAIRING_VARIANT_PIN}
      *
+     * <p>When the calling application targets API level 37 or higher, {@link
+     * android.Manifest.permission#BLUETOOTH_PRIVILEGED} is required.
+     *
+     * @deprecated Only privileged apps should be setting the pin code. General use of this API can
+     *     interfere with pairing or cause security problems. Use {@link #setPin(String)} instead.
      * @return true pin has been set false for error
      */
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
+    @Deprecated
+    @FlaggedApi(Flags.FLAG_APAIRING_26Q2_PERMISSION_IMPROVEMENTS)
     public boolean setPin(byte[] pin) {
         if (DBG) log("setPin()");
         final IBluetooth service = getService();
@@ -2473,19 +2494,35 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /**
      * Set the pin during pairing when the pairing method is {@link #PAIRING_VARIANT_PIN}
      *
+     * <p>When the calling application targets API level 37 or higher, {@link
+     * android.Manifest.permission#BLUETOOTH_PRIVILEGED} is required.
+     *
      * @return true pin has been set false for error
      */
     @Hide
     @SystemApi
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
     public boolean setPin(@NonNull String pin) {
         byte[] pinBytes = convertPinToBytes(pin);
         if (pinBytes == null) {
             return false;
         }
-        return setPin(pinBytes);
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "BT not enabled. Cannot set Remote Device pin");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                return service.setPin(this, true, pinBytes.length, pinBytes, mAttributionSource);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return false;
     }
 
     /**
