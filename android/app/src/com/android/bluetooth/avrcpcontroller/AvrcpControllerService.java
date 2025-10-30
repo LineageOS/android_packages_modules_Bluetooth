@@ -596,12 +596,7 @@ public class AvrcpControllerService extends ProfileService {
 
     protected AvrcpControllerStateMachine getOrCreateStateMachine(BluetoothDevice device) {
         AvrcpControllerStateMachine newStateMachine =
-                new AvrcpControllerStateMachine(
-                        mAdapterService,
-                        this,
-                        device,
-                        mNativeInterface,
-                        Utils.isAutomotive(getApplicationContext()));
+                new AvrcpControllerStateMachine(mAdapterService, this, device, mNativeInterface);
         AvrcpControllerStateMachine existingStateMachine =
                 mDeviceStateMap.putIfAbsent(device, newStateMachine);
         // Given null is not a valid value in our map, ConcurrentHashMap will return null if the

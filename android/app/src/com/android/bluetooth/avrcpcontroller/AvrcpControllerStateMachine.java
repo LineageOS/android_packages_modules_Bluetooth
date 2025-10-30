@@ -98,17 +98,14 @@ class AvrcpControllerStateMachine extends StateMachine {
     // 400->499 Events for Cover Artwork
     static final int MESSAGE_PROCESS_IMAGE_DOWNLOADED = 400;
 
-    // Base value for absolute volume from JNI
-    private static final int ABS_VOL_BASE = 127;
-
     // Notification types for Avrcp protocol JNI.
     private static final byte NOTIFICATION_RSP_TYPE_INTERIM = 0x00;
 
     private final AdapterService mAdapterService;
-    private final AudioManager mAudioManager;
     private final GetFolderList mGetFolderList;
-    private final boolean mIsVolumeFixed;
     private final SparseArray<AvrcpPlayer> mAvailablePlayerList;
+
+    private final AvrcpControllerVolumeHandler mVolumeHandler;
 
     @VisibleForTesting final BrowseTree mBrowseTree;
 
@@ -141,8 +138,7 @@ class AvrcpControllerStateMachine extends StateMachine {
             AdapterService adapterService,
             AvrcpControllerService service,
             BluetoothDevice device,
-            AvrcpControllerNativeInterface nativeInterface,
-            boolean isControllerAbsoluteVolumeEnabled) {
+            AvrcpControllerNativeInterface nativeInterface) {
         super(TAG);
         mAdapterService = adapterService;
         mDevice = device;
@@ -179,8 +175,7 @@ class AvrcpControllerStateMachine extends StateMachine {
 
         mGetFolderList = new GetFolderList();
         addState(mGetFolderList, mConnected);
-        mAudioManager = mAdapterService.getSystemService(AudioManager.class);
-        mIsVolumeFixed = mAudioManager.isVolumeFixed() || isControllerAbsoluteVolumeEnabled;
+        mVolumeHandler = new AvrcpControllerVolumeHandler(mAdapterService, mDevice);
 
         setInitialState(mDisconnected);
 
@@ -256,6 +251,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                         + (mCoverArtManager != null
                                 ? mCoverArtManager.getState(mDevice) == STATE_CONNECTED
                                 : "false, mCoverArtManager is null"));
+        ProfileService.println(sb, "mVolumeHandler: " + mVolumeHandler);
 
         ProfileService.println(sb, "Addressed Player ID: " + mAddressedPlayerId);
         ProfileService.println(sb, "Browsed Player ID: " + mBrowseTree.getCurrentBrowsedPlayer());
@@ -541,11 +537,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                 }
                 case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION -> {
                     mVolumeNotificationLabel = msg.arg1;
-                    mNativeInterface.sendRegisterAbsVolRsp(
-                            mDeviceAddress,
-                            NOTIFICATION_RSP_TYPE_INTERIM,
-                            getAbsVolume(),
-                            mVolumeNotificationLabel);
+                    registerAbsoluteVolumeChanged();
                 }
                 case MESSAGE_GET_FOLDER_ITEMS -> transitionTo(mGetFolderList);
                 case MESSAGE_PLAY_ITEM -> processPlayItem((BrowseTree.BrowseNode) msg.obj);
@@ -1153,53 +1145,20 @@ class AvrcpControllerStateMachine extends StateMachine {
      */
     private void handleAbsVolumeRequest(int absVol, int label) {
         debug("handleAbsVolumeRequest: absVol = " + absVol + ", label = " + label);
-        if (mIsVolumeFixed) {
-            debug("Source volume is assumed to be fixed, responding with max volume");
-            absVol = ABS_VOL_BASE;
-        } else {
-            setAbsVolume(absVol);
-        }
-        mNativeInterface.sendAbsVolRsp(mDeviceAddress, absVol, label);
-    }
-
-    /**
-     * Align our volume with a requested absolute volume level
-     *
-     * @param absVol A volume level based on a domain of [0, ABS_VOL_MAX]
-     */
-    private void setAbsVolume(int absVol) {
-        int maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int curLocalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        int reqLocalVolume = (maxLocalVolume * absVol) / ABS_VOL_BASE;
-        debug(
-                "setAbsVolume: absVol = "
-                        + absVol
-                        + ", reqLocal = "
-                        + reqLocalVolume
-                        + ", curLocal = "
-                        + curLocalVolume
-                        + ", maxLocal = "
-                        + maxLocalVolume);
-
-        /*
-         * In some cases change in percentage is not sufficient enough to warrant
-         * change in index values which are in range of 0-15. For such cases
-         * no action is required
-         */
-        if (reqLocalVolume != curLocalVolume) {
-            mAudioManager.setStreamVolume(
-                    AudioManager.STREAM_MUSIC, reqLocalVolume, AudioManager.FLAG_SHOW_UI);
-        }
+        int newVol = mVolumeHandler.setAbsoluteVolume(absVol, label);
+        mNativeInterface.sendAbsVolRsp(mDeviceAddress, newVol, label);
     }
 
     private int getAbsVolume() {
-        if (mIsVolumeFixed) {
-            return ABS_VOL_BASE;
-        }
-        int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int currIndex = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        int newIndex = (currIndex * ABS_VOL_BASE) / maxVolume;
-        return newIndex;
+        return mVolumeHandler.getAbsoluteVolume();
+    }
+
+    private void registerAbsoluteVolumeChanged() {
+        mNativeInterface.sendRegisterAbsVolRsp(
+                mDeviceAddress,
+                NOTIFICATION_RSP_TYPE_INTERIM,
+                getAbsVolume(),
+                mVolumeNotificationLabel);
     }
 
     private boolean shouldDownloadBrowsedImages() {
