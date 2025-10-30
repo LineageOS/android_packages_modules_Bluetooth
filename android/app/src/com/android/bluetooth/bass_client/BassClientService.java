@@ -1479,20 +1479,25 @@ public class BassClientService extends ConnectableProfile {
     }
 
     /**
-     * Checks the PA Sync State change for BIG Channel Map classification based on the sink device.
-     * This method determines whether to add or delete a BIG Channel Map classification based on the
-     * transition of the PA sync status.
+     * Checks the PA (Periodic Advertising) sync status for BIG (Broadcast Isochronous Group)
+     * channel map classification based on the provided {@link BluetoothLeBroadcastReceiveState}.
      *
-     * @param sink The Bluetooth device sink.
-     * @param oldSyncStatus The previous {@link SyncStatus} of the PA.
-     * @param newSyncStatus The current {@link SyncStatus} of the PA.
+     * @param sink The Bluetooth device of the sink.
+     * @param broadcastId The Broadcast ID.
+     * @param receiveState The current {@link BluetoothLeBroadcastReceiveState} of the broadcast.
      * @return An integer representing the action to be taken: {@link
      *     SetBigChannelMapClassificationAction#ADD} if transitioned to PA_SYNCED, {@link
      *     SetBigChannelMapClassificationAction#DELETE} if transitioned to NOT_SYNCED, or {@link
      *     SetBigChannelMapClassificationAction#NO_ACTION} if no change or other status.
      */
     public int checkPaSyncStatusForBigChannelMapClassification(
-            BluetoothDevice sink, SyncStatus oldSyncStatus, SyncStatus newSyncStatus) {
+            BluetoothDevice sink, int broadcastId, BluetoothLeBroadcastReceiveState receiveState) {
+        // Read the oldSyncStatus from the mSyncStatusMap for comparison with newSyncStatus.
+        SyncStatus oldSyncStatus =
+                mSyncStatusMap
+                        .getOrDefault(sink, Collections.emptyMap())
+                        .getOrDefault(broadcastId, SyncStatus.NOT_SYNCED);
+        SyncStatus newSyncStatus = GetSyncStatusFromReceiveState(receiveState);
 
         int action = SetBigChannelMapClassificationAction.NO_ACTION.getValue();
 
@@ -1541,16 +1546,9 @@ public class BassClientService extends ConnectableProfile {
         }
 
         if (isLocalBroadcast(broadcastId)) {
-            // Read the oldSyncStatus from the mSyncStatusMap for comparison with newSyncStatus.
-            SyncStatus oldSyncStatus =
-                    mSyncStatusMap
-                            .getOrDefault(sink, Collections.emptyMap())
-                            .getOrDefault(broadcastId, SyncStatus.NOT_SYNCED);
-            SyncStatus newSyncStatus = GetSyncStatusFromReceiveState(receiveState);
-
             int action =
                     checkPaSyncStatusForBigChannelMapClassification(
-                            sink, oldSyncStatus, newSyncStatus);
+                            sink, broadcastId, receiveState);
             if (action != SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
                 final var leAudio = mAdapterService.getLeAudioService();
                 if (!leAudio.isEmpty()) {
