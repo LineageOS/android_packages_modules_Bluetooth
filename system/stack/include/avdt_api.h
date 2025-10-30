@@ -72,6 +72,8 @@ inline std::string avdt_result_text(const tAVDT_RESULT& result) {
   }
 }
 
+std::string DumpAvdtCodecInfo(const uint8_t* data);
+
 /* The index to access the codec type in codec_info[]. */
 #define AVDT_CODEC_TYPE_INDEX 2
 
