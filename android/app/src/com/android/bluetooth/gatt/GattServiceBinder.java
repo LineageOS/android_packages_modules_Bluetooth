@@ -146,14 +146,13 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             boolean isDirect,
             int transport,
             boolean opportunistic,
-            int phy,
             AttributionSource source) {
         GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
         service.clientConnect(
-                callback, device, addressType, isDirect, transport, opportunistic, phy, source);
+                callback, device, addressType, isDirect, transport, opportunistic, source);
     }
 
     @Override

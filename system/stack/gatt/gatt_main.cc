@@ -225,7 +225,7 @@ void gatt_free(void) {
  *
  ******************************************************************************/
 static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tGATT_TCB* p_tcb,
-                         tBT_TRANSPORT transport, uint8_t /* initiating_phys */, tGATT_IF gatt_if) {
+                         tBT_TRANSPORT transport, tGATT_IF gatt_if) {
   if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN) {
     gatt_set_ch_state(p_tcb, GATT_CH_CONN);
   }
@@ -475,14 +475,14 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
 
 /** GATT connection initiation */
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                      tBT_TRANSPORT transport, int8_t initiating_phys) {
+                      tBT_TRANSPORT transport) {
   log::verbose("address:{}, transport:{}", bd_addr, bt_transport_text(transport));
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
   if (p_tcb != NULL) {
     /* before link down, another app try to open a GATT connection */
     uint8_t st = gatt_get_ch_state(p_tcb);
     if (st == GATT_CH_OPEN && p_tcb->app_hold_link.empty() && transport == BT_TRANSPORT_LE) {
-      if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, initiating_phys, p_reg->gatt_if)) {
+      if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
         return false;
       }
     } else if (st == GATT_CH_CLOSING) {
@@ -500,7 +500,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
     return false;
   }
 
-  if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, initiating_phys, p_reg->gatt_if)) {
+  if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, p_reg->gatt_if)) {
     log::error("gatt_connect failed");
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
     alarm_free(p_tcb->conf_timer);
@@ -512,9 +512,8 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYP
   return true;
 }
 
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                      int8_t initiating_phys) {
-  return gatt_act_connect(p_reg, bd_addr, BLE_ADDR_PUBLIC, transport, initiating_phys);
+bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  return gatt_act_connect(p_reg, bd_addr, BLE_ADDR_PUBLIC, transport);
 }
 
 namespace connection_manager {

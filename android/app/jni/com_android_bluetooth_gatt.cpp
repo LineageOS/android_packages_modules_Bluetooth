@@ -798,7 +798,7 @@ static void btgatts_subrate_change_cb(int conn_id, uint16_t subrate_factor, uint
   }
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServerSubrateChange, conn_id, subrate_factor,
-                               latency, cont_num, timeout,subrate_mode, status);
+                               latency, cont_num, timeout, subrate_mode, status);
 }
 
 static void btgatts_characteristics_unoffloaded_cb(int conn_id, int session_id, uint8_t status) {
@@ -1122,14 +1122,14 @@ static void gattClientUnregisterAppNative(JNIEnv* /* env */, jobject /* object *
 
 static void gattClientConnectNative(JNIEnv* env, jobject /* object */, jint clientif,
                                     jstring address, jint addressType, jboolean isDirect,
-                                    jint transport, jboolean opportunistic, jint initiating_phys,
-                                    jint preferred_mtu, jboolean prefer_relax_mode) {
+                                    jint transport, jboolean opportunistic, jint preferred_mtu,
+                                    jboolean prefer_relax_mode) {
   if (!sGattIf) {
     return;
   }
 
   sGattIf->client->connect(clientif, str2addr(env, address), addressType, isDirect, transport,
-                           opportunistic, initiating_phys, preferred_mtu, prefer_relax_mode);
+                           opportunistic, preferred_mtu, prefer_relax_mode);
 }
 
 static void gattClientDisconnectNative(JNIEnv* env, jobject /* object */, jint clientIf,
@@ -2122,7 +2122,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"gattClientRegisterAppNative", "(JJLjava/lang/String;Z)V",
            (void*)gattClientRegisterAppNative},
           {"gattClientUnregisterAppNative", "(I)V", (void*)gattClientUnregisterAppNative},
-          {"gattClientConnectNative", "(ILjava/lang/String;IZIZIIZ)V",
+          {"gattClientConnectNative", "(ILjava/lang/String;IZIZIZ)V",
            (void*)gattClientConnectNative},
           {"gattClientDisconnectNative", "(ILjava/lang/String;I)V",
            (void*)gattClientDisconnectNative},
@@ -2177,7 +2177,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
            (void*)gattServerUnoffloadCharacteristicsNative},
           {"gattSubrateModeRequestNative", "(ILjava/lang/String;I)I",
            (void*)gattSubrateModeRequestNative},
-
   };
   const char* jniNativeInterfaceClass = "com/android/bluetooth/gatt/GattNativeInterface";
   const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);

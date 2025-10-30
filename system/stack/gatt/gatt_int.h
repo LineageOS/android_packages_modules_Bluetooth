@@ -433,7 +433,7 @@ typedef struct {
 #define GATT_SUBRATE_REQ_TYPE_CONN_UPDATE 1 /* connection update */
 
 typedef struct {
-  int request_type; // 0: subrate, 1: conn_update
+  int request_type;  // 0: subrate, 1: conn_update
   tGATT_IF client_if;
   RawAddress bda;
   tGATT_SUBRATE_MODE mode;
@@ -455,8 +455,8 @@ typedef struct {
 
 typedef struct {
   RawAddress bda;
-  tGATT_SUBRATE_SM_STATE state; // state_machine
-  std::list<tGATT_SUBRATE_REQ> pending_queue; // pending add queue
+  tGATT_SUBRATE_SM_STATE state;                // state_machine
+  std::list<tGATT_SUBRATE_REQ> pending_queue;  // pending add queue
   std::unordered_map<tGATT_SUBRATE_MODE, std::list<tGATT_IF>> config_map;
   bool has_new_request;
   int retry_count;
@@ -572,7 +572,7 @@ static constexpr uint16_t kDefaultSubrateMgrLeaModeRatio = 100;
 /* Subrate Manager Fixed Parameter config */
 static constexpr uint16_t kDefaultSubrateLeAudioModeMaxSubrate = 2;
 static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 1;
-static constexpr uint16_t kDefaultSubrateLeAudioModeContNum= 1;
+static constexpr uint16_t kDefaultSubrateLeAudioModeContNum = 1;
 
 static constexpr uint16_t kDefaultSubrateHighModeMaxSubrate = 4;
 static constexpr uint16_t kDefaultSubrateHighModeMinSbrate = 2;
@@ -589,10 +589,9 @@ static constexpr uint16_t kDefaultSubrateLowModeContNum = 6;
 /* from gatt_main.cc */
 void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment);
 bool gatt_disconnect(tGATT_TCB* p_tcb);
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                      int8_t initiating_phys);
+bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                      tBT_TRANSPORT transport, int8_t initiating_phys);
+                      tBT_TRANSPORT transport);
 void gatt_data_process(tGATT_TCB& p_tcb, uint16_t cid, BT_HDR* p_buf);
 void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_add,
                                    bool check_acl_link);

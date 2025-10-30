@@ -381,7 +381,6 @@ public class GattServiceTest {
         boolean isDirect = false;
         int transport = 2;
         boolean opportunistic = true;
-        int phy = 3;
 
         mService.clientConnect(
                 mGattCallback,
@@ -390,7 +389,6 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 mSource);
 
         verify(mNativeInterface)
@@ -401,7 +399,6 @@ public class GattServiceTest {
                         isDirect,
                         transport,
                         opportunistic,
-                        phy,
                         0,
                         false);
     }
@@ -412,7 +409,6 @@ public class GattServiceTest {
         boolean isDirect = true;
         int transport = TRANSPORT_LE;
         boolean opportunistic = false;
-        int phy = 3;
 
         AttributionSource testAttributeSource =
                 new AttributionSource.Builder(Process.SYSTEM_UID)
@@ -429,7 +425,6 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 testAttributeSource);
 
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
@@ -441,7 +436,6 @@ public class GattServiceTest {
                         isDirect,
                         transport,
                         opportunistic,
-                        phy,
                         0,
                         false);
         mService.onConnectedFromNative(
@@ -455,7 +449,6 @@ public class GattServiceTest {
         boolean isDirect = true;
         int transport = TRANSPORT_LE;
         boolean opportunistic = false;
-        int phy = 3;
 
         AttributionSource testAttributeSource =
                 new AttributionSource.Builder(Process.SYSTEM_UID)
@@ -472,7 +465,6 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 testAttributeSource);
 
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
@@ -484,7 +476,6 @@ public class GattServiceTest {
                         isDirect,
                         transport,
                         opportunistic,
-                        phy,
                         0,
                         false);
         mService.onConnectedFromNative(
@@ -500,7 +491,6 @@ public class GattServiceTest {
         boolean isDirect = true;
         int transport = TRANSPORT_LE;
         boolean opportunistic = false;
-        int phy = 3;
 
         AttributionSource testAttributeSource =
                 new AttributionSource.Builder(Process.SYSTEM_UID)
@@ -517,7 +507,6 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 testAttributeSource);
 
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
@@ -529,7 +518,6 @@ public class GattServiceTest {
                         isDirect,
                         transport,
                         opportunistic,
-                        phy,
                         0,
                         false);
         mService.onConnectedFromNative(

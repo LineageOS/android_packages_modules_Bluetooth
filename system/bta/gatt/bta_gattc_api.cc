@@ -128,14 +128,13 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *                  connection_type: connection type used for the peer device
  *                  transport: Transport to be used for GATT connection
  *                             (BREDR/LE)
- *                  initiating_phys: LE PHY to use, optional
  *                  opportunistic: whether the connection shall be
  *                  opportunistic, and don't impact the disconnection timer
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                    uint8_t initiating_phys, uint16_t preferred_mtu, bool prefer_relax_mode) {
+                    uint16_t preferred_mtu, bool prefer_relax_mode) {
   tBTA_GATTC_DATA data = {
           .api_conn =
                   {
@@ -147,7 +146,6 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
                           .client_if = client_if,
                           .connection_type = connection_type,
                           .transport = transport,
-                          .initiating_phys = initiating_phys,
                           .opportunistic = opportunistic,
                           .remote_addr_type = addr_type,
                           .preferred_mtu = preferred_mtu,
@@ -161,7 +159,7 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type, BT_TRANSPORT_LE,
-                 opportunistic, LE_PHY_1M, 0, false);
+                 opportunistic, 0, false);
 }
 
 /*******************************************************************************

@@ -91,7 +91,6 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private final int mTransport;
 
-    private final int mPhy;
     private final boolean mOpportunistic;
     private final AttributionSource mAttributionSource;
 
@@ -301,7 +300,6 @@ public final class BluetoothGatt implements BluetoothProfile {
                         !mAutoConnect,
                         mTransport,
                         mOpportunistic,
-                        mPhy,
                         mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, "", e);
@@ -926,7 +924,6 @@ public final class BluetoothGatt implements BluetoothProfile {
         mDevice = device;
         mTransport = transport;
         mAutoConnect = autoConnect;
-        mPhy = phy;
         mOpportunistic = opportunistic;
         mAttributionSource = source;
         mCallback = callback;
@@ -1113,7 +1110,6 @@ public final class BluetoothGatt implements BluetoothProfile {
                     !mAutoConnect,
                     mTransport,
                     mOpportunistic,
-                    mPhy,
                     mAttributionSource);
             return true;
         } catch (RemoteException e) {

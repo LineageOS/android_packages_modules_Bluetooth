@@ -29,8 +29,7 @@
 
 void gatt_init(void) { inc_func_call_count(__func__); }
 bool gatt_act_connect(tGATT_REG* /* p_reg */, const RawAddress& /* bd_addr */,
-                      tBLE_ADDR_TYPE /* addr_type */, tBT_TRANSPORT /* transport */,
-                      int8_t /* initiating_phys */) {
+                      tBLE_ADDR_TYPE /* addr_type */, tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
   return false;
 }

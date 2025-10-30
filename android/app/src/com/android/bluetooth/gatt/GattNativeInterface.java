@@ -49,7 +49,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             boolean isDirect,
             int transport,
             boolean opportunistic,
-            int initiatingPhys,
             int preferredMtu,
             boolean preferRelaxMode);
 
@@ -203,7 +202,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             boolean isDirect,
             int transport,
             boolean opportunistic,
-            int initiatingPhys,
             int preferredMtu,
             boolean preferRelaxMode) {
         gattClientConnectNative(
@@ -213,7 +211,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
                 isDirect,
                 transport,
                 opportunistic,
-                initiatingPhys,
                 preferredMtu,
                 preferRelaxMode);
     }
