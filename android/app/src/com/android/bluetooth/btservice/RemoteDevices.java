@@ -1563,7 +1563,7 @@ public class RemoteDevices {
 
         infoLog(
                 "aclStateChangeCallback: "
-                        + Utils.transportToString(transport)
+                        + Util.transportToString(transport)
                         + (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED
                                 ? " Connected "
                                 : " Disconnected ")

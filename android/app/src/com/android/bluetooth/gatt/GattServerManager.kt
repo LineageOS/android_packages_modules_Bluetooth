@@ -31,12 +31,12 @@ import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import com.android.bluetooth.Util.Transport
 import com.android.bluetooth.Util.appNameOrUnknown
 import com.android.bluetooth.Utils.callbackToApp
-import com.android.bluetooth.Utils.transportToString
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
-import com.android.bluetooth.gatt.GattUtil.statusToString
+import com.android.bluetooth.gatt.GattUtil.Status
 import com.android.bluetooth.gatt.GattUtil.translateHciCode
 import com.android.bluetooth.util.getLastAttributionTag
 import java.util.UUID
@@ -45,31 +45,31 @@ private const val TAG = "GattServerManager"
 
 class GattServerManager(
     private val adapterService: AdapterService,
-    private val service: GattService,
+    private val gatt: GattService,
     val serverMap: ContextMap<IBluetoothGattServerCallback>,
     private val metricsReporter: GattMetricsReporter,
 ) {
     internal val handleMap = HandleMap()
     private val nativeInterface: GattNativeInterface
-        get() = service.nativeInterface
+        get() = gatt.nativeInterface
+
+    private inner class ServerDeathRecipient(
+        private val callback: IBluetoothGattServerCallback,
+        private val app: String,
+    ) : IBinder.DeathRecipient {
+        override fun binderDied() {
+            Log.d(TAG, "binderDied(): Unregistering server for $app, callback=$callback")
+            unregisterServer(callback)
+        }
+    }
 
     fun clear() {
         serverMap.clear()
         handleMap.clear()
     }
 
-    private inner class ServerDeathRecipient(
-        private val callback: IBluetoothGattServerCallback,
-        private val appName: String,
-    ) : IBinder.DeathRecipient {
-        override fun binderDied() {
-            Log.d(TAG, "binderDied(): Unregistering server for app=$appName, callback=$callback")
-            unregisterServer(callback)
-        }
-    }
-
     fun onServerRegisteredFromNative(status: Int, serverIf: Int, uuid: UUID) {
-        Log.d(TAG, "onServerRegistered(${statusToString(status)}, serverIf=$serverIf, uuid=$uuid)")
+        Log.d(TAG, "onServerRegistered(${Status(status)}, serverIf=$serverIf, uuid=$uuid)")
         val app = serverMap.getByUuid(uuid) ?: return
         app.id = serverIf
         app.linkToDeath(ServerDeathRecipient(app.callback, app.name))
@@ -77,10 +77,7 @@ class GattServerManager(
     }
 
     fun onServiceAddedFromNative(status: Int, serverIf: Int, service: List<GattDbElement>) {
-        Log.d(
-            TAG,
-            "onServiceAdded(${statusToString(status)}, serverIf=$serverIf, service=$service)",
-        )
+        Log.d(TAG, "onServiceAdded(${Status(status)}, serverIf=$serverIf, service=$service)")
         if (status != BluetoothGatt.GATT_SUCCESS) {
             return
         }
@@ -151,11 +148,7 @@ class GattServerManager(
     }
 
     fun onServiceStoppedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
-        Log.d(
-            TAG,
-            "onServiceStopped(${statusToString(status)}, serverIf=$serverIf" +
-                ", srvcHandle=$srvcHandle)",
-        )
+        Log.d(TAG, "onServiceStopped(${Status(status)}, serverIf=$serverIf, handle=$srvcHandle)")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             handleMap.setStarted(serverIf, srvcHandle, false)
         }
@@ -163,11 +156,7 @@ class GattServerManager(
     }
 
     fun onServiceDeletedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
-        Log.d(
-            TAG,
-            "onServiceDeleted(${statusToString(status)}, serverIf=$serverIf" +
-                ", srvcHandle=$srvcHandle)",
-        )
+        Log.d(TAG, "onServiceDeleted(${Status(status)}, serverIf=$serverIf, handle=$srvcHandle)")
         handleMap.deleteService(serverIf, srvcHandle)
     }
 
@@ -179,8 +168,8 @@ class GattServerManager(
         serverIf: Int,
     ) {
         val header =
-            "onClientConnected($device, ${transportToString(transport)}" +
-                ", connected=$connected, connId=$connId, serverIf=$serverIf):"
+            "onClientConnected($device, ${Transport(transport)}, connected=$connected" +
+                ", connId=$connId, serverIf=$serverIf):"
         val app = serverMap.getById(serverIf)
         if (app == null) {
             Log.w(TAG, "$header Received connection event for unregistered app")
@@ -253,8 +242,7 @@ class GattServerManager(
     fun onServerPhyUpdateFromNative(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
         Log.d(
             TAG,
-            "onServerPhyUpdateFromNative(connId=$connId, txPhy=$txPhy, rxPhy=$rxPhy" +
-                ", ${statusToString(status)})",
+            "onServerPhyUpdate(connId=$connId, txPhy=$txPhy, rxPhy=$rxPhy, ${Status(status)})",
         )
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
@@ -268,8 +256,7 @@ class GattServerManager(
         rxPhy: Int,
         status: Int,
     ) {
-        Log.d(TAG, "onServerPhyRead(): $device, ${statusToString(status)}")
-
+        Log.d(TAG, "onServerPhyRead($device, ${Status(status)})")
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
         val connId = if (connections.isEmpty()) null else connections[0].connId
         if (connId == null) {
@@ -293,12 +280,11 @@ class GattServerManager(
         timeout: Int,
         status: Int,
     ) {
-        Log.d(TAG, "onServerConnUpdate(): connId=$connId, ${statusToString(status)}")
-
+        Log.d(TAG, "onServerConnUpdate(connId=$connId, ${Status(status)})")
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
 
-        service.mCachedPeripheralLatency[device] = latency // cache new peripheral latency
+        gatt.mCachedPeripheralLatency[device] = latency // cache new peripheral latency
 
         callbackToApp {
             app.callback.onConnectionUpdated(device, interval, latency, timeout, status)
@@ -314,20 +300,16 @@ class GattServerManager(
         mode: Int,
         status: Int,
     ) {
-        Log.d(TAG, "onServerSubrateChange(): connId=$connId, ${statusToString(status)}")
-
-        val subrateMode: Int
-
+        Log.d(TAG, "onServerSubrateChange(connId=$connId, ${Status(status)})")
         val device: BluetoothDevice = serverMap.deviceByConnId(connId) ?: return
         val app: ContextApp<IBluetoothGattServerCallback> = serverMap.getByConnId(connId) ?: return
 
+        val subrateMode: Int
         if (status == BluetoothStatusCodes.SUCCESS) {
-            // Confirm flag config
             if (Flags.leSubrateManager()) {
-                subrateMode = service.updateGattSubratingMode(mode)
+                subrateMode = gatt.updateGattSubratingMode(mode)
             } else {
-                subrateMode =
-                    service.verifyGattSubratingMode(device, subrateFactor, latency, contNum)
+                subrateMode = gatt.verifyGattSubratingMode(device, subrateFactor, latency, contNum)
             }
         } else {
             subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED
@@ -347,8 +329,8 @@ class GattServerManager(
     ) {
         Log.v(
             TAG,
-            "onServerReadCharacteristic(): $device, connId=$connId, transId=$transId" +
-                ", handle=$handle, offset=$offset",
+            "onServerReadCharacteristic($device, connId=$connId, transId=$transId" +
+                ", handle=$handle, offset=$offset)",
         )
         val entry = handleMap.getByHandle(handle) ?: return
 
@@ -361,7 +343,6 @@ class GattServerManager(
         }
 
         val app = serverMap.getById(entry.mServerIf) ?: return
-
         callbackToApp {
             app.callback.onCharacteristicReadRequest(device, requestId, offset, isLong, handle)
         }
@@ -377,10 +358,9 @@ class GattServerManager(
     ) {
         Log.v(
             TAG,
-            "onServerReadDescriptor(): $device, connId=$connId, transId=$transId" +
-                ", handle=$handle, offset=$offset",
+            "onServerReadDescriptor($device, connId=$connId, transId=$transId" +
+                ", handle=$handle, offset=$offset)",
         )
-
         val entry = handleMap.getByHandle(handle) ?: return
 
         val requestId: Int
@@ -392,7 +372,6 @@ class GattServerManager(
         }
 
         val app = serverMap.getById(entry.mServerIf) ?: return
-
         callbackToApp {
             app.callback.onDescriptorReadRequest(device, requestId, offset, isLong, handle)
         }
@@ -411,10 +390,9 @@ class GattServerManager(
     ) {
         Log.v(
             TAG,
-            "onServerWriteCharacteristic(): $device, connId=$connId, transId=$transId" +
-                ", handle=$handle, offset=$offset, isPrep=$isPrep",
+            "onServerWriteCharacteristic($device, connId=$connId, transId=$transId" +
+                ", handle=$handle, offset=$offset, isPrep=$isPrep)",
         )
-
         val entry = handleMap.getByHandle(handle) ?: return
 
         val requestId: Int
@@ -426,7 +404,6 @@ class GattServerManager(
         }
 
         val app = serverMap.getById(entry.mServerIf) ?: return
-
         callbackToApp {
             app.callback.onCharacteristicWriteRequest(
                 device,
@@ -454,10 +431,9 @@ class GattServerManager(
     ) {
         Log.v(
             TAG,
-            "onServerWriteDescriptor(): $device, connId=$connId, transId=$transId, handle=$handle" +
-                ", offset=$offset, isPrep=$isPrep",
+            "onServerWriteDescriptor($device, connId=$connId, transId=$transId, handle=$handle" +
+                ", offset=$offset, isPrep=$isPrep)",
         )
-
         val entry = handleMap.getByHandle(handle) ?: return
 
         val requestId: Int
@@ -469,7 +445,6 @@ class GattServerManager(
         }
 
         val app = serverMap.getById(entry.mServerIf) ?: return
-
         callbackToApp {
             app.callback.onDescriptorWriteRequest(
                 device,
@@ -493,9 +468,8 @@ class GattServerManager(
         val operation = if (execWrite == 1) "WRITE" else "CANCEL"
         Log.d(
             TAG,
-            "onExecuteWrite(): $device, connId=$connId, transId=$transId, operation=$operation",
+            "onExecuteWrite($device, connId=$connId, transId=$transId, operation=$operation)",
         )
-
         val app = serverMap.getByConnId(connId) ?: return
 
         val requestId: Int
@@ -510,13 +484,8 @@ class GattServerManager(
         callbackToApp { app.callback.onExecuteWrite(device, requestId, execWrite == 1) }
     }
 
-    fun onResponseSendCompletedFromNative(status: Int, attrHandle: Int) {
-        Log.d(TAG, "onResponseSendCompleted(handle=$attrHandle)")
-    }
-
     fun onNotificationSentFromNative(connId: Int, status: Int) {
-        Log.v(TAG, "onNotificationSent(connId=$connId, ${statusToString(status)})")
-
+        Log.v(TAG, "onNotificationSent(connId=$connId, ${Status(status)})")
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
 
@@ -545,7 +514,6 @@ class GattServerManager(
 
     fun onMtuChangedFromNative(connId: Int, mtu: Int) {
         Log.d(TAG, "onMtuChanged(connId=$connId, mtu=$mtu)")
-
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
 
@@ -555,13 +523,11 @@ class GattServerManager(
     fun onServerCharacteristicsUnoffloadedFromNative(connId: Int, sessionId: Int, status: Int) {
         Log.d(
             TAG,
-            "onServerCharacteristicsUnoffloaded(): connId=$connId, sessionId=$sessionId" +
-                ", status=$status",
+            "onServerCharacteristicsUnoffloaded(connId=$connId, sessionId=$sessionId" +
+                ", status=${Status(status)})",
         )
-
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
-
         callbackToApp { app.callback.onCharacteristicsUnoffloaded(device, sessionId, status) }
     }
 
@@ -582,7 +548,7 @@ class GattServerManager(
             name = "$name[$tag]"
         }
 
-        Log.d(TAG, "registerServer(): UUID=$uuid, name=$name, ${transportToString(transport)}")
+        Log.d(TAG, "registerServer(): UUID=$uuid, name=$name, ${Transport(transport)}")
         val uid = if (Flags.gattThread()) source.uid else Binder.getCallingUid()
         val appName = adapterService.appNameOrUnknown(uid)
         serverMap.add(uid, appName, uuid, callback, transport, tag)
@@ -601,7 +567,6 @@ class GattServerManager(
         }
         val serverIf = serverApp.id
         Log.d(TAG, "unregisterServer(): serverIf=$serverIf")
-
         deleteServices(serverIf)
 
         serverMap.remove(serverIf, ContextMap.RemoveReason.REASON_UNREGISTER_SERVER)
@@ -622,7 +587,7 @@ class GattServerManager(
             return
         }
         val serverIf = serverApp.id
-        Log.d(TAG, "serverConnect(): $device, ${transportToString(transport)}")
+        Log.d(TAG, "serverConnect(): $device, ${Transport(transport)}")
 
         metricsReporter.logServerForegroundInfo(source.uid, isDirect)
         nativeInterface.gattServerConnect(serverIf, device, addressType, isDirect, transport)
@@ -678,7 +643,7 @@ class GattServerManager(
             return
         }
 
-        Log.d(TAG, "serverSetPreferredPhy() $device, connections=$connections")
+        Log.d(TAG, "serverSetPreferredPhy(): $device, connections=$connections")
         nativeInterface.gattServerSetPreferredPhy(serverIf, device, txPhy, rxPhy, phyOptions)
     }
 
@@ -691,11 +656,11 @@ class GattServerManager(
         val serverIf = serverApp.id
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
         if (connections.isEmpty()) {
-            Log.d(TAG, "serverReadPhy(): No connection to $device")
+            Log.d(TAG, "serverReadPhy($callback): No connection to $device")
             return
         }
 
-        Log.d(TAG, "serverReadPhy(): $device, connections=$connections")
+        Log.d(TAG, "serverReadPhy($callback): $device, connections=$connections")
         nativeInterface.gattServerReadPhy(serverIf, device)
     }
 
@@ -752,7 +717,7 @@ class GattServerManager(
             return
         }
         val serverIf = serverApp.id
-        Log.d(TAG, "removeService(): handle=$handle")
+        Log.d(TAG, "removeService($callback, handle=$handle)")
         nativeInterface.gattServerDeleteService(serverIf, handle)
     }
 
@@ -763,7 +728,7 @@ class GattServerManager(
             return
         }
         val serverIf = serverApp.id
-        Log.d(TAG, "clearServices()")
+        Log.d(TAG, "clearServices($callback)")
         deleteServices(serverIf)
     }
 
@@ -775,7 +740,7 @@ class GattServerManager(
         offset: Int,
         value: ByteArray?,
     ) {
-        Log.v(TAG, "sendResponse($device, requestId=$requestId, ${statusToString(status)})")
+        Log.v(TAG, "sendResponse($device, requestId=$requestId, ${Status(status)})")
 
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
@@ -874,11 +839,11 @@ class GattServerManager(
 
             // If there was no transport that matches the preference, use the oldest bearer
             if (connId == null && !connections.isEmpty()) {
-                connId = connections.get(0).connId
+                connId = connections[0].connId
             }
         } else {
             if (!connections.isEmpty()) {
-                connId = connections.get(0).connId
+                connId = connections[0].connId
             }
         }
 
@@ -901,28 +866,28 @@ class GattServerManager(
     fun offloadClientCharacteristics(
         callback: IBluetoothGattCallback,
         device: BluetoothDevice,
-        srvc: BluetoothGattService,
+        service: BluetoothGattService,
         characteristics: MutableList<BluetoothGattCharacteristic>,
         endpointId: Long,
         hubId: Long,
     ): GattOffloadSession.InnerParcel? {
-        check(isGattClientOffloadSupported()) { "GATT client offload is not supported" }
-        val clientApp = service.mClientMap.getByCallbackId(callback)
+        check(adapterService.isGattClientOffloadSupported()) { "GATT client offload unsupported" }
+        val clientApp = gatt.mClientMap.getByCallbackId(callback)
         requireNotNull(clientApp) { "$callback: App not registered" }
         val clientIf = clientApp.id
         Log.v(
             TAG,
-            "offloadClientCharacteristics(): clientIf=$clientIf, $device" +
-                ", service uuid=${srvc.uuid}, endpointId=$endpointId, hubId=$hubId",
+            "offloadClientCharacteristics(clientIf=$clientIf, $device" +
+                ", service uuid=${service.uuid}, endpointId=$endpointId, hubId=$hubId)",
         )
 
-        val connId = service.getFirstConnectionIdForDevice(clientIf, device)
+        val connId = gatt.getFirstConnectionIdForDevice(clientIf, device)
         requireNotNull(connId) { "No connection to $device" }
 
-        synchronized(service.mOffloadLock) {
+        synchronized(gatt.mOffloadLock) {
             return nativeInterface.gattClientOffloadCharacteristics(
                 connId,
-                getGattDatabaseForOffload(srvc, characteristics),
+                getGattDatabaseForOffload(service, characteristics),
                 endpointId,
                 hubId,
             )
@@ -934,8 +899,8 @@ class GattServerManager(
         device: BluetoothDevice,
         sessionId: Int,
     ) {
-        check(isGattClientOffloadSupported()) { "GATT client offload is not supported" }
-        val clientApp = service.mClientMap.getByCallbackId(callback)
+        check(adapterService.isGattClientOffloadSupported()) { "GATT client offload unsupported" }
+        val clientApp = gatt.mClientMap.getByCallbackId(callback)
         requireNotNull(clientApp) { "$callback: App not registered" }
         val clientIf = clientApp.id
         Log.v(
@@ -943,9 +908,9 @@ class GattServerManager(
             "unoffloadClientCharacteristics(clientIf=$clientIf, $device, sessionId=$sessionId)",
         )
 
-        val connId = service.getFirstConnectionIdForDevice(clientIf, device)
+        val connId = gatt.getFirstConnectionIdForDevice(clientIf, device)
         requireNotNull(connId) { "No connection to $device" }
-        synchronized(service.mOffloadLock) {
+        synchronized(gatt.mOffloadLock) {
             nativeInterface.gattClientUnoffloadCharacteristics(connId, sessionId)
         }
     }
@@ -953,19 +918,19 @@ class GattServerManager(
     fun offloadServerCharacteristics(
         callback: IBluetoothGattServerCallback,
         device: BluetoothDevice,
-        srvc: BluetoothGattService,
+        service: BluetoothGattService,
         characteristics: MutableList<BluetoothGattCharacteristic>,
         endpointId: Long,
         hubId: Long,
     ): GattOffloadSession.InnerParcel? {
-        check(isGattServerOffloadSupported()) { "GATT server offload is not supported" }
+        check(adapterService.isGattServerOffloadSupported()) { "GATT server offload unsupported" }
         val serverApp = serverMap.getByCallbackId(callback)
         requireNotNull(serverApp) { "$callback: App not registered" }
         val serverIf = serverApp.id
         Log.v(
             TAG,
             "offloadServerCharacteristics(serverIf=$serverIf, $device" +
-                ", service uuid=${srvc.uuid}, endpointId=$endpointId, hubId=$hubId",
+                ", service uuid=${service.uuid}, endpointId=$endpointId, hubId=$hubId",
         )
 
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
@@ -973,10 +938,10 @@ class GattServerManager(
         requireNotNull(connId) { "No connection to $device" }
 
         // Lock the thread until onServerCharacteristicsOffloaded comes back.
-        synchronized(service.mOffloadLock) {
+        synchronized(gatt.mOffloadLock) {
             return nativeInterface.gattServerOffloadCharacteristics(
                 connId,
-                getGattDatabaseForOffload(srvc, characteristics),
+                getGattDatabaseForOffload(service, characteristics),
                 endpointId,
                 hubId,
             )
@@ -988,7 +953,7 @@ class GattServerManager(
         device: BluetoothDevice,
         sessionId: Int,
     ) {
-        check(isGattServerOffloadSupported()) { "GATT server offload is not supported" }
+        check(adapterService.isGattServerOffloadSupported()) { "GATT server offload unsupported" }
         val serverApp = serverMap.getByCallbackId(callback)
         requireNotNull(serverApp) { "$callback: App not registered" }
         val serverIf = serverApp.id
@@ -1000,21 +965,13 @@ class GattServerManager(
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
         val connId = (if (connections.isEmpty()) null else connections.get(0).connId)
         requireNotNull(connId) { "No connection to $device" }
-        synchronized(service.mOffloadLock) {
+        synchronized(gatt.mOffloadLock) {
             nativeInterface.gattServerUnoffloadCharacteristics(connId, sessionId)
         }
     }
 
-    private fun isGattClientOffloadSupported(): Boolean {
-        return adapterService.isGattClientOffloadSupported()
-    }
-
-    private fun isGattServerOffloadSupported(): Boolean {
-        return adapterService.isGattServerOffloadSupported()
-    }
-
     private fun stopNextService(serverIf: Int, status: Int) {
-        Log.d(TAG, "stopNextService(serverIf=$serverIf, ${statusToString(status)})")
+        Log.d(TAG, "stopNextService(serverIf=$serverIf, ${Status(status)})")
 
         if (status != BluetoothGatt.GATT_SUCCESS) {
             return
@@ -1057,40 +1014,35 @@ class GattServerManager(
     private fun getGattDatabaseForOffload(
         service: BluetoothGattService,
         characteristics: MutableList<BluetoothGattCharacteristic>,
-    ): MutableList<GattDbElement> {
-        val db = mutableListOf<GattDbElement>()
-        db.add(GattDbElement.createPrimaryService(service.uuid))
-
-        for (characteristic in characteristics) {
-            val permissionEncodingKeySize = (characteristic.keySize - 7) shl 12
-            val permissions = permissionEncodingKeySize + characteristic.permissions
-            db.add(
-                GattDbElement.createCharacteristic(
-                    characteristic.uuid,
-                    characteristic.properties,
-                    permissions,
-                    characteristic.instanceId,
+    ) =
+        buildList {
+                add(GattDbElement.createPrimaryService(service.uuid))
+                addAll(
+                    characteristics.map { characteristic ->
+                        val permissionEncodingKeySize = (characteristic.keySize - 7) shl 12
+                        val permissions = permissionEncodingKeySize + characteristic.permissions
+                        GattDbElement.createCharacteristic(
+                            characteristic.uuid,
+                            characteristic.properties,
+                            permissions,
+                            characteristic.instanceId,
+                        )
+                    }
                 )
-            )
-        }
-
-        val builder = StringBuilder("getGattDatabaseForOffload{")
-        builder.append("database size=").append(db.size)
-        for (element in db) {
-            builder
-                .append(", type=")
-                .append(element.type)
-                .append(", attributeHandle=")
-                .append(element.attributeHandle)
-                .append(", uuid=")
-                .append(element.uuid)
-                .append(", properties=")
-                .append(element.properties)
-                .append(", permissions=")
-                .append(element.permissions)
-        }
-        builder.append("}")
-        Log.d(TAG, builder.toString())
-        return db
-    }
+            }
+            .also { db ->
+                val string = buildString {
+                    append("getGattDatabaseForOffload{")
+                    append("database size=${db.size}")
+                    db.forEach { element ->
+                        append(", type=${element.type}")
+                        append(", attributeHandle=${element.attributeHandle}")
+                        append(", uuid=${element.uuid}")
+                        append(", properties=${element.properties}")
+                        append(", permissions=${element.permissions}")
+                    }
+                    append("}")
+                }
+                Log.d(TAG, string)
+            }
 }

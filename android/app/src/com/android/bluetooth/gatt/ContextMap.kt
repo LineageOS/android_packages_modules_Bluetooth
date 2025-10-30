@@ -19,7 +19,7 @@ package com.android.bluetooth.gatt
 import android.bluetooth.BluetoothDevice
 import android.os.IInterface
 import android.util.Log
-import com.android.bluetooth.Utils.transportToString
+import com.android.bluetooth.Util.Transport
 import com.android.internal.annotations.GuardedBy
 import java.time.Instant
 import java.time.ZoneId
@@ -66,12 +66,12 @@ class ContextMap<C : IInterface> {
 
         private val dtf =
             DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+        private val tagString
+            get() = tag?.let { ", tag=$it" } ?: ""
 
         override fun toString() =
-            "AppRecord(${dtf.format(registerTime)} ~ ${dtf.format(unregisterTime)}, " +
-                "id=$id, appName=$appName, transport=${transportToString(transport)}" +
-                (tag?.let { ", tag=$it" } ?: "") +
-                ", reason=$removeReason)"
+            "AppRecord(${dtf.format(registerTime)} ~ ${dtf.format(unregisterTime)}, id=$id" +
+                ", appName=$appName, ${Transport(transport)}$tagString, reason=$removeReason)"
     }
 
     /** Connection class helps map connection IDs to devices. */
@@ -82,8 +82,7 @@ class ContextMap<C : IInterface> {
         val appId: Int,
     ) {
         override fun toString() =
-            "Connection(connId=$connId, device=$device" +
-                ", transport=${transportToString(transport)}, appId=$appId)"
+            "Connection(connId=$connId, $device, ${Transport(transport)}, appId=$appId)"
     }
 
     enum class RemoveReason {
