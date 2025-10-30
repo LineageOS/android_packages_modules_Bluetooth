@@ -1037,6 +1037,10 @@ public:
       return true;
     }
 
+    if (ongoing_operations_.empty()) {
+      return false;
+    }
+
     // Check if the mute status differs in the currently executing request
     uint8_t oppositeOpcode = mute ? kControlPointOpcodeUnmute : kControlPointOpcodeMute;
     const auto op = &ongoing_operations_.front();
@@ -1056,6 +1060,10 @@ public:
     // Check if the volume differs on the remote
     if (dev->volume != volume) {
       return true;
+    }
+
+    if (ongoing_operations_.empty()) {
+      return false;
     }
 
     // Check if the volume differs in the currently executing request
