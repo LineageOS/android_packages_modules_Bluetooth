@@ -3182,6 +3182,9 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
   log::verbose("type=0x{:x}", prop->type);
   switch (prop->type) {
     case BT_PROPERTY_BDNAME: {
+      if (com_android_bluetooth_flags_set_name_in_system_server()) {
+        log::fatal("Invalid set/get name within native config under set from system server flag");
+      }
       bt_bdname_t* bd_name = (bt_bdname_t*)prop->val;
       strncpy((char*)bd_name->name, (char*)btif_get_default_local_name(),
               sizeof(bd_name->name) - 1);

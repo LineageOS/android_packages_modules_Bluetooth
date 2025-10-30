@@ -34,6 +34,7 @@ import android.os.Parcelable
 import android.os.RemoteException
 import android.sysprop.BluetoothProperties
 import com.android.bluetooth.flags.Flags
+import kotlin.text.Charsets.UTF_8
 
 private const val TAG = "Messenger"
 
@@ -162,6 +163,24 @@ internal class ServiceMessenger(
                             IBluetoothManager.DEFAULT_MAC_ADDRESS
                         }
                 }
+            }
+            is SystemServiceMessage.SetName -> {
+                val source = obj.attributionSource
+                val name = obj.name
+
+                try {
+                    checker.setNameAllowed(source)
+                    // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section
+                    // 4.3.5).
+                    if (name != null && name.toByteArray(UTF_8).size > 248) {
+                        throw IllegalArgumentException("Name is too long: $name")
+                    }
+
+                    api.setName(name)
+                } catch (e: PermissionChecker.BluetoothPermissionException) {
+                    Log.e(TAG, "${obj}: FAILED", e)
+                }
+                SystemServiceMessage.SetName.Reply()
             }
             is SystemServiceMessage.GetName -> {
                 val source = obj.attributionSource

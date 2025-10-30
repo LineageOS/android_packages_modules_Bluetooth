@@ -99,6 +99,13 @@ public class SystemServiceMessenger {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
+    SystemServiceMessage.SetName.Reply send(SystemServiceMessage.SetName data) {
+        return send(data, SystemServiceMessage.SetName.Reply.class);
+    }
+
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // Wrong propagation in Messenger
     SystemServiceMessage.GetName.Reply send(SystemServiceMessage.GetName data) {
         return send(data, SystemServiceMessage.GetName.Reply.class);
     }

@@ -70,6 +70,12 @@ class PermissionChecker(
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
+    fun setNameAllowed(source: AttributionSource) {
+        enforceConnectPermission(source, "setName")
+        if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)
+    }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
     fun getNameAllowed(source: AttributionSource) {
         enforceConnectPermission(source, "getName")
         if (source.uid != SYSTEM_UID) enforceCallerIsForegroundUser(source.uid)

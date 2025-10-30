@@ -151,6 +151,9 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_TIMESTAMP, static_cast<int>(time(NULL)));
       break;
     case BT_PROPERTY_BDNAME: {
+      if (com_android_bluetooth_flags_set_name_in_system_server() && !remote_bd_addr) {
+        log::fatal("Invalid set/get name within native config under set from system server flag");
+      }
       int name_length = prop->len > BD_NAME_LEN ? BD_NAME_LEN : prop->len;
       strncpy(value, reinterpret_cast<char*>(prop->val), name_length);
       value[name_length] = '\0';
@@ -266,6 +269,9 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       }
       break;
     case BT_PROPERTY_BDNAME: {
+      if (com_android_bluetooth_flags_set_name_in_system_server() && !remote_bd_addr) {
+        log::fatal("Invalid set/get name within native config under set from system server flag");
+      }
       int len = prop->len;
       if (remote_bd_addr) {
         ret = btif_config_get_str(bdstr, BTIF_STORAGE_KEY_NAME, reinterpret_cast<char*>(prop->val),

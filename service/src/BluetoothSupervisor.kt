@@ -124,6 +124,8 @@ class BluetoothSupervisor(
 
         override fun getAddress() = bms().address
 
+        override fun setName(name: String) = bms().setName(name)
+
         override fun getName() = bms().name
 
         override fun isBleScanAvailable() = bms().isBleScanAvailable()

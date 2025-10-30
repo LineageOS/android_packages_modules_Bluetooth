@@ -67,6 +67,11 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
+    fun setName(name: String) {
+        adapterBinder.setName(name)
+    }
+
+    @Throws(RemoteException::class)
     fun killBluetoothProcess() {
         adapterBinder.killBluetoothProcess()
     }

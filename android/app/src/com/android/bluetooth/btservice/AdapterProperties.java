@@ -229,6 +229,9 @@ public class AdapterProperties {
     }
 
     String getName() {
+        if (Flags.setNameInSystemServer()) {
+            throw new IllegalStateException("setNameInSystemServer is enabled");
+        }
         return mName;
     }
 
@@ -238,6 +241,9 @@ public class AdapterProperties {
      * @param name the name to set
      */
     boolean setName(String name) {
+        if (Flags.setNameInSystemServer()) {
+            throw new IllegalStateException("setNameInSystemServer is enabled");
+        }
         synchronized (mObject) {
             return mService.getNative()
                     .setAdapterProperty(
@@ -713,6 +719,9 @@ public class AdapterProperties {
             synchronized (mObject) {
                 switch (type) {
                     case AbstractionLayer.BT_PROPERTY_BDNAME -> {
+                        if (Flags.setNameInSystemServer()) {
+                            throw new IllegalStateException("setNameInSystemServer is enabled");
+                        }
                         String name = new String(val);
                         if (name.equals(mName)) {
                             debugLog("Name already set: " + mName);

@@ -72,6 +72,10 @@ public class AdapterNativeInterface {
         return setScanModeNative(mode);
     }
 
+    void setLocalName(String localName) {
+        setLocalNameNative(localName);
+    }
+
     boolean setAdapterProperty(int type, byte[] val) {
         return setAdapterPropertyNative(type, val);
     }
@@ -294,6 +298,8 @@ public class AdapterNativeInterface {
     private native boolean disableNative();
 
     private native boolean setScanModeNative(int mode);
+
+    private native void setLocalNameNative(String localName);
 
     private native boolean setAdapterPropertyNative(int type, byte[] val);
 

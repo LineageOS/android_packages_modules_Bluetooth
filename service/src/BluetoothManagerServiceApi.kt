@@ -39,6 +39,8 @@ interface BluetoothManagerServiceApi {
 
     fun getAddress(): String?
 
+    fun setName(name: String)
+
     fun getName(): String?
 
     fun isBleScanAvailable(): Boolean
