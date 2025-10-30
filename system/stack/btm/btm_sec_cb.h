@@ -44,8 +44,8 @@ public:
   tBTM_SEC_DEVCB devcb;
 
   uint16_t enc_handle{0};
-  Octet8 enc_rand;    /* received rand value from LTK request*/
-  uint16_t ediv{0};   /* received ediv value from LTK request */
+  Octet8 enc_rand;  /* received rand value from LTK request*/
+  uint16_t ediv{0}; /* received ediv value from LTK request */
   uint8_t key_size{0};
 
 public:
@@ -72,7 +72,7 @@ public:
                                                              Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
-// TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
+  // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
   list_t* sec_dev_rec{nullptr}; /* list of BtmDevice */
   std::array<BtmDevice, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records = {};
   tBTM_SEC_SERV_REC* p_out_serv{nullptr};
@@ -99,6 +99,7 @@ public:
   bool IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
+  bool IsSecCBInitialized() { return security_mode != 0; }
 
   BtmSecurityRecord* getSecRec(const RawAddress bd_addr);
 

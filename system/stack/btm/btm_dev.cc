@@ -805,6 +805,11 @@ BtmDevice* btm_sec_allocate_dev_rec(void) {
     p_device = static_cast<BtmDevice*>(osi_calloc(sizeof(BtmDevice)));
     list_append(btm_sec_cb.sec_dev_rec, p_device);
   } else {
+    if (!btm_sec_cb.IsSecCBInitialized()) {
+      log::warn("Security CB is not initialized");
+      return nullptr;
+    }
+
     for (BtmDevice& device : btm_sec_cb.device_records) {
       if (!device.IsInitialized()) {
         p_device = &device;
