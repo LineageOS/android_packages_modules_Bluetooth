@@ -95,18 +95,14 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                     return;
                 }
 
-                MediaSessionCompat session = service.getSession();
-
                 // Update playback state error message under new locale, if applicable
-                MediaControllerCompat controller = session.getController();
-                PlaybackStateCompat playbackState =
-                        controller == null ? null : controller.getPlaybackState();
+                PlaybackStateCompat playbackState = getPlaybackState();
                 if (playbackState != null && playbackState.getErrorMessage() != null) {
                     setErrorPlaybackState();
                 }
 
                 // Update queue title under new locale
-                session.setQueueTitle(getString(R.string.bluetooth_media_audio_queue_name));
+                mSession.setQueueTitle(getString(R.string.bluetooth_media_audio_queue_name));
             }
         }
     }
@@ -159,8 +155,9 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                         | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mSession.setQueueTitle(getString(R.string.bluetooth_media_audio_queue_name));
 
-        setNowPlayingQueue(null);
+        setMetadata(null);
         setErrorPlaybackState();
+        setNowPlayingQueue(null);
 
         mReceiver = new LocaleChangedReceiver();
         IntentFilter filter = new IntentFilter();
@@ -280,9 +277,9 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
 
         Log.d(TAG, "Track Changed, track=" + track);
         if (track != null) {
-            service.mSession.setMetadata(track.toMediaMetadata());
+            service.setMetadata(track.toMediaMetadata());
         } else {
-            service.mSession.setMetadata(null);
+            service.setMetadata(null);
         }
     }
 
@@ -297,7 +294,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                 TAG,
                 "Playback State Changed, state="
                         + AvrcpControllerUtils.playbackStateCompatToString(state));
-        service.mSession.setPlaybackState(state);
+        service.setPlaybackState(state);
     }
 
     static synchronized void onNowPlayingQueueChanged(BrowseTree.BrowseNode node) {
@@ -347,13 +344,6 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         }
 
         Log.d(TAG, "Browse Node contents changed, node=" + node);
-
-        int scope = node.getScope();
-        if (scope != AvrcpControllerService.BROWSE_SCOPE_VFS
-                && scope != AvrcpControllerService.BROWSE_SCOPE_PLAYER_LIST) {
-            Log.w(TAG, "Received browse tree update for node outside of player or VFS scope");
-            return;
-        }
         service.notifyChildrenChanged(node.getID());
     }
 
@@ -395,11 +385,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
 
         service.setActive(true);
 
-        MediaSessionCompat session = service.getSession();
-        MediaControllerCompat controller = session.getController();
-        PlaybackStateCompat currentState =
-                controller == null ? null : controller.getPlaybackState();
-
+        PlaybackStateCompat currentState = service.getPlaybackState();
         PlaybackStateCompat connectingState = null;
         if (currentState != null) {
             connectingState =
@@ -409,8 +395,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                                     currentState.getPosition(),
                                     currentState.getPlaybackSpeed())
                             .build();
-            service.mSession.setPlaybackState(connectingState);
-            service.mSession.setPlaybackState(currentState);
+            service.setPlaybackState(connectingState);
+            service.setPlaybackState(currentState);
         } else {
             Log.w(
                     TAG,
@@ -428,7 +414,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         }
 
         Log.i(TAG, "onShuffleModeChanged(mode=" + mode + ")");
-        service.mSession.setShuffleMode(mode);
+        service.setShuffleMode(mode);
     }
 
     public static synchronized void onRepeatModeChanged(int mode) {
@@ -439,24 +425,12 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         }
 
         Log.i(TAG, "onRepeatModeChanged(mode=" + mode + ")");
-        service.mSession.setRepeatMode(mode);
+        service.setRepeatMode(mode);
     }
 
     // ---------------------------------------------------------------------------------------------
     // (Internal) Session State Management
     // ---------------------------------------------------------------------------------------------
-
-    // Session
-
-    /** Get Media session for updating state */
-    public static synchronized MediaSessionCompat getSession() {
-        BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
-        if (service == null) {
-            Log.w(TAG, "getSession(): Service not available");
-            return null;
-        }
-        return service.mSession;
-    }
 
     // Active State
 
@@ -475,25 +449,41 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         mSession.setActive(active);
     }
 
+    // Metadata
+
+    public synchronized MediaMetadataCompat getMetadata() {
+        MediaControllerCompat controller = mSession.getController();
+        return controller == null ? null : controller.getMetadata();
+    }
+
+    private synchronized void setMetadata(MediaMetadataCompat metadata) {
+        Log.d(TAG, "setMetadata(track=" + metadata + ")");
+        mSession.setMetadata(metadata);
+    }
+
     // Playback State
 
-    /** Get playback state */
-    public static synchronized PlaybackStateCompat getPlaybackState() {
-        BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
-        if (service == null) {
-            Log.w(TAG, "getPlaybackState(): Service not available");
-            return null;
-        }
-
-        MediaSessionCompat session = service.getSession();
-        if (session == null) return null;
-        MediaControllerCompat controller = session.getController();
+    public synchronized PlaybackStateCompat getPlaybackState() {
+        MediaControllerCompat controller = mSession.getController();
         PlaybackStateCompat playbackState =
                 controller == null ? null : controller.getPlaybackState();
         return playbackState;
     }
 
-    private void setErrorPlaybackState() {
+    private synchronized void setPlaybackState(PlaybackStateCompat state) {
+        Log.d(TAG, "setPlaybackState(status=" + state + ")");
+
+        if (state == null) {
+            setErrorPlaybackState();
+            return;
+        }
+
+        mSession.setPlaybackState(state);
+    }
+
+    private synchronized void setErrorPlaybackState() {
+        Log.d(TAG, "setErrorPlaybackState()");
+
         Bundle extras = new Bundle();
         extras.putString(
                 ERROR_RESOLUTION_ACTION_LABEL, getString(R.string.bluetooth_connect_action));
@@ -513,12 +503,38 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                         .setExtras(extras)
                         .setState(PlaybackStateCompat.STATE_ERROR, 0, 0)
                         .build();
-        mSession.setPlaybackState(errorState);
+
+        setPlaybackState(errorState);
+    }
+
+    // Shuffle/Repeat
+
+    public synchronized int getShuffleMode() {
+        MediaControllerCompat controller = mSession.getController();
+        return controller.getShuffleMode();
+    }
+
+    public synchronized int getRepeatMode() {
+        MediaControllerCompat controller = mSession.getController();
+        return controller.getRepeatMode();
+    }
+
+    private synchronized void setShuffleMode(int mode) {
+        mSession.setShuffleMode(mode);
+    }
+
+    private synchronized void setRepeatMode(int mode) {
+        mSession.setRepeatMode(mode);
     }
 
     // Now Playing List
 
-    private void setNowPlayingQueue(List<MediaItem> songList) {
+    public synchronized List<MediaSessionCompat.QueueItem> getNowPlayingQueue() {
+        MediaControllerCompat controller = mSession.getController();
+        return controller == null ? null : controller.getQueue();
+    }
+
+    private synchronized void setNowPlayingQueue(List<MediaItem> songList) {
         Log.d(TAG, "setNowPlayingQueue(queue=" + songList + ")");
         if (songList != null && songList.size() > 0) {
             ArrayList<MediaSessionCompat.QueueItem> queue = new ArrayList<>(songList.size());
@@ -539,9 +555,9 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             return;
         }
 
-        service.setNowPlayingQueue(null);
-        service.mSession.setMetadata(null);
+        service.setMetadata(null);
         service.setErrorPlaybackState();
+        service.setNowPlayingQueue(null);
         service.mSession.setCallback(null);
         Log.d(TAG, "Service state has been reset");
     }
@@ -570,13 +586,9 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         sb.append(TAG).append(":");
         BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
         if (service != null) {
-            MediaSessionCompat session = service.getSession();
-            MediaControllerCompat controller = session.getController();
-            MediaMetadataCompat metadata = controller == null ? null : controller.getMetadata();
-            PlaybackStateCompat playbackState =
-                    controller == null ? null : controller.getPlaybackState();
-            List<MediaSessionCompat.QueueItem> queue =
-                    controller == null ? null : controller.getQueue();
+            MediaMetadataCompat metadata = service.getMetadata();
+            PlaybackStateCompat playbackState = service.getPlaybackState();
+            List<MediaSessionCompat.QueueItem> queue = service.getNowPlayingQueue();
             if (metadata != null) {
                 sb.append("\n    track={");
                 sb.append("title=")
