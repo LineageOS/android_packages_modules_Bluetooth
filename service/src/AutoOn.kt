@@ -128,16 +128,12 @@ class AutoOn(
     fun isSupported() = Settings.Secure.getInt(contentResolver, USER_SETTINGS_KEY, -1) != -1
 
     fun isEnabled(): Boolean {
-        if (!isSupported()) {
-            throw IllegalStateException("AutoOn not supported for $user")
-        }
+        check(isSupported()) { "AutoOn not supported for $user" }
         return isEnabledUnchecked()
     }
 
     fun setEnabled(status: Boolean) {
-        if (!isSupported()) {
-            throw IllegalStateException("AutoOn not supported for $user")
-        }
+        check(isSupported()) { "AutoOn not supported for $user" }
         if (isEnabledUnchecked() && status == true) {
             Log.i(TAG, "setEnabled: Nothing to do, feature is already enabled")
             return
