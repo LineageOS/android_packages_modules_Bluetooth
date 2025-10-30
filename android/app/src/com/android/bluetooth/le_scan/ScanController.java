@@ -1205,7 +1205,7 @@ public class ScanController {
                 Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         scanClient.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
-        startScan(scannerId, settings, filters, scanClient);
+        dispatchStartScan(scannerId, settings, filters, scanClient);
     }
 
     // TODO(b/455057044) Make private on cleanup
@@ -1230,10 +1230,10 @@ public class ScanController {
                 Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         scanClient.setAssociatedDevices(Collections.emptyList());
 
-        startScan(scannerId, settings, filters, scanClient);
+        dispatchStartScan(scannerId, settings, filters, scanClient);
     }
 
-    private void startScan(
+    private void dispatchStartScan(
             int scannerId, ScanSettings settings, List<ScanFilter> filters, ScanClient scanClient) {
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
