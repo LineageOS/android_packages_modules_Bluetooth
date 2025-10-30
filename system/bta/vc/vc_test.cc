@@ -516,7 +516,7 @@ protected:
     }));
     ON_CALL(*mock_alarm, AlarmFree(_)).WillByDefault(Invoke([](alarm_t* alarm) {
       if (alarm) {
-        free(alarm);
+        delete alarm;
       }
     }));
     ON_CALL(*mock_alarm, AlarmCancel(_)).WillByDefault(Invoke([](alarm_t* alarm) {

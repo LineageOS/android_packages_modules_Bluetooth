@@ -672,6 +672,7 @@ cc_test {
     ],
     sanitize: {
         cfi: false,
+        address: true,
     },
 }
 
