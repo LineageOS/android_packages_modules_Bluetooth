@@ -23,11 +23,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.IBluetoothCsipSetCoordinator.CSIS_GROUP_ID_INVALID;
-import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.bluetooth.IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
-
-import static com.android.bluetooth.flags.Flags.vcpHandleGroupIdInternally;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -255,31 +251,7 @@ public class VolumeControlService extends ConnectableProfile {
             return GROUP_ID_INVALID;
         }
 
-        if (vcpHandleGroupIdInternally()) {
-            return mGroupIds.getOrDefault(device, GROUP_ID_INVALID);
-        }
-
-        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
-        if (csipSetCoordinator.isPresent()) {
-            int groupId = csipSetCoordinator.get().getGroupId(device, BluetoothUuid.CAP);
-            if (groupId != CSIS_GROUP_ID_INVALID) {
-                return groupId;
-            }
-        } else {
-            Log.w(TAG, "CSIP not available");
-        }
-
-        final var leAudio = mAdapterService.getLeAudioService();
-        if (leAudio.isPresent()) {
-            int groupId = leAudio.get().getGroupId(device);
-            if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
-                return groupId;
-            }
-        } else {
-            Log.w(TAG, "leAudioService not available");
-        }
-
-        return GROUP_ID_INVALID;
+        return mGroupIds.getOrDefault(device, GROUP_ID_INVALID);
     }
 
     private List<BluetoothDevice> getGroupDevices(int groupId) {
@@ -289,35 +261,11 @@ public class VolumeControlService extends ConnectableProfile {
             return result;
         }
 
-        if (vcpHandleGroupIdInternally()) {
-            for (Map.Entry<BluetoothDevice, Integer> entry : mGroupIds.entrySet()) {
-                if (entry.getValue() == groupId) {
-                    result.add(entry.getKey());
-                }
+        for (Map.Entry<BluetoothDevice, Integer> entry : mGroupIds.entrySet()) {
+            if (entry.getValue() == groupId) {
+                result.add(entry.getKey());
             }
-            return result;
         }
-
-        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
-        if (csipSetCoordinator.isPresent()) {
-            result = csipSetCoordinator.get().getGroupDevicesOrdered(groupId);
-            if (!result.isEmpty()) {
-                return result;
-            }
-        } else {
-            Log.w(TAG, "CSIP not available");
-        }
-
-        final var leAudio = mAdapterService.getLeAudioService();
-        if (leAudio.isPresent()) {
-            result = leAudio.get().getGroupDevices(groupId);
-            if (!result.isEmpty()) {
-                return result;
-            }
-        } else {
-            Log.w(TAG, "leAudioService not available");
-        }
-
         return result;
     }
 
@@ -1552,18 +1500,9 @@ public class VolumeControlService extends ConnectableProfile {
         mDeviceMuteCache.remove(device);
         mGroupIds.remove(device);
 
-        if (vcpHandleGroupIdInternally()) {
-            if (!getGroupDevices(groupId).isEmpty()) {
-                // Return if group is not empty
-                return;
-            }
-        } else {
-            for (BluetoothDevice groupDevice : getGroupDevices(groupId)) {
-                if (mAdapterService.getBondState(groupDevice) != BOND_NONE) {
-                    // Return if any device from group is BONDED or BONDING
-                    return;
-                }
-            }
+        if (!getGroupDevices(groupId).isEmpty()) {
+            // Return if group is not empty
+            return;
         }
 
         Log.d(TAG, "Remove group data for id: " + groupId);
