@@ -523,7 +523,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /**
      * Used as an int extra field in {@link #ACTION_PAIRING_REQUEST} intents to indicate pairing
      * method used. Possible values are: {@link #PAIRING_VARIANT_PIN}, {@link
-     * #PAIRING_VARIANT_PASSKEY_CONFIRMATION},
+     * #PAIRING_VARIANT_PASSKEY}, {@link #PAIRING_VARIANT_PASSKEY_CONFIRMATION}, {@link
+     * #PAIRING_VARIANT_CONSENT}, {@link #PAIRING_VARIANT_DISPLAY_PASSKEY}, {@link
+     * #PAIRING_VARIANT_DISPLAY_PIN}, {@link #PAIRING_VARIANT_OOB_CONSENT}, {@link
+     * #PAIRING_VARIANT_PIN_16_DIGITS}.
      */
     public static final String EXTRA_PAIRING_VARIANT =
             "android.bluetooth.device.extra.PAIRING_VARIANT";
