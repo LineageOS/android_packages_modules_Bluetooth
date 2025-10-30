@@ -101,6 +101,11 @@ object GattUtil {
             else -> BluetoothStatusCodes.ERROR_UNKNOWN
         }
 
+    @JvmInline
+    internal value class Status(val value: Int) {
+        override fun toString() = statusToString(value)
+    }
+
     /*
      * Print a readable version of the various status codes that can come from the stack or
      * applications.

@@ -17,10 +17,13 @@
 package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothDevice
+import android.util.Log
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 import java.util.UUID
+
+private const val TAG = "GattNativeCallback"
 
 class GattNativeCallback(
     private val adapterService: AdapterService,
@@ -281,7 +284,7 @@ class GattNativeCallback(
     }
 
     fun onResponseSendCompleted(status: Int, attrHandle: Int) {
-        gattServer.onResponseSendCompletedFromNative(status, attrHandle)
+        Log.d(TAG, "onResponseSendCompleted(status=$status, handle=$attrHandle)")
     }
 
     fun onNotificationSent(connId: Int, status: Int) {

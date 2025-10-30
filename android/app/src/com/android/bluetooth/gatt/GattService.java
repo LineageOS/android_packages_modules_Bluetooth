@@ -553,7 +553,6 @@ public class GattService extends ProfileService {
         }
 
         if (status == BluetoothStatusCodes.SUCCESS) {
-            // Confirm flag config
             if (Flags.leSubrateManager()) {
                 subrateMode = updateGattSubratingMode(mode);
             } else {
@@ -1474,7 +1473,7 @@ public class GattService extends ProfileService {
      * @param subrateMode for this LE connection.
      * @return the connection subrating priority in integer defined in GATT framework
      */
-    public int updateGattSubratingMode(int subrateMode) {
+    int updateGattSubratingMode(int subrateMode) {
         int returnSubrateMode = BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE;
         if (subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH) returnSubrateMode = subrateMode;
         return returnSubrateMode;
