@@ -31,7 +31,7 @@ import android.os.ParcelUuid
 import com.android.bluetooth.Utils
 import kotlin.concurrent.Volatile
 
-private const val TAG = "DistanceMeasurementBinder"
+private const val TAG = GattUtil.TAG_PREFIX + "DistanceMeasurementBinder"
 
 class DistanceMeasurementBinder(
     private val context: Context,
