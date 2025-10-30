@@ -32,7 +32,6 @@ import android.annotation.SystemApi;
 import android.app.PendingIntent;
 import android.bluetooth.Attributable;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.IBluetoothScan;
 import android.bluetooth.annotations.RequiresBluetoothLocationPermission;
 import android.bluetooth.annotations.RequiresBluetoothScanPermission;
@@ -469,7 +468,7 @@ public final class BluetoothLeScanner {
         mLeScanClients.clear();
     }
 
-    /** Bluetooth GATT interface callbacks */
+    /** Bluetooth Scan interface callbacks */
     private final class BleScanCallbackWrapper extends IScannerCallback.Stub {
         // TODO(b/455057044) Delete on flag cleanup
         private static final int REGISTRATION_CALLBACK_TIMEOUT_MILLIS = 2000;
@@ -601,7 +600,7 @@ public final class BluetoothLeScanner {
             Log.d(TAG, header + "mScannerId=" + mScannerId);
             synchronized (this) {
                 if (Flags.scanRegisterAndStart()) {
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                    if (status == ScanCallback.NO_ERROR) {
                         mScannerId = scannerId;
                     } else {
                         // If scanning too frequently, don't report anything to the app.
@@ -617,7 +616,7 @@ public final class BluetoothLeScanner {
                     return;
                 }
 
-                if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (status == ScanCallback.NO_ERROR) {
                     try {
                         if (mScannerId == -1) {
                             // Registration succeeds after timeout, unregister scanner.
