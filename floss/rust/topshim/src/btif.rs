@@ -39,27 +39,24 @@ pub enum BtTransport {
     Le,
 }
 
-impl From<i32> for BtTransport {
-    fn from(item: i32) -> Self {
-        BtTransport::from_i32(item).unwrap_or(BtTransport::Auto)
+impl From<bindings::tBT_TRANSPORT> for BtTransport {
+    fn from(item: bindings::tBT_TRANSPORT) -> Self {
+        match item {
+            bindings::tBT_TRANSPORT_BT_TRANSPORT_AUTO => BtTransport::Auto,
+            bindings::tBT_TRANSPORT_BT_TRANSPORT_BR_EDR => BtTransport::Bredr,
+            bindings::tBT_TRANSPORT_BT_TRANSPORT_LE => BtTransport::Le,
+            _ => unreachable!(),
+        }
     }
 }
 
-impl From<BtTransport> for i32 {
+impl From<BtTransport> for bindings::tBT_TRANSPORT {
     fn from(item: BtTransport) -> Self {
-        item.to_i32().unwrap_or(0)
-    }
-}
-
-impl From<u8> for BtTransport {
-    fn from(transport: u8) -> Self {
-        BtTransport::from_u8(transport).unwrap_or(BtTransport::Auto)
-    }
-}
-
-impl From<BtTransport> for u8 {
-    fn from(val: BtTransport) -> Self {
-        val.to_u8().unwrap_or(0)
+        match item {
+            BtTransport::Auto => bindings::tBT_TARNSPORT_BT_TRANSPORT_AUTO,
+            BtTransport::Bredr => bindings::tBT_TARNSPORT_BT_TRANSPORT_BR_EDR,
+            BtTransport::Le => bindings::tBT_TARNSPORT_BT_TRANSPORT_LE,
+        }
     }
 }
 

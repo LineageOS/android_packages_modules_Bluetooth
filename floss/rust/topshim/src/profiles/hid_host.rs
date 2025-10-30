@@ -29,7 +29,27 @@ pub enum BthhConnectionState {
 
 impl From<bindings::bthh_connection_state_t> for BthhConnectionState {
     fn from(item: bindings::bthh_connection_state_t) -> Self {
-        BthhConnectionState::from_u32(item).unwrap_or_else(|| BthhConnectionState::Unknown)
+        match item {
+            bindings::bthh_connection_state_t_BTHH_CONN_STATE_CONNECTED => {
+                BthhConnectionState::Connected
+            }
+            bindings::bthh_connection_state_t_BTHH_CONN_STATE_CONNECTING => {
+                BthhConnectionState::Connecting
+            }
+            bindings::bthh_connection_state_t_BTHH_CONN_STATE_DISCONNECTED => {
+                BthhConnectionState::Disconnected
+            }
+            bindings::bthh_connection_state_t_BTHH_CONN_STATE_DISCONNECTING => {
+                BthhConnectionState::Disconnecting
+            }
+            bindings::bthh_connection_state_t_BTHH_CONN_STATE_ACCEPTING => {
+                BthhConnectionState::Accepting
+            }
+            bindings::bthh_connection_state_t_BTHH_CONN_STATE_UNKNOWN => {
+                BthhConnectionState::Unknown
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -50,13 +70,46 @@ pub enum BthhStatus {
     ErrNoRes,
     ErrAuthFailed,
     ErrHdl,
-
-    Unknown,
 }
 
 impl From<bindings::bthh_status_t> for BthhStatus {
     fn from(item: bindings::bthh_status_t) -> Self {
-        BthhStatus::from_u32(item.into()).unwrap_or_else(|| BthhStatus::Unknown)
+        match item {
+            bindings::bthh_status_t_BTHH_OK => BthhStatus::Ok,
+            bindings::bthh_status_t_BTHH_HS_HID_NOT_READY => BthhStatus::HsHidNotReady,
+            bindings::bthh_status_t_BTHH_HS_INVALID_RPT_ID => BthhStatus::HsInvalidRptId,
+            bindings::bthh_status_t_BTHH_HS_TRANS_NOT_SPT => BthhStatus::HsTransNotSpt,
+            bindings::bthh_status_t_BTHH_HS_INVALID_PARAM => BthhStatus::HsInvalidParam,
+            bindings::bthh_status_t_BTHH_HS_ERROR => BthhStatus::HsError,
+            bindings::bthh_status_t_BTHH_ERR => BthhStatus::Error,
+            bindings::bthh_status_t_BTHH_ERR_SDP => BthhStatus::ErrSdp,
+            bindings::bthh_status_t_BTHH_ERR_PROTO => BthhStatus::ErrProto,
+            bindings::bthh_status_t_BTHH_ERR_DB_FULL => BthhStatus::ErrDbFull,
+            bindings::bthh_status_t_BTHH_ERR_TOD_UNSPT => BthhStatus::ErrTodUnspt,
+            bindings::bthh_status_t_BTHH_ERR_AUTH_FAILED => BthhStatus::ErrAuthFailed,
+            bindings::bthh_status_t_BTHH_ERR_HDL => BthhStatus::ErrHdl,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<BthhStatus> for bindings::bthh_status_t {
+    fn from(item: BthhStatus) -> Self {
+        match item {
+            BthhStatus::Ok => bindings::bthh_status_t_BTHH_OK,
+            BthhStatus::HsHidNotReady => bindings::bthh_status_t_BTHH_HS_HID_NOT_READY,
+            BthhStatus::HsInvalidRptId => bindings::bthh_status_t_BTHH_HS_INVALID_RPT_ID,
+            BthhStatus::HsTransNotSpt => bindings::bthh_status_t_BTHH_HS_TRANS_NOT_SPT,
+            BthhStatus::HsInvalidParam => bindings::bthh_status_t_BTHH_HS_INVALID_PARAM,
+            BthhStatus::HsError => bindings::bthh_status_t_BTHH_HS_ERROR,
+            BthhStatus::Error => bindings::bthh_status_t_BTHH_ERR,
+            BthhStatus::ErrSdp => bindings::bthh_status_t_BTHH_ERR_SDP,
+            BthhStatus::ErrProto => bindings::bthh_status_t_BTHH_ERR_PROTO,
+            BthhStatus::ErrDbFull => bindings::bthh_status_t_BTHH_ERR_DB_FULL,
+            BthhStatus::ErrTodUnspt => bindings::bthh_status_t_BTHH_ERR_TOD_UNSPT,
+            BthhStatus::ErrAuthFailed => bindings::bthh_status_t_BTHH_ERR_AUTH_FAILED,
+            BthhStatus::ErrHdl => bindings::bthh_status_t_BTHH_ERR_HDL,
+        }
     }
 }
 
@@ -72,13 +125,26 @@ pub enum BthhProtocolMode {
 
 impl From<bindings::bthh_protocol_mode_t> for BthhProtocolMode {
     fn from(item: bindings::bthh_protocol_mode_t) -> Self {
-        BthhProtocolMode::from_u32(item).unwrap_or_else(|| BthhProtocolMode::UnsupportedMode)
+        match item {
+            bindings::bthh_protocol_mode_t_BTHH_REPORT_MODE => BthhProtocolMode::ReportMode,
+            bindings::bthh_protocol_mode_t_BTHH_BOOT_MODE => BthhProtocolMode::BootMode,
+            bindings::bthh_protocol_mode_t_BTHH_UNSUPPORTED_MODE => {
+                BthhProtocolMode::UnsupportedMode
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
 impl From<BthhProtocolMode> for bindings::bthh_protocol_mode_t {
     fn from(item: BthhProtocolMode) -> Self {
-        item.to_u32().unwrap()
+        match item {
+            BthhProtocolMode::ReportMode => bindings::bthh_protocol_mode_t_BTHH_REPORT_MODE,
+            BthhProtocolMode::BootMode => bindings::bthh_protocol_mode_t_BTHH_BOOT_MODE,
+            BthhProtocolMode::UnsupportedMode => {
+                bindings::bthh_protocol_mode_t_BTHH_UNSUPPORTED_MODE
+            }
+        }
     }
 }
 
@@ -92,7 +158,22 @@ pub enum BthhReportType {
 
 impl From<BthhReportType> for bindings::bthh_report_type_t {
     fn from(item: BthhReportType) -> Self {
-        item.to_u32().unwrap()
+        match item {
+            BthhReportType::InputReport => bindings::bthh_report_type_t_BTHH_INPUT_REPORT,
+            BthhReportType::OutputReport => bindings::bthh_report_type_t_BTHH_OUTPUT_REPORT,
+            BthhReportType::FeatureReport => bindings::bthh_report_type_t_BTHH_FEATURE_REPORT,
+        }
+    }
+}
+
+impl From<bindings::bthh_report_type_t> for BthhReportType {
+    fn from(item: bindings::bthh_report_type_t) -> Self {
+        match item {
+            bindings::bthh_report_type_t_BTHH_INPUT_REPORT => BthhReportType::InputReport,
+            bindings::bthh_report_type_t_BTHH_OUTPUT_REPORT => BthhReportType::OutputReport,
+            bindings::bthh_report_type_t_BTHH_FEATURE_REPORT => BthhReportType::FeatureReport,
+            _ => unreachable!(),
+        }
     }
 }
 
