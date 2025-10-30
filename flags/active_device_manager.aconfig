@@ -40,3 +40,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "adm_suspend_fallback_during_change"
+    namespace: "bluetooth"
+    description: "Suspend active device disconnection fallback mechanism when active device change is pending"
+    bug: "446848896"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
