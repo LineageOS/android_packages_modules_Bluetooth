@@ -242,15 +242,6 @@ class HeadsetServiceBinder extends IBluetoothHeadset.Stub implements IProfileSer
     }
 
     @Override
-    public void setForceScoAudio(boolean forced, AttributionSource source) {
-        HeadsetService service = getService(source);
-        if (service == null) {
-            return;
-        }
-        service.setForceScoAudio(forced);
-    }
-
-    @Override
     public boolean startScoUsingVirtualVoiceCall(AttributionSource source) {
         HeadsetService service = getService(source);
         if (service == null) {
