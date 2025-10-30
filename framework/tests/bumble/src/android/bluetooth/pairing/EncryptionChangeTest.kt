@@ -21,6 +21,7 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
+import android.bluetooth.getParcelUuidArray
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.EnableBluetoothRule
@@ -74,11 +75,7 @@ class EncryptionChangeTest {
         IntentReceiver.IntentListener { intent ->
             val action = intent.action
             if (BluetoothDevice.ACTION_UUID == action) {
-                val uuids =
-                    intent.getParcelableArrayExtra(
-                        BluetoothDevice.EXTRA_UUID,
-                        ParcelUuid::class.java,
-                    )
+                val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID)
                 Log.d(TAG, "onReceive(): UUID=${uuids.contentToString()}")
             } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED == action) {
                 val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
