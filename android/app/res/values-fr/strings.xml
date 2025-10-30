@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Ouvrir"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Effacer de la liste"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Effacer"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"En écoute"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"En écoute"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Icône de l\'application"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Audio Bluetooth déconnecté"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"Audio Bluetooth"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Audio Bluetooth"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Impossible de transférer les fichiers supérieurs à 4 Go"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Se connecter au Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Bluetooth activé en mode Avion"</string>

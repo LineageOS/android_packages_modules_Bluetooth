@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Открыть"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Удалить из списка"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Очистить"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"Что сейчас играет?"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Что сейчас играет?"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Значок приложения"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Звук через Bluetooth отключен"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"Звук через Bluetooth"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Звук через Bluetooth"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Можно перенести только файлы размером до 4 ГБ."</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Подключиться по Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Функция Bluetooth будет включена в режиме полета"</string>

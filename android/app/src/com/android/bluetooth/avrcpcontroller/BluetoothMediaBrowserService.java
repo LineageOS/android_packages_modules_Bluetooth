@@ -106,7 +106,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                 }
 
                 // Update queue title under new locale
-                session.setQueueTitle(getString(R.string.bluetooth_a2dp_sink_queue_name));
+                session.setQueueTitle(getString(R.string.bluetooth_media_audio_queue_name));
             }
         }
     }
@@ -157,7 +157,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         mSession.setFlags(
                 MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
                         | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        mSession.setQueueTitle(getString(R.string.bluetooth_a2dp_sink_queue_name));
+        mSession.setQueueTitle(getString(R.string.bluetooth_media_audio_queue_name));
+
         setNowPlayingQueue(null);
         setErrorPlaybackState();
 

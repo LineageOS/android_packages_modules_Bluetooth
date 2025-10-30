@@ -961,7 +961,7 @@
     <issue
         id="ExportedService"
         message="Exported service does not require permission"
-        errorLine1="        &lt;service android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService&quot; android:enabled=&quot;true&quot; android:exported=&quot;true&quot; android:label=&quot;@string/a2dp_sink_mbs_label&quot;>"
+        errorLine1="        &lt;service android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService&quot; android:enabled=&quot;true&quot; android:exported=&quot;true&quot; android:label=&quot;@string/bluetooth_media_audio_app_name&quot;>"
         errorLine2="         ~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/BluetoothLib/android_common_apex36/manifest_fixer/AndroidManifest.xml"

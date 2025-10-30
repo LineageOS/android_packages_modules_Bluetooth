@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"کھولیں"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"فہرست سے صاف کریں"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"صاف کریں"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"Now Playing"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Now Playing"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"ایپلیکیشن کا آئیکن"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"بلوٹوتھ آڈیو غیر منسلک ہے"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"بلوٹوتھ آڈیو"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"بلوٹوتھ آڈیو"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"‏4GB سے بڑی فائلیں منتقل نہیں کی جا سکتیں"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"بلوٹوتھ سے منسلک کریں"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"ہوائی جہاز وضع میں بلوٹوتھ آن ہے"</string>

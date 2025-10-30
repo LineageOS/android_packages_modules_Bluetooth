@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"തുറക്കുക"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"ലിസ്റ്റിൽ നിന്നും മായ്‌ക്കുക"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"മായ്‌ക്കുക"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"ഇപ്പോൾ പ്ലേ ചെയ്യുന്നത്"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"ഇപ്പോൾ പ്ലേ ചെയ്യുന്നത്"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"അപ്ലിക്കേഷൻ ഐക്കൺ"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Bluetooth ഓഡിയോ വിച്ഛേദിച്ചു"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"Bluetooth ഓഡിയോ"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Bluetooth ഓഡിയോ"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4GB-യിൽ കൂടുതലുള്ള ഫയലുകൾ കൈമാറാനാവില്ല"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Bluetooth-ലേക്ക് കണക്‌റ്റ് ചെയ്യുക"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"ഫ്ലൈറ്റ് മോഡിൽ Bluetooth ഓണാണ്"</string>
