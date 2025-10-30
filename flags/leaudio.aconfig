@@ -140,16 +140,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_bis_sync_control"
-    namespace: "bluetooth"
-    description: "Allow to control BIS sync state from BASS service level"
-    bug: "407928525"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_audio_update_config_preference_to_hal"
     namespace: "bluetooth"
     description: "Send user set config preference to BT Audio HAL"
