@@ -671,7 +671,8 @@ cc_test {
         "server_configurable_flags",
     ],
     sanitize: {
-        cfi: false,
+        cfi: true,
+        scs: true,
         address: true,
         all_undefined: true,
         integer_overflow: true,
