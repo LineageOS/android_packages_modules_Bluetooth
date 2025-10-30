@@ -53,6 +53,9 @@ BroadcastConfiguration GetBroadcastConfig(
     if (!options->compare("lc3_stereo_48_4_2")) {
       return lc3_stereo_48_4_2;
     }
+    if (!options->compare("lc3_mono_48_4_2")) {
+      return lc3_mono_48_4_2;
+    }
   }
 
   // High quality, Low Latency
