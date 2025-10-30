@@ -16,6 +16,7 @@
 
 package com.android.bluetooth
 
+import android.bluetooth.BluetoothDevice
 import com.android.bluetooth.btservice.AdapterService
 
 object Util {
@@ -24,4 +25,18 @@ object Util {
     @JvmStatic
     fun AdapterService.appNameOrUnknown(uid: Int) =
         packageManager.getNameForUid(uid) ?: "Unknown App (UID: $uid)"
+
+    @JvmInline
+    internal value class Transport(val value: Int) {
+        override fun toString() = transportToString(value)
+    }
+
+    @JvmStatic
+    fun transportToString(transport: Int) =
+        when (transport) {
+            BluetoothDevice.TRANSPORT_AUTO -> "AUTO"
+            BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR"
+            BluetoothDevice.TRANSPORT_LE -> "LE"
+            else -> "Unknown transport ($transport)"
+        }
 }

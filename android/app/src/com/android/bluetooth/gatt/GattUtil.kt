@@ -20,7 +20,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.IBluetoothGattCallback
 import android.os.IInterface
-import com.android.bluetooth.Utils.transportToString
+import com.android.bluetooth.Util.Transport
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.gatt.HandleMap.Type
 import com.android.bluetooth.hid.HidHostService
@@ -195,7 +195,7 @@ object GattUtil {
         map.getAllApps().forEach { app ->
             append("    app_if: ${app.id}")
             append(", appName: ${app.name}")
-            append(", transport: ${transportToString(app.transport)}")
+            append(", transport: ${Transport(app.transport)}")
             app.tag?.let { tag -> append(", tag: $tag") }
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }

@@ -31,9 +31,9 @@ import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import com.android.bluetooth.Util.Transport
 import com.android.bluetooth.Util.appNameOrUnknown
 import com.android.bluetooth.Utils.callbackToApp
-import com.android.bluetooth.Utils.transportToString
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.gatt.GattUtil.Status
@@ -168,8 +168,8 @@ class GattServerManager(
         serverIf: Int,
     ) {
         val header =
-            "onClientConnected($device, ${transportToString(transport)}" +
-                ", connected=$connected, connId=$connId, serverIf=$serverIf):"
+            "onClientConnected($device, ${Transport(transport)}, connected=$connected" +
+                ", connId=$connId, serverIf=$serverIf):"
         val app = serverMap.getById(serverIf)
         if (app == null) {
             Log.w(TAG, "$header Received connection event for unregistered app")
@@ -548,7 +548,7 @@ class GattServerManager(
             name = "$name[$tag]"
         }
 
-        Log.d(TAG, "registerServer(): UUID=$uuid, name=$name, ${transportToString(transport)}")
+        Log.d(TAG, "registerServer(): UUID=$uuid, name=$name, ${Transport(transport)}")
         val uid = if (Flags.gattThread()) source.uid else Binder.getCallingUid()
         val appName = adapterService.appNameOrUnknown(uid)
         serverMap.add(uid, appName, uuid, callback, transport, tag)
@@ -587,7 +587,7 @@ class GattServerManager(
             return
         }
         val serverIf = serverApp.id
-        Log.d(TAG, "serverConnect(): $device, ${transportToString(transport)}")
+        Log.d(TAG, "serverConnect(): $device, ${Transport(transport)}")
 
         metricsReporter.logServerForegroundInfo(source.uid, isDirect)
         nativeInterface.gattServerConnect(serverIf, device, addressType, isDirect, transport)
