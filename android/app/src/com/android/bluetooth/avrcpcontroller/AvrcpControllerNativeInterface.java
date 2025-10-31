@@ -292,6 +292,7 @@ public class AvrcpControllerNativeInterface {
                 .setType(type)
                 .setUid(uid)
                 .setUuid(UUID.randomUUID().toString())
+                .setTitle(name)
                 .setDisplayableName(name)
                 .setPlayable(playable == 0x01)
                 .setBrowsable(true)
