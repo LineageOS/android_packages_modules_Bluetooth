@@ -277,7 +277,7 @@ struct SubeventResult {
    * Timestamp when all subevent data are received by the host; Not defined by the spec.
    * Using epoch time in nanos (e.g., 1697673127175).
    */
-  long timestamp_nanos_;
+  int64_t timestamp_nanos_;
 };
 
 struct ProcedureDataV2 {
