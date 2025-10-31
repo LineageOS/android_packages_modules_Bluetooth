@@ -235,8 +235,9 @@ public:
   void SetBluetoothRequestState(BluetoothRequest request, BluetoothRequestState state);
   void SetBluetoothRequestStateUnsafe(BluetoothRequest request, BluetoothRequestState state);
 
-  static inline LeAudioSourceTransport* instance = nullptr;
-  static inline BluetoothAudioSourceClientInterface* interface = nullptr;
+  static inline LeAudioSourceTransport* instance_unicast_ = nullptr;
+
+  static inline BluetoothAudioSourceClientInterface* interface_unicast_ = nullptr;
 
 private:
   LeAudioTransport* transport_;

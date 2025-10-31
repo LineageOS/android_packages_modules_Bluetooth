@@ -565,7 +565,7 @@ protected:
     } else {
       source_ = LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
                                                          &message_loop_thread);
-      ASSERT_TRUE(LeAudioClientInterface::Get()->IsSourceAcquired());
+      ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSourceAcquired());
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSinkAcquired());
     }
     com::android::bluetooth::flags::provider_->reset_flags();
@@ -583,9 +583,9 @@ protected:
       }
     }
 
-    if (LeAudioClientInterface::Get()->IsSourceAcquired()) {
+    if (LeAudioClientInterface::Get()->IsUnicastSourceAcquired()) {
       LeAudioClientInterface::Get()->ReleaseSource(source_);
-      ASSERT_FALSE(LeAudioClientInterface::Get()->IsSourceAcquired());
+      ASSERT_FALSE(LeAudioClientInterface::Get()->IsUnicastSourceAcquired());
     }
 
     cleanup_message_loop_thread();
@@ -716,7 +716,8 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, TrackListUpdate) {
           sink_metadata_v7_t({.track_count = 0, .tracks = nullptr}));
 
   // Playback tracks updates twice - with a valid track and with an empty track list
-  auto& source_transport = ::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface;
+  auto& source_transport = ::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::
+      interface_unicast_;
   ASSERT_NE(source_transport, nullptr);
   playback_track_metadata_v7 playback_tracks[] = {
           {
@@ -777,7 +778,8 @@ TEST_F(LeAudioSoftwareBroadcastTestAidl, AcquireAndRelease) {
   ASSERT_NE(::bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::interface_broadcast_,
             nullptr);
   ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::interface_unicast_, nullptr);
-  ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface, nullptr);
+  ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface_unicast_,
+            nullptr);
 }
 
 // Test scenario: Verify that a valid broadcast configuration can be retrieved
@@ -1035,7 +1037,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestCanceled) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequest) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(
           bluetooth::audio::le_audio::BluetoothRequest::RESUME,
           bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
@@ -1047,7 +1049,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequest) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestIdle) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
                                      bluetooth::audio::le_audio::BluetoothRequestState::IDLE);
   source_->ConfirmStreamingRequest();
@@ -1055,7 +1057,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestIdle) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestPendingBeforeResume) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(
           bluetooth::audio::le_audio::BluetoothRequest::RESUME,
           bluetooth::audio::le_audio::BluetoothRequestState::PENDING_BEFORE_REQUEST);
@@ -1064,7 +1066,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestPendingBefor
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestConfirmed) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
                                      bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
   source_->ConfirmStreamingRequest();
@@ -1072,7 +1074,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestConfirmed) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequest) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(
           bluetooth::audio::le_audio::BluetoothRequest::RESUME,
           bluetooth::audio::le_audio::BluetoothRequestState::PENDING_AFTER_REQUEST);
@@ -1084,7 +1086,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequest) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestIdle) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
                                      bluetooth::audio::le_audio::BluetoothRequestState::IDLE);
   source_->CancelStreamingRequest();
@@ -1092,7 +1094,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestIdle) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestPendingBeforeResume) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(
           bluetooth::audio::le_audio::BluetoothRequest::RESUME,
           bluetooth::audio::le_audio::BluetoothRequestState::PENDING_BEFORE_REQUEST);
@@ -1101,7 +1103,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestPendingBefore
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestCanceled) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
   instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
                                      bluetooth::audio::le_audio::BluetoothRequestState::CANCELED);
   source_->CancelStreamingRequest();
@@ -1235,7 +1237,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStartSessionNonV2_1Hidl) {
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestInvalidStates) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
 
   instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
                                      bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);
@@ -1248,7 +1250,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestInvalidState
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestInvalidStates) {
   ASSERT_NE(nullptr, source_);
-  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance_unicast_;
 
   instance->SetBluetoothRequestState(bluetooth::audio::le_audio::BluetoothRequest::RESUME,
                                      bluetooth::audio::le_audio::BluetoothRequestState::CONFIRMED);

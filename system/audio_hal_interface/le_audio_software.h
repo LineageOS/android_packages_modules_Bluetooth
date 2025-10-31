@@ -185,7 +185,7 @@ public:
   // not yet released.
   Source* GetSource(StreamCallbacks stream_cb, bluetooth::common::MessageLoopThread* message_loop);
   // This should be called before trying to get source interface
-  bool IsSourceAcquired();
+  bool IsUnicastSourceAcquired();
   // Release source interface if belongs to LE audio client interface
   bool ReleaseSource(Source* source);
 
@@ -203,7 +203,7 @@ private:
   static LeAudioClientInterface* interface;
   Sink* unicast_sink_ = nullptr;
   Sink* broadcast_sink_ = nullptr;
-  Source* source_ = nullptr;
+  Source* unicast_source_ = nullptr;
 };
 
 }  // namespace le_audio
