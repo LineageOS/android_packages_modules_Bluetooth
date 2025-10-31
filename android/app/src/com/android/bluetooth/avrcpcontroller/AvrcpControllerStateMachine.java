@@ -470,6 +470,10 @@ class AvrcpControllerStateMachine extends StateMachine {
                                 mAddressedPlayer.getCurrentTrack());
                         BluetoothMediaBrowserService.onPlaybackStateChanged(
                                 mAddressedPlayer.getPlaybackState());
+                        BluetoothMediaBrowserService.onShuffleModeChanged(
+                                mAddressedPlayer.getShuffleMode());
+                        BluetoothMediaBrowserService.onRepeatModeChanged(
+                                mAddressedPlayer.getRepeatMode());
                         BluetoothMediaBrowserService.onNowPlayingQueueChanged(
                                 mBrowseTree.mNowPlayingNode);
 
@@ -661,6 +665,12 @@ class AvrcpControllerStateMachine extends StateMachine {
                 case MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS -> {
                     mAddressedPlayer.setCurrentPlayerApplicationSettings(
                             (PlayerApplicationSettings) msg.obj);
+                    if (isActive()) {
+                        BluetoothMediaBrowserService
+                                .onShuffleModeChanged(mAddressedPlayer.getShuffleMode());
+                        BluetoothMediaBrowserService
+                                .onRepeatModeChanged(mAddressedPlayer.getRepeatMode());
+                    }
                     notifyPlaybackStateChanged(mAddressedPlayer.getPlaybackState());
                 }
                 case MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED -> processAvailablePlayerChanged();

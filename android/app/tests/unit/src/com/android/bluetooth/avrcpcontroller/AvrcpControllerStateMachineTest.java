@@ -91,6 +91,7 @@ public class AvrcpControllerStateMachineTest {
     @Mock private AvrcpControllerService mAvrcpControllerService;
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
     @Mock private AvrcpCoverArtManager mCoverArtManager;
+    @Mock private PlayerApplicationSettings mPlayerApplicationSettings;
     @Mock private AudioManager mAudioManager;
     @Mock private PackageManager mPackageManager;
 
@@ -2139,5 +2140,45 @@ public class AvrcpControllerStateMachineTest {
         // make sure the second player is cached now
         playerTwoNode = mAvrcpStateMachine.findNode(results.getChildren().get(1).getID());
         assertThat(playerTwoNode.isCached()).isTrue();
+    }
+
+    @Test
+    public void testOnShuffleStateChanged() {
+        setUpConnectedState(true, true);
+        doReturn(PlaybackStateCompat.SHUFFLE_MODE_ALL).when(mPlayerApplicationSettings)
+                .getSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
+
+        mAvrcpStateMachine.sendMessage(
+                AvrcpControllerStateMachine.MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS,
+                        mPlayerApplicationSettings);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
+
+        MediaSessionCompat session = BluetoothMediaBrowserService.getSession();
+        assertThat(session).isNotNull();
+        MediaControllerCompat controller = session.getController();
+        assertThat(controller).isNotNull();
+
+        assertThat(controller.getShuffleMode()).isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_ALL);
+    }
+
+    @Test
+    public void testOnRepeatStateChanged() {
+        setUpConnectedState(true, true);
+        doReturn(PlaybackStateCompat.REPEAT_MODE_ALL).when(mPlayerApplicationSettings)
+                .getSetting(PlayerApplicationSettings.REPEAT_STATUS);
+
+        mAvrcpStateMachine.sendMessage(
+                AvrcpControllerStateMachine.MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS,
+                        mPlayerApplicationSettings);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
+
+        MediaSessionCompat session = BluetoothMediaBrowserService.getSession();
+        assertThat(session).isNotNull();
+        MediaControllerCompat controller = session.getController();
+        assertThat(controller).isNotNull();
+
+        assertThat(controller.getRepeatMode()).isEqualTo(PlaybackStateCompat.REPEAT_MODE_ALL);
     }
 }

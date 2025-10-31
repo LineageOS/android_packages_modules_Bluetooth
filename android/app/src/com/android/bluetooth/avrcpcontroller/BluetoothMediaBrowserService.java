@@ -422,6 +422,28 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         }
     }
 
+    public static synchronized void onShuffleModeChanged(int mode) {
+        BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
+        if (service == null) {
+            Log.w(TAG, "onShuffleModeChanged(mode=" + mode + "): Service not available");
+            return;
+        }
+
+        Log.i(TAG, "onShuffleModeChanged(mode=" + mode + ")");
+        service.mSession.setShuffleMode(mode);
+    }
+
+    public static synchronized void onRepeatModeChanged(int mode) {
+        BluetoothMediaBrowserService service = BluetoothMediaBrowserService.getInstance();
+        if (service == null) {
+            Log.w(TAG, "onRepeatModeChanged(mode=" + mode + "): Service not available");
+            return;
+        }
+
+        Log.i(TAG, "onRepeatModeChanged(mode=" + mode + ")");
+        service.mSession.setRepeatMode(mode);
+    }
+
     // ---------------------------------------------------------------------------------------------
     // (Internal) Session State Management
     // ---------------------------------------------------------------------------------------------
