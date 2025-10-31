@@ -1184,10 +1184,9 @@ public class ScanController {
                 callingPackage.equals(mExposureNotificationPackage));
         scanClient.setHasDisavowedLocation(
                 Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
-        scanClient.setQApp(
-                checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q));
+        var isQApp = checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q);
         if (!scanClient.getHasDisavowedLocation()) {
-            if (scanClient.isQApp()) {
+            if (isQApp) {
                 scanClient.setHasLocationPermission(
                         Utils.checkCallerHasFineLocation(
                                 mAdapterService, source, scanClient.getUserHandle()));
@@ -1221,7 +1220,6 @@ public class ScanController {
                         filters,
                         Binder.getCallingUserHandle(),
                         true);
-        scanClient.setQApp(true);
         scanClient.setHasNetworkSettingsPermission(
                 Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
         scanClient.setHasNetworkSetupWizardPermission(
@@ -1344,8 +1342,6 @@ public class ScanController {
                         piInfo.filters,
                         app.getUserHandle());
         scanClient.setHasLocationPermission(app.getHasLocationPermission());
-        scanClient.setQApp(
-                checkCallerTargetSdk(mAdapterService, app.getName(), Build.VERSION_CODES.Q));
         scanClient.setEligibleForSanitizedExposureNotification(
                 app.getEligibleForSanitizedExposureNotification());
         scanClient.setHasNetworkSettingsPermission(app.getHasNetworkSettingsPermission());
