@@ -754,15 +754,6 @@ public class ScanController {
         return null;
     }
 
-    private ScanClient findBatchScanClientById(int scannerId) {
-        for (ScanClient client : mScanManager.getBatchScanQueue()) {
-            if (client.getScannerId() == scannerId) {
-                return client;
-            }
-        }
-        return null;
-    }
-
     /** Callback method for batch scan reports */
     void onBatchScanReports(
             int status, int scannerId, int reportType, int numRecords, byte[] recordData) {
@@ -786,7 +777,7 @@ public class ScanController {
                 return;
             }
 
-            ScanClient client = findBatchScanClientById(scannerId);
+            var client = ScanUtil.findById(mScanManager.getBatchScanQueue(), scannerId);
             if (client == null) {
                 return;
             }
@@ -1375,12 +1366,12 @@ public class ScanController {
 
     void flushPendingBatchResults(int scannerId) {
         enforceScanThread();
-        final var scanClient = findBatchScanClientById(scannerId);
-        if (scanClient == null) {
+        var client = ScanUtil.findById(mScanManager.getBatchScanQueue(), scannerId);
+        if (client == null) {
             Log.e(TAG, "Unexpectedly cannot find batch scan client for scannerId=" + scannerId);
             return;
         }
-        mScanManager.flushBatchScanResults(scanClient);
+        mScanManager.flushBatchScanResults(client);
     }
 
     public void stopScan(int scannerId) {
