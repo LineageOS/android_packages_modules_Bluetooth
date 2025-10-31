@@ -313,7 +313,7 @@ public class RemoteDevices {
                 debugLog(
                         ("Properties for device=" + toAnonymizedAddress(key))
                                 + ("["
-                                        + Utils.addressTypeToString(addressType)
+                                        + Util.addressTypeToString(addressType)
                                         + "] are already added"));
                 return mDevices.get(key);
             }
@@ -1553,7 +1553,7 @@ public class RemoteDevices {
                                     "aclStateChangeCallback: Adding cache for unknown device "
                                             + Utils.getRedactedAddressStringFromByte(address)
                                             + " ("
-                                            + Utils.addressTypeToString(addressType));
+                                            + Util.addressTypeToString(addressType));
                             return addDeviceProperties(address, addressType).getDevice();
                         });
 
@@ -1569,7 +1569,7 @@ public class RemoteDevices {
                                 : " Disconnected ")
                         + device
                         + "("
-                        + Utils.addressTypeToString(addressType)
+                        + Util.addressTypeToString(addressType)
                         + ") reason: "
                         + hciReason
                         + " adapter state: "
@@ -2386,17 +2386,15 @@ public class RemoteDevices {
             sb.append("    ")
                     .append(anonAddress)
                     .append("(")
-                    .append(
-                            Utils.addressTypeToString(
-                                    deviceProperties.getDevice().getAddressType()))
+                    .append(Util.addressTypeToString(deviceProperties.getDevice().getAddressType()))
                     .append(")")
                     .append(" => ")
                     .append(anonIdentityAddress)
                     .append("(")
-                    .append(Utils.addressTypeToString(identityAddressType))
+                    .append(Util.addressTypeToString(identityAddressType))
                     .append(")")
                     .append(" [")
-                    .append(Utils.deviceTypeToString(deviceProperties.getDeviceType()))
+                    .append(Util.deviceTypeToString(deviceProperties.getDeviceType()))
                     .append("] [0x")
                     .append(String.format("%06X", deviceProperties.getBluetoothClass()))
                     .append("] [ACL BR/EDR:")

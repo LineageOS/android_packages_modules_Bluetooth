@@ -209,24 +209,6 @@ public final class Utils {
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
     }
 
-    public static String deviceTypeToString(int deviceType) {
-        return switch (deviceType) {
-            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
-            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
-            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
-            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
-            default -> "Invalid device type: " + deviceType;
-        };
-    }
-
-    public static String addressTypeToString(int addressType) {
-        return switch (addressType) {
-            case BluetoothDevice.ADDRESS_TYPE_PUBLIC -> "Public ";
-            case BluetoothDevice.ADDRESS_TYPE_RANDOM -> "Random ";
-            default -> "Unknown";
-        };
-    }
-
     /**
      * Returns the correct device address to be used for connections over BR/EDR transport.
      *
