@@ -295,11 +295,10 @@ void btsnd_hcic_ble_term_big(uint8_t big_handle, uint8_t reason) {
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_term_big(big_handle, reason);
 }
 void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
-                                                       uint8_t num_handles,
-                                                       const std::vector<uint16_t>& handles) {
+                                                           const std::vector<uint16_t>& handles) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_big_channel_map_classification_vsc(
-          action, big_handle, num_handles, handles);
+          action, big_handle, handles);
 }
 // Mocked functions complete
 // END mockcify generation

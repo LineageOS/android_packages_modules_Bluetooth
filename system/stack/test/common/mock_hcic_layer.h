@@ -57,8 +57,7 @@ public:
                          struct bluetooth::hci::iso_manager::big_create_params big_params) = 0;
 
   virtual void SetBigChannelMapClassificationByConnHandles(
-          uint8_t action, uint8_t big_handle, uint8_t num_handles,
-          const std::vector<uint16_t>& handles) = 0;
+          uint8_t action, uint8_t big_handle, const std::vector<uint16_t>& handles) = 0;
 
   virtual void TerminateBig(uint8_t big_handle, uint8_t reason) = 0;
 
@@ -104,9 +103,8 @@ public:
 
   MOCK_METHOD((void), TerminateBig, (uint8_t big_handle, uint8_t reason), (override));
 
-  MOCK_METHOD(void, SetBigChannelMapClassificationByConnHandles,
-              (uint8_t action, uint8_t big_handle, uint8_t num_handles,
-               const std::vector<uint16_t>& conn_handles),
+  MOCK_METHOD((void), SetBigChannelMapClassificationByConnHandles,
+              (uint8_t action, uint8_t big_handle, const std::vector<uint16_t>& conn_handles),
               (override));
 };
 

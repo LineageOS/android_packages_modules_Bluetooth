@@ -556,15 +556,14 @@ extern struct btsnd_hcic_ble_term_big btsnd_hcic_ble_term_big;
 
 // Name: btsnd_hcic_ble_set_big_channel_map_classification_vsc
 // Params: uint8_t action, uint8_t big_handle,
-// uint8_t num_handles, const std::vector<uint16_t>& handles
+// const std::vector<uint16_t>& handles
 // Return: void
 struct btsnd_hcic_ble_set_big_channel_map_classification_vsc {
-  std::function<void(uint8_t, uint8_t, uint8_t, std::vector<uint16_t>)> body{
-          [](uint8_t /* action */, uint8_t /* big_handle */, uint8_t /* num_handles */,
-             std::vector<uint16_t> /* handles */) {}};
-  void operator()(uint8_t action, uint8_t big_handle, uint8_t num_handles,
-                  const std::vector<uint16_t>& handles) {
-    body(action, big_handle, num_handles, handles);
+  std::function<void(uint8_t, uint8_t, std::vector<uint16_t>)> body{
+          [](uint8_t /* action */, uint8_t /* big_handle */, std::vector<uint16_t> /* handles */) {
+          }};
+  void operator()(uint8_t action, uint8_t big_handle, const std::vector<uint16_t>& handles) {
+    body(action, big_handle, handles);
   }
 };
 extern struct btsnd_hcic_ble_set_big_channel_map_classification_vsc

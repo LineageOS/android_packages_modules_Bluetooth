@@ -97,10 +97,8 @@ void btsnd_hcic_ble_term_big(uint8_t big_handle, uint8_t reason) {
 }
 
 void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
-                                                       uint8_t num_handles,
-                                                       const std::vector<uint16_t>& handles) {
-  hcic_interface->SetBigChannelMapClassificationByConnHandles(action, big_handle, num_handles,
-                                                              handles);
+                                                           const std::vector<uint16_t>& handles) {
+  hcic_interface->SetBigChannelMapClassificationByConnHandles(action, big_handle, handles);
 }
 
 namespace bluetooth::legacy::hci {
