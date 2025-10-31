@@ -58,9 +58,6 @@ import java.util.Optional;
 public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     private static final String TAG = BluetoothMediaBrowserService.class.getSimpleName();
 
-    // Browsing related structures.
-    private final List<MediaSessionCompat.QueueItem> mMediaQueue = new ArrayList<>();
-
     // Media Framework Content Style constants
     private static final String CONTENT_STYLE_SUPPORTED =
             "android.media.browse.CONTENT_STYLE_SUPPORTED";
@@ -161,7 +158,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                 MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
                         | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mSession.setQueueTitle(getString(R.string.bluetooth_a2dp_sink_queue_name));
-        mSession.setQueue(mMediaQueue);
+        setNowPlayingQueue(null);
         setErrorPlaybackState();
 
         mReceiver = new LocaleChangedReceiver();
@@ -331,7 +328,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
 
         if (callback == null) {
             service.setErrorPlaybackState();
-            service.clearNowPlayingQueue();
+            service.setNowPlayingQueue(null);
         }
         service.mSession.setCallback(callback);
     }
@@ -521,23 +518,16 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     // Now Playing List
 
     private void setNowPlayingQueue(List<MediaItem> songList) {
-        mMediaQueue.clear();
+        Log.d(TAG, "setNowPlayingQueue(queue=" + songList + ")");
         if (songList != null && songList.size() > 0) {
+            ArrayList<MediaSessionCompat.QueueItem> queue = new ArrayList<>(songList.size());
             for (MediaItem song : songList) {
-                mMediaQueue.add(
-                        new MediaSessionCompat.QueueItem(
-                                song.getDescription(), mMediaQueue.size()));
+                queue.add(new MediaSessionCompat.QueueItem(song.getDescription(), queue.size()));
             }
-            mSession.setQueue(mMediaQueue);
+            mSession.setQueue(queue);
         } else {
             mSession.setQueue(null);
         }
-        Log.d(TAG, "Now Playing List Changed, queue=" + mMediaQueue);
-    }
-
-    private void clearNowPlayingQueue() {
-        mMediaQueue.clear();
-        mSession.setQueue(null);
     }
 
     /** Reset the state of BluetoothMediaBrowserService to that before a device connected */
@@ -548,7 +538,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             return;
         }
 
-        service.clearNowPlayingQueue();
+        service.setNowPlayingQueue(null);
         service.mSession.setMetadata(null);
         service.setErrorPlaybackState();
         service.mSession.setCallback(null);
@@ -611,7 +601,6 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             sb.append("\n    playbackState=")
                     .append(AvrcpControllerUtils.playbackStateCompatToString(playbackState));
             sb.append("\n    queue=").append(queue);
-            sb.append("\n    internal_queue=").append(service.mMediaQueue);
             sb.append("\n    session active state=").append(service.isActive());
         } else {
             Log.w(TAG, "dump Unavailable");
