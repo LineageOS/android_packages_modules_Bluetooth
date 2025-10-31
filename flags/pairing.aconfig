@@ -262,3 +262,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "provide_pairing_algo"
+    namespace: "bluetooth"
+    description: "Add pairing algorithm in pairing request"
+    bug: "453979807"
+}
