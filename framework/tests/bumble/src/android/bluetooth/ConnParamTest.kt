@@ -28,7 +28,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.flags.Flags
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.hamcrest.Matchers.greaterThan
@@ -88,7 +87,7 @@ class ConnParamTest {
         mHost.close()
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_INITIAL_CONN_PARAMS_P1)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.initial_conn_params_p1")
     @Test
     fun connParamsAreRelaxedAfterServiceDiscovery() {
         checkAggressiveConnectionWillBeUsed()
@@ -120,7 +119,7 @@ class ConnParamTest {
         disconnectAndWaitDisconnection(gatt, gattCallback)
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_INITIAL_CONN_PARAMS_P1)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.initial_conn_params_p1")
     @Test
     fun connParamsAreRelaxedForBondedDevice_withBluetoothRestart() {
         checkAggressiveConnectionWillBeUsed()

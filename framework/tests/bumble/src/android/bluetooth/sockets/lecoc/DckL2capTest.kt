@@ -25,7 +25,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Any
@@ -505,7 +504,7 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_DONOT_MANDATE_AUTH_ALONG_WITH_ENCRYPTION)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.donot_mandate_auth_along_with_encryption")
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
@@ -544,7 +543,7 @@ public class DckL2capTest() : Closeable {
 
     @Test
     @Ignore
-    @RequiresFlagsEnabled(Flags.FLAG_LECOC_WITH_FIXED_PSM)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.lecoc_with_fixed_psm")
     /**
      * Test:
      * - Create insecure L2CAP Socket server on Phone with given Fixed PSM (0xFD)
@@ -588,7 +587,7 @@ public class DckL2capTest() : Closeable {
 
     @Test
     @Ignore
-    @RequiresFlagsEnabled(Flags.FLAG_LECOC_WITH_FIXED_PSM)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.lecoc_with_fixed_psm")
     /**
      * Test:
      * - Create insecure L2CAP Socket server on Phone with given Fixed PSM (0xFD)
@@ -634,7 +633,7 @@ public class DckL2capTest() : Closeable {
 
     @Test
     @Ignore
-    @RequiresFlagsEnabled(Flags.FLAG_LECOC_WITH_FIXED_PSM)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.lecoc_with_fixed_psm")
     /**
      * Test:
      * - Create insecure L2CAP Socket server on Phone with given Fixed invalid PSM (0x88, which is
@@ -662,7 +661,7 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_DONOT_MANDATE_AUTH_ALONG_WITH_ENCRYPTION)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.donot_mandate_auth_along_with_encryption")
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
@@ -701,7 +700,7 @@ public class DckL2capTest() : Closeable {
 
     @Test
     @VirtualOnly
-    @RequiresFlagsEnabled(Flags.FLAG_FIX_LECOC_SOCKET_AVAILABLE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_lecoc_socket_available")
     fun testBluetoothSocketAvailable() {
         Log.d(TAG, "testBluetoothSocketAvailable: Connect L2CAP")
         val (l2capServer, bluetoothSocket, channel) =
@@ -776,7 +775,7 @@ public class DckL2capTest() : Closeable {
 
     @Test
     @VirtualOnly
-    @RequiresFlagsEnabled(Flags.FLAG_FIX_LECOC_SOCKET_AVAILABLE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_lecoc_socket_available")
     fun testBluetoothSocketReadOoB() {
         Log.d(TAG, "testBluetoothSockeReadtOoB: Connect L2CAP")
         val (l2capServer, bluetoothSocket, channel) =

@@ -32,7 +32,6 @@ import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -303,7 +302,7 @@ class LeScanningTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_USE_FILTER_FOR_EACH_MANUFACTURER_DATA_BLOCK)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.use_filter_for_each_manufacturer_data_block")
     fun startBleScan_scanFilterOnManufacturerDataInScanResponse() {
         val payloadInAdvData = byteArrayOf(0x01, 0x02)
         // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
@@ -339,7 +338,7 @@ class LeScanningTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_USE_FILTER_FOR_EACH_MANUFACTURER_DATA_BLOCK)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.use_filter_for_each_manufacturer_data_block")
     fun startBleScan_scanFilterOnManufacturerDataInAdvertisingData() {
         val payloadInAdvData = byteArrayOf(0x01, 0x02)
         // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
@@ -375,7 +374,7 @@ class LeScanningTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_USE_FILTER_FOR_EACH_MANUFACTURER_DATA_BLOCK)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.use_filter_for_each_manufacturer_data_block")
     fun startBleScan_scanFilterOnConcatenatedManufacturerData() {
         val payloadInAdvData = byteArrayOf(0x01, 0x02)
         // first 2 bytes are the manufacturer ID 0x00E0 (Google) in little endian
@@ -479,7 +478,7 @@ class LeScanningTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.support_passive_scanning")
     fun startScan_scanType(@TestParameter isActive: Boolean) {
         val requestBuilder = AdvertiseRequest.newBuilder()
 

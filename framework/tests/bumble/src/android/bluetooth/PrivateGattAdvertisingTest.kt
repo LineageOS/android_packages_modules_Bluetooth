@@ -30,7 +30,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import io.grpc.Deadline
@@ -81,7 +80,7 @@ class PrivateGattAdvertisingTest {
         }
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_FIX_PRIVATE_GATT_ADVERTISEMENT)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_private_gatt_advertisement")
     @Test
     fun privateGattAdvertisingWithNormalAdvertising() {
         // Starts private GATT advertisement, and get address of it.
@@ -182,7 +181,7 @@ class PrivateGattAdvertisingTest {
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_DISCONNECTED))
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_FIX_PRIVATE_GATT_ADVERTISEMENT)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_private_gatt_advertisement")
     @Test
     fun twoPrivateGattAdvertising() {
         // Starts private GATT advertisement 1, and get address of it.

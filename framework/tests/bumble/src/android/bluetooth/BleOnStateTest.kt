@@ -34,7 +34,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CompletableFuture
@@ -107,7 +106,7 @@ class BleOnStateTest {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsDisabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOff_canAdvertise() {
         val bluetoothLeAdvertiser = adapter.bluetoothLeAdvertiser ?: return
 
@@ -140,7 +139,7 @@ class BleOnStateTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOn_cantAdvertise() {
         val bluetoothLeAdvertiser = adapter.bluetoothLeAdvertiser ?: return
 
@@ -173,7 +172,7 @@ class BleOnStateTest {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsDisabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOff_gattCanConnect() {
         advertiseWithBumble()
 
@@ -190,7 +189,7 @@ class BleOnStateTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOn_gattCantConnect() {
         advertiseWithBumble()
 

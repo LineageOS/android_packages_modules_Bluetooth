@@ -45,7 +45,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -341,7 +340,7 @@ class PairingWithDiscoveryTest {
      * Expectation: The address type of the connected device is BluetoothDevice.ADDRESS_TYPE_PUBLIC.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_AtConnectionFromRemote_typePublic() {
         registerIntentActions(
@@ -407,7 +406,7 @@ class PairingWithDiscoveryTest {
      * Expectation: The address type of the connected device is BluetoothDevice.ADDRESS_TYPE_RANDOM.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_AtConnectionFromRemote_typeRandom() {
         registerIntentActions(
@@ -494,7 +493,7 @@ class PairingWithDiscoveryTest {
      * 2. The address type of the bonded Bumble device is BluetoothDevice.ADDRESS_TYPE_PUBLIC.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_onBluetoothOnOff_typePublic() {
         val intentReceiver =
@@ -537,7 +536,7 @@ class PairingWithDiscoveryTest {
      * BluetoothDevice.ADDRESS_TYPE_RANDOM.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_onBluetoothOnOff_typeRandom() {
         val intentReceiver =

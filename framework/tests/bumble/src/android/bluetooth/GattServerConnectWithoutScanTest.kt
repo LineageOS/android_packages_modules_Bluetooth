@@ -24,7 +24,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
@@ -167,7 +166,7 @@ class GattServerConnectWithoutScanTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun serverOffloadCharacteristics() {
         assumeTrue(
             bluetoothAdapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false
@@ -237,7 +236,7 @@ class GattServerConnectWithoutScanTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun serverUnoffloadCharacteristics() {
         assumeTrue(
             bluetoothAdapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false
@@ -311,7 +310,7 @@ class GattServerConnectWithoutScanTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun serverUnoffloadCharacteristics_autoClose() {
         assumeTrue(
             bluetoothAdapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false
