@@ -222,8 +222,8 @@ object GattUtil {
                 appendLine(
                     "RequestData<" +
                         "request_id/transaction_id: $key" +
-                        ", conn_id: ${request.connId()}" +
-                        ", handle: ${request.handle()}>"
+                        ", conn_id: ${request.fetchConnId()}" +
+                        ", handle: ${request.fetchHandle()}>"
                 )
             }
         }

@@ -976,7 +976,7 @@ class GattServerManager(
         if (status != BluetoothGatt.GATT_SUCCESS) {
             return
         }
-        for (entry in handleMap.entries) {
+        for (entry in handleMap.getEntries()) {
             if (
                 entry.mType != HandleMap.Type.SERVICE ||
                     entry.mServerIf != serverIf ||
@@ -998,7 +998,7 @@ class GattServerManager(
          * The handles are copied into a new list to avoid race conditions.
          */
         val handleList = mutableListOf<Int>()
-        for (entry in handleMap.entries) {
+        for (entry in handleMap.getEntries()) {
             if (entry.mType != HandleMap.Type.SERVICE || entry.mServerIf != serverIf) {
                 continue
             }

@@ -42,8 +42,8 @@ class HandleMapTest {
             ADVERTISE_PREFERRED,
         )
 
-        assertThat(handleMap.entries).hasSize(1)
-        val entry = handleMap.entries[0]
+        assertThat(handleMap.getEntries()).hasSize(1)
+        val entry = handleMap.getEntries()[0]
 
         expect.that(entry.mServerIf).isEqualTo(SERVER_IF_1)
         expect.that(entry.mType).isEqualTo(HandleMap.Type.SERVICE)
@@ -61,8 +61,8 @@ class HandleMapTest {
     fun testAddCharacteristic_createsCorrectEntry() {
         handleMap.addCharacteristic(SERVER_IF_1, CHARACTERISTIC_HANDLE, FAKE_UUID, SERVICE_HANDLE)
 
-        assertThat(handleMap.entries).hasSize(1)
-        val entry = handleMap.entries[0]
+        assertThat(handleMap.getEntries()).hasSize(1)
+        val entry = handleMap.getEntries()[0]
 
         assertThat(entry.mServerIf).isEqualTo(SERVER_IF_1)
         assertThat(entry.mType).isEqualTo(HandleMap.Type.CHARACTERISTIC)
@@ -83,9 +83,9 @@ class HandleMapTest {
         handleMap.addCharacteristic(SERVER_IF_1, CHARACTERISTIC_HANDLE, FAKE_UUID, SERVICE_HANDLE)
         handleMap.addDescriptor(SERVER_IF_1, DESCRIPTOR_HANDLE, FAKE_UUID, SERVICE_HANDLE)
 
-        assertThat(handleMap.entries).hasSize(2)
+        assertThat(handleMap.getEntries()).hasSize(2)
         // The descriptor is the second entry added
-        val entry = handleMap.entries[1]
+        val entry = handleMap.getEntries()[1]
 
         assertThat(entry.mServerIf).isEqualTo(SERVER_IF_1)
         assertThat(entry.mType).isEqualTo(HandleMap.Type.DESCRIPTOR)
@@ -156,12 +156,12 @@ class HandleMapTest {
         assertThat(context1).isNotEqualTo(context2)
 
         assertThat(context1).isNotNull()
-        assertThat(context1.connId).isEqualTo(CONN_ID_1)
+        assertThat(context1!!.connId).isEqualTo(CONN_ID_1)
         assertThat(context1.transactionId).isEqualTo(TRANS_ID_1)
         assertThat(context1.handle).isEqualTo(HANDLE_1)
 
         assertThat(context2).isNotNull()
-        assertThat(context2.connId).isEqualTo(CONN_ID_2)
+        assertThat(context2!!.connId).isEqualTo(CONN_ID_2)
         assertThat(context2.transactionId).isEqualTo(TRANS_ID_1)
         assertThat(context2.handle).isEqualTo(HANDLE_2)
     }
