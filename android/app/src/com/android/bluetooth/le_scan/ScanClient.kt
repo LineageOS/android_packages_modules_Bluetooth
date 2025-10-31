@@ -36,7 +36,6 @@ private constructor(
     var started: Boolean = false,
     var appDied: Boolean = false,
     var hasLocationPermission: Boolean = false,
-    var isQApp: Boolean = false,
     var isEligibleForSanitizedExposureNotification: Boolean = false,
     var hasNetworkSettingsPermission: Boolean = false,
     var hasNetworkSetupWizardPermission: Boolean = false,
