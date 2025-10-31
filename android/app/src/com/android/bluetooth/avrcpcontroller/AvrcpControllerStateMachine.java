@@ -39,6 +39,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;

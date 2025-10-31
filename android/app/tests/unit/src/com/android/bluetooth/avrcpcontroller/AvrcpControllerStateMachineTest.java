@@ -61,6 +61,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;

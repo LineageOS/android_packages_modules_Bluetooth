@@ -31,7 +31,7 @@
             </intent-filter>
         </service>
         <service android:process="@string/process"
-             android:name="com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService"
+             android:name="com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService"
              android:enabled="true"
              android:exported="true"
              android:label="@string/bluetooth_media_audio_app_name">
