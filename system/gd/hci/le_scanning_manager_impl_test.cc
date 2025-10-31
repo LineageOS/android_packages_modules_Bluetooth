@@ -16,6 +16,8 @@
 
 #include "hci/le_scanning_manager_impl.h"
 
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -30,7 +32,6 @@
 #include <queue>
 #include <vector>
 
-#include "common/bind.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/address.h"
 #include "hci/controller_mock.h"
@@ -157,10 +158,11 @@ private:
 
 class TestLeAddressManager : public LeAddressManager {
 public:
-  TestLeAddressManager(common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
-                       os::Handler* handler, Address public_address, uint8_t accept_list_size,
-                       uint8_t resolving_list_size, Controller* controller)
-      : LeAddressManager(enqueue_command, handler, public_address, accept_list_size,
+  TestLeAddressManager(
+          base::RepeatingCallback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
+          os::Handler* handler, Address public_address, uint8_t accept_list_size,
+          uint8_t resolving_list_size, Controller* controller)
+      : LeAddressManager(std::move(enqueue_command), handler, public_address, accept_list_size,
                          resolving_list_size, controller) {}
 
   AddressPolicy Register(LeAddressManagerCallback* callback) override {
@@ -240,7 +242,7 @@ protected:
     test_controller_->SetBlePeriodicAdvertisingSyncTransferSenderSupport(true);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     test_le_address_manager_ = std::make_unique<TestLeAddressManager>(
-            common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
+            base::BindRepeating([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
             client_handler_, address, 0x3F, 0x3F, test_controller_.get());
 
     ASSERT_TRUE(client_handler_ != nullptr);
@@ -461,7 +463,7 @@ TEST_F(LeScanningManagerAndroidHciTest, start_scan_test) {
 
 TEST_F(LeScanningManagerAndroidHciTest, is_ad_type_filter_supported_true_test) {
   sync_client_handler();
-  client_handler_->Post(common::BindOnce(
+  client_handler_->Post(base::BindOnce(
           [](LeScanningManagerImpl* le_scanning_manager) {
             ASSERT_TRUE(le_scanning_manager->IsAdTypeFilterSupported());
           },
@@ -595,7 +597,7 @@ TEST_F(LeScanningManagerAndroidHciTest, scan_filter_add_transport_discovery_data
 
 TEST_F(LeScanningManagerAndroidHciTest, scan_filter_add_ad_type_test) {
   sync_client_handler();
-  client_handler_->Post(common::BindOnce(
+  client_handler_->Post(base::BindOnce(
           [](LeScanningManagerImpl* le_scanning_manager) {
             ASSERT_TRUE(le_scanning_manager->IsAdTypeFilterSupported());
           },
@@ -1376,9 +1378,7 @@ TEST_F(LeScanningManagerAndroidHciTest,
                                      ApcfAction::ADD, (uint8_t)ErrorCode::SUCCESS));
 
   test_hci_layer_->IncomingEvent(LeAdvFilterSolicitationUuidCompleteBuilder::Create(
-          0x01, ErrorCode::SUCCESS, ApcfAction::ADD,
-          10  // Available spaces
-          ));
+          0x01, ErrorCode::SUCCESS, ApcfAction::ADD, 10 /* Available spaces */));
   sync_client_handler();
 }
 

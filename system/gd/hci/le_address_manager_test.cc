@@ -108,7 +108,7 @@ public:
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
-            common::Bind(&LeAddressManagerTest::enqueue_command, common::Unretained(this)),
+            base::BindRepeating(&LeAddressManagerTest::enqueue_command, base::Unretained(this)),
             handler_, address, 0x3F, 0x3F, controller_.get());
     AllocateClients(1);
   }
@@ -116,7 +116,7 @@ public:
   void sync_handler(os::Handler* /* handler */) {
     std::promise<void> promise;
     auto future = promise.get_future();
-    handler_->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    handler_->Post(base::BindOnce(&std::promise<void>::set_value, base::Unretained(&promise)));
     auto future_status = future.wait_for(std::chrono::seconds(1));
     EXPECT_EQ(future_status, std::future_status::ready);
   }
@@ -140,7 +140,7 @@ public:
   void enqueue_command(std::unique_ptr<CommandBuilder> command_packet) {
     hci_layer_->EnqueueCommand(std::move(command_packet),
                                handler_->BindOnce(&LeAddressManager::OnCommandComplete,
-                                                  common::Unretained(le_address_manager_)));
+                                                  base::Unretained(le_address_manager_)));
   }
 
   Thread* thread_;
@@ -331,8 +331,8 @@ public:
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
-            common::Bind(&LeAddressManagerWithSingleClientTest::enqueue_command,
-                         common::Unretained(this)),
+            base::BindRepeating(&LeAddressManagerWithSingleClientTest::enqueue_command,
+                                base::Unretained(this)),
             handler_, address, 0x3F, 0x3F, controller_.get());
     AllocateClients(1);
 
@@ -354,7 +354,7 @@ public:
   void enqueue_command(std::unique_ptr<CommandBuilder> command_packet) {
     hci_layer_->EnqueueCommand(std::move(command_packet),
                                handler_->BindOnce(&LeAddressManager::OnCommandComplete,
-                                                  common::Unretained(le_address_manager_)));
+                                                  base::Unretained(le_address_manager_)));
   }
 
   void TearDown() override {

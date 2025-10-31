@@ -61,10 +61,10 @@ static std::string AddressPolicyText(const LeAddressManager::AddressPolicy polic
 }
 
 LeAddressManager::LeAddressManager(
-        common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
+        base::RepeatingCallback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
         os::Handler* handler, Address public_address, uint8_t accept_list_size,
         uint8_t resolving_list_size, Controller* controller)
-    : enqueue_command_(enqueue_command),
+    : enqueue_command_(std::move(enqueue_command)),
       handler_(handler),
       public_address_(public_address),
       accept_list_size_(accept_list_size),
@@ -141,7 +141,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       }
       le_address_ = fixed_address;
       auto packet = hci::LeSetRandomAddressBuilder::Create(le_address_.GetAddress());
-      handler_->Post(common::BindOnce(enqueue_command_, std::move(packet)));
+      handler_->Post(base::BindOnce(enqueue_command_, std::move(packet)));
     } break;
     case AddressPolicy::USE_NON_RESOLVABLE_ADDRESS:
     case AddressPolicy::USE_RESOLVABLE_ADDRESS:
@@ -299,10 +299,10 @@ bool LeAddressManager::UnregisterSync(LeAddressManagerCallback* callback,
   std::promise<void> promise;
   auto future = promise.get_future();
   if (com_android_bluetooth_flags_use_shared_promise_for_le_address_manager()) {
-    handler_->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); },
-                                    std::move(promise)));
+    handler_->Post(base::BindOnce([](std::promise<void> promise) { promise.set_value(); },
+                                  std::move(promise)));
   } else {
-    handler_->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    handler_->Post(base::BindOnce(&std::promise<void>::set_value, base::Unretained(&promise)));
   }
 
   return future.wait_for(timeout) == std::future_status::ready;
@@ -422,11 +422,10 @@ void LeAddressManager::schedule_rotate_random_address() {
   std::string client_name = "LeAddressManager";
   auto privateAddressIntervalRange = GetNextPrivateAddressIntervalRange(client_name);
   address_rotation_wake_alarm_->Schedule(
-          common::BindOnce(
-                  []() { log::info("deadline wakeup in schedule_rotate_random_address"); }),
+          base::BindOnce([]() { log::info("deadline wakeup in schedule_rotate_random_address"); }),
           privateAddressIntervalRange.max);
   address_rotation_non_wake_alarm_->Schedule(
-          common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
+          base::BindOnce(&LeAddressManager::prepare_to_rotate, base::Unretained(this)),
           privateAddressIntervalRange.min);
 
   auto now = std::chrono::system_clock::now();
