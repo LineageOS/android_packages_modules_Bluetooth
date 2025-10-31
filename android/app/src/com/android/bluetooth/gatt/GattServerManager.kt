@@ -336,13 +336,13 @@ class GattServerManager(
 
         val requestId: Int
         if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
         } else {
             requestId = transId
             handleMap.addRequest(connId, transId, handle)
         }
 
-        val app = serverMap.getById(entry.mServerIf) ?: return
+        val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
             app.callback.onCharacteristicReadRequest(device, requestId, offset, isLong, handle)
         }
@@ -365,13 +365,13 @@ class GattServerManager(
 
         val requestId: Int
         if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
         } else {
             requestId = transId
             handleMap.addRequest(connId, transId, handle)
         }
 
-        val app = serverMap.getById(entry.mServerIf) ?: return
+        val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
             app.callback.onDescriptorReadRequest(device, requestId, offset, isLong, handle)
         }
@@ -397,13 +397,13 @@ class GattServerManager(
 
         val requestId: Int
         if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
         } else {
             requestId = transId
             handleMap.addRequest(connId, transId, handle)
         }
 
-        val app = serverMap.getById(entry.mServerIf) ?: return
+        val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
             app.callback.onCharacteristicWriteRequest(
                 device,
@@ -438,13 +438,13 @@ class GattServerManager(
 
         val requestId: Int
         if (Flags.gattMultiBearerTransactions()) {
-            requestId = handleMap.addRequestContext(entry.mServerIf, connId, transId, handle)
+            requestId = handleMap.addRequestContext(entry.serverIf, connId, transId, handle)
         } else {
             requestId = transId
             handleMap.addRequest(connId, transId, handle)
         }
 
-        val app = serverMap.getById(entry.mServerIf) ?: return
+        val app = serverMap.getById(entry.serverIf) ?: return
         callbackToApp {
             app.callback.onDescriptorWriteRequest(
                 device,
@@ -759,16 +759,16 @@ class GattServerManager(
         if (Flags.gattMultiBearerTransactions()) {
             requestContext = handleMap.getRequestContext(serverIf, requestId)
             if (requestContext != null) {
-                connId = requestContext.fetchConnId()
-                transId = requestContext.fetchTransactionId()
-                handle = requestContext.fetchHandle()
+                connId = requestContext.connId
+                transId = requestContext.transactionId
+                handle = requestContext.handle
             }
         } else {
             transId = requestId
             requestData = handleMap.getRequestDataByRequestId(requestId)
             if (requestData != null) {
-                handle = requestData.fetchHandle()
-                connId = requestData.fetchConnId()
+                handle = requestData.handle
+                connId = requestData.connId
             }
         }
 
@@ -976,16 +976,14 @@ class GattServerManager(
         if (status != BluetoothGatt.GATT_SUCCESS) {
             return
         }
-        for (entry in handleMap.getEntries()) {
+        for (entry in handleMap.entries) {
             if (
-                entry.mType != HandleMap.Type.SERVICE ||
-                    entry.mServerIf != serverIf ||
-                    !entry.mStarted
+                entry.type != HandleMap.Type.SERVICE || entry.serverIf != serverIf || !entry.started
             ) {
                 continue
             }
 
-            nativeInterface.gattServerStopService(serverIf, entry.mHandle)
+            nativeInterface.gattServerStopService(serverIf, entry.handle)
             return
         }
     }
@@ -998,11 +996,11 @@ class GattServerManager(
          * The handles are copied into a new list to avoid race conditions.
          */
         val handleList = mutableListOf<Int>()
-        for (entry in handleMap.getEntries()) {
-            if (entry.mType != HandleMap.Type.SERVICE || entry.mServerIf != serverIf) {
+        for (entry in handleMap.entries) {
+            if (entry.type != HandleMap.Type.SERVICE || entry.serverIf != serverIf) {
                 continue
             }
-            handleList.add(entry.mHandle)
+            handleList.add(entry.handle)
         }
 
         /* Now actually delete the services.... */
