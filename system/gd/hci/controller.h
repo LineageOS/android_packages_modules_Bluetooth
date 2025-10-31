@@ -48,7 +48,6 @@ public:
   virtual void RegisterCompletedMonitorAclPacketsCallback(CompletedAclPacketsCallback cb) = 0;
   virtual void UnregisterCompletedMonitorAclPacketsCallback() = 0;
 
-  virtual std::string GetLocalName() const = 0;
   virtual LocalVersionInformation GetLocalVersionInformation() const = 0;
 
   virtual bool SupportsSimplePairing() const = 0;
