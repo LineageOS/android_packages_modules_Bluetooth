@@ -2953,7 +2953,6 @@ public class BluetoothMapContentObserver {
             this.statusDelivered = 0; /* Assume success */
             this.timestamp = 0;
         }
-        ;
     }
 
     private final Map<Long, PushMsgInfo> mPushMsgList =

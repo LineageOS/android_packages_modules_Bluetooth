@@ -657,7 +657,6 @@ public final class BluetoothLeScanner {
                     }
                     return;
                 }
-                ;
             }
             mHandler.post(
                     () -> {

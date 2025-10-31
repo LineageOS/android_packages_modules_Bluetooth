@@ -333,7 +333,6 @@ public abstract class BluetoothMapbMessage {
                     envLevel);
         }
     }
-    ;
 
     @VisibleForTesting
     static class BMsgReader {
@@ -472,7 +471,6 @@ public abstract class BluetoothMapbMessage {
             return data;
         }
     }
-    ;
 
     public BluetoothMapbMessage() {}
 

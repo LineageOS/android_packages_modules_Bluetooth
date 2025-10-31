@@ -1990,7 +1990,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             super(8, IpcDataCache.MODULE_BLUETOOTH, api, api, query);
         }
     }
-    ;
 
     /**
      * Invalidate a bluetooth cache. This method is just a short-hand wrapper that enforces the
