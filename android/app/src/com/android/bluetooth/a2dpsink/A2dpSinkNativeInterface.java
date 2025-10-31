@@ -33,6 +33,10 @@ public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallb
     static final int AUDIO_STATE_STOPPED = 1;
     static final int AUDIO_STATE_STARTED = 2;
 
+    // Match up with btif_a2dp_sink_focus_state_t focus states from btif_a2dp_sink.h
+    static final int STATE_FOCUS_LOST = 0;
+    static final int STATE_FOCUS_GRANTED = 1;
+
     A2dpSinkNativeInterface(A2dpSinkNativeCallback nativeCallback, AdapterService adapterService) {
         super(requireNonNull(nativeCallback));
         mAdapterService = adapterService;
