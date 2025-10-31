@@ -786,7 +786,7 @@ public class AdapterProperties {
             debugLog(
                     "updateBondedDevices: Add device: "
                             + BluetoothUtils.toAnonymizedAddress(address)
-                            + ("[" + Utils.addressTypeToString(addressType) + "]"));
+                            + ("[" + Util.addressTypeToString(addressType) + "]"));
 
             BluetoothDevice device =
                     Flags.retainAddressType()
