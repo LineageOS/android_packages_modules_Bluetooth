@@ -24,7 +24,7 @@ import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.MetricsLogger
 
-private const val TAG = "GattMetricsReporter"
+private const val TAG = GattUtil.TAG_PREFIX + "GattMetricsReporter"
 
 class GattMetricsReporter(private val profileId: Int, private val adapterService: AdapterService) {
 

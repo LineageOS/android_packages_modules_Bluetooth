@@ -26,7 +26,7 @@ import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 
-private const val TAG = "AdvertiseSuspendManager"
+private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseSuspendManager"
 
 /**
  * Manages the queueing of advertisement commands during Bluetooth suspend state. This class is

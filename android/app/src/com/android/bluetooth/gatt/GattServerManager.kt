@@ -41,7 +41,7 @@ import com.android.bluetooth.gatt.GattUtil.translateHciCode
 import com.android.bluetooth.util.getLastAttributionTag
 import java.util.UUID
 
-private const val TAG = "GattServerManager"
+private const val TAG = GattUtil.TAG_PREFIX + "GattServerManager"
 
 class GattServerManager(
     private val adapterService: AdapterService,
