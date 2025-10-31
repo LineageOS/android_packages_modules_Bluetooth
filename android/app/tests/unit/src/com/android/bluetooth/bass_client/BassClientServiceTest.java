@@ -82,7 +82,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -1789,92 +1788,6 @@ public class BassClientServiceTest {
         }
     }
 
-    /**
-     * Test whether service.removeSource() does send modify source to all the state machines if
-     * either PA or BIS is synced
-     */
-    @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BIS_SYNC_CONTROL)
-    public void testRemoveSourceForGroupAndTriggerModifySource() {
-        prepareConnectedDeviceGroup();
-        prepareSyncToSourceAndVerify();
-        addSourceAndVerify(mBroadcastMetadata1);
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            injectRemoteSourceStateSourceAdded(
-                    sm,
-                    mBroadcastMetadata1,
-                    TEST_SOURCE_ID,
-                    BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
-                    mBroadcastMetadata1.isEncrypted()
-                            ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
-                            : BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
-                    null,
-                    0L);
-            doReturn(mBroadcastMetadata1).when(sm).getCurrentBroadcastMetadata(eq(TEST_SOURCE_ID));
-            doReturn(true).when(sm).isSyncedToTheSource(eq(TEST_SOURCE_ID));
-        }
-
-        // Remove broadcast source
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-
-        // Verify all group members getting UPDATE_BCAST_SOURCE message
-        // because PA state is synced
-        assertThat(mStateMachines).hasSize(2);
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
-
-            Optional<Message> msg =
-                    messageCaptor.getAllValues().stream()
-                            .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
-                            .findFirst();
-            assertThat(msg.isPresent()).isTrue();
-
-            // Verify using the right sourceId on each device
-            assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
-        }
-
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            // Update receiver state
-            injectRemoteSourceStateChanged(
-                    sm,
-                    mBroadcastMetadata1,
-                    TEST_SOURCE_ID,
-                    BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
-                    mBroadcastMetadata1.isEncrypted()
-                            ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
-                            : BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
-                    null,
-                    1L);
-        }
-
-        // Remove broadcast source
-        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-
-        // Verify all group members getting UPDATE_BCAST_SOURCE message if
-        // bis sync state is non-zero and pa sync state is not synced
-        assertThat(mStateMachines).hasSize(2);
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
-
-            Optional<Message> msg =
-                    messageCaptor.getAllValues().stream()
-                            .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
-                            .findFirst();
-            assertThat(msg.isPresent()).isTrue();
-
-            // Verify using the right sourceId on each device
-            assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
-        }
-
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            injectRemoteSourceStateRemoval(sm, TEST_SOURCE_ID);
-        }
-
-        verify(mLeAudioService).activeBroadcastAssistantNotification(eq(false));
-    }
-
     private void verifyRemoveMessageAndInjectSourceRemoval() {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -1949,19 +1862,10 @@ public class BassClientServiceTest {
             // Verify device get update source
             verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
 
-            Optional<Message> msg = Optional.empty();
-            if (Flags.leaudioBisSyncControl()) {
-                msg =
-                        messageCaptor.getAllValues().stream()
-                                .filter(m -> m.what == BassClientStateMachine.REMOVE_BCAST_SOURCE)
-                                .findFirst();
-            } else {
-                msg =
-                        messageCaptor.getAllValues().stream()
-                                .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
-                                .findFirst();
-                assertThat(msg.get().arg2).isEqualTo(BassConstants.PA_SYNC_DO_NOT_SYNC);
-            }
+            Optional<Message> msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(m -> m.what == BassClientStateMachine.REMOVE_BCAST_SOURCE)
+                            .findFirst();
             assertThat(msg.isPresent()).isTrue();
 
             assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
