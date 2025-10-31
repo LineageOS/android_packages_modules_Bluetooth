@@ -469,17 +469,6 @@ typedef struct {
   bool smp_over_br;
 } tBTM_LE_COMPLT;
 
-/************************
- *  Stored Linkkey Types
- ************************/
-#define BTM_CB_EVT_DELETE_STORED_LINK_KEYS 4
-
-typedef struct {
-  uint8_t event;
-  uint8_t status;
-  uint16_t num_keys;
-} tBTM_DELETE_STORED_LINK_KEY_COMPLETE;
-
 enum tBTM_BOND_TYPE : uint8_t {
   BOND_TYPE_UNKNOWN = 0,
   BOND_TYPE_PERSISTENT = 1,

@@ -96,8 +96,6 @@ typedef struct {
 /* Define the Device Management control structure
  */
 typedef struct tBTM_SEC_DEVCB {
-  tBTM_CMPL_CB* p_stored_link_key_cmpl_cb; /* Read/Write/Delete stored link key    */
-
   tBTM_BLE_LOCAL_ID_KEYS id_keys;   /* local BLE ID keys */
   Octet16 ble_encryption_key_value; /* BLE encryption key */
 

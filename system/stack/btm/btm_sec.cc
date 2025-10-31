@@ -525,10 +525,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
   }
 
   /* Tell controller to get rid of the link key if it has one stored */
-  if ((BTM_DeleteStoredLinkKey(&bd_addr, NULL)) != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("Failed to delete stored link keys");
-    return tBTM_STATUS::BTM_NO_RESOURCES;
-  }
+  btm_sec_hci_delete_stored_link_key(bd_addr);
 
   btm_sec_cb.link_spec = {.addrt = {.type = addr_type, .bda = bd_addr}, .transport = transport};
 
@@ -2933,7 +2930,7 @@ static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
     /* With BRCM controller, we do not need to delete the stored link key in
        controller.
        If the stack may sit on top of other controller, we may need this
-       BTM_DeleteStoredLinkKey (bd_addr, NULL); */
+       btm_sec_hci_delete_stored_link_key(p_device->bd_addr); */
     p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
     btm_sec_execute_procedure(p_device);
     return true;
@@ -5156,4 +5153,15 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool hos
 
   p_device->remote_supports_bredr = br_edr_supported;
   p_device->remote_supports_ble = le_supported;
+}
+
+void btm_sec_hci_delete_stored_link_key(const RawAddress& bd_addr) {
+  /* Read and Write stored link key stems from a legacy use-case. */
+  /* If the controller doesn't support this then just return success */
+  if (!bluetooth::shim::GetController()->IsSupported(
+              bluetooth::hci::OpCode::DELETE_STORED_LINK_KEY)) {
+    log::verbose("DELETE_STORED_LINK_KEY not supported");
+    return;
+  }
+  btsnd_hcic_delete_stored_key(bd_addr, false);
 }

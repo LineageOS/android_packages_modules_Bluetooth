@@ -190,7 +190,7 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   btm_sec_clear_ble_keys(p_device);
   wipe_secrets_and_remove(p_device);
   /* Tell controller to get rid of the link key, if it has one stored */
-  BTM_DeleteStoredLinkKey(&bda, NULL);
+  btm_sec_hci_delete_stored_link_key(bda);
   log::info("{} complete", bd_addr);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Device removed",
                  std::format("device_type:{} bond_type:{}", DeviceTypeText(device_type),
