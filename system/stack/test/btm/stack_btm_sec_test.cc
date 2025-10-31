@@ -212,10 +212,12 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
       ASSERT_NE(nullptr, p_devices[i]);
     }
   } else {
+    ASSERT_EQ(kBtmSecMaxDeviceRecords, p_devices[kBtmSecMaxDeviceRecords - 1]->timestamp);
+
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
       BtmDevice* p_device = btm_sec_allocate_dev_rec();
-      ASSERT_NE(nullptr, p_device);       // must be a valid entry
-      ASSERT_NE(p_device, p_devices[i]);  // should be a new record
+      ASSERT_NE(nullptr, p_device);                             // must be a valid entry
+      ASSERT_NE(p_devices[i]->timestamp, p_device->timestamp);  // should be a new record
       p_devices[i] = p_device;
     }
   }
@@ -440,7 +442,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_encryption_required) 
 
 // Test fixture for testing the security upgrade logic.
 class StackBtmSecSecurityUpgradeTest : public StackBtmSecWithInitFreeTest {
- protected:
+protected:
   void SetUp() override {
     StackBtmSecWithInitFreeTest::SetUp();
     p_device_ = btm_sec_allocate_dev_rec();
