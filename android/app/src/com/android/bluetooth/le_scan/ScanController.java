@@ -730,6 +730,13 @@ public class ScanController {
         return false;
     }
 
+    private void handleDeadScanClient(int scannerId) {
+        var client = findScanClientById(scannerId);
+        if (client != null) {
+            handleDeadScanClient(client);
+        }
+    }
+
     private void handleDeadScanClient(ScanClient client) {
         if (client.getAppDied()) {
             Log.w(TAG, "Already dead " + client);
@@ -972,10 +979,7 @@ public class ScanController {
                 sendErrorByPendingIntent(app.getInfo(), errorCode);
             } catch (PendingIntent.CanceledException e) {
                 Log.e(TAG, "Error sending error code via PendingIntent: " + e);
-                ScanClient client = findScanClientById(scannerId);
-                if (client != null) {
-                    handleDeadScanClient(client);
-                }
+                handleDeadScanClient(scannerId);
             }
         }
     }
@@ -1473,18 +1477,8 @@ public class ScanController {
 
         @Override
         public void binderDied() {
-            Log.d(
-                    TAG,
-                    "binderDied(): "
-                            + ("Unregistering scanner for=" + mPackageName)
-                            + (" with scannerId=" + mScannerId));
-            doOnScanThread(
-                    () -> {
-                        ScanClient client = findScanClientById(mScannerId);
-                        if (client != null) {
-                            handleDeadScanClient(client);
-                        }
-                    });
+            Log.d(TAG, "binderDied(): Unregister scannerId=" + mScannerId + " for " + mPackageName);
+            doOnScanThread(() -> handleDeadScanClient(mScannerId));
         }
     }
 
