@@ -4358,6 +4358,17 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
     log::error("No memory to allocate new p_device");
     return;
   }
+  if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
+      !p_device->sec_rec.is_device_encrypted() &&
+      com::android::bluetooth::flags::detect_bondloss_legacy_bredr_pairing()) {
+    log::warn(
+            "Remote device is already bonded but it is initiating legacy pairing, marking bond "
+            "as lost");
+    btsnd_hcic_pin_code_neg_reply(p_bda);
+    btm_sec_report_bond_loss(p_device, BT_TRANSPORT_BR_EDR, BTM_KEY_MISSING_BREDR_INCOMING_PAIRING);
+    return;
+  }
+
   /* received PIN code request. must be non-sm4 */
   p_device->sm4 = BTM_SM4_KNOWN;
 
