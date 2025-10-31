@@ -351,64 +351,6 @@ public class ScanController {
         }
     }
 
-    /**************************************************************************
-     * Callback functions - CLIENT
-     *************************************************************************/
-
-    // EN format defined here:
-    // https://blog.google/documents/70/Exposure_Notification_-_Bluetooth_Specification_v1.2.2.pdf
-    private static final byte[] EXPOSURE_NOTIFICATION_FLAGS_PREAMBLE =
-            new byte[] {
-                // size 2, flag field, flags byte (value is not important)
-                (byte) 0x02, (byte) 0x01
-            };
-
-    private static final int EXPOSURE_NOTIFICATION_FLAGS_LENGTH = 0x2 + 1;
-    private static final byte[] EXPOSURE_NOTIFICATION_PAYLOAD_PREAMBLE =
-            new byte[] {
-                // size 3, complete 16 bit UUID, EN UUID
-                (byte) 0x03, (byte) 0x03, (byte) 0x6F, (byte) 0xFD,
-                // size 23, data for 16 bit UUID, EN UUID
-                (byte) 0x17, (byte) 0x16, (byte) 0x6F, (byte) 0xFD,
-                // ...payload
-            };
-    private static final int EXPOSURE_NOTIFICATION_PAYLOAD_LENGTH = 0x03 + 0x17 + 2;
-
-    private static boolean arrayStartsWith(byte[] array, byte[] prefix) {
-        if (array.length < prefix.length) {
-            return false;
-        }
-        for (int i = 0; i < prefix.length; i++) {
-            if (prefix[i] != array[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static ScanResult getSanitizedExposureNotification(ScanResult result) {
-        ScanRecord record = result.getScanRecord();
-        // Remove the flags part of the payload, if present
-        if (record.getBytes().length > EXPOSURE_NOTIFICATION_FLAGS_LENGTH
-                && arrayStartsWith(record.getBytes(), EXPOSURE_NOTIFICATION_FLAGS_PREAMBLE)) {
-            record =
-                    ScanRecord.parseFromBytes(
-                            Arrays.copyOfRange(
-                                    record.getBytes(),
-                                    EXPOSURE_NOTIFICATION_FLAGS_LENGTH,
-                                    record.getBytes().length));
-        }
-
-        if (record.getBytes().length != EXPOSURE_NOTIFICATION_PAYLOAD_LENGTH) {
-            return null;
-        }
-        if (!arrayStartsWith(record.getBytes(), EXPOSURE_NOTIFICATION_PAYLOAD_PREAMBLE)) {
-            return null;
-        }
-
-        return new ScanResult(null, 0, 0, 0, 0, 0, result.getRssi(), 0, record, 0);
-    }
-
     /** Callback method for a scan result. */
     void onScanResult(
             int eventType,
@@ -552,7 +494,7 @@ public class ScanController {
                 }
             }
             if (!hasPermission && client.isEligibleForSanitizedExposureNotification()) {
-                ScanResult sanitized = getSanitizedExposureNotification(result);
+                ScanResult sanitized = ScanUtil.getSanitizedExposureNotification(scanRecord, rssi);
                 if (sanitized != null) {
                     hasPermission = true;
                     result = sanitized;
@@ -1021,10 +963,6 @@ public class ScanController {
             mIsMsftAdvMonitorEnabled = enable;
         }
     }
-
-    /**************************************************************************
-     * Scan functions - Shared CLIENT/SERVER
-     *************************************************************************/
 
     // TODO(b/455057044) Delete on flag cleanup
     void registerScanner(

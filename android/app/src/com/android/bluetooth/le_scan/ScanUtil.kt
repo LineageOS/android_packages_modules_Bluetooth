@@ -19,6 +19,8 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanRecord
+import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.bluetooth.le.ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY
 import android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED
@@ -432,6 +434,69 @@ object ScanUtil {
         val scanModeString = scanModeToString(client.scanModeApp)
         Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
         client.appScanStats?.setAutoBatchScan(client.scannerId, false)
+    }
+
+    // EN format defined here:
+    // https://blog.google/documents/70/Exposure_Notification_-_Bluetooth_Specification_v1.2.2.pdf
+    private val EXPOSURE_NOTIFICATION_FLAGS_PREAMBLE =
+        // size 2, flag field, flags byte (value is not important)
+        byteArrayOf(0x02.toByte(), 0x01.toByte())
+
+    private const val EXPOSURE_NOTIFICATION_FLAGS_LENGTH = 0x2 + 1
+    private val EXPOSURE_NOTIFICATION_PAYLOAD_PREAMBLE =
+        byteArrayOf(
+            // size 3, complete 16 bit UUID, EN UUID -> (0x03, 0x03, 0x6F, 0xFD)
+            0x03.toByte(),
+            0x03.toByte(),
+            0x6F.toByte(),
+            0xFD.toByte(),
+            // size 23, data for 16 bit UUID, EN UUID -> (0x17, 0x16, 0x6F, 0xFD)
+            0x17.toByte(),
+            0x16.toByte(),
+            0x6F.toByte(),
+            0xFD.toByte(),
+            // ...payload
+        )
+    private const val EXPOSURE_NOTIFICATION_PAYLOAD_LENGTH = 0x03 + 0x17 + 2
+
+    @JvmStatic
+    fun getSanitizedExposureNotification(scanRecord: ScanRecord, rssi: Int): ScanResult? {
+        // Remove the flags part of the payload, if present
+        val record =
+            if (
+                scanRecord.bytes.size > EXPOSURE_NOTIFICATION_FLAGS_LENGTH &&
+                    scanRecord.bytes.startsWith(EXPOSURE_NOTIFICATION_FLAGS_PREAMBLE)
+            ) {
+                ScanRecord.parseFromBytes(
+                    scanRecord.bytes.copyOfRange(
+                        EXPOSURE_NOTIFICATION_FLAGS_LENGTH,
+                        scanRecord.bytes.size,
+                    )
+                )
+            } else {
+                scanRecord
+            }
+
+        if (record.bytes.size != EXPOSURE_NOTIFICATION_PAYLOAD_LENGTH) {
+            return null
+        }
+        if (!record.bytes.startsWith(EXPOSURE_NOTIFICATION_PAYLOAD_PREAMBLE)) {
+            return null
+        }
+
+        return ScanResult(null, 0, 0, 0, 0, 0, rssi, 0, record, 0)
+    }
+
+    private fun ByteArray.startsWith(prefix: ByteArray): Boolean {
+        if (this.size < prefix.size) {
+            return false
+        }
+        for (i in prefix.indices) {
+            if (prefix[i] != this[i]) {
+                return false
+            }
+        }
+        return true
     }
 
     fun ScanFilter.toStringWithoutNullParam() = buildString {
