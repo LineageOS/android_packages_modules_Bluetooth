@@ -178,7 +178,6 @@ public class UtilsTest {
 
         Utils.checkCallerIsSystemOrActiveOrManagedUser(context, tag);
         Utils.checkCallerIsSystemOrActiveOrManagedUser(null, tag);
-        Utils.checkCallerIsSystemOrActiveUser(tag);
     }
 
     @Test

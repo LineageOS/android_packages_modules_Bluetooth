@@ -633,14 +633,6 @@ public final class Utils {
                 || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
     }
 
-    static boolean checkCallerIsSystemOrActiveUser(String tag) {
-        final boolean res = checkCallerIsSystemOrActiveUser();
-        if (!res) {
-            Log.w(TAG, tag + " - Not allowed for non-active user and non-system user");
-        }
-        return res;
-    }
-
     /**
      * Checks if the caller to the method is system server.
      *
