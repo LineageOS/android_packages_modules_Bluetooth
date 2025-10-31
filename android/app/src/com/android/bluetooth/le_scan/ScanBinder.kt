@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.IBluetoothScan
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
+import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
@@ -99,7 +100,7 @@ class ScanBinder(
         }
         withControllerRunOnScanThread(source, "registerAndStartScan") {
             registerAndStartScan(callback, workSource, source, settings, filters)
-        }
+        } ?: run { callback.onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1) }
     }
 
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
