@@ -107,7 +107,6 @@ typedef struct {
   tGATT_IF client_if;
   tBTM_BLE_CONN_TYPE connection_type;
   tBT_TRANSPORT transport;
-  uint8_t initiating_phys;
   bool opportunistic;
   tBT_DEVICE_TYPE remote_addr_type;
   uint16_t preferred_mtu;

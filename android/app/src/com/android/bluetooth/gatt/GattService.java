@@ -945,7 +945,6 @@ public class GattService extends ProfileService {
             boolean isDirect,
             int transport,
             boolean opportunistic,
-            int phy,
             AttributionSource source) {
         var clientApp = mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
@@ -958,7 +957,7 @@ public class GattService extends ProfileService {
                 ("clientConnect(): device=" + device)
                         + (", transport=" + transportToString(transport))
                         + (", addressType=" + addressType + ", isDirect=" + isDirect)
-                        + (", opportunistic=" + opportunistic + ", phy=" + phy));
+                        + (", opportunistic=" + opportunistic));
         mMetricsReporter.logAppPackage(clientIf, device, source.getUid());
         mMetricsReporter.logClientForegroundInfo(source.getUid(), isDirect);
         mMetricsReporter.logGattConnectionStateChange(
@@ -1013,7 +1012,6 @@ public class GattService extends ProfileService {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 preferredMtu,
                 preferRelaxMode);
     }

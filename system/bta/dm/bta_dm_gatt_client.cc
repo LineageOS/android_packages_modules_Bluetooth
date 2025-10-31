@@ -97,8 +97,7 @@ static gatt_interface_t default_gatt_interface = {
                           "GATTC_Open", remote_bda, client_if, connection_type,
                           opportunistic ? 'T' : 'F'));
                   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type,
-                                 BT_TRANSPORT_LE, opportunistic, LE_PHY_1M, preferred_mtu,
-                                 prefer_relax_mode);
+                                 BT_TRANSPORT_LE, opportunistic, preferred_mtu, prefer_relax_mode);
                 },
 };
 

@@ -101,7 +101,6 @@ public class GattServiceBinderTest {
         boolean isDirect = true;
         int transport = 2;
         boolean opportunistic = true;
-        int phy = 3;
 
         mBinder.clientConnect(
                 mGattCallback,
@@ -110,7 +109,6 @@ public class GattServiceBinderTest {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 mSource);
         verify(mService)
                 .clientConnect(
@@ -120,7 +118,6 @@ public class GattServiceBinderTest {
                         isDirect,
                         transport,
                         opportunistic,
-                        phy,
                         mSource);
     }
 

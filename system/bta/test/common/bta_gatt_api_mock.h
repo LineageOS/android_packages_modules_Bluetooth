@@ -31,8 +31,8 @@ public:
                            BtaAppRegisterCallback cb, bool eatt_support) = 0;
   virtual void AppDeregister(tGATT_IF client_if) = 0;
   virtual void Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                    uint8_t initiating_phys) = 0;
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
+                    bool opportunistic) = 0;
   virtual void Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) = 0;
   virtual void CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) = 0;
@@ -71,7 +71,7 @@ public:
   MOCK_METHOD((void), AppDeregister, (tGATT_IF client_if), (override));
   MOCK_METHOD((void), Open,
               (tGATT_IF client_if, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE connection_type,
-               tBT_TRANSPORT transport, bool opportunistic, uint8_t initiating_phys),
+               tBT_TRANSPORT transport, bool opportunistic),
               (override));
   MOCK_METHOD((void), Open,
               (tGATT_IF client_if, const RawAddress& remote_bda, tBTM_BLE_CONN_TYPE connection_type,
