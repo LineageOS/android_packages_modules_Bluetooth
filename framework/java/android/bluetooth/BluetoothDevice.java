@@ -2990,7 +2990,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothGatt connectGatt(
             Context context, boolean autoConnect, BluetoothGattCallback callback) {
-        return (connectGatt(context, autoConnect, callback, TRANSPORT_AUTO));
+        return (connectGatt(
+                new BluetoothGattConnectionSettings.Builder()
+                        .setAutoConnectEnabled(autoConnect)
+                        .setBluetoothGattCallback(
+                                new BluetoothUtils.SynchronousExecutor(), callback)
+                        .setTransport(TRANSPORT_AUTO)
+                        .build()));
     }
 
     /**
@@ -3011,7 +3017,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothGatt connectGatt(
             Context context, boolean autoConnect, BluetoothGattCallback callback, int transport) {
-        return (connectGatt(context, autoConnect, callback, transport, PHY_LE_1M_MASK));
+        return (connectGatt(
+                new BluetoothGattConnectionSettings.Builder()
+                        .setAutoConnectEnabled(autoConnect)
+                        .setBluetoothGattCallback(
+                                new BluetoothUtils.SynchronousExecutor(), callback)
+                        .setTransport(transport)
+                        .build()));
     }
 
     /**
@@ -3040,7 +3052,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             BluetoothGattCallback callback,
             int transport,
             int phy) {
-        return connectGatt(context, autoConnect, callback, transport, phy, null);
+        return (connectGatt(
+                new BluetoothGattConnectionSettings.Builder()
+                        .setAutoConnectEnabled(autoConnect)
+                        .setBluetoothGattCallback(
+                                new BluetoothUtils.SynchronousExecutor(), callback)
+                        .setTransport(transport)
+                        .build()));
     }
 
     /**
@@ -3072,14 +3090,16 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             int transport,
             int phy,
             Handler handler) {
-        return connectGatt(
-                context,
-                autoConnect,
-                callback,
-                transport,
-                false,
-                phy,
-                handler != null ? handler::post : new BluetoothUtils.SynchronousExecutor());
+        return (connectGatt(
+                new BluetoothGattConnectionSettings.Builder()
+                        .setAutoConnectEnabled(autoConnect)
+                        .setBluetoothGattCallback(
+                                handler != null
+                                        ? handler::post
+                                        : new BluetoothUtils.SynchronousExecutor(),
+                                callback)
+                        .setTransport(transport)
+                        .build()));
     }
 
     /**
@@ -3117,8 +3137,36 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             boolean opportunistic,
             int phy,
             @NonNull @CallbackExecutor Executor executor) {
-        if (callback == null) {
-            throw new NullPointerException("callback is null");
+        return (connectGatt(
+                new BluetoothGattConnectionSettings.Builder()
+                        .setAutoConnectEnabled(autoConnect)
+                        .setBluetoothGattCallback(executor, callback)
+                        .setTransport(transport)
+                        .setOpportunisticEnabled(opportunistic)
+                        .build()));
+    }
+
+    /**
+     * Connect to the GATT Server hosted by the given device. Caller acts as a GATT client. The
+     * {@link BluetoothGattConnectionSettings#setBluetoothGattCallback(BluetoothCallback)} is used
+     * to set the callback which will deliver results to the Caller, such as connection updates and
+     * GATT client operation results. The method returns a {@link BluetoothGatt} instance. The
+     * application can use BluetoothGatt to conduct GATT client operations.
+     *
+     * @param gattConnectionSettings {@link BluetoothGattConnectionSettings} objects with required
+     *     gatt settings for the GATT connection
+     */
+    @Hide
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    @Nullable
+    BluetoothGatt connectGatt(@NonNull BluetoothGattConnectionSettings gattConnectionSettings) {
+        if (gattConnectionSettings == null) {
+            throw new NullPointerException("settings is null");
+        }
+
+        if (gattConnectionSettings.getBluetoothGattCallback() == null) {
+            throw new NullPointerException("Bluetooth gatt callback is null");
         }
 
         // TODO(Bluetooth) check whether platform support BLE
@@ -3132,19 +3180,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             return null;
         }
         BluetoothGatt gatt =
-                new BluetoothGatt(
-                        iGatt,
-                        this,
-                        transport,
-                        opportunistic,
-                        phy,
-                        mAttributionSource,
-                        autoConnect,
-                        callback,
-                        executor);
+                new BluetoothGatt(iGatt, this, mAttributionSource, gattConnectionSettings);
         return gatt;
     }
-
     /**
      * Create a Bluetooth L2CAP Connection-oriented Channel (CoC) {@link BluetoothSocket} that can
      * be used to start a secure outgoing connection to the remote device with the same dynamic

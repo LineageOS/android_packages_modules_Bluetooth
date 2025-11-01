@@ -25,7 +25,6 @@ import static android.bluetooth.BluetoothUtils.logRemoteException;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntDef;
@@ -93,7 +92,6 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private final boolean mOpportunistic;
     private final AttributionSource mAttributionSource;
-
     private static final int AUTH_RETRY_STATE_IDLE = 0;
     private static final int AUTH_RETRY_STATE_MITM = 2;
 
@@ -913,21 +911,16 @@ public final class BluetoothGatt implements BluetoothProfile {
     BluetoothGatt(
             @NonNull IBluetoothGatt iGatt,
             @NonNull BluetoothDevice device,
-            int transport,
-            boolean opportunistic,
-            int phy,
             AttributionSource source,
-            boolean autoConnect,
-            BluetoothGattCallback callback,
-            @CallbackExecutor Executor executor) {
+            BluetoothGattConnectionSettings gattConnectionSettings) {
         mService = iGatt;
         mDevice = device;
-        mTransport = transport;
-        mAutoConnect = autoConnect;
-        mOpportunistic = opportunistic;
+        mTransport = gattConnectionSettings.getTransport();
+        mAutoConnect = gattConnectionSettings.isAutoConnectEnabled();
+        mOpportunistic = gattConnectionSettings.isOpportunisticEnabled();
         mAttributionSource = source;
-        mCallback = callback;
-        mExecutor = executor;
+        mCallback = gattConnectionSettings.getBluetoothGattCallback();
+        mExecutor = gattConnectionSettings.getBluetoothGattCallbackExecutor();
         UUID uuid = UUID.randomUUID();
         Log.d(TAG, "BluetoothGatt() UUID=" + uuid);
         try {
