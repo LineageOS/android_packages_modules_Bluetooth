@@ -154,7 +154,6 @@ public class BassClientServiceTest {
     private static final int TEST_SYNC_HANDLE_2 = TEST_SYNC_HANDLE + 1;
 
     private static final int TEST_CODEC_ID = 42;
-    private static final int TEST_CHANNEL_INDEX = 56;
 
     // For BluetoothLeAudioCodecConfigMetadata
     private static final long TEST_AUDIO_LOCATION_FRONT_LEFT = 0x01;
@@ -181,6 +180,8 @@ public class BassClientServiceTest {
             createBroadcastMetadata(TEST_BROADCAST_ID);
     private final BluetoothLeBroadcastMetadata mBroadcastMetadata2 =
             createBroadcastMetadata(TEST_BROADCAST_ID_2);
+    private final BluetoothLeBroadcastMetadata mBroadcastMetadataNoPreference =
+            createBroadcastMetadataBisNotSelected(TEST_BROADCAST_ID);
 
     private BassClientService mBassClientService;
     private ArgumentCaptor<IScannerCallback> mBassScanCallbackCaptor;
@@ -206,19 +207,31 @@ public class BassClientServiceTest {
                         .setCodecSpecificConfig(codecMetadata)
                         .setContentMetadata(contentMetadata);
 
-        BluetoothLeAudioCodecConfigMetadata channelCodecMetadata =
+        BluetoothLeAudioCodecConfigMetadata channelCodecMetadataLeft =
+                new BluetoothLeAudioCodecConfigMetadata.Builder()
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
+                        .build();
+
+        BluetoothLeAudioCodecConfigMetadata channelCodecMetadataRight =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
                         .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_RIGHT)
                         .build();
 
-        // builder expect at least one channel
-        BluetoothLeBroadcastChannel channel =
+        // Make two channels
+        BluetoothLeBroadcastChannel channel1 =
                 new BluetoothLeBroadcastChannel.Builder()
                         .setSelected(true)
-                        .setChannelIndex(TEST_CHANNEL_INDEX)
-                        .setCodecMetadata(channelCodecMetadata)
+                        .setChannelIndex(1)
+                        .setCodecMetadata(channelCodecMetadataLeft)
                         .build();
-        builder.addChannel(channel);
+        builder.addChannel(channel1);
+        BluetoothLeBroadcastChannel channel2 =
+                new BluetoothLeBroadcastChannel.Builder()
+                        .setSelected(true)
+                        .setChannelIndex(2)
+                        .setCodecMetadata(channelCodecMetadataRight)
+                        .build();
+        builder.addChannel(channel2);
         return builder.build();
     }
 
@@ -238,19 +251,31 @@ public class BassClientServiceTest {
                         .setCodecSpecificConfig(codecMetadata)
                         .setContentMetadata(contentMetadata);
 
-        BluetoothLeAudioCodecConfigMetadata channelCodecMetadata =
+        BluetoothLeAudioCodecConfigMetadata channelCodecMetadataLeft =
+                new BluetoothLeAudioCodecConfigMetadata.Builder()
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
+                        .build();
+
+        BluetoothLeAudioCodecConfigMetadata channelCodecMetadataRight =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
                         .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_RIGHT)
                         .build();
 
         // builder expect at least one channel
-        BluetoothLeBroadcastChannel channel =
+        BluetoothLeBroadcastChannel channel1 =
                 new BluetoothLeBroadcastChannel.Builder()
                         .setSelected(false)
-                        .setChannelIndex(TEST_CHANNEL_INDEX)
-                        .setCodecMetadata(channelCodecMetadata)
+                        .setChannelIndex(1)
+                        .setCodecMetadata(channelCodecMetadataLeft)
                         .build();
-        builder.addChannel(channel);
+        builder.addChannel(channel1);
+        BluetoothLeBroadcastChannel channel2 =
+                new BluetoothLeBroadcastChannel.Builder()
+                        .setSelected(false)
+                        .setChannelIndex(2)
+                        .setCodecMetadata(channelCodecMetadataRight)
+                        .build();
+        builder.addChannel(channel2);
         return builder.build();
     }
 
@@ -4831,6 +4856,23 @@ public class BassClientServiceTest {
         verifyUnregisterSyncCalled();
     }
 
+    private void prepareSynchronizedPairNoPreferenceAndStopSearching() {
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+
+        // Add source
+        addSourceAndVerify(mBroadcastMetadataNoPreference);
+
+        // Bis synced
+        injectRemoteSourceStateSourceAdded(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        verify(mLeAudioService).activeBroadcastAssistantNotification(eq(true));
+
+        // Stop searching
+        mBassClientService.stopSearchingForSources();
+        verifyUnregisterSyncCalled();
+    }
+
     private void bigMonitoringWithoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7285,18 +7327,15 @@ public class BassClientServiceTest {
     public void broadcastMonitoring_stopOnSuspendedByHost_resumeFromRemote() {
         prepareSynchronizedPairAndStopSearching();
 
-        BluetoothLeBroadcastMetadata mBroadcastMetadata1BisNotSelected =
-                createBroadcastMetadataBisNotSelected(TEST_BROADCAST_ID);
-
         // deselect all BISes - we are stopping listening to broadcast
         mBassClientService.modifySource(
-                mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadata1BisNotSelected);
+                mCurrentDevice, TEST_SOURCE_ID, mBroadcastMetadataNoPreference);
 
         // Inject Receiver State without synchronized PA. With BIG MONITORING,
         // we'd expect this to cause resynchronization attempt.
         // Assure BIG MONITORING is off
         injectRemoteSourceStateChanged(
-                mBroadcastMetadata1BisNotSelected, /* isPaSynced */ false, /* isBisSynced */ false);
+                mBroadcastMetadataNoPreference, /* isPaSynced */ false, /* isBisSynced */ false);
         verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByHost();
         checkNoResumeSynchronizationByBig();
@@ -7311,6 +7350,37 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         verifyRegisterSyncCalled(mSourceDevice);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_STOP_BIG_MONITORING_BASED_ON_BIS_SYNC)
+    public void broadcastMonitoring_noPreference_resumeOnHandover() {
+        prepareSynchronizedPairNoPreferenceAndStopSearching();
+
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+
+        // Receiver state received after sync
+        injectRemoteSourceStateChanged(
+                sm1, mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+        injectRemoteSourceStateChanged(
+                sm2, mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        // Handover to unicast
+        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
+        // Receiver state received after sync
+        injectRemoteSourceStateChanged(
+                sm1, mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        injectRemoteSourceStateChanged(
+                sm2, mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Resume
+        mBassClientService.resumeReceiversSourceSynchronization();
+        verifyRegisterSyncCalled(mSourceDevice);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
     }
 
     private void verifyUpdateMetadataAndNoOthers() {
