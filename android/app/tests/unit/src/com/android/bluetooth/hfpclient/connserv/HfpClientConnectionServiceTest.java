@@ -411,4 +411,22 @@ public class HfpClientConnectionServiceTest {
 
         assertThat(connection).isNull();
     }
+
+    @Test
+    public void onConference_noDeviceBlock_doesNotCrash() {
+        // Verifies that onConference does not crash when there is no device block.
+        createService();
+        // Note: No device is connected, so findBlockForDevice will return null.
+
+        // Create two mock connections for the same device that is not connected.
+        HfpClientConnection connection1 = mock(HfpClientConnection.class);
+        HfpClientConnection connection2 = mock(HfpClientConnection.class);
+        when(connection1.getDevice()).thenReturn(mDevice);
+        when(connection2.getDevice()).thenReturn(mDevice);
+
+        // Trigger the conference call. This should not crash, even without a device block.
+        mHfpClientConnectionService.onConference(connection1, connection2);
+
+        // No assertions needed, the test passes if no exception is thrown.
+    }
 }
