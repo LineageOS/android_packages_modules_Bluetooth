@@ -267,8 +267,10 @@ class BluetoothManagerService {
                 }
             };
 
-    private String computeInitialName() {
-        String name = SystemProperties.get("bluetooth.device.default_name");
+    private String validateLocalName(String name) {
+        if (name == null || name.isEmpty()) {
+            name = SystemProperties.get("bluetooth.device.default_name");
+        }
         if (name == null || name.isEmpty()) {
             name = Settings.Global.getString(mContentResolver, DEVICE_NAME);
         }
@@ -609,17 +611,11 @@ class BluetoothManagerService {
         mContext.registerReceiver(mReceiver, filter, null, mHandler);
 
         if (Flags.setNameInSystemServer()) {
-            // The Bluetooth Device Name can be up to 248 bytes (see [Vol 2] Part C, Section 4.3.5).
             mName =
-                    Text.truncateUtf8String(
+                    validateLocalName(
                             BluetoothServerProxy.getInstance()
                                     .settingsSecureGetString(
-                                            mContentResolver, Settings.Secure.BLUETOOTH_NAME),
-                            248);
-            if (mName == null || mName.isEmpty()) {
-                mName = computeInitialName();
-                storeName(mName);
-            }
+                                            mContentResolver, Settings.Secure.BLUETOOTH_NAME));
         } else {
             mName =
                     BluetoothServerProxy.getInstance()
@@ -1145,9 +1141,7 @@ class BluetoothManagerService {
     }
 
     void setName(String name) {
-        if (name == null || name.isEmpty()) {
-            name = computeInitialName();
-        }
+        name = validateLocalName(name);
         if (Objects.equals(name, mName)) {
             return;
         }
