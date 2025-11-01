@@ -169,7 +169,7 @@ public final class BluetoothLeScanner {
             conditional = true)
     public void startScan(
             List<ScanFilter> filters, ScanSettings settings, final ScanCallback callback) {
-        startScan(filters, settings, /* workSource */ null, callback, /* callbackIntent= */ null);
+        doStartScan(filters, settings, /* workSource */ null, callback, /* callbackIntent= */ null);
     }
 
     /**
@@ -218,7 +218,7 @@ public final class BluetoothLeScanner {
             @Nullable List<ScanFilter> filters,
             @Nullable ScanSettings settings,
             @NonNull PendingIntent callbackIntent) {
-        return startScan(
+        return doStartScan(
                 filters,
                 settings != null ? settings : new ScanSettings.Builder().build(),
                 /* workSource */ null,
@@ -295,13 +295,13 @@ public final class BluetoothLeScanner {
             ScanSettings settings,
             final WorkSource workSource,
             final ScanCallback callback) {
-        startScan(filters, settings, workSource, callback, /* callbackIntent= */ null);
+        doStartScan(filters, settings, workSource, callback, /* callbackIntent= */ null);
     }
 
     @RequiresPermission(
             allOf = {BLUETOOTH_PRIVILEGED, BLUETOOTH_SCAN},
             conditional = true)
-    private int startScan(
+    private int doStartScan(
             List<ScanFilter> filters,
             ScanSettings settings,
             final WorkSource workSource,
