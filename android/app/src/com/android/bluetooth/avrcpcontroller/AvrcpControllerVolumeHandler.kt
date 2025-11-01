@@ -53,7 +53,7 @@ import com.android.bluetooth.Util
  */
 class AvrcpControllerVolumeHandler(
     private val mContext: Context,
-    private val mDevice: BluetoothDevice?,
+    private val mDevice: BluetoothDevice,
 ) {
     private val mAudioManager: AudioManager = mContext.getSystemService(AudioManager::class.java)
 
@@ -75,9 +75,8 @@ class AvrcpControllerVolumeHandler(
             if (this.isLoud) {
                 return ABS_VOL_MAX
             }
-            val maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-            val index = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-            return (index * ABS_VOL_MAX) / maxVolume
+            val localVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            return localToAbsoluteVolume(localVolume)
         }
 
     /**
@@ -112,18 +111,15 @@ class AvrcpControllerVolumeHandler(
      * @param absVol A volume level based on a domain of [0, ABS_VOL_MAX]
      */
     private fun setAbsVolume(absVol: Int) {
-        val maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val reqLocalVolume = absoluteToLocalVolume(absVol)
         val curLocalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        val reqLocalVolume: Int = (maxLocalVolume * absVol) / ABS_VOL_MAX
         debug(
             "setAbsVolume: absVol=" +
                 absVol +
                 ", reqLocal=" +
                 reqLocalVolume +
                 ", curLocal=" +
-                curLocalVolume +
-                ", maxLocal=" +
-                maxLocalVolume
+                curLocalVolume
         )
 
         /*
@@ -141,6 +137,28 @@ class AvrcpControllerVolumeHandler(
     }
 
     /**
+     * Translate to an absolute volume level
+     *
+     * @param localVolume A local volume level based on the device's audio manager
+     * @return An absolute volume level based on a domain of [0, ABS_VOL_MAX]
+     */
+    private fun localToAbsoluteVolume(localVolume: Int): Int {
+        val maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        return (ABS_VOL_MAX * localVolume) / maxLocalVolume
+    }
+
+    /**
+     * Translate to a local volume level
+     *
+     * @param absoluteVolume An absolute volume level based on a domain of [0, ABS_VOL_MAX]
+     * @return A local volume level based on the device's audio manager
+     */
+    private fun absoluteToLocalVolume(absoluteVolume: Int): Int {
+        val maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        return (maxLocalVolume * absoluteVolume) / ABS_VOL_MAX
+    }
+
+    /**
      * Get a minimal string representation of this handler.
      *
      * @return The output string
@@ -149,7 +167,7 @@ class AvrcpControllerVolumeHandler(
         return "Device: $mDevice, Strategy: " + strategyToString(this.volumeStrategy)
     }
 
-    private fun debug(message: String?) {
+    private fun debug(message: String) {
         Log.d(TAG, "[$mDevice]: $message")
     }
 
