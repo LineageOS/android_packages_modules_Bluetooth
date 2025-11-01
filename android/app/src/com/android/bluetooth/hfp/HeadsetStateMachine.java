@@ -272,7 +272,7 @@ class HeadsetStateMachine extends StateMachine {
         setInitialState(mDisconnected);
 
         start();
-        Log.i(TAG, "Created state machine " + this + " for " + device);
+        Log.i(TAG, "Created for " + device + " with " + mHsClientAudioPolicy);
     }
 
     static void destroy(HeadsetStateMachine stateMachine) {

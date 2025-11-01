@@ -349,9 +349,11 @@ constructor(
     }
 
     fun getAudioPolicyMetadata(device: BluetoothDevice): BluetoothSinkAudioPolicy {
-        val settings =
-            currentStorage.devicesMap[device.address]?.hfpClientSettings
-                ?: return BluetoothSinkAudioPolicy.Builder().build()
+        val device = currentStorage.devicesMap[device.address]
+        if (device == null || !device.hasHfpClientSettings()) {
+            return BluetoothSinkAudioPolicy.Builder().build()
+        }
+        val settings = device.hfpClientSettings
 
         return BluetoothSinkAudioPolicy.Builder()
             .setCallEstablishPolicy(toAudioPolicy(settings.callEstablish))

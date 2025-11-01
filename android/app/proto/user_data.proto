@@ -75,7 +75,7 @@ message Device {
 
   A2dpSettings a2dp_settings = 4;
   AvrcpSettings avrcp_settings = 5;
-  HfpClientSettings hfp_client_settings = 6;
+  optional HfpClientSettings hfp_client_settings = 6;
   LeAudioSettings le_audio_settings = 7;
 
   map<uint32, bytes> custom_metadata = 8;
