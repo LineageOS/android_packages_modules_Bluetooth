@@ -36,6 +36,7 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -134,25 +135,7 @@ public class AdvertiseManager {
     private record AdvertiserInfo(
             /* When id is negative, the registration is ongoing. When the registration finishes, id
              * becomes equal to advertiser_id */
-            Integer id,
-            AdvertisingSetDeathRecipient deathRecipient,
-            IAdvertisingSetCallback callback) {}
-
-    private class AdvertisingSetDeathRecipient implements IBinder.DeathRecipient {
-        private final IAdvertisingSetCallback mCallback;
-        private final String mAppName;
-
-        AdvertisingSetDeathRecipient(IAdvertisingSetCallback callback, String appName) {
-            this.mCallback = callback;
-            this.mAppName = appName;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering advertising set (" + mAppName + ")!");
-            doOnAdvertiseThread(() -> stopAdvertisingSet(mCallback));
-        }
-    }
+            Integer id, ActionOnDeathRecipient deathRecipient, IAdvertisingSetCallback callback) {}
 
     private Map.Entry<IBinder, AdvertiserInfo> findAdvertiser(int advertiserId) {
         return mAdvertisers.entrySet().stream()
@@ -311,7 +294,9 @@ public class AdvertiseManager {
 
         int uid = Flags.gattThread() ? source.getUid() : Binder.getCallingUid();
         var appName = Util.appNameOrUnknown(mAdapterService, uid);
-        final var deathRecipient = new AdvertisingSetDeathRecipient(callback, appName);
+        var message = "Unregistering advertising set (" + appName + ")!";
+        Runnable onDeathAction = () -> doOnAdvertiseThread(() -> stopAdvertisingSet(callback));
+        var deathRecipient = new ActionOnDeathRecipient(TAG, message, onDeathAction);
         final var binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);

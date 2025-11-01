@@ -56,6 +56,8 @@ class ContextApp<C : IInterface>(
         fun valueByteArray() = value?.toByteArray()
     }
 
+    override fun toString() = "ContextApp($name)"
+
     fun linkToDeath(recipient: IBinder.DeathRecipient) {
         try {
             callback.asBinder().linkToDeath(recipient, 0)
