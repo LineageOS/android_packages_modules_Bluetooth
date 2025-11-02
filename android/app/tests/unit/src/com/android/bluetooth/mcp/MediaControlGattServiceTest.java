@@ -1589,4 +1589,41 @@ public class MediaControlGattServiceTest {
         assertThat(iconUrlChar.getStringValue(0)).isEqualTo(truncatedString);
         assertThat(iconUrlChar.getStringValue(0).length()).isEqualTo(max_gatt_attr_len);
     }
+
+    @Test
+    public void updatePlayerState_withNullPlayerName_doesNotCrash() {
+        BluetoothGattService service = initAllFeaturesGattService();
+        Map<PlayerStateField, Object> stateMap = new HashMap<>();
+        stateMap.put(PlayerStateField.PLAYER_NAME, null);
+
+        // This should not throw NullPointerException
+        mMediaControlGattService.updatePlayerState(stateMap);
+
+        // Verify that player name characteristic is not changed from its initial empty value
+        BluetoothGattCharacteristic playerNameChar =
+                service.getCharacteristic(MediaControlGattService.UUID_PLAYER_NAME);
+        assertThat(playerNameChar.getStringValue(0)).isEmpty();
+    }
+
+    @Test
+    public void updatePlayerState_withNullTrackTitle_updatesToEmpty() {
+        BluetoothGattService service = initAllFeaturesGattService();
+        BluetoothGattCharacteristic trackTitleChar =
+                service.getCharacteristic(MediaControlGattService.UUID_TRACK_TITLE);
+        assertThat(trackTitleChar).isNotNull();
+
+        // Set an initial non-empty title
+        final String initialTitle = "Initial Title";
+        mMediaControlGattService.updateTrackTitleChar(initialTitle, false);
+        assertThat(trackTitleChar.getStringValue(0)).isEqualTo(initialTitle);
+
+        Map<PlayerStateField, Object> stateMap = new HashMap<>();
+        stateMap.put(PlayerStateField.TRACK_TITLE, null);
+
+        // This should not throw NullPointerException
+        mMediaControlGattService.updatePlayerState(stateMap);
+
+        // Verify that track title is updated to empty string
+        assertThat(trackTitleChar.getStringValue(0)).isEmpty();
+    }
 }
