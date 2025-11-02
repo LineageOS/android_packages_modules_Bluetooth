@@ -21,8 +21,6 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.IBluetoothGattCallback
 import android.os.IInterface
 import com.android.bluetooth.Util.Transport
-import com.android.bluetooth.flags.Flags
-import com.android.bluetooth.gatt.HandleMap.Type
 import com.android.bluetooth.hid.HidHostService
 import java.util.UUID
 
@@ -200,32 +198,4 @@ object GattUtil {
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
-
-    @JvmStatic
-    fun HandleMap.dump() = buildString {
-        appendLine("  Entries: ${mEntries.size}")
-        for (entry in mEntries) {
-            append("      ${entry.mServerIf}: [${entry.mHandle}] ")
-            when (entry.mType) {
-                Type.SERVICE -> appendLine("Service ${entry.mUuid}, started ${entry.mStarted}")
-                Type.CHARACTERISTIC -> appendLine("  Characteristic ${entry.mUuid}")
-                Type.DESCRIPTOR -> appendLine("    Descriptor ${entry.mUuid}")
-            }
-        }
-        appendLine("  Requests: ${mRequestMap.size}")
-        if (Flags.gattMultiBearerTransactions()) {
-            for (context in mRequestContextMap.values) {
-                appendLine("      $context")
-            }
-        } else {
-            for ((key, request) in mRequestMap) {
-                appendLine(
-                    "RequestData<" +
-                        "request_id/transaction_id: $key" +
-                        ", conn_id: ${request.connId()}" +
-                        ", handle: ${request.handle()}>"
-                )
-            }
-        }
-    }
 }

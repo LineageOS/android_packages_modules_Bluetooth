@@ -45,15 +45,15 @@ class HandleMapTest {
         assertThat(handleMap.entries).hasSize(1)
         val entry = handleMap.entries[0]
 
-        expect.that(entry.mServerIf).isEqualTo(SERVER_IF_1)
-        expect.that(entry.mType).isEqualTo(HandleMap.Type.SERVICE)
-        expect.that(entry.mHandle).isEqualTo(SERVICE_HANDLE)
-        expect.that(entry.mUuid).isEqualTo(FAKE_UUID)
-        expect.that(entry.mInstance).isEqualTo(INSTANCE)
-        expect.that(entry.mServiceType).isEqualTo(SERVICE_TYPE)
-        expect.that(entry.mServiceHandle).isEqualTo(0)
-        expect.that(entry.mCharHandle).isEqualTo(0)
-        expect.that(entry.mAdvertisePreferred).isEqualTo(ADVERTISE_PREFERRED)
+        expect.that(entry.serverIf).isEqualTo(SERVER_IF_1)
+        expect.that(entry.type).isEqualTo(HandleMap.Type.SERVICE)
+        expect.that(entry.handle).isEqualTo(SERVICE_HANDLE)
+        expect.that(entry.uuid).isEqualTo(FAKE_UUID)
+        expect.that(entry.instance).isEqualTo(INSTANCE)
+        expect.that(entry.serviceType).isEqualTo(SERVICE_TYPE)
+        expect.that(entry.serviceHandle).isEqualTo(0)
+        expect.that(entry.charHandle).isEqualTo(0)
+        expect.that(entry.advertisePreferred).isEqualTo(ADVERTISE_PREFERRED)
     }
 
     /** Verifies that adding a characteristic creates a correct Entry object. */
@@ -64,16 +64,16 @@ class HandleMapTest {
         assertThat(handleMap.entries).hasSize(1)
         val entry = handleMap.entries[0]
 
-        assertThat(entry.mServerIf).isEqualTo(SERVER_IF_1)
-        assertThat(entry.mType).isEqualTo(HandleMap.Type.CHARACTERISTIC)
-        assertThat(entry.mHandle).isEqualTo(CHARACTERISTIC_HANDLE)
-        assertThat(entry.mUuid).isEqualTo(FAKE_UUID)
-        assertThat(entry.mServiceHandle).isEqualTo(SERVICE_HANDLE)
+        assertThat(entry.serverIf).isEqualTo(SERVER_IF_1)
+        assertThat(entry.type).isEqualTo(HandleMap.Type.CHARACTERISTIC)
+        assertThat(entry.handle).isEqualTo(CHARACTERISTIC_HANDLE)
+        assertThat(entry.uuid).isEqualTo(FAKE_UUID)
+        assertThat(entry.serviceHandle).isEqualTo(SERVICE_HANDLE)
         // Check default values for fields not set by this constructor
-        assertThat(entry.mInstance).isEqualTo(0)
-        assertThat(entry.mServiceType).isEqualTo(0)
-        assertThat(entry.mCharHandle).isEqualTo(0)
-        assertThat(entry.mAdvertisePreferred).isFalse()
+        assertThat(entry.instance).isEqualTo(0)
+        assertThat(entry.serviceType).isEqualTo(0)
+        assertThat(entry.charHandle).isEqualTo(0)
+        assertThat(entry.advertisePreferred).isFalse()
     }
 
     /** Verifies that adding a descriptor creates a correct Entry object. */
@@ -87,16 +87,16 @@ class HandleMapTest {
         // The descriptor is the second entry added
         val entry = handleMap.entries[1]
 
-        assertThat(entry.mServerIf).isEqualTo(SERVER_IF_1)
-        assertThat(entry.mType).isEqualTo(HandleMap.Type.DESCRIPTOR)
-        assertThat(entry.mHandle).isEqualTo(DESCRIPTOR_HANDLE)
-        assertThat(entry.mUuid).isEqualTo(FAKE_UUID)
-        assertThat(entry.mServiceHandle).isEqualTo(SERVICE_HANDLE)
-        assertThat(entry.mCharHandle).isEqualTo(CHARACTERISTIC_HANDLE)
+        assertThat(entry.serverIf).isEqualTo(SERVER_IF_1)
+        assertThat(entry.type).isEqualTo(HandleMap.Type.DESCRIPTOR)
+        assertThat(entry.handle).isEqualTo(DESCRIPTOR_HANDLE)
+        assertThat(entry.uuid).isEqualTo(FAKE_UUID)
+        assertThat(entry.serviceHandle).isEqualTo(SERVICE_HANDLE)
+        assertThat(entry.charHandle).isEqualTo(CHARACTERISTIC_HANDLE)
         // Check default values for fields not set by this constructor
-        assertThat(entry.mInstance).isEqualTo(0)
-        assertThat(entry.mServiceType).isEqualTo(0)
-        assertThat(entry.mAdvertisePreferred).isFalse()
+        assertThat(entry.instance).isEqualTo(0)
+        assertThat(entry.serviceType).isEqualTo(0)
+        assertThat(entry.advertisePreferred).isFalse()
     }
 
     /*
@@ -156,12 +156,12 @@ class HandleMapTest {
         assertThat(context1).isNotEqualTo(context2)
 
         assertThat(context1).isNotNull()
-        assertThat(context1.connId).isEqualTo(CONN_ID_1)
+        assertThat(context1!!.connId).isEqualTo(CONN_ID_1)
         assertThat(context1.transactionId).isEqualTo(TRANS_ID_1)
         assertThat(context1.handle).isEqualTo(HANDLE_1)
 
         assertThat(context2).isNotNull()
-        assertThat(context2.connId).isEqualTo(CONN_ID_2)
+        assertThat(context2!!.connId).isEqualTo(CONN_ID_2)
         assertThat(context2.transactionId).isEqualTo(TRANS_ID_1)
         assertThat(context2.handle).isEqualTo(HANDLE_2)
     }
