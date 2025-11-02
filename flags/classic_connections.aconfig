@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "remove_fake_role_change_event"
+    namespace: "bluetooth"
+    description: "Removes fake role change event generated when classic connection is established"
+    bug: "456794465"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
