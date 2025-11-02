@@ -14,709 +14,743 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import android.Manifest
+import android.annotation.RequiresPermission
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.GattOffloadSession
+import android.bluetooth.IBluetoothGatt
+import android.bluetooth.IBluetoothGattCallback
+import android.bluetooth.IBluetoothGattServerCallback
+import android.content.AttributionSource
+import android.os.Build
+import android.os.ParcelUuid
+import android.util.Log
+import com.android.bluetooth.Utils
+import com.android.bluetooth.gatt.GattUtil.isHidCharUuid
+import com.android.bluetooth.profile.ProfileService
 
-import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
-import static com.android.bluetooth.Utils.checkConnectPermissionForDataDelivery;
-import static com.android.bluetooth.gatt.GattUtil.isHidCharUuid;
+private const val TAG = GattUtil.TAG_PREFIX + "GattServiceBinder"
 
-import static java.util.Objects.requireNonNull;
+class GattServiceBinder(private var mService: GattService?) :
+    IBluetoothGatt.Stub(), ProfileService.IProfileServiceBinder {
 
-import android.annotation.RequiresPermission;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.GattOffloadSession;
-import android.bluetooth.IBluetoothGatt;
-import android.bluetooth.IBluetoothGattCallback;
-import android.bluetooth.IBluetoothGattServerCallback;
-import android.content.AttributionSource;
-import android.os.Build;
-import android.os.ParcelUuid;
-import android.util.Log;
-
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBinder {
-    private static final String TAG = GattUtil.TAG_PREFIX + GattServiceBinder.class.getSimpleName();
-
-    private GattService mService;
-
-    GattServiceBinder(GattService svc) {
-        mService = svc;
+    override fun cleanup() {
+        mService = null
     }
 
-    @Override
-    public void cleanup() {
-        mService = null;
-    }
-
-    private GattService getService() {
-        GattService service = mService;
+    private fun getGattService(): GattService? {
+        val service = mService
 
         if (!Utils.checkServiceAvailable(service, TAG)) {
-            return null;
+            return null
         }
 
-        return service;
+        return service
     }
 
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    private GattService getServiceAndEnforceConnect(AttributionSource source) {
-        GattService service = mService;
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun getServiceAndEnforceConnect(source: AttributionSource): GattService? {
+        val service = mService
 
-        if (!Utils.checkServiceAvailable(service, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-            return null;
+        if (
+            !Utils.checkServiceAvailable(service, TAG) ||
+                !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)
+        ) {
+            return null
         }
 
-        return service;
+        return service
     }
 
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    private GattServerManager getServerManagerAndEnforceConnect(AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun getServerManagerAndEnforceConnect(source: AttributionSource): GattServerManager? {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return null;
+            return null
         }
-        return service.getServerManager();
+        return service.getServerManager()
     }
 
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    private GattServerManager getServerManagerAndEnforceConnectAndPrivileged(
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    @RequiresPermission(
+        allOf = [Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_PRIVILEGED]
+    )
+    private fun getServerManagerAndEnforceConnectAndPrivileged(
+        source: AttributionSource
+    ): GattServerManager? {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return null;
+            return null
         }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.getServerManager();
+        service.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
+        return service.getServerManager()
     }
 
-    @Override
-    public List<BluetoothDevice> getDevicesMatchingConnectionStates(
-            int[] states, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun getDevicesMatchingConnectionStates(
+        states: IntArray,
+        source: AttributionSource,
+    ): List<BluetoothDevice> {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return Collections.emptyList();
+            return emptyList()
         }
-        return service.getDevicesMatchingConnectionStates(states);
+        return service.getDevicesMatchingConnectionStates(states)
     }
 
-    @Override
-    public void registerClient(
-            ParcelUuid uuid,
-            IBluetoothGattCallback callback,
-            boolean eattSupport,
-            int transport,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun registerClient(
+        uuid: ParcelUuid,
+        callback: IBluetoothGattCallback,
+        eattSupport: Boolean,
+        transport: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.registerClient(uuid.getUuid(), callback, eattSupport, transport, source);
+        service.registerClient(uuid.getUuid(), callback, eattSupport, transport, source)
     }
 
-    @Override
-    public void unregisterClient(IBluetoothGattCallback callback, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun unregisterClient(callback: IBluetoothGattCallback, source: AttributionSource) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.unregisterClient(
-                callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        service.unregisterClient(callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
     }
 
-    @Override
-    public void clientConnect(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int addressType,
-            boolean isDirect,
-            int transport,
-            boolean opportunistic,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun clientConnect(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        addressType: Int,
+        isDirect: Boolean,
+        transport: Int,
+        opportunistic: Boolean,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
         service.clientConnect(
-                callback, device, addressType, isDirect, transport, opportunistic, source);
+            callback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            source,
+        )
     }
 
-    @Override
-    public void clientDisconnect(
-            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun clientDisconnect(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.clientDisconnect(callback, device, source);
+        service.clientDisconnect(callback, device, source)
     }
 
-    @Override
-    public void clientSetPreferredPhy(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int txPhy,
-            int rxPhy,
-            int phyOptions,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun clientSetPreferredPhy(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        txPhy: Int,
+        rxPhy: Int,
+        phyOptions: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions);
+        service.clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
     }
 
-    @Override
-    public void clientReadPhy(
-            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun clientReadPhy(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.clientReadPhy(callback, device);
+        service.clientReadPhy(callback, device)
     }
 
-    @Override
-    public void refreshDevice(
-            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun refreshDevice(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.refreshDevice(callback, device);
+        service.refreshDevice(callback, device)
     }
 
-    @Override
-    public void discoverServices(
-            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun discoverServices(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.discoverServices(callback, device);
+        service.discoverServices(callback, device)
     }
 
-    @Override
-    public void discoverServiceByUuid(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            ParcelUuid uuid,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun discoverServiceByUuid(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        uuid: ParcelUuid,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.discoverServiceByUuid(callback, device, uuid.getUuid());
+        service.discoverServiceByUuid(callback, device, uuid.getUuid())
     }
 
-    @Override
-    public void readCharacteristic(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            int authReq,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun readCharacteristic(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        authReq: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
 
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
+            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+        } catch (ex: SecurityException) {
+            val callingPackage = source.getPackageName()
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
+            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex
             }
-            Log.w(TAG, "readCharacteristic() - permission check failed!");
-            return;
+            Log.w(TAG, "readCharacteristic() - permission check failed!")
+            return
         }
 
-        service.readCharacteristic(callback, device, handle, authReq);
+        service.readCharacteristic(callback, device, handle, authReq)
     }
 
-    @Override
-    public void readUsingCharacteristicUuid(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            ParcelUuid uuid,
-            int startHandle,
-            int endHandle,
-            int authReq,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun readUsingCharacteristicUuid(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        uuid: ParcelUuid,
+        startHandle: Int,
+        endHandle: Int,
+        authReq: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
 
         try {
             if (isHidCharUuid(uuid.getUuid())) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+                service.enforceCallingOrSelfPermission(
+                    Manifest.permission.BLUETOOTH_PRIVILEGED,
+                    null,
+                )
             }
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
+        } catch (ex: SecurityException) {
+            val callingPackage = source.getPackageName()
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
+            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex
             }
-            Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!");
-            return;
+            Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!")
+            return
         }
         service.readUsingCharacteristicUuid(
-                callback, device, uuid.getUuid(), startHandle, endHandle, authReq);
+            callback,
+            device,
+            uuid.getUuid(),
+            startHandle,
+            endHandle,
+            authReq,
+        )
     }
 
-    @Override
-    public int writeCharacteristic(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            int writeType,
-            int authReq,
-            byte[] value,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun writeCharacteristic(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        writeType: Int,
+        authReq: Int,
+        value: ByteArray,
+        source: AttributionSource,
+    ): Int {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
+            return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
         }
-        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
-        return service.writeCharacteristic(callback, device, handle, writeType, authReq, value);
+        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+        return service.writeCharacteristic(callback, device, handle, writeType, authReq, value)
     }
 
-    @Override
-    public void readDescriptor(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            int authReq,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun readDescriptor(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        authReq: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
 
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
+            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+        } catch (ex: SecurityException) {
+            val callingPackage = source.getPackageName()
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
+            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex
             }
-            Log.w(TAG, "readDescriptor() - permission check failed!");
-            return;
+            Log.w(TAG, "readDescriptor() - permission check failed!")
+            return
         }
 
-        service.readDescriptor(callback, device, handle, authReq);
+        service.readDescriptor(callback, device, handle, authReq)
     }
 
-    @Override
-    public int writeDescriptor(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            int authReq,
-            byte[] value,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun writeDescriptor(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        authReq: Int,
+        value: ByteArray,
+        source: AttributionSource,
+    ): Int {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
+            return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
         }
-        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
-        return service.writeDescriptor(callback, device, handle, authReq, value);
+        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+        return service.writeDescriptor(callback, device, handle, authReq, value)
     }
 
-    @Override
-    public void beginReliableWrite(BluetoothDevice device, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun beginReliableWrite(device: BluetoothDevice, source: AttributionSource) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.beginReliableWrite(device);
+        service.beginReliableWrite(device)
     }
 
-    @Override
-    public void endReliableWrite(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            boolean execute,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun endReliableWrite(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        execute: Boolean,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.endReliableWrite(callback, device, execute);
+        service.endReliableWrite(callback, device, execute)
     }
 
-    @Override
-    public void registerForNotification(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle,
-            boolean enable,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun registerForNotification(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        enable: Boolean,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
+            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+        } catch (ex: SecurityException) {
+            val callingPackage = source.getPackageName()
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
+            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex
             }
-            Log.w(TAG, "registerForNotification() - permission check failed!");
-            return;
+            Log.w(TAG, "registerForNotification() - permission check failed!")
+            return
         }
 
-        service.registerForNotification(callback, device, handle, enable);
+        service.registerForNotification(callback, device, handle, enable)
     }
 
-    @Override
-    public void readRemoteRssi(
-            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun readRemoteRssi(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.readRemoteRssi(callback, device);
+        service.readRemoteRssi(callback, device)
     }
 
-    @Override
-    public void configureMTU(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int mtu,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun configureMTU(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        mtu: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.configureMTU(callback, device, mtu);
+        service.configureMTU(callback, device, mtu)
     }
 
-    @Override
-    public void connectionParameterUpdate(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int connectionPriority,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun connectionParameterUpdate(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        connectionPriority: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.connectionParameterUpdate(callback, device, connectionPriority);
+        service.connectionParameterUpdate(callback, device, connectionPriority)
     }
 
-    @Override
-    public void leConnectionUpdate(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int minConnectionInterval,
-            int maxConnectionInterval,
-            int peripheralLatency,
-            int supervisionTimeout,
-            int minConnectionEventLen,
-            int maxConnectionEventLen,
-            AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun leConnectionUpdate(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        minConnectionInterval: Int,
+        maxConnectionInterval: Int,
+        peripheralLatency: Int,
+        supervisionTimeout: Int,
+        minConnectionEventLen: Int,
+        maxConnectionEventLen: Int,
+        source: AttributionSource,
+    ) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
         service.leConnectionUpdate(
-                callback,
-                device,
-                minConnectionInterval,
-                maxConnectionInterval,
-                peripheralLatency,
-                supervisionTimeout,
-                minConnectionEventLen,
-                maxConnectionEventLen);
+            callback,
+            device,
+            minConnectionInterval,
+            maxConnectionInterval,
+            peripheralLatency,
+            supervisionTimeout,
+            minConnectionEventLen,
+            maxConnectionEventLen,
+        )
     }
 
-    @Override
-    public int subrateModeRequest(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int subrateMode,
-            AttributionSource source) {
-        GattService service = getService();
+    override fun subrateModeRequest(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        subrateMode: Int,
+        source: AttributionSource,
+    ): Int {
+        val service = getGattService()
         if (service == null) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "subrateModeRequest")) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+        if (!Utils.callerIsSystemOrActiveOrManagedUser(service, TAG, "subrateModeRequest")) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         }
-        if (!checkConnectPermissionForDataDelivery(service, source, TAG, "subrateModeRequest")) {
-            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
+        if (
+            !Utils.checkConnectPermissionForDataDelivery(service, source, TAG, "subrateModeRequest")
+        ) {
+            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION
         }
 
         Utils.enforceCdmAssociationIfNotBluetoothPrivileged(
-                service, service.getCompanionDeviceManager(), source, device);
+            service,
+            service.getCompanionDeviceManager(),
+            source,
+            device,
+        )
 
-        if (subrateMode < BluetoothGatt.SUBRATE_MODE_OFF
-                || subrateMode > BluetoothGatt.SUBRATE_MODE_HIGH) {
-            throw new IllegalArgumentException("Subrate Mode not within valid range");
+        if (
+            subrateMode < BluetoothGatt.SUBRATE_MODE_OFF ||
+                subrateMode > BluetoothGatt.SUBRATE_MODE_HIGH
+        ) {
+            throw IllegalArgumentException("Subrate Mode not within valid range")
         }
 
-        requireNonNull(device);
-
-        return service.subrateModeRequest(callback, device, subrateMode);
+        return service.subrateModeRequest(callback, device, subrateMode)
     }
 
-    @Override
-    public void registerServer(
-            ParcelUuid uuid,
-            IBluetoothGattServerCallback callback,
-            boolean eattSupport,
-            int transport,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun registerServer(
+        uuid: ParcelUuid,
+        callback: IBluetoothGattServerCallback,
+        eattSupport: Boolean,
+        transport: Int,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.registerServer(uuid.getUuid(), callback, eattSupport, transport, source);
+        serverManager.registerServer(uuid.getUuid(), callback, eattSupport, transport, source)
     }
 
-    @Override
-    public void unregisterServer(IBluetoothGattServerCallback callback, AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun unregisterServer(
+        callback: IBluetoothGattServerCallback,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.unregisterServer(callback);
+        serverManager.unregisterServer(callback)
     }
 
-    @Override
-    public void serverConnect(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            int addressType,
-            boolean isDirect,
-            int transport,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun serverConnect(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        addressType: Int,
+        isDirect: Boolean,
+        transport: Int,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.serverConnect(callback, device, addressType, isDirect, transport, source);
+        serverManager.serverConnect(callback, device, addressType, isDirect, transport, source)
     }
 
-    @Override
-    public void serverDisconnect(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun serverDisconnect(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.serverDisconnect(callback, device);
+        serverManager.serverDisconnect(callback, device)
     }
 
-    @Override
-    public void serverSetPreferredPhy(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            int txPhy,
-            int rxPhy,
-            int phyOptions,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun serverSetPreferredPhy(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        txPhy: Int,
+        rxPhy: Int,
+        phyOptions: Int,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions);
+        serverManager.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
     }
 
-    @Override
-    public void serverReadPhy(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun serverReadPhy(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.serverReadPhy(callback, device);
+        serverManager.serverReadPhy(callback, device)
     }
 
-    @Override
-    public void addService(
-            IBluetoothGattServerCallback callback,
-            BluetoothGattService svc,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun addService(
+        callback: IBluetoothGattServerCallback,
+        svc: BluetoothGattService,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.addService(callback, svc);
+        serverManager.addService(callback, svc)
     }
 
-    @Override
-    public void removeService(
-            IBluetoothGattServerCallback callback, int handle, AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun removeService(
+        callback: IBluetoothGattServerCallback,
+        handle: Int,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.removeService(callback, handle);
+        serverManager.removeService(callback, handle)
     }
 
-    @Override
-    public void clearServices(IBluetoothGattServerCallback callback, AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun clearServices(callback: IBluetoothGattServerCallback, source: AttributionSource) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.clearServices(callback);
+        serverManager.clearServices(callback)
     }
 
-    @Override
-    public void sendResponse(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            int requestId,
-            int status,
-            int offset,
-            byte[] value,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun sendResponse(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        requestId: Int,
+        status: Int,
+        offset: Int,
+        value: ByteArray,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return;
+            return
         }
-        serverManager.sendResponse(callback, device, requestId, status, offset, value);
+        serverManager.sendResponse(callback, device, requestId, status, offset, value)
     }
 
-    @Override
-    public int sendNotification(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            int handle,
-            boolean confirm,
-            byte[] value,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnect(source);
+    override fun sendNotification(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        handle: Int,
+        confirm: Boolean,
+        value: ByteArray,
+        source: AttributionSource,
+    ): Int {
+        val serverManager = getServerManagerAndEnforceConnect(source)
         if (serverManager == null) {
-            return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
+            return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
         }
-        return serverManager.sendNotification(callback, device, handle, confirm, value);
+        return serverManager.sendNotification(callback, device, handle, confirm, value)
     }
 
-    @Override
-    public void disconnectAll(AttributionSource source) {
-        GattService service = getServiceAndEnforceConnect(source);
+    override fun disconnectAll(source: AttributionSource) {
+        val service = getServiceAndEnforceConnect(source)
         if (service == null) {
-            return;
+            return
         }
-        service.disconnectAll(source);
+        service.disconnectAll(source)
     }
 
-    @Override
-    public GattOffloadSession.InnerParcel offloadClientCharacteristics(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            BluetoothGattService gattService,
-            List<BluetoothGattCharacteristic> characteristics,
-            long endpointId,
-            long hubId,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+    override fun offloadClientCharacteristics(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        gattService: BluetoothGattService,
+        characteristics: MutableList<BluetoothGattCharacteristic>,
+        endpointId: Long,
+        hubId: Long,
+        source: AttributionSource,
+    ): GattOffloadSession.InnerParcel {
+        val serverManager = getServerManagerAndEnforceConnectAndPrivileged(source)
         if (serverManager == null) {
-            throw new IllegalArgumentException("Service is null");
+            throw IllegalArgumentException("Service is null")
         }
         return serverManager.offloadClientCharacteristics(
-                callback, device, gattService, characteristics, endpointId, hubId);
+            callback,
+            device,
+            gattService,
+            characteristics,
+            endpointId,
+            hubId,
+        )
     }
 
-    @Override
-    public void unoffloadClientCharacteristics(
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int sessionId,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+    override fun unoffloadClientCharacteristics(
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        sessionId: Int,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnectAndPrivileged(source)
         if (serverManager == null) {
-            throw new IllegalArgumentException("Service is null");
+            throw IllegalArgumentException("Service is null")
         }
-        serverManager.unoffloadClientCharacteristics(callback, device, sessionId);
+        serverManager.unoffloadClientCharacteristics(callback, device, sessionId)
     }
 
-    @Override
-    public GattOffloadSession.InnerParcel offloadServerCharacteristics(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            BluetoothGattService gattService,
-            List<BluetoothGattCharacteristic> characteristics,
-            long endpointId,
-            long hubId,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+    override fun offloadServerCharacteristics(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        gattService: BluetoothGattService,
+        characteristics: MutableList<BluetoothGattCharacteristic>,
+        endpointId: Long,
+        hubId: Long,
+        source: AttributionSource,
+    ): GattOffloadSession.InnerParcel {
+        val serverManager = getServerManagerAndEnforceConnectAndPrivileged(source)
         if (serverManager == null) {
-            throw new IllegalArgumentException("Service is null");
+            throw IllegalArgumentException("Service is null")
         }
         return serverManager.offloadServerCharacteristics(
-                callback, device, gattService, characteristics, endpointId, hubId);
+            callback,
+            device,
+            gattService,
+            characteristics,
+            endpointId,
+            hubId,
+        )
     }
 
-    @Override
-    public void unoffloadServerCharacteristics(
-            IBluetoothGattServerCallback callback,
-            BluetoothDevice device,
-            int sessionId,
-            AttributionSource source) {
-        var serverManager = getServerManagerAndEnforceConnectAndPrivileged(source);
+    override fun unoffloadServerCharacteristics(
+        callback: IBluetoothGattServerCallback,
+        device: BluetoothDevice,
+        sessionId: Int,
+        source: AttributionSource,
+    ) {
+        val serverManager = getServerManagerAndEnforceConnectAndPrivileged(source)
         if (serverManager == null) {
-            throw new IllegalArgumentException("Service is null");
+            throw IllegalArgumentException("Service is null")
         }
-        serverManager.unoffloadServerCharacteristics(callback, device, sessionId);
+        serverManager.unoffloadServerCharacteristics(callback, device, sessionId)
     }
 
-    private static void enforcePrivilegedPermissionIfNeededForHandle(
-            GattService service,
-            IBluetoothGattCallback callback,
-            BluetoothDevice device,
-            int handle) {
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation")
+    private fun enforcePrivilegedPermissionIfNeededForHandle(
+        service: GattService,
+        callback: IBluetoothGattCallback,
+        device: BluetoothDevice,
+        handle: Int,
+    ) {
         if (Utils.isInstrumentationTestMode()) {
-            return;
+            return
         }
 
-        final var clientApp = service.mClientMap.getByCallbackId(callback);
+        val clientApp = service.mClientMap.getByCallbackId(callback)
         if (clientApp == null) {
-            Log.w(TAG, "(" + callback + ") - App not registered");
-            return;
+            Log.w(TAG, "(" + callback + ") - App not registered")
+            return
         }
-        final var connId = service.getFirstConnectionIdForDevice(clientApp.getId(), device);
+        val connId = service.getFirstConnectionIdForDevice(clientApp.id, device)
         if (connId == null) {
-            Log.e(TAG, "(" + device + ") - No connection");
-            return;
+            Log.e(TAG, "(" + device + ") - No connection")
+            return
         }
 
         if (!isHandleRestricted(service, connId, handle)) {
-            return;
+            return
         }
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        service.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
     }
 
-    private static boolean isHandleRestricted(GattService service, int connId, int handle) {
-        Set<Integer> restrictedHandles = service.mRestrictedHandles.get(connId);
-        return restrictedHandles != null && restrictedHandles.contains(handle);
+    private fun isHandleRestricted(service: GattService, connId: Int, handle: Int): Boolean {
+        val restrictedHandles = service.mRestrictedHandles.get(connId)
+        return restrictedHandles != null && restrictedHandles.contains(handle)
     }
 }
