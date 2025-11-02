@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,411 +14,410 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.IBluetoothGattCallback
+import android.bluetooth.IBluetoothGattServerCallback
+import android.content.AttributionSource
+import android.os.ParcelUuid
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.tests.bluetooth.MockitoRule
+import java.util.UUID
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.IBluetoothGattCallback;
-import android.bluetooth.IBluetoothGattServerCallback;
-import android.content.AttributionSource;
-import android.os.ParcelUuid;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-
-import java.util.UUID;
-
-/** Test cases for {@link GattServiceBinder}. */
+/** Test cases for [GattServiceBinder]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class GattServiceBinderTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(AndroidJUnit4::class)
+class GattServiceBinderTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    @Mock private AttributionSource mSource;
-    @Mock private IBluetoothGattServerCallback mGattServerCallback;
-    @Mock private IBluetoothGattCallback mGattCallback;
-    @Mock private GattService mService;
-    @Mock private GattServerManager mServerManager;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var gattServerCallback: IBluetoothGattServerCallback
+    @Mock private lateinit var gattCallback: IBluetoothGattCallback
+    @Mock private lateinit var service: GattService
+    @Mock private lateinit var serverManager: GattServerManager
 
-    private final BluetoothDevice mDevice = getTestDevice(109);
+    private val device = getTestDevice(109)
 
-    private GattServiceBinder mBinder;
+    private lateinit var binder: GattServiceBinder
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(true).when(mService).isAvailable();
-        doReturn(mServerManager).when(mService).getServerManager();
-        mBinder = new GattServiceBinder(mService);
+    @Throws(Exception::class)
+    fun setUp() {
+        doReturn(true).whenever(service).isAvailable
+        doReturn(serverManager).whenever(service).serverManager
+        binder = GattServiceBinder(service)
     }
 
     @Test
-    public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED};
+    fun getDevicesMatchingConnectionStates() {
+        val states = intArrayOf(BluetoothProfile.STATE_CONNECTED)
 
-        mBinder.getDevicesMatchingConnectionStates(states, mSource);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+        binder.getDevicesMatchingConnectionStates(states, source)
+        verify(service).getDevicesMatchingConnectionStates(states)
     }
 
     @Test
-    public void registerClient() {
-        UUID uuid = UUID.randomUUID();
-        boolean eattSupport = true;
-        int transport = TRANSPORT_LE;
+    fun registerClient() {
+        val uuid = UUID.randomUUID()
+        val eattSupport = true
+        val transport = BluetoothDevice.TRANSPORT_LE
 
-        mBinder.registerClient(
-                new ParcelUuid(uuid), mGattCallback, eattSupport, transport, mSource);
-        verify(mService).registerClient(uuid, mGattCallback, eattSupport, transport, mSource);
+        binder.registerClient(ParcelUuid(uuid), gattCallback, eattSupport, transport, source)
+        verify(service).registerClient(uuid, gattCallback, eattSupport, transport, source)
     }
 
     @Test
-    public void unregisterClient() {
-        mBinder.unregisterClient(mGattCallback, mSource);
-        verify(mService)
-                .unregisterClient(
-                        mGattCallback, mSource, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+    fun unregisterClient() {
+        binder.unregisterClient(gattCallback, source)
+        verify(service)
+            .unregisterClient(
+                gattCallback,
+                source,
+                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT,
+            )
     }
 
     @Test
-    public void clientConnect() throws Exception {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = true;
-        int transport = 2;
-        boolean opportunistic = true;
+    fun clientConnect() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = true
+        val transport = 2
+        val opportunistic = true
 
-        mBinder.clientConnect(
-                mGattCallback,
-                mDevice,
+        binder.clientConnect(
+            gattCallback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            source,
+        )
+        verify(service)
+            .clientConnect(
+                gattCallback,
+                device,
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
-                mSource);
-        verify(mService)
-                .clientConnect(
-                        mGattCallback,
-                        mDevice,
-                        addressType,
-                        isDirect,
-                        transport,
-                        opportunistic,
-                        mSource);
+                source,
+            )
     }
 
     @Test
-    public void clientDisconnect() throws Exception {
-        mBinder.clientDisconnect(mGattCallback, mDevice, mSource);
-        verify(mService).clientDisconnect(mGattCallback, mDevice, mSource);
+    fun clientDisconnect() {
+        binder.clientDisconnect(gattCallback, device, source)
+        verify(service).clientDisconnect(gattCallback, device, source)
     }
 
     @Test
-    public void clientSetPreferredPhy() throws Exception {
-        int txPhy = 2;
-        int rxPhy = 1;
-        int phyOptions = 3;
+    fun clientSetPreferredPhy() {
+        val txPhy = 2
+        val rxPhy = 1
+        val phyOptions = 3
 
-        mBinder.clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions, mSource);
-        verify(mService).clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions);
+        binder.clientSetPreferredPhy(gattCallback, device, txPhy, rxPhy, phyOptions, source)
+        verify(service).clientSetPreferredPhy(gattCallback, device, txPhy, rxPhy, phyOptions)
     }
 
     @Test
-    public void clientReadPhy() throws Exception {
-        mBinder.clientReadPhy(mGattCallback, mDevice, mSource);
-        verify(mService).clientReadPhy(mGattCallback, mDevice);
+    fun clientReadPhy() {
+        binder.clientReadPhy(gattCallback, device, source)
+        verify(service).clientReadPhy(gattCallback, device)
     }
 
     @Test
-    public void refreshDevice() throws Exception {
-        mBinder.refreshDevice(mGattCallback, mDevice, mSource);
-        verify(mService).refreshDevice(mGattCallback, mDevice);
+    fun refreshDevice() {
+        binder.refreshDevice(gattCallback, device, source)
+        verify(service).refreshDevice(gattCallback, device)
     }
 
     @Test
-    public void discoverServices() throws Exception {
-        mBinder.discoverServices(mGattCallback, mDevice, mSource);
-        verify(mService).discoverServices(mGattCallback, mDevice);
+    fun discoverServices() {
+        binder.discoverServices(gattCallback, device, source)
+        verify(service).discoverServices(gattCallback, device)
     }
 
     @Test
-    public void discoverServiceByUuid() throws Exception {
-        UUID uuid = UUID.randomUUID();
+    fun discoverServiceByUuid() {
+        val uuid = UUID.randomUUID()
 
-        mBinder.discoverServiceByUuid(mGattCallback, mDevice, new ParcelUuid(uuid), mSource);
-        verify(mService).discoverServiceByUuid(mGattCallback, mDevice, uuid);
+        binder.discoverServiceByUuid(gattCallback, device, ParcelUuid(uuid), source)
+        verify(service).discoverServiceByUuid(gattCallback, device, uuid)
     }
 
     @Test
-    public void readCharacteristic() throws Exception {
-        int handle = 2;
-        int authReq = 3;
+    fun readCharacteristic() {
+        val handle = 2
+        val authReq = 3
 
-        mBinder.readCharacteristic(mGattCallback, mDevice, handle, authReq, mSource);
-        verify(mService).readCharacteristic(mGattCallback, mDevice, handle, authReq);
+        binder.readCharacteristic(gattCallback, device, handle, authReq, source)
+        verify(service).readCharacteristic(gattCallback, device, handle, authReq)
     }
 
     @Test
-    public void readUsingCharacteristicUuid() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        int startHandle = 2;
-        int endHandle = 3;
-        int authReq = 4;
+    fun readUsingCharacteristicUuid() {
+        val uuid = UUID.randomUUID()
+        val startHandle = 2
+        val endHandle = 3
+        val authReq = 4
 
-        mBinder.readUsingCharacteristicUuid(
-                mGattCallback,
-                mDevice,
-                new ParcelUuid(uuid),
+        binder.readUsingCharacteristicUuid(
+            gattCallback,
+            device,
+            ParcelUuid(uuid),
+            startHandle,
+            endHandle,
+            authReq,
+            source,
+        )
+        verify(service)
+            .readUsingCharacteristicUuid(
+                gattCallback,
+                device,
+                uuid,
                 startHandle,
                 endHandle,
                 authReq,
-                mSource);
-        verify(mService)
-                .readUsingCharacteristicUuid(
-                        mGattCallback, mDevice, uuid, startHandle, endHandle, authReq);
+            )
     }
 
     @Test
-    public void writeCharacteristic() throws Exception {
-        int handle = 2;
-        int writeType = 3;
-        int authReq = 4;
-        byte[] value = new byte[] {5, 6};
+    fun writeCharacteristic() {
+        val handle = 2
+        val writeType = 3
+        val authReq = 4
+        val value = byteArrayOf(5, 6)
 
-        mBinder.writeCharacteristic(
-                mGattCallback, mDevice, handle, writeType, authReq, value, mSource);
-        verify(mService)
-                .writeCharacteristic(mGattCallback, mDevice, handle, writeType, authReq, value);
+        binder.writeCharacteristic(gattCallback, device, handle, writeType, authReq, value, source)
+        verify(service).writeCharacteristic(gattCallback, device, handle, writeType, authReq, value)
     }
 
     @Test
-    public void readDescriptor() throws Exception {
-        int handle = 2;
-        int authReq = 3;
+    fun readDescriptor() {
+        val handle = 2
+        val authReq = 3
 
-        mBinder.readDescriptor(mGattCallback, mDevice, handle, authReq, mSource);
-        verify(mService).readDescriptor(mGattCallback, mDevice, handle, authReq);
+        binder.readDescriptor(gattCallback, device, handle, authReq, source)
+        verify(service).readDescriptor(gattCallback, device, handle, authReq)
     }
 
     @Test
-    public void writeDescriptor() throws Exception {
-        int handle = 2;
-        int authReq = 3;
-        byte[] value = new byte[] {4, 5};
+    fun writeDescriptor() {
+        val handle = 2
+        val authReq = 3
+        val value = byteArrayOf(4, 5)
 
-        mBinder.writeDescriptor(mGattCallback, mDevice, handle, authReq, value, mSource);
-        verify(mService).writeDescriptor(mGattCallback, mDevice, handle, authReq, value);
+        binder.writeDescriptor(gattCallback, device, handle, authReq, value, source)
+        verify(service).writeDescriptor(gattCallback, device, handle, authReq, value)
     }
 
     @Test
-    public void beginReliableWrite() throws Exception {
-        mBinder.beginReliableWrite(mDevice, mSource);
-        verify(mService).beginReliableWrite(mDevice);
+    fun beginReliableWrite() {
+        binder.beginReliableWrite(device, source)
+        verify(service).beginReliableWrite(device)
     }
 
     @Test
-    public void endReliableWrite() throws Exception {
-        boolean execute = true;
+    fun endReliableWrite() {
+        val execute = true
 
-        mBinder.endReliableWrite(mGattCallback, mDevice, execute, mSource);
-        verify(mService).endReliableWrite(mGattCallback, mDevice, execute);
+        binder.endReliableWrite(gattCallback, device, execute, source)
+        verify(service).endReliableWrite(gattCallback, device, execute)
     }
 
     @Test
-    public void registerForNotification() throws Exception {
-        int handle = 2;
-        boolean enable = true;
+    fun registerForNotification() {
+        val handle = 2
+        val enable = true
 
-        mBinder.registerForNotification(mGattCallback, mDevice, handle, enable, mSource);
-        verify(mService).registerForNotification(mGattCallback, mDevice, handle, enable);
+        binder.registerForNotification(gattCallback, device, handle, enable, source)
+        verify(service).registerForNotification(gattCallback, device, handle, enable)
     }
 
     @Test
-    public void readRemoteRssi() throws Exception {
-        mBinder.readRemoteRssi(mGattCallback, mDevice, mSource);
-        verify(mService).readRemoteRssi(mGattCallback, mDevice);
+    fun readRemoteRssi() {
+        binder.readRemoteRssi(gattCallback, device, source)
+        verify(service).readRemoteRssi(gattCallback, device)
     }
 
     @Test
-    public void configureMTU() throws Exception {
-        int mtu = 2;
+    fun configureMTU() {
+        val mtu = 2
 
-        mBinder.configureMTU(mGattCallback, mDevice, mtu, mSource);
-        verify(mService).configureMTU(mGattCallback, mDevice, mtu);
+        binder.configureMTU(gattCallback, device, mtu, source)
+        verify(service).configureMTU(gattCallback, device, mtu)
     }
 
     @Test
-    public void connectionParameterUpdate() throws Exception {
-        int connectionPriority = 2;
+    fun connectionParameterUpdate() {
+        val connectionPriority = 2
 
-        mBinder.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority, mSource);
-        verify(mService).connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
+        binder.connectionParameterUpdate(gattCallback, device, connectionPriority, source)
+        verify(service).connectionParameterUpdate(gattCallback, device, connectionPriority)
     }
 
     @Test
-    public void leConnectionUpdate() throws Exception {
-        int minConnectionInterval = 3;
-        int maxConnectionInterval = 4;
-        int peripheralLatency = 5;
-        int supervisionTimeout = 6;
-        int minConnectionEventLen = 7;
-        int maxConnectionEventLen = 8;
+    fun leConnectionUpdate() {
+        val minConnectionInterval = 3
+        val maxConnectionInterval = 4
+        val peripheralLatency = 5
+        val supervisionTimeout = 6
+        val minConnectionEventLen = 7
+        val maxConnectionEventLen = 8
 
-        mBinder.leConnectionUpdate(
-                mGattCallback,
-                mDevice,
+        binder.leConnectionUpdate(
+            gattCallback,
+            device,
+            minConnectionInterval,
+            maxConnectionInterval,
+            peripheralLatency,
+            supervisionTimeout,
+            minConnectionEventLen,
+            maxConnectionEventLen,
+            source,
+        )
+        verify(service)
+            .leConnectionUpdate(
+                gattCallback,
+                device,
                 minConnectionInterval,
                 maxConnectionInterval,
                 peripheralLatency,
                 supervisionTimeout,
                 minConnectionEventLen,
                 maxConnectionEventLen,
-                mSource);
-        verify(mService)
-                .leConnectionUpdate(
-                        mGattCallback,
-                        mDevice,
-                        minConnectionInterval,
-                        maxConnectionInterval,
-                        peripheralLatency,
-                        supervisionTimeout,
-                        minConnectionEventLen,
-                        maxConnectionEventLen);
+            )
     }
 
     @Test
-    public void subrateModeRequest() throws Exception {
-        BluetoothDevice testDevice = getTestDevice(5);
-        int subrateMode = 0;
+    fun subrateModeRequest() {
+        val testDevice = getTestDevice(5)
+        val subrateMode = 0
 
-        mBinder.subrateModeRequest(mGattCallback, testDevice, subrateMode, mSource);
+        binder.subrateModeRequest(gattCallback, testDevice, subrateMode, source)
 
-        verify(mService).subrateModeRequest(mGattCallback, testDevice, subrateMode);
+        verify(service).subrateModeRequest(gattCallback, testDevice, subrateMode)
     }
 
     @Test
-    public void registerServer() {
-        UUID uuid = UUID.randomUUID();
-        boolean eattSupport = true;
-        int transport = TRANSPORT_LE;
+    fun registerServer() {
+        val uuid = UUID.randomUUID()
+        val eattSupport = true
+        val transport = BluetoothDevice.TRANSPORT_LE
 
-        mBinder.registerServer(
-                new ParcelUuid(uuid), mGattServerCallback, eattSupport, transport, mSource);
-        verify(mServerManager)
-                .registerServer(uuid, mGattServerCallback, eattSupport, transport, mSource);
+        binder.registerServer(ParcelUuid(uuid), gattServerCallback, eattSupport, transport, source)
+        verify(serverManager)
+            .registerServer(uuid, gattServerCallback, eattSupport, transport, source)
     }
 
     @Test
-    public void unregisterServer() {
-        mBinder.unregisterServer(mGattServerCallback, mSource);
-        verify(mServerManager).unregisterServer(mGattServerCallback);
+    fun unregisterServer() {
+        binder.unregisterServer(gattServerCallback, source)
+        verify(serverManager).unregisterServer(gattServerCallback)
     }
 
     @Test
-    public void serverConnect() {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = true;
-        int transport = 2;
+    fun serverConnect() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = true
+        val transport = 2
 
-        mBinder.serverConnect(
-                mGattServerCallback, mDevice, addressType, isDirect, transport, mSource);
-        verify(mServerManager)
-                .serverConnect(
-                        mGattServerCallback, mDevice, addressType, isDirect, transport, mSource);
+        binder.serverConnect(gattServerCallback, device, addressType, isDirect, transport, source)
+        verify(serverManager)
+            .serverConnect(gattServerCallback, device, addressType, isDirect, transport, source)
     }
 
     @Test
-    public void serverDisconnect() {
-        mBinder.serverDisconnect(mGattServerCallback, mDevice, mSource);
-        verify(mServerManager).serverDisconnect(mGattServerCallback, mDevice);
+    fun serverDisconnect() {
+        binder.serverDisconnect(gattServerCallback, device, source)
+        verify(serverManager).serverDisconnect(gattServerCallback, device)
     }
 
     @Test
-    public void serverSetPreferredPhy() throws Exception {
-        int txPhy = 2;
-        int rxPhy = 1;
-        int phyOptions = 3;
+    fun serverSetPreferredPhy() {
+        val txPhy = 2
+        val rxPhy = 1
+        val phyOptions = 3
 
-        mBinder.serverSetPreferredPhy(
-                mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions, mSource);
-        verify(mServerManager)
-                .serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
+        binder.serverSetPreferredPhy(gattServerCallback, device, txPhy, rxPhy, phyOptions, source)
+        verify(serverManager)
+            .serverSetPreferredPhy(gattServerCallback, device, txPhy, rxPhy, phyOptions)
     }
 
     @Test
-    public void serverReadPhy() throws Exception {
-        mBinder.serverReadPhy(mGattServerCallback, mDevice, mSource);
-        verify(mServerManager).serverReadPhy(mGattServerCallback, mDevice);
+    fun serverReadPhy() {
+        binder.serverReadPhy(gattServerCallback, device, source)
+        verify(serverManager).serverReadPhy(gattServerCallback, device)
     }
 
     @Test
-    public void addService() {
-        BluetoothGattService svc = mock(BluetoothGattService.class);
+    fun addService() {
+        val svc = mock<BluetoothGattService>()
 
-        mBinder.addService(mGattServerCallback, svc, mSource);
-        verify(mServerManager).addService(mGattServerCallback, svc);
+        binder.addService(gattServerCallback, svc, source)
+        verify(serverManager).addService(gattServerCallback, svc)
     }
 
     @Test
-    public void removeService() {
-        int handle = 2;
+    fun removeService() {
+        val handle = 2
 
-        mBinder.removeService(mGattServerCallback, handle, mSource);
-        verify(mServerManager).removeService(mGattServerCallback, handle);
+        binder.removeService(gattServerCallback, handle, source)
+        verify(serverManager).removeService(gattServerCallback, handle)
     }
 
     @Test
-    public void clearServices() {
-        mBinder.clearServices(mGattServerCallback, mSource);
-        verify(mServerManager).clearServices(mGattServerCallback);
+    fun clearServices() {
+        binder.clearServices(gattServerCallback, source)
+        verify(serverManager).clearServices(gattServerCallback)
     }
 
     @Test
-    public void sendResponse() throws Exception {
-        int requestId = 2;
-        int status = 3;
-        int offset = 4;
-        byte[] value = new byte[] {5, 6};
+    fun sendResponse() {
+        val requestId = 2
+        val status = 3
+        val offset = 4
+        val value = byteArrayOf(5, 6)
 
-        mBinder.sendResponse(
-                mGattServerCallback, mDevice, requestId, status, offset, value, mSource);
-        verify(mServerManager)
-                .sendResponse(mGattServerCallback, mDevice, requestId, status, offset, value);
+        binder.sendResponse(gattServerCallback, device, requestId, status, offset, value, source)
+        verify(serverManager)
+            .sendResponse(gattServerCallback, device, requestId, status, offset, value)
     }
 
     @Test
-    public void sendNotification() throws Exception {
-        int handle = 2;
-        boolean confirm = true;
-        byte[] value = new byte[] {5, 6};
+    fun sendNotification() {
+        val handle = 2
+        val confirm = true
+        val value = byteArrayOf(5, 6)
 
-        mBinder.sendNotification(mGattServerCallback, mDevice, handle, confirm, value, mSource);
-        verify(mServerManager)
-                .sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+        binder.sendNotification(gattServerCallback, device, handle, confirm, value, source)
+        verify(serverManager).sendNotification(gattServerCallback, device, handle, confirm, value)
     }
 
     @Test
-    public void disconnectAll() throws Exception {
-        mBinder.disconnectAll(mSource);
-        verify(mService).disconnectAll(mSource);
+    fun disconnectAll() {
+        binder.disconnectAll(source)
+        verify(service).disconnectAll(source)
     }
 
     @Test
-    public void cleanup_doesNotCrash() {
-        mBinder.cleanup();
+    fun cleanup_doesNotCrash() {
+        binder.cleanup()
     }
 }
