@@ -238,7 +238,7 @@ public class GattService extends ProfileService {
 
         mDistanceMeasurementManager =
                 new DistanceMeasurementManager(
-                        mAdapterService, distanceMeasurementNativeInterface, looper);
+                        mAdapterService, this, distanceMeasurementNativeInterface, looper);
 
         mSubrateLowParameters =
                 new int[] {

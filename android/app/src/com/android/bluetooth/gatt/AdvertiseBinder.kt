@@ -33,13 +33,13 @@ private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseBinder"
 
 class AdvertiseBinder(
     private val context: Context,
-    private val advertiseManager: AdvertiseManager,
+    private var gattService: GattService?,
+    private var advertiseManager: AdvertiseManager?,
 ) : IBluetoothAdvertise.Stub() {
 
-    @Volatile private var isAvailable = true
-
     fun cleanup() {
-        isAvailable = false
+        gattService = null
+        advertiseManager = null
     }
 
     @RequiresPermission(BLUETOOTH_ADVERTISE)
@@ -47,10 +47,11 @@ class AdvertiseBinder(
         source: AttributionSource,
         block: AdvertiseManager.() -> Unit,
     ) {
-        if (!isAvailable || !Utils.checkAdvertisePermissionForDataDelivery(context, source, TAG)) {
-            return
-        }
-        advertiseManager.doOnAdvertiseThread { advertiseManager.block() }
+        val gatt = gattService ?: return
+        val manager = advertiseManager ?: return
+        if (!Utils.checkServiceAvailable(gatt, TAG)) return
+        if (!Utils.checkAdvertisePermissionForDataDelivery(gatt, source, TAG)) return
+        manager.doOnAdvertiseThread { manager.block() }
     }
 
     override fun startAdvertisingSet(
