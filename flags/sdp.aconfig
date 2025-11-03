@@ -27,3 +27,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+  name: "explicit_uuid_transport_api"
+  namespace: "bluetooth"
+  description: "Enables the new fetchUuids() and fetchUuids(int transport)"
+                "APIs in BluetoothDevice and deprecates fetchUuidsWithSdp."
+  bug: "457242678"
+}
