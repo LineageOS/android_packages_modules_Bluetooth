@@ -29,8 +29,8 @@ import android.bluetooth.IBluetoothGattServerCallback
 import android.content.AttributionSource
 import android.content.pm.PackageManager
 import android.os.Binder
-import android.os.IBinder
 import android.util.Log
+import com.android.bluetooth.ActionOnDeathRecipient
 import com.android.bluetooth.Util.Transport
 import com.android.bluetooth.Util.appNameOrUnknown
 import com.android.bluetooth.Utils.callbackToApp
@@ -53,16 +53,6 @@ class GattServerManager(
     private val nativeInterface: GattNativeInterface
         get() = gatt.nativeInterface
 
-    private inner class ServerDeathRecipient(
-        private val callback: IBluetoothGattServerCallback,
-        private val app: String,
-    ) : IBinder.DeathRecipient {
-        override fun binderDied() {
-            Log.d(TAG, "binderDied(): Unregistering server for $app, callback=$callback")
-            unregisterServer(callback)
-        }
-    }
-
     fun clear() {
         serverMap.clear()
         handleMap.clear()
@@ -72,7 +62,8 @@ class GattServerManager(
         Log.d(TAG, "onServerRegistered(${Status(status)}, serverIf=$serverIf, uuid=$uuid)")
         val app = serverMap.getByUuid(uuid) ?: return
         app.id = serverIf
-        app.linkToDeath(ServerDeathRecipient(app.callback, app.name))
+        val message = "Unregistering server for $app, callback=${app.callback}"
+        app.linkToDeath(ActionOnDeathRecipient(TAG, message, { unregisterServer(app.callback) }))
         callbackToApp { app.callback.onServerRegistered(status) }
     }
 

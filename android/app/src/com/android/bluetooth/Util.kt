@@ -17,6 +17,8 @@
 package com.android.bluetooth
 
 import android.bluetooth.BluetoothDevice
+import android.os.IBinder
+import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 
 object Util {
@@ -57,4 +59,21 @@ object Util {
             BluetoothDevice.TRANSPORT_LE -> "LE"
             else -> "Unknown transport ($transport)"
         }
+}
+
+class ActionOnDeathRecipient(
+    private val tag: String,
+    private val message: String,
+    private val action: () -> Unit,
+) : IBinder.DeathRecipient {
+    constructor(
+        tag: String,
+        message: String,
+        actionRunnable: Runnable,
+    ) : this(tag, message, { actionRunnable.run() })
+
+    override fun binderDied() {
+        Log.d(tag, "binderDied(): $message")
+        action()
+    }
 }

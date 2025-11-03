@@ -23,6 +23,7 @@ import android.content.AttributionSource
 import android.os.RemoteException
 import android.os.UserHandle
 import android.util.Log
+import com.android.bluetooth.ActionOnDeathRecipient
 import java.util.UUID
 
 private const val TAG = "ScannerApp"
@@ -47,7 +48,7 @@ class ScannerApp(
     var hasDisavowedLocation = false
     var eligibleForSanitizedExposureNotification = false
     var associatedDevices: MutableList<String>? = null
-    private var deathRecipient: ScanController.ScannerDeathRecipient? = null
+    private var deathRecipient: ActionOnDeathRecipient? = null
 
     val uid = appScanStats.uid
     val pid = appScanStats.pid
@@ -55,7 +56,7 @@ class ScannerApp(
 
     override fun toString() = "ScannerApp(uid=$uid, name=$name)"
 
-    fun linkToDeath(recipient: ScanController.ScannerDeathRecipient) {
+    fun linkToDeath(recipient: ActionOnDeathRecipient) {
         callback?.let { cb ->
             try {
                 cb.asBinder().linkToDeath(recipient, 0)

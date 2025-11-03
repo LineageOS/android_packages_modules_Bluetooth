@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.Util.transportToString;
 import static com.android.bluetooth.Utils.callbackToApp;
+import static com.android.bluetooth.gatt.ContextMap.RemoveReason.REASON_BINDER_DIED;
 import static com.android.bluetooth.gatt.GattUtil.isAndroidHeadtrackerSrvcUuid;
 import static com.android.bluetooth.gatt.GattUtil.isAndroidTvRemoteSrvcUuid;
 import static com.android.bluetooth.gatt.GattUtil.isAppleNotificationCenterSrvcUuid;
@@ -56,6 +57,7 @@ import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
+import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
@@ -340,23 +342,6 @@ public class GattService extends ProfileService {
         return mNativeInterface;
     }
 
-    private class ClientDeathRecipient implements IBinder.DeathRecipient {
-        private final IBluetoothGattCallback mCallback;
-        private final String mPackageName;
-
-        ClientDeathRecipient(IBluetoothGattCallback callback, String packageName) {
-            mCallback = callback;
-            mPackageName = packageName;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering client " + mPackageName + " " + mCallback);
-            unregisterClient(
-                    mCallback, getAttributionSource(), ContextMap.RemoveReason.REASON_BINDER_DIED);
-        }
-    }
-
     /**************************************************************************
      * Callback functions - CLIENT
      *************************************************************************/
@@ -367,13 +352,17 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
+        var callback = app.getCallback();
         if (status != BluetoothGatt.GATT_SUCCESS) {
             mClientMap.remove(uuid, ContextMap.RemoveReason.REASON_REGISTER_FAILED);
         } else {
             app.setId(clientIf);
-            app.linkToDeath(new ClientDeathRecipient(app.getCallback(), app.getName()));
+            var message = "Unregistering client " + app + ", callback=" + callback;
+            Runnable onDeathAction =
+                    () -> unregisterClient(callback, getAttributionSource(), REASON_BINDER_DIED);
+            app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
         }
-        callbackToApp(() -> app.getCallback().onClientRegistered(status));
+        callbackToApp(() -> callback.onClientRegistered(status));
     }
 
     void onConnectedFromNative(

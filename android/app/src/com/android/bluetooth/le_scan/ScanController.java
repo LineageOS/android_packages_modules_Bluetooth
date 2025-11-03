@@ -56,6 +56,7 @@ import android.os.WorkSource;
 import android.text.format.DateUtils;
 import android.util.Log;
 
+import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
@@ -598,7 +599,9 @@ public class ScanController {
         // If app is callback based, setup a death recipient. App will initiate the start.
         // Otherwise, if PendingIntent based, start the scan directly.
         if (scannerApp.getCallback() != null) {
-            scannerApp.linkToDeath(new ScannerDeathRecipient(scannerId, scannerApp.getName()));
+            var message = "Unregister " + scannerId + " for " + scannerApp;
+            Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
+            scannerApp.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
             if (Flags.scanRegisterAndStart()) {
                 if (scannerApp.isInternal()) {
                     startScanInternal(scannerId, scannerApp.getSettings(), scannerApp.getFilters());
@@ -1385,26 +1388,6 @@ public class ScanController {
         enforceScanThread();
         return mAdapterService.getTotalNumOfTrackableAdvertisements()
                 - mScanManager.getCurrentUsedTrackingAdvertisement();
-    }
-
-    /**
-     * DeathRecipient handler used to unregister applications that disconnect ungracefully (ie.
-     * crash or forced close).
-     */
-    public class ScannerDeathRecipient implements IBinder.DeathRecipient {
-        private final int mScannerId;
-        private final String mPackageName;
-
-        ScannerDeathRecipient(int scannerId, String packageName) {
-            mScannerId = scannerId;
-            mPackageName = packageName;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "binderDied(): Unregister scannerId=" + mScannerId + " for " + mPackageName);
-            doOnScanThread(() -> handleDeadScanClient(mScannerId));
-        }
     }
 
     void enforceScanThread() {
