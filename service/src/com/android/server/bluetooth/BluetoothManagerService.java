@@ -1181,12 +1181,8 @@ class BluetoothManagerService {
                 Log.e(TAG, "Unknown service disconnected: " + name);
                 return;
             }
-
-            if (Flags.setComponentAvailableFix()) {
-                sendMessage(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED, componentName.getPackageName());
-            } else {
-                sendMessage(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
-            }
+            sendMessage(
+                    MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED, componentName.getPackageName());
         }
 
         @Override
@@ -1305,10 +1301,7 @@ class BluetoothManagerService {
                 }
                 case MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED -> {
                     Log.e(TAG, "MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED");
-
-                    if (Flags.setComponentAvailableFix()) {
-                        disableBluetoothComponents((String) msg.obj);
-                    }
+                    disableBluetoothComponents((String) msg.obj);
 
                     if (!resetAdapter()) {
                         break;
