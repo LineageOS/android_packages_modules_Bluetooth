@@ -331,7 +331,7 @@ struct iso_impl {
       }
     }
 
-    if (conn_hdl_to_iso_stream_map_.size()) {
+    if (!conn_hdl_to_iso_stream_map_.empty()) {
       return;
     }
 
@@ -984,7 +984,7 @@ struct iso_impl {
     }
     big_handle_to_group_map_.erase(group_it);
 
-    if (conn_hdl_to_iso_stream_map_.size()) {
+    if (!conn_hdl_to_iso_stream_map_.empty()) {
       return;
     }
 
