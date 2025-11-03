@@ -1663,6 +1663,8 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_improve_state_machine_invalid_status(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_stop_stream_race(true);
+    com::android::bluetooth::flags::provider_->csis_quirk_for_single_device_with_sirk_all_zeros(
+            true);
 
     init_message_loop_thread();
     init_delayed_message_loop_thread();
@@ -3320,6 +3322,7 @@ class UnicastTestCsis : public UnicastTest {
 protected:
   void SetUp() override {
     UnicastTest::SetUp();
+    ON_CALL(mock_csis_client_module_, ShallCsisBeUsedForTheDevice(_)).WillByDefault(Return(true));
     ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
     ON_CALL(mock_csis_client_module_, GetDesiredSize(group_id_1_))
             .WillByDefault(Invoke([&](int /*group_id*/) { return group_id_1_size_; }));
@@ -4094,6 +4097,40 @@ TEST_F(UnicastTest, ConnectRemoteDisconnectOnTimeoutOneEarbud) {
   /* For background connect, test needs to Inject Connected Event */
   InjectConnectedEvent(test_address0, 1);
   SyncOnMainLoop();
+}
+
+TEST_F(UnicastTestCsis, ConnectDeviceWithCsisButNotUsedForGrouping) {
+  /* Scenario
+   * Remote device has CSIS service with SIRK 0x00 and set size 1.
+   */
+  group_id_1_size_ = 1;
+  uint8_t channel_cnt = 1;
+  auto location = codec_spec_conf::kLeAudioLocationFrontLeft;
+
+  ON_CALL(mock_csis_client_module_, ShallCsisBeUsedForTheDevice(_)).WillByDefault(Return(false));
+
+  const RawAddress test_address0 = GetTestAddress(0);
+  SetSampleDatabaseEarbudsValid(1, test_address0, location, location, channel_cnt, channel_cnt,
+                                0x02B4, /* sample freq 16/24/32/48/96khz */
+                                true,   /*add_csis*/
+                                true,   /*add_cas*/
+                                true,   /*add_pacs*/
+                                true,   /*add_ascs*/
+                                group_id_1_size_, 0);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id_1_)));
+
+  ASSERT_NE(group_id_1_, bluetooth::groups::kGroupUnknown);
+
+  ConnectLeAudio(test_address0);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
 TEST_F(UnicastTestCsis, AutoconnectTwoEarbudsOneEarlyConnected) {

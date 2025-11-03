@@ -108,7 +108,6 @@ public:
   uint16_t mtu_;
   bool encrypted_;
   int group_id_;
-  bool csis_member_;
   int cis_failed_to_be_established_retry_cnt_;
   std::bitset<16> tmap_role_;
 
@@ -150,7 +149,6 @@ public:
         mtu_(0),
         encrypted_(false),
         group_id_(group_id),
-        csis_member_(false),
         cis_failed_to_be_established_retry_cnt_(0),
         audio_directions_(0),
         model_name_(""),
@@ -160,10 +158,10 @@ public:
         subrate_state_(SubrateState::DISABLED),
         link_quality_timer(nullptr),
         last_ase_ctp_command_sent(0x00),
-        update_to_relaxed_conn_interval_timer(alarm_new(
-          (std::string("update_to_relaxed_conn_interval_timer_") +
-           address.ToString().substr(10, 4)).c_str()
-        )),
+        update_to_relaxed_conn_interval_timer(
+                alarm_new((std::string("update_to_relaxed_conn_interval_timer_") +
+                           address.ToString().substr(10, 4))
+                                  .c_str())),
         dsa_({{DsaMode::DISABLED},
               types::DataPathState::IDLE,
               LE_AUDIO_INVALID_CIS_HANDLE,

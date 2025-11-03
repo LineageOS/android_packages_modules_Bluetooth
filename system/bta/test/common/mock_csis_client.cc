@@ -46,3 +46,8 @@ bool bluetooth::csis::CsisClient::IsCsisClientRunning() {
   log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
   return mock_csis_client->IsCsisClientRunning();
 }
+
+bool bluetooth::csis::CsisClient::ShallCsisBeUsedForTheDevice(const RawAddress& addr) {
+  log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
+  return mock_csis_client->ShallCsisBeUsedForTheDevice(addr);
+}

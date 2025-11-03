@@ -18,6 +18,7 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/bt_transport.h>
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -361,6 +362,9 @@ private:
 protected:
   void SetUp(void) override {
     reset_mock_function_count_map();
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->csis_quirk_for_single_device_with_sirk_all_zeros(
+            true);
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     dm::SetMockBtaDmInterface(&dm_interface);
     gatt::SetMockBtaGattInterface(&gatt_interface);
@@ -1029,6 +1033,140 @@ TEST_F(CsisClientTest, test_get_set_sirk) {
   Octet16 sirk = {1};
   g_1->SetSirk(sirk);
   ASSERT_EQ(g_1->GetSirk(), sirk);
+}
+
+TEST_F(CsisClientTest, test_sirk_all_zeros_and_set_size_one) {
+  uint16_t conn_id = 0x0001;
+  EXPECT_CALL(dm_interface, BTA_DmBleCsisObserve(true, _)).Times(1);
+  SetSampleDatabaseCsis(conn_id, 1, 1);
+  TestAppRegister();
+
+  // Here we handle background scan request
+  Mock::VerifyAndClearExpectations(&dm_interface);
+
+  TestConnect(test_address);
+  InjectConnectedEvent(test_address, 1);
+
+  auto ReadCharacteristicCbGenerator = []() {
+    return [](uint16_t conn_id, uint16_t handle, GATT_READ_OP_CB cb, void* cb_data) -> void {
+      std::vector<uint8_t> value;
+      switch (handle) {
+        case 0x0003:
+          // device name
+          value.resize(20);
+          break;
+        case 0x0021:
+          // plain sirk
+          value.resize(17);
+          value.assign(17, 0);
+          break;
+        case 0x0024:
+          // size
+          value.resize(1);
+          value.assign(1, 1);
+          break;
+        case 0x0027:
+          // lock
+          value.resize(2);
+          break;
+        case 0x0030:
+          // rank
+          value.resize(1);
+          value.assign(1, 1);
+          break;
+        default:
+          FAIL();
+          return;
+      }
+      if (cb) {
+        cb(conn_id, GATT_SUCCESS, handle, value.size(), value.data(), cb_data);
+      }
+    };
+  };
+  // We should read 4 times for sirk, lock, size, rank
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, _, _, _))
+          .Times(4)
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()));
+
+  // We should read 4 times for sirk, rank, size, and lock characteristics
+  EXPECT_CALL(gatt_interface, Close(conn_id)).Times(AtLeast(1));
+
+  GetSearchCompleteEvent(conn_id);
+
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+
+  /* SIRK is 0x00 and size is 1, let's skip the CSIS service at all */
+  ASSERT_FALSE(CsisClient::Get()->ShallCsisBeUsedForTheDevice(test_address));
+}
+
+TEST_F(CsisClientTest, test_sirk_all_zeros_and_set_size_two) {
+  uint16_t conn_id = 0x0001;
+  EXPECT_CALL(dm_interface, BTA_DmBleCsisObserve(true, _)).Times(1);
+  SetSampleDatabaseCsis(conn_id, 1, 1);
+  TestAppRegister();
+
+  // Here we handle background scan request
+  Mock::VerifyAndClearExpectations(&dm_interface);
+
+  TestConnect(test_address);
+  InjectConnectedEvent(test_address, 1);
+
+  auto ReadCharacteristicCbGenerator = []() {
+    return [](uint16_t conn_id, uint16_t handle, GATT_READ_OP_CB cb, void* cb_data) -> void {
+      std::vector<uint8_t> value;
+      switch (handle) {
+        case 0x0003:
+          // device name
+          value.resize(20);
+          break;
+        case 0x0021:
+          // plain sirk
+          value.resize(17);
+          value.assign(17, 0);
+          break;
+        case 0x0024:
+          // size
+          value.resize(1);
+          value.assign(1, 2);
+          break;
+        case 0x0027:
+          // lock
+          value.resize(2);
+          break;
+        case 0x0030:
+          // rank
+          value.resize(1);
+          value.assign(1, 1);
+          break;
+        default:
+          FAIL();
+          return;
+      }
+      if (cb) {
+        cb(conn_id, GATT_SUCCESS, handle, value.size(), value.data(), cb_data);
+      }
+    };
+  };
+  // We should read 4 times for sirk, lock, size, rank
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, _, _, _))
+          .Times(4)
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()));
+
+  // We should read 4 times for sirk, rank, size, and lock characteristics
+  EXPECT_CALL(gatt_interface, Close(conn_id)).Times(AtLeast(1));
+
+  GetSearchCompleteEvent(conn_id);
+
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+
+  /* SInce SIZE is 2 SIRK Shall be correct. */
+  ASSERT_TRUE(CsisClient::Get()->ShallCsisBeUsedForTheDevice(test_address));
 }
 
 TEST_F(CsisClientTest, test_not_open_duplicate_active_scan_while_bonding_set_member) {
