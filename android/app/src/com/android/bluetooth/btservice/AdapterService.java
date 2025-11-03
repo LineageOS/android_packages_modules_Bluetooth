@@ -474,10 +474,11 @@ public class AdapterService extends Service {
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
         mBluetoothKeystoreService = new BluetoothKeystoreService(bluetoothKeystoreNativeInterface);
+        var bQRnativeCallback = new BluetoothQualityReportNativeCallback(this);
         mBluetoothQualityReportNativeInterface =
                 requireNonNullElseGet(
                         bluetoothQualityReportNativeInterface,
-                        () -> new BluetoothQualityReportNativeInterface(this));
+                        () -> new BluetoothQualityReportNativeInterface(bQRnativeCallback));
         mBluetoothHciVendorSpecificNativeInterface =
                 requireNonNullElseGet(
                         bluetoothHciVendorSpecificNativeInterface,
