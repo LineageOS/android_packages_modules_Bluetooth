@@ -96,7 +96,7 @@ class PairingTest {
 
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
-    @get:Rule(order = 3) val secondBumble = PandoraDevice()
+    @get:Rule(order = 3) val secondBumble = PandoraDevice.createSecondPandoraDevice()
 
     @get:Rule(order = 4) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
