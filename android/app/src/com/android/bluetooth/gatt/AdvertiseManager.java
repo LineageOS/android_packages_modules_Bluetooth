@@ -96,7 +96,7 @@ public class AdvertiseManager {
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mNativeInterface.init();
         mHandler = new Handler(advertiseLooper);
-        mAdvertiseBinder = new AdvertiseBinder(mAdapterService, this);
+        mAdvertiseBinder = new AdvertiseBinder(mAdapterService, mGattService, this);
         mAdvertiseSuspendManager = new AdvertiseSuspendManager(this, adapterService);
     }
 
