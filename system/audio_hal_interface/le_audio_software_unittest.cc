@@ -560,11 +560,13 @@ protected:
 
     sink_ = LeAudioClientInterface::Get()->GetSink(*unicast_sink_stream_cb_, &message_loop_thread,
                                                    is_broadcast_);
+    source_ = LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
+                                                       &message_loop_thread, is_broadcast_);
+
     if (is_broadcast_) {
+      ASSERT_TRUE(LeAudioClientInterface::Get()->IsBroadcastSourceAcquired());
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsBroadcastSinkAcquired());
     } else {
-      source_ = LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
-                                                         &message_loop_thread);
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSourceAcquired());
       ASSERT_TRUE(LeAudioClientInterface::Get()->IsUnicastSinkAcquired());
     }
@@ -583,9 +585,14 @@ protected:
       }
     }
 
-    if (LeAudioClientInterface::Get()->IsUnicastSourceAcquired()) {
+    if (LeAudioClientInterface::Get()->IsUnicastSourceAcquired() ||
+        LeAudioClientInterface::Get()->IsBroadcastSourceAcquired()) {
       LeAudioClientInterface::Get()->ReleaseSource(source_);
-      ASSERT_FALSE(LeAudioClientInterface::Get()->IsUnicastSourceAcquired());
+      if (is_broadcast_) {
+        ASSERT_FALSE(LeAudioClientInterface::Get()->IsBroadcastSourceAcquired());
+      } else {
+        ASSERT_FALSE(LeAudioClientInterface::Get()->IsUnicastSourceAcquired());
+      }
     }
 
     cleanup_message_loop_thread();
@@ -675,7 +682,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, ReleaseSinkNotAcquired) {
 TEST_F(LeAudioSoftwareUnicastTestAidl, GetSourceTwice) {
   ASSERT_NE(nullptr, source_);
   ASSERT_EQ(LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
-                                                     &message_loop_thread),
+                                                     &message_loop_thread, is_broadcast_),
             nullptr);
 }
 
@@ -769,13 +776,14 @@ protected:
   }
 };
 
-// Test scenario: Test the successful acquisition and release of a sink
-// interface for a broadcast session. Ensure that a source cannot be acquired in
-// a broadcast session.
+// Test scenario: Test the successful acquisition and release of both sink and
+// source interface for a broadcast session.
 TEST_F(LeAudioSoftwareBroadcastTestAidl, AcquireAndRelease) {
   ASSERT_NE(nullptr, sink_);
-  ASSERT_EQ(nullptr, source_);
+  ASSERT_NE(nullptr, source_);
   ASSERT_NE(::bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::interface_broadcast_,
+            nullptr);
+  ASSERT_NE(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface_broadcast_,
             nullptr);
   ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::interface_unicast_, nullptr);
   ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface_unicast_,
@@ -786,7 +794,9 @@ TEST_F(LeAudioSoftwareBroadcastTestAidl, AcquireAndRelease) {
 // for a broadcast sink.
 TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastConfig) {
   ASSERT_NE(nullptr, sink_);
+  ASSERT_NE(nullptr, source_);
   ASSERT_NE(sink_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
+  ASSERT_NE(source_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
 }
 
 // Test scenario: Test the retrieval of a unicast configuration with valid
@@ -1209,7 +1219,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkUpdateAudioConfigToHalNoOffload) {
   sink_->UpdateAudioConfigToHal(config);
 }
 
-TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastConfigNoOffload) {
+TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastSinkConfigNoOffload) {
   // This test is for a unicast sink, but we are in a broadcast test fixture.
   // So we need to release the broadcast sink and create a unicast one.
   LeAudioClientInterface::Get()->ReleaseSink(sink_);
@@ -1220,7 +1230,7 @@ TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastConfigNoOffload) {
   ASSERT_EQ(sink_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
 }
 
-TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastAudioConfigToHalNoOffload) {
+TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastSinkAudioConfigToHalNoOffload) {
   ASSERT_NE(nullptr, sink_);
   bluetooth::le_audio::broadcast_offload_config config;
   // Set session to non-offload, expect no call
@@ -1279,6 +1289,25 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetCodecPriorityNoOffload) {
   source_->SetCodecPriority(codec_id, 0);
 }
 
+TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastSourceConfigNoOffload) {
+  // This test is for a unicast source, but we are in a broadcast test fixture.
+  // So we need to release the broadcast source and create a unicast one.
+  LeAudioClientInterface::Get()->ReleaseSource(source_);
+  source_ = LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
+                                                     &message_loop_thread, false);
+  ASSERT_NE(nullptr, source_);
+  ASSERT_FALSE(source_->IsBroadcastSink());
+  ASSERT_EQ(source_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
+}
+
+TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastSourceAudioConfigToHalNoOffload) {
+  ASSERT_NE(nullptr, source_);
+  bluetooth::le_audio::broadcast_offload_config config;
+  // Set session to non-offload, expect no call
+  is_broadcast_ = false;
+  source_->UpdateBroadcastAudioConfigToHal(config);
+}
+
 TEST_F(LeAudioSoftwareUnicastTestAidl, GetSinkInvalidInterface) {
   // Release the valid sink first
   LeAudioClientInterface::Get()->ReleaseSink(sink_);
@@ -1297,7 +1326,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, GetSourceInvalidInterface) {
 
   ON_CALL(audio_client_interface_, IsValid).WillByDefault(Return(false));
   ASSERT_EQ(LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
-                                                     &message_loop_thread),
+                                                     &message_loop_thread, is_broadcast_),
             nullptr);
 }
 
@@ -1328,7 +1357,7 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetCodecPriority) {
   sink_->SetCodecPriority(codec_id, 0);
 }
 
-TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastAudioConfigToHal) {
+TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastSinkAudioConfigToHal) {
   ASSERT_NE(nullptr, sink_);
   bluetooth::le_audio::broadcast_offload_config config;
   EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).Times(1);
@@ -1346,6 +1375,13 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetCodecPriority) {
   ASSERT_NE(nullptr, source_);
   bluetooth::le_audio::types::LeAudioCodecId codec_id;
   source_->SetCodecPriority(codec_id, 0);
+}
+
+TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastSourceAudioConfigToHal) {
+  ASSERT_NE(nullptr, source_);
+  bluetooth::le_audio::broadcast_offload_config config;
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).Times(1);
+  source_->UpdateBroadcastAudioConfigToHal(config);
 }
 
 TEST_F(LeAudioSoftwareUnicastTestAidl, SetAllowedDsaModes) {

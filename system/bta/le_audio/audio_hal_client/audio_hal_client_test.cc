@@ -109,7 +109,8 @@ public:
                bool is_broadcasting_session_type));
   MOCK_METHOD((Source*), GetSource,
               (bluetooth::audio::le_audio::StreamCallbacks stream_cb,
-               bluetooth::common::MessageLoopThread* message_loop));
+               bluetooth::common::MessageLoopThread* message_loop,
+               bool is_broadcasting_session_type));
 
   MOCK_METHOD((void), SetAllowedDsaModes, (DsaModes dsa_modes));
 };
@@ -132,8 +133,9 @@ LeAudioClientInterface::Sink* LeAudioClientInterface::GetSink(
 }
 
 LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
-        StreamCallbacks stream_cb, bluetooth::common::MessageLoopThread* message_loop) {
-  return interface_mock->GetSource(stream_cb, message_loop);
+        StreamCallbacks stream_cb, bluetooth::common::MessageLoopThread* message_loop,
+        bool is_broadcasting_session_type) {
+  return interface_mock->GetSource(stream_cb, message_loop, is_broadcasting_session_type);
 }
 
 bool LeAudioClientInterface::ReleaseSink(LeAudioClientInterface::Sink* /*sink*/) { return true; }
@@ -242,7 +244,7 @@ protected:
     is_source_audio_hal_acquired = false;
     source_audio_hal_stream_cb = {.on_resume_ = nullptr, .on_suspend_ = nullptr};
 
-    ON_CALL(mock_client_interface_, GetSource(_, _))
+    ON_CALL(mock_client_interface_, GetSource(_, _, _))
             .WillByDefault(DoAll(SaveArg<0>(&source_audio_hal_stream_cb),
                                  Assign(&is_source_audio_hal_acquired, true),
                                  Return(bluetooth::audio::le_audio::source_mock)));
@@ -312,7 +314,7 @@ protected:
 };
 
 TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkInitializeCleanup) {
-  EXPECT_CALL(mock_client_interface_, GetSource(_, _));
+  EXPECT_CALL(mock_client_interface_, GetSource(_, _, _));
   ASSERT_TRUE(AcquireLeAudioSinkHalClient());
 
   EXPECT_CALL(mock_hal_interface_audio_source_, Cleanup());
