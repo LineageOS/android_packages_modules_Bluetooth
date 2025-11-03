@@ -49,7 +49,7 @@ public:
   virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_handle) = 0;
   virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle, uint8_t big_handle) = 0;
 
-  virtual void OnBigEvent(uint8_t event, void* data) = 0;
+  virtual void OnBigSourceEvent(BigSourceEvent event, void* data) = 0;
 };
 
 struct IsoManagerCallbacks {

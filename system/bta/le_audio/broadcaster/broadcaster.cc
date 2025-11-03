@@ -73,6 +73,7 @@ using bluetooth::hci::IsoManager;
 using bluetooth::hci::iso_manager::big_create_cmpl_evt;
 using bluetooth::hci::iso_manager::big_terminate_cmpl_evt;
 using bluetooth::hci::iso_manager::BigCallbacks;
+using bluetooth::hci::iso_manager::BigSourceEvent;
 using bluetooth::hci::iso_manager::IsoClientHandle;
 using bluetooth::hci::iso_manager::IsoManagerCallbacks;
 using bluetooth::hci::iso_manager::kInvalidIsoClientHandle;
@@ -888,16 +889,16 @@ public:
     broadcasts_[broadcast_id]->OnRemoveIsoDataPath(status, conn_handle);
   }
 
-  void OnBigEvent(uint8_t event, void* data) override {
+  void OnBigSourceEvent(BigSourceEvent event, void* data) override {
     switch (event) {
-      case bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl: {
+      case BigSourceEvent::kCreateCmpl: {
         auto* evt = static_cast<big_create_cmpl_evt*>(data);
         auto broadcast_id = BroadcastIdFromBigHandle(evt->big_handle);
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
                          "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, evt);
       } break;
-      case bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl: {
+      case BigSourceEvent::kTerminateCmpl: {
         auto* evt = static_cast<big_terminate_cmpl_evt*>(data);
         auto broadcast_id = BroadcastIdFromBigHandle(evt->big_handle);
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
@@ -905,7 +906,7 @@ public:
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT, evt);
       } break;
       default:
-        log::error("Invalid event={}", event);
+        log::error("Invalid event={}", static_cast<uint8_t>(event));
     }
   }
 

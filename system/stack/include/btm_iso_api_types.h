@@ -74,8 +74,10 @@ constexpr uint8_t kIsoEventCigOnCreateCmpl = 0x00;
 constexpr uint8_t kIsoEventCigOnReconfigureCmpl = 0x01;
 constexpr uint8_t kIsoEventCigOnRemoveCmpl = 0x02;
 
-constexpr uint8_t kIsoEventBigOnCreateCmpl = 0x00;
-constexpr uint8_t kIsoEventBigOnTerminateCmpl = 0x01;
+enum class BigSourceEvent : uint8_t {
+  kCreateCmpl = 0x00,
+  kTerminateCmpl,
+};
 
 struct cig_create_params {
   uint32_t sdu_itv_mtos;

@@ -447,12 +447,14 @@ protected:
             .conn_handles = conn_handles,
     };
 
-    big_callbacks_->OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, &evt);
+    big_callbacks_->OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl,
+                                     &evt);
   }
 
   void InjectBigTerminateComplete(uint8_t big_handle, uint8_t reason) {
     hci::iso_manager::big_terminate_cmpl_evt evt = {.big_handle = big_handle, .reason = reason};
-    big_callbacks_->OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, &evt);
+    big_callbacks_->OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kTerminateCmpl,
+                                     &evt);
   }
 
 protected:

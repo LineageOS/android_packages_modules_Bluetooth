@@ -121,8 +121,8 @@ struct iso_impl {
 
   IsoManagerCallbacks* get_client_callbacks_from_big(uint8_t big_handle) {
     const std::lock_guard<std::mutex> lock(iso_client_mutex_);
-    auto group_it = big_handle_to_group_map_.find(big_handle);
-    if (group_it == big_handle_to_group_map_.end()) {
+    auto group_it = source_big_handle_to_group_map_.find(big_handle);
+    if (group_it == source_big_handle_to_group_map_.end()) {
       return nullptr;
     }
     auto client_it = iso_clients_.find(group_it->second->client_handle);
@@ -918,8 +918,8 @@ struct iso_impl {
     log::assert_that(len == (18 + num_bis * sizeof(uint16_t)),
                      "Invalid packet length: {}. Number of bis: {}", len, num_bis);
 
-    auto group_it = big_handle_to_group_map_.find(evt.big_handle);
-    log::assert_that(group_it != big_handle_to_group_map_.end(),
+    auto group_it = source_big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != source_big_handle_to_group_map_.end(),
                      "Cannot find group for big_handle: {}", evt.big_handle);
 
     size_t stream_sz_before_big_create = conn_hdl_to_iso_stream_map_.size();
@@ -952,7 +952,7 @@ struct iso_impl {
     log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
                      evt.big_handle);
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
-    client_cbs->big_callbacks->OnBigEvent(kIsoEventBigOnCreateCmpl, &evt);
+    client_cbs->big_callbacks->OnBigSourceEvent(BigSourceEvent::kCreateCmpl, &evt);
 
     if (stream_sz_before_big_create) {
       return;
@@ -970,19 +970,20 @@ struct iso_impl {
     STREAM_TO_UINT8(evt.big_handle, data);
     STREAM_TO_UINT8(evt.reason, data);
 
-    auto group_it = big_handle_to_group_map_.find(evt.big_handle);
-    log::assert_that(group_it != big_handle_to_group_map_.end(), "No such big: {}", evt.big_handle);
+    auto group_it = source_big_handle_to_group_map_.find(evt.big_handle);
+    log::assert_that(group_it != source_big_handle_to_group_map_.end(), "No such big: {}",
+                     evt.big_handle);
 
     auto* client_cbs = get_client_callbacks_from_big(evt.big_handle);
     log::assert_that(client_cbs != nullptr, "Cannot find client callbacks for big {}",
                      evt.big_handle);
     log::assert_that(client_cbs->big_callbacks != nullptr, "Invalid BIG callbacks");
-    client_cbs->big_callbacks->OnBigEvent(kIsoEventBigOnTerminateCmpl, &evt);
+    client_cbs->big_callbacks->OnBigSourceEvent(BigSourceEvent::kTerminateCmpl, &evt);
 
     for (auto handle : group_it->second->stream_conn_handles) {
       conn_hdl_to_iso_stream_map_.erase(handle);
     }
-    big_handle_to_group_map_.erase(group_it);
+    source_big_handle_to_group_map_.erase(group_it);
 
     if (!conn_hdl_to_iso_stream_map_.empty()) {
       return;
@@ -1001,7 +1002,7 @@ struct iso_impl {
       auto group = std::make_unique<iso_group>();
       group->id = big_handle;
       group->client_handle = client_handle;
-      big_handle_to_group_map_[big_handle] = std::move(group);
+      source_big_handle_to_group_map_[big_handle] = std::move(group);
     }
 
     if (stack_config_get_interface()->get_pts_unencrypt_broadcast()) {
@@ -1173,7 +1174,7 @@ struct iso_impl {
       }
     }
     dprintf(fd, "    BIGs:");
-    for (auto const& group_pair : big_handle_to_group_map_) {
+    for (auto const& group_pair : source_big_handle_to_group_map_) {
       dprintf(fd, "      BIG handle: %d", group_pair.first);
       for (auto const& handle : group_pair.second->stream_conn_handles) {
         auto stream_it = conn_hdl_to_iso_stream_map_.find(handle);
@@ -1222,6 +1223,9 @@ struct iso_impl {
   // CIG/BIG Ownership Tracking
   std::unordered_map<uint8_t /* cig_id */, std::unique_ptr<iso_group>> cig_id_to_group_map_;
   std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>> big_handle_to_group_map_;
+
+  std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>>
+          source_big_handle_to_group_map_;
 
   // Member variables should appear before the WeakPtrFactory, to ensure
   // that any WeakPtrs are invalidated before its members

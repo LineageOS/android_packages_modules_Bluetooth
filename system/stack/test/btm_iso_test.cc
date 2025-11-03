@@ -22,6 +22,7 @@
 #include <functional>
 
 #include "btm_iso_api.h"
+#include "btm_iso_api_types.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
@@ -125,7 +126,8 @@ public:
   MOCK_METHOD((void), OnRemoveIsoDataPath,
               (uint8_t status, uint16_t conn_handle, uint8_t big_handle), (override));
 
-  MOCK_METHOD((void), OnBigEvent, (uint8_t event, void* data), (override));
+  MOCK_METHOD((void), OnBigSourceEvent,
+              (bluetooth::hci::iso_manager::BigSourceEvent event, void* data), (override));
 };
 }  // namespace
 
@@ -623,9 +625,11 @@ TEST_F(IsoManagerTest, MultiClientBig) {
     }
     IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, buf.data(), buf.size());
   });
-  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
           .Times(1);
-  EXPECT_CALL(*big_callbacks2, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+  EXPECT_CALL(*big_callbacks2,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
           .Times(0);
   manager_instance_->CreateBig(client_handle_, big_id1, kDefaultBigParams);
 
@@ -649,9 +653,11 @@ TEST_F(IsoManagerTest, MultiClientBig) {
     }
     IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, buf.data(), buf.size());
   });
-  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
           .Times(0);
-  EXPECT_CALL(*big_callbacks2, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
+  EXPECT_CALL(*big_callbacks2,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
           .Times(1);
   manager_instance_->CreateBig(client_handle2, big_id2, kDefaultBigParams);
 
@@ -1788,8 +1794,9 @@ TEST_F(IsoManagerTest, CreateBigHciCall) {
 TEST_F(IsoManagerTest, CreateBigValid) {
   bluetooth::hci::iso_manager::big_create_cmpl_evt evt;
   evt.status = 0x01;
-  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
-          .WillOnce([&evt](uint8_t /* type */, void* data) {
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
+          .WillOnce([&evt](bluetooth::hci::iso_manager::BigSourceEvent /* type */, void* data) {
             evt = *static_cast<bluetooth::hci::iso_manager::big_create_cmpl_evt*>(data);
             return 0;
           });
@@ -1857,8 +1864,9 @@ TEST_F(IsoManagerDeathTest, CreateBigInvalidResponsePacket2) {
 TEST_F(IsoManagerTest, CreateBigInvalidStatus) {
   bluetooth::hci::iso_manager::big_create_cmpl_evt evt;
   evt.status = 0x00;
-  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
-          .WillOnce([&evt](uint8_t /* type */, void* data) {
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
+          .WillOnce([&evt](bluetooth::hci::iso_manager::BigSourceEvent /* type */, void* data) {
             evt = *static_cast<bluetooth::hci::iso_manager::big_create_cmpl_evt*>(data);
             return 0;
           });
@@ -1900,8 +1908,9 @@ TEST_F(IsoManagerTest, CreateBigInvalidStatus) {
 TEST_F(IsoManagerDeathTest, CreateSameBigTwice) {
   bluetooth::hci::iso_manager::big_create_cmpl_evt evt;
   evt.status = 0x01;
-  EXPECT_CALL(*big_callbacks_, OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _))
-          .WillOnce([&evt](uint8_t /* type */, void* data) {
+  EXPECT_CALL(*big_callbacks_,
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _))
+          .WillOnce([&evt](bluetooth::hci::iso_manager::BigSourceEvent /* type */, void* data) {
             evt = *static_cast<bluetooth::hci::iso_manager::big_create_cmpl_evt*>(data);
             return 0;
           });
@@ -1930,7 +1939,7 @@ TEST_F(IsoManagerDeathTest, TerminateSameBigTwice) {
 
   IsoManager::GetInstance()->CreateBig(client_handle_, big_handle, kDefaultBigParams);
   EXPECT_CALL(*big_callbacks_,
-              OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, _));
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kTerminateCmpl, _));
 
   IsoManager::GetInstance()->TerminateBig(big_handle, reason);
   ASSERT_EXIT(IsoManager::GetInstance()->TerminateBig(big_handle, reason),
@@ -1942,7 +1951,7 @@ TEST_F(IsoManagerDeathTest, TerminateBigNoSuchBig) {
   const uint8_t reason = 0x16;  // Terminated by local host
 
   EXPECT_CALL(*big_callbacks_,
-              OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, _));
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kCreateCmpl, _));
   IsoManager::GetInstance()->CreateBig(client_handle_, big_handle, kDefaultBigParams);
 
   ASSERT_EXIT(IsoManager::GetInstance()->TerminateBig(big_handle + 1, reason),
@@ -2011,8 +2020,8 @@ TEST_F(IsoManagerTest, TerminateBigValid) {
   ASSERT_EQ(is_iso_active_, true);
 
   EXPECT_CALL(*big_callbacks_,
-              OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, _))
-          .WillOnce([&evt](uint8_t /* type */, void* data) {
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kTerminateCmpl, _))
+          .WillOnce([&evt](bluetooth::hci::iso_manager::BigSourceEvent /* type */, void* data) {
             evt = *static_cast<bluetooth::hci::iso_manager::big_terminate_cmpl_evt*>(data);
             return 0;
           });
@@ -2804,7 +2813,7 @@ TEST_F(IsoManagerTest, HandleDisconnectNoSuchHandle) {
   // Don't expect any callbacks when connection handle is not for ISO.
   EXPECT_CALL(*cig_callbacks_, OnCigEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCisEvent).Times(0);
-  EXPECT_CALL(*big_callbacks_, OnBigEvent).Times(0);
+  EXPECT_CALL(*big_callbacks_, OnBigSourceEvent).Times(0);
 
   IsoManager::GetInstance()->HandleDisconnect(123, 16);
 }
@@ -2816,7 +2825,7 @@ TEST_F(IsoManagerTest, HandleDisconnectValidCig) {
   auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
   IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
 
-  EXPECT_CALL(*big_callbacks_, OnBigEvent).Times(0);
+  EXPECT_CALL(*big_callbacks_, OnBigSourceEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCigEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCisEvent).Times(0);
 
@@ -2839,7 +2848,7 @@ TEST_F(IsoManagerTest, HandleDisconnectDisconnectedCig) {
   auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
   IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
 
-  EXPECT_CALL(*big_callbacks_, OnBigEvent).Times(0);
+  EXPECT_CALL(*big_callbacks_, OnBigSourceEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCigEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCisEvent).Times(0);
 
@@ -2864,7 +2873,7 @@ TEST_F(IsoManagerTest, HandleDisconnectLateArrivingCallback) {
   auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
   IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
 
-  EXPECT_CALL(*big_callbacks_, OnBigEvent).Times(0);
+  EXPECT_CALL(*big_callbacks_, OnBigSourceEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCigEvent).Times(0);
   EXPECT_CALL(*cig_callbacks_, OnCisEvent).Times(0);
 
@@ -2980,7 +2989,7 @@ TEST_F(IsoManagerDeathTestNoCleanup, HandleLateArivingEventHandleHciEvent) {
   // Stop iso manager before trying to call the HCI callbacks
   IsoManager::GetInstance()->Stop();
   EXPECT_CALL(*big_callbacks_,
-              OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, _))
+              OnBigSourceEvent(bluetooth::hci::iso_manager::BigSourceEvent::kTerminateCmpl, _))
           .Times(0);
 
   // Expect no assert on this call - should be gracefully ignored
