@@ -1424,11 +1424,7 @@ void gatt_sr_reset_cback_cnt(tGATT_TCB& tcb, uint16_t cid) {
  * Returns        None
  *
  ******************************************************************************/
-void gatt_sr_reset_prep_cnt(tGATT_TCB& tcb) {
-  for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
-    tcb.prep_cnt[i] = 0;
-  }
-}
+void gatt_sr_reset_prep_cnt(tGATT_TCB& tcb) { tcb.prep_cnt_map.clear(); }
 
 /* Get pointer to server command on given cid */
 tGATT_SR_CMD* gatt_sr_get_cmd_by_cid(tGATT_TCB& tcb, uint16_t cid) {

@@ -844,8 +844,10 @@ void bta_gatt_client_dump(int fd) {
       continue;
     }
     entry_count++;
-    stream << "  address: " << p_bg_track->remote_bda.ToRedactedStringForLogging()
-           << "  cif_mask: " << loghex(p_bg_track->cif_mask);
+    stream << "  address: " << p_bg_track->remote_bda.ToRedactedStringForLogging() << "  cif_set: ";
+    for (auto& cif : p_bg_track->cif_set) {
+      stream << static_cast<int>(cif) << " ";
+    }
     stream << "\n";
   }
 
