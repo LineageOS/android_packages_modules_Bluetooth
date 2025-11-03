@@ -265,6 +265,50 @@ public class ScanControllerTest {
         verifyOnBatchScanReportsInternal(/* expectResults= */ false, /* isTruncated= */ false);
     }
 
+    @Test
+    public void onBatchScanReportsInternal_truncatedScanClientNotFound() {
+        final int reportType = ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
+        final int numRecords = 1;
+        final byte[] recordData =
+                new byte[] {
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x06, 0x04, 0x02, 0x02, 0x00, 0x00, 0x02
+                };
+
+        // Setup so that no client is found
+        doReturn(Collections.emptySet()).when(mScanManager).getBatchScanQueue();
+        doReturn(mApp).when(mScannerMap).getById(TEST_SCANNER_ID);
+
+        mScanController.onBatchScanReportsInternal(
+                TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
+
+        // Verify that callbackDone is not called because the method returns early when client is
+        // not found.
+        verify(mScanManager, never()).callbackDone(anyInt(), anyInt());
+    }
+
+    @Test
+    public void onBatchScanReportsInternal_fullBatchScanNoClients() {
+        final int reportType = ScanUtil.SCAN_RESULT_TYPE_FULL;
+        final int numRecords = 1;
+        final byte[] recordData =
+                new byte[] {
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00, 0x00
+                };
+
+        final BluetoothDevice device = getTestDevice("02:00:00:00:00:00");
+        mockGetRemoteDevice(mAdapterService, device);
+
+        doReturn(Collections.emptySet()).when(mScanManager).getFullBatchScanQueue();
+
+        mScanController.onBatchScanReportsInternal(
+                TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
+
+        if (!Flags.scanControllerThread()) {
+            verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
+        }
+        verify(mScannerMap, never()).getById(anyInt());
+    }
+
     private void verifyOnBatchScanReportsInternal(boolean expectResults, boolean isTruncated)
             throws RemoteException {
         final int reportType =
@@ -453,6 +497,17 @@ public class ScanControllerTest {
 
         mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
         verify(mScanManager).flushBatchScanResults(scanClient);
+    }
+
+    @Test
+    public void flushPendingBatchResults_clientNotFound() {
+        // Setup so that no client is found
+        doReturn(Collections.emptySet()).when(mScanManager).getBatchScanQueue();
+
+        mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
+
+        // Verify that flush is not called.
+        verify(mScanManager, never()).flushBatchScanResults(any());
     }
 
     @Test
