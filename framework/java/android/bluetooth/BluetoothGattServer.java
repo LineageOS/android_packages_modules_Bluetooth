@@ -468,7 +468,6 @@ public final class BluetoothGattServer implements BluetoothProfile {
             }
         }
     }
-    ;
 
     /** Create a BluetoothGattServer proxy object. */
     /* package */ BluetoothGattServer(
@@ -862,7 +861,10 @@ public final class BluetoothGattServer implements BluetoothProfile {
      *     false} to send a notification
      * @param value the characteristic value
      * @return whether the notification has been triggered successfully
-     * @throws IllegalArgumentException if the characteristic value or service is null
+     * @throws IllegalArgumentException if the device, characteristic, value, or the
+     *     characteristic's service is null, or if the value length exceeds the maximum attribute
+     *     length of 512 bytes (As defined in GATT max attribute length (Bluetooth Core
+     *     Specification 6.1 Volume 3, Part F, section 3.2.9).
      */
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission

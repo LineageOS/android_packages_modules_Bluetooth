@@ -53,7 +53,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/btu_hcif.h"
-#include "stack/include/dev_hci_link_interface.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_evt_length.h"
 #include "stack/include/inq_hci_link_interface.h"
@@ -893,7 +892,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
       break;
 
     case HCI_DELETE_STORED_LINK_KEY:
-      btm_delete_stored_link_key_complete(p, evt_len);
       break;
 
     case HCI_READ_RSSI:

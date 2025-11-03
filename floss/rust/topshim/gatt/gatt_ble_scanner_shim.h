@@ -127,7 +127,7 @@ public:
 
   // Start periodic sync. Gets responses via |OnStartSyncCb|. Periodic reports
   // come via |OnSyncReportCb| and |OnSyncLostCb|.
-  void StartSync(uint8_t sid, RawAddress addr, uint16_t skip, uint16_t timeout);
+  void StartSync(uint8_t sid, RawAddress addr, uint8_t addr_type, uint16_t skip, uint16_t timeout);
 
   // Stop periodic sync.
   void StopSync(uint16_t handle);

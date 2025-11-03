@@ -55,6 +55,7 @@ public class GattServiceBinderTest {
     @Mock private IBluetoothGattServerCallback mGattServerCallback;
     @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private GattService mService;
+    @Mock private GattServerManager mServerManager;
 
     private final BluetoothDevice mDevice = getTestDevice(109);
 
@@ -63,6 +64,7 @@ public class GattServiceBinderTest {
     @Before
     public void setUp() throws Exception {
         doReturn(true).when(mService).isAvailable();
+        doReturn(mServerManager).when(mService).getServerManager();
         mBinder = new GattServiceBinder(mService);
     }
 
@@ -99,7 +101,6 @@ public class GattServiceBinderTest {
         boolean isDirect = true;
         int transport = 2;
         boolean opportunistic = true;
-        int phy = 3;
 
         mBinder.clientConnect(
                 mGattCallback,
@@ -108,7 +109,6 @@ public class GattServiceBinderTest {
                 isDirect,
                 transport,
                 opportunistic,
-                phy,
                 mSource);
         verify(mService)
                 .clientConnect(
@@ -118,7 +118,6 @@ public class GattServiceBinderTest {
                         isDirect,
                         transport,
                         opportunistic,
-                        phy,
                         mSource);
     }
 
@@ -319,13 +318,14 @@ public class GattServiceBinderTest {
 
         mBinder.registerServer(
                 new ParcelUuid(uuid), mGattServerCallback, eattSupport, transport, mSource);
-        verify(mService).registerServer(uuid, mGattServerCallback, eattSupport, transport, mSource);
+        verify(mServerManager)
+                .registerServer(uuid, mGattServerCallback, eattSupport, transport, mSource);
     }
 
     @Test
     public void unregisterServer() {
         mBinder.unregisterServer(mGattServerCallback, mSource);
-        verify(mService).unregisterServer(mGattServerCallback);
+        verify(mServerManager).unregisterServer(mGattServerCallback);
     }
 
     @Test
@@ -336,7 +336,7 @@ public class GattServiceBinderTest {
 
         mBinder.serverConnect(
                 mGattServerCallback, mDevice, addressType, isDirect, transport, mSource);
-        verify(mService)
+        verify(mServerManager)
                 .serverConnect(
                         mGattServerCallback, mDevice, addressType, isDirect, transport, mSource);
     }
@@ -344,7 +344,7 @@ public class GattServiceBinderTest {
     @Test
     public void serverDisconnect() {
         mBinder.serverDisconnect(mGattServerCallback, mDevice, mSource);
-        verify(mService).serverDisconnect(mGattServerCallback, mDevice);
+        verify(mServerManager).serverDisconnect(mGattServerCallback, mDevice);
     }
 
     @Test
@@ -355,14 +355,14 @@ public class GattServiceBinderTest {
 
         mBinder.serverSetPreferredPhy(
                 mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions, mSource);
-        verify(mService)
+        verify(mServerManager)
                 .serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void serverReadPhy() throws Exception {
         mBinder.serverReadPhy(mGattServerCallback, mDevice, mSource);
-        verify(mService).serverReadPhy(mGattServerCallback, mDevice);
+        verify(mServerManager).serverReadPhy(mGattServerCallback, mDevice);
     }
 
     @Test
@@ -370,7 +370,7 @@ public class GattServiceBinderTest {
         BluetoothGattService svc = mock(BluetoothGattService.class);
 
         mBinder.addService(mGattServerCallback, svc, mSource);
-        verify(mService).addService(mGattServerCallback, svc);
+        verify(mServerManager).addService(mGattServerCallback, svc);
     }
 
     @Test
@@ -378,13 +378,13 @@ public class GattServiceBinderTest {
         int handle = 2;
 
         mBinder.removeService(mGattServerCallback, handle, mSource);
-        verify(mService).removeService(mGattServerCallback, handle);
+        verify(mServerManager).removeService(mGattServerCallback, handle);
     }
 
     @Test
     public void clearServices() {
         mBinder.clearServices(mGattServerCallback, mSource);
-        verify(mService).clearServices(mGattServerCallback);
+        verify(mServerManager).clearServices(mGattServerCallback);
     }
 
     @Test
@@ -396,7 +396,7 @@ public class GattServiceBinderTest {
 
         mBinder.sendResponse(
                 mGattServerCallback, mDevice, requestId, status, offset, value, mSource);
-        verify(mService)
+        verify(mServerManager)
                 .sendResponse(mGattServerCallback, mDevice, requestId, status, offset, value);
     }
 
@@ -407,7 +407,8 @@ public class GattServiceBinderTest {
         byte[] value = new byte[] {5, 6};
 
         mBinder.sendNotification(mGattServerCallback, mDevice, handle, confirm, value, mSource);
-        verify(mService).sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+        verify(mServerManager)
+                .sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
     }
 
     @Test

@@ -201,6 +201,7 @@ pub mod ffi {
             self: Pin<&mut BleScannerIntf>,
             sid: u8,
             address: RawAddress,
+            address_type: u8,
             skip: u16,
             timeout: u16,
         );
@@ -612,7 +613,7 @@ pub enum GattServerCallbacks {
     PhyUpdated(i32, u8, u8, GattStatus),
     ConnUpdated(i32, u16, u16, u16, GattStatus),
     ReadPhy(i32, RawAddress, u8, u8, GattStatus),
-    SubrateChanged(i32, u16, u16, u16, u16, GattStatus),
+    SubrateChanged(i32, u16, u16, u16, u16, u8, GattStatus),
 }
 
 pub struct GattClientCallbacksDispatcher {
@@ -883,7 +884,7 @@ cb_variant!(
 cb_variant!(
     GattServerCb,
     gs_subrate_chg_cb -> GattServerCallbacks::SubrateChanged,
-    i32, u16, u16, u16, u16, u8 -> GattStatus, {}
+    i32, u16, u16, u16, u16, u8, u8 -> GattStatus, {}
 );
 
 /// Scanning callbacks used by the GD implementation of BleScannerInterface.
@@ -1702,8 +1703,15 @@ impl BleScanner {
     }
 
     #[log_args]
-    pub fn start_sync(&mut self, sid: u8, addr: RawAddress, skip: u16, timeout: u16) {
-        mutcxxcall!(self, StartSync, sid, addr, skip, timeout);
+    pub fn start_sync(
+        &mut self,
+        sid: u8,
+        addr: RawAddress,
+        addr_type: u8,
+        skip: u16,
+        timeout: u16,
+    ) {
+        mutcxxcall!(self, StartSync, sid, addr, addr_type, skip, timeout);
     }
 
     #[log_args]

@@ -60,6 +60,7 @@ filegroup {
         "android/bluetooth/IBluetoothVolumeControlCallback.aidl",
         "android/bluetooth/IDistanceMeasurement.aidl",
         "android/bluetooth/IncomingRfcommSocketInfo.aidl",
+        "android/bluetooth/State.aidl",
         "android/bluetooth/le/IAdvertisingSetCallback.aidl",
         "android/bluetooth/le/IDistanceMeasurementCallback.aidl",
         "android/bluetooth/le/IPeriodicAdvertisingCallback.aidl",

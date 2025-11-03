@@ -50,7 +50,6 @@
 #include "stack/include/btm_inq.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
-#include "stack/include/dev_hci_link_interface.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_controller_interface.h"
 
@@ -387,84 +386,4 @@ void BTM_WriteVoiceSettings(uint16_t settings) {
 
   /* Send the HCI command */
   btsnd_hcic_write_voice_settings((uint16_t)(settings & 0x03ff));
-}
-
-/*******************************************************************************
- *
- * Function         BTM_DeleteStoredLinkKey
- *
- * Description      This function is called to delete link key for the specified
- *                  device addresses from the NVRAM storage attached to the
- *                  Bluetooth controller.
- *
- * Parameters:      bd_addr      - Addresses of the devices
- *                  p_cb         - Call back function to be called to return
- *                                 the results
- *
- ******************************************************************************/
-tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr, tBTM_CMPL_CB* p_cb) {
-  /* Read and Write STORED link key stems from a legacy use-case */
-  /* If the controller doesn't support this then just return success */
-  if (!bluetooth::shim::GetController()->IsSupported(
-              bluetooth::hci::OpCode::DELETE_STORED_LINK_KEY)) {
-    log::info("BTM: BTM_DeleteStoredLinkKey: DELETE_STORED_LINK_KEY not supported");
-    return tBTM_STATUS::BTM_SUCCESS;
-  }
-
-  /* Check if the previous command is completed */
-  if (btm_sec_cb.devcb.p_stored_link_key_cmpl_cb) {
-    return tBTM_STATUS::BTM_BUSY;
-  }
-
-  bool delete_all_flag = !bd_addr;
-
-  log::verbose("BTM: BTM_DeleteStoredLinkKey: delete_all_flag: {}", delete_all_flag);
-
-  btm_sec_cb.devcb.p_stored_link_key_cmpl_cb = p_cb;
-  if (!bd_addr) {
-    /* This is to delete all link keys */
-    /* We don't care the BD address. Just pass a non zero pointer */
-    RawAddress local_bd_addr = RawAddress::kEmpty;
-    btsnd_hcic_delete_stored_key(local_bd_addr, delete_all_flag);
-  } else {
-    btsnd_hcic_delete_stored_key(*bd_addr, delete_all_flag);
-  }
-
-  return tBTM_STATUS::BTM_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         btm_delete_stored_link_key_complete
- *
- * Description      This function is called when the command complete message
- *                  is received from the HCI for the delete stored link key
- *                  command.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_delete_stored_link_key_complete(uint8_t* p, uint16_t evt_len) {
-  tBTM_CMPL_CB* p_cb = btm_sec_cb.devcb.p_stored_link_key_cmpl_cb;
-  tBTM_DELETE_STORED_LINK_KEY_COMPLETE result;
-
-  /* If there was a callback registered for read stored link key, call it */
-  btm_sec_cb.devcb.p_stored_link_key_cmpl_cb = NULL;
-
-  if (p_cb) {
-    /* Set the call back event to indicate command complete */
-    result.event = BTM_CB_EVT_DELETE_STORED_LINK_KEYS;
-
-    if (evt_len < 3) {
-      log::error("Malformatted event packet, too short");
-      return;
-    }
-
-    /* Extract the result fields from the HCI event */
-    STREAM_TO_UINT8(result.status, p);
-    STREAM_TO_UINT16(result.num_keys, p);
-
-    /* Call the call back and pass the result */
-    (*p_cb)(&result);
-  }
 }

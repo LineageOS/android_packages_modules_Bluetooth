@@ -367,17 +367,10 @@ class GetUuidsFromLeAdvertisingDataTest {
                         val resultType =
                             intent.getIntExtra(BluetoothDevice.EXTRA_DISCOVERY_RESULT_TYPE, -1)
                         if ((resultType and BluetoothDevice.DEVICE_TYPE_LE) == 0) return false
-                        val actualUuids =
-                            intent.getParcelableArrayExtra(
-                                BluetoothDevice.EXTRA_UUID_LE,
-                                ParcelUuid::class.java,
-                            )
+                        val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID_LE)
                         return when {
-                            expectedUuids == null -> actualUuids == null
-                            actualUuids == null -> false
-                            else -> {
-                                arrayContainingInAnyOrder(*expectedUuids).matches(actualUuids)
-                            }
+                            expectedUuids == null -> uuids.isEmpty()
+                            else -> arrayContainingInAnyOrder(*expectedUuids).matches(uuids)
                         }
                     }
                 }

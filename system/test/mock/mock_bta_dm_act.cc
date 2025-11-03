@@ -109,9 +109,9 @@ void BTA_dm_on_hw_off() {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::BTA_dm_on_hw_off();
 }
-void BTA_dm_on_hw_on() {
+void BTA_dm_on_hw_on(const std::string local_name) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::BTA_dm_on_hw_on();
+  test::mock::bta_dm_act::BTA_dm_on_hw_on(local_name);
 }
 void BTA_dm_report_role_change(const RawAddress bd_addr, tHCI_ROLE new_role,
                                tHCI_STATUS hci_status) {

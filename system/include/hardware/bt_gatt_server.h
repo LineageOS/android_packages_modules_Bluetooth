@@ -114,7 +114,8 @@ typedef void (*conn_updated_callback)(int conn_id, uint16_t interval, uint16_t l
 /** Callback invoked when the subrate change event for a given connection
  * is received */
 typedef void (*subrate_change_callback)(int conn_id, uint16_t subrate_factor, uint16_t latency,
-                                        uint16_t cont_num, uint16_t timeout, uint8_t status);
+                                        uint16_t cont_num, uint16_t timeout, uint8_t subrate_mode,
+                                        uint8_t status);
 
 /** Callback invoked when the characteristics unoffloaded event for a given connection is received
  */

@@ -147,7 +147,6 @@ public class HeadsetServiceTest {
         doReturn(BluetoothDevice.BOND_BONDED)
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
@@ -193,7 +192,12 @@ public class HeadsetServiceTest {
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any(), any());
         mHeadsetService =
-                new HeadsetService(mAdapterService, mStorage, mNativeInterface, mSystemInterface);
+                new HeadsetService(
+                        mAdapterService,
+                        mStorage,
+                        mNativeInterface,
+                        mSystemInterface,
+                        mActiveDeviceManager);
         mHeadsetService.setAvailable(true);
         mHeadsetService.setForceScoAudio(true);
     }

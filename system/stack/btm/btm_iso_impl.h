@@ -366,7 +366,7 @@ struct iso_impl {
       auto stream_ptr = GetStream(cis_param.cis_conn_handle);
       log::assert_that(stream_ptr != nullptr, "No such cis: {}", cis_param.cis_conn_handle);
 
-      auto device_address = cis_hdl_to_addr[evt.cis_conn_hdl];
+      auto device_address = cis_hdl_to_addr[cis_param.cis_conn_handle];
 
       if (status != HCI_SUCCESS) {
         evt.status = status;
@@ -404,7 +404,7 @@ struct iso_impl {
 
       stream_ptr->state_flags |= kStateFlagIsConnecting;
 
-      BtmDevice* p_device = btm_find_dev_by_handle(el.acl_conn_handle);
+      const BtmDevice* p_device = btm_find_dev_by_handle(el.acl_conn_handle);
       if (p_device) {
         cis_hdl_to_addr[el.cis_conn_handle] = p_device->ble.pseudo_addr;
         BTM_LogHistory(kBtmLogTag, p_device->ble.pseudo_addr, "Establish CIS",
@@ -1192,9 +1192,9 @@ struct iso_impl {
     dprintf(fd, "  ----------------");
   }
 
-  void set_big_channel_map_classification(uint8_t action, uint8_t big_handle, uint8_t num_handles,
+  void set_big_channel_map_classification(uint8_t action, uint8_t big_handle,
                                           const std::vector<uint16_t>& handles) {
-    btsnd_hcic_ble_set_big_channel_map_classification_vsc(action, big_handle, num_handles, handles);
+    btsnd_hcic_ble_set_big_channel_map_classification_vsc(action, big_handle, handles);
   }
 
   std::unordered_map<uint16_t, RawAddress> cis_hdl_to_addr;

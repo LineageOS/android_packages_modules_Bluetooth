@@ -207,6 +207,106 @@ prop {
     prop_name: "bluetooth.ble.client.subrate_le_audio_mode_cont_number.config"
 }
 
+# Bluetooth Subrate Manager Mode Configurations : continuation number ratio
+prop {
+    api_name: "subrate_manager_low_mode_cont_num_ratio"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.low_mode_cont_num_ratio.config"
+}
+
+prop {
+    api_name: "subrate_manager_balanced_mode_cont_num_ratio"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.balanced_mode_cont_num_ratio.config"
+}
+
+prop {
+    api_name: "subrate_manager_high_mode_cont_num_ratio"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.high_mode_cont_num_ratio.config"
+}
+
+prop {
+    api_name: "subrate_manager_lea_mode_cont_num_ratio"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.lea_mode_cont_num_ratio.config"
+}
+
+# Bluetooth Subrate Manager Mode Configurations : continuation number maximum
+prop {
+    api_name: "subrate_manager_low_mode_cont_num_max"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.low_mode_cont_num_max.config"
+}
+
+prop {
+    api_name: "subrate_manager_balanced_mode_cont_num_max"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.balanced_mode_cont_num_max.config"
+}
+
+prop {
+    api_name: "subrate_manager_high_mode_cont_num_max"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.high_mode_cont_num_max.config"
+}
+
+prop {
+    api_name: "subrate_manager_lea_mode_cont_num_max"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.lea_mode_cont_num_max.config"
+}
+
+
+# Bluetooth Subrate Manager Mode Configurations : Fixed Parameter Flag
+prop {
+    api_name: "subrate_manager_low_mode_fixed_flag"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.low_mode_fixed_flag.config"
+}
+
+prop {
+    api_name: "subrate_manager_balanced_mode_fixed_flag"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.balanced_mode_fixed_flag.config"
+}
+
+prop {
+    api_name: "subrate_manager_high_mode_fixed_flag"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.high_mode_fixed_flag.config"
+}
+
+prop {
+    api_name: "subrate_manager_lea_mode_fixed_flag"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.sm.lea_mode_fixed_flag.config"
+}
+
 prop {
     api_name: "lecoc_fixed_psm_slots"
     type: Integer

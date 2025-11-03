@@ -38,7 +38,7 @@ namespace bttest {
 TEST_F(BluetoothTest, AdapterEnableDisable) {
   EXPECT_EQ(GetState(), BT_STATE_OFF) << "Test should be run with Adapter disabled";
 
-  EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+  EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
   semaphore_wait(adapter_state_changed_callback_sem_);
   EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";
 
@@ -51,7 +51,7 @@ TEST_F(BluetoothTest, AdapterRepeatedEnableDisable) {
   EXPECT_EQ(GetState(), BT_STATE_OFF) << "Test should be run with Adapter disabled";
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
-    EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";
 
@@ -110,7 +110,7 @@ static bool property_equals(const bt_property_t* p1, const bt_property_t* p2) {
 TEST_F(BluetoothTest, AdapterSetGetName) {
   bt_property_t* new_name = property_new_name("BluetoothTestName1");
 
-  EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+  EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
   semaphore_wait(adapter_state_changed_callback_sem_);
   EXPECT_EQ(GetState(), BT_STATE_ON) << "Test should be run with Adapter enabled";
 
@@ -152,7 +152,7 @@ TEST_F(BluetoothTest, AdapterSetGetName) {
 }
 
 TEST_F(BluetoothTest, AdapterStartDiscovery) {
-  EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+  EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
   semaphore_wait(adapter_state_changed_callback_sem_);
   EXPECT_EQ(GetState(), BT_STATE_ON) << "Test should be run with Adapter enabled";
 
@@ -166,7 +166,7 @@ TEST_F(BluetoothTest, AdapterStartDiscovery) {
 }
 
 TEST_F(BluetoothTest, AdapterCancelDiscovery) {
-  EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+  EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
   semaphore_wait(adapter_state_changed_callback_sem_);
   EXPECT_EQ(GetState(), BT_STATE_ON) << "Test should be run with Adapter enabled";
 
@@ -188,13 +188,13 @@ TEST_F(BluetoothTest, AdapterDisableDuringBonding) {
   RawAddress bdaddr = {{0x22, 0x22, 0x22, 0x22, 0x22, 0x22}};
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
-    EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";
 
-    EXPECT_EQ(bt_interface()->create_bond(&bdaddr, BT_TRANSPORT_BR_EDR), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->create_bond(bdaddr, BT_TRANSPORT_BR_EDR), BT_STATUS_SUCCESS);
 
-    EXPECT_EQ(bt_interface()->cancel_bond(&bdaddr), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->cancel_bond(bdaddr), BT_STATUS_SUCCESS);
 
     EXPECT_EQ(bt_interface()->disable(), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);
@@ -210,7 +210,7 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
     bt_interface()->init(callbacks, false, false, 0, false, "default");
-    EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
+    EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";
 

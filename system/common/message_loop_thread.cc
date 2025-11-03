@@ -163,8 +163,14 @@ void MessageLoopThread::ShutDown() {
     {
       std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
       handler_->Clear();
-      handler_->WaitUntilStopped(
-              kHandlerStopTimeout);  // this should be quick as the handler is already synchronized.
+    }
+
+    // To prevent deadlock, release the lock before waiting for the reactable to be unregistered.
+    // This is safe because the handler is already cleared and will no longer accept tasks.
+    handler_->WaitUntilStopped(kHandlerStopTimeout);
+
+    {
+      std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
       delete handler_;
       delete handler_thread_;
       // The destructor of os::Thread will stop and join the thread.

@@ -2320,25 +2320,30 @@ void btif_remove_local_irk_from_resolving_list() {
   }
 }
 
-void BTIF_dm_enable() {
+void BTIF_dm_enable(const std::string local_name) {
   btif_storage_prune_devices();
 
-  BD_NAME bdname;
-  bt_property_t prop{
-          .type = BT_PROPERTY_BDNAME,
-          .len = BD_NAME_LEN,
-          .val = (void*)bdname,
-  };
-
-  bt_status_t status = btif_storage_get_adapter_property(&prop);
-  if (status == BT_STATUS_SUCCESS) {
-    /* A name exists in the storage. Make this the device name */
-    BTA_DmSetDeviceName((const char*)prop.val);
+  if (com_android_bluetooth_flags_set_name_in_system_server()) {
+    log::debug("Adapter local name is {}", local_name);
+    BTA_DmSetDeviceName(local_name.c_str());
   } else {
-    /* Storage does not have a name yet.
-     * Use the default name and write it to the chip
-     */
-    BTA_DmSetDeviceName(btif_get_default_local_name());
+    BD_NAME bdname;
+    bt_property_t prop{
+            .type = BT_PROPERTY_BDNAME,
+            .len = BD_NAME_LEN,
+            .val = (void*)bdname,
+    };
+
+    bt_status_t status = btif_storage_get_adapter_property(&prop);
+    if (status == BT_STATUS_SUCCESS) {
+      /* A name exists in the storage. Make this the device name */
+      BTA_DmSetDeviceName((const char*)prop.val);
+    } else {
+      /* Storage does not have a name yet.
+       * Use the default name and write it to the chip
+       */
+      BTA_DmSetDeviceName(btif_get_default_local_name());
+    }
   }
 
   /* Enable or disable local privacy */
@@ -3177,6 +3182,9 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
   log::verbose("type=0x{:x}", prop->type);
   switch (prop->type) {
     case BT_PROPERTY_BDNAME: {
+      if (com_android_bluetooth_flags_set_name_in_system_server()) {
+        log::fatal("Invalid set/get name within native config under set from system server flag");
+      }
       bt_bdname_t* bd_name = (bt_bdname_t*)prop->val;
       strncpy((char*)bd_name->name, (char*)btif_get_default_local_name(),
               sizeof(bd_name->name) - 1);

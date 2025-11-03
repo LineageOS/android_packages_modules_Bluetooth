@@ -73,15 +73,7 @@
        return;
      }
 
-     ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                     sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-     if (!addr.get()) {
-       log::error("Failed to new bd addr jbyteArray for on start va session");
-       return;
-     }
-
-     sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                      reinterpret_cast<const jbyte*>(&bd_addr));
+     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onStartVaSession, addr.get());
    }
 
@@ -94,15 +86,7 @@
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Failed to new bd addr jbyteArray for on stop va session");
-      return;
-    }
-
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                     reinterpret_cast<const jbyte*>(&bd_addr));
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onStopVaSession, addr.get());
   }
  };

@@ -1009,6 +1009,16 @@ void Device::HandlePlayItem(uint8_t label, std::shared_ptr<PlayItemRequest> pkt)
     return;
   }
 
+  if (com_android_bluetooth_flags_fix_play_item_non_playable_folder() &&
+      pkt->GetScope() == Scope::VFS &&
+      non_playable_vfs_uids_.find(pkt->GetUid()) != non_playable_vfs_uids_.end()) {
+    log::warn("{}: Request to play non-playable folder", address_);
+    auto response =
+            RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::FOLDER_ITEM_NOT_PLAYABLE);
+    send_message(label, false, std::move(response));
+    return;
+  }
+
   log::verbose("scope={} uid={}", pkt->GetScope(), pkt->GetUid());
 
   std::string media_id = "";
@@ -1566,7 +1576,11 @@ void Device::GetVFSListResponse(uint8_t label, std::shared_ptr<GetFolderItemsReq
   // an operation.
   for (const auto& item : items) {
     if (item.type == ListItem::FOLDER) {
-      vfs_ids_.insert(item.folder.media_id);
+      uint64_t item_uid = vfs_ids_.insert(item.folder.media_id);
+      if (com_android_bluetooth_flags_fix_play_item_non_playable_folder() &&
+          !item.folder.is_playable) {
+        non_playable_vfs_uids_.insert(item_uid);
+      }
     } else if (item.type == ListItem::SONG) {
       vfs_ids_.insert(item.song.media_id);
     }

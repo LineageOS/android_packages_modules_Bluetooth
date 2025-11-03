@@ -24,6 +24,7 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
+#include <cstdint>
 #include <deque>
 #include <list>
 #include <map>
@@ -75,6 +76,8 @@ inline std::string gatt_security_action_text(const tGATT_SEC_ACTION& action) {
 #define GATT_AUTH_SIGN_LEN 12
 
 #define GATT_HDR_SIZE 3 /* 1B opcode + 2B handle */
+
+#define GATT_SUBRATE_MAX_RETRY 3
 
 /* wait for ATT cmd response timeout value */
 #define GATT_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
@@ -413,6 +416,55 @@ typedef struct {
 } tGATT_OFFLOAD_SESSION;
 
 typedef struct {
+  tGATT_SUBRATE_MODE mode;
+  // true: fixed value, false:dynamic
+  bool fixed_config;
+
+  // cont_num config for dymaic
+  uint16_t cont_num_ratio;
+  uint16_t cont_num_max;
+  // subrate parameter for fixed
+  uint16_t subrate_min;
+  uint16_t subrate_max;
+  uint16_t cont_num;
+} tGATT_SUBRATE_MODE_CONFIG;
+
+#define GATT_SUBRATE_REQ_TYPE_NEW_REQ 0     /* new subrate request  */
+#define GATT_SUBRATE_REQ_TYPE_CONN_UPDATE 1 /* connection update */
+
+typedef struct {
+  int request_type;  // 0: subrate, 1: conn_update
+  tGATT_IF client_if;
+  RawAddress bda;
+  tGATT_SUBRATE_MODE mode;
+} tGATT_SUBRATE_REQ;
+
+typedef struct {
+  tGATT_SUBRATE_MODE mode;
+  uint16_t conn_interval;
+  uint16_t periph_latency;
+
+  uint16_t subrate_min;
+  uint16_t subrate_max;
+  uint16_t max_latency;
+  uint16_t cont_num;
+  uint16_t timeout;
+
+  uint16_t subrate_factor;
+} tGATT_SUBRATE_CONFIG;
+
+typedef struct {
+  RawAddress bda;
+  tGATT_SUBRATE_SM_STATE state;                // state_machine
+  std::list<tGATT_SUBRATE_REQ> pending_queue;  // pending add queue
+  std::unordered_map<tGATT_SUBRATE_MODE, std::list<tGATT_IF>> config_map;
+  bool has_new_request;
+  int retry_count;
+  tGATT_SUBRATE_CONFIG pending_config;
+  tGATT_SUBRATE_CONFIG current_config;
+} tGATT_SUBRATE_MGR_CB;
+
+typedef struct {
   tGATT_TCB tcb[GATT_MAX_PHY_CHANNEL];
   fixed_queue_t* sign_op_queue;
 
@@ -466,6 +518,8 @@ typedef struct {
   bool over_br_enabled;
 
   std::unordered_map<uint16_t, tGATT_OFFLOAD_SESSION> offload_sessions;
+  std::unordered_map<tGATT_SUBRATE_MODE, tGATT_SUBRATE_MODE_CONFIG> subrate_mode_config;
+  std::unordered_map<RawAddress, tGATT_SUBRATE_MGR_CB> subrate_info;
 } tGATT_CB;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
@@ -503,13 +557,41 @@ struct tTCB_STATE_HISTORY {
 
 extern bluetooth::common::TimestampedCircularBuffer<tTCB_STATE_HISTORY> tcb_state_history_;
 
+/* Subrate Parameter Fixed config Flag */
+static constexpr bool kDefaultSubrateMgrLowModeFixedConfig = false;
+static constexpr bool kDefaultSubrateMgrBalancedModeFixedConfig = false;
+static constexpr bool kDefaultSubrateMgrHighModeFixedConfig = false;
+static constexpr bool kDefaultSubrateMgrLeaModeFixedConfig = true;
+
+/* Subrate Manager Dynamic Ratio for cont_num vs factor */
+static constexpr uint16_t kDefaultSubrateMgrLowModeRatio = 25;
+static constexpr uint16_t kDefaultSubrateMgrBalancedModeRatio = 50;
+static constexpr uint16_t kDefaultSubrateMgrHighModeRatio = 75;
+static constexpr uint16_t kDefaultSubrateMgrLeaModeRatio = 100;
+
+/* Subrate Manager Fixed Parameter config */
+static constexpr uint16_t kDefaultSubrateLeAudioModeMaxSubrate = 2;
+static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 1;
+static constexpr uint16_t kDefaultSubrateLeAudioModeContNum = 1;
+
+static constexpr uint16_t kDefaultSubrateHighModeMaxSubrate = 4;
+static constexpr uint16_t kDefaultSubrateHighModeMinSbrate = 2;
+static constexpr uint16_t kDefaultSubrateHighModeContNum = 1;
+
+static constexpr uint16_t kDefaultSubrateBalancedModeMaxSubrate = 7;
+static constexpr uint16_t kDefaultSubrateBalancedModeMinSubrate = 5;
+static constexpr uint16_t kDefaultSubrateBalancedModeContNum = 4;
+
+static constexpr uint16_t kDefaultSubrateLowModeMaxSubrate = 10;
+static constexpr uint16_t kDefaultSubrateLowModeMinSubrate = 8;
+static constexpr uint16_t kDefaultSubrateLowModeContNum = 6;
+
 /* from gatt_main.cc */
 void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment);
 bool gatt_disconnect(tGATT_TCB* p_tcb);
-bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                      int8_t initiating_phys);
+bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                      tBT_TRANSPORT transport, int8_t initiating_phys);
+                      tBT_TRANSPORT transport);
 void gatt_data_process(tGATT_TCB& p_tcb, uint16_t cid, BT_HDR* p_buf);
 void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_add,
                                    bool check_acl_link);
@@ -674,6 +756,17 @@ void gatt_verify_signature(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf);
 tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb);
 tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb);
 void gatt_set_sec_act(tGATT_TCB* p_tcb, tGATT_SEC_ACTION sec_act);
+
+/* gatt_subrate_manager.cc */
+void gatt_init_subrate_cb(const RawAddress& bd_addr);
+void gatt_release_subrate_cb(const RawAddress& bd_addr);
+bool gatt_register_subrate_config(tGATT_IF client_if, const RawAddress& bd_addr,
+                                  tGATT_SUBRATE_MODE subrate_mode);
+bool gatt_handle_subrate_cback_status(const RawAddress& bda, uint16_t subrate_factor,
+                                      uint16_t latency, uint16_t cont_num, uint16_t timeout,
+                                      uint8_t status);
+void gatt_handle_conn_parameter_cback_status(const RawAddress& bda, uint16_t interval);
+void gatt_init_subrate_mode_config();
 
 /* gatt_db.cc */
 void gatts_init_service_db(tGATT_SVC_DB& db, const bluetooth::Uuid& service, bool is_pri,

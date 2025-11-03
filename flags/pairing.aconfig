@@ -242,3 +242,30 @@ flag {
     description: "Permission improvements for pairing in 26Q2"
     bug: "449010608"
 }
+
+flag {
+    name: "enable_autonomous_repairing"
+    namespace: "bluetooth"
+    description: "Enable autonomous re-pairing when bond loss is detected."
+    bug: "442712426"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "detect_bondloss_legacy_bredr_pairing"
+    namespace: "bluetooth"
+    description: "Detect bond loss during legacy BR/EDR pairing"
+    bug: "455785260"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "provide_pairing_algo"
+    namespace: "bluetooth"
+    description: "Add pairing algorithm in pairing request"
+    bug: "453979807"
+}

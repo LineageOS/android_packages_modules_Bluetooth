@@ -245,6 +245,7 @@ typedef struct {
   uint16_t latency;
   uint16_t cont_num;
   uint16_t timeout;
+  tGATT_SUBRATE_MODE subrate_mode;
   tGATT_STATUS status;
 } tBTA_GATTC_SUBRATE_CHG;
 
@@ -426,6 +427,7 @@ typedef struct {
   uint16_t latency;
   uint16_t cont_num;
   uint16_t timeout;
+  tGATT_SUBRATE_MODE subrate_mode;
   tGATT_STATUS status;
 } tBTA_GATTS_SUBRATE_CHG;
 
@@ -513,14 +515,13 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  * Parameters       client_if: server interface.
  *                  remote_bda: remote device BD address.
  *                  connection_type: connection type used for the peer device
- *                  initiating_phys: LE PHY to use, optional
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic);
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
                     tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                    uint8_t initiating_phys, uint16_t preferred_mtu, bool prefer_relax_mode);
+                    uint16_t preferred_mtu, bool prefer_relax_mode);
 
 /*******************************************************************************
  *
@@ -895,6 +896,40 @@ void BTA_GATTC_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_el
  *
  ******************************************************************************/
 void BTA_GATTC_UnoffloadCharacteristics(tCONN_ID conn_id, int session_id);
+
+/*******************************************************************************
+ * Function         BTA_GATTC_SubrateModeRequest
+ *
+ * Description      subrate mode request, can only be used when connection is up.
+ *
+ * Parameters:      client_if     - client interface.
+ *                  bd_addr       - BD address of the peer
+ *                  subrate_mode  - subrate mode [none/low/balanced/high/lea]
+ *
+ * Returns          tGATT_STATUS
+ *
+ ******************************************************************************/
+tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
+                              tGATT_SUBRATE_MODE subrate_mode);
+
+/*******************************************************************************
+ * Function         BTA_GATTC_SubrateModeRequest
+ *
+ * Description      Update fixed subrate parameters of subrate mode in config.
+ *                  Subrate mode request, can only be used when connection is up.
+ *
+ * Parameters:      client_if     - client interface.
+ *                  bd_addr       - BD address of the peer
+ *                  subrate_mode  - subrate mode [none/low/balanced/high/lea]
+ *                  Subrate parameters
+ *
+ * Returns          tGATT_STATUS
+ *
+ ******************************************************************************/
+tGATT_STATUS BTA_GATTC_SubrateModeRequest(tGATT_IF client_if, const RawAddress& bd_addr,
+                                          tGATT_SUBRATE_MODE subrate_mode,
+                                          uint16_t subrate_max, uint16_t subrate_min,
+                                          uint16_t cont_num);
 
 /*******************************************************************************
  *  BTA GATT Server API

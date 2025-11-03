@@ -2,26 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "dump_without_promise_timeout"
-    namespace: "bluetooth"
-    description: "Remove the promise timeout for the dump"
-    bug: "404703494"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "remove_hop_from_le_adv_set_term"
-    namespace: "bluetooth"
-    description: "Remove one hop from the handling of LE Advertising Set Terminated handling to be consistent with the add_hop_to_event_callback flagged change for subevent callback"
-    bug: "407893031"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "set_ptr_null_after_free"
     namespace: "bluetooth"
     description: "Set the alarm pointers to null after freeing them"
@@ -80,6 +60,16 @@ flag {
     namespace: "bluetooth"
     description: "Fix use of object passed to handler bind after the object is destroyed."
     bug: "433736221"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "add_watchdog_with_timeout"
+    namespace : "bluetooth"
+    description: "Implement a watchdog mechanism with a set timeout to monitor the AIDL backend callback. If the timeout is exceeded, trigger the generation of a tombstone."
+    bug: "452756731"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

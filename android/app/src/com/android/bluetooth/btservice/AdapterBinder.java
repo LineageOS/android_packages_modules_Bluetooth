@@ -26,14 +26,14 @@ import android.bluetooth.IAdapter;
 import android.bluetooth.IBluetoothCallback;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 
 class AdapterBinder extends IAdapter.Stub {
-    private static final String TAG = Utils.BT_PREFIX + AdapterBinder.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterBinder.class.getSimpleName();
 
     private final AdapterService mService;
 
@@ -147,6 +147,16 @@ class AdapterBinder extends IAdapter.Stub {
             return;
         }
         service.bleOnToOff();
+    }
+
+    @Override
+    public void setName(String name) {
+        Log.v(TAG, "setName(" + name + ")");
+        AdapterService service = getServiceAndEnforcePrivileged();
+        if (service == null) {
+            return;
+        }
+        service.setName(name);
     }
 
     @Override

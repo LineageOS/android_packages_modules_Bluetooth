@@ -2275,19 +2275,9 @@ public class BassClientStateMachineTest {
         BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
         mStateMachine.mPendingMetadata = metadata;
 
-        if (Flags.leaudioBisSyncControl()) {
-            sendMessageAndVerifyTransition(
-                    mStateMachine.obtainMessage(REMOVE_BCAST_SOURCE, TEST_SOURCE_ID),
-                    BassClientStateMachine.ConnectedProcessing.class);
-        } else {
-            sendMessageAndVerifyTransition(
-                    mStateMachine.obtainMessage(
-                            UPDATE_BCAST_SOURCE,
-                            TEST_SOURCE_ID,
-                            BassConstants.PA_SYNC_DO_NOT_SYNC,
-                            metadata),
-                    BassClientStateMachine.ConnectedProcessing.class);
-        }
+        sendMessageAndVerifyTransition(
+                mStateMachine.obtainMessage(REMOVE_BCAST_SOURCE, TEST_SOURCE_ID),
+                BassClientStateMachine.ConnectedProcessing.class);
         assertThat(mStateMachine.mPendingOperation).isEqualTo(UPDATE_BCAST_SOURCE);
         assertThat(mStateMachine.mPendingSourceId).isEqualTo(TEST_SOURCE_ID);
 
@@ -2338,24 +2328,13 @@ public class BassClientStateMachineTest {
         mStateMachine.mPendingMetadata = updatedMetadataPaused;
         byte[] valueBisPaused = convertMetadataToUpdateSourceByteArray(updatedMetadataPaused);
 
-        if (Flags.leaudioBisSyncControl()) {
-            sendMessageAndVerifyTransition(
-                    mStateMachine.obtainMessage(
-                            UPDATE_BCAST_SOURCE,
-                            TEST_SOURCE_ID,
-                            BassConstants.FLAG_SYNC_PA
-                                    | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE,
-                            updatedMetadataPaused),
-                    BassClientStateMachine.ConnectedProcessing.class);
-        } else {
-            sendMessageAndVerifyTransition(
-                    mStateMachine.obtainMessage(
-                            UPDATE_BCAST_SOURCE,
-                            TEST_SOURCE_ID,
-                            BassConstants.INVALID_PA_SYNC_VALUE,
-                            updatedMetadataPaused),
-                    BassClientStateMachine.ConnectedProcessing.class);
-        }
+        sendMessageAndVerifyTransition(
+                mStateMachine.obtainMessage(
+                        UPDATE_BCAST_SOURCE,
+                        TEST_SOURCE_ID,
+                        BassConstants.FLAG_SYNC_PA | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE,
+                        updatedMetadataPaused),
+                BassClientStateMachine.ConnectedProcessing.class);
         assertThat(mStateMachine.mPendingOperation).isEqualTo(UPDATE_BCAST_SOURCE);
         assertThat(mStateMachine.mPendingSourceId).isEqualTo(TEST_SOURCE_ID);
         verify(scanControlPoint).setValue(eq(valueBisPaused));
@@ -2417,7 +2396,6 @@ public class BassClientStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BIS_SYNC_CONTROL)
     public void remoteRemovedBroadcastSource_clearPendingOperations() {
         prepareInitialReceiveStateForGatt();
 

@@ -1546,6 +1546,20 @@ void LeAudioDevice::StartConnSubrate() {
     return;
   }
 
+  if (com::android::bluetooth::flags::le_subrate_manager()) {
+      stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
+      tGATT_STATUS status =
+          BTA_GATTC_SubrateModeRequest(client_if_, address_, GATT_SUBRATE_MODE_LEA);
+
+      if (status != GATT_SUCCESS) {
+        log::error("Fail to request subrate mode.");
+      } else {
+        SetSubrateState(SubrateState::PENDING_ENABLING_SUBRATE_UPDATE);
+      }
+
+      return;
+  }
+
   stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
   stack::l2cap::get_interface().L2CA_SubrateRequest(address_, min_subrate, max_subrate, 0,
                                                     cont_number, supervision_timeout);
@@ -1559,6 +1573,11 @@ void LeAudioDevice::StopConnSubrate() {
   }
 
   stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, false);
+
+  if (com::android::bluetooth::flags::le_subrate_manager()) {
+    BTA_GATTC_SubrateModeRequest(client_if_, address_, GATT_SUBRATE_MODE_OFF);
+  }
+
   SetSubrateState(SubrateState::DISABLED);
 }
 

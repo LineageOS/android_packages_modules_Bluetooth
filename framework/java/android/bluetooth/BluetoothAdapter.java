@@ -1750,6 +1750,21 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean setName(String name) {
+        if (Flags.setNameInSystemServer()) {
+            if (Flags.bluetoothSystemServerMessenger()) {
+                var data = new SystemServiceMessage.SetName();
+                data.attributionSource = mAttributionSource;
+                data.name = name;
+                mSystemServiceMessenger.send(data);
+                return true;
+            }
+            try {
+                mManagerService.setName(name, mAttributionSource);
+                return true;
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
+        }
         if (getState() != STATE_ON) {
             return false;
         }

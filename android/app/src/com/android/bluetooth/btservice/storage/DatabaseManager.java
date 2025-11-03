@@ -40,6 +40,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -60,7 +61,7 @@ import java.util.stream.Collectors;
  * The active device manager is responsible to handle a Room database for Bluetooth persistent data.
  */
 public class DatabaseManager {
-    private static final String TAG = Utils.BT_PREFIX + DatabaseManager.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + DatabaseManager.class.getSimpleName();
 
     private static final int LOAD_DATABASE_TIMEOUT_MS = 500;
     private static final int MSG_LOAD_DATABASE = 0;

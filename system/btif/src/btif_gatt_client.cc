@@ -252,7 +252,7 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       HAL_CBACK(callbacks, client->subrate_chg_cb, static_cast<int>(p_data->subrate_chg.conn_id),
                 p_data->subrate_chg.subrate_factor, p_data->subrate_chg.latency,
                 p_data->subrate_chg.cont_num, p_data->subrate_chg.timeout,
-                p_data->subrate_chg.status);
+                p_data->subrate_chg.subrate_mode, p_data->subrate_chg.status);
       break;
 
     case BTA_GATTC_CHARACTERISTICS_UNOFFLOADED_EVT:
@@ -322,7 +322,7 @@ static bt_status_t btif_gattc_unregister_app(int client_if) {
 
 void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr_type,
                           bool is_direct, tBT_TRANSPORT transport, bool opportunistic,
-                          int initiating_phys, int preferred_mtu, bool prefer_relax_mode) {
+                          int preferred_mtu, bool prefer_relax_mode) {
   int device_type = BT_DEVICE_TYPE_UNKNOWN;
 
   if (addr_type == BLE_ADDR_RANDOM) {
@@ -362,22 +362,21 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
   }
 
   // Connect!
-  log::info("Transport={}, device type={}, address={}, address type={}, phy={}",
-            bt_transport_text(transport), DeviceTypeText(device_type),
-            address, addr_type, initiating_phys);
+  log::info("Transport={}, device type={}, address={}, address type={}",
+            bt_transport_text(transport), DeviceTypeText(device_type), address, addr_type);
   tBTM_BLE_CONN_TYPE type = is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
-  BTA_GATTC_Open(client_if, address, addr_type, type, transport, opportunistic, initiating_phys,
-                 preferred_mtu, prefer_relax_mode);
+  BTA_GATTC_Open(client_if, address, addr_type, type, transport, opportunistic, preferred_mtu,
+                 prefer_relax_mode);
 }
 
 static bt_status_t btif_gattc_open(int client_if, const RawAddress& bd_addr, uint8_t addr_type,
                                    bool is_direct, int transport, bool opportunistic,
-                                   int initiating_phys, int preferred_mtu, bool prefer_relax_mode) {
+                                   int preferred_mtu, bool prefer_relax_mode) {
   CHECK_BTGATT_INIT();
   // Closure will own this value and free it.
   return do_in_jni_thread(Bind(&btif_gattc_open_impl, client_if, bd_addr, addr_type, is_direct,
-                               to_bt_transport(transport), opportunistic, initiating_phys,
-                               preferred_mtu, prefer_relax_mode));
+                               to_bt_transport(transport), opportunistic, preferred_mtu,
+                               prefer_relax_mode));
 }
 
 void btif_gattc_close_impl(int client_if, RawAddress address, int conn_id) {
@@ -668,6 +667,22 @@ static bt_status_t btif_gattc_subrate_request(const RawAddress& bd_addr, int sub
                                subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
 
+static void btif_gattc_subrate_mode_request_impl(int client_if, const RawAddress& addr,
+                                                 tGATT_SUBRATE_MODE subrate_mode) {
+  if (BTA_DmGetConnectionState(addr)) {
+    log::info("client_if={}, bd_addr={}, subrate_mode={}", client_if, addr, subrate_mode);
+    BTA_GATTC_SubrateModeRequest(client_if, addr, subrate_mode);
+  }
+}
+
+static bt_status_t btif_gattc_subrate_mode_request(int client_if, const RawAddress& bd_addr,
+                                                   uint8_t subrate_mode) {
+  CHECK_BTGATT_INIT();
+  tGATT_SUBRATE_MODE mode = (tGATT_SUBRATE_MODE) subrate_mode;
+  return do_in_jni_thread(Bind(base::IgnoreResult(&btif_gattc_subrate_mode_request_impl),
+                                                  client_if, bd_addr, mode));
+}
+
 static bt_status_t btif_gattc_offload_characteristics(int conn_id, btgatt_db_element_t* service,
                                                       size_t elements_count, uint64_t endpoint_id,
                                                       uint64_t hub_id,
@@ -726,6 +741,7 @@ const btgatt_client_interface_t btgattClientInterface = {
         btif_gattc_set_preferred_phy,
         btif_gattc_read_phy,
         btif_gattc_subrate_request,
+        btif_gattc_subrate_mode_request,
         btif_gattc_offload_characteristics,
         btif_gattc_unoffload_characteristics,
 };

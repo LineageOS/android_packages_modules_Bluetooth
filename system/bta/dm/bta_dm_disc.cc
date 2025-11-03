@@ -141,8 +141,7 @@ struct gatt_interface_t {
                    tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
                    bool prefer_relax_mode) {
                   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type,
-                                 BT_TRANSPORT_LE, opportunistic, LE_PHY_1M, preferred_mtu,
-                                 prefer_relax_mode);
+                                 BT_TRANSPORT_LE, opportunistic, preferred_mtu, prefer_relax_mode);
                 },
 };
 

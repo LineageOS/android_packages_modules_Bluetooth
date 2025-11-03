@@ -41,6 +41,7 @@ import android.os.UserHandle;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
@@ -62,7 +63,7 @@ import java.util.stream.Stream;
  * device is in bonding / unbonding state.
  */
 public final class BondStateMachine extends StateMachine {
-    private static final String TAG = Utils.BT_PREFIX + BondStateMachine.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + BondStateMachine.class.getSimpleName();
 
     // State machine command messages (Java -> Native)
     static final int MESSAGE_CREATE_BOND = 1;

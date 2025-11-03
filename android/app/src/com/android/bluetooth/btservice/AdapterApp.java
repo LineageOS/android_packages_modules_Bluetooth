@@ -19,10 +19,10 @@ package com.android.bluetooth.btservice;
 import android.app.Application;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 
 public class AdapterApp extends Application {
-    private static final String TAG = Utils.BT_PREFIX + AdapterApp.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterApp.class.getSimpleName();
 
     @Override
     public void onCreate() {

@@ -330,7 +330,6 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
             super(8, IpcDataCache.MODULE_BLUETOOTH, api, api, query);
         }
     }
-    ;
 
     @Hide
     @RequiresNoPermission

@@ -20,6 +20,7 @@ aconfig_declarations {
         "btif_dm.aconfig",
         "btm_ble.aconfig",
         "btm_iso.aconfig",
+        "classic_connections.aconfig",
         "connectivity.aconfig",
         "dis.aconfig",
         "framework.aconfig",

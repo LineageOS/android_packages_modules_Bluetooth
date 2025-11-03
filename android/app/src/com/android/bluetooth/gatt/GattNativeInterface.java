@@ -49,7 +49,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             boolean isDirect,
             int transport,
             boolean opportunistic,
-            int initiatingPhys,
             int preferredMtu,
             boolean preferRelaxMode);
 
@@ -146,6 +145,11 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             int contNumber,
             int supervisionTimeout);
 
+    private native int gattSubrateModeRequestNative(
+            int clientIf,
+            String address,
+            int subrateMode);
+
     private native GattOffloadSession.InnerParcel gattClientOffloadCharacteristicsNative(
             int connId, List<GattDbElement> characteristics, long endpointId, long hubId);
 
@@ -198,7 +202,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             boolean isDirect,
             int transport,
             boolean opportunistic,
-            int initiatingPhys,
             int preferredMtu,
             boolean preferRelaxMode) {
         gattClientConnectNative(
@@ -208,7 +211,6 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
                 isDirect,
                 transport,
                 opportunistic,
-                initiatingPhys,
                 preferredMtu,
                 preferRelaxMode);
     }
@@ -315,7 +317,7 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
                 maxConnectionEventLen);
     }
 
-    /** Update connection parameter. */
+    /** Update subrate parameter. */
     int gattSubrateRequest(
             int clientIf,
             BluetoothDevice device,
@@ -332,6 +334,17 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
                 maxLatency,
                 contNumber,
                 supervisionTimeout);
+    }
+
+    /** Update subrate mode. */
+    int gattSubrateModeRequest(
+            int clientIf,
+            BluetoothDevice device,
+            int subrateMode) {
+        return gattSubrateModeRequestNative(
+                clientIf,
+                device.getAddress(),
+                subrateMode);
     }
 
     /** Register GATT server */

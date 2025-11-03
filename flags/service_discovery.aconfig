@@ -30,3 +30,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "send_discovered_dev_to_new_pkgs"
+    namespace: "bluetooth"
+    description: "Send already discovered device to new packages starting discovery"
+    bug: "450710779"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -190,7 +190,7 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   btm_sec_clear_ble_keys(p_device);
   wipe_secrets_and_remove(p_device);
   /* Tell controller to get rid of the link key, if it has one stored */
-  BTM_DeleteStoredLinkKey(&bda, NULL);
+  btm_sec_hci_delete_stored_link_key(bda);
   log::info("{} complete", bd_addr);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Device removed",
                  std::format("device_type:{} bond_type:{}", DeviceTypeText(device_type),
@@ -335,7 +335,7 @@ static bool is_handle_equal(void* data, void* context) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
+static BtmDevice* btm_find_dev_by_handle_(uint16_t handle) {
   if (handle == HCI_INVALID_HANDLE) {
     return nullptr;
   }
@@ -355,6 +355,18 @@ BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
   }
 
   return nullptr;
+}
+
+const BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
+  return btm_find_dev_by_handle_(handle);
+}
+
+BtmDevice* btm_get_dev_by_handle(uint16_t handle) {
+  if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+    return btm_find_dev_by_handle_(handle); // non-const return
+  }
+
+  return get_main_thread()->DoInThreadSynchronously(&btm_find_dev_by_handle_, handle);
 }
 
 static bool is_not_same_identity_or_pseudo_address(void* data, void* context) {
@@ -793,6 +805,11 @@ BtmDevice* btm_sec_allocate_dev_rec(void) {
     p_device = static_cast<BtmDevice*>(osi_calloc(sizeof(BtmDevice)));
     list_append(btm_sec_cb.sec_dev_rec, p_device);
   } else {
+    if (!btm_sec_cb.IsSecCBInitialized()) {
+      log::warn("Security CB is not initialized");
+      return nullptr;
+    }
+
     for (BtmDevice& device : btm_sec_cb.device_records) {
       if (!device.IsInitialized()) {
         p_device = &device;

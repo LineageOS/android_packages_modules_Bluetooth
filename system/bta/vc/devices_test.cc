@@ -59,7 +59,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     devices_ = new VolumeControlDevices();
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
@@ -222,7 +221,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     device = new VolumeControlDevice(GetTestAddress(1), true);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
@@ -767,14 +765,10 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_handles_first) {
     device->VerifyReady(handle);
   }
 
-  if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
-    ASSERT_EQ(true, device->device_ready);
-  } else {
-    ASSERT_EQ(false, device->device_ready);
-    device->group_id = 5;  // Set by VolumeControl in verify_device_ready
-    device->VerifyReady();
-    ASSERT_EQ(true, device->device_ready);
-  }
+  ASSERT_EQ(false, device->device_ready);
+  device->group_id = 5;  // Set by VolumeControl in verify_device_ready
+  device->VerifyReady();
+  ASSERT_EQ(true, device->device_ready);
 }
 
 TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread_single_read_remaining) {

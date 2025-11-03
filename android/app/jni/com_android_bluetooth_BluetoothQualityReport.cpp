@@ -62,16 +62,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Error while allocation byte array for addr");
-      return;
-    }
-
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                     (jbyte*)bd_addr.address.data());
-
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     ScopedLocalRef<jbyteArray> raw_data(sCallbackEnv.get(),
                                         sCallbackEnv->NewByteArray(bqr_raw_data.size()));
     if (!raw_data.get()) {

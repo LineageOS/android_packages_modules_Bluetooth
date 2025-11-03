@@ -67,21 +67,6 @@ static jobject mCallbacksObj = nullptr;
 static jfieldID sCallbacksField;
 static std::shared_timed_mutex callbacks_mutex;
 
-static jbyteArray marshall_bda(RawAddress* bd_addr) {
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid()) {
-    return nullptr;
-  }
-
-  jbyteArray addr = sCallbackEnv->NewByteArray(sizeof(RawAddress));
-  if (!addr) {
-    log::error("Fail to new jbyteArray bd addr");
-    return nullptr;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr, 0, sizeof(RawAddress), (jbyte*)bd_addr);
-  return addr;
-}
-
 class JniHeadsetCallbacks : bluetooth::headset::Callbacks {
 public:
   static bluetooth::headset::Callbacks* GetInstance() {
@@ -99,11 +84,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
                                  addr.get(), (jint)reason);
   }
@@ -118,11 +100,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state,
                                  addr.get());
   }
@@ -135,12 +114,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVrStateChanged, (jint)state, addr.get());
   }
 
@@ -151,12 +126,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAnswerCall, addr.get());
   }
 
@@ -167,12 +138,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onHangupCall, addr.get());
   }
 
@@ -184,12 +151,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVolumeChanged, (jint)type, (jint)volume,
                                  addr.get());
   }
@@ -201,11 +164,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
 
     char null_str[] = "";
     if (!sCallbackEnv.isValidUtf(number)) {
@@ -224,11 +184,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
 
     // TBD dtmf has changed from int to char
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSendDtmf, dtmf, addr.get());
@@ -241,11 +198,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onNoiseReductionEnable,
                                  nrec == bluetooth::headset::BTHF_NREC_START, addr.get());
   }
@@ -257,11 +211,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (addr.get() == nullptr) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onWBS, wbs_config, addr.get());
   }
 
@@ -273,11 +224,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (addr.get() == nullptr) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSWB, swb_codec, swb_config, addr.get());
   }
 
@@ -288,14 +236,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)bd_addr);
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtChld, chld, addr.get());
   }
 
@@ -306,12 +248,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtCnum, addr.get());
   }
 
@@ -322,12 +260,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtCind, addr.get());
   }
 
@@ -338,12 +272,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtCops, addr.get());
   }
 
@@ -354,12 +284,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtClcc, addr.get());
   }
 
@@ -370,11 +296,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
 
     char null_str[] = "";
     if (!sCallbackEnv.isValidUtf(at_string)) {
@@ -393,12 +316,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (!addr.get()) {
-      log::error("Fail to new jbyteArray bd addr for audio state");
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onKeyPressed, addr.get());
   }
 
@@ -409,10 +328,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (addr.get() == nullptr) {
-      return;
-    }
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
 
     char null_str[] = "";
     if (!sCallbackEnv.isValidUtf(at_string)) {
@@ -433,11 +350,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (addr.get() == nullptr) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBiev, ind_id, (jint)ind_value,
                                  addr.get());
   }
@@ -450,11 +364,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (addr.get() == nullptr) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBia, service, roam, signal, battery,
                                  addr.get());
   }
@@ -466,11 +377,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-    if (addr.get() == nullptr) {
-      return;
-    }
-
+    // TODO(b/424272093) Unchecked RawAddress* dereference.
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBcc, addr.get());
   }
 

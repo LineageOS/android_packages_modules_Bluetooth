@@ -67,7 +67,7 @@ BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_dev::btm_find_dev.body(bd_addr);
 }
-BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) {
+const BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) {
   inc_func_call_count(__func__);
   return nullptr;
 }

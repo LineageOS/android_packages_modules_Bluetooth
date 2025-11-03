@@ -38,6 +38,7 @@ import android.os.SystemProperties;
 import android.util.Log;
 import android.view.Display;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -54,7 +55,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AdapterSuspend {
-    private static final String TAG = Utils.BT_PREFIX + AdapterSuspend.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterSuspend.class.getSimpleName();
 
     // Event mask bits corresponding to specific HCI events
     // as defined in Bluetooth core v5.4, Vol 4, Part E, 7.3.1.

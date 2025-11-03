@@ -45,14 +45,14 @@ import android.bluetooth.BluetoothProfile.VOLUME_CONTROL
 import android.bluetooth.BluetoothProfile.getProfileName
 import android.bluetooth.BluetoothUuid
 import android.util.Log
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.Utils.arrayContains
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.hid.HidHostService
 import com.android.bluetooth.storage.BluetoothStorageManager
 
-private const val TAG = Utils.BT_PREFIX + "ConnectableProfile"
+private const val TAG = Util.BT_PREFIX + "ConnectableProfile"
 
 // Base class for a Bluetooth profile that supports connection semantics
 abstract class ConnectableProfile

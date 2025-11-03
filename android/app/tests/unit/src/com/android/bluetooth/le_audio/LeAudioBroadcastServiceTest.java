@@ -71,8 +71,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.annotation.Nullable;
@@ -109,8 +109,11 @@ import org.mockito.Spy;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /** Test cases for {@link LeAudioBroadcastService}. */
 @MediumTest
@@ -206,7 +209,6 @@ public class LeAudioBroadcastServiceTest {
         ExtendedMockito.doReturn(true)
                 .when(() -> Config.isProfileSupported(BluetoothProfile.LE_AUDIO));
 
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
@@ -219,9 +221,10 @@ public class LeAudioBroadcastServiceTest {
                 new LeAudioService(
                         mAdapterService,
                         mStorage,
-                        mLooper.getLooper(),
                         mLeAudioNativeInterface,
-                        mLeAudioBroadcasterNativeInterface);
+                        mLeAudioBroadcasterNativeInterface,
+                        mActiveDeviceManager,
+                        mLooper.getLooper());
         mService.setAvailable(true);
 
         doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
@@ -1168,13 +1171,26 @@ public class LeAudioBroadcastServiceTest {
         int groupId = 1;
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
+        List<BluetoothDevice> devices = new ArrayList<>();
+        Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
+        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
+
+        devices.add(mDevice1);
         prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
 
-        /* Expect clear of Inband Ringtone Support when device is changing to inactive and there is
-         * no unicast to broadcast fallback device set
-         */
-        verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
+        if (Flags.leaudioFallbackGroupSelection()) {
+            broadcastReceivers.add(mDevice1);
+            mService.selectDefaultBroadcastToUnicastFallbackGroup(broadcastReceivers);
+
+            /* Expect clear of inband rington support after broadcast is create and before
+             * fallback group would be set
+             */
+            verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
+        } else {
+            verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice1));
+        }
 
         /* Internal broadcast paused due to onAudioSuspend */
         LeAudioStackEvent state_event =
@@ -1360,8 +1376,10 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
         List<BluetoothDevice> devices = new ArrayList<>();
+        Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice2).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         synchronized (mService.mLeAudioCallbacks) {
             mService.mLeAudioCallbacks.register(mLeAudioCallbacks);
@@ -1370,8 +1388,12 @@ public class LeAudioBroadcastServiceTest {
         initializeNative();
         devices.add(mDevice2);
         prepareConnectedUnicastDevice(groupId2, mDevice2);
-        devices.add(mDevice1);
+        devices.add(0, mDevice1);
         prepareHandoverStreamingBroadcast(groupId1, broadcastId, code);
+
+        /* Mock device1 and device2 as receiving broadcast devices */
+        broadcastReceivers.addAll(Arrays.asList(mDevice2, mDevice1));
+        mService.selectDefaultBroadcastToUnicastFallbackGroup(broadcastReceivers);
 
         /* group 1 is deactivated due to broadcast and group 2 is set by default as broadcast to
          * unicast fallback group (first add device)
@@ -1420,19 +1442,35 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
         List<BluetoothDevice> devices = new ArrayList<>();
+        Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         initializeNative();
         devices.add(mDevice1);
         prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
         mService.deviceConnected(mDevice1);
-        devices.add(mDevice2);
+
+        if (Flags.leaudioFallbackGroupSelection()) {
+            /* Mock mDevice1 as receiving broadcast device */
+            broadcastReceivers.add(mDevice1);
+            mService.selectDefaultBroadcastToUnicastFallbackGroup(broadcastReceivers);
+        }
+
+        devices.add(0, mDevice2);
         prepareConnectedUnicastDevice(groupId2, mDevice2);
 
         InOrder tbsOrder = inOrder(mTbsService);
         tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice2));
-        tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice1));
+        if (Flags.leaudioFallbackGroupSelection()) {
+            /* Expect clear of inband rington support after broadcast is create and before
+             * fallback group would be set
+             */
+            tbsOrder.verify(mTbsService, times(1)).clearInbandRingtoneSupport(eq(mDevice1));
+        } else {
+            tbsOrder.verify(mTbsService, never()).clearInbandRingtoneSupport(eq(mDevice1));
+        }
 
         assertThat(mService.mBroadcastToUnicastFallbackGroup).isEqualTo(groupId);
         tbsOrder.verify(mTbsService, times(1)).setInbandRingtoneSupport(eq(mDevice1));
@@ -1473,8 +1511,10 @@ public class LeAudioBroadcastServiceTest {
         int groupId = 1;
         int groupId2 = 2;
         List<BluetoothDevice> devices = new ArrayList<>();
+        Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         /* If no connected devices - no fallback device */
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
@@ -1484,8 +1524,12 @@ public class LeAudioBroadcastServiceTest {
         devices.add(mDevice1);
         prepareConnectedUnicastDevice(groupId, mDevice1);
         mService.deviceConnected(mDevice1);
-        devices.add(mDevice2);
+        devices.add(0, mDevice2);
         prepareConnectedUnicastDevice(groupId2, mDevice2);
+
+        /* Mock device1 and device2 as receiving broadcast devices */
+        broadcastReceivers.addAll(Arrays.asList(mDevice2, mDevice1));
+        mService.selectDefaultBroadcastToUnicastFallbackGroup(broadcastReceivers);
 
         LeAudioStackEvent stackEvent =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_GROUP_STATUS_CHANGED);
@@ -1509,6 +1553,7 @@ public class LeAudioBroadcastServiceTest {
         mLooper.dispatchAll();
 
         /* Disconnected last device from fallback should trigger set default group 1 -> -1 */
+        doReturn(null).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
         disconnectDevice(mDevice1);
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
                 .isEqualTo(LE_AUDIO_GROUP_ID_INVALID);
@@ -1801,6 +1846,7 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
         devices.add(mDevice1);
 
         initializeNative();

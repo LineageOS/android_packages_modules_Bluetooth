@@ -22,6 +22,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_fix_stop_stream_race"
+    namespace: "bluetooth"
+    description: "Fix race when resume is called just after stream release"
+    bug: "455775663"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_software_bt_request_lock_fix"
     namespace: "bluetooth"
     description: "Fix minor locking issue"
@@ -56,6 +66,16 @@ flag {
     namespace: "bluetooth"
     description: "Change how LE Audio profiles are configured and enabled"
     bug: "379178585"
+}
+
+flag {
+    name: "leaudio_game_detector"
+    namespace: "bluetooth"
+    description: "LeAudio starts detects game applications."
+    bug: "454841160"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
 
 flag {
@@ -134,16 +154,6 @@ flag {
     namespace: "bluetooth"
     description: "Use the codec extensibility API for passing DSA parameters"
     bug: "406747076"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_bis_sync_control"
-    namespace: "bluetooth"
-    description: "Allow to control BIS sync state from BASS service level"
-    bug: "407928525"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -437,6 +447,16 @@ flag {
     namespace: "bluetooth"
     description: "Remove all coordinated set members when any member is requested to be removed"
     bug: "454419225"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_sw_config_quality_logic"
+    namespace: "bluetooth"
+    description: "Improve broadcast config selection by using quality-based logic instead of context type"
+    bug: "450213446"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

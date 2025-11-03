@@ -521,7 +521,8 @@ static void btgattc_service_changed_cb(int conn_id) {
 }
 
 static void btgattc_subrate_change_cb(int conn_id, uint16_t subrate_factor, uint16_t latency,
-                                      uint16_t cont_num, uint16_t timeout, uint8_t status) {
+                                      uint16_t cont_num, uint16_t timeout, uint8_t subrate_mode,
+                                      uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mCallbacksObj) {
@@ -529,7 +530,7 @@ static void btgattc_subrate_change_cb(int conn_id, uint16_t subrate_factor, uint
   }
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onClientSubrateChange, conn_id, subrate_factor,
-                               latency, cont_num, timeout, status);
+                               latency, cont_num, timeout, subrate_mode, status);
 }
 
 static void btgattc_characteristics_unoffloaded_cb(int conn_id, int session_id, uint8_t status) {
@@ -788,7 +789,8 @@ static void btgatts_conn_updated_cb(int conn_id, uint16_t interval, uint16_t lat
 }
 
 static void btgatts_subrate_change_cb(int conn_id, uint16_t subrate_factor, uint16_t latency,
-                                      uint16_t cont_num, uint16_t timeout, uint8_t status) {
+                                      uint16_t cont_num, uint16_t timeout, uint8_t subrate_mode,
+                                      uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mCallbacksObj) {
@@ -796,7 +798,7 @@ static void btgatts_subrate_change_cb(int conn_id, uint16_t subrate_factor, uint
   }
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServerSubrateChange, conn_id, subrate_factor,
-                               latency, cont_num, timeout, status);
+                               latency, cont_num, timeout, subrate_mode, status);
 }
 
 static void btgatts_characteristics_unoffloaded_cb(int conn_id, int session_id, uint8_t status) {
@@ -1120,14 +1122,14 @@ static void gattClientUnregisterAppNative(JNIEnv* /* env */, jobject /* object *
 
 static void gattClientConnectNative(JNIEnv* env, jobject /* object */, jint clientif,
                                     jstring address, jint addressType, jboolean isDirect,
-                                    jint transport, jboolean opportunistic, jint initiating_phys,
-                                    jint preferred_mtu, jboolean prefer_relax_mode) {
+                                    jint transport, jboolean opportunistic, jint preferred_mtu,
+                                    jboolean prefer_relax_mode) {
   if (!sGattIf) {
     return;
   }
 
   sGattIf->client->connect(clientif, str2addr(env, address), addressType, isDirect, transport,
-                           opportunistic, initiating_phys, preferred_mtu, prefer_relax_mode);
+                           opportunistic, preferred_mtu, prefer_relax_mode);
 }
 
 static void gattClientDisconnectNative(JNIEnv* env, jobject /* object */, jint clientIf,
@@ -1340,6 +1342,16 @@ static int gattSubrateRequestNative(JNIEnv* env, jobject /* object */, jint /* c
   // TODO does BtStatus align with BluetoothStatusCodes ?
   sGattIf->client->subrate_request(str2addr(env, address), subrate_min, subrate_max, max_latency,
                                    cont_num, sup_timeout);
+  return 0;  // BluetoothStatusCodes.SUCCESS
+}
+
+static int gattSubrateModeRequestNative(JNIEnv* env, jobject /* object */, jint client_if,
+                                    jstring address, jint subrate_mode) {
+  if (!sGattIf) {
+    return 1;  // BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
+  }
+  // TODO does bt_status_t align with BluetoothStatusCodes ?
+  sGattIf->client->subrate_mode_request(client_if, str2addr(env, address), subrate_mode);
   return 0;  // BluetoothStatusCodes.SUCCESS
 }
 
@@ -2110,7 +2122,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"gattClientRegisterAppNative", "(JJLjava/lang/String;Z)V",
            (void*)gattClientRegisterAppNative},
           {"gattClientUnregisterAppNative", "(I)V", (void*)gattClientUnregisterAppNative},
-          {"gattClientConnectNative", "(ILjava/lang/String;IZIZIIZ)V",
+          {"gattClientConnectNative", "(ILjava/lang/String;IZIZIZ)V",
            (void*)gattClientConnectNative},
           {"gattClientDisconnectNative", "(ILjava/lang/String;I)V",
            (void*)gattClientDisconnectNative},
@@ -2163,6 +2175,8 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
            (void*)gattClientUnoffloadCharacteristicsNative},
           {"gattServerUnoffloadCharacteristicsNative", "(II)V",
            (void*)gattServerUnoffloadCharacteristicsNative},
+          {"gattSubrateModeRequestNative", "(ILjava/lang/String;I)I",
+           (void*)gattSubrateModeRequestNative},
   };
   const char* jniNativeInterfaceClass = "com/android/bluetooth/gatt/GattNativeInterface";
   const int result = REGISTER_NATIVE_METHODS(env, jniNativeInterfaceClass, methods);
@@ -2195,7 +2209,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"onClientPhyUpdate", "(IIII)V", &method_onClientPhyUpdate},
           {"onClientConnUpdate", "(IIIII)V", &method_onClientConnUpdate},
           {"onServiceChanged", "(I)V", &method_onServiceChanged},
-          {"onClientSubrateChange", "(IIIIII)V", &method_onClientSubrateChange},
+          {"onClientSubrateChange", "(IIIIIII)V", &method_onClientSubrateChange},
           {"onClientCharacteristicsUnoffloaded", "(III)V",
            &method_onClientCharacteristicsUnoffloaded},
 
@@ -2220,7 +2234,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"onServerPhyRead", "(ILjava/lang/String;III)V", &method_onServerPhyRead},
           {"onServerPhyUpdate", "(IIII)V", &method_onServerPhyUpdate},
           {"onServerConnUpdate", "(IIIII)V", &method_onServerConnUpdate},
-          {"onServerSubrateChange", "(IIIIII)V", &method_onServerSubrateChange},
+          {"onServerSubrateChange", "(IIIIIII)V", &method_onServerSubrateChange},
           {"onServerCharacteristicsUnoffloaded", "(III)V",
            &method_onServerCharacteristicsUnoffloaded},
   };

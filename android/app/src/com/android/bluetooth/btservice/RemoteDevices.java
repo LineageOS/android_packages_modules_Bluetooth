@@ -55,6 +55,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
@@ -75,7 +76,7 @@ import java.util.Set;
 
 /** Remote device manager. This class is currently mostly used for HF and AG remote devices. */
 public class RemoteDevices {
-    private static final String TAG = Utils.BT_PREFIX + RemoteDevices.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + RemoteDevices.class.getSimpleName();
 
     // Maximum number of device properties to remember
     private static final int MAX_DEVICE_QUEUE_SIZE = 200;
@@ -312,7 +313,7 @@ public class RemoteDevices {
                 debugLog(
                         ("Properties for device=" + toAnonymizedAddress(key))
                                 + ("["
-                                        + Utils.addressTypeToString(addressType)
+                                        + Util.addressTypeToString(addressType)
                                         + "] are already added"));
                 return mDevices.get(key);
             }
@@ -1230,7 +1231,7 @@ public class RemoteDevices {
             return;
         }
 
-        boolean uuids_updated = false;
+        boolean uuidsUpdated = false;
 
         for (int j = 0; j < types.length; j++) {
             type = types[j];
@@ -1317,7 +1318,7 @@ public class RemoteDevices {
                             }
                             deviceProperties.setUuidsLe(newUuidsLe);
                         }
-                        uuids_updated = true;
+                        uuidsUpdated = true;
                     }
                     case AbstractionLayer.BT_PROPERTY_TYPE_OF_DEVICE -> {
                         if (deviceProperties.isConsolidated()) {
@@ -1409,24 +1410,24 @@ public class RemoteDevices {
             }
         }
 
-        if (!uuids_updated) {
-            return;
+        if (uuidsUpdated) {
+            // Broadcast UUID update only once even if LE and BREDR UUIDs are received separately
+            uuidsUpdated(deviceProperties);
         }
+    }
 
-        /* uuids_updated == true
-         * We might have received LE and BREDR UUIDS separately, ensure that UUID intent is sent
-         * just once */
-
+    private void uuidsUpdated(DeviceProperties deviceProperties) {
+        BluetoothDevice device = deviceProperties.getDevice();
         if (mAdapterService.getState() == BluetoothAdapter.STATE_ON) {
             // SDP Adding UUIDs to property cache and sending intent
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT, 1);
-            mAdapterService.deviceUuidUpdated(bdDevice);
-            sendUuidIntent(bdDevice, deviceProperties, true);
+            mAdapterService.deviceUuidUpdated(device);
+            sendUuidIntent(device, deviceProperties, true);
         } else if (mAdapterService.getState() == BluetoothAdapter.STATE_BLE_ON) {
             // SDP Adding UUIDs to property cache but with no intent
             MetricsLogger.getInstance()
                     .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
-            mAdapterService.deviceUuidUpdated(bdDevice);
+            mAdapterService.deviceUuidUpdated(device);
         } else {
             // SDP Silently dropping UUIDs and with no intent
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
@@ -1552,7 +1553,7 @@ public class RemoteDevices {
                                     "aclStateChangeCallback: Adding cache for unknown device "
                                             + Utils.getRedactedAddressStringFromByte(address)
                                             + " ("
-                                            + Utils.addressTypeToString(addressType));
+                                            + Util.addressTypeToString(addressType));
                             return addDeviceProperties(address, addressType).getDevice();
                         });
 
@@ -1562,13 +1563,13 @@ public class RemoteDevices {
 
         infoLog(
                 "aclStateChangeCallback: "
-                        + Utils.transportToString(transport)
+                        + Util.transportToString(transport)
                         + (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED
                                 ? " Connected "
                                 : " Disconnected ")
                         + device
                         + "("
-                        + Utils.addressTypeToString(addressType)
+                        + Util.addressTypeToString(addressType)
                         + ") reason: "
                         + hciReason
                         + " adapter state: "
@@ -2385,17 +2386,15 @@ public class RemoteDevices {
             sb.append("    ")
                     .append(anonAddress)
                     .append("(")
-                    .append(
-                            Utils.addressTypeToString(
-                                    deviceProperties.getDevice().getAddressType()))
+                    .append(Util.addressTypeToString(deviceProperties.getDevice().getAddressType()))
                     .append(")")
                     .append(" => ")
                     .append(anonIdentityAddress)
                     .append("(")
-                    .append(Utils.addressTypeToString(identityAddressType))
+                    .append(Util.addressTypeToString(identityAddressType))
                     .append(")")
                     .append(" [")
-                    .append(Utils.deviceTypeToString(deviceProperties.getDeviceType()))
+                    .append(Util.deviceTypeToString(deviceProperties.getDeviceType()))
                     .append("] [0x")
                     .append(String.format("%06X", deviceProperties.getBluetoothClass()))
                     .append("] [ACL BR/EDR:")

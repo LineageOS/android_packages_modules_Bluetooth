@@ -159,51 +159,7 @@ protected:
   void TearDown() override { bluetooth::testing::stack::l2cap::reset_interface(); }
 };
 
-// TODO: b/406250389 - Remove when deleting flag donot_collide_with_closed_port
-TEST_F(StackRfcommTest, PORT_IsCollisionDetected_basic) {
-  RawAddress test_bd_addr(kRawAddress);
-  RawAddress different_bd_addr(kRawAddress2);
-
-  rfc_cb.port.rfc_mcb[0].bd_addr = test_bd_addr;
-  // no collisions will happen if the bd_addr don't match, regardless of state
-  for (int state_int = RFC_MX_STATE_IDLE; state_int <= RFC_MX_STATE_DISC_WAIT_UA; state_int++) {
-    rfc_cb.port.rfc_mcb[0].state = tRFC_MX_STATE(state_int);
-    ASSERT_FALSE(PORT_IsCollisionDetected(different_bd_addr));
-  }
-
-  rfc_cb.port.rfc_mcb[0].is_initiator = false;
-  // no collisions will happen if not initiator, regardless of state
-  for (int state_int = RFC_MX_STATE_IDLE; state_int <= RFC_MX_STATE_DISC_WAIT_UA; state_int++) {
-    rfc_cb.port.rfc_mcb[0].state = tRFC_MX_STATE(state_int);
-    ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
-  }
-
-  // possible collisions if bd_addr match and is initiator
-  rfc_cb.port.rfc_mcb[0].is_initiator = true;
-
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_IDLE;
-  ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_WAIT_CONN_CNF;
-  ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONFIGURE;
-  ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_SABME_WAIT_UA;
-  ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_WAIT_SABME;
-  ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONNECTED;
-
-  rfc_cb.port.port[0].rfc.p_mcb = &rfc_cb.port.rfc_mcb[0];
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_OPENED;
-  ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_TERM_WAIT_SEC_CHECK;
-  ASSERT_TRUE(PORT_IsCollisionDetected(test_bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_DISC_WAIT_UA;
-  ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
-}
-
-TEST_F_WITH_FLAGS(StackRfcommTest, test_PORT_IsCollisionDetected,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, donot_collide_with_closed_port))) {
+TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
   RawAddress test_bd_addr(kRawAddress);
   RawAddress different_bd_addr(kRawAddress2);
 

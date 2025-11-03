@@ -417,7 +417,7 @@ public final class ScanRecord {
      */
     @Nullable
     List<Integer> getManufacturerDataBlockStartIndices(int manufacturerId) {
-        if (Flags.useFilterForEachManufacturerDataBlock()) {
+        if (!Flags.useFilterForEachManufacturerDataBlock()) {
             return null;
         }
 

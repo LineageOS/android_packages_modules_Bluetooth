@@ -48,21 +48,6 @@ static jobject mCallbacksObj = NULL;
 static jfieldID sCallbacksField;
 static std::shared_timed_mutex mCallbacks_mutex;
 
-static jbyteArray marshall_bda(RawAddress* bd_addr) {
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid()) {
-    return NULL;
-  }
-
-  jbyteArray addr = sCallbackEnv->NewByteArray(sizeof(RawAddress));
-  if (!addr) {
-    log::error("Fail to new jbyteArray bd addr");
-    return NULL;
-  }
-  sCallbackEnv->SetByteArrayRegion(addr, 0, sizeof(RawAddress), (jbyte*)bd_addr);
-  return addr;
-}
-
 static void connection_state_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
                                       tBT_TRANSPORT transport, bthh_connection_state_t state,
                                       bthh_status_t hh_status) {
@@ -75,12 +60,9 @@ static void connection_state_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_t
     log::error("mCallbacksObj is null");
     return;
   }
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for HID channel state");
-    return;
-  }
 
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, addr.get(),
                                (jint)addr_type, (jint)transport, (jint)state, (jint)hh_status);
 }
@@ -102,12 +84,8 @@ static void get_protocol_mode_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for get protocol mode callback");
-    return;
-  }
-
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGetProtocolMode, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)mode);
 }
@@ -129,11 +107,9 @@ static void get_report_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for get report callback");
-    return;
-  }
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+
   ScopedLocalRef<jbyteArray> data(sCallbackEnv.get(), sCallbackEnv->NewByteArray(rpt_size));
   if (!data.get()) {
     log::error("Fail to new jbyteArray data for get report callback");
@@ -157,11 +133,9 @@ static void virtual_unplug_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_typ
     log::error("mCallbacksObj is null");
     return;
   }
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for HID channel state");
-    return;
-  }
+
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVirtualUnplug, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)hh_status);
 }
@@ -178,11 +152,8 @@ static void handshake_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for handshake callback");
-    return;
-  }
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onHandshake, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)hh_status);
 }
@@ -196,11 +167,8 @@ static void get_idle_time_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr");
-    return;
-  }
+  // TODO(b/424272093) Unchecked RawAddress* dereference.
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGetIdleTime, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)idle_time);
 }

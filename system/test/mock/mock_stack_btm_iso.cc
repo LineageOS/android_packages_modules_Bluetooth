@@ -159,12 +159,11 @@ void IsoManager::HandleHciEvent(uint8_t sub_code, uint8_t* params, uint16_t leng
 }
 
 void IsoManager::SetBigChannelMapClassificationByConnHandles(uint8_t action, uint8_t big_handle,
-                                                             uint8_t num_handles,
                                                              const std::vector<uint16_t>& handles) {
   if (!pimpl_) {
     return;
   }
-  pimpl_->SetBigChannelMapClassificationByConnHandles(action, big_handle, num_handles, handles);
+  pimpl_->SetBigChannelMapClassificationByConnHandles(action, big_handle, handles);
 }
 
 void IsoManager::Start() {

@@ -345,6 +345,25 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   } else {
     /* application allows to do update, if we were delaying one do it now */
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
+
+      /* If we find timeout for connection update config smaller than lower bound
+         because of current subrate factor, reset the subrate first */
+      if (com::android::bluetooth::flags::le_subrate_manager()) {
+        if (p_lcb->SubrateFactor() > 1) {
+          uint16_t timeout_bond =
+              (1 + p_lcb->latency) * p_lcb->SubrateFactor() * p_lcb->max_interval * 1.25 * 2;
+          log::info("timeout: {}, timeout_bond: {}", p_lcb->timeout, timeout_bond);
+          if (p_lcb->timeout < timeout_bond) {
+              log::verbose("Sending HCI cmd for subrate req to reset first");
+              bluetooth::shim::ACL_LeSubrateRequest(
+                p_lcb->Handle(), 1, 1, p_lcb->PeriphLatency(), 0, p_lcb->timeout);
+              p_lcb->subrate_req_mask |= L2C_BLE_SUBRATE_REQ_PENDING;
+              p_lcb->conn_update_mask |= L2C_BLE_NOT_DEFAULT_PARAM;
+              return;
+          }
+        }
+      }
+
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral() ||
           (bluetooth::shim::GetController()->SupportsBleConnectionParametersRequest() &&
@@ -395,7 +414,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status, uint16_t interval,
-                                    uint16_t /* latency */, uint16_t /* timeout */) {
+                                    uint16_t latency, uint16_t timeout) {
   log::verbose("");
 
   /* See if we have a link control block for the remote device */
@@ -405,10 +424,15 @@ void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status, uint16_t in
     return;
   }
   p_lcb->SetConnInterval(interval);
+  p_lcb->SetPeriphLatency(latency);
+  p_lcb->SetSupervisionTimeout(timeout);
   p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
 
   if (status != HCI_SUCCESS) {
     log::warn("Error status: {}", status);
+  } else {
+    p_lcb->SetSubrateFactor(1);
+    p_lcb->SetContNumber(0);
   }
 
   l2cble_start_conn_update(p_lcb);
@@ -635,8 +659,8 @@ bool L2CA_SubrateRequest(const RawAddress& rem_bda, uint16_t subrate_min, uint16
  *
  ******************************************************************************/
 void l2cble_process_subrate_change_evt(uint16_t handle, uint8_t status,
-                                       uint16_t /* subrate_factor */,
-                                       uint16_t /* peripheral_latency */, uint16_t /* cont_num */,
+                                       uint16_t subrate_factor,
+                                       uint16_t /* peripheral_latency */, uint16_t cont_num,
                                        uint16_t /* timeout */) {
   log::verbose("");
 
@@ -651,6 +675,11 @@ void l2cble_process_subrate_change_evt(uint16_t handle, uint8_t status,
 
   if (status != HCI_SUCCESS) {
     log::warn("Error status: {}", status);
+  }
+
+  if (status == HCI_SUCCESS) {
+    p_lcb->SetSubrateFactor(subrate_factor);
+    p_lcb->SetContNumber(cont_num);
   }
 
   l2cble_start_conn_update(p_lcb);

@@ -146,7 +146,6 @@ public class A2dpServiceTest {
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
         mA2dpService =
@@ -154,6 +153,7 @@ public class A2dpServiceTest {
                         mAdapterService,
                         mStorage,
                         mMockNativeInterface,
+                        mActiveDeviceManager,
                         mCompanionDeviceManager,
                         mLooper.getLooper());
         mA2dpService.setAvailable(true);

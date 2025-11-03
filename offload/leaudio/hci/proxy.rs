@@ -94,11 +94,11 @@ impl Stream {
         let iso_interval_us = (e.iso_interval as u32) * 1250;
 
         assert!(
-            cig.sdu_interval_c_to_p == 0 || (iso_interval_us % cig.sdu_interval_c_to_p) == 0,
+            cig.sdu_interval_c_to_p == 0 || iso_interval_us.is_multiple_of(cig.sdu_interval_c_to_p),
             "Framing mode not supported"
         );
         assert!(
-            cig.sdu_interval_p_to_c == 0 || (iso_interval_us % cig.sdu_interval_p_to_c) == 0,
+            cig.sdu_interval_p_to_c == 0 || iso_interval_us.is_multiple_of(cig.sdu_interval_p_to_c),
             "Framing mode not supported"
         );
 

@@ -108,16 +108,6 @@ flag {
 }
 
 flag {
-    name: "continue_queued_command_after_discovery"
-    namespace: "bluetooth"
-    description: "Execute enqueued command exiting discovery state"
-    bug: "411021422"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "service_rediscovery_fix"
     namespace: "bluetooth"
     description: "Fix handling service change with multiple reconnecting clients trying to discover services immediately after connection"

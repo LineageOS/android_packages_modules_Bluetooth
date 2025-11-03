@@ -27,9 +27,6 @@ import static android.Manifest.permission.NETWORK_SETUP_WIZARD;
 import static android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
 import static android.Manifest.permission.WRITE_SMS;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
 import static android.content.pm.PackageManager.GET_PERMISSIONS;
@@ -96,8 +93,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class Utils {
-    public static final String BT_PREFIX = "Bluetooth";
-    private static final String TAG = BT_PREFIX + Utils.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + Utils.class.getSimpleName();
 
     public static final int BD_ADDR_LEN = 6; // bytes
     public static final int TYPED_BD_ADDR_LEN = 7; // bytes
@@ -211,34 +207,6 @@ public final class Utils {
         }
 
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
-    }
-
-    public static String deviceTypeToString(int deviceType) {
-        return switch (deviceType) {
-            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
-            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
-            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
-            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
-            default -> "Invalid device type: " + deviceType;
-        };
-    }
-
-    public static String addressTypeToString(int addressType) {
-        return switch (addressType) {
-            case BluetoothDevice.ADDRESS_TYPE_PUBLIC -> "Public ";
-            case BluetoothDevice.ADDRESS_TYPE_RANDOM -> "Random ";
-            default -> "Unknown";
-        };
-    }
-
-    /** Convert a BluetoothDevice transport constant to a string for printing in debug lines */
-    public static String transportToString(int transport) {
-        return switch (transport) {
-            case TRANSPORT_AUTO -> "AUTO";
-            case TRANSPORT_BREDR -> "BR/EDR";
-            case TRANSPORT_LE -> "LE";
-            default -> "Unknown transport (" + transport + ")";
-        };
     }
 
     /**
@@ -663,14 +631,6 @@ public final class Utils {
         return Process.myUserHandle().equals(callingUser)
                 || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
                 || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
-    }
-
-    static boolean checkCallerIsSystemOrActiveUser(String tag) {
-        final boolean res = checkCallerIsSystemOrActiveUser();
-        if (!res) {
-            Log.w(TAG, tag + " - Not allowed for non-active user and non-system user");
-        }
-        return res;
     }
 
     /**

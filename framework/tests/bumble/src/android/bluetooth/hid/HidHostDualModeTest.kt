@@ -52,12 +52,12 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.BluetoothUuid
 import android.bluetooth.PandoraDevice
 import android.bluetooth.VirtualOnly
+import android.bluetooth.getParcelUuidArray
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.ParcelUuid
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -90,6 +90,7 @@ import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.kotlin.whenever
 import org.mockito.stubbing.Answer
 import pandora.HIDGrpc
 import pandora.HidProto.HidServiceType
@@ -156,13 +157,10 @@ class HidHostDualModeTest {
             }
             ACTION_UUID == action -> {
                 val device = intent.getParcelableExtra(EXTRA_DEVICE, BluetoothDevice::class.java)
-                val uuidsRaw = intent.getParcelableArrayExtra(EXTRA_UUID, ParcelUuid::class.java)
-                if (uuidsRaw == null) {
-                    Log.e(TAG, "onReceive(): device $device null uuid list")
-                } else if (uuidsRaw.isEmpty()) {
+                val uuids = intent.getParcelUuidArray(EXTRA_UUID)
+                if (uuids.isEmpty()) {
                     Log.e(TAG, "onReceive(): device $device 0 length uuid list")
                 } else {
-                    val uuids = uuidsRaw.map { it as ParcelUuid }.toTypedArray()
                     Log.d(TAG, "onReceive(): device $device, UUID=${uuids.contentToString()}")
                 }
             }
@@ -205,7 +203,7 @@ class HidHostDualModeTest {
     fun setUp() {
         MockitoAnnotations.initMocks(this)
 
-        doAnswer(intentHandler).`when`(receiver).onReceive(any(), any())
+        doAnswer(intentHandler).whenever(receiver).onReceive(any(), any())
 
         inOrder = inOrder(receiver)
 

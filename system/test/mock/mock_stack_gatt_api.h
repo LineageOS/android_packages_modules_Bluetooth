@@ -266,6 +266,39 @@ struct GATTS_StopService {
 };
 extern struct GATTS_StopService GATTS_StopService;
 
+// Name: GATT_UpdateSubrateConfig
+// Params: GATT_SUBRATE_MODE subrate_mode uint16_t subrate_max,
+//         uint16_t subrate_min, uint16_t cont_num
+// Return: void
+struct GATT_UpdateSubrateConfig {
+  std::function<void(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                     uint16_t subrate_min, uint16_t cont_num)>
+          body{[](tGATT_SUBRATE_MODE /*subrate_mode*/, uint16_t /*subrate_max*/,
+                  uint16_t /*subrate_min*/, uint16_t /*cont_num*/) {}};
+  void operator()(tGATT_SUBRATE_MODE subrate_mode, uint16_t subrate_max,
+                  uint16_t subrate_min, uint16_t cont_num) {
+    body(subrate_mode, subrate_max, subrate_min, cont_num);
+  }
+};
+extern struct GATT_UpdateSubrateConfig GATT_UpdateSubrateConfig;
+
+// Name: GATT_SubrateRequest
+// Params: tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode
+// Return: bool
+struct GATT_SubrateRequest {
+  static bool return_value;
+  std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                     tGATT_SUBRATE_MODE subrate_mode)>
+          body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
+                  tGATT_SUBRATE_MODE /* subrate_mode */) {
+            return return_value;
+          }};
+  bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tGATT_SUBRATE_MODE subrate_mode) {
+    return body(gatt_if, bd_addr, subrate_mode);
+  }
+};
+extern struct GATT_SubrateRequest GATT_SubrateRequest;
+
 // Name: GATT_CancelConnect
 // Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct
 // Return: bool
@@ -283,23 +316,23 @@ extern struct GATT_CancelConnect GATT_CancelConnect;
 
 // Name: GATT_Connect
 // Params: tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
-// tBT_TRANSPORT transport, bool opportunistic, uint8_t initiating_phys, uint16_t preferred_mtu,
+// tBT_TRANSPORT transport, bool opportunistic, uint16_t preferred_mtu,
 // bool prefer_relax_mode Return: bool
 struct GATT_Connect {
   static bool return_value;
   std::function<bool(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                      bool is_direct, tBT_TRANSPORT transport, bool opportunistic,
-                     uint8_t initiating_phys, uint16_t preferred_mtu, bool prefer_relax_mode)>
+                     uint16_t preferred_mtu, bool prefer_relax_mode)>
           body{[](tGATT_IF /* gatt_if */, const RawAddress& /* bd_addr */,
                   tBLE_ADDR_TYPE /* addr_type */, bool /* is_direct */,
                   tBT_TRANSPORT /* transport */, bool /* opportunistic */,
-                  uint8_t /* initiating_phys */, uint16_t /* preferred_mtu */,
+                  uint16_t /* preferred_mtu */,
                   bool /* prefer_relax_mode */) { return return_value; }};
   bool operator()(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                   bool is_direct, tBT_TRANSPORT transport, bool opportunistic,
-                  uint8_t initiating_phys, uint16_t preferred_mtu, bool prefer_relax_mode) {
-    return body(gatt_if, bd_addr, addr_type, is_direct, transport, opportunistic, initiating_phys,
-                preferred_mtu, prefer_relax_mode);
+                  uint16_t preferred_mtu, bool prefer_relax_mode) {
+    return body(gatt_if, bd_addr, addr_type, is_direct, transport, opportunistic, preferred_mtu,
+                prefer_relax_mode);
   }
 };
 extern struct GATT_Connect GATT_Connect;

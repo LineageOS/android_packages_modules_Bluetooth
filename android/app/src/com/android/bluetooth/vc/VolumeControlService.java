@@ -23,11 +23,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.IBluetoothCsipSetCoordinator.CSIS_GROUP_ID_INVALID;
-import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.bluetooth.IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
-
-import static com.android.bluetooth.flags.Flags.vcpHandleGroupIdInternally;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -52,6 +48,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.GuardedBy;
@@ -59,6 +56,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,10 +93,16 @@ public class VolumeControlService extends ConnectableProfile {
     private final Map<BluetoothDevice, VolumeControlInputDescriptor> mAudioInputs =
             new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Integer> mGroupIds = new ConcurrentHashMap<>();
-    private final Map<Integer, Integer> mGroupVolumeCache = new ConcurrentHashMap<>();
-    private final Map<Integer, Boolean> mGroupMuteCache = new ConcurrentHashMap<>();
-    private final Map<BluetoothDevice, Integer> mDeviceVolumeCache = new ConcurrentHashMap<>();
-    private final Map<BluetoothDevice, Boolean> mDeviceMuteCache = new ConcurrentHashMap<>();
+    /*groupId, VolumeControlStreamType, volume*/
+    private final Map<Integer, Map<Integer, Integer>> mGroupVolumeCache = new ConcurrentHashMap<>();
+    /*groupId, VolumeControlStreamType, mute*/
+    private final Map<Integer, Map<Integer, Boolean>> mGroupMuteCache = new ConcurrentHashMap<>();
+    /*BluetoothDevice, VolumeControlStreamType, volume*/
+    private final Map<BluetoothDevice, Map<Integer, Integer>> mDeviceVolumeCache =
+            new ConcurrentHashMap<>();
+    /*BluetoothDevice, VolumeControlStreamType, mute*/
+    private final Map<BluetoothDevice, Map<Integer, Boolean>> mDeviceMuteCache =
+            new ConcurrentHashMap<>();
 
     private Boolean mIgnoreSetVolumeFromAF = false;
 
@@ -187,7 +191,7 @@ public class VolumeControlService extends ConnectableProfile {
         mGroupMuteCache.clear();
         mDeviceVolumeCache.clear();
         mDeviceMuteCache.clear();
-        setIgnoreSetVolumeFromAfFlag(false);
+        updateIgnoreSetVolumeFromAFFlag(false);
 
         synchronized (mCallbacks) {
             mCallbacks.kill();
@@ -247,31 +251,7 @@ public class VolumeControlService extends ConnectableProfile {
             return GROUP_ID_INVALID;
         }
 
-        if (vcpHandleGroupIdInternally()) {
-            return mGroupIds.getOrDefault(device, GROUP_ID_INVALID);
-        }
-
-        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
-        if (csipSetCoordinator.isPresent()) {
-            int groupId = csipSetCoordinator.get().getGroupId(device, BluetoothUuid.CAP);
-            if (groupId != CSIS_GROUP_ID_INVALID) {
-                return groupId;
-            }
-        } else {
-            Log.w(TAG, "CSIP not available");
-        }
-
-        final var leAudio = mAdapterService.getLeAudioService();
-        if (leAudio.isPresent()) {
-            int groupId = leAudio.get().getGroupId(device);
-            if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
-                return groupId;
-            }
-        } else {
-            Log.w(TAG, "leAudioService not available");
-        }
-
-        return GROUP_ID_INVALID;
+        return mGroupIds.getOrDefault(device, GROUP_ID_INVALID);
     }
 
     private List<BluetoothDevice> getGroupDevices(int groupId) {
@@ -281,35 +261,11 @@ public class VolumeControlService extends ConnectableProfile {
             return result;
         }
 
-        if (vcpHandleGroupIdInternally()) {
-            for (Map.Entry<BluetoothDevice, Integer> entry : mGroupIds.entrySet()) {
-                if (entry.getValue() == groupId) {
-                    result.add(entry.getKey());
-                }
+        for (Map.Entry<BluetoothDevice, Integer> entry : mGroupIds.entrySet()) {
+            if (entry.getValue() == groupId) {
+                result.add(entry.getKey());
             }
-            return result;
         }
-
-        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
-        if (csipSetCoordinator.isPresent()) {
-            result = csipSetCoordinator.get().getGroupDevicesOrdered(groupId);
-            if (!result.isEmpty()) {
-                return result;
-            }
-        } else {
-            Log.w(TAG, "CSIP not available");
-        }
-
-        final var leAudio = mAdapterService.getLeAudioService();
-        if (leAudio.isPresent()) {
-            result = leAudio.get().getGroupDevices(groupId);
-            if (!result.isEmpty()) {
-                return result;
-            }
-        } else {
-            Log.w(TAG, "leAudioService not available");
-        }
-
         return result;
     }
 
@@ -479,11 +435,15 @@ public class VolumeControlService extends ConnectableProfile {
             setGroupVolume(groupId, volume);
         } else {
             Log.i(TAG, "Setting individual device volume");
-            mDeviceVolumeCache.put(device, volume);
+            int streamType = getCurrentStreamType();
+            int streamTypeForCache = getCurrentStreamTypeForCache();
+            mDeviceVolumeCache
+                    .computeIfAbsent(device, k -> new ConcurrentHashMap<>())
+                    .put(streamTypeForCache, volume);
             mNativeInterface.setVolume(device, volume);
 
             // We only receive the volume change and mute state needs to be acquired manually
-            Boolean isStreamMute = mAudioManager.isStreamMute(getBluetoothContextualVolumeStream());
+            Boolean isStreamMute = mAudioManager.isStreamMute(streamType);
             adjustDeviceMute(device, volume, isStreamMute);
         }
     }
@@ -515,7 +475,7 @@ public class VolumeControlService extends ConnectableProfile {
 
         if (mIgnoreSetVolumeFromAF) {
             Log.d(TAG, "setGroupVolume ignored (from AF) because persisted/cached volume was used");
-            setIgnoreSetVolumeFromAfFlag(false);
+            updateIgnoreSetVolumeFromAFFlag(false);
             return;
         }
 
@@ -524,17 +484,25 @@ public class VolumeControlService extends ConnectableProfile {
             return;
         }
 
+        int streamType = getCurrentStreamType();
+        int streamTypeForCache = getCurrentStreamTypeForCache();
+
         synchronized (mDeviceVolumeCache) {
-            mGroupVolumeCache.put(groupId, volume);
+            mGroupVolumeCache
+                    .computeIfAbsent(groupId, k -> new ConcurrentHashMap<>())
+                    .put(streamTypeForCache, volume);
             for (BluetoothDevice dev : getGroupDevices(groupId)) {
-                mDeviceVolumeCache.put(dev, volume);
+                mDeviceVolumeCache
+                        .computeIfAbsent(dev, k -> new ConcurrentHashMap<>())
+                        .put(streamTypeForCache, volume);
             }
         }
+
         mNativeInterface.setGroupVolume(groupId, volume);
 
         // We only receive the volume change and mute state needs to be acquired manually
         Boolean isGroupMute = getGroupMute(groupId);
-        Boolean isStreamMute = mAudioManager.isStreamMute(getBluetoothContextualVolumeStream());
+        Boolean isStreamMute = mAudioManager.isStreamMute(streamType);
 
         /* Note: AudioService keeps volume levels for each stream and for each device type,
          * however it stores the mute state only for the stream type but not for each individual
@@ -574,13 +542,18 @@ public class VolumeControlService extends ConnectableProfile {
     @VisibleForTesting
     int getGroupVolume(int groupId) {
         synchronized (mDeviceVolumeCache) {
-            Integer volume = mGroupVolumeCache.get(groupId);
+            int streamType = getCurrentStreamTypeForCache();
+            Integer volume =
+                    mGroupVolumeCache.getOrDefault(groupId, Collections.emptyMap()).get(streamType);
             if (volume != null) {
                 return volume;
             }
             Log.d(TAG, "No group volume available");
             for (BluetoothDevice device : getGroupDevices(groupId)) {
-                volume = mDeviceVolumeCache.get(device);
+                volume =
+                        mDeviceVolumeCache
+                                .getOrDefault(device, Collections.emptyMap())
+                                .get(streamType);
                 if (volume != null) {
                     Log.w(TAG, "Volume taken from device: " + device);
                     return volume;
@@ -596,12 +569,15 @@ public class VolumeControlService extends ConnectableProfile {
     @VisibleForTesting
     int getDeviceVolume(BluetoothDevice device) {
         synchronized (mDeviceVolumeCache) {
-            Integer volume = mDeviceVolumeCache.get(device);
+            int streamType = getCurrentStreamTypeForCache();
+            Integer volume =
+                    mDeviceVolumeCache.getOrDefault(device, Collections.emptyMap()).get(streamType);
             if (volume != null) {
                 return volume;
             }
-            return mGroupVolumeCache.getOrDefault(
-                    getGroupId(device), VOLUME_CONTROL_UNKNOWN_VOLUME);
+            return mGroupVolumeCache
+                    .getOrDefault(getGroupId(device), Collections.emptyMap())
+                    .getOrDefault(streamType, VOLUME_CONTROL_UNKNOWN_VOLUME);
         }
     }
 
@@ -613,12 +589,16 @@ public class VolumeControlService extends ConnectableProfile {
             return;
         }
 
-        int groupVolume = getGroupVolume(groupId);
-        Boolean groupMute = getGroupMute(groupId);
+        if (!Flags.vcpStoreVolumePerStreamType()) {
+            int groupVolume = getGroupVolume(groupId);
+            Boolean groupMute = getGroupMute(groupId);
 
-        if (groupVolume != VOLUME_CONTROL_UNKNOWN_VOLUME) {
-            /* Don't need to show volume when activating known device. */
-            updateGroupCacheAndAudioSystem(groupId, groupVolume, groupMute, /* showInUI*/ false);
+            if (groupVolume != VOLUME_CONTROL_UNKNOWN_VOLUME) {
+                updateCacheByAutonomousChange(
+                        groupId, groupVolume, groupMute, /* showInUI */ false);
+            }
+        } else {
+            updateAudioSystem(groupId, /* showInUI */ false);
         }
     }
 
@@ -628,11 +608,15 @@ public class VolumeControlService extends ConnectableProfile {
     @VisibleForTesting
     Boolean getMute(BluetoothDevice device) {
         synchronized (mDeviceMuteCache) {
-            Boolean isMute = mDeviceMuteCache.get(device);
+            int streamType = getCurrentStreamTypeForCache();
+            Boolean isMute =
+                    mDeviceMuteCache.getOrDefault(device, Collections.emptyMap()).get(streamType);
             if (isMute != null) {
                 return isMute;
             }
-            return mGroupMuteCache.getOrDefault(getGroupId(device), false);
+            return mGroupMuteCache
+                    .getOrDefault(getGroupId(device), Collections.emptyMap())
+                    .getOrDefault(streamType, false);
         }
     }
 
@@ -642,12 +626,17 @@ public class VolumeControlService extends ConnectableProfile {
     @VisibleForTesting
     Boolean getGroupMute(int groupId) {
         synchronized (mDeviceMuteCache) {
-            Boolean isMute = mGroupMuteCache.get(groupId);
+            int streamType = getCurrentStreamTypeForCache();
+            Boolean isMute =
+                    mGroupMuteCache.getOrDefault(groupId, Collections.emptyMap()).get(streamType);
             if (isMute != null) {
                 return isMute;
             }
             for (BluetoothDevice device : getGroupDevices(groupId)) {
-                isMute = mDeviceMuteCache.get(device);
+                isMute =
+                        mDeviceMuteCache
+                                .getOrDefault(device, Collections.emptyMap())
+                                .get(streamType);
                 if (isMute != null) {
                     return isMute;
                 }
@@ -658,16 +647,23 @@ public class VolumeControlService extends ConnectableProfile {
 
     @VisibleForTesting
     void mute(BluetoothDevice device) {
-        mDeviceMuteCache.put(device, true);
+        mDeviceMuteCache
+                .computeIfAbsent(device, k -> new ConcurrentHashMap<>())
+                .put(getCurrentStreamTypeForCache(), true);
         mNativeInterface.mute(device);
     }
 
     @VisibleForTesting
     void muteGroup(int groupId) {
         synchronized (mDeviceMuteCache) {
-            mGroupMuteCache.put(groupId, true);
+            int streamType = getCurrentStreamTypeForCache();
+            mGroupMuteCache
+                    .computeIfAbsent(groupId, k -> new ConcurrentHashMap<>())
+                    .put(streamType, true);
             for (BluetoothDevice dev : getGroupDevices(groupId)) {
-                mDeviceMuteCache.put(dev, true);
+                mDeviceMuteCache
+                        .computeIfAbsent(dev, k -> new ConcurrentHashMap<>())
+                        .put(streamType, true);
             }
         }
         mNativeInterface.muteGroup(groupId);
@@ -675,16 +671,23 @@ public class VolumeControlService extends ConnectableProfile {
 
     @VisibleForTesting
     void unmute(BluetoothDevice device) {
-        mDeviceMuteCache.put(device, false);
+        mDeviceMuteCache
+                .computeIfAbsent(device, k -> new ConcurrentHashMap<>())
+                .put(getCurrentStreamTypeForCache(), false);
         mNativeInterface.unmute(device);
     }
 
     @VisibleForTesting
     void unmuteGroup(int groupId) {
         synchronized (mDeviceMuteCache) {
-            mGroupMuteCache.put(groupId, false);
+            int streamType = getCurrentStreamTypeForCache();
+            mGroupMuteCache
+                    .computeIfAbsent(groupId, k -> new ConcurrentHashMap<>())
+                    .put(streamType, false);
             for (BluetoothDevice dev : getGroupDevices(groupId)) {
-                mDeviceMuteCache.put(dev, false);
+                mDeviceMuteCache
+                        .computeIfAbsent(dev, k -> new ConcurrentHashMap<>())
+                        .put(streamType, false);
             }
         }
         mNativeInterface.unmuteGroup(groupId);
@@ -783,17 +786,15 @@ public class VolumeControlService extends ConnectableProfile {
         }
     }
 
-    void updateGroupCacheAndAudioSystem(int groupId, int volume, boolean mute, boolean showInUI) {
+    private void updateCacheByAutonomousChange(
+            int groupId, int volume, boolean mute, boolean showInUI) {
         Log.d(
                 TAG,
-                " updateGroupCacheAndAudioSystem: groupId: "
-                        + groupId
-                        + ", vol: "
-                        + volume
-                        + ", mute: "
-                        + mute
-                        + ", showInUI"
-                        + showInUI);
+                "updateGroupAutonomousChange: "
+                        + ("groupId: " + groupId)
+                        + (", vol: " + volume)
+                        + (", mute: " + mute)
+                        + (", showInUI: " + showInUI));
 
         if (volume < 0) {
             Log.w(TAG, "Tried to update invalid volume " + volume + ". Ignored.");
@@ -801,13 +802,36 @@ public class VolumeControlService extends ConnectableProfile {
         }
 
         synchronized (mDeviceVolumeCache) {
-            mGroupVolumeCache.put(groupId, volume);
-            mGroupMuteCache.put(groupId, mute);
+            int streamType = getCurrentStreamTypeForCache();
+            mGroupVolumeCache
+                    .computeIfAbsent(groupId, k -> new ConcurrentHashMap<>())
+                    .put(streamType, volume);
+            mGroupMuteCache
+                    .computeIfAbsent(groupId, k -> new ConcurrentHashMap<>())
+                    .put(streamType, mute);
             for (BluetoothDevice dev : getGroupDevices(groupId)) {
-                mDeviceVolumeCache.put(dev, volume);
-                mDeviceMuteCache.put(dev, mute);
+                mDeviceVolumeCache
+                        .computeIfAbsent(dev, k -> new ConcurrentHashMap<>())
+                        .put(streamType, volume);
+                mDeviceMuteCache
+                        .computeIfAbsent(dev, k -> new ConcurrentHashMap<>())
+                        .put(streamType, mute);
             }
         }
+
+        updateAudioSystem(groupId, showInUI);
+    }
+
+    private void updateAudioSystem(int groupId, boolean showInUI) {
+        int streamType = getCurrentStreamType();
+        Log.d(
+                TAG,
+                "updateAudioSystem: "
+                        + ("groupId: " + groupId)
+                        + (", showInUI: " + showInUI)
+                        + (", streamType: " + streamType)
+                        + (", mGroupVolumeCache: " + mGroupVolumeCache)
+                        + (", mGroupMuteCache: " + mGroupMuteCache));
 
         final var leAudio = mAdapterService.getLeAudioService();
         if (leAudio.isPresent()) {
@@ -830,23 +854,80 @@ public class VolumeControlService extends ConnectableProfile {
             Log.w(TAG, "leAudioService not available");
         }
 
-        int streamType = getBluetoothContextualVolumeStream();
-        int flags = AudioManager.FLAG_BLUETOOTH_ABS_VOLUME;
-        if (showInUI) {
-            flags |= AudioManager.FLAG_SHOW_UI;
-        }
+        if (!Flags.vcpStoreVolumePerStreamType()) {
+            int flags = AudioManager.FLAG_BLUETOOTH_ABS_VOLUME;
+            if (showInUI) {
+                flags |= AudioManager.FLAG_SHOW_UI;
+            }
+            int volume = getGroupVolume(groupId);
+            mAudioManager.setStreamVolume(
+                    streamType, getAudioDeviceVolume(streamType, volume), flags);
+            boolean mute = getGroupMute(groupId);
+            if (mAudioManager.isStreamMute(streamType) != mute) {
+                int adjustment = mute ? AudioManager.ADJUST_MUTE : AudioManager.ADJUST_UNMUTE;
+                mAudioManager.adjustStreamVolume(streamType, adjustment, flags);
+            }
+        } else {
+            mGroupVolumeCache
+                    .getOrDefault(groupId, Collections.emptyMap())
+                    .forEach(
+                            (streamT, vol) -> {
+                                int flags = AudioManager.FLAG_BLUETOOTH_ABS_VOLUME;
+                                if (showInUI && streamT == streamType) {
+                                    flags |= AudioManager.FLAG_SHOW_UI;
+                                }
+                                mAudioManager.setStreamVolume(
+                                        streamT, getAudioDeviceVolume(streamT, vol), flags);
+                            });
 
-        mAudioManager.setStreamVolume(streamType, getAudioDeviceVolume(streamType, volume), flags);
-
-        if (mAudioManager.isStreamMute(streamType) != mute) {
-            int adjustment = mute ? AudioManager.ADJUST_MUTE : AudioManager.ADJUST_UNMUTE;
-            mAudioManager.adjustStreamVolume(streamType, adjustment, flags);
+            mGroupMuteCache
+                    .getOrDefault(groupId, Collections.emptyMap())
+                    .forEach(
+                            (streamT, mute) -> {
+                                int flags = AudioManager.FLAG_BLUETOOTH_ABS_VOLUME;
+                                if (showInUI && streamT == streamType) {
+                                    flags |= AudioManager.FLAG_SHOW_UI;
+                                }
+                                if (mAudioManager.isStreamMute(streamT) != mute) {
+                                    int adjustment =
+                                            mute
+                                                    ? AudioManager.ADJUST_MUTE
+                                                    : AudioManager.ADJUST_UNMUTE;
+                                    mAudioManager.adjustStreamVolume(streamT, adjustment, flags);
+                                }
+                            });
         }
     }
 
-    private void setIgnoreSetVolumeFromAfFlag(boolean value) {
-        Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
-        mIgnoreSetVolumeFromAF = value;
+    /**
+     * Set the flag to ignore volume changes from the Audio Framework (AF).
+     *
+     * <p>This is necessary when a remote device with a persisted volume connects, or when a cached
+     * volume is used. In these cases, the device becomes active, and AF send a volume change
+     * request which should be ignored to respect the remote's or cached volume.
+     *
+     * <p>However, during a local broadcast, the newly connected device does not become active, so
+     * volume changes from AF should not be ignored.
+     *
+     * @param value The new value for the flag.
+     */
+    private void updateIgnoreSetVolumeFromAFFlag(boolean value) {
+        if (!Flags.vcpSkipIgnoringVolumeDuringBroadcast()) {
+            Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
+            mIgnoreSetVolumeFromAF = value;
+        } else {
+            boolean broadcastActive = false;
+            final var leAudio = mAdapterService.getLeAudioService();
+            if (leAudio.isPresent()) {
+                broadcastActive = leAudio.get().isBroadcastActive();
+            }
+            if (!value || !broadcastActive) {
+                Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
+                mIgnoreSetVolumeFromAF = value;
+            } else {
+                Log.d(TAG, "Skip mIgnoreSetVolumeFromAF set as local broadcast is active");
+            }
+        }
     }
 
     synchronized void handleVolumeControlChanged(
@@ -883,8 +964,8 @@ public class VolumeControlService extends ConnectableProfile {
                     && (getConnectedDevices(groupId).size() == 1)) {
                 Log.i(TAG, "Setting device: " + device + " volume: " + volume + " to the system");
                 // Ignore volume from AF because persisted volume was used
-                setIgnoreSetVolumeFromAfFlag(true);
-                updateGroupCacheAndAudioSystem(groupId, volume, mute, false);
+                updateIgnoreSetVolumeFromAFFlag(true);
+                updateCacheByAutonomousChange(groupId, volume, mute, /* showInUI */ false);
                 return;
             }
 
@@ -907,13 +988,13 @@ public class VolumeControlService extends ConnectableProfile {
                 }
                 if (getConnectedDevices(groupId).size() == 1) {
                     // Ignore volume from AF because cached volume was used
-                    setIgnoreSetVolumeFromAfFlag(true);
+                    updateIgnoreSetVolumeFromAFFlag(true);
                 }
             } else {
                 Log.i(TAG, "Waiting for volume from AF to set to the device: " + device);
                 if (getConnectedDevices(groupId).size() == 1) {
                     // Clear ignore flag as volume from AF is needed
-                    setIgnoreSetVolumeFromAfFlag(false);
+                    updateIgnoreSetVolumeFromAFFlag(false);
                 }
             }
 
@@ -941,7 +1022,7 @@ public class VolumeControlService extends ConnectableProfile {
 
         if (isAutonomous && device == null) {
             /* Received group notification for autonomous change. Update cache and audio system. */
-            updateGroupCacheAndAudioSystem(groupId, volume, mute, true);
+            updateCacheByAutonomousChange(groupId, volume, mute, /* showInUI */ true);
         }
     }
 
@@ -956,8 +1037,16 @@ public class VolumeControlService extends ConnectableProfile {
             volume = 0;
         }
 
+        int streamType = getCurrentStreamType();
+        Log.d(
+                TAG,
+                "getAudioDeviceGroupVolume: "
+                        + ("groupId: " + groupId)
+                        + (", streamType: " + streamType)
+                        + (", volume: " + volume));
+
         if (volume == VOLUME_CONTROL_UNKNOWN_VOLUME) return VOLUME_CONTROL_UNKNOWN_VOLUME;
-        return getAudioDeviceVolume(getBluetoothContextualVolumeStream(), volume);
+        return getAudioDeviceVolume(streamType, volume);
     }
 
     int getAudioDeviceVolume(int streamType, int bleVolume) {
@@ -968,19 +1057,26 @@ public class VolumeControlService extends ConnectableProfile {
         return (int) Math.round(deviceVolume);
     }
 
-    // Copied from AudioService.getBluetoothContextualVolumeStream() and modified it.
-    int getBluetoothContextualVolumeStream() {
-        int mode = mAudioManager.getMode();
+    int getCurrentStreamTypeForCache() {
+        // When removing vcpStoreVolumePerStreamType flag there is need to:
+        // 1. Remove all `int streamTypeForCache = getCurrentStreamTypeForCache();`
+        // 2. Replace all `getCurrentStreamTypeForCache` with `getCurrentStreamType`
+        // 3. Replace all `streamTypeForCache` with `streamType`
+        // 4. Remove this method
+        if (Flags.vcpStoreVolumePerStreamType()) {
+            return getCurrentStreamType();
+        } else {
+            final int ONE_TYPE_FOR_ALL_CACHED_DATA = 1;
+            return ONE_TYPE_FOR_ALL_CACHED_DATA;
+        }
+    }
 
-        Log.d(TAG, "Volume mode:" + mode + "; Description: 0:normal, 1:ring, 2,3:call");
-
-        return switch (mode) {
-            case AudioManager.MODE_IN_CALL, AudioManager.MODE_IN_COMMUNICATION ->
+    int getCurrentStreamType() {
+        return switch (mAudioManager.getMode()) {
+            case AudioManager.MODE_RINGTONE,
+                    AudioManager.MODE_IN_CALL,
+                    AudioManager.MODE_IN_COMMUNICATION ->
                     AudioManager.STREAM_VOICE_CALL;
-            case AudioManager.MODE_RINGTONE -> {
-                Log.d(TAG, " Update during ringtone applied to voice call");
-                yield AudioManager.STREAM_VOICE_CALL;
-            }
             default -> AudioManager.STREAM_MUSIC;
         };
     }
@@ -1404,18 +1500,9 @@ public class VolumeControlService extends ConnectableProfile {
         mDeviceMuteCache.remove(device);
         mGroupIds.remove(device);
 
-        if (vcpHandleGroupIdInternally()) {
-            if (!getGroupDevices(groupId).isEmpty()) {
-                // Return if group is not empty
-                return;
-            }
-        } else {
-            for (BluetoothDevice groupDevice : getGroupDevices(groupId)) {
-                if (mAdapterService.getBondState(groupDevice) != BOND_NONE) {
-                    // Return if any device from group is BONDED or BONDING
-                    return;
-                }
-            }
+        if (!getGroupDevices(groupId).isEmpty()) {
+            // Return if group is not empty
+            return;
         }
 
         Log.d(TAG, "Remove group data for id: " + groupId);
@@ -1505,6 +1592,20 @@ public class VolumeControlService extends ConnectableProfile {
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);
+        ProfileService.println(sb, "StreamType: " + getCurrentStreamType());
+        ProfileService.println(
+                sb,
+                "Group volumes {GroupId={VolumeControlStreamType=Volume}}: " + mGroupVolumeCache);
+        ProfileService.println(
+                sb,
+                "Group mute states {GroupId={VolumeControlStreamType=Mute}}: " + mGroupMuteCache);
+        ProfileService.println(
+                sb,
+                "Device volumes {Device={VolumeControlStreamType=Volume}}: " + mDeviceVolumeCache);
+        ProfileService.println(
+                sb,
+                "Device mute states {Device={VolumeControlStreamType=Mute}}: " + mDeviceMuteCache);
+
         for (VolumeControlStateMachine sm : mStateMachines.values()) {
             sm.dump(sb);
         }
@@ -1525,28 +1626,6 @@ public class VolumeControlService extends ConnectableProfile {
             ProfileService.println(sb, "    Device: " + device);
             ProfileService.println(sb, "    Volume input cnt: " + descriptor.size());
             descriptor.dump(sb);
-        }
-
-        for (Map.Entry<Integer, Integer> entry : mGroupVolumeCache.entrySet()) {
-            ProfileService.println(
-                    sb,
-                    "    GroupId: "
-                            + entry.getKey()
-                            + " volume: "
-                            + entry.getValue()
-                            + ", mute: "
-                            + getGroupMute(entry.getKey()));
-        }
-
-        for (Map.Entry<BluetoothDevice, Integer> entry : mDeviceVolumeCache.entrySet()) {
-            ProfileService.println(
-                    sb,
-                    "    Device: "
-                            + entry.getKey()
-                            + " volume: "
-                            + entry.getValue()
-                            + ", mute: "
-                            + getMute(entry.getKey()));
         }
     }
 }

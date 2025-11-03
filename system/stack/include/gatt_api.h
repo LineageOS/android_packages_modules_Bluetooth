@@ -691,6 +691,20 @@ typedef struct {
   tGATT_DISC_VALUE value;
 } tGATT_DISC_RES;
 
+typedef enum : uint8_t {
+  GATT_SUBRATE_SM_IDLE = 0x00,
+  GATT_SUBRATE_SM_CONFIG_PENDING = 0x01,
+} tGATT_SUBRATE_SM_STATE;
+
+typedef enum : uint8_t {
+  GATT_SUBRATE_MODE_OFF = 0x00,
+  GATT_SUBRATE_MODE_LOW = 0x01,
+  GATT_SUBRATE_MODE_BALANCED = 0x02,
+  GATT_SUBRATE_MODE_HIGH = 0x03,
+  GATT_SUBRATE_MODE_LEA = 0x04,
+  GATT_SUBRATE_MODE_SYSTEM_UPDATE = 0x63,
+} tGATT_SUBRATE_MODE;
+
 #define GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP  \
   1 /* start a idle timer for this duration \
      when no application need to use the link */
@@ -736,7 +750,7 @@ typedef void(tGATT_CONN_UPDATE_CB)(tGATT_IF gatt_if, tCONN_ID conn_id, uint16_t 
 /* Define a callback function when subrate change event is received */
 typedef void(tGATT_SUBRATE_CHG_CB)(tGATT_IF gatt_if, tCONN_ID conn_id, uint16_t subrate_factor,
                                    uint16_t latency, uint16_t cont_num, uint16_t timeout,
-                                   tGATT_STATUS status);
+                                   tGATT_SUBRATE_MODE subrate_mode, tGATT_STATUS status);
 
 /* Define a callback function when characteristics unoffloaded event is received
  */
@@ -1217,8 +1231,7 @@ void GATT_StartIf(tGATT_IF gatt_if);
 [[nodiscard]] bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                                 tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
                                 tBT_TRANSPORT transport, bool opportunistic,
-                                uint8_t initiating_phys, uint16_t preferred_transport,
-                                bool prefer_relax_mode);
+                                uint16_t preferred_transport, bool prefer_relax_mode);
 [[nodiscard]] bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                                 tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                                 bool opportunistic);
@@ -1360,6 +1373,33 @@ void GATTC_InformNotificationHandle(const RawAddress& remote_bda, uint16_t handl
  ******************************************************************************/
 void GATTC_InformServiceChangedIndication(const RawAddress& remote_bda);
 
+/*******************************************************************************
+ * Function         GATT_SubrateRequest
+ *
+ * Description      Configure subrate config for each client_if
+ *
+ * Parameters       gatt_if: application interface
+ *                  bd_addr: peer device address
+ *                  subrate_mode: subrate_mode
+ *
+ * Returns          true if config successfully.
+ *
+ ******************************************************************************/
+bool GATT_SubrateRequest(tGATT_IF client_if, const RawAddress& bd_addr,
+                         tGATT_SUBRATE_MODE subrate_mode);
+
+/*******************************************************************************
+ * Function         GATT_UpdateSubrateConfig
+ *
+ * Description      Update fixed subrate parameters of subrate mode in config.
+ *
+ * Parameters       subrate_mode: subrate_mode
+ *                  Subrate parameters
+ *
+ ******************************************************************************/
+void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode,
+                              uint16_t subrate_max, uint16_t subrate_min,
+                              uint16_t cont_num);
 // Enables the GATT profile on the device.
 // It clears out the control blocks, and registers with L2CAP.
 void gatt_init(void);
@@ -1397,6 +1437,8 @@ template <>
 struct formatter<tGATT_OP_CODE> : enum_formatter<tGATT_OP_CODE> {};
 template <>
 struct formatter<tGATT_DISC_TYPE> : enum_formatter<tGATT_DISC_TYPE> {};
+template <>
+struct formatter<tGATT_SUBRATE_MODE> : enum_formatter<tGATT_SUBRATE_MODE> {};
 }  // namespace std
 
 #endif /* GATT_API_H */

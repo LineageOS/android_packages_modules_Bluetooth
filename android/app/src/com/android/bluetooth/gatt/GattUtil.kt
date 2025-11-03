@@ -19,12 +19,8 @@ package com.android.bluetooth.gatt
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.IBluetoothGattCallback
-import android.bluetooth.IBluetoothGattServerCallback
 import android.os.IInterface
-import com.android.bluetooth.Utils.transportToString
-import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
-import com.android.bluetooth.gatt.HandleMap.Type
+import com.android.bluetooth.Util.Transport
 import com.android.bluetooth.hid.HidHostService
 import java.util.UUID
 
@@ -62,10 +58,6 @@ object GattUtil {
 
     private val APPLE_NOTIFICATION_CENTER_SERVICE_UUID =
         UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0")
-
-    @JvmStatic
-    fun appNameOrUnknown(adapterService: AdapterService, uid: Int) =
-        adapterService.packageManager.getNameForUid(uid) ?: "Unknown App (UID: $uid)"
 
     @JvmStatic fun isHidSrvcUuid(uuid: UUID) = uuid == HID_SERVICE_UUID
 
@@ -106,6 +98,11 @@ object GattUtil {
             59 -> BluetoothStatusCodes.ERROR_BAD_PARAMETERS
             else -> BluetoothStatusCodes.ERROR_UNKNOWN
         }
+
+    @JvmInline
+    internal value class Status(val value: Int) {
+        override fun toString() = statusToString(value)
+    }
 
     /*
      * Print a readable version of the various status codes that can come from the stack or
@@ -174,60 +171,31 @@ object GattUtil {
     fun dump(
         advertiseManager: AdvertiseManager,
         clientMap: ContextMap<IBluetoothGattCallback>,
-        serverMap: ContextMap<IBluetoothGattServerCallback>,
-        handleMap: HandleMap,
+        serverManager: GattServerManager,
     ) = buildString {
         appendLine("Registered App:")
         appendLine("  Client:")
         dumpMapDetails(clientMap)
         appendLine("  Server:")
-        dumpMapDetails(serverMap)
+        dumpMapDetails(serverManager.serverMap)
         appendLine()
         appendLine("GATT Advertiser Map:")
         advertiseManager.dump(this)
         appendLine("GATT Client Map:")
         clientMap.dump(this)
         appendLine("GATT Server Map:")
-        serverMap.dump(this)
+        serverManager.serverMap.dump(this)
         appendLine("GATT Handle Map:")
-        handleMap.dump(this)
+        serverManager.handleMap.dump(this)
     }
 
     private fun <C : IInterface> StringBuilder.dumpMapDetails(map: ContextMap<C>) =
         map.getAllApps().forEach { app ->
             append("    app_if: ${app.id}")
             append(", appName: ${app.name}")
-            append(", transport: ${transportToString(app.transport)}")
+            append(", transport: ${Transport(app.transport)}")
             app.tag?.let { tag -> append(", tag: $tag") }
             appendLine()
             map.getConnectionByApp(app.id).forEach { appendLine("      $it") }
         }
-
-    @JvmStatic
-    fun HandleMap.dump() = buildString {
-        appendLine("  Entries: ${mEntries.size}")
-        for (entry in mEntries) {
-            append("      ${entry.mServerIf}: [${entry.mHandle}] ")
-            when (entry.mType) {
-                Type.SERVICE -> appendLine("Service ${entry.mUuid}, started ${entry.mStarted}")
-                Type.CHARACTERISTIC -> appendLine("  Characteristic ${entry.mUuid}")
-                Type.DESCRIPTOR -> appendLine("    Descriptor ${entry.mUuid}")
-            }
-        }
-        appendLine("  Requests: ${mRequestMap.size}")
-        if (Flags.gattMultiBearerTransactions()) {
-            for (context in mRequestContextMap.values) {
-                appendLine("      $context")
-            }
-        } else {
-            for ((key, request) in mRequestMap) {
-                appendLine(
-                    "RequestData<" +
-                        "request_id/transaction_id: $key" +
-                        ", conn_id: ${request.connId()}" +
-                        ", handle: ${request.handle()}>"
-                )
-            }
-        }
-    }
 }

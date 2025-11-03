@@ -54,6 +54,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ConnectableProfile;
@@ -78,6 +79,7 @@ public class A2dpService extends ConnectableProfile {
     private final A2dpNativeInterface mNativeInterface;
     private final A2dpCodecConfig mA2dpCodecConfig;
     private final AudioManager mAudioManager;
+    private final ActiveDeviceManager mActiveDeviceManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final Looper mLooper;
     private final Handler mHandler;
@@ -105,8 +107,15 @@ public class A2dpService extends ConnectableProfile {
     public A2dpService(
             AdapterService adapterService,
             BluetoothStorageManager storage,
+            ActiveDeviceManager activeDeviceManager,
             CompanionDeviceManager companionDeviceManager) {
-        this(adapterService, storage, null, companionDeviceManager, Looper.getMainLooper());
+        this(
+                adapterService,
+                storage,
+                null,
+                activeDeviceManager,
+                companionDeviceManager,
+                Looper.getMainLooper());
     }
 
     @VisibleForTesting
@@ -114,6 +123,7 @@ public class A2dpService extends ConnectableProfile {
             AdapterService adapterService,
             BluetoothStorageManager storage,
             A2dpNativeInterface nativeInterface,
+            ActiveDeviceManager activeDeviceManager,
             CompanionDeviceManager companionDeviceManager,
             Looper looper) {
         super(BluetoothProfile.A2DP, adapterService, storage);
@@ -125,6 +135,7 @@ public class A2dpService extends ConnectableProfile {
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
+        mActiveDeviceManager = activeDeviceManager;
         mCompanionDeviceManager = companionDeviceManager;
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
@@ -1235,9 +1246,7 @@ public class A2dpService extends ConnectableProfile {
                                 avrcpTarget.handleA2dpConnectionStateChanged(device, toState));
         mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
         mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
-        mAdapterService
-                .getActiveDeviceManager()
-                .profileConnectionStateChanged(mProfileId, device, fromState, toState);
+        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
         mAdapterService
                 .getSilenceDeviceManager()
                 .a2dpConnectionStateChanged(device, fromState, toState);

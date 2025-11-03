@@ -88,6 +88,7 @@ public class HapClientService extends ConnectableProfile {
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
+    private final ActiveDeviceManager mActiveDeviceManager;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
     private final HandlerThread mStateMachinesThread;
@@ -97,16 +98,23 @@ public class HapClientService extends ConnectableProfile {
     @GuardedBy("mCallbacks")
     final RemoteCallbackList<IBluetoothHapClientCallback> mCallbacks = new RemoteCallbackList<>();
 
-    public HapClientService(AdapterService adapterService) {
-        this(adapterService, Flags.hapOnMainLooper() ? Looper.getMainLooper() : null, null);
+    public HapClientService(
+            AdapterService adapterService, ActiveDeviceManager activeDeviceManager) {
+        this(
+                adapterService,
+                activeDeviceManager,
+                Flags.hapOnMainLooper() ? Looper.getMainLooper() : null,
+                null);
     }
 
     @VisibleForTesting
     HapClientService(
             AdapterService adapterService,
+            ActiveDeviceManager activeDeviceManager,
             Looper looper,
             HapClientNativeInterface nativeInterface) {
         super(BluetoothProfile.HAP_CLIENT, adapterService);
+        mActiveDeviceManager = activeDeviceManager;
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -413,10 +421,7 @@ public class HapClientService extends ConnectableProfile {
                 removeStateMachine(device);
             }
         }
-        ActiveDeviceManager adManager = mAdapterService.getActiveDeviceManager();
-        if (adManager != null) {
-            adManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
-        }
+        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
                 device, mProfileId, toState, fromState);
     }

@@ -16,8 +16,9 @@
 
 #pragma once
 
-#include "bind.h"
-#include "callback.h"
+#include <base/functional/bind.h>
+#include <base/functional/callback.h>
+
 #include "i_postable_context.h"
 
 namespace bluetooth {
@@ -30,7 +31,7 @@ class ContextualOnceCallback;
 template <typename R, typename... Args>
 class ContextualOnceCallback<R(Args...)> {
 public:
-  ContextualOnceCallback(common::OnceCallback<R(Args...)>&& callback, IPostableContext* context)
+  ContextualOnceCallback(base::OnceCallback<R(Args...)>&& callback, IPostableContext* context)
       : callback_(std::move(callback)), context_(context) {}
 
   constexpr ContextualOnceCallback() = default;
@@ -41,13 +42,13 @@ public:
   ContextualOnceCallback& operator=(ContextualOnceCallback&&) noexcept = default;
 
   void operator()(Args... args) {
-    context_->Post(common::BindOnce(std::move(callback_), std::forward<Args>(args)...));
+    context_->Post(base::BindOnce(std::move(callback_), std::forward<Args>(args)...));
   }
 
   operator bool() const { return context_ && callback_; }
 
 private:
-  common::OnceCallback<R(Args...)> callback_;
+  base::OnceCallback<R(Args...)> callback_;
   IPostableContext* context_;
 };
 
@@ -62,7 +63,7 @@ class ContextualCallback;
 template <typename R, typename... Args>
 class ContextualCallback<R(Args...)> {
 public:
-  ContextualCallback(common::Callback<R(Args...)>&& callback, IPostableContext* context)
+  ContextualCallback(base::RepeatingCallback<R(Args...)>&& callback, IPostableContext* context)
       : callback_(std::move(callback)), context_(context) {}
 
   constexpr ContextualCallback() = default;
@@ -73,13 +74,13 @@ public:
   ContextualCallback& operator=(ContextualCallback&&) noexcept = default;
 
   void operator()(Args... args) {
-    context_->Post(common::BindOnce(callback_, std::forward<Args>(args)...));
+    context_->Post(base::BindOnce(callback_, std::forward<Args>(args)...));
   }
 
   operator bool() const { return context_ && callback_; }
 
 private:
-  common::Callback<R(Args...)> callback_;
+  base::RepeatingCallback<R(Args...)> callback_;
   IPostableContext* context_;
 };
 

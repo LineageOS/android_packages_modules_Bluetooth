@@ -118,7 +118,7 @@ typedef struct {
    * which is requesting the socket. This is used for traffic accounting
    * purposes.
    */
-  bt_status_t (*connect)(const RawAddress* bd_addr, btsock_type_t type, const bluetooth::Uuid* uuid,
+  bt_status_t (*connect)(RawAddress bd_addr, btsock_type_t type, const bluetooth::Uuid* uuid,
                          int channel, int* sock_fd, int flags, int callingUid,
                          btsock_data_path_t data_path, const char* socket_name, uint64_t hub_id,
                          uint64_t endpoint_id, int max_rx_packet_size);

@@ -19,7 +19,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -60,7 +60,7 @@ import java.io.PrintWriter;
 /** Bluetooth StateMachine to handle system suspend and wake by Bluetooth. */
 final class AdapterSuspendStateMachine extends StateMachine {
     private static final String TAG =
-            Utils.BT_PREFIX + AdapterSuspendStateMachine.class.getSimpleName();
+            Util.BT_PREFIX + AdapterSuspendStateMachine.class.getSimpleName();
 
     // Messages used to communicate with the state machine.
     static final int MSG_SCREEN_ON = 1;

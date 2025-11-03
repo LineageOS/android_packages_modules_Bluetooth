@@ -90,16 +90,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Failed to new bd addr jbyteArray for connection state");
-      return;
-    }
-
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                     reinterpret_cast<const jbyte*>(&bd_addr));
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, addr.get(),
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, jaddr.get(),
                                  (jint)state);
   }
 
@@ -110,16 +102,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Failed to new bd addr jbyteArray for device available");
-      return;
-    }
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                     reinterpret_cast<const jbyte*>(&bd_addr));
-
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, addr.get(),
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, jaddr.get(),
                                  (jint)features);
   }
 
@@ -130,16 +114,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Failed to new bd addr jbyteArray for device available");
-      return;
-    }
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                     reinterpret_cast<const jbyte*>(&bd_addr));
-
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onFeaturesUpdate, addr.get(),
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onFeaturesUpdate, jaddr.get(),
                                  (jint)features);
   }
 
@@ -150,16 +126,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-    if (!addr.get()) {
-      log::error("Failed to new bd addr jbyteArray for preset selected");
-      return;
-    }
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                     reinterpret_cast<const jbyte*>(&bd_addr));
-
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelected, addr.get(),
+    ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelected, jaddr.get(),
                                  (jint)preset_index);
   }
 
@@ -183,17 +151,9 @@ public:
     }
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
-      ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                      sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-      if (!addr.get()) {
-        log::error("Failed to new bd addr jbyteArray for preset select error");
-        return;
-      }
-      sCallbackEnv->SetByteArrayRegion(
-              addr.get(), 0, sizeof(RawAddress),
-              reinterpret_cast<jbyte*>(&std::get<RawAddress>(addr_or_group_id)));
-
-      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelectionFailed, addr.get(),
+      ScopedLocalRef<jbyteArray> jaddr =
+              addressToJByteArray(sCallbackEnv.get(), std::get<RawAddress>(addr_or_group_id));
+      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelectionFailed, jaddr.get(),
                                    (jint)error_code);
     } else {
       sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetSelectionForGroupFailed,
@@ -236,17 +196,9 @@ public:
     }
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
-      ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                      sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-      if (!addr.get()) {
-        log::error("Failed to new bd addr jbyteArray for preset name");
-        return;
-      }
-      sCallbackEnv->SetByteArrayRegion(
-              addr.get(), 0, sizeof(RawAddress),
-              reinterpret_cast<jbyte*>(&std::get<RawAddress>(addr_or_group_id)));
-
-      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetInfo, addr.get(),
+      ScopedLocalRef<jbyteArray> jaddr =
+              addressToJByteArray(sCallbackEnv.get(), std::get<RawAddress>(addr_or_group_id));
+      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onPresetInfo, jaddr.get(),
                                    (jint)info_reason, presets_array);
     } else {
       sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGroupPresetInfo,
@@ -274,17 +226,9 @@ public:
     }
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
-      ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                      sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-      if (!addr.get()) {
-        log::error("Failed to new bd addr jbyteArray for preset name set error");
-        return;
-      }
-      sCallbackEnv->SetByteArrayRegion(
-              addr.get(), 0, sizeof(RawAddress),
-              reinterpret_cast<jbyte*>(&std::get<RawAddress>(addr_or_group_id)));
-
-      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSetPresetNameFailed, addr.get(),
+      ScopedLocalRef<jbyteArray> jaddr =
+              addressToJByteArray(sCallbackEnv.get(), std::get<RawAddress>(addr_or_group_id));
+      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSetPresetNameFailed, jaddr.get(),
                                    (jint)preset_index, (jint)error_code);
     } else {
       sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSetPresetNameForGroupFailed,
@@ -367,15 +311,8 @@ static jboolean connectHapClientNative(JNIEnv* env, jobject /* object */, jbyteA
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->Connect(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->Connect(bd_addr);
   return JNI_TRUE;
 }
 
@@ -386,15 +323,8 @@ static jboolean disconnectHapClientNative(JNIEnv* env, jobject /* object */, jby
     return JNI_FALSE;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return JNI_FALSE;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->Disconnect(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->Disconnect(bd_addr);
   return JNI_TRUE;
 }
 
@@ -406,15 +336,8 @@ static void selectActivePresetNative(JNIEnv* env, jobject /* object */, jbyteArr
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->SelectActivePreset(*tmpraw, preset_index);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->SelectActivePreset(bd_addr, preset_index);
 }
 
 static void groupSelectActivePresetNative(JNIEnv* /* env */, jobject /* object */, jint group_id,
@@ -435,15 +358,8 @@ static void nextActivePresetNative(JNIEnv* env, jobject /* object */, jbyteArray
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->NextActivePreset(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->NextActivePreset(bd_addr);
 }
 
 static void groupNextActivePresetNative(JNIEnv* /* env */, jobject /* object */, jint group_id) {
@@ -463,15 +379,8 @@ static void previousActivePresetNative(JNIEnv* env, jobject /* object */, jbyteA
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->PreviousActivePreset(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->PreviousActivePreset(bd_addr);
 }
 
 static void groupPreviousActivePresetNative(JNIEnv* /* env */, jobject /* object */,
@@ -493,15 +402,8 @@ static void getPresetInfoNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->GetPresetInfo(*tmpraw, preset_index);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->GetPresetInfo(bd_addr, preset_index);
 }
 
 static void getAllPresetInfoNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
@@ -511,15 +413,8 @@ static void getAllPresetInfoNative(JNIEnv* env, jobject /* object */, jbyteArray
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->GetAllPresetInfo(*tmpraw);
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->GetAllPresetInfo(bd_addr);
 }
 
 static void setPresetNameNative(JNIEnv* env, jobject /* object */, jbyteArray address,
@@ -530,12 +425,6 @@ static void setPresetNameNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     return;
   }
 
-  jbyte* addr = env->GetByteArrayElements(address, nullptr);
-  if (!addr) {
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
   std::string name_str;
   if (name != nullptr) {
     const char* value = env->GetStringUTFChars(name, nullptr);
@@ -543,9 +432,8 @@ static void setPresetNameNative(JNIEnv* env, jobject /* object */, jbyteArray ad
     env->ReleaseStringUTFChars(name, value);
   }
 
-  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
-  sHasClientInterface->SetPresetName(*tmpraw, preset_index, std::move(name_str));
-  env->ReleaseByteArrayElements(address, addr, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, address);
+  sHasClientInterface->SetPresetName(bd_addr, preset_index, std::move(name_str));
 }
 
 static void groupSetPresetNameNative(JNIEnv* env, jobject /* object */, jint group_id,

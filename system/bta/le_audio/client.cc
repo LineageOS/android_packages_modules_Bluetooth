@@ -2804,7 +2804,7 @@ public:
     };
   }
 
-  void OnGattConnected(tGATT_STATUS status, tCONN_ID conn_id, tGATT_IF /*client_if*/,
+  void OnGattConnected(tGATT_STATUS status, tCONN_ID conn_id, tGATT_IF client_if,
                        RawAddress address, tBT_TRANSPORT transport, uint16_t mtu) {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
 
@@ -2871,6 +2871,7 @@ public:
       }
     }
 
+    leAudioDevice->client_if_ = client_if;
     leAudioDevice->conn_id_ = conn_id;
     leAudioDevice->mtu_ = mtu;
 
@@ -4248,14 +4249,13 @@ public:
     /* Send data to the controller */
     if (left_cis_handle) {
       IsoManager::GetInstance()->SendIsoData(
-              left_cis_handle, (const uint8_t*)sw_enc_left->GetDecodedSamples().data(),
-              sw_enc_left->GetDecodedSamples().size() * 2);
+              left_cis_handle, (const uint8_t*)sw_enc_left->GetDecodedSamples().data(), byte_count);
     }
 
     if (right_cis_handle) {
       IsoManager::GetInstance()->SendIsoData(
               right_cis_handle, (const uint8_t*)sw_enc_right->GetDecodedSamples().data(),
-              sw_enc_right->GetDecodedSamples().size() * 2);
+              byte_count);
     }
   }
 
@@ -4295,7 +4295,7 @@ public:
 
     IsoManager::GetInstance()->SendIsoData(cis_handle,
                                            (const uint8_t*)sw_enc_left->GetDecodedSamples().data(),
-                                           sw_enc_left->GetDecodedSamples().size() * 2);
+                                           byte_count * num_channels);
   }
 
   const struct bluetooth::le_audio::stream_configuration* GetStreamSinkConfiguration(

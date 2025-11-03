@@ -28,6 +28,7 @@ import android.os.Message;
 import android.os.UserHandle;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 
@@ -48,7 +49,7 @@ import java.util.Map;
  * is not connected with A2DP or HFP, it cannot enter silence mode.
  */
 public class SilenceDeviceManager {
-    private static final String TAG = Utils.BT_PREFIX + SilenceDeviceManager.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + SilenceDeviceManager.class.getSimpleName();
 
     private final AdapterService mAdapterService;
     private final Handler mHandler;

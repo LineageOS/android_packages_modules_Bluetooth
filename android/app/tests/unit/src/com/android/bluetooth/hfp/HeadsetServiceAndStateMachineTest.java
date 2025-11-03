@@ -135,6 +135,7 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
 
+    @Mock private BluetoothSinkAudioPolicy sinkAudioPolicy;
     @Mock private HeadsetNativeInterface mNativeInterface;
     @Mock private LeAudioService mLeAudioService;
     @Mock private AdapterService mAdapterService;
@@ -142,7 +143,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothStorageManager mStorageFlag;
-    private BluetoothStorageManager mStorage; // Merge when cleaning flag
+    private BluetoothStorageManager mStorage; // Move to mock when cleaning flag
     @Mock private HeadsetSystemInterface mSystemInterface;
     @Mock private AudioManager mAudioManager;
     @Mock private AudioDeviceVolumeManager mAudioDeviceVolumeManager;
@@ -173,6 +174,7 @@ public class HeadsetServiceAndStateMachineTest {
             mStorage = null; // force mock to null when flag is off to be compliant with code
         } else {
             mStorage = mStorageFlag;
+            doReturn(sinkAudioPolicy).when(mStorage).getAudioPolicyMetadata(any());
         }
         mInOrder = inOrder(mAdapterService);
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
@@ -199,7 +201,6 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(new BluetoothSinkAudioPolicy.Builder().build())
                 .when(mAdapterService)
                 .getRequestedAudioPolicyAsSink(any(BluetoothDevice.class));
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         // Mock system interface
@@ -247,6 +248,7 @@ public class HeadsetServiceAndStateMachineTest {
                         mStorage,
                         mNativeInterface,
                         mSystemInterface,
+                        mActiveDeviceManager,
                         mTestLooper.getLooper());
         mHeadsetService.setAvailable(true);
         if (android.media.audio.Flags.scoManagedByAudio()) {

@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/hci_interface.h"
 #include "hci/remote_name_request.h"
@@ -49,6 +51,12 @@ public:
   void ReportRemoteNameRequestCancellation(Address address) override;
 
 private:
+  void ReportRemoteNameRequestCancellationImpl_(Address address);
+  void on_start_remote_name_request_status_(Address address, CompletionCallback on_completion,
+                                            CommandStatusView status);
+  void on_remote_host_supported_features_(EventView view);
+  void completed_(ErrorCode status, std::array<uint8_t, 248> name, Address address);
+
   void ReportRemoteNameRequestCancellationImpl(Address address);
   void actually_start_remote_name_request(
           Address address, std::unique_ptr<RemoteNameRequestBuilder> request,
@@ -67,6 +75,13 @@ private:
   HciInterface& hci_layer_;
   acl_manager::AclScheduler& acl_scheduler_;
 
+  struct RemoteNameCallbacks {
+    RemoteNameCallback on_remote_name_complete;
+    RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification;
+  };
+  std::map<Address, RemoteNameCallbacks> requests_;
+
+  // TODO(b/445714747): Remove when rnr_multiple_name_request is shipped
   bool pending_ = false;
   RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification_;
   RemoteNameCallback on_remote_name_complete_;

@@ -27,6 +27,7 @@ import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ProfileService;
@@ -38,7 +39,7 @@ import java.util.Map;
 
 /** Provides Media Control Profile, as a service in the Bluetooth application. */
 public class McpService extends ProfileService {
-    private static final String TAG = Utils.BT_PREFIX + McpService.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + McpService.class.getSimpleName();
 
     private final MediaControlProfile mGmcs;
     private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();

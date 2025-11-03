@@ -44,6 +44,23 @@ static const BroadcastSubgroupCodecConfig lc3_mono_16_2 = BroadcastSubgroupCodec
         // bits_per_sample
         16);
 
+static const BroadcastSubgroupCodecConfig lc3_mono_48_4 = BroadcastSubgroupCodecConfig(
+        kLeAudioCodecIdLc3,
+        {BroadcastSubgroupBisCodecConfig{
+                // num_bis
+                1,
+                // bis_channel_cnt_
+                1,
+                // codec_specific
+                types::LeAudioLtvMap({
+                        LTV_ENTRY_SAMPLING_FREQUENCY(codec_spec_conf::kLeAudioSamplingFreq48000Hz),
+                        LTV_ENTRY_FRAME_DURATION(codec_spec_conf::kLeAudioCodecFrameDur10000us),
+                        LTV_ENTRY_OCTETS_PER_CODEC_FRAME(120),
+                }),
+        }},
+        // bits_per_sample
+        16);
+
 static const BroadcastSubgroupCodecConfig lc3_stereo_16_2 = BroadcastSubgroupCodecConfig(
         kLeAudioCodecIdLc3,
         {BroadcastSubgroupBisCodecConfig{
@@ -259,6 +276,18 @@ static const BroadcastConfiguration lc3_stereo_48_3_2 = {
         .phy = 0x02,   // PHY_LE_2M
         .packing = 0,  // Sequential
         .framing = 0   // Unframed,
+};
+
+static const BroadcastConfiguration lc3_mono_48_4_2 = {
+        // subgroup list, qos configuration, data path configuration
+        .subgroups = {lc3_mono_48_4},
+        .qos = qos_config_4_65,
+        .data_path = lc3_data_path,
+        .sduIntervalUs = 10000,
+        .maxSduOctets = 120,
+        .phy = 0x02,   // PHY_LE_2M
+        .packing = 0,  // Sequential
+        .framing = 0,  // Unframed
 };
 
 static const BroadcastConfiguration lc3_stereo_48_4_2 = {

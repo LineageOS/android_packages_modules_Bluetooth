@@ -35,7 +35,6 @@ public:
   MOCK_METHOD(void, UnregisterCompletedAclPacketsCallback, ());
   MOCK_METHOD(void, RegisterCompletedMonitorAclPacketsCallback, (CompletedAclPacketsCallback cb));
   MOCK_METHOD(void, UnregisterCompletedMonitorAclPacketsCallback, ());
-  MOCK_METHOD(std::string, GetLocalName, (), (const));
   MOCK_METHOD(LocalVersionInformation, GetLocalVersionInformation, (), (const));
   MOCK_METHOD(bool, SupportsSimplePairing, (), (const));
   MOCK_METHOD(bool, SupportsSecureConnections, (), (const));

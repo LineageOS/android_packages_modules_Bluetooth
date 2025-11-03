@@ -63,22 +63,22 @@ import java.util.List;
 /** Test cases for {@link PbapClientAccountManager}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapClientAccountManagerTest {
-    private static final String ACCOUNT_TYPE = "com.android.bluetooth.pbapclient.account";
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
 
     @Mock private Context mMockContext;
     @Mock private HandlerThread mMockHandlerThread;
-    private TestLooper mTestLooper;
     @Mock private Resources mMockResources;
     @Mock private AccountManager mMockAccountManager;
     @Mock private UserManager mMockUserManager;
+    @Mock private PbapClientAccountManager.Callback mMockCallback;
+
+    private static final String ACCOUNT_TYPE = "com.android.bluetooth.pbapclient.account";
+
+    private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
+    private TestLooper mTestLooper;
     ArgumentCaptor<BroadcastReceiver> mReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
     private BroadcastReceiver mBroadcastReceiver;
-    @Mock private PbapClientAccountManager.Callback mMockCallback;
     ArgumentCaptor<List<Account>> mFromAccountsCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<List<Account>> mToAccountsCaptor = ArgumentCaptor.forClass(List.class);
 

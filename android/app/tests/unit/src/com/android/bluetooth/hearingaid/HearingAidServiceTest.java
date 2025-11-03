@@ -113,12 +113,16 @@ public class HearingAidServiceTest {
         doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID})
                 .when(mAdapterService)
                 .getRemoteUuids(any());
-        doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
 
         doReturn(true).when(mNativeInterface).connectHearingAid(any());
         doReturn(true).when(mNativeInterface).disconnectHearingAid(any());
 
-        mService = new HearingAidService(mAdapterService, mLooper.getLooper(), mNativeInterface);
+        mService =
+                new HearingAidService(
+                        mAdapterService,
+                        mNativeInterface,
+                        mActiveDeviceManager,
+                        mLooper.getLooper());
         mService.setAvailable(true);
         mBinder = (HearingAidServiceBinder) mService.initBinder();
     }

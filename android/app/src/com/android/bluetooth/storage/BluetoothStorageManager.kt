@@ -29,6 +29,7 @@ import android.os.Bundle
 import android.util.Log
 import android.util.Pair
 import androidx.datastore.core.CorruptionException
+import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
@@ -209,28 +210,26 @@ constructor(
         val mediaProfile = toMediaProfile(bundle.getInt(AUDIO_MODE_OUTPUT_ONLY))
         val voiceProfile = toVoiceProfile(bundle.getInt(AUDIO_MODE_DUPLEX))
 
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
 
-                groupDevices.forEach { device ->
-                    val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
-                    val leAudioBuilder = deviceBuilder.leAudioSettings.toBuilder()
+            groupDevices.forEach { device ->
+                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+                val leAudioBuilder = deviceBuilder.leAudioSettings.toBuilder()
 
-                    if (mediaProfile != MediaProfile.UNKNOWN) {
-                        leAudioBuilder.preferredOutputProfile = mediaProfile
-                        logEvent(device, "preferred media profile is $mediaProfile")
-                    }
-                    if (voiceProfile != VoiceProfile.UNKNOWN) {
-                        leAudioBuilder.preferredInputProfile = voiceProfile
-                        logEvent(device, "preferred voice profile is $voiceProfile")
-                    }
-
-                    deviceBuilder.setLeAudioSettings(leAudioBuilder.build())
-                    builder.putDevices(device.address, deviceBuilder.build())
+                if (mediaProfile != MediaProfile.UNKNOWN) {
+                    leAudioBuilder.preferredOutputProfile = mediaProfile
+                    logEvent(device, "preferred media profile is $mediaProfile")
                 }
-                builder.build()
+                if (voiceProfile != VoiceProfile.UNKNOWN) {
+                    leAudioBuilder.preferredInputProfile = voiceProfile
+                    logEvent(device, "preferred voice profile is $voiceProfile")
+                }
+
+                deviceBuilder.setLeAudioSettings(leAudioBuilder.build())
+                builder.putDevices(device.address, deviceBuilder.build())
             }
+            builder.build()
         }
     }
 
@@ -242,20 +241,17 @@ constructor(
 
     fun setActiveAudioPolicy(device: BluetoothDevice, value: Int) {
         val newPolicy = toActiveAudioPolicy(value)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+            val settingsBuilder = deviceBuilder.leAudioSettings.toBuilder()
+            settingsBuilder.activeAudioPolicy = newPolicy
 
-                val settingsBuilder = deviceBuilder.leAudioSettings.toBuilder()
-                settingsBuilder.activeAudioPolicy = newPolicy
+            logEvent(device, "active audio policy to $newPolicy")
 
-                logEvent(device, "active audio policy to $newPolicy")
-
-                deviceBuilder.setLeAudioSettings(settingsBuilder.build())
-                builder.putDevices(device.address, deviceBuilder.build()).build()
-            }
+            deviceBuilder.setLeAudioSettings(settingsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
     }
 
@@ -284,34 +280,31 @@ constructor(
 
     fun setCustomMetadata(device: BluetoothDevice, key: Int, value: ByteArray) {
         validateMetadataKey(key)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+            val newByteString =
+                if (value.isEmpty()) ByteString.EMPTY else ByteString.copyFrom(value)
+            val oldByteString = deviceBuilder.customMetadataMap[key] ?: ByteString.EMPTY
 
-                val newByteString =
-                    if (value.isEmpty()) ByteString.EMPTY else ByteString.copyFrom(value)
-                val oldByteString = deviceBuilder.customMetadataMap[key] ?: ByteString.EMPTY
-
-                if (oldByteString == newByteString) {
-                    return@updateData storage
-                }
-
-                adapterService.onMetadataChanged(device, key, value)
-                logEvent(device, "Custom metadata changed for $key")
-
-                val metadataBuilder = deviceBuilder.customMetadataMap.toMutableMap()
-                if (value.isEmpty()) {
-                    metadataBuilder.remove(key)
-                } else {
-                    metadataBuilder[key] = newByteString
-                }
-                deviceBuilder.clearCustomMetadata()
-                deviceBuilder.putAllCustomMetadata(metadataBuilder)
-
-                builder.putDevices(device.address, deviceBuilder.build()).build()
+            if (oldByteString == newByteString) {
+                return@blockingUpdateData storage
             }
+
+            adapterService.onMetadataChanged(device, key, value)
+            logEvent(device, "Custom metadata changed for $key")
+
+            val metadataBuilder = deviceBuilder.customMetadataMap.toMutableMap()
+            if (value.isEmpty()) {
+                metadataBuilder.remove(key)
+            } else {
+                metadataBuilder[key] = newByteString
+            }
+            deviceBuilder.clearCustomMetadata()
+            deviceBuilder.putAllCustomMetadata(metadataBuilder)
+
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
     }
 
@@ -323,35 +316,34 @@ constructor(
 
     fun setProfileConnectionPolicy(device: BluetoothDevice, profile: Int, policy: Int) {
         val newValue = fromConnectionPolicy(policy)
-
         val accessor = getPolicyAccessor(profile)
 
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val previousValue = accessor.getter(deviceBuilder.profileConnectionPolicies)
-                if (previousValue == newValue) {
-                    return@updateData storage
-                }
-
-                val oldPolicy = previousValue.toConnectionPolicy()
-                logEvent(device, "${getProfileName(profile)} policy changed: $oldPolicy -> $policy")
-
-                val policiesBuilder = deviceBuilder.profileConnectionPolicies.toBuilder()
-                val newPolicies = accessor.setter(policiesBuilder, newValue).build()
-                deviceBuilder.setProfileConnectionPolicies(newPolicies)
-
-                builder.putDevices(device.address, deviceBuilder.build()).build()
+            val previousValue = accessor.getter(deviceBuilder.profileConnectionPolicies)
+            if (previousValue == newValue) {
+                return@blockingUpdateData storage
             }
+
+            val oldPolicy = previousValue.toConnectionPolicy()
+            logEvent(device, "${getProfileName(profile)} policy changed: $oldPolicy -> $policy")
+
+            val policiesBuilder = deviceBuilder.profileConnectionPolicies.toBuilder()
+            val newPolicies = accessor.setter(policiesBuilder, newValue).build()
+            deviceBuilder.setProfileConnectionPolicies(newPolicies)
+
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
     }
 
     fun getAudioPolicyMetadata(device: BluetoothDevice): BluetoothSinkAudioPolicy {
-        val settings =
-            currentStorage.devicesMap[device.address]?.hfpClientSettings
-                ?: return BluetoothSinkAudioPolicy.Builder().build()
+        val device = currentStorage.devicesMap[device.address]
+        if (device == null || !device.hasHfpClientSettings()) {
+            return BluetoothSinkAudioPolicy.Builder().build()
+        }
+        val settings = device.hfpClientSettings
 
         return BluetoothSinkAudioPolicy.Builder()
             .setCallEstablishPolicy(toAudioPolicy(settings.callEstablish))
@@ -361,22 +353,20 @@ constructor(
     }
 
     fun setAudioPolicyMetadata(device: BluetoothDevice, policy: BluetoothSinkAudioPolicy) =
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val settingsBuilder = deviceBuilder.hfpClientSettings.toBuilder()
-                settingsBuilder.callEstablish = fromAudioPolicy(policy.callEstablishPolicy)
-                settingsBuilder.setActiveAfterConnection =
-                    fromAudioPolicy(policy.activeDevicePolicyAfterConnection)
-                settingsBuilder.inBandRingtoneEnabled = fromAudioPolicy(policy.inBandRingtonePolicy)
+            val settingsBuilder = deviceBuilder.hfpClientSettings.toBuilder()
+            settingsBuilder.callEstablish = fromAudioPolicy(policy.callEstablishPolicy)
+            settingsBuilder.setActiveAfterConnection =
+                fromAudioPolicy(policy.activeDevicePolicyAfterConnection)
+            settingsBuilder.inBandRingtoneEnabled = fromAudioPolicy(policy.inBandRingtonePolicy)
 
-                logEvent(device, "audio policy metadata to $policy")
+            logEvent(device, "audio policy metadata to $policy")
 
-                deviceBuilder.setHfpClientSettings(settingsBuilder.build())
-                builder.putDevices(device.address, deviceBuilder.build()).build()
-            }
+            deviceBuilder.setHfpClientSettings(settingsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
 
     fun getA2dpOptionalCodecsSupported(device: BluetoothDevice): Int {
@@ -390,8 +380,8 @@ constructor(
         return toSupported(status)
     }
 
-    fun setA2dpOptionalCodecsSupported(device: BluetoothDevice, value: Int) = runBlocking {
-        dataStore.updateData { storage ->
+    fun setA2dpOptionalCodecsSupported(device: BluetoothDevice, value: Int) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
@@ -407,7 +397,6 @@ constructor(
             deviceBuilder.setA2DpSettings(settingsBuilder.build())
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
-    }
 
     fun getA2dpOptionalCodecsEnabled(device: BluetoothDevice): Int {
         val a2dpSettings = currentStorage.devicesMap[device.address]?.a2DpSettings
@@ -420,8 +409,8 @@ constructor(
         return toPreference(status)
     }
 
-    fun setA2dpOptionalCodecsEnabled(device: BluetoothDevice, value: Int) = runBlocking {
-        dataStore.updateData { storage ->
+    fun setA2dpOptionalCodecsEnabled(device: BluetoothDevice, value: Int) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
@@ -437,7 +426,6 @@ constructor(
             deviceBuilder.setA2DpSettings(settingsBuilder.build())
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
-    }
 
     fun getPhonebookAccessPermission(device: BluetoothDevice): Int {
         val permissions = currentStorage.devicesMap[device.address]?.permissions
@@ -447,27 +435,25 @@ constructor(
 
     fun setPhonebookAccessPermission(device: BluetoothDevice, value: Int) {
         val newStatus = fromAccess(value)
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val permissions = deviceBuilder.permissions
-                val oldStatus = if (permissions.hasPhonebook()) permissions.phonebook else null
+            val permissions = deviceBuilder.permissions
+            val oldStatus = if (permissions.hasPhonebook()) permissions.phonebook else null
 
-                if (oldStatus == newStatus) {
-                    return@updateData storage
-                }
-                logEvent(device, "Phonebook permission changed: $oldStatus -> $newStatus")
-                val permissionsBuilder = permissions.toBuilder()
-                if (newStatus == null) {
-                    permissionsBuilder.clearPhonebook()
-                } else {
-                    permissionsBuilder.phonebook = newStatus
-                }
-                deviceBuilder.setPermissions(permissionsBuilder.build())
-                builder.putDevices(device.address, deviceBuilder.build()).build()
+            if (oldStatus == newStatus) {
+                return@blockingUpdateData storage
             }
+            logEvent(device, "Phonebook permission changed: $oldStatus -> $newStatus")
+            val permissionsBuilder = permissions.toBuilder()
+            if (newStatus == null) {
+                permissionsBuilder.clearPhonebook()
+            } else {
+                permissionsBuilder.phonebook = newStatus
+            }
+            deviceBuilder.setPermissions(permissionsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
     }
 
@@ -479,27 +465,25 @@ constructor(
 
     fun setMessageAccessPermission(device: BluetoothDevice, value: Int) {
         val newStatus = fromAccess(value)
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val permissions = deviceBuilder.permissions
-                val oldStatus = if (permissions.hasMessage()) permissions.message else null
+            val permissions = deviceBuilder.permissions
+            val oldStatus = if (permissions.hasMessage()) permissions.message else null
 
-                if (oldStatus == newStatus) {
-                    return@updateData storage
-                }
-                logEvent(device, "Message permission changed: $oldStatus -> $newStatus")
-                val permissionsBuilder = permissions.toBuilder()
-                if (newStatus == null) {
-                    permissionsBuilder.clearMessage()
-                } else {
-                    permissionsBuilder.message = newStatus
-                }
-                deviceBuilder.setPermissions(permissionsBuilder.build())
-                builder.putDevices(device.address, deviceBuilder.build()).build()
+            if (oldStatus == newStatus) {
+                return@blockingUpdateData storage
             }
+            logEvent(device, "Message permission changed: $oldStatus -> $newStatus")
+            val permissionsBuilder = permissions.toBuilder()
+            if (newStatus == null) {
+                permissionsBuilder.clearMessage()
+            } else {
+                permissionsBuilder.message = newStatus
+            }
+            deviceBuilder.setPermissions(permissionsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
     }
 
@@ -511,27 +495,25 @@ constructor(
 
     fun setSimAccessPermission(device: BluetoothDevice, value: Int) {
         val newStatus = fromAccess(value)
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val permissions = deviceBuilder.permissions
-                val oldStatus = if (permissions.hasSim()) permissions.sim else null
+            val permissions = deviceBuilder.permissions
+            val oldStatus = if (permissions.hasSim()) permissions.sim else null
 
-                if (oldStatus == newStatus) {
-                    return@updateData storage
-                }
-                logEvent(device, "SIM permission changed: $oldStatus -> $newStatus")
-                val permissionsBuilder = permissions.toBuilder()
-                if (newStatus == null) {
-                    permissionsBuilder.clearSim()
-                } else {
-                    permissionsBuilder.sim = newStatus
-                }
-                deviceBuilder.setPermissions(permissionsBuilder.build())
-                builder.putDevices(device.address, deviceBuilder.build()).build()
+            if (oldStatus == newStatus) {
+                return@blockingUpdateData storage
             }
+            logEvent(device, "SIM permission changed: $oldStatus -> $newStatus")
+            val permissionsBuilder = permissions.toBuilder()
+            if (newStatus == null) {
+                permissionsBuilder.clearSim()
+            } else {
+                permissionsBuilder.sim = newStatus
+            }
+            deviceBuilder.setPermissions(permissionsBuilder.build())
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
     }
 
@@ -539,27 +521,25 @@ constructor(
         currentStorage.devicesMap[device.address]?.keyMissingCount ?: -1
 
     fun updateKeyMissingCount(device: BluetoothDevice, isKeyMissingDetected: Boolean) =
-        runBlocking {
-            dataStore.updateData { storage ->
-                val builder = storage.toBuilder()
-                val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
+        dataStore.blockingUpdateData { storage ->
+            val builder = storage.toBuilder()
+            val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
-                val newCount =
-                    if (isKeyMissingDetected) {
-                        deviceBuilder.keyMissingCount + 1
-                    } else {
-                        0
-                    }
-
-                if (deviceBuilder.keyMissingCount == newCount) {
-                    return@updateData storage
+            val newCount =
+                if (isKeyMissingDetected) {
+                    deviceBuilder.keyMissingCount + 1
+                } else {
+                    0
                 }
 
-                logEvent(device, "Key missing count: ${deviceBuilder.keyMissingCount} -> $newCount")
-                deviceBuilder.keyMissingCount = newCount
-
-                builder.putDevices(device.address, deviceBuilder.build()).build()
+            if (deviceBuilder.keyMissingCount == newCount) {
+                return@blockingUpdateData storage
             }
+
+            logEvent(device, "Key missing count: ${deviceBuilder.keyMissingCount} -> $newCount")
+            deviceBuilder.keyMissingCount = newCount
+
+            builder.putDevices(device.address, deviceBuilder.build()).build()
         }
 
     fun isMicrophonePreferredForCalls(device: BluetoothDevice): Boolean {
@@ -571,8 +551,8 @@ constructor(
         }
     }
 
-    fun setMicrophonePreferredForCalls(device: BluetoothDevice, enabled: Boolean) = runBlocking {
-        dataStore.updateData { storage ->
+    fun setMicrophonePreferredForCalls(device: BluetoothDevice, enabled: Boolean) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
@@ -580,7 +560,7 @@ constructor(
                 deviceBuilder.hasMicrophonePreferredForCalls() &&
                     deviceBuilder.microphonePreferredForCalls == enabled
             ) {
-                return@updateData storage
+                return@blockingUpdateData storage
             }
 
             logEvent(device, "Microphone preferred for calls set to $enabled")
@@ -588,7 +568,6 @@ constructor(
 
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
-    }
 
     fun getAvrcpVolume(device: BluetoothDevice, defaultValue: Int): Int {
         val avrcpSettings = currentStorage.devicesMap[device.address]?.avrcpSettings
@@ -599,14 +578,14 @@ constructor(
         }
     }
 
-    fun setAvrcpVolume(device: BluetoothDevice, newVolume: Int) = runBlocking {
-        dataStore.updateData { storage ->
+    fun setAvrcpVolume(device: BluetoothDevice, newVolume: Int) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
             val settingsBuilder = deviceBuilder.avrcpSettings.toBuilder()
 
             if (settingsBuilder.hasVolume() && settingsBuilder.volume == newVolume) {
-                return@updateData storage
+                return@blockingUpdateData storage
             }
 
             logEvent(device, "Storing AVRCP Volume = $newVolume")
@@ -615,7 +594,6 @@ constructor(
             deviceBuilder.setAvrcpSettings(settingsBuilder.build())
             builder.putDevices(device.address, deviceBuilder.build()).build()
         }
-    }
 
     fun getLeAudioCodecPreferences(
         devices: List<BluetoothDevice>
@@ -639,8 +617,8 @@ constructor(
     fun setLeAudioCodecPreferences(
         devices: List<BluetoothDevice>,
         codecPreferences: Map<Int, Pair<BluetoothLeAudioCodecConfig, BluetoothLeAudioCodecConfig>>,
-    ) = runBlocking {
-        dataStore.updateData { storage ->
+    ) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             devices.forEach { device ->
                 val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
@@ -661,7 +639,6 @@ constructor(
             }
             builder.build()
         }
-    }
 
     /**
      * Gets the most recently connected bluetooth devices in order with most recently connected
@@ -736,8 +713,8 @@ constructor(
      * @param profileId The profile ID from [BluetoothProfile] that is now active, or `null` if no
      *   profile's active status needs to be updated.
      */
-    fun onDeviceConnected(device: BluetoothDevice, profileId: Int) = runBlocking {
-        dataStore.updateData { storage ->
+    fun onDeviceConnected(device: BluetoothDevice, profileId: Int) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
             deviceBuilder.incrementConnectionCounter(builder)
@@ -761,7 +738,6 @@ constructor(
             }
             builder.build()
         }
-    }
 
     /**
      * Updates the storage when a device disconnects for a specific profile.
@@ -771,8 +747,8 @@ constructor(
      * @param device The remote Bluetooth device that has disconnected.
      * @param profileId The profile ID from [BluetoothProfile] that is no longer active.
      */
-    fun onDeviceDisconnected(device: BluetoothDevice, profileId: Int) = runBlocking {
-        dataStore.updateData { storage ->
+    fun onDeviceDisconnected(device: BluetoothDevice, profileId: Int) =
+        dataStore.blockingUpdateData { storage ->
             val builder = storage.toBuilder()
 
             when (profileId) {
@@ -789,11 +765,10 @@ constructor(
             }
             builder.build()
         }
-    }
 
     /** Removes a device from storage */
-    fun removeDevice(device: BluetoothDevice) = runBlocking {
-        dataStore.updateData { storage ->
+    fun removeDevice(device: BluetoothDevice) =
+        dataStore.blockingUpdateData { storage ->
             logEvent(device, "Remove from storage")
             val builder = storage.toBuilder()
 
@@ -807,7 +782,6 @@ constructor(
 
             builder.build()
         }
-    }
 
     private suspend fun recompactConnectionCounter() =
         dataStore.updateData { storage ->
@@ -872,6 +846,10 @@ constructor(
             newBuilder.build()
         }
     }
+
+    private fun DataStore<UserStorage>.blockingUpdateData(
+        transform: suspend (UserStorage) -> UserStorage
+    ) = runBlocking { updateData(transform) }
 
     /** Logs a metadata change event for dumpsys. */
     private fun logEvent(device: BluetoothDevice, log: String) {

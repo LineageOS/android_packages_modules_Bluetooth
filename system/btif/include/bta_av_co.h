@@ -352,6 +352,14 @@ public:
   bool ReportSourceCodecState(BtaAvCoPeer* p_peer);
 
   /**
+   * Report the source codec state for a peer
+   *
+   * @param peer_address the peer address to report
+   * @return true on success, otherwise false
+   */
+  bool ReportSourceCodecState(const RawAddress& peer_address);
+
+  /**
    * Report the sink codec state for a peer
    *
    * @param p_peer the peer to report

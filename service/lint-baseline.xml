@@ -3,12 +3,12 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `ServiceMessenger.handleMessage` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED, android.permission.LOCAL_MAC_ADDRESS]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_PRIVILEGED]}."
+        message="Method `ServiceMessenger.handleMessage` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED, android.permission.LOCAL_MAC_ADDRESS]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_CONNECT]}."
         errorLine1="    private fun handleMessage(sendingUid: Int, obj: Parcelable): Parcelable {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/service/src/ServiceMessenger.kt"
-            line="78"
+            line="79"
             column="17"/>
     </issue>
 

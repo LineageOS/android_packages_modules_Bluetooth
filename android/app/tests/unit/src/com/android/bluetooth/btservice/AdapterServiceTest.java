@@ -108,6 +108,7 @@ import com.android.tests.bluetooth.MockitoRule;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -115,6 +116,7 @@ import org.mockito.Mock;
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.List;
@@ -127,7 +129,7 @@ public class AdapterServiceTest {
     private static final String TAG = AdapterServiceTest.class.getSimpleName();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
+    @Rule public final TemporaryFolder mTempFolder = new TemporaryFolder();
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private Context mContext;
@@ -237,7 +239,9 @@ public class AdapterServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_BOND_STATE_MACHINE_LOOPER, Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);
+                Flags.FLAG_BOND_STATE_MACHINE_LOOPER,
+                Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF,
+                Flags.FLAG_MAINLINE_BETA_STORAGE);
     }
 
     public AdapterServiceTest(FlagsWrapper flags) {
@@ -292,6 +296,12 @@ public class AdapterServiceTest {
                     }
                 });
 
+        doReturn(mTempFolder.getRoot()).when(mContext).getFilesDir();
+        doAnswer(it -> new File(mTempFolder.getRoot(), it.getArgument(0)))
+                .when(mContext)
+                .getDatabasePath(anyString());
+
+        doReturn(mContext).when(mContext).createDeviceProtectedStorageContext();
         doReturn(context.getCacheDir()).when(mContext).getCacheDir();
         doReturn(context.getUser()).when(mContext).getUser();
         doReturn(context.getPackageName()).when(mContext).getPackageName();
@@ -399,7 +409,7 @@ public class AdapterServiceTest {
             syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
         }
 
-        verify(mNativeInterface).enable();
+        verify(mNativeInterface).enable(any());
         mAdapter.stateChangeCallback(AbstractionLayer.BT_STATE_ON);
         syncHandler(AdapterState.BLE_STARTED);
         verifyStateChange(STATE_BLE_TURNING_ON, STATE_BLE_ON);
@@ -1290,6 +1300,7 @@ public class AdapterServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_REBOKE_PERMISSION_ON_UNBOND)
+    @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE) // permission are now part of device entry
     public void testRemovePermissionBondedToBonding() {
         initTest();
         SharedPreferences mockPreferences = mock(SharedPreferences.class);

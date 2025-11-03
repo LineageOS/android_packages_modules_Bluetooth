@@ -525,10 +525,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
   }
 
   /* Tell controller to get rid of the link key if it has one stored */
-  if ((BTM_DeleteStoredLinkKey(&bd_addr, NULL)) != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("Failed to delete stored link keys");
-    return tBTM_STATUS::BTM_NO_RESOURCES;
-  }
+  btm_sec_hci_delete_stored_link_key(bd_addr);
 
   btm_sec_cb.link_spec = {.addrt = {.type = addr_type, .bda = bd_addr}, .transport = transport};
 
@@ -2878,7 +2875,7 @@ static void btm_sec_auth_collision(uint16_t handle) {
         p_device = btm_sec_find_dev_by_sec_state(tSECURITY_STATE::ENCRYPTING);
       }
     } else {
-      p_device = btm_find_dev_by_handle(handle);
+      p_device = btm_get_dev_by_handle(handle);
     }
 
     if (p_device != NULL) {
@@ -2908,7 +2905,7 @@ static void btm_sec_auth_collision(uint16_t handle) {
  *
  *****************************************************************************/
 static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (!p_device) {
     return false;
   }
@@ -2933,7 +2930,7 @@ static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
     /* With BRCM controller, we do not need to delete the stored link key in
        controller.
        If the stack may sit on top of other controller, we may need this
-       BTM_DeleteStoredLinkKey (bd_addr, NULL); */
+       btm_sec_hci_delete_stored_link_key(p_device->bd_addr); */
     p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
     btm_sec_execute_procedure(p_device);
     return true;
@@ -2944,7 +2941,7 @@ static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
 
 void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   tBTM_PAIRING_STATE old_state = btm_sec_cb.pairing_state;
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   bool are_bonding = false;
   bool was_authenticating = false;
 
@@ -3222,7 +3219,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   }
   btm_sec_cb.collision_start_time = 0;
 
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     log::warn(
             "Received encryption change for unknown device handle:0x{:04x} "
@@ -3810,7 +3807,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
 }
 
 tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason, std::string comment) {
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
 
   /* In some weird race condition we may not have a record */
   if (!p_device) {
@@ -3839,7 +3836,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
               hci_error_code_text(reason), handle, comment);
   }
 
-  BtmDevice* p_device = btm_find_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     log::warn("Got disconnect for unknown device record handle:0x{:04x}", handle);
     return;
@@ -3888,7 +3885,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
 
     NotifyBondingChange(*p_device, status);
 
-    p_device = btm_find_dev_by_handle(handle);
+    p_device = btm_get_dev_by_handle(handle);
     if (p_device == nullptr) {
       // |btm_sec_cb.api.p_auth_complete_callback| may cause |p_device| to be
       // deallocated.
@@ -4361,6 +4358,17 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
     log::error("No memory to allocate new p_device");
     return;
   }
+  if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
+      !p_device->sec_rec.is_device_encrypted() &&
+      com::android::bluetooth::flags::detect_bondloss_legacy_bredr_pairing()) {
+    log::warn(
+            "Remote device is already bonded but it is initiating legacy pairing, marking bond "
+            "as lost");
+    btsnd_hcic_pin_code_neg_reply(p_bda);
+    btm_sec_report_bond_loss(p_device, BT_TRANSPORT_BR_EDR, BTM_KEY_MISSING_BREDR_INCOMING_PAIRING);
+    return;
+  }
+
   /* received PIN code request. must be non-sm4 */
   p_device->sm4 = BTM_SM4_KNOWN;
 
@@ -4464,7 +4472,7 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   BtmDevice* p_device;
   tBTM_INQ_INFO* p_inq_info;
 
-  p_device = btm_find_dev_by_handle(handle);
+  p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     return;
   }
@@ -5102,7 +5110,7 @@ static bool btm_sec_use_smp_br_chnl(BtmDevice* p_device) {
 void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
                                bool controller_sc_supported, bool hci_role_switch_supported,
                                bool br_edr_supported, bool le_supported) {
-  BtmDevice* p_device = btm_find_dev_by_handle(hci_handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(hci_handle);
   if (p_device == nullptr) {
     return;
   }
@@ -5156,4 +5164,15 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool hos
 
   p_device->remote_supports_bredr = br_edr_supported;
   p_device->remote_supports_ble = le_supported;
+}
+
+void btm_sec_hci_delete_stored_link_key(const RawAddress& bd_addr) {
+  /* Read and Write stored link key stems from a legacy use-case. */
+  /* If the controller doesn't support this then just return success */
+  if (!bluetooth::shim::GetController()->IsSupported(
+              bluetooth::hci::OpCode::DELETE_STORED_LINK_KEY)) {
+    log::verbose("DELETE_STORED_LINK_KEY not supported");
+    return;
+  }
+  btsnd_hcic_delete_stored_key(bd_addr, false);
 }

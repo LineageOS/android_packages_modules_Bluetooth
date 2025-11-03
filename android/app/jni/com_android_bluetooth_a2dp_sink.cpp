@@ -57,16 +57,8 @@ static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for connection state");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   (const jbyte*)bd_addr.address.data());
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, addr.get(),
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, jaddr.get(),
                                (jint)state);
 }
 
@@ -98,16 +90,8 @@ static void a2dp_sink_audio_config_callback(const RawAddress& bd_addr, uint32_t 
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                  sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-  if (!addr.get()) {
-    log::error("Fail to new jbyteArray bd addr for connection state");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   (const jbyte*)bd_addr.address.data());
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioConfigChanged, addr.get(),
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioConfigChanged, jaddr.get(),
                                (jint)sample_rate, (jint)channel_count);
 }
 

@@ -103,6 +103,7 @@ public:
   bool notify_connected_after_read_;
   bool closing_stream_for_disconnection_;
   bool autoconnect_flag_;
+  tGATT_IF client_if_;
   tCONN_ID conn_id_;
   uint16_t mtu_;
   bool encrypted_;
@@ -144,6 +145,7 @@ public:
         notify_connected_after_read_(false),
         closing_stream_for_disconnection_(false),
         autoconnect_flag_(false),
+        client_if_(0),
         conn_id_(GATT_INVALID_CONN_ID),
         mtu_(0),
         encrypted_(false),

@@ -796,8 +796,7 @@ public class BluetoothManagerServiceTest {
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
         // Verify a subsequent enable call still works (is not blocked by a pending user switch).
-        assertThat(mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing"))
-                .isTrue();
+        assertThat(mManagerService.enable(0, "userSwitch_onSameUserWhenBtOn_doesNothing")).isTrue();
 
         endTest();
     }

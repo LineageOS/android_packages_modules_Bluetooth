@@ -70,6 +70,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
@@ -92,7 +93,7 @@ import java.util.stream.Collectors;
  * killed
  */
 class AdapterServiceBinder extends IBluetooth.Stub {
-    private static final String TAG = Utils.BT_PREFIX + AdapterServiceBinder.class.getSimpleName();
+    private static final String TAG = Util.BT_PREFIX + AdapterServiceBinder.class.getSimpleName();
 
     private static final int MIN_ADVT_INSTANCES_FOR_MA = 5;
     private static final int MIN_OFFLOADED_FILTERS = 10;
@@ -188,6 +189,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean setName(String name, AttributionSource source) {
+        if (Flags.setNameInSystemServer()) {
+            throw new IllegalStateException("setNameInSystemServer is active");
+        }
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setName")
@@ -302,7 +306,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        return service.getAdapterProperties().isDiscovering();
+        return service.isDiscovering();
     }
 
     @Override

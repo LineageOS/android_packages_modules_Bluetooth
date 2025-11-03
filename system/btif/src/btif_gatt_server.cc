@@ -274,7 +274,7 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
       HAL_CBACK(callbacks, server->subrate_chg_cb, static_cast<int>(p_data->subrate_chg.conn_id),
                 p_data->subrate_chg.subrate_factor, p_data->subrate_chg.latency,
                 p_data->subrate_chg.cont_num, p_data->subrate_chg.timeout,
-                p_data->subrate_chg.status);
+                p_data->subrate_chg.subrate_mode, p_data->subrate_chg.status);
       break;
 
     case BTA_GATTS_CHARACTERISTICS_UNOFFLOADED_EVT:
