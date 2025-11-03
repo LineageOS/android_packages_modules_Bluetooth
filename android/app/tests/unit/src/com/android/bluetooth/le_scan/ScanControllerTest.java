@@ -224,6 +224,108 @@ public class ScanControllerTest {
     }
 
     @Test
+    public void onScanResult_multipleClients_oneMatchesFilter() throws Exception {
+        // Setup common parameters for onScanResult
+        int eventType = 0x1B; // Connectable and scannable legacy advertising PDU
+        int addressType = 0;
+        int primaryPhy = 1;
+        int secondPhy = 0;
+        int advertisingSid = 0xFF;
+        int txPower = 127;
+        int rssi = -50;
+        int periodicAdvInt = 0;
+        BluetoothDevice device = getTestDevice(0xAA);
+        String deviceAddress = device.getAddress();
+        mockGetRemoteDevice(mAdapterService, device);
+
+        // Create a scan record for a device named "TestDevice"
+        byte[] scanRecordBytes =
+                new byte[] {
+                    0x02,
+                    0x01,
+                    0x06, // AD Flags
+                    0x0B,
+                    0x09,
+                    'T',
+                    'e',
+                    's',
+                    't',
+                    'D',
+                    'e',
+                    'v',
+                    'i',
+                    'c',
+                    'e' // Complete Local Name
+                };
+
+        // Setup matching client
+        final int matchingScannerId = 1;
+        ScanSettings matchingSettings =
+                new ScanSettings.Builder()
+                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                        .build();
+        List<ScanFilter> matchingFilters =
+                List.of(new ScanFilter.Builder().setDeviceName("TestDevice").build());
+        ScanClient matchingClient =
+                new ScanClient(1000, matchingScannerId, matchingSettings, matchingFilters);
+        matchingClient.setHasNetworkSettingsPermission(true); // Bypass permission checks
+        ScannerApp matchingApp = mock(ScannerApp.class);
+        IScannerCallback matchingCallback = mock(IScannerCallback.class);
+        AppScanStats matchingAppScanStats = mock(AppScanStats.class);
+        doReturn(matchingCallback).when(matchingApp).getCallback();
+        doReturn(matchingAppScanStats).when(matchingApp).getAppScanStats();
+        matchingClient.setAppScanStats(matchingAppScanStats);
+
+        // Setup non-matching client
+        final int nonMatchingScannerId = 2;
+        ScanSettings nonMatchingSettings =
+                new ScanSettings.Builder()
+                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                        .build();
+        List<ScanFilter> nonMatchingFilters =
+                List.of(new ScanFilter.Builder().setDeviceName("OtherDevice").build());
+        ScanClient nonMatchingClient =
+                new ScanClient(1001, nonMatchingScannerId, nonMatchingSettings, nonMatchingFilters);
+        nonMatchingClient.setHasNetworkSettingsPermission(true); // Bypass permission checks
+        ScannerApp nonMatchingApp = mock(ScannerApp.class);
+        IScannerCallback nonMatchingCallback = mock(IScannerCallback.class);
+        AppScanStats nonMatchingAppScanStats = mock(AppScanStats.class);
+        doReturn(nonMatchingCallback).when(nonMatchingApp).getCallback();
+        doReturn(nonMatchingAppScanStats).when(nonMatchingApp).getAppScanStats();
+        nonMatchingClient.setAppScanStats(nonMatchingAppScanStats);
+
+        // Mock dependencies
+        doReturn(Set.of(matchingClient, nonMatchingClient))
+                .when(mScanManager)
+                .getRegularScanQueue();
+        doReturn(matchingApp).when(mScannerMap).getById(matchingScannerId);
+        doReturn(nonMatchingApp).when(mScannerMap).getById(nonMatchingScannerId);
+        doReturn(deviceAddress).when(mAdapterService).getIdentityAddress(anyString());
+
+        // Execute the method under test
+        mScanController.onScanResult(
+                eventType,
+                addressType,
+                deviceAddress,
+                primaryPhy,
+                secondPhy,
+                advertisingSid,
+                txPower,
+                rssi,
+                periodicAdvInt,
+                scanRecordBytes,
+                deviceAddress);
+
+        // Verify that only the matching client received the scan result
+        verify(matchingCallback).onScanResult(any(ScanResult.class));
+        verify(matchingAppScanStats).addResults(matchingScannerId);
+
+        // Verify that the non-matching client did not receive the scan result
+        verify(nonMatchingCallback, never()).onScanResult(any(ScanResult.class));
+        verify(nonMatchingAppScanStats, never()).addResults(anyInt());
+    }
+
+    @Test
     public void onScannerRegistered_success_callback() throws RemoteException {
         long uuidLsb = 12345L;
         long uuidMsb = 67890L;
