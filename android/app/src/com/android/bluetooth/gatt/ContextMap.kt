@@ -94,6 +94,17 @@ class ContextMap<C : IInterface> {
         REASON_UNKNOWN,
     }
 
+    fun clear() {
+        synchronized(appsLock) {
+            for (entry in apps) {
+                entry.unlinkToDeath()
+            }
+            apps.clear()
+            ongoingRecords.clear()
+        }
+        synchronized(connectionsLock) { connections.clear() }
+    }
+
     fun add(
         appUid: Int,
         appName: String,
@@ -101,14 +112,13 @@ class ContextMap<C : IInterface> {
         callback: C,
         transport: Int,
         tag: String?,
-    ): ContextApp<C> {
+    ): ContextApp<C> =
         synchronized(appsLock) {
             val app = ContextApp(appUid, appName, uuid, callback, transport, tag)
             apps.add(app)
             recordRegisterApp(app)
             return app
         }
-    }
 
     fun remove(uuid: UUID, reason: RemoveReason): ContextApp<C>? {
         synchronized(appsLock) {
@@ -147,30 +157,23 @@ class ContextMap<C : IInterface> {
         return removedApp
     }
 
-    fun getAllApps(): List<ContextApp<C>> {
+    fun getAllApps(): List<ContextApp<C>> =
         synchronized(appsLock) {
             return Collections.unmodifiableList(apps)
         }
-    }
 
-    fun addConnection(id: Int, connId: Int, transport: Int, device: BluetoothDevice) {
+    fun addConnection(id: Int, connId: Int, transport: Int, device: BluetoothDevice) =
         synchronized(connectionsLock) {
-            val entry = getById(id)
-            if (entry != null) {
-                connections.add(Connection(connId, device, transport, id))
-            }
+            getById(id)?.let { _ -> connections.add(Connection(connId, device, transport, id)) }
         }
-    }
 
-    fun removeConnection(id: Int, connId: Int) {
+    fun removeConnection(id: Int, connId: Int) =
         synchronized(connectionsLock) {
             connections.removeIf { conn -> conn.appId == id && conn.connId == connId }
         }
-    }
 
-    fun removeConnectionsByAppId(appId: Int) {
+    fun removeConnectionsByAppId(appId: Int) =
         synchronized(connectionsLock) { connections.removeIf { conn -> conn.appId == appId } }
-    }
 
     fun getById(id: Int) = findBy("ID=$id") { it.id == id }
 
@@ -179,7 +182,7 @@ class ContextMap<C : IInterface> {
 
     fun getByUuid(uuid: UUID) = findBy("UUID=$uuid") { it.uuid == uuid }
 
-    private fun findBy(criteria: String, predicate: (ContextApp<C>) -> Boolean): ContextApp<C>? {
+    private fun findBy(criteria: String, predicate: (ContextApp<C>) -> Boolean): ContextApp<C>? =
         synchronized(appsLock) {
             val app = apps.find(predicate)
             if (app == null) {
@@ -187,33 +190,18 @@ class ContextMap<C : IInterface> {
             }
             return app
         }
-    }
 
-    fun getConnectedDevices(): Set<BluetoothDevice> {
-        val devices = mutableSetOf<BluetoothDevice>()
+    fun getConnectedDevices(): Set<BluetoothDevice> =
         synchronized(connectionsLock) {
-            for (connection in connections) {
-                devices.add(connection.device)
-            }
+            return connections.map { it.device }.toSet()
         }
-        return devices
-    }
 
-    /** Get an application context by a connection ID. */
     fun getByConnId(connId: Int): ContextApp<C>? {
-        var appId = -1
+        val connection: Connection
         synchronized(connectionsLock) {
-            for (connection in connections) {
-                if (connection.connId == connId) {
-                    appId = connection.appId
-                    break
-                }
-            }
+            connection = connections.firstOrNull { it.connId == connId } ?: return null
         }
-        if (appId >= 0) {
-            return getById(appId)
-        }
-        return null
+        return getById(connection.appId)
     }
 
     /**
@@ -231,73 +219,31 @@ class ContextMap<C : IInterface> {
      *
      * <p>This function provides a way to get all connections for a device so we can do the above.
      */
-    fun getConnectionsByDevice(appId: Int, device: BluetoothDevice): List<Connection> {
-        val currentConnections = mutableListOf<Connection>()
+    fun getConnectionsByDevice(appId: Int, device: BluetoothDevice): List<Connection> =
         synchronized(connectionsLock) {
-            for (connection in connections) {
-                if (connection.device == device && connection.appId == appId) {
-                    currentConnections.add(connection)
-                }
-            }
+            return connections.filter { it.appId == appId && it.device == device }
         }
-        return currentConnections
-    }
 
-    /** Returns the device for a given connection ID. */
-    fun deviceByConnId(connId: Int): BluetoothDevice? {
+    fun deviceByConnId(connId: Int): BluetoothDevice? =
         synchronized(connectionsLock) {
-            for (connection in connections) {
-                if (connection.connId == connId) {
-                    return connection.device
-                }
-            }
+            return connections.firstOrNull { it.connId == connId }?.device
         }
-        return null
-    }
 
-    /** Returns all Connections that have a given app UID. */
-    fun getConnectionByApp(appId: Int): List<Connection> {
-        val currentConnections = mutableListOf<Connection>()
+    fun getConnectionByApp(appId: Int): List<Connection> =
         synchronized(connectionsLock) {
-            for (connection in connections) {
-                if (connection.appId == appId) {
-                    currentConnections.add(connection)
-                }
-            }
+            return connections.filter { it.appId == appId }
         }
-        return currentConnections
-    }
 
-    /** Counts the number of applications that have a given app UID. */
-    fun countByAppUid(appUid: Int): Int {
+    fun countByAppUid(appUid: Int): Int =
         synchronized(appsLock) {
-            return apps.stream().filter { app -> app.uid == appUid }.count().toInt()
+            return apps.count { it.uid == appUid }
         }
-    }
-
-    /** Erases all application context entries. */
-    fun clear() {
-        synchronized(appsLock) {
-            for (entry in apps) {
-                entry.unlinkToDeath()
-            }
-            apps.clear()
-            ongoingRecords.clear()
-        }
-
-        synchronized(connectionsLock) { connections.clear() }
-    }
 
     /** Returns connect device map with addr and appid */
-    fun getConnectedMap(): Map<Int, BluetoothDevice> {
-        val connectedMap = mutableMapOf<Int, BluetoothDevice>()
+    fun getConnectedMap(): Map<Int, BluetoothDevice> =
         synchronized(connectionsLock) {
-            for (conn in connections) {
-                connectedMap[conn.appId] = conn.device
-            }
+            return connections.associate { it.appId to it.device }
         }
-        return connectedMap
-    }
 
     fun dump(sb: StringBuilder) {
         synchronized(appsLock) {
@@ -321,7 +267,6 @@ class ContextMap<C : IInterface> {
                 record.id = app.id
                 record.removeReason = reason
                 record.unregisterTime = Instant.now()
-
                 if (lastRecords.size >= MAX_LAST_RECORDS) {
                     lastRecords.removeAt(0)
                 }
