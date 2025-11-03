@@ -858,10 +858,10 @@ class GattServerManager(
         callback: IBluetoothGattCallback,
         device: BluetoothDevice,
         service: BluetoothGattService,
-        characteristics: MutableList<BluetoothGattCharacteristic>,
+        characteristics: List<BluetoothGattCharacteristic>,
         endpointId: Long,
         hubId: Long,
-    ): GattOffloadSession.InnerParcel? {
+    ): GattOffloadSession.InnerParcel {
         check(adapterService.isGattClientOffloadSupported()) { "GATT client offload unsupported" }
         val clientApp = gatt.mClientMap.getByCallbackId(callback)
         requireNotNull(clientApp) { "$callback: App not registered" }
@@ -910,10 +910,10 @@ class GattServerManager(
         callback: IBluetoothGattServerCallback,
         device: BluetoothDevice,
         service: BluetoothGattService,
-        characteristics: MutableList<BluetoothGattCharacteristic>,
+        characteristics: List<BluetoothGattCharacteristic>,
         endpointId: Long,
         hubId: Long,
-    ): GattOffloadSession.InnerParcel? {
+    ): GattOffloadSession.InnerParcel {
         check(adapterService.isGattServerOffloadSupported()) { "GATT server offload unsupported" }
         val serverApp = serverMap.getByCallbackId(callback)
         requireNotNull(serverApp) { "$callback: App not registered" }
@@ -1002,7 +1002,7 @@ class GattServerManager(
 
     private fun getGattDatabaseForOffload(
         service: BluetoothGattService,
-        characteristics: MutableList<BluetoothGattCharacteristic>,
+        characteristics: List<BluetoothGattCharacteristic>,
     ) =
         buildList {
                 add(GattDbElement.createPrimaryService(service.uuid))

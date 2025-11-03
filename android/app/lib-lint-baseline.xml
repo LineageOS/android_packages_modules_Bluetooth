@@ -718,17 +718,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `GattServiceBinder.enforcePrivilegedPermissionIfNeededForHandle` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    private static void enforcePrivilegedPermissionIfNeededForHandle("
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/gatt/GattServiceBinder.java"
-            line="677"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `BluetoothGattServerProxy.open` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
         errorLine1="        boolean open(BluetoothGattServerCallback callback) {"
         errorLine2="                ~~~~">
