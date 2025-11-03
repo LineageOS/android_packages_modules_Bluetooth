@@ -1151,46 +1151,37 @@ struct iso_impl {
                     : 0llu);
   }
 
+  void dump_iso_group(
+          int fd, const std::string& title, const std::string& group_id_name,
+          const std::string& stream_name,
+          const std::unordered_map<uint8_t, std::unique_ptr<iso_group>>& group_map) const {
+    dprintf(fd, "    %s:\n", title.c_str());
+    for (auto const& group_pair : group_map) {
+      dprintf(fd, "      %s: %d\n", group_id_name.c_str(), group_pair.first);
+      for (auto const& handle : group_pair.second->stream_conn_handles) {
+        auto stream_it = conn_hdl_to_iso_stream_map_.find(handle);
+        if (stream_it == conn_hdl_to_iso_stream_map_.end()) {
+          continue;
+        }
+        auto& stream = stream_it->second;
+        dprintf(fd, "        %s Connection handle: %d\n", stream_name.c_str(), stream->conn_handle);
+        dprintf(fd, "          Used Credits: %d\n", stream->used_credits.load());
+        dprintf(fd, "          SDU Interval: %d\n", stream->sdu_itv);
+        dprintf(fd, "          State Flags: 0x%02hx\n", stream->state_flags.load());
+        dump_credits_stats(fd, stream->cr_stats);
+        dump_event_stats(fd, stream->evt_stats);
+      }
+    }
+  }
+
   void dump(int fd) const {
-    dprintf(fd, "  ----------------\n ");
+    dprintf(fd, "  ----------------\n");
     dprintf(fd, "  ISO Manager:\n");
     dprintf(fd, "    Available credits: %d\n", iso_credits_.load());
     dprintf(fd, "    Controller buffer size: %d\n", iso_buffer_size_);
-    dprintf(fd, "    CIGs:");
-    for (auto const& group_pair : cig_id_to_group_map_) {
-      dprintf(fd, "      CIG ID: %d", group_pair.first);
-      for (auto const& handle : group_pair.second->stream_conn_handles) {
-        auto stream_it = conn_hdl_to_iso_stream_map_.find(handle);
-        if (stream_it == conn_hdl_to_iso_stream_map_.end()) {
-          continue;
-        }
-        auto& stream = stream_it->second;
-        dprintf(fd, "      CIS Connection handle: %d", stream->conn_handle);
-        dprintf(fd, "        Used Credits: %d", stream->used_credits.load());
-        dprintf(fd, "        SDU Interval: %d", stream->sdu_itv);
-        dprintf(fd, "        State Flags: 0x%02hx", stream->state_flags.load());
-        dump_credits_stats(fd, stream->cr_stats);
-        dump_event_stats(fd, stream->evt_stats);
-      }
-    }
-    dprintf(fd, "    BIGs:");
-    for (auto const& group_pair : source_big_handle_to_group_map_) {
-      dprintf(fd, "      BIG handle: %d", group_pair.first);
-      for (auto const& handle : group_pair.second->stream_conn_handles) {
-        auto stream_it = conn_hdl_to_iso_stream_map_.find(handle);
-        if (stream_it == conn_hdl_to_iso_stream_map_.end()) {
-          continue;
-        }
-        auto& stream = stream_it->second;
-        dprintf(fd, "      BIS Connection handle: %d", stream->conn_handle);
-        dprintf(fd, "        Used Credits: %d", stream->used_credits.load());
-        dprintf(fd, "        SDU Interval: %d", stream->sdu_itv);
-        dprintf(fd, "        State Flags: 0x%02hx", stream->state_flags.load());
-        dump_credits_stats(fd, stream->cr_stats);
-        dump_event_stats(fd, stream->evt_stats);
-      }
-    }
-    dprintf(fd, "  ----------------");
+    dump_iso_group(fd, "CIGs", "CIG ID", "CIS", cig_id_to_group_map_);
+    dump_iso_group(fd, "BIGs (Source)", "BIG handle", "BIS", source_big_handle_to_group_map_);
+    dprintf(fd, "  ----------------\n");
   }
 
   void set_big_channel_map_classification(uint8_t action, uint8_t big_handle,
