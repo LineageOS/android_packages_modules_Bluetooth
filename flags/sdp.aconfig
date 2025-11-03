@@ -31,7 +31,7 @@ flag {
 flag {
   name: "explicit_uuid_transport_api"
   namespace: "bluetooth"
-  description: "Enables the new fetchUuids() and fetchUuids(int transport)"
-                "APIs in BluetoothDevice and deprecates fetchUuidsWithSdp."
+  description: "Enables the new fetchUuids(int transport)"
   bug: "457242678"
+  is_exported: true  # Required for @FlaggedApi
 }

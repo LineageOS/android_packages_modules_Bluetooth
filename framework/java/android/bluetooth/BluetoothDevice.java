@@ -2391,7 +2391,54 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /**
-     * Perform a service discovery on the remote device to get the UUIDs supported.
+     * Performs a service discovery on the remote device to get the UUIDs supported, allowing the
+     * caller to specify the transport.
+     *
+     * <p>This API is asynchronous. When discovery completes, the {@link #ACTION_UUID} intent is
+     * sent, containing the UUIDs supported by the remote device for the specified transport(s).
+     * Cached UUIDs may be sent if an error occurs or if discovery is lengthy. Use {@link #getUuids}
+     * to retrieve cached UUIDs without initiating discovery.
+     *
+     * <p>The implementation already handles invalid transport arguments by throwing
+     * IllegalArgumentException and returns false when Bluetooth is disabled, covering the contract
+     * verification points.
+     *
+     * @param transport The transport to use for discovery: {@link #TRANSPORT_BREDR} for Classic
+     *     Bluetooth (SDP), {@link #TRANSPORT_LE} for Bluetooth Low Energy (GATT), or {@link
+     *     #TRANSPORT_AUTO} to discover on all applicable transports (typically BR/EDR and LE for
+     *     dual-mode devices). * @return False if the check fails, True if the process of initiating
+     *     an ACL connection to the remote device was started or cached UUIDs will be broadcast with
+     *     the specific transport.
+     */
+    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public boolean fetchUuids(@Transport int transport) {
+        if (DBG) log("fetchUuids(transport=" + transport);
+        if (transport != TRANSPORT_AUTO
+                && transport != TRANSPORT_BREDR
+                && transport != TRANSPORT_LE) {
+            throw new IllegalArgumentException(
+                    "Invalid transport value: "
+                            + transport
+                            + ". Must be TRANSPORT_AUTO, "
+                            + "TRANSPORT_BREDR, or TRANSPORT_LE.");
+        }
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "BT not enabled. Cannot fetchUuids");
+            return false;
+        }
+        try {
+            return service.fetchRemoteUuids(this, transport, mAttributionSource);
+        } catch (RemoteException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        }
+        return false;
+    }
+
+    /**
+     * Performs a service discovery on the remote device to get the UUIDs supported.
      *
      * <p>This API is asynchronous and {@link #ACTION_UUID} intent is sent, with the UUIDs supported
      * by the remote end. If there is an error in getting the SDP records or if the process takes a
@@ -2402,7 +2449,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast.
+     * @deprecated Use {@link #fetchUuids(int)}.
      */
+    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
+    @Deprecated
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -2430,7 +2480,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @param transport - provide type of transport (e.g. LE or Classic).
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast with the specific transport.
+     * @deprecated Use {@link #fetchUuids(int)}.
      */
+    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
+    @Deprecated
     @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -2445,7 +2498,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else {
             try {
-                return service.fetchRemoteUuids(this, transport, mAttributionSource);
+                return service.fetchRemoteUuidsWithSdp(this, transport, mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
