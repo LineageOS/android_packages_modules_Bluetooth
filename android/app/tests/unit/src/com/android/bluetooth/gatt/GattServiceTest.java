@@ -438,6 +438,33 @@ public class GattServiceTest {
     }
 
     @Test
+    public void clientConnect_withCrossDeviceAccessServiceTag_setsPreferRelaxMode() {
+        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
+        boolean isDirect = false;
+        int transport = 2;
+        boolean opportunistic = true;
+        AttributionSource source =
+                new AttributionSource.Builder(Process.myUid())
+                        .setPackageName("com.test.package")
+                        .setAttributionTag("crossdeviceaccessservice")
+                        .build();
+
+        mService.clientConnect(
+                mGattCallback, mDevice, addressType, isDirect, transport, opportunistic, source);
+
+        verify(mNativeInterface)
+                .gattClientConnect(
+                        CLIENT_IF,
+                        mDevice,
+                        addressType,
+                        isDirect,
+                        transport,
+                        opportunistic,
+                        0,
+                        true /* preferRelaxMode */);
+    }
+
+    @Test
     public void clientConnectOverLeFailed() throws Exception {
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
