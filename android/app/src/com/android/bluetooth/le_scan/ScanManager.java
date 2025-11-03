@@ -96,7 +96,7 @@ import java.util.stream.Stream;
 
 /** Class that handles Bluetooth LE scan related operations. */
 class ScanManager {
-    private static final String TAG = ScanManager.class.getSimpleName();
+    private static final String TAG = ScanUtil.TAG_PREFIX + ScanManager.class.getSimpleName();
 
     // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. To be deleted [START]
     // Messages for handling BLE scan operations.

@@ -33,7 +33,7 @@ import com.android.bluetooth.util.toTable
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
-private const val TAG = "ScannerMap"
+private const val TAG = ScanUtil.TAG_PREFIX + "ScannerMap"
 
 /** List of our registered scanners. */
 class ScannerMap {

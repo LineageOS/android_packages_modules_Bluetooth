@@ -34,7 +34,7 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS
 import com.android.bluetooth.util.NumberUtils
 import java.util.concurrent.TimeUnit
 
-private const val TAG = "BatchScanUtil"
+private const val TAG = ScanUtil.TAG_PREFIX + "BatchScanUtil"
 
 data class BatchScanParams(
     val scanMode: Int,

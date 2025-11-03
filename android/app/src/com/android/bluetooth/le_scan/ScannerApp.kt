@@ -26,7 +26,7 @@ import android.util.Log
 import com.android.bluetooth.ActionOnDeathRecipient
 import java.util.UUID
 
-private const val TAG = "ScannerApp"
+private const val TAG = ScanUtil.TAG_PREFIX + "ScannerApp"
 
 class ScannerApp(
     val appScanStats: AppScanStats,

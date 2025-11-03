@@ -85,7 +85,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ScanController {
-    private static final String TAG = ScanController.class.getSimpleName();
+    private static final String TAG = ScanUtil.TAG_PREFIX + ScanController.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 

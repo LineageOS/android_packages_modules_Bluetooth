@@ -28,7 +28,7 @@ import com.android.bluetooth.util.TimeProvider;
 import com.android.bluetooth.util.WorkSourceUtil;
 
 class ScanRadioStats {
-    private static final String TAG = ScanRadioStats.class.getSimpleName();
+    private static final String TAG = ScanUtil.TAG_PREFIX + ScanRadioStats.class.getSimpleName();
 
     private final TimeProvider mTimeProvider;
 
