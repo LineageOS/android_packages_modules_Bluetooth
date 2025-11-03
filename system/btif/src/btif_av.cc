@@ -386,8 +386,9 @@ public:
   bool GetLowLatencyMode() const { return is_low_latency_mode_; }
   void SetLowLatencyMode(bool is_low_latency_mode) { is_low_latency_mode_ = is_low_latency_mode; }
 
-  void SetReconfigureStreamData(btif_av_reconfig_req_t&& req) {
+  BtStatus SetReconfigureStreamData(btif_av_reconfig_req_t&& req) {
     reconfig_req_ = std::make_optional<btif_av_reconfig_req_t>(std::move(req));
+    return BtifStatus(SUCCESS);
   }
 
   std::optional<btif_av_reconfig_req_t> GetReconfigureStreamData() {
@@ -629,8 +630,7 @@ public:
             .reconf_ready_promise = std::move(reconf_ready_promise),
     };
 
-    peer->SetReconfigureStreamData(std::move(reconf_stream_req));
-    return BtifStatus();
+    return peer->SetReconfigureStreamData(std::move(reconf_stream_req));
   }
 
   void DumpPeersInfo(int fd);
