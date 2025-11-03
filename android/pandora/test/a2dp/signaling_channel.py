@@ -21,7 +21,7 @@ from .packets import avdtp as av
 import pyee
 import typing
 from unittest.mock import ANY
-from typing import Optional
+from typing import Optional, TypeVar
 
 import asyncio
 import bumble.device
@@ -154,9 +154,9 @@ class SignalingChannel(pyee.EventEmitter):
         await self.transport_channel.disconnect()
         self.transport_channel = None
 
-    async def expect_signal(self,
-                            expected_sig: typing.Union[av.SignalingPacket, type],
-                            timeout: float = 3) -> av.SignalingPacket:
+    _SIG = TypeVar('_SIG', bound=av.SignalingPacket)
+
+    async def expect_signal(self, expected_sig: _SIG | type[_SIG], timeout: float = 3) -> _SIG:
         if not self.signaling_channel:
             if (self.role != "acceptor"):
                 raise AttributeError("Signaling channel is None")
@@ -192,7 +192,7 @@ class SignalingChannel(pyee.EventEmitter):
 
         logger.debug(f"<<< {self.connection.self_address} {self.role} received signal: <<<")
         sig.show()
-        return sig
+        return sig  # type: ignore
 
     async def expect_media(self, timeout: float = 5.0) -> avdtp.MediaPacket:
         if not self.transport_channel:
@@ -307,7 +307,7 @@ class SignalingChannel(pyee.EventEmitter):
             av.DiscoverResponse(transaction_label=cmd.transaction_label,
                                 seid_information=seid_information))
 
-    async def initiate_discover(self, transaction_label: int = 0x01):
+    async def initiate_discover(self, transaction_label: int = 0x01) -> av.DiscoverResponse:
         self.send_signal(av.DiscoverCommand(transaction_label=transaction_label))
         return await self.expect_signal(av.DiscoverResponse(transaction_label=transaction_label,
                                                             seid_information=ANY),
@@ -320,9 +320,10 @@ class SignalingChannel(pyee.EventEmitter):
             av.GetAllCapabilitiesResponse(transaction_label=cmd.transaction_label,
                                           service_capabilities=service_capabilities))
 
-    async def initiate_get_all_capabilities(self,
-                                            seid_information: av.SeidInformation,
-                                            transaction_label: int = 0x02):
+    async def initiate_get_all_capabilities(
+            self,
+            seid_information: av.SeidInformation,
+            transaction_label: int = 0x02) -> av.GetAllCapabilitiesResponse:
         self.send_signal(
             av.GetAllCapabilitiesCommand(transaction_label=transaction_label,
                                          acp_seid=seid_information.acp_seid))

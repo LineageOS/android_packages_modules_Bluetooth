@@ -359,14 +359,14 @@ class HapTest(base_test.BaseTestClass):
         await self.setup_monaural()
 
         # Change preset name
-        has_preset = self.ref_left.has.preset_records.get(FOO_PRESET.index, None)
+        has_preset = self.ref_left.has.preset_records[FOO_PRESET.index]
         has_preset.name = "Very nice name"
         await self.logcat.Log("Preset modified in server. Notify now")
         await self.ref_left.generic_update(0, has_preset)
         preset_changed = await self.dut_hap.WaitPresetChanged()
 
         updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
-        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        updated_preset = next(p for p in updated_list if p.index == has_preset.index)
         assert_equal(updated_preset.name, has_preset.name)
         assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
 
@@ -384,7 +384,7 @@ class HapTest(base_test.BaseTestClass):
         self.ref_left.has.currently_connected_clients = clients
 
         # Change preset name
-        has_preset = self.ref_left.has.preset_records.get(LONGNAME_PRESET.index, None)
+        has_preset = self.ref_left.has.preset_records[LONGNAME_PRESET.index]
         has_preset.name = "Very nice name"
 
         await self.logcat.Log("Preset modified in server. Notify 2 preset now")
@@ -392,7 +392,7 @@ class HapTest(base_test.BaseTestClass):
         preset_changed = await self.dut_hap.WaitPresetChanged()
 
         updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
-        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        updated_preset = next(p for p in updated_list if p.index == has_preset.index)
         assert_equal(updated_preset.name, has_preset.name)
         assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
 
@@ -409,7 +409,7 @@ class HapTest(base_test.BaseTestClass):
         await self.ref_left.generic_update(0, FOO_PRESET)  # Not propagated yet
 
         # Change preset name
-        has_preset = self.ref_left.has.preset_records.get(LONGNAME_PRESET.index, None)
+        has_preset = self.ref_left.has.preset_records[LONGNAME_PRESET.index]
         has_preset.name = "Very nice name"
 
         await self.ref_left.generic_update(FOO_PRESET.index, has_preset)  # Not propagated yet
@@ -423,7 +423,7 @@ class HapTest(base_test.BaseTestClass):
         preset_changed = await self.dut_hap.WaitPresetChanged()
 
         updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
-        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        updated_preset = next(p for p in updated_list if p.index == has_preset.index)
         assert_equal(updated_preset.name, has_preset.name)
         assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
 
@@ -432,24 +432,24 @@ class HapTest(base_test.BaseTestClass):
         await self.setup_binaural()
 
         # Change preset name
-        has_preset = self.ref_left.has.preset_records.get(FOO_PRESET.index, None)
+        has_preset = self.ref_left.has.preset_records[FOO_PRESET.index]
         has_preset.name = "Very nice name"
         await self.logcat.Log("Preset modified in server. Notify now")
         await self.ref_left.generic_update(0, has_preset)
         preset_changed = await self.dut_hap.WaitPresetChanged()
 
         updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
-        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        updated_preset = next(p for p in updated_list if p.index == has_preset.index)
         assert_equal(updated_preset.name, has_preset.name)
         assert_equal(updated_list, get_server_preset_sorted(self.ref_left.has))
 
-        has_preset = self.ref_right.has.preset_records.get(FOO_PRESET.index, None)
+        has_preset = self.ref_right.has.preset_records[FOO_PRESET.index]
         has_preset.name = "Very nice name"
         await self.ref_right.generic_update(0, has_preset)
         preset_changed = await self.dut_hap.WaitPresetChanged()
 
         updated_list = to_bumble_preset_list(preset_changed.preset_record_list)
-        updated_preset = next((p for p in updated_list if p.index == has_preset.index), None)
+        updated_preset = next(p for p in updated_list if p.index == has_preset.index)
         assert_equal(updated_preset.name, has_preset.name)
         assert_equal(updated_list, get_server_preset_sorted(self.ref_right.has))
 
