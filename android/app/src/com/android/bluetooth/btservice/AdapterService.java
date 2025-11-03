@@ -1554,6 +1554,8 @@ public class AdapterService extends Service {
             mNativeInterface.getCallbacks().cleanup();
         }
 
+        mBluetoothQualityReportNativeInterface.cleanup();
+
         if (mBluetoothKeystoreService != null) {
             Log.d(TAG, "cleanup(): mBluetoothKeystoreService.cleanup()");
             mBluetoothKeystoreService.cleanup();
