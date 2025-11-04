@@ -105,3 +105,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+  name: "report_vendor_events_from_acl"
+  namespace: "bluetooth"
+  description: "Allows the Bluetooth stack to listen for and report vendor-specific events received over ACL connections. The valid handle range for these events is specified by the HCI Get Vendor Capabilities command."
+  bug: "456742258"
+}
+
