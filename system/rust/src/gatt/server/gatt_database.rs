@@ -1360,7 +1360,7 @@ mod test {
     }
 
     #[test]
-    fn test_unwriteable_without_response_characteristic() {
+    fn test_write_without_response_characteristic_which_only_has_writable_with_response() {
         // arrange: db with a characteristic that is writable, but not writable-without-response
         let (gatt_datastore, mut data_events) = MockRawDatastore::new();
         let gatt_db = SharedBox::new(GattDatabase::new());
@@ -1374,6 +1374,48 @@ mod test {
                         type_: CHARACTERISTIC_TYPE,
                         permissions: AttPermissions::READABLE
                             | AttPermissions::WRITABLE_WITH_RESPONSE,
+                        descriptors: vec![],
+                    }],
+                },
+                Rc::new(gatt_datastore),
+            )
+            .unwrap();
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &gatt_db);
+        let data = [1, 2];
+
+        // act: try writing without response to this characteristic
+        client.write_no_response_attribute(CHARACTERISTIC_VALUE_HANDLE, &data);
+
+        // We don't ignore this write-without-response request. Instead, let the app decide.
+        // This is to match the behavior same with non-private GATT servers.
+        // assert: we got a callback
+        let event = data_events.blocking_recv().unwrap();
+        let MockRawDatastoreEvents::WriteNoResponse(
+            TCB_IDX,
+            CHARACTERISTIC_VALUE_HANDLE,
+            AttributeBackingType::Characteristic,
+            recv_data,
+        ) = event
+        else {
+            unreachable!("{event:?}");
+        };
+        assert_eq!(recv_data, data);
+    }
+
+    #[test]
+    fn test_read_only_characteristic() {
+        // arrange: db with a characteristic that does not have any write properties.
+        let (gatt_datastore, mut data_events) = MockRawDatastore::new();
+        let gatt_db = SharedBox::new(GattDatabase::new());
+        gatt_db
+            .add_service_with_handles(
+                GattServiceWithHandle {
+                    handle: SERVICE_HANDLE,
+                    type_: SERVICE_TYPE,
+                    characteristics: vec![GattCharacteristicWithHandle {
+                        handle: CHARACTERISTIC_VALUE_HANDLE,
+                        type_: CHARACTERISTIC_TYPE,
+                        permissions: AttPermissions::READABLE, // No writable properties
                         descriptors: vec![],
                     }],
                 },

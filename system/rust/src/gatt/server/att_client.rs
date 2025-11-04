@@ -87,8 +87,9 @@ impl AttClient {
     pub fn write_no_response_attribute(&self, handle: AttHandle, data: &[u8]) {
         if self.gatt_db.with(|db| {
             db.and_then(|db| db.with_attribute(handle, |attr| {
-                if !attr.attribute.permissions.writable_without_response() {
-                    warn!("trying to write without response to {handle:?}, which doesn't support it");
+                if !attr.attribute.permissions.writable_with_response()
+                        && !attr.attribute.permissions.writable_without_response() {
+                    warn!("{handle:?} does not support write operation");
                     return;
                 }
                 match &attr.value {
@@ -218,7 +219,9 @@ impl WeakAttClient {
         data: &[u8],
     ) -> Result<(), AttErrorCode> {
         let (tcb_idx, value) = self.with_attribute(handle, |client, attr| {
-            if !attr.attribute.permissions.writable_with_response() {
+            if !attr.attribute.permissions.writable_with_response()
+                && !attr.attribute.permissions.writable_without_response()
+            {
                 Err(AttErrorCode::WriteNotPermitted)
             } else {
                 Ok((client.tcb_idx, attr.value.clone()))
@@ -282,7 +285,9 @@ impl WeakAttClient {
         data: &[u8],
     ) -> Result<(), AttErrorCode> {
         let (tcb_idx, backing_type, datastore) = self.with_attribute(handle, |client, attr| {
-            if !attr.attribute.permissions.writable_with_response() {
+            if !attr.attribute.permissions.writable_with_response()
+                && !attr.attribute.permissions.writable_without_response()
+            {
                 return Err(AttErrorCode::WriteNotPermitted);
             }
 
