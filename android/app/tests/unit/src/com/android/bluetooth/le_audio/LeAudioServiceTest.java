@@ -173,9 +173,6 @@ public class LeAudioServiceTest {
     private final BluetoothDevice mSingleDevice_2 = getTestDevice(3);
     private final BluetoothDevice mBroadcastDevice = getTestDevice("FF:FF:FF:FF:FF:FF");
 
-    private LeAudioService mService;
-    private BluetoothStorageManager mStorage;
-    private TestLooper mLooper;
     private static final int TEST_GROUP_ID = 1;
     private static final int TEST_GROUP_ID2 = 2;
     private boolean onGroupStatusCallbackCalled = false;
@@ -252,6 +249,9 @@ public class LeAudioServiceTest {
     private static final List<BluetoothLeAudioCodecConfig> OPUS_SELECTABLE_CONFIGS =
             List.of(LC3_48KHZ_16KHZ_CONFIG, OPUS_48KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
 
+    private LeAudioService mService;
+    private BluetoothStorageManager mStorage;
+    private TestLooper mLooper;
     private InOrder mInOrder;
 
     @Parameters(name = "{0}")

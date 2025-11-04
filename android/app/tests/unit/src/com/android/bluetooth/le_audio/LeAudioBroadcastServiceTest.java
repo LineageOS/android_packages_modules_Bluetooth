@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -76,7 +77,6 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.annotation.Nullable;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -93,6 +93,7 @@ import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.hamcrest.Matcher;
@@ -108,6 +109,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.hamcrest.MockitoHamcrest;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -117,9 +121,9 @@ import java.util.Set;
 
 /** Test cases for {@link LeAudioBroadcastService}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class LeAudioBroadcastServiceTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
 
     @Mock private ActiveDeviceManager mActiveDeviceManager;
@@ -184,12 +188,25 @@ public class LeAudioBroadcastServiceTest {
     private InOrder mInOrder;
     private TestLooper mLooper;
 
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(
+                Flags.FLAG_LEAUDIO_FALLBACK_GROUP_SELECTION, Flags.FLAG_MAINLINE_BETA_STORAGE);
+    }
+
+    public LeAudioBroadcastServiceTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
+
     @Before
     public void setUp() throws Exception {
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
 
         mInOrder = inOrder(mAdapterService);
 
+        doAnswer(invocation -> getLeastRecentlyConnectedDeviceInList(invocation.getArgument(0)))
+                .when(mStorage)
+                .getLeastRecentlyConnectedDeviceInList(any());
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
         doReturn(mAdapterService).when(mAdapterService).createContextAsUser(any(), anyInt());
         doReturn(context.getContentResolver()).when(mAdapterService).getContentResolver();
@@ -244,6 +261,14 @@ public class LeAudioBroadcastServiceTest {
             assertThat(LeAudioService.getLeAudioService()).isNull();
         }
         MetricsLogger.setInstanceForTesting(null);
+    }
+
+    private static BluetoothDevice getLeastRecentlyConnectedDeviceInList(
+            List<BluetoothDevice> devices) {
+        if (devices.isEmpty()) {
+            return null;
+        }
+        return devices.get(0);
     }
 
     @Test
@@ -1175,7 +1200,6 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
-        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         devices.add(mDevice1);
         prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
@@ -1379,7 +1403,6 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
-        doReturn(mDevice2).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         synchronized (mService.mLeAudioCallbacks) {
             mService.mLeAudioCallbacks.register(mLeAudioCallbacks);
@@ -1445,7 +1468,6 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
-        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         initializeNative();
         devices.add(mDevice1);
@@ -1514,7 +1536,6 @@ public class LeAudioBroadcastServiceTest {
         Set<BluetoothDevice> broadcastReceivers = new HashSet<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
-        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
 
         /* If no connected devices - no fallback device */
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
@@ -1553,7 +1574,6 @@ public class LeAudioBroadcastServiceTest {
         mLooper.dispatchAll();
 
         /* Disconnected last device from fallback should trigger set default group 1 -> -1 */
-        doReturn(null).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
         disconnectDevice(mDevice1);
         assertThat(mService.getBroadcastToUnicastFallbackGroup())
                 .isEqualTo(LE_AUDIO_GROUP_ID_INVALID);
@@ -1846,7 +1866,6 @@ public class LeAudioBroadcastServiceTest {
         List<BluetoothDevice> devices = new ArrayList<>();
 
         when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
-        doReturn(mDevice1).when(mStorage).getLeastRecentlyConnectedDeviceInList(any());
         devices.add(mDevice1);
 
         initializeNative();
