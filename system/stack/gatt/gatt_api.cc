@@ -1030,6 +1030,10 @@ tGATT_STATUS GATTC_Read(tCONN_ID conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM
       p_clcb->s_handle = 0;
       /* copy multiple handles in CB */
       tGATT_READ_MULTI* p_read_multi = (tGATT_READ_MULTI*)osi_malloc(sizeof(tGATT_READ_MULTI));
+      if (!p_read_multi) {
+        log::error("Unable to allocate read multiple buffer");
+        return GATT_NO_RESOURCES;
+      }
       p_clcb->p_attr_buf = (uint8_t*)p_read_multi;
       memcpy(p_read_multi, &p_read->read_multiple, sizeof(tGATT_READ_MULTI));
       break;
