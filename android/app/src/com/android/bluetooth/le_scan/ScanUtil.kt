@@ -39,9 +39,10 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-private const val TAG = "ScanUtil"
+private const val TAG = ScanUtil.TAG_PREFIX + "ScanUtil"
 
 object ScanUtil {
+    const val TAG_PREFIX = "BtScan."
 
     const val DEFAULT_SCAN_QUOTA_COUNT = 5
     @JvmField val DEFAULT_SCAN_QUOTA_WINDOW = 30.seconds.toJavaDuration()

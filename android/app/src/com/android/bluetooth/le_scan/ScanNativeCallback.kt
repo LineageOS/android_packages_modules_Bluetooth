@@ -24,7 +24,7 @@ import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-private const val TAG = "ScanNativeCallback"
+private const val TAG = ScanUtil.TAG_PREFIX + "ScanNativeCallback"
 
 class ScanNativeCallback(private val scanController: ScanController) : NativeCallback {
 

@@ -23,7 +23,8 @@ import android.util.Log;
 import com.android.bluetooth.profile.NativeInterface;
 
 public class ScanNativeInterface extends NativeInterface<ScanNativeCallback> {
-    private static final String TAG = ScanNativeInterface.class.getSimpleName();
+    private static final String TAG =
+            ScanUtil.TAG_PREFIX + ScanNativeInterface.class.getSimpleName();
 
     ScanNativeInterface(ScanNativeCallback nativeCallback) {
         super(requireNonNull(nativeCallback));

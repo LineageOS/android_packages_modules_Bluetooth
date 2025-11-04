@@ -47,7 +47,8 @@ import java.util.stream.Collectors;
 
 /** Manages Bluetooth LE Periodic scans */
 public class PeriodicScanManager {
-    private static final String TAG = PeriodicScanManager.class.getSimpleName();
+    private static final String TAG =
+            ScanUtil.TAG_PREFIX + PeriodicScanManager.class.getSimpleName();
 
     @VisibleForTesting int mTempRegistrationId = -1;
 
