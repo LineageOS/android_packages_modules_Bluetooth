@@ -37,28 +37,24 @@ import com.android.bluetooth.profile.ProfileService
 
 private const val TAG = GattUtil.TAG_PREFIX + "GattServiceBinder"
 
-class GattServiceBinder(private var service: GattService?) :
+class GattServiceBinder(private var gattService: GattService?) :
     IBluetoothGatt.Stub(), ProfileService.IProfileServiceBinder {
 
     override fun cleanup() {
-        service = null
+        gattService = null
     }
 
     private fun getGattService(): GattService? {
-        val service = service
-        if (!Utils.checkServiceAvailable(service, TAG)) {
-            return null
-        }
-        return service
+        val gatt = gattService
+        if (!Utils.checkServiceAvailable(gatt, TAG)) return null
+        return gatt
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private fun getServiceAndEnforceConnect(source: AttributionSource): GattService? {
-        val service = getGattService()
-        if (!Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-            return null
-        }
-        return service
+        val gatt = getGattService() ?: return null
+        if (!Utils.checkConnectPermissionForDataDelivery(gatt, source, TAG)) return null
+        return gatt
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
