@@ -25,6 +25,7 @@
 #include <map>
 
 #include "bta/le_audio/common/gatt_client_data_tracker.h"
+#include "bta/le_audio/common/le_audio_event_tracker.h"
 #include "bta/le_audio/le_audio_types.h"
 
 // Generated packet headers:
@@ -74,6 +75,8 @@ bool ParseAseCtpRequestWithAseIds(
 }
 }  // namespace
 
+static const char* EVT_LOG_TAG = "Asc Service";
+
 // Static instance lifetime management
 static std::shared_ptr<Ascs> instance = nullptr;
 std::shared_ptr<Ascs> InstantiateAscs() {
@@ -113,6 +116,7 @@ struct Ascs::service_impl {
   int server_if_ = 0;
   Ascs::Callbacks* callbacks_ = nullptr;
   GattClientDataTracker<AscDevice> device_tracker_;
+  std::shared_ptr<LeAudioEventTracker> event_tracker_;
 
   ServiceDescriptor service_descriptor_;
 
@@ -130,7 +134,7 @@ struct Ascs::service_impl {
   // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<Ascs::service_impl> weak_factory_{this};
 
-  service_impl() = default;
+  service_impl() { event_tracker_ = LeAudioEventTracker::GetLeAudioSinkInstance(); }
   ~service_impl() {
     if (server_if_ != 0) {
       BTA_GATTS_AppDeregister(server_if_);
@@ -245,6 +249,9 @@ struct Ascs::service_impl {
   void OnGattServiceAdded(tGATT_STATUS status, int server_if,
                           std::vector<btgatt_db_element_t> service_elements) {
     log::info("GATT Service Add status: {}, server_if: {}", gatt_status_text(status), server_if);
+    event_tracker_->OnEvent(EVT_LOG_TAG, LeAudioEventTracker::EventType::POINT,
+                            "GATT Service Add status: {}, server_if: {}", gatt_status_text(status),
+                            server_if);
 
     log::assert_that(status == GATT_SUCCESS, "Unable to add GATT service");
     log::assert_that(service_elements.size() != 0, "Service is empty");
@@ -584,8 +591,15 @@ struct Ascs::service_impl {
       if (write_req.need_rsp) {
         BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_VALUE_NOT_ALLOWED, nullptr);
       }
+      event_tracker_->OnEvent(EVT_LOG_TAG, LeAudioEventTracker::EventType::POINT,
+                              "Invalid ASE control point request, con_id: {}, request opcode: {}",
+                              conn_id, pending_request.opcode);
       return;
     }
+
+    event_tracker_->OnEvent(EVT_LOG_TAG, LeAudioEventTracker::EventType::POINT,
+                            "ASE control point request, con_id: {}, request opcode: {}", conn_id,
+                            pending_request.opcode);
 
     if (pending_request_by_address_.count(asc_device->pseudo_addr)) {
       log::warn("Device {} has a pending request, rejecting new one.", asc_device->pseudo_addr);
@@ -647,6 +661,10 @@ struct Ascs::service_impl {
 
           // Notify as connected if the control point notifications are enabled
           if (asc_device->GetDescriptorValueAsU16(char_meta.cccd_handle) != GATT_CLT_CONFIG_NONE) {
+            event_tracker_->OnEvent(EVT_LOG_TAG, LeAudioEventTracker::EventType::START,
+                                    "GATT device {} connected with conn_id: {}",
+                                    asc_device->pseudo_addr,
+                                    device_tracker_.FindConnectionId(asc_device->pseudo_addr));
             callbacks_->OnDeviceConnected(asc_device->pseudo_addr);
           }
         }
@@ -659,6 +677,8 @@ struct Ascs::service_impl {
 
           // Notify as disconnected if the control point notifications were enabled
           if (asc_device->GetDescriptorValueAsU16(char_meta.cccd_handle) != GATT_CLT_CONFIG_NONE) {
+            event_tracker_->OnEvent(EVT_LOG_TAG, LeAudioEventTracker::EventType::END,
+                                    "GATT device {} disconnected", asc_device->pseudo_addr);
             callbacks_->OnDeviceDisconnected(asc_device->pseudo_addr);
           }
         }
@@ -741,6 +761,9 @@ struct Ascs::service_impl {
     auto notify_value = BuildAseStateCharValue(ase_id, ase_state);
     log::info("Sending ASE notification value: {}",
               base::HexEncode(notify_value.data(), notify_value.size()));
+
+    event_tracker_->OnEvent(EVT_LOG_TAG, LeAudioEventTracker::EventType::POINT,
+                            "Sending ASE {} state notification", ase_state.state);
 
     BTA_GATTS_HandleValueIndication(conn_id, char_value_handle, notify_value, false);
   }

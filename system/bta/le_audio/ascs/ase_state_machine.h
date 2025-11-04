@@ -23,11 +23,14 @@
 #include <vector>
 
 #include "ascs_types.h"
+#include "bta/le_audio/common/le_audio_event_tracker.h"
 #include "common/state_machine.h"
 #include "osi/include/osi.h"
 #include "stack/include/main_thread.h"
 
 namespace bluetooth::le_audio {
+static const char* EVT_LOG_TAG = "Ase State Machine";
+
 /**
  * @brief Manages the state of a single Audio Stream Endpoint (ASE) as defined
  * by the Audio Stream Control Service (ASCS) specification v1.0.1.
@@ -303,6 +306,8 @@ public:
 
     log::assert_that(callbacks != nullptr, "Callbacks not set!");
 
+    event_tracker_ = LeAudioEventTracker::GetLeAudioSinkInstance();
+
     // Note: AddState() transfers the raw pointers ownership to the base class
     AddState(state_idle_);
     AddState(state_codec_configured_);
@@ -317,6 +322,20 @@ public:
 
   /** @brief Destroys the AscsAseStateMachine instance. */
   virtual ~AscsAseStateMachine() {}
+
+  /**
+   * @brief Logs a state machine event for tracking and debugging.
+   *
+   * @tparam T Variadic template for format arguments.
+   * @param event_type The type of the event (e.g., POINT, SUBEVENT).
+   * @param fmt The format string for the log message.
+   * @param args The arguments for the format string.
+   */
+  template <typename... T>
+  inline void TrackEvent(LeAudioEventTracker::EventType event_type, std::format_string<T&...> fmt,
+                         T&&... args) {
+    event_tracker_->OnEvent(EVT_LOG_TAG, event_type, fmt, args...);
+  }
 
 protected:
   /**
@@ -347,6 +366,8 @@ private:
   StateDisabling* state_disabling_;
   StateStreaming* state_streaming_;
   StateReleasing* state_releasing_;
+
+  std::shared_ptr<LeAudioEventTracker> event_tracker_;
 
   // Weak factory used for safe and reliable asynchronous state transitions
   base::WeakPtrFactory<AscsAseStateMachine> weak_factory_{this};

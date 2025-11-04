@@ -72,6 +72,8 @@ T& GetEventData(void* p_data) {
 // State: IDLE
 void AscsAseStateMachine::StateIdle::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
   sm->SetEnableConfirmed(false);
 
   if (sm->PreviousStateId() == StateMachine::kStateInvalid) {
@@ -86,7 +88,13 @@ bool AscsAseStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) 
 
   switch (event) {
     case CONFIG_CODEC: {
-      sm->codec_configuration = GetEventData<ascs::AseStateCodecConfiguration>(p_data);
+      auto& codec_config = GetEventData<ascs::AseStateCodecConfiguration>(p_data);
+      sm->TrackEvent(
+              LeAudioEventTracker::EventType::SUBEVENT,
+              "{}, event: {}, codec_id: {{format:0x{:02x}, company:0x{:04x}, codec:0x{:04x}}}",
+              sm->GetHeaderString(), Events(event), codec_config.codec_id.coding_format,
+              codec_config.codec_id.vendor_company_id, codec_config.codec_id.vendor_codec_id);
+      sm->codec_configuration = codec_config;
       sm->AsyncTransitionTo(StateId::CODEC_CONFIGURED);
       return true;
     } break;
@@ -122,6 +130,8 @@ bool AscsAseStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) 
 // State: CODEC_CONFIGURED
 void AscsAseStateMachine::StateCodecConfigured::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
   sm->SetEnableConfirmed(false);
 
   log::assert_that(sm->codec_configuration.has_value(), "Invalid codec configuration");
@@ -134,27 +144,42 @@ bool AscsAseStateMachine::StateCodecConfigured::ProcessEvent(uint32_t event, voi
   log::debug("{}, event: {}", sm->GetHeaderString(), Events(event));
 
   switch (event) {
-    case CONFIG_CODEC:
-      sm->codec_configuration = GetEventData<ascs::AseStateCodecConfiguration>(p_data);
+    case CONFIG_CODEC: {
+      auto& codec_config = GetEventData<ascs::AseStateCodecConfiguration>(p_data);
+      sm->TrackEvent(
+              LeAudioEventTracker::EventType::SUBEVENT,
+              "{}, event: {}, codec_id: {{format:0x{:02x}, company:0x{:04x}, codec:0x{:04x}}}",
+              sm->GetHeaderString(), Events(event), codec_config.codec_id.coding_format,
+              codec_config.codec_id.vendor_company_id, codec_config.codec_id.vendor_codec_id);
+      sm->codec_configuration = codec_config;
       sm->AsyncTransitionTo(StateId::CODEC_CONFIGURED);
       return true;
+    }
 
     case CONFIG_QOS: {
       auto& sm_params =
               GetEventData<std::pair<ascs::AseStateQosConfiguration, ascs::DataPathConfiguration>>(
                       p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT,
+                     "{}, event: {}, sdu_interval: {}, framing: {}, phy: {}", sm->GetHeaderString(),
+                     Events(event), sm_params.first.sdu_interval, sm_params.first.framing,
+                     sm_params.first.phy);
       sm->qos_configuration = sm_params.first;
       sm->data_path_configuration = sm_params.second;
       sm->AsyncTransitionTo(StateId::QOS_CONFIGURED);
       return true;
     }
 
-    case RELEASE:
-      if (!GetEventData<bool>(p_data) /*is_caching*/) {
+    case RELEASE: {
+      auto const is_caching = GetEventData<bool>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}, is_caching: {}",
+                     sm->GetHeaderString(), Events(event), is_caching);
+      if (!is_caching) {
         sm->codec_configuration = std::nullopt;
       }
       sm->AsyncTransitionTo(StateId::RELEASING);
       return true;
+    }
 
     case ENABLE:
       // Ignore
@@ -181,6 +206,8 @@ bool AscsAseStateMachine::StateCodecConfigured::ProcessEvent(uint32_t event, voi
 // State: QOS_CONFIGURED
 void AscsAseStateMachine::StateQosConfigured::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
   sm->SetEnableConfirmed(false);
 
   log::assert_that(sm->codec_configuration.has_value(), "Invalid codec configuration");
@@ -197,35 +224,53 @@ bool AscsAseStateMachine::StateQosConfigured::ProcessEvent(uint32_t event, void*
   log::debug("{}, event: {}", sm->GetHeaderString(), Events(event));
 
   switch (event) {
-    case CONFIG_CODEC:
+    case CONFIG_CODEC: {
       sm->qos_configuration = std::nullopt;
-
-      sm->codec_configuration = GetEventData<ascs::AseStateCodecConfiguration>(p_data);
+      auto& codec_config = GetEventData<ascs::AseStateCodecConfiguration>(p_data);
+      sm->TrackEvent(
+              LeAudioEventTracker::EventType::SUBEVENT,
+              "{}, event: {}, codec_id: {{format:0x{:02x}, company:0x{:04x}, codec:0x{:04x}}}",
+              sm->GetHeaderString(), Events(event), codec_config.codec_id.coding_format,
+              codec_config.codec_id.vendor_company_id, codec_config.codec_id.vendor_codec_id);
+      sm->codec_configuration = codec_config;
       sm->AsyncTransitionTo(StateId::CODEC_CONFIGURED);
       return true;
+    }
 
     case CONFIG_QOS: {
       auto& sm_params =
               GetEventData<std::pair<ascs::AseStateQosConfiguration, ascs::DataPathConfiguration>>(
                       p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT,
+                     "{}, event: {}, sdu_interval: {}, framing: {}, phy: {}", sm->GetHeaderString(),
+                     Events(event), sm_params.first.sdu_interval, sm_params.first.framing,
+                     sm_params.first.phy);
       sm->qos_configuration = sm_params.first;
       sm->data_path_configuration = sm_params.second;
       sm->AsyncTransitionTo(StateId::QOS_CONFIGURED);
       return true;
     }
 
-    case RELEASE:
-      if (!GetEventData<bool>(p_data) /*is_caching*/) {
+    case RELEASE: {
+      auto const is_caching = GetEventData<bool>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}, is_caching: {}",
+                     sm->GetHeaderString(), Events(event), is_caching);
+      if (!is_caching) {
         sm->codec_configuration = std::nullopt;
         log::debug("No valid cached codec configuration, going to IDLE");
       }
       sm->AsyncTransitionTo(StateId::RELEASING);
       return true;
+    }
 
-    case ENABLE:
-      sm->metadata = GetEventData<std::vector<uint8_t>>(p_data);
+    case ENABLE: {
+      auto& metadata = GetEventData<std::vector<uint8_t>>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {},  metadata size: {}",
+                     sm->GetHeaderString(), Events(event), metadata.size());
+      sm->metadata = metadata;
       sm->AsyncTransitionTo(StateId::ENABLING);
       return true;
+    }
 
     case DISABLE:
       // Ignore
@@ -256,6 +301,8 @@ bool AscsAseStateMachine::StateQosConfigured::ProcessEvent(uint32_t event, void*
 // State: ENABLING
 void AscsAseStateMachine::StateEnabling::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
 
   log::assert_that(sm->metadata.has_value(), "Invalid metadata");
   log::assert_that(sm->codec_configuration.has_value(), "Invalid codec configuration");
@@ -277,19 +324,25 @@ bool AscsAseStateMachine::StateEnabling::ProcessEvent(uint32_t event, void* p_da
       // Ignore
       break;
 
-    case RELEASE:
-      if (!GetEventData<bool>(p_data) /*is_caching*/) {
+    case RELEASE: {
+      auto const is_caching = GetEventData<bool>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}, is_caching: {}",
+                     sm->GetHeaderString(), Events(event), is_caching);
+      if (!is_caching) {
         sm->codec_configuration = std::nullopt;
         log::debug("No valid cached codec configuration, going to IDLE");
       }
       sm->AsyncTransitionTo(StateId::RELEASING);
       return true;
+    }
 
     case ENABLE:
       // Ignore
       break;
 
     case DISABLE:
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}",
+                     sm->GetHeaderString(), Events(event));
       if (sm->is_source_ase_) {
         sm->AsyncTransitionTo(StateId::DISABLING);
       } else {
@@ -297,11 +350,10 @@ bool AscsAseStateMachine::StateEnabling::ProcessEvent(uint32_t event, void* p_da
       }
       return true;
 
-    // Note: This is sent by AseManager when acting as Sink ASE
+    // Note: This is sent by AseManager when acting as Sink ASE and by peer device when Source ASE
     case RECEIVER_START_READY:
-      if (sm->is_source_ase_) {
-        // The remote peer is ready to receive our audio data, we can start
-      }
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}",
+                     sm->GetHeaderString(), Events(event));
       sm->AsyncTransitionTo(StateId::STREAMING);
       return true;
 
@@ -309,15 +361,21 @@ bool AscsAseStateMachine::StateEnabling::ProcessEvent(uint32_t event, void* p_da
       // Ignore
       break;
 
-    case UPDATE_METADATA:
-      sm->metadata = GetEventData<std::vector<uint8_t>>(p_data);
+    case UPDATE_METADATA: {
+      auto& metadata = GetEventData<std::vector<uint8_t>>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {},  metadata size: {}",
+                     sm->GetHeaderString(), Events(event), metadata.size());
+      sm->metadata = metadata;
       sm->AsyncTransitionTo(StateId::ENABLING);
       return true;
+    }
     case CIS_ASSIGNED:
       // No action required
       return true;
 
     case CIS_LOST:
+      sm->TrackEvent(LeAudioEventTracker::EventType::POINT, "{}, event: {}", sm->GetHeaderString(),
+                     Events(event));
       sm->AsyncTransitionTo(StateId::QOS_CONFIGURED);
       return true;
   }
@@ -330,6 +388,8 @@ bool AscsAseStateMachine::StateEnabling::ProcessEvent(uint32_t event, void* p_da
 // State: DISABLING
 void AscsAseStateMachine::StateDisabling::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
 
   log::assert_that(sm->metadata.has_value(), "Invalid metadata");
   log::assert_that(sm->codec_configuration.has_value(), "Invalid codec configuration");
@@ -351,12 +411,16 @@ bool AscsAseStateMachine::StateDisabling::ProcessEvent(uint32_t event, void* p_d
       // Ignore
       break;
 
-    case RELEASE:
-      if (!GetEventData<bool>(p_data) /*is_caching*/) {
+    case RELEASE: {
+      auto const is_caching = GetEventData<bool>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}, is_caching: {}",
+                     sm->GetHeaderString(), Events(event), is_caching);
+      if (!is_caching) {
         sm->codec_configuration = std::nullopt;
       }
       sm->AsyncTransitionTo(StateId::RELEASING);
       return true;
+    }
 
     case ENABLE:
       // Ignore
@@ -369,9 +433,8 @@ bool AscsAseStateMachine::StateDisabling::ProcessEvent(uint32_t event, void* p_d
       break;
 
     case RECEIVER_STOP_READY:
-      if (sm->is_source_ase_) {
-        // The remote peer is ready to stop consuming our audio data, we can stop
-      }
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}",
+                     sm->GetHeaderString(), Events(event));
       sm->AsyncTransitionTo(StateId::QOS_CONFIGURED);
       return true;
 
@@ -380,6 +443,8 @@ bool AscsAseStateMachine::StateDisabling::ProcessEvent(uint32_t event, void* p_d
       break;
 
     case CIS_LOST:
+      sm->TrackEvent(LeAudioEventTracker::EventType::POINT, "{}, event: {}", sm->GetHeaderString(),
+                     Events(event));
       sm->AsyncTransitionTo(StateId::QOS_CONFIGURED);
       return true;
   }
@@ -392,6 +457,8 @@ bool AscsAseStateMachine::StateDisabling::ProcessEvent(uint32_t event, void* p_d
 // State: STREAMING
 void AscsAseStateMachine::StateStreaming::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
 
   log::assert_that(sm->metadata.has_value(), "Invalid metadata");
   log::assert_that(sm->codec_configuration.has_value(), "Invalid codec configuration");
@@ -415,18 +482,24 @@ bool AscsAseStateMachine::StateStreaming::ProcessEvent(uint32_t event, void* p_d
       // Ignore
       break;
 
-    case RELEASE:
-      if (!GetEventData<bool>(p_data) /*is_caching*/) {
+    case RELEASE: {
+      auto const is_caching = GetEventData<bool>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}, is_caching: {}",
+                     sm->GetHeaderString(), Events(event), is_caching);
+      if (!is_caching) {
         sm->codec_configuration = std::nullopt;
       }
       sm->AsyncTransitionTo(StateId::RELEASING);
       return true;
+    }
 
     case ENABLE:
       // Ignore
       break;
 
     case DISABLE:
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {}",
+                     sm->GetHeaderString(), Events(event));
       if (sm->is_source_ase_) {
         sm->AsyncTransitionTo(StateId::DISABLING);
       } else {
@@ -441,12 +514,18 @@ bool AscsAseStateMachine::StateStreaming::ProcessEvent(uint32_t event, void* p_d
       // Ignore
       break;
 
-    case UPDATE_METADATA:
-      sm->metadata = GetEventData<std::vector<uint8_t>>(p_data);
+    case UPDATE_METADATA: {
+      auto& metadata = GetEventData<std::vector<uint8_t>>(p_data);
+      sm->TrackEvent(LeAudioEventTracker::EventType::SUBEVENT, "{}, event: {},  metadata size: {}",
+                     sm->GetHeaderString(), Events(event), metadata.size());
+      sm->metadata = metadata;
       sm->AsyncTransitionTo(StateId::STREAMING);
       return true;
+    }
 
     case CIS_LOST:
+      sm->TrackEvent(LeAudioEventTracker::EventType::POINT, "{}, event: {}", sm->GetHeaderString(),
+                     Events(event));
       sm->AsyncTransitionTo(StateId::QOS_CONFIGURED);
       return true;
   }
@@ -459,6 +538,8 @@ bool AscsAseStateMachine::StateStreaming::ProcessEvent(uint32_t event, void* p_d
 // State: RELEASING
 void AscsAseStateMachine::StateReleasing::OnEnter() {
   log::debug("{}", sm->GetHeaderString());
+  sm->TrackEvent(LeAudioEventTracker::EventType::TRANSITION, "{} -> {}", sm->GetPreviousStateId(),
+                 sm->GetStateId());
 
   if (sm->callbacks_) {
     sm->callbacks_->OnAseTransition(sm->ase_id_, sm->peer_);
