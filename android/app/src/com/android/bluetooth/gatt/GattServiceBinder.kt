@@ -591,7 +591,7 @@ class GattServiceBinder(private var service: GattService?) :
             return
         }
 
-        val clientApp = service.mClientMap.getByCallbackId(callback)
+        val clientApp = service.clientMap.getByCallbackId(callback)
         if (clientApp == null) {
             Log.w(TAG, "($callback) - App not registered")
             return
