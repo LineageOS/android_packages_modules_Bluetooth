@@ -35,7 +35,6 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
 import static com.android.bluetooth.Util.enforcePermissionForDataDelivery;
-import static com.android.bluetooth.Util.enforcePermissionForPreflight;
 
 import static java.util.Objects.requireNonNull;
 
@@ -454,19 +453,6 @@ public final class Utils {
         return new AttributionSource.Builder(callingUid)
                 .setPackageName(context.getPackageManager().getPackagesForUid(callingUid)[0])
                 .build();
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_CONNECT permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where the app op should not be noted.
-     */
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForPreflight(
-            Context context, AttributionSource source) {
-        return enforcePermissionForPreflight(context, BLUETOOTH_CONNECT, source);
     }
 
     /**

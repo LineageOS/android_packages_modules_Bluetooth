@@ -16,8 +16,10 @@
 
 package com.android.bluetooth
 
+import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
+import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothDevice
 import android.content.AttributionSource
 import android.content.Context
@@ -67,6 +69,18 @@ object Util {
             else -> "Unknown transport ($transport)"
         }
 
+    /**
+     * Returns `true` if the [BLUETOOTH_CONNECT] permission is granted for the calling app. Returns
+     * `false` if the result is a soft denial. Throws [SecurityException] if the result is a hard
+     * denial.
+     *
+     * Should be used in situations where the app op should not be noted.
+     */
+    @JvmStatic
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    fun enforceConnectPermissionForPreflight(context: Context, source: AttributionSource) =
+        enforcePermissionForPreflight(context, BLUETOOTH_CONNECT, source)
+
     // TODO(b/455679694) Remove `@JvmStatic`, make private when all `check/enforce` methods are here
     @JvmStatic
     @PermissionMethod
@@ -102,10 +116,8 @@ object Util {
         }
     }
 
-    // TODO(b/455679694) Remove `@JvmStatic`, make private when all `check/enforce` methods are here
-    @JvmStatic
     @PermissionMethod
-    fun enforcePermissionForPreflight(
+    private fun enforcePermissionForPreflight(
         context: Context,
         @PermissionName permission: String,
         source: AttributionSource,
