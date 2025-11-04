@@ -323,8 +323,8 @@ flag {
 }
 
 flag {
-    name: "le_conn_manager_api"
+    name: "gatt_conn_settings"
     namespace: "bluetooth"
-    description: "APIs for Le Acl connecion Management"
+    description: "GATT connection settings & related APIs"
     bug: "450085002"
 }
