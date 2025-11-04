@@ -16,7 +16,8 @@
 
 package com.android.bluetooth.gatt
 
-import android.Manifest
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -52,7 +53,7 @@ class GattServiceBinder(private var service: GattService?) :
         return service
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @RequiresPermission(BLUETOOTH_CONNECT)
     private fun getServiceAndEnforceConnect(source: AttributionSource): GattService? {
         val service = getGattService()
         if (!Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
@@ -61,19 +62,17 @@ class GattServiceBinder(private var service: GattService?) :
         return service
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @RequiresPermission(BLUETOOTH_CONNECT)
     private fun getServerManagerAndEnforceConnect(source: AttributionSource): GattServerManager? {
         return getServiceAndEnforceConnect(source)?.serverManager
     }
 
-    @RequiresPermission(
-        allOf = [Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_PRIVILEGED]
-    )
+    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     private fun getServerManagerAndEnforceConnectAndPrivileged(
         source: AttributionSource
     ): GattServerManager? {
         val service = getServiceAndEnforceConnect(source) ?: return null
-        service.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         return service.serverManager
     }
 
@@ -209,10 +208,7 @@ class GattServiceBinder(private var service: GattService?) :
         val service = getServiceAndEnforceConnect(source) ?: return
         try {
             if (isHidCharUuid(uuid.uuid)) {
-                service.enforceCallingOrSelfPermission(
-                    Manifest.permission.BLUETOOTH_PRIVILEGED,
-                    null,
-                )
+                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
             }
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
@@ -580,6 +576,10 @@ class GattServiceBinder(private var service: GattService?) :
         serverManager.unoffloadServerCharacteristics(callback, device, sessionId)
     }
 
+    // The permission enforcement for BLUETOOTH_PRIVILEGED is complex-conditional. Callers like
+    // `readCharacteristic` and `registerForNotification` only require to throw an exception on
+    // SDK T+ for specific handles that are stored in `mRestrictedHandles` via the code flow found
+    // in GattService#isRestrictedSrvcUuid
     @SuppressWarnings("IncorrectRequiresPermissionPropagation")
     private fun enforcePrivilegedPermissionIfNeededForHandle(
         service: GattService,
@@ -602,10 +602,9 @@ class GattServiceBinder(private var service: GattService?) :
             return
         }
 
-        if (!isHandleRestricted(service, connId, handle)) {
-            return
+        if (isHandleRestricted(service, connId, handle)) {
+            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
-        service.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
     }
 
     private fun isHandleRestricted(service: GattService, connId: Int, handle: Int) =
