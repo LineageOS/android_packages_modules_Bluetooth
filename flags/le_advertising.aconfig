@@ -10,3 +10,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_adv_own_address_api"
+    namespace: "bluetooth"
+    description: "APIs for getting own address of advertising sets"
+    bug: "457538952"
+}
+
