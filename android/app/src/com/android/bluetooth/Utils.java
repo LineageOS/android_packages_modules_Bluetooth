@@ -33,14 +33,14 @@ import static android.content.pm.PackageManager.GET_PERMISSIONS;
 import static android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
-import static android.permission.PermissionManager.PERMISSION_HARD_DENIED;
+
+import static com.android.bluetooth.Util.enforcePermissionForDataDelivery;
+import static com.android.bluetooth.Util.enforcePermissionForPreflight;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.annotation.PermissionMethod;
-import android.annotation.PermissionName;
 import android.annotation.RequiresPermission;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
@@ -456,62 +456,6 @@ public final class Utils {
                 .build();
     }
 
-    @PermissionMethod
-    private static boolean checkPermissionForPreflight(
-            Context context, @PermissionName String permission, AttributionSource source) {
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        requireNonNull(source);
-        final int result = pm.checkPermissionForPreflight(permission, source);
-        if (result == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        final String msg = "Need " + permission + " permission";
-        if (result == PERMISSION_HARD_DENIED) {
-            throw new SecurityException(msg);
-        } else {
-            Log.w(TAG, msg);
-            return false;
-        }
-    }
-
-    @PermissionMethod
-    private static boolean checkPermissionForDataDelivery(
-            Context context,
-            @PermissionName String permission,
-            AttributionSource source,
-            String message) {
-        if (isInstrumentationTestMode()) {
-            return true;
-        }
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        final int result =
-                pm.checkPermissionForDataDeliveryFromDataSource(
-                        permission, currentAttribution, message);
-        if (result == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        final String msg =
-                "Need " + permission + " permission for " + currentAttribution + ": " + message;
-        if (result == PERMISSION_HARD_DENIED) {
-            throw new SecurityException(msg);
-        } else {
-            Log.w(TAG, msg);
-            return false;
-        }
-    }
-
     /**
      * Returns true if the BLUETOOTH_CONNECT permission is granted for the calling app. Returns
      * false if the result is a soft denial. Throws SecurityException if the result is a hard
@@ -522,7 +466,7 @@ public final class Utils {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public static boolean checkConnectPermissionForPreflight(
             Context context, AttributionSource source) {
-        return checkPermissionForPreflight(context, BLUETOOTH_CONNECT, source);
+        return enforcePermissionForPreflight(context, BLUETOOTH_CONNECT, source);
     }
 
     /**
@@ -536,7 +480,7 @@ public final class Utils {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public static boolean checkConnectPermissionForDataDelivery(
             Context context, AttributionSource source, String message) {
-        return checkPermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message);
+        return enforcePermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message);
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -555,7 +499,7 @@ public final class Utils {
     @RequiresPermission(BLUETOOTH_SCAN)
     public static boolean checkScanPermissionForDataDelivery(
             Context context, AttributionSource source, String tag, String method) {
-        return checkPermissionForDataDelivery(
+        return enforcePermissionForDataDelivery(
                 context, BLUETOOTH_SCAN, source, tag + "." + method + "()");
     }
 
@@ -570,7 +514,7 @@ public final class Utils {
     @RequiresPermission(BLUETOOTH_ADVERTISE)
     public static boolean checkAdvertisePermissionForDataDelivery(
             Context context, AttributionSource source, String message) {
-        return checkPermissionForDataDelivery(context, BLUETOOTH_ADVERTISE, source, message);
+        return enforcePermissionForDataDelivery(context, BLUETOOTH_ADVERTISE, source, message);
     }
 
     /**
