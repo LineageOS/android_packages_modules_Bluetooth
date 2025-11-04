@@ -29,6 +29,7 @@ import android.bluetooth.le.IDistanceMeasurementCallback
 import android.content.AttributionSource
 import android.content.Context
 import android.os.ParcelUuid
+import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.Utils
 
 private const val TAG = GattUtil.TAG_PREFIX + "DistanceMeasurementBinder"
@@ -47,7 +48,7 @@ class DistanceMeasurementBinder(
     private fun getManager(): DistanceMeasurementManager? {
         val gatt = gattService ?: return null
         val manager = distanceMeasurementManager ?: return null
-        if (!Utils.checkServiceAvailable(gatt, TAG)) return null
+        if (!gatt.checkProfileAvailable(TAG)) return null
         return manager
     }
 

@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothHidHost;
 import android.content.AttributionSource;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -56,7 +57,7 @@ class HidHostServiceBinder extends IBluetoothHidHost.Stub implements IProfileSer
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;

@@ -26,6 +26,7 @@ import android.bluetooth.IBluetoothPbap;
 import android.content.AttributionSource;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -54,7 +55,7 @@ class BluetoothPbapServiceBinder extends IBluetoothPbap.Stub implements IProfile
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;

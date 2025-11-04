@@ -29,6 +29,7 @@ import android.bluetooth.IBluetoothSap;
 import android.content.AttributionSource;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -57,7 +58,7 @@ class SapServiceBinder extends IBluetoothSap.Stub implements IProfileServiceBind
     private SapService getService(AttributionSource source) {
         SapService service = mService;
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
