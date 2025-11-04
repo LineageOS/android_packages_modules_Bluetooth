@@ -28,11 +28,14 @@ import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import java.util.UUID
+import java.util.function.Supplier
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -57,6 +60,18 @@ class GattServiceBinderTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
+        doAnswer { invocation ->
+                (invocation.getArgument(0) as Runnable).run()
+                null
+            }
+            .whenever(service)
+            .doOnGattThread(any())
+        doAnswer { invocation ->
+                val supplier = invocation.getArgument<Supplier<*>>(0)
+                supplier.get()
+            }
+            .whenever(service)
+            .fetchOnGattThread<Any>(any(), any())
         doReturn(true).whenever(service).isAvailable
         doReturn(serverManager).whenever(service).serverManager
         binder = GattServiceBinder(service)

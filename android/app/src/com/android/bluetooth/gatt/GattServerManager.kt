@@ -529,6 +529,7 @@ class GattServerManager(
         transport: Int,
         source: AttributionSource,
     ) {
+        gatt.enforceGattThread()
         var name = source.packageName
         val tag = source.getLastAttributionTag()
         val myPackage = AttributionSource.myAttributionSource().packageName
@@ -551,6 +552,7 @@ class GattServerManager(
     }
 
     fun unregisterServer(callback: IBluetoothGattServerCallback) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "unregisterServer($callback): App not registered")
@@ -572,6 +574,7 @@ class GattServerManager(
         transport: Int,
         source: AttributionSource,
     ) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "serverConnect($callback): App not registered")
@@ -585,6 +588,7 @@ class GattServerManager(
     }
 
     fun serverDisconnect(callback: IBluetoothGattServerCallback, device: BluetoothDevice) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "serverDisconnect($callback): App not registered")
@@ -622,6 +626,7 @@ class GattServerManager(
         rxPhy: Int,
         phyOptions: Int,
     ) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "serverSetPreferredPhy($callback): App not registered")
@@ -639,6 +644,7 @@ class GattServerManager(
     }
 
     fun serverReadPhy(callback: IBluetoothGattServerCallback, device: BluetoothDevice) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "serverReadPhy($callback): App not registered")
@@ -656,6 +662,7 @@ class GattServerManager(
     }
 
     fun addService(callback: IBluetoothGattServerCallback, service: BluetoothGattService) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "addService($callback): App not registered")
@@ -702,6 +709,7 @@ class GattServerManager(
     }
 
     fun removeService(callback: IBluetoothGattServerCallback, handle: Int) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "removeService($callback): App not registered")
@@ -713,6 +721,7 @@ class GattServerManager(
     }
 
     fun clearServices(callback: IBluetoothGattServerCallback) {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "clearServices($callback): App not registered")
@@ -731,6 +740,7 @@ class GattServerManager(
         offset: Int,
         value: ByteArray?,
     ) {
+        gatt.enforceGattThread()
         Log.v(TAG, "sendResponse($device, requestId=$requestId, ${Status(status)})")
 
         val serverApp = serverMap.getByCallbackId(callback)
@@ -798,6 +808,7 @@ class GattServerManager(
         confirm: Boolean,
         value: ByteArray,
     ): Int {
+        gatt.enforceGattThread()
         val serverApp = serverMap.getByCallbackId(callback)
         if (serverApp == null) {
             Log.w(TAG, "sendNotification($callback): App not registered")
@@ -862,6 +873,7 @@ class GattServerManager(
         endpointId: Long,
         hubId: Long,
     ): GattOffloadSession.InnerParcel {
+        gatt.enforceGattThread()
         check(adapterService.isGattClientOffloadSupported()) { "GATT client offload unsupported" }
         val clientApp = gatt.clientMap.getByCallbackId(callback)
         requireNotNull(clientApp) { "$callback: App not registered" }
@@ -890,6 +902,7 @@ class GattServerManager(
         device: BluetoothDevice,
         sessionId: Int,
     ) {
+        gatt.enforceGattThread()
         check(adapterService.isGattClientOffloadSupported()) { "GATT client offload unsupported" }
         val clientApp = gatt.clientMap.getByCallbackId(callback)
         requireNotNull(clientApp) { "$callback: App not registered" }
@@ -914,6 +927,7 @@ class GattServerManager(
         endpointId: Long,
         hubId: Long,
     ): GattOffloadSession.InnerParcel {
+        gatt.enforceGattThread()
         check(adapterService.isGattServerOffloadSupported()) { "GATT server offload unsupported" }
         val serverApp = serverMap.getByCallbackId(callback)
         requireNotNull(serverApp) { "$callback: App not registered" }
@@ -944,6 +958,7 @@ class GattServerManager(
         device: BluetoothDevice,
         sessionId: Int,
     ) {
+        gatt.enforceGattThread()
         check(adapterService.isGattServerOffloadSupported()) { "GATT server offload unsupported" }
         val serverApp = serverMap.getByCallbackId(callback)
         requireNotNull(serverApp) { "$callback: App not registered" }
