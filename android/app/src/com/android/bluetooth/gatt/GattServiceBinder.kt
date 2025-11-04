@@ -46,7 +46,7 @@ class GattServiceBinder(private var gattService: GattService?) :
     }
 
     private fun getGattService(): GattService? {
-        val gatt = gattService
+        val gatt = gattService ?: return null
         if (!Utils.checkServiceAvailable(gatt, TAG)) return null
         return gatt
     }
