@@ -1218,9 +1218,6 @@ public class BassClientServiceTest {
     private void generateScanResult(ScanResult result) {
         try {
             mBassScanCallbackCaptor.getValue().onScanResult(result);
-            if (Flags.scanControllerThread()) {
-                mLooper.dispatchAll();
-            }
         } catch (RemoteException e) {
             // the mocked onScanResult doesn't throw RemoteException
         }

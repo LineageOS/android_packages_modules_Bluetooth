@@ -1406,6 +1406,11 @@ public class ScanController {
         }
     }
 
+    public boolean isOnScanThread() {
+        if (!Flags.scanControllerThread() || Utils.isInstrumentationTestMode()) return false;
+        return mScanHandler.getLooper().isCurrentThread();
+    }
+
     public void doOnScanThread(Runnable r) {
         if (!Flags.scanControllerThread()) {
             r.run();
