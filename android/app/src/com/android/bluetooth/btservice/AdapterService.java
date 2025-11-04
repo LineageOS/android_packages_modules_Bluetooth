@@ -2820,11 +2820,16 @@ public class AdapterService extends Service {
             boolean discovering = isDiscovering();
             DiscoveringPackageInfo pkgInfo =
                     new DiscoveringPackageInfo(permission, hasDisavowedLocation);
-            mDiscoveringPackages.put(callingPackage, pkgInfo);
+            DiscoveringPackageInfo oldPkgInfo = mDiscoveringPackages.put(callingPackage, pkgInfo);
 
             if (Flags.ignoreRedundantDiscoveryIfSameState() && discovering) {
                 // If discovery is already running, broadcast the ACTION_DISCOVERY_STARTED intent.
                 Log.d(TAG, "startDiscovery: discovery is already running");
+                if (oldPkgInfo != null) {
+                    Log.e(TAG, "startDiscovery: discovery already started by the same package");
+                    return false;
+                }
+
                 Intent intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 intent.setPackage(callingPackage);
                 sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
