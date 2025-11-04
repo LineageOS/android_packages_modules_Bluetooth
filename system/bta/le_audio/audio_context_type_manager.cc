@@ -63,6 +63,7 @@ public:
 
     if (encoding_metadata.empty()) {
       log::verbose("Clear encoding metadata");
+      updateVoipState();
       return;
     }
 
