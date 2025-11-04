@@ -1053,7 +1053,9 @@ public class AdapterService extends Service {
         mNativeAvailable = true;
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
-        mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
+        if (!Flags.setNameInSystemServer()) {
+            mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
+        }
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE);
 
         mBluetoothKeystoreService.initJni();
