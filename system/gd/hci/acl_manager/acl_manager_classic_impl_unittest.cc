@@ -91,7 +91,8 @@ private:
 
 class MockConnectionCallback : public ConnectionCallbacks {
 public:
-  void OnConnectSuccess(std::unique_ptr<ClassicAclConnection> connection) override {
+  void OnConnectSuccess(std::unique_ptr<ClassicAclConnection> connection,
+                        Role /* role */) override {
     // Convert to std::shared_ptr during push_back()
     connections_.push_back(std::move(connection));
     if (is_promise_set_) {

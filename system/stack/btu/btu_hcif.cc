@@ -1027,7 +1027,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status, const u
     case HCI_CREATE_CONNECTION:
       if (status != HCI_SUCCESS) {
         STREAM_TO_BDADDR(bd_addr, p_cmd);
-        btm_acl_connected(bd_addr, HCI_INVALID_HANDLE, hci_status, 0);
+        on_acl_br_edr_failed(bd_addr, hci_status, /* locally_initiated */ true);
       }
       break;
     case HCI_AUTHENTICATION_REQUESTED:

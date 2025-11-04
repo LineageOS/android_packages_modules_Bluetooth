@@ -47,7 +47,8 @@ public:
   ~Acl();
 
   // hci::acl_manager::ConnectionCallbacks
-  void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection>) override;
+  void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection>,
+                        hci::Role role) override;
   void OnConnectRequest(hci::Address, hci::ClassOfDevice) override;
   void OnConnectFail(hci::Address, hci::ErrorCode reason, bool locally_initiated) override;
 

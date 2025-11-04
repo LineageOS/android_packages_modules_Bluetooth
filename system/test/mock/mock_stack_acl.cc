@@ -86,7 +86,6 @@ struct acl_rcv_acl_data acl_rcv_acl_data;
 struct acl_send_data_packet_ble acl_send_data_packet_ble;
 struct acl_set_disconnect_reason acl_set_disconnect_reason;
 struct acl_write_automatic_flush_timeout acl_write_automatic_flush_timeout;
-struct btm_acl_connected btm_acl_connected;
 struct btm_acl_created btm_acl_created;
 struct btm_acl_device_down btm_acl_device_down;
 struct btm_acl_disconnected btm_acl_disconnected;
@@ -281,11 +280,6 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr, uint16_t flush
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_write_automatic_flush_timeout(bd_addr, flush_timeout_in_ticks);
 }
-void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status,
-                       uint8_t enc_mode) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_connected(bda, handle, status, enc_mode);
-}
 void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_created(link_spec, hci_handle, link_role);
@@ -370,9 +364,9 @@ void btm_connection_request(const RawAddress& bda, const bluetooth::hci::ClassOf
   test::mock::stack_acl::btm_connection_request(bda, cod);
 }
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
-                             bool locally_initiated) {
+                             bool locally_initiated, tHCI_ROLE role) {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::on_acl_br_edr_connected(bda, handle, enc_mode, locally_initiated);
+  test::mock::stack_acl::on_acl_br_edr_connected(bda, handle, enc_mode, locally_initiated, role);
 }
 void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status, bool locally_initiated) {
   inc_func_call_count(__func__);
