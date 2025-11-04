@@ -24,6 +24,7 @@ import android.content.pm.PackageManager
 import android.os.Looper
 import android.provider.Settings
 import com.android.bluetooth.BluetoothStatsLog
+import com.android.server.bluetooth.BackupHelper
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.initializeRadioModeListener
@@ -260,6 +261,9 @@ private class AirplaneMetricSession(
                 Log.i(TAG, "Enhancement Mode will turn Bluetooth OFF when toggling Airplane")
             }
         }
+
+        Log.i(TAG, "Triggering data backup")
+        BackupHelper.sendBroadcast(userContext)
     }
 
     /** Log current airplaneSession. Session cannot be re-use */

@@ -228,8 +228,6 @@
     <string name="sharedUserId" translatable="false"><xliff:g id="x" /></string>
     <!-- Do not translate. android:process of this application. -->
     <string name="process" translatable="false"><xliff:g id="x" /></string>
-
-
     <string name="bluetooth_a2dp_sink_queue_name">Now Playing</string>
     <string name="bluetooth_map_settings_app_icon">Application Icon</string>
     <string name="bluetooth_disconnected">Bluetooth audio disconnected"</string>
