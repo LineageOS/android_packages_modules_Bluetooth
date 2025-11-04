@@ -21,6 +21,7 @@ import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
+import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
@@ -88,6 +89,41 @@ class ScanBinderTest {
 
         binder.registerScanner(callback, settings, filters, workSource, source)
         verify(scanController).registerScanner(callback, workSource, source)
+    }
+
+    @Test
+    fun registerAndStartScan() {
+        // Setup: Create mock objects for the call
+        val callback = mock(IScannerCallback::class.java)
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
+        val workSource = mock(WorkSource::class.java)
+
+        // Action: Call the method to be tested
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
+
+        // Verification: Ensure the call is forwarded to the scanController
+        verify(scanController).registerAndStartScan(callback, workSource, source, settings, filters)
+        // The callback should not be invoked directly by the binder in the success path
+        verify(callback, never()).onScannerRegistered(any(Int::class.java), any(Int::class.java))
+    }
+
+    @Test
+    fun registerAndStartScan_afterCleanup_callsOnScannerRegisteredFailed() {
+        // Setup: Create mock objects and put the binder in a cleaned-up state
+        val callback = mock(IScannerCallback::class.java)
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf<ScanFilter>()
+        val workSource: WorkSource? = null
+        binder.cleanup()
+
+        // Action: Call the method to be tested
+        binder.registerAndStartScan(callback, settings, filters, workSource, source)
+
+        // Verification: Ensure the scanController is not called
+        verify(scanController, never()).registerAndStartScan(any(), any(), any(), any(), any())
+        // Verification: Ensure the failure callback is invoked with the correct error code
+        verify(callback).onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1)
     }
 
     @Test
