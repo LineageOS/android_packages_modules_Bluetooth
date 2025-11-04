@@ -20,6 +20,7 @@
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <jni.h>
 
 #include <cerrno>
@@ -106,6 +107,8 @@ SetPlayerSettingValueCb set_player_setting_value_cb;
 SetBrowsedPlayerCb set_browsed_player_cb;
 using map_entry = std::pair<std::string, GetFolderItemsCb>;
 std::map<std::string, GetFolderItemsCb> get_folder_items_cb_map;
+// Use map of vectors instead of multi-map to send response as per requests order
+std::map<std::string, std::vector<GetFolderItemsCb>> get_folder_item_cb_list_map;
 std::map<RawAddress, ::bluetooth::avrcp::VolumeInterface::VolumeChangedCb> volumeCallbackMap;
 
 template <typename T>
@@ -311,6 +314,7 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
   std::unique_lock<std::shared_timed_mutex> callbacks_lock(callbacks_mutex);
 
   get_folder_items_cb_map.clear();
+  get_folder_item_cb_list_map.clear();
   volumeCallbackMap.clear();
 
   sServiceInterface->Cleanup();
@@ -745,21 +749,36 @@ static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */, jstr
     env->ReleaseStringUTFChars(parent_id, value);
   }
 
-  // TODO(apanicke): Right now browsing will fail on a second device if two
-  // devices browse the same folder. Use a MultiMap to fix this behavior so
-  // that both callbacks can be handled with one lookup if a request comes
-  // for a folder that is already trying to be looked at.
-  if (get_folder_items_cb_map.find(id) == get_folder_items_cb_map.end()) {
-    log::error("Could not find response callback for the request of \"{}\"", id);
-    return;
-  }
+  std::vector<GetFolderItemsCb> pending_cb_list;
+  GetFolderItemsCb callback;
+  if (com_android_bluetooth_flags_fix_multiple_browse_requests()) {
+    auto iterator = get_folder_item_cb_list_map.find(id);
+    if (iterator == get_folder_item_cb_list_map.end()) {
+      log::error("Could not find any response callbacks for the request of \"{}\"", id);
+      return;
+    }
 
-  auto callback = get_folder_items_cb_map.find(id)->second;
-  get_folder_items_cb_map.erase(id);
+    pending_cb_list = iterator->second;
+    get_folder_item_cb_list_map.erase(id);
+  } else {
+    if (get_folder_items_cb_map.find(id) == get_folder_items_cb_map.end()) {
+      log::error("Could not find response callback for the request of \"{}\"", id);
+      return;
+    }
+
+    callback = get_folder_items_cb_map.find(id)->second;
+    get_folder_items_cb_map.erase(id);
+  }
 
   if (list == nullptr) {
     log::error("Got a null get folder items response list");
-    callback.Run(std::vector<ListItem>());
+    if (com_android_bluetooth_flags_fix_multiple_browse_requests()) {
+      for (auto& cb : pending_cb_list) {
+        cb.Run(std::vector<ListItem>());
+      }
+    } else {
+      callback.Run(std::vector<ListItem>());
+    }
     return;
   }
 
@@ -769,7 +788,13 @@ static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */, jstr
 
   jint list_size = env->CallIntMethod(list, method_size);
   if (list_size == 0) {
-    callback.Run(std::vector<ListItem>());
+    if (com_android_bluetooth_flags_fix_multiple_browse_requests()) {
+      for (auto& cb : pending_cb_list) {
+        cb.Run(std::vector<ListItem>());
+      }
+    } else {
+      callback.Run(std::vector<ListItem>());
+    }
     return;
   }
 
@@ -803,7 +828,13 @@ static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */, jstr
 
   env->DeleteLocalRef(list_item);
 
-  callback.Run(std::move(ret_list));
+  if (com_android_bluetooth_flags_fix_multiple_browse_requests()) {
+    for (auto& cb : pending_cb_list) {
+      cb.Run(ret_list);
+    }
+  } else {
+    callback.Run(std::move(ret_list));
+  }
 }
 
 static void getFolderItems(uint16_t player_id, std::string media_id, GetFolderItemsCb cb) {
@@ -816,7 +847,18 @@ static void getFolderItems(uint16_t player_id, std::string media_id, GetFolderIt
 
   // TODO(apanicke): Fix a potential media_id collision if two media players
   // use the same media_id scheme or two devices browse the same content.
-  get_folder_items_cb_map.insert(map_entry(media_id, cb));
+  if (com_android_bluetooth_flags_fix_multiple_browse_requests()) {
+    auto iterator = get_folder_item_cb_list_map.find(media_id);
+    if (iterator != get_folder_item_cb_list_map.end()) {
+      log::debug("Queuing browsing request for \"{}\"", media_id);
+      iterator->second.push_back(cb);
+      return;
+    }
+
+    get_folder_item_cb_list_map.insert(std::make_pair(media_id, std::vector<GetFolderItemsCb>{cb}));
+  } else {
+    get_folder_items_cb_map.insert(map_entry(media_id, cb));
+  }
 
   jstring j_media_id = sCallbackEnv->NewStringUTF(media_id.c_str());
   sCallbackEnv->CallVoidMethod(mJavaInterface, method_getFolderItemsRequest, player_id, j_media_id);

@@ -84,3 +84,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_multiple_browse_requests"
+    namespace: "bluetooth"
+    description: "Fix only one browse response is sent when multiple request is received or multiple devices browses the same media"
+    bug: "455701850"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
