@@ -27,11 +27,25 @@ import android.os.IBinder
 import android.permission.PermissionManager
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.profile.ProfileService
 
 private const val TAG = Util.BT_PREFIX + "Util"
 
 object Util {
     const val BT_PREFIX = "Bluetooth"
+
+    @JvmStatic
+    fun ProfileService?.checkProfileAvailable(tag: String): Boolean {
+        if (this == null) {
+            Log.w(TAG, "$tag - Not present")
+            return false
+        }
+        if (!this.isAvailable) {
+            Log.w(TAG, "$tag - Not available")
+            return false
+        }
+        return true
+    }
 
     @JvmStatic
     fun AdapterService.appNameOrUnknown(uid: Int) =

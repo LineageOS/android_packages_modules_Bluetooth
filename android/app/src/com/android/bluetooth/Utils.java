@@ -71,7 +71,6 @@ import android.provider.Telephony;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.profile.ProfileService;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -631,18 +630,6 @@ public final class Utils {
     public static boolean callerIsSystemOrActiveOrManagedUser(
             Context context, String tag, String method) {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
-    }
-
-    public static boolean checkServiceAvailable(ProfileService service, String tag) {
-        if (service == null) {
-            Log.w(TAG, tag + " - Not present");
-            return false;
-        }
-        if (!service.isAvailable()) {
-            Log.w(TAG, tag + " - Not available");
-            return false;
-        }
-        return true;
     }
 
     /** Checks whether location is off and must be on for us to perform some operation */

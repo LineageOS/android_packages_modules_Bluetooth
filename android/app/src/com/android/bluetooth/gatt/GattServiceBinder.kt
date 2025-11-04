@@ -32,6 +32,7 @@ import android.content.AttributionSource
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.Utils
 import com.android.bluetooth.gatt.GattUtil.isHidCharUuid
 import com.android.bluetooth.profile.ProfileService
@@ -46,8 +47,8 @@ class GattServiceBinder(private var gattService: GattService?) :
     }
 
     private fun getGattService(): GattService? {
-        val gatt = gattService
-        if (!Utils.checkServiceAvailable(gatt, TAG)) return null
+        val gatt = gattService ?: return null
+        if (!gatt.checkProfileAvailable(TAG)) return null
         return gatt
     }
 

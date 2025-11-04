@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothHearingAid.AdvertisementServiceData;
 import android.bluetooth.IBluetoothHearingAid;
 import android.content.AttributionSource;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -56,7 +57,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
@@ -217,7 +218,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
             BluetoothDevice device, AttributionSource source) {
         HearingAidService service = mService;
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Utils.checkScanPermissionForDataDelivery(
                         service, source, TAG, "getAdvertisementServiceData")) {
