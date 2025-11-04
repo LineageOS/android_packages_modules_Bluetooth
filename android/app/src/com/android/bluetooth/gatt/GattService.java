@@ -137,7 +137,7 @@ public class GattService extends ProfileService {
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
     /** List of our registered clients. */
-    final ContextMap<IBluetoothGattCallback> mClientMap;
+    private final ContextMap<IBluetoothGattCallback> mClientMap;
 
     /** Reliable write queue */
     private final Set<BluetoothDevice> mReliableQueue;
@@ -153,7 +153,7 @@ public class GattService extends ProfileService {
      */
     private final HashMap<BluetoothDevice, Integer> mPermits = new HashMap<>();
 
-    final Map<BluetoothDevice, Integer> mCachedPeripheralLatency = new HashMap<>();
+    private final Map<BluetoothDevice, Integer> mCachedPeripheralLatency = new HashMap<>();
 
     /** Record data class for RSSI caching */
     record RssiCacheEntry(long readTimeStamp, int rssi) {}
@@ -330,12 +330,20 @@ public class GattService extends ProfileService {
         return mCompanionDeviceManager;
     }
 
-    public GattServerManager getServerManager() {
+    GattServerManager getServerManager() {
         return mServerManager;
+    }
+
+    ContextMap<IBluetoothGattCallback> getClientMap() {
+        return mClientMap;
     }
 
     ContextMap<IBluetoothGattServerCallback> getServerMap() {
         return mServerManager.getServerMap();
+    }
+
+    Map<BluetoothDevice, Integer> getCachedPeripheralLatency() {
+        return mCachedPeripheralLatency;
     }
 
     GattNativeInterface getNativeInterface() {
