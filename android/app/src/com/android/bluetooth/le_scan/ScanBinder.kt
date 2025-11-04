@@ -35,6 +35,7 @@ import android.os.WorkSource
 import android.util.Log
 import com.android.bluetooth.Utils.checkScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.le_scan.ScanUtil.toStringShort
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanBinder"
 
@@ -195,6 +196,8 @@ class ScanBinder(
         settings: ScanSettings,
         filters: List<ScanFilter>,
     ) {
+        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(${settings.toStringShort()}, $filters")
+
         fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
             // BLE scan only mode needs special permission.
             if (adapterService.getState() != BluetoothAdapter.STATE_ON) {
@@ -237,15 +240,6 @@ class ScanBinder(
                     }
                 }
             }
-
-        Log.d(
-            TAG,
-            "enforcePrivilegedPermissionIfNeeded: " +
-                "scanMode=${ScanUtil.scanModeToString(settings.scanMode)}, " +
-                "reportDelayMillis=${settings.reportDelayMillis}, " +
-                "scanResultType=${settings.scanResultType}, " +
-                "filters=$filters",
-        )
 
         if (needsPrivilegedPermissionForScan(settings)) {
             adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)

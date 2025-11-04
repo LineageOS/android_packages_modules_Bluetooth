@@ -500,6 +500,11 @@ object ScanUtil {
         return true
     }
 
+    @JvmStatic
+    fun ScanSettings.toStringShort() =
+        "ScanSettings(mode=${scanModeToString(scanMode)}, reportDelayMs=$reportDelayMillis" +
+            ", resultType=${callbackTypeToString(scanResultType)})"
+
     fun ScanFilter.toStringWithoutNullParam() = buildString {
         append("Filter: [")
         deviceName?.let { append(" DeviceName=").append(it) }

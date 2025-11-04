@@ -1054,8 +1054,8 @@ public class ScanController {
         Log.d(
                 TAG,
                 ("registerAndStartScan(): uid=" + uid + ", pid=" + uid + ", app=" + appName)
-                        + (", UUID=" + uuid + ", settings=" + settings + ", filters=" + filters)
-                        + (", isInternal=" + isInternal));
+                        + (", UUID=" + uuid + ", settings=" + ScanUtil.toStringShort(settings))
+                        + (", filters=" + filters + ", isInternal=" + isInternal));
         mScannerMap.addWithCallback(
                 uid,
                 pid,
