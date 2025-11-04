@@ -148,6 +148,9 @@ public:
 
       local_decoding_context_types_.set(track_context);
     }
+    if (com_android_bluetooth_flags_leaudio_game_detector()) {
+      updateVoipState();
+    }
     printCurrentState("SetDecodingSession:");
   }
 
@@ -167,6 +170,13 @@ public:
 
   bool IsInCall(void) { return in_call_; }
   bool IsInVoip(void) { return in_voip_; }
+  bool IsInGame(void) { return in_game_; }
+
+  void SetInGame(bool in_game) {
+    log::info("{}", in_game);
+    in_game_ = in_game;
+    printCurrentState("SetInGame");
+  }
 
   bool IsAnyMetadataSet(
           uint8_t local_directions = bluetooth::le_audio::types::kLeAudioDirectionBoth) {
@@ -254,10 +264,10 @@ public:
     }
 
     log::info(
-            "IsInCall: {}, IsInVoip: {}, local_encoding_contexts_types_.source: {}, "
+            "IsInCall: {}, IsInVoip: {}, InInGame: {}, local_encoding_contexts_types_.source: {}, "
             "local_encoding_contexts_types_.sink: {}, "
             "local_decoding_context_types_: {}, remote_directions: {}",
-            IsInCall(), IsInVoip(), ToString(local_encoding_contexts_types_.source),
+            IsInCall(), IsInVoip(), IsInGame(), ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_),
             ToString(remote_directions));
 
@@ -277,9 +287,9 @@ public:
       }
     }
 
-    /* If there is no metadata set but call is happening, we can move forward. Othwerise lets return
-     * here.*/
-    if (!IsAnyMetadataSet() && !IsInCall()) {
+    /* If there is no metadata set but call or game is happening, we can move forward. Othwerise
+     * lets return here.*/
+    if (!IsAnyMetadataSet() && !IsInCall() && !IsInGame()) {
       log::error(
               "Called for group_id: {}, when HAL did not set any metadata. using Unspecified only "
               "for SINK",
@@ -292,13 +302,29 @@ public:
     LeAudioContextType configuration_context_type = LeAudioContextType::UNINITIALIZED;
     BidirectionalPair<AudioContexts> additional_local_contexts_based_on_states = {AudioContexts(),
                                                                                   AudioContexts()};
+    if (IsInGame()) {
+      if (copy_local_encoding_ctxs.source.any()) {
+        log::info("Adding game Mode to remote Sink");
+        copy_local_encoding_ctxs.source.set(LeAudioContextType::GAME);
+        additional_local_contexts_based_on_states.source.set(LeAudioContextType::GAME);
+      }
+
+      if (copy_local_decoding_ctxs.any()) {
+        log::info("Adding game Mode to remote Source");
+        copy_local_decoding_ctxs.set(LeAudioContextType::GAME);
+        additional_local_contexts_based_on_states.sink.set(LeAudioContextType::GAME);
+      }
+    }
+
     if (IsInCall() || IsInVoip()) {
       additional_local_contexts_based_on_states.sink.set(LeAudioContextType::CONVERSATIONAL);
       additional_local_contexts_based_on_states.source.set(LeAudioContextType::CONVERSATIONAL);
+
       if (!(group->IsGmapEnabled() &&
             copy_local_encoding_ctxs.source.test(LeAudioContextType::GAME))) {
         configuration_context_type = LeAudioContextType::CONVERSATIONAL;
       }
+
       log::info("Adding local sink: {} source: {}, IsInCall: {}, IsInVoip: {}",
                 ToString(additional_local_contexts_based_on_states.sink),
                 ToString(additional_local_contexts_based_on_states.source), IsInCall(), IsInVoip());
@@ -396,10 +422,10 @@ public:
     std::stringstream stream;
 
     stream << std::format(
-            "AudioContextTypeManager: \n IsInCall: {}, IsInVoip: {}\n, "
+            "AudioContextTypeManager: \n IsInCall: {}, IsInVoip: {}, IsInGame: {}\n, "
             "local_encoding_contexts_types_.source: {}, local_encoding_contexts_types_.sink: {}\n, "
             "local_decoding_context_types_(sink): {} \n",
-            IsInCall(), IsInVoip(), ToString(local_encoding_contexts_types_.source),
+            IsInCall(), IsInVoip(), IsInGame(), ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_));
     dprintf(fd, "%s\n", stream.str().c_str());
   }
@@ -420,8 +446,11 @@ private:
               LeAudioContextType::SOUNDEFFECTS,
       };
 
+      log::debug("gmap_available: {}, in_game_: {}, in_voip_: {}", gmap_available, in_game_,
+                 in_voip_);
+
       // Prioritize GMAP if available
-      if (gmap_available) {
+      if (gmap_available || (in_game_ && in_voip_)) {
         context_priority_list.push_front(LeAudioContextType::GAME);
       }
 
@@ -437,9 +466,10 @@ private:
   }
 
   void updateVoipState(void) {
-    constexpr AudioContexts possible_voip_contexts =
+    constexpr AudioContexts possible_voip_contexts_on_encoding =
             LeAudioContextType::RINGTONE | LeAudioContextType::CONVERSATIONAL;
-    if (local_encoding_contexts_types_.source.test_any(possible_voip_contexts)) {
+    if (local_encoding_contexts_types_.source.test_any(possible_voip_contexts_on_encoding) ||
+        local_decoding_context_types_.test(LeAudioContextType::CONVERSATIONAL)) {
       if (!in_call_) {
         /* Consider VOIP call */
         in_voip_ = true;
@@ -450,10 +480,12 @@ private:
   }
   void printCurrentState(std::string prefix) {
     log::info(
-            "{}: IsInCall: {}, IsInVoip: {}, local_encoding_contexts_types_.source: {}, "
+            "{}: IsInCall: {}, IsInVoip: {}, IsInGame: {}, "
+            "local_encoding_contexts_types_.source: {}, "
             "local_encoding_contexts_types_.sink: {}, "
             "local_decoding_context_types_(sink): {}",
-            prefix, IsInCall(), IsInVoip(), ToString(local_encoding_contexts_types_.source),
+            prefix, IsInCall(), IsInVoip(), IsInGame(),
+            ToString(local_encoding_contexts_types_.source),
             ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_));
   }
 
@@ -479,6 +511,7 @@ private:
 
   bool in_call_ = false;
   bool in_voip_ = false;
+  bool in_game_ = false;
 };
 }  // namespace
 

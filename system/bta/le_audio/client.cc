@@ -1682,6 +1682,11 @@ public:
     audio_dev_active_tracker_.Reset();
   }
 
+  void SetInGame(bool in_game) override {
+    log::debug("in_game: {}", in_game);
+    audioContextTypeManager_->SetInGame(in_game);
+  }
+
   void StartAudioSession(LeAudioDeviceGroup* group) {
     /* This function is called when group is not yet set to active.
      * This is why we don't have to check if session is started already.
@@ -4745,6 +4750,8 @@ public:
     stream << "  Active group (gID): " << +active_group_id_ << "\n";
     stream << "  GATT App ID: " << +gatt_if_ << "\n";
     stream << "  TBS state: " << (in_call_ ? " In call" : "No calls") << "\n";
+    stream << "  Game mode: " << (audioContextTypeManager_->IsInGame() ? "Enabled" : "Disabled")
+           << "\n";
     stream << "  Reconnection mode: "
            << (reconnection_mode_ == BTM_BLE_BKG_CONNECT_ALLOW_LIST ? "Allow List"
                                                                     : "Targeted Announcements")

@@ -37,6 +37,8 @@ import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMac
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningAppProcessInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
@@ -60,11 +62,14 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.AudioRecordingConfiguration;
 import android.media.BluetoothProfileConnectionInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -182,6 +187,9 @@ public class LeAudioService extends ConnectableProfile {
 
     private boolean mSystemSuspended = false;
 
+    private final ActivityManager mActivityManager;
+    private final PackageManager mPackageManager;
+
     /**
      * During a call that has LE Audio -> HFP handover, the HFP device that is going to connect SCO
      * after LE Audio group becomes idle
@@ -195,6 +203,52 @@ public class LeAudioService extends ConnectableProfile {
     int mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
     int mBroadcastToUnicastFallbackGroup = LE_AUDIO_GROUP_ID_INVALID;
     int mCurrentAudioMode = AudioManager.MODE_NORMAL;
+
+    @VisibleForTesting
+    class GameTracker {
+        private int mUid;
+        private Handler mHandler;
+        static final int GAME_BACKGROUND_MONITOR_MS = 120000;
+
+        GameTracker(int uid) {
+            mUid = uid;
+            mHandler = null;
+        }
+
+        void backgroundTimeoutHandler() {
+            processGameImportanceChange(
+                    mUid, ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        }
+
+        void startBackgroundMonitor(Looper looper) {
+            if (mHandler != null) {
+                Log.e(TAG, "startBackgroundMonitor: already started");
+                return;
+            }
+            mHandler = new Handler(looper);
+            mHandler.postDelayed(() -> backgroundTimeoutHandler(), GAME_BACKGROUND_MONITOR_MS);
+        }
+
+        void stopBackgroundMonitor() {
+            if (mHandler == null) {
+                Log.e(TAG, "stopBackgroundMonitor: already stopped");
+                return;
+            }
+            mHandler.removeCallbacksAndMessages(null);
+            mHandler = null;
+        }
+
+        int getUid() {
+            return mUid;
+        }
+
+        boolean isBackgroundMonitorActive() {
+            return mHandler != null;
+        }
+    }
+
+    @VisibleForTesting final List<GameTracker> mGameTrackingList = new ArrayList<>();
+
     boolean mCurrentRecordingMode = false;
     Optional<Integer> mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
     Optional<Boolean> mQueuedInCallValue = Optional.empty();
@@ -222,7 +276,7 @@ public class LeAudioService extends ConnectableProfile {
             AdapterService adapterService,
             BluetoothStorageManager storage,
             ActiveDeviceManager activeDeviceManager) {
-        this(adapterService, storage, null, null, activeDeviceManager, null);
+        this(adapterService, storage, null, null, activeDeviceManager, null, null, null);
     }
 
     @VisibleForTesting
@@ -232,7 +286,9 @@ public class LeAudioService extends ConnectableProfile {
             LeAudioNativeInterface nativeInterface,
             LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface,
             ActiveDeviceManager activeDeviceManager,
-            Looper looper) {
+            Looper looper,
+            ActivityManager activityManager,
+            PackageManager packageManager) {
         super(BluetoothProfile.LE_AUDIO, adapterService, storage);
         mNativeInterface =
                 requireNonNullElseGet(
@@ -319,7 +375,87 @@ public class LeAudioService extends ConnectableProfile {
         mAudioManager.addOnModeChangedListener(getMainExecutor(), mAudioModeChangeListener);
 
         mAudioManager.registerAudioRecordingCallback(mAudioRecordingCallback, null);
+
+        if (activityManager != null) {
+            mActivityManager = activityManager;
+        } else {
+            mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
+        }
+
+        if (packageManager != null) {
+            mPackageManager = packageManager;
+        } else {
+            mPackageManager = mAdapterService.getPackageManager();
+        }
+        registerOnUidImportanceListener();
     }
+
+    private boolean isGameApplication(int uid) {
+        String[] packageNames = mPackageManager.getPackagesForUid(uid);
+        if (packageNames == null) {
+            return false;
+        }
+
+        for (String packageName : packageNames) {
+            if (packageName == null || packageName.isEmpty()) {
+                continue;
+            }
+
+            try {
+                ApplicationInfo info = mPackageManager.getApplicationInfo(packageName, 0);
+                boolean isGameApp;
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    isGameApp = info.category == ApplicationInfo.CATEGORY_GAME;
+                } else {
+                    isGameApp = (info.flags & ApplicationInfo.FLAG_IS_GAME) != 0;
+                }
+                if (isGameApp) {
+                    return true;
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.d(TAG, "isGameApplication, NameNotFoundException: " + packageName);
+            }
+        }
+
+        return false;
+    }
+
+    private GameTracker getGameTracker(int uid) {
+        for (GameTracker g : mGameTrackingList) {
+            if (g.getUid() == uid) {
+                return g;
+            }
+        }
+        return null;
+    }
+
+    private boolean isGameTracking(int uid) {
+        return getGameTracker(uid) != null;
+    }
+
+    private final ActivityManager.OnUidImportanceListener mUidImportanceListener =
+            new ActivityManager.OnUidImportanceListener() {
+                @Override
+                public void onUidImportance(final int uid, final int importance) {
+                    /* If app which is not tracked get was removed or went to background,
+                     * it is not interested for us
+                     */
+                    if ((importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE
+                                    || importance
+                                            == ActivityManager.RunningAppProcessInfo
+                                                    .IMPORTANCE_CACHED)
+                            && !isGameTracking(uid)) {
+                        return;
+                    }
+
+                    if (!isGameApplication(uid)) {
+                        return;
+                    }
+
+                    processGameImportanceChange(uid, importance);
+                }
+            };
 
     @VisibleForTesting
     int getTmapRoleMask() {
@@ -696,6 +832,9 @@ public class LeAudioService extends ConnectableProfile {
 
         clearCreateBroadcastTimeoutCallback();
 
+        mGameTrackingList.clear();
+        unregisterOnUidImportanceListener();
+
         removeActiveDevice(false);
 
         if (mTmapGattServer == null) {
@@ -794,7 +933,6 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         mHandler.removeCallbacksAndMessages(null);
-
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
     }
 
@@ -5869,6 +6007,116 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
+    private static String getImportanceString(int importance) {
+        return switch (importance) {
+            case ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ->
+                    "Foreground (" + importance + ")";
+            case ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE ->
+                    "Visible (" + importance + ")";
+            case ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED ->
+                    "Background (" + importance + ")";
+            case ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE ->
+                    "Gone (" + importance + ")";
+            default -> "Unknown (" + importance + ")";
+        };
+    }
+
+    private void processGameImportanceChange(int uid, int importance) {
+        GameTracker gameTracker = getGameTracker(uid);
+        boolean isInGameOnEntry = !mGameTrackingList.isEmpty();
+
+        Log.d(
+                TAG,
+                ("processGameImportanceChange, uid: "
+                        + uid
+                        + " game "
+                        + (gameTracker != null ? " known" : " unknown")
+                        + ", isInGameOnEntry: "
+                        + isInGameOnEntry
+                        + " importance: "
+                        + getImportanceString(importance)));
+
+        boolean gameBecomeActive =
+                (importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                        || importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE);
+        boolean gameMovedToBackground =
+                (importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED);
+        boolean gameIsGone = (importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+
+        // Update game tracking list based on received importance
+        if (gameBecomeActive) {
+            if (gameTracker == null) {
+                mGameTrackingList.add(new GameTracker(uid));
+            } else {
+                gameTracker.stopBackgroundMonitor();
+            }
+        } else if (gameMovedToBackground) {
+            if (gameTracker != null) {
+                gameTracker.startBackgroundMonitor(Looper.getMainLooper());
+            }
+        } else if (gameIsGone) {
+            if (gameTracker != null) {
+                gameTracker.stopBackgroundMonitor();
+                mGameTrackingList.remove(gameTracker);
+            }
+        }
+
+        // Change the game state
+        boolean inInGameOnExit = !mGameTrackingList.isEmpty();
+        if (isInGameOnEntry != inInGameOnExit) {
+            Log.i(TAG, "Game mode changing from " + isInGameOnEntry + " to " + inInGameOnExit);
+            mNativeInterface.setInGame(inInGameOnExit);
+        }
+    }
+
+    private void checkForGameApplications(List<RunningAppProcessInfo> processes) {
+        if (processes == null) {
+            Log.e(TAG, "checkForGameApplications, no processes");
+            return;
+        }
+
+        if (mPackageManager == null) {
+            Log.e(TAG, "checkForGameApplications, No PackageManager");
+            return;
+        }
+
+        for (RunningAppProcessInfo process : processes) {
+            if (!isGameApplication(process.uid)) {
+                continue;
+            }
+            processGameImportanceChange(process.uid, process.importance);
+        }
+    }
+
+    private void registerOnUidImportanceListener() {
+        if (!Flags.leaudioGameDetector()) {
+            return;
+        }
+
+        if (mActivityManager != null) {
+            Log.d(TAG, "registerOnUidImportanceListener");
+            mActivityManager.addOnUidImportanceListener(
+                    mUidImportanceListener,
+                    ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE);
+            checkForGameApplications(mActivityManager.getRunningAppProcesses());
+        } else {
+            Log.e(TAG, "registerOnUidImportanceListener, No Activity Manager");
+        }
+    }
+
+    private void unregisterOnUidImportanceListener() {
+        if (!Flags.leaudioGameDetector()) {
+            return;
+        }
+
+        if (mActivityManager != null) {
+            Log.d(TAG, "unregisterOnUidImportanceListener");
+            mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
+        } else {
+            Log.e(TAG, "unregisterOnUidImportanceListener, No Activity Manager");
+        }
+    }
+
     class AudioModeChangeListener implements AudioManager.OnModeChangedListener {
         @Override
         public void onModeChanged(int mode) {
@@ -5894,11 +6142,29 @@ public class LeAudioService extends ConnectableProfile {
                 sb,
                 "  mBroadcastIdDeactivatedForUnicastTransition: "
                         + mBroadcastIdDeactivatedForUnicastTransition);
+        if (mGameTrackingList.isEmpty()) {
+            ProfileService.println(sb, "  game mode not active");
+        } else {
+            ProfileService.println(sb, "  game mode is active, gameTrackList:");
+            String gameTrackingLog = "";
+            for (GameTracker g : mGameTrackingList) {
+                gameTrackingLog =
+                        gameTrackingLog.concat(
+                                "   game uid: "
+                                        + g.getUid()
+                                        + " state: "
+                                        + (g.isBackgroundMonitorActive()
+                                                ? "background monitor,\n\n"
+                                                : "foreground,\n\n"));
+            }
+            ProfileService.println(sb, gameTrackingLog);
+        }
+
         ProfileService.println(sb, "  mExposedActiveDevice: " + mExposedActiveDevice);
         ProfileService.println(sb, "  mHfpHandoverDevice:" + mHfpHandoverDevice);
         ProfileService.println(
                 sb,
-                " mLeAudioDeviceInactivatedForHfpHandover:"
+                "  mLeAudioDeviceInactivatedForHfpHandover:"
                         + mLeAudioDeviceInactivatedForHfpHandover);
         ProfileService.println(
                 sb,
