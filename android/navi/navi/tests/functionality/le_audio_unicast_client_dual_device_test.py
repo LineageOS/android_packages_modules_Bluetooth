@@ -34,7 +34,6 @@ from bumble.profiles import cap
 from bumble.profiles import csip
 from bumble.profiles import le_audio
 from bumble.profiles import mcp
-from bumble.profiles import pacs
 from bumble.profiles import vcs
 from mobly import test_runner
 from mobly import signals
@@ -42,6 +41,7 @@ from typing_extensions import override
 
 from navi.bumble_ext import ccp
 from navi.bumble_ext import gatt_helper
+from navi.bumble_ext import pacs
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
@@ -161,49 +161,6 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
     dut_mcp_enabled: bool = False
     dut_ccp_enabled: bool = False
 
-    @classmethod
-    def _default_pacs(cls,
-                      audio_location: bap.AudioLocation) -> pacs.PublishedAudioCapabilitiesService:
-        return pacs.PublishedAudioCapabilitiesService(
-            supported_source_context=bap.ContextType(0xFFFF),
-            available_source_context=bap.ContextType(0xFFFF),
-            supported_sink_context=bap.ContextType(0xFFFF),
-            available_sink_context=bap.ContextType(0xFFFF),
-            sink_audio_locations=audio_location,
-            source_audio_locations=audio_location,
-            sink_pac=[
-                pacs.PacRecord(
-                    coding_format=hci.CodingFormat(hci.CodecID.LC3),
-                    codec_specific_capabilities=bap.CodecSpecificCapabilities(
-                        supported_sampling_frequencies=(bap.SupportedSamplingFrequency.FREQ_16000 |
-                                                        bap.SupportedSamplingFrequency.FREQ_32000 |
-                                                        bap.SupportedSamplingFrequency.FREQ_48000),
-                        supported_frame_durations=(
-                            bap.SupportedFrameDuration.DURATION_10000_US_SUPPORTED),
-                        supported_audio_channel_count=[1],
-                        min_octets_per_codec_frame=26,
-                        max_octets_per_codec_frame=120,
-                        supported_max_codec_frames_per_sdu=1,
-                    ),
-                )
-            ],
-            source_pac=[
-                pacs.PacRecord(
-                    coding_format=hci.CodingFormat(hci.CodecID.LC3),
-                    codec_specific_capabilities=bap.CodecSpecificCapabilities(
-                        supported_sampling_frequencies=(bap.SupportedSamplingFrequency.FREQ_16000 |
-                                                        bap.SupportedSamplingFrequency.FREQ_32000),
-                        supported_frame_durations=(
-                            bap.SupportedFrameDuration.DURATION_10000_US_SUPPORTED),
-                        supported_audio_channel_count=[1],
-                        min_octets_per_codec_frame=26,
-                        max_octets_per_codec_frame=120,
-                        supported_max_codec_frames_per_sdu=1,
-                    ),
-                )
-            ],
-        )
-
     def _setup_unicast_server(
         self,
         ref: device.Device,
@@ -212,7 +169,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
         sirk_type: csip.SirkType,
     ) -> None:
         ref.add_services([
-            self._default_pacs(audio_location),
+            pacs.make_pacs(audio_location),
             ascs.AudioStreamControlService(
                 ref,
                 sink_ase_id=[1],

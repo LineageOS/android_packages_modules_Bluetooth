@@ -4,6 +4,8 @@ from typing import Any
 from mobly.controllers.android_device_lib import callback_handler_v2
 from mobly.controllers.android_device_lib import snippet_client_v2
 
+from navi.utils import android_constants
+
 
 class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     # Mobly
@@ -178,7 +180,7 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         self,
         address: str,
         transport: int,
-        address_type: int | None = None,
+        address_type: int = android_constants.AddressTypeStatus.RANDOM,
     ) -> callback_handler_v2.CallbackHandlerV2:
         ...
 
@@ -335,7 +337,7 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         address: str,
         secure: bool,
         psm: int,
-        address_type: int | None = None,
+        address_type: int = android_constants.AddressTypeStatus.RANDOM,
     ) -> str:
         ...
 
@@ -519,6 +521,32 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def unregisterInputEventCallback(self, callback_id: str) -> None:
         ...
 
+    # HID Device
+    def registerHidDeviceApp(
+        self,
+        sdp_settings: dict[str, Any],
+    ) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def unregisterHidDeviceApp(self, callback_id: str) -> None:
+        ...
+
+    def hidDeviceSendReport(self, address: str, report_id: int, data: list[int]) -> bool:
+        ...
+
+    def hidDeviceReplyReport(self, address: str, report_type: int, report_id: int,
+                             data: list[int]) -> bool:
+        ...
+
+    def hidDeviceReportError(self, address: str, error: int) -> bool:
+        ...
+
+    def hidDeviceConnect(self, address: str) -> bool:
+        ...
+
+    def hidDeviceDisconnect(self, address: str) -> bool:
+        ...
+
     # HID Host
     def registerHidHostCallback(self,) -> callback_handler_v2.CallbackHandlerV2:
         ...
@@ -598,6 +626,65 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     def getSupportedDistanceMeasurementMethods(self) -> list[int]:
+        ...
+
+    # AICS
+    def registerAicsCallback(self, address: str,
+                             instance_id: int) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def unregisterAicsCallback(self, callback_id: str) -> None:
+        ...
+
+    def registerVolumeControlCallback(self) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def unregisterVolumeControlCallback(self, callback_id: str) -> None:
+        ...
+
+    def vcpSetConnectionPolicy(self, address: str, policy: int) -> bool:
+        ...
+
+    def aicsGetAudioInputType(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsGetGainSettingUnit(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsGetGainSettingMin(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsGetGainSettingMax(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsGetDescription(self, address: str, instance_id: int) -> str:
+        ...
+
+    def aicsIsDescriptionWritable(self, address: str, instance_id: int) -> bool:
+        ...
+
+    def aicsSetDescription(self, address: str, instance_id: int, description: str) -> bool:
+        ...
+
+    def aicsGetAudioInputStatus(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsGetGainSetting(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsSetGainSetting(self, address: str, instance_id: int, gain_setting: int) -> bool:
+        ...
+
+    def aicsGetGainMode(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsSetGainMode(self, address: str, instance_id: int, gain_mode: int) -> bool:
+        ...
+
+    def aicsGetMute(self, address: str, instance_id: int) -> int:
+        ...
+
+    def aicsSetMute(self, address: str, instance_id: int, mute: int) -> bool:
         ...
 
     # HAP Client

@@ -194,6 +194,7 @@ class AudioSnippet : Snippet {
 
     /** Registers a player snippet callback with [callbackId]. */
     @AsyncRpc(description = "Registers a player snippet callback")
+    @RunOnUiThread
     fun registerPlayerListener(callbackId: String, @RpcOptional playerId: String? = null) {
         val player =
             players[playerId] ?: throw IllegalArgumentException("$playerId is not a valid player")
@@ -212,6 +213,18 @@ class AudioSnippet : Snippet {
                         mediaItem?.localConfiguration?.uri.let {
                             putString(SnippetConstants.URI, it.toString())
                         }
+                    }
+                }
+
+                override fun onPositionDiscontinuity(
+                    oldPosition: Player.PositionInfo,
+                    newPosition: Player.PositionInfo,
+                    reason: Int,
+                ) {
+                    Log.d(TAG, "onPositionDiscontinuity: $oldPosition -> $newPosition, $reason")
+                    postSnippetEvent(callbackId, SnippetConstants.POSITION_DISCONTINUITY) {
+                        putLong(SnippetConstants.OLD_POSITION, oldPosition.positionMs)
+                        putLong(SnippetConstants.NEW_POSITION, newPosition.positionMs)
                         putInt(SnippetConstants.FIELD_REASON, reason)
                     }
                 }

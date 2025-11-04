@@ -29,8 +29,10 @@ from typing_extensions import override
 
 from navi.tests import navi_test_base
 from navi.utils import bl4a_api
+from navi.utils import errors
 
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
+_DEFAULT_TEST_TIMEOUT_SECONDS = 15.0
 _TRANSMISSION_TIMEOUT_SECONDS = 180.0
 _RFCOMM_SERVICE_RECORD_HANDLE = 1
 _RFCOMM_UUID = "130c8436-15ac-4d08-aa60-595af4547e8d"
@@ -133,6 +135,7 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
       3. Connect RFCOMM from REF to DUT.
       4. Transmit SDU from REF to DUT.
       5. Transmit SDU from DUT to REF.
+      6. Disconnect RFCOMM from REF.
 
     Args:
       variant: Whether Secure API is used. (They have the same behavior for
@@ -172,6 +175,10 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
 
         await self._transmission_test(ref_dut_dlc, dut_ref_dlc)
 
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Disconnect RFCOMM channel.")
+            await ref_dut_dlc.disconnect()
+
     @navi_test_base.parameterized(_Variant.SECURE, _Variant.INSECURE)
     async def test_outgoing_connection(self, variant: _Variant) -> None:
         """Tests RFCOMM outgoing connection, read and write.
@@ -183,6 +190,7 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
       2. Connect RFCOMM from REF to DUT.
       3. Transmit SDU from REF to DUT.
       4. Transmit SDU from DUT to REF.
+      5. Disconnect RFCOMM from DUT.
 
     Args:
       variant: Whether Secure API is used. (They have the same behavior for
@@ -211,6 +219,62 @@ class RfcommTest(navi_test_base.TwoDevicesTestBase):
             )
 
         await self._transmission_test(ref_dut_dlc, dut_ref_dlc)
+
+        self.logger.info("[DUT] Disconnect RFCOMM channel.")
+        await dut_ref_dlc.close()
+
+    async def test_outgoing_connection_rejected(self) -> None:
+        """Tests RFCOMM outgoing connection to a non-registered UUID, should be rejected.
+
+    Test steps:
+      1. Setup pairing.
+      2. Connect RFCOMM from DUT to REF with an unregistered UUID.
+    """
+        await self._setup_pairing()
+
+        self.logger.info("[DUT] Connect RFCOMM channel to REF.")
+        with self.assertRaises(errors.ConnectionError):
+            await self.dut.bl4a.create_rfcomm_channel(
+                address=self.ref.address,
+                secure=True,
+                uuid=_RFCOMM_UUID,
+                retry_count=0,
+            )
+
+    async def test_incoming_connection_rejected(self) -> None:
+        """Tests RFCOMM incoming connection to a non-registered channel number, should be rejected.
+
+    Test steps:
+      1. Setup pairing.
+      2. Connect ACL from REF to DUT.
+      3. Connect RFCOMM from REF to DUT with an unregistered channel number.
+    """
+        await self._setup_pairing()
+        async with self.assert_not_timeout(_DEFAULT_TEST_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Connect to DUT.")
+            ref_dut_acl = await self.ref.device.connect(
+                str(self.dut.address),
+                transport=core.BT_BR_EDR_TRANSPORT,
+            )
+            await ref_dut_acl.authenticate()
+            await ref_dut_acl.encrypt(True)
+
+            self.logger.info("[REF] Find an unregistered RFCOMM channel.")
+            registered_channels = await rfcomm.find_rfcomm_channels(ref_dut_acl)
+            unregistered_channel = next(
+                (channel for channel in range(
+                    rfcomm.RFCOMM_DYNAMIC_CHANNEL_NUMBER_START,
+                    rfcomm.RFCOMM_DYNAMIC_CHANNEL_NUMBER_END + 1,
+                ) if channel not in registered_channels),
+                None,
+            )
+            if not unregistered_channel:
+                self.skipTest("Failed to find an unregistered RFCOMM channel.")
+
+            self.logger.info("[REF] Connect RFCOMM channel to DUT.")
+            ref_rfcomm = await rfcomm.Client(ref_dut_acl).start()
+            with self.assertRaises(core.ConnectionError):
+                await ref_rfcomm.open_dlc(unregistered_channel)
 
 
 if __name__ == "__main__":

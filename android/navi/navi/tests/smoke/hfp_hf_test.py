@@ -14,7 +14,6 @@
 """Tests related to Bluetooth HFP(Hands-Free Profile) HF role on Pixel."""
 
 import asyncio
-from collections.abc import Iterable, Sequence
 from unittest import mock
 
 from bumble import core
@@ -62,33 +61,6 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
     async def async_setup_test(self) -> None:
         await super().async_setup_test()
         self.ref_hfp_protocols = asyncio.Queue[hfp.AgProtocol]()
-
-    @classmethod
-    def _ag_configuration(
-            cls,
-            supported_ag_features: Iterable[hfp.AgFeature] = (),
-            supported_ag_indicators: Sequence[hfp.AgIndicatorState] = (),
-            supported_hf_indicators: Iterable[hfp.HfIndicator] = (),
-            supported_ag_call_hold_operations: Iterable[hfp.CallHoldOperation] = (),
-            supported_audio_codecs: Iterable[hfp.AudioCodec] = (),
-    ) -> hfp.AgConfiguration:
-        return hfp.AgConfiguration(
-            supported_ag_features=(supported_ag_features or [
-                hfp.AgFeature.ENHANCED_CALL_STATUS,
-            ]),
-            supported_ag_indicators=(supported_ag_indicators or [
-                hfp.AgIndicatorState.call(),
-                hfp.AgIndicatorState.callsetup(),
-                hfp.AgIndicatorState.service(),
-                hfp.AgIndicatorState.signal(),
-                hfp.AgIndicatorState.roam(),
-                hfp.AgIndicatorState.callheld(),
-                hfp.AgIndicatorState.battchg(),
-            ]),
-            supported_hf_indicators=supported_hf_indicators or [],
-            supported_ag_call_hold_operations=(supported_ag_call_hold_operations or []),
-            supported_audio_codecs=supported_audio_codecs or [hfp.AudioCodec.CVSD],
-        )
 
     async def _terminate_connection_from_ref(self) -> None:
         if not (dut_ref_acl := self.ref.device.find_connection_by_bd_addr(
@@ -161,8 +133,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
       2. Create bond from DUT.
       3. Wait HFP connected on DUT.(Android should autoconnect HFP as HF)
     """
-        config = self._ag_configuration()
-        self._setup_ag_device(config)
+        self._setup_ag_device(hfp_ext.make_ag_configuration())
 
         self.logger.info("[DUT] Connect and pair REF.")
         with self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF) as dut_cb:
@@ -206,12 +177,11 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
       5. Disconnect from REF.
       6. Wait HFP disconnected on DUT.
     """
-        configuration = self._ag_configuration()
         await self.test_pair_and_connect()
         await self._terminate_connection_from_ref()
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF) as dut_cb:
-            await self._connect_hfp_from_ref(configuration)
+            await self._connect_hfp_from_ref(hfp_ext.make_ag_configuration())
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await self._wait_for_hfp_state(dut_cb, _HfpState.CONNECTED)
@@ -237,7 +207,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
     """
 
         self._setup_ag_device(
-            self._ag_configuration(
+            hfp_ext.make_ag_configuration(
                 supported_audio_codecs=[
                     hfp.AudioCodec.CVSD,
                     hfp.AudioCodec.MSBC,
@@ -315,8 +285,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
     Args:
       issuer: Device which requests the volume.
     """
-        configuration = self._ag_configuration()
-        self._setup_ag_device(configuration)
+        self._setup_ag_device(hfp_ext.make_ag_configuration())
 
         max_system_call_volume = self.dut.bt.getMaxVolume(_STREAM_TYPE_CALL)
         min_system_call_volume = self.dut.bt.getMinVolume(_STREAM_TYPE_CALL)
@@ -376,7 +345,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
       2. Update battery indicator from HF.
       3. Check the battery indicator from AG.
     """
-        configuration = self._ag_configuration(
+        configuration = hfp_ext.make_ag_configuration(
             supported_ag_features=[
                 hfp.AgFeature.HF_INDICATORS,
                 hfp.AgFeature.ENHANCED_CALL_STATUS,
@@ -435,7 +404,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
     Args:
       accepted: Whether the call is accepted or rejected.
     """
-        configuration = self._ag_configuration(
+        configuration = hfp_ext.make_ag_configuration(
             supported_ag_features=[
                 hfp.AgFeature.ENHANCED_CALL_STATUS,
                 hfp.AgFeature.CODEC_NEGOTIATION,

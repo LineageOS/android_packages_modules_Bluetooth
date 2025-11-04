@@ -28,6 +28,7 @@ from typing_extensions import override
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
+from navi.utils import errors
 
 
 class Variant(enum.Enum):
@@ -108,6 +109,7 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
       4. Connect L2CAP from REF to DUT.
       5. Transmit data from REF to DUT.
       6. Transmit data from DUT to REF.
+      7. Close L2CAP channel.
 
     Args:
       variant: Whether encryption is required.
@@ -149,6 +151,9 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
 
         await self._test_transmission(ref_dut_l2cap_channel, dut_ref_l2cap_channel)
 
+        self.logger.info("[REF] Disconnect L2CAP channel.")
+        await ref_dut_l2cap_channel.disconnect()
+
     @navi_test_base.parameterized(Variant.SECURE, Variant.INSECURE)
     async def test_outgoing_connection(self, variant: Variant) -> None:
         """Test L2CAP outgoing connection, read and write.
@@ -161,6 +166,7 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
       3. Connect L2CAP from REF to DUT.
       4. Transmit SDU from REF to DUT for 256 times.
       5. Transmit SDU from DUT to REF for 256 times.
+      6. Close L2CAP channel.
 
     Args:
       variant: Whether encryption is required.
@@ -204,6 +210,72 @@ class L2capTest(navi_test_base.TwoDevicesTestBase):
             )
 
         await self._test_transmission(ref_dut_l2cap_channel, dut_ref_l2cap_channel)
+
+        self.logger.info("[DUT] Disconnect L2CAP channel.")
+        await dut_ref_l2cap_channel.close()
+
+    async def test_outgoing_connection_rejected(self) -> None:
+        """Tests L2CAP outgoing connection rejected.
+
+    Test steps:
+      1. Start advertising on REF.
+      2. Connect L2CAP from DUT to REF.
+    """
+        # Open a server to allocate a PSM, but close it immediately.
+        server = self.ref.device.create_l2cap_server(spec=l2cap.LeCreditBasedChannelSpec())
+        server.close()
+
+        self.logger.info("[REF] Start advertising.")
+        await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+        self.logger.info("[DUT] Start scanning for REF.")
+        scanner = self.dut.bl4a.start_scanning(scan_filter=bl4a_api.ScanFilter(
+            device=self.ref.random_address,
+            address_type=android_constants.AddressTypeStatus.RANDOM,
+        ),)
+        with scanner:
+            self.logger.info("[DUT] Wait for scan result.")
+            await scanner.wait_for_event(bl4a_api.ScanResult)
+        with self.assertRaises(errors.ConnectionError):
+            await self.dut.bl4a.create_l2cap_channel(
+                address=self.ref.random_address,
+                secure=False,
+                psm=server.psm,
+                address_type=android_constants.AddressTypeStatus.RANDOM,
+                retry_count=0,
+            )
+
+    async def test_incoming_connection_rejected(self) -> None:
+        """Tests L2CAP incoming connection rejected.
+
+    Test steps:
+      1. Start advertising on DUT.
+      2. Connect L2CAP from REF to DUT.
+    """
+        # Open a server to allocate a PSM, but close it immediately.
+        server = self.dut.bl4a.create_l2cap_server(secure=False)
+        server.close()
+
+        self.logger.info("[DUT] Start advertising.")
+        await self.dut.bl4a.start_legacy_advertiser(settings=bl4a_api.LegacyAdvertiseSettings(
+            own_address_type=android_constants.AddressTypeStatus.PUBLIC),)
+
+        self.logger.info("[REF] Connect to DUT.")
+        ref_dut_acl = await self.ref.device.connect(
+            f"{self.dut.address}/P",
+            transport=core.BT_LE_TRANSPORT,
+            timeout=datetime.timedelta(seconds=15).total_seconds(),
+            own_address_type=hci.OwnAddressType.RANDOM,
+        )
+
+        # Workaround: Request feature exchange to avoid connection failure.
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
+            await ref_dut_acl.get_remote_le_features()
+
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
+            with self.assertRaises(core.BaseBumbleError):
+                self.logger.info("[REF] Connect L2CAP channel to DUT.")
+                await ref_dut_acl.create_l2cap_channel(
+                    l2cap.LeCreditBasedChannelSpec(psm=server.psm))
 
 
 if __name__ == "__main__":

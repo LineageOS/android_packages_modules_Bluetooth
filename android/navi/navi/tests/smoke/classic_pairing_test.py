@@ -19,6 +19,7 @@ import contextlib
 import datetime
 import enum
 import itertools
+from unittest import mock
 
 from bumble import core
 from bumble import device
@@ -28,12 +29,12 @@ from bumble import l2cap
 from bumble import pairing
 from bumble import smp
 from mobly import test_runner
-from typing_extensions import override
 
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
+from navi.utils import matcher
 from navi.utils import pairing as pairing_utils
 from navi.utils import pyee_extensions
 
@@ -68,10 +69,6 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
     """Tests related to Bluetooth Classic pairing."""
 
     pairing_delegate: pairing_utils.PairingDelegate
-
-    @override
-    async def async_setup_test(self) -> None:
-        await super().async_setup_test()
 
     async def _test_ssp_pairing_async(
         self,
@@ -152,8 +149,7 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Wait for pairing request.")
         dut_pairing_event = await dut_cb.wait_for_event(
-            event=bl4a_api.PairingRequest,
-            predicate=lambda e: (e.address == ref_addr),
+            event=bl4a_api.PairingRequest(address=ref_addr, variant=mock.ANY, pin=mock.ANY),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )
         ref_accept = variant != TestVariant.REJECTED
@@ -210,8 +206,8 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
         expect_state = (android_constants.BondState.BONDED
                         if variant == TestVariant.ACCEPT else android_constants.BondState.NONE)
         actual_state = (await dut_cb.wait_for_event(
-            event=bl4a_api.BondStateChanged,
-            predicate=lambda e: (e.state in _TERMINATED_BOND_STATES),
+            event=bl4a_api.BondStateChanged(address=ref_addr,
+                                            state=matcher.any_of(*_TERMINATED_BOND_STATES)),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )).state
         self.assertEqual(actual_state, expect_state)
@@ -458,6 +454,9 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       6. Set pairing PIN on DUT.
       7. Verify final states.
     """
+        self.ref.device.classic_sc_enabled = False
+        self.ref.device.classic_ssp_enabled = False
+        await self.ref.device.power_on()
 
         dut_cb = self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER)
         self.test_case_context.push(dut_cb)
@@ -472,10 +471,6 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
             return pairing.PairingConfig(delegate=pairing_delegate)
 
         self.ref.device.pairing_config_factory = pairing_config_factory
-
-        self.logger.info("[REF] Disable SSP on REF.")
-        await self.ref.device.send_command(
-            hci.HCI_Write_Simple_Pairing_Mode_Command(simple_pairing_mode=0))
 
         self.logger.info("[REF] Connect to DUT.")
         ref_dut = await self.ref.device.connect(
@@ -505,8 +500,7 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Wait for pairing request.")
         dut_pairing_request = await dut_cb.wait_for_event(
-            event=bl4a_api.PairingRequest,
-            predicate=lambda e: (e.address == ref_addr),
+            event=bl4a_api.PairingRequest(address=ref_addr, variant=mock.ANY, pin=mock.ANY),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )
         self.assertEqual(dut_pairing_request.variant, _AndroidPairingVariant.PIN)
@@ -516,8 +510,8 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Check final state.")
         actual_state = (await dut_cb.wait_for_event(
-            event=bl4a_api.BondStateChanged,
-            predicate=lambda e: (e.state in _TERMINATED_BOND_STATES),
+            event=bl4a_api.BondStateChanged(address=ref_addr,
+                                            state=matcher.any_of(*_TERMINATED_BOND_STATES)),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )).state
         self.assertEqual(actual_state, android_constants.BondState.BONDED)
@@ -544,6 +538,11 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
       ref_cod: Class of Device code of REF.
     """
 
+        self.logger.info("[REF] Set CoD to %s.", ref_cod)
+        self.ref.device.class_of_device = ref_cod
+        self.ref.device.classic_sc_enabled = False
+        self.ref.device.classic_ssp_enabled = False
+        await self.ref.device.power_on()
         dut_cb = self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER)
         self.test_case_context.push(dut_cb)
         ref_addr = str(self.ref.address)
@@ -564,19 +563,10 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         self.ref.device.pairing_config_factory = pairing_config_factory
 
-        self.logger.info("[REF] Set CoD.")
-        await self.ref.device.send_command(
-            hci.HCI_Write_Class_Of_Device_Command(class_of_device=ref_cod))
-
-        self.logger.info("[REF] Disable SSP on REF.")
-        await self.ref.device.send_command(
-            hci.HCI_Write_Simple_Pairing_Mode_Command(simple_pairing_mode=0))
-
         self.logger.info("[DUT] Search for REF to update CoD.")
         self.dut.bt.startInquiry()
         await dut_cb.wait_for_event(
-            event=bl4a_api.DeviceFound,
-            predicate=lambda e: (e.address == ref_addr),
+            event=bl4a_api.DeviceFound(address=ref_addr, name=mock.ANY),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )
 
@@ -586,8 +576,7 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
         if not auto_pair:
             self.logger.info("[DUT] Wait for pairing request.")
             dut_pairing_request = await dut_cb.wait_for_event(
-                event=bl4a_api.PairingRequest,
-                predicate=lambda e: (e.address == ref_addr),
+                event=bl4a_api.PairingRequest(address=ref_addr, variant=mock.ANY, pin=mock.ANY),
                 timeout=_DEFAULT_STEP_TIMEOUT,
             )
             self.assertEqual(dut_pairing_request.variant, _AndroidPairingVariant.PIN)
@@ -608,8 +597,8 @@ class ClassicPairingTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Check final state.")
         actual_state = (await dut_cb.wait_for_event(
-            event=bl4a_api.BondStateChanged,
-            predicate=lambda e: (e.state in _TERMINATED_BOND_STATES),
+            event=bl4a_api.BondStateChanged(address=ref_addr,
+                                            state=matcher.any_of(*_TERMINATED_BOND_STATES)),
             timeout=_DEFAULT_STEP_TIMEOUT,
         )).state
         self.assertEqual(actual_state, android_constants.BondState.BONDED)

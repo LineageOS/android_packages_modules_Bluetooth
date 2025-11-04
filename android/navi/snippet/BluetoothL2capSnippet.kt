@@ -24,6 +24,7 @@ import android.util.Base64
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.mobly.snippet.Snippet
 import com.google.android.mobly.snippet.rpc.Rpc
+import com.google.android.mobly.snippet.rpc.RpcDefault
 import com.google.android.mobly.snippet.rpc.RpcOptional
 import java.util.UUID
 
@@ -48,13 +49,13 @@ class BluetoothL2capSnippet : Snippet {
         address: String,
         secure: Boolean,
         psm: Int,
-        @RpcOptional addressType: Int?,
+        @RpcDefault(
+            BluetoothDevice.ADDRESS_TYPE_RANDOM.toString(),
+            converter = Utils.IntConverter::class,
+        )
+        addressType: Int = BluetoothDevice.ADDRESS_TYPE_RANDOM,
     ): String {
-        val device =
-            bluetoothAdapter.getRemoteLeDevice(
-                address,
-                addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
-            )
+        val device = bluetoothAdapter.getRemoteLeDevice(address, addressType)
         val socket =
             when (secure) {
                 true -> device.createL2capChannel(psm)
