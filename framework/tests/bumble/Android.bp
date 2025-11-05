@@ -43,9 +43,8 @@ android_test_helper_app {
         "truth",
     ],
 
-    // Include all test java and kotlin files.
+    // Include all test kotlin files.
     srcs: [
-        "src/**/*.java",
         "src/**/*.kt",
     ],
 }
