@@ -3952,7 +3952,7 @@ public class BluetoothMapContentObserver {
         Uri uri = Uri.parse(uriString);
 
         if (result == Activity.RESULT_OK) {
-            Log.d(TAG, "actionMessageSentDisconnected: result OK");
+            Log.d(TAG, "actionSmsSentDisconnected: result OK");
             if (transparent == 0) {
                 if (!Utils.moveMessageToFolder(context, uri, true)) {
                     Log.d(TAG, "Failed to move " + uri + " to SENT");
