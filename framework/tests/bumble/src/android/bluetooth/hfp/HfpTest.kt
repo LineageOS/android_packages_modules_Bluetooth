@@ -259,7 +259,6 @@ class HfpTest {
         verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
-        hfpService.setForceScoAudio(true)
         // Allow one second delay to complete  SLC on bumble side
         Thread.sleep(1000)
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
@@ -303,7 +302,6 @@ class HfpTest {
         verifyConnectionState(STATE_CONNECTING, bumbleDevice)
         verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
-        hfpService.setForceScoAudio(true)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
 
         // Disconnect sco to first bumble device while in connecting state
@@ -338,7 +336,6 @@ class HfpTest {
 
         assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
 
-        hfpService.setForceScoAudio(true)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
         // Disconnect sco to first bumble device while in connecting state
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
@@ -371,8 +368,6 @@ class HfpTest {
         verifyConnectionState(STATE_CONNECTING, secondBumbleDevice)
         verifyConnectionState(STATE_CONNECTED, secondBumbleDevice)
         assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
-
-        hfpService.setForceScoAudio(true)
 
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
 

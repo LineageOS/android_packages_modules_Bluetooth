@@ -890,30 +890,6 @@ public final class BluetoothHeadset implements BluetoothProfile {
         return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
-    /**
-     * Force SCO audio to be opened regardless any other restrictions
-     *
-     * @param forced Whether or not SCO audio connection should be forced: True to force SCO audio
-     *     False to use SCO audio in normal manner
-     */
-    @Hide
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public void setForceScoAudio(boolean forced) {
-        if (VDBG) log("setForceScoAudio " + String.valueOf(forced));
-        final IBluetoothHeadset service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled()) {
-            try {
-                service.setForceScoAudio(forced, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-    }
-
     @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(

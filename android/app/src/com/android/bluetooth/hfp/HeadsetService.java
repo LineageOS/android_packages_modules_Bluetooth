@@ -145,8 +145,6 @@ public class HeadsetService extends ConnectableProfile {
     Intent mPendingDialingOutIntent = null;
     BluetoothDevice mPendingDialingOutDevice = null;
     private boolean mAudioRouteAllowed = true;
-    // Indicates whether SCO audio needs to be forced to open regardless ANY OTHER restrictions
-    private boolean mForceScoAudio;
     private boolean mInbandRingingRuntimeDisable;
     private boolean mVirtualCallStarted;
     // Non null value indicates a pending dialing out event is going on
@@ -322,7 +320,6 @@ public class HeadsetService extends ConnectableProfile {
                 broadcastActiveDevice(null);
             }
             mInbandRingingRuntimeDisable = false;
-            mForceScoAudio = false;
             mAudioRouteAllowed = true;
             mMaxHeadsetConnections = 1;
             mVoiceRecognitionStarted = false;
@@ -1021,16 +1018,6 @@ public class HeadsetService extends ConnectableProfile {
 
     public boolean getAudioRouteAllowed() {
         return mAudioRouteAllowed;
-    }
-
-    public void setForceScoAudio(boolean forced) {
-        Log.i(TAG, "setForceScoAudio: forced=" + forced + ", " + Utils.getUidPidString());
-        mForceScoAudio = forced;
-    }
-
-    @VisibleForTesting
-    public boolean getForceScoAudio() {
-        return mForceScoAudio;
     }
 
     /**
@@ -2492,9 +2479,6 @@ public class HeadsetService extends ConnectableProfile {
                 Log.w(TAG, "isScoAcceptable: rejected SCO since HFPC is connected!");
                 return BluetoothStatusCodes.ERROR_AUDIO_ROUTE_BLOCKED;
             }
-            if (mForceScoAudio) {
-                return BluetoothStatusCodes.SUCCESS;
-            }
             if (!mAudioRouteAllowed) {
                 Log.w(TAG, "isScoAcceptable: rejected SCO since audio route is not allowed");
                 return BluetoothStatusCodes.ERROR_AUDIO_ROUTE_BLOCKED;
@@ -2591,7 +2575,6 @@ public class HeadsetService extends ConnectableProfile {
                     sb, "mVoiceRecognitionTimeoutEvent: " + mVoiceRecognitionTimeoutEvent);
             ProfileService.println(sb, "mVirtualCallStarted: " + mVirtualCallStarted);
             ProfileService.println(sb, "mDialingOutTimeoutEvent: " + mDialingOutTimeoutEvent);
-            ProfileService.println(sb, "mForceScoAudio: " + mForceScoAudio);
             ProfileService.println(sb, "AudioManager.isBluetoothScoOn(): " + isScoOn);
             ProfileService.println(sb, "Telecom.isInCall(): " + mSystemInterface.isInCall());
             ProfileService.println(sb, "Telecom.isRinging(): " + mSystemInterface.isRinging());
