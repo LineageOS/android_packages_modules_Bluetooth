@@ -180,7 +180,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getNameLengthForAdvertise")
-                || !Utils.checkAdvertisePermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceAdvertisePermissionForDataDelivery(service, source, TAG)) {
             return -1;
         }
 

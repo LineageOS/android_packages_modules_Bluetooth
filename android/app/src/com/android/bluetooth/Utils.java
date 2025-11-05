@@ -18,7 +18,6 @@ package com.android.bluetooth;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static android.Manifest.permission.BLUETOOTH_ADVERTISE;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
@@ -472,20 +471,6 @@ public final class Utils {
     public static boolean checkConnectPermissionForDataDelivery(
             Context context, AttributionSource source, String tag, String method) {
         return checkConnectPermissionForDataDelivery(context, source, tag + "." + method + "()");
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_ADVERTISE permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_ADVERTISE)
-    public static boolean checkAdvertisePermissionForDataDelivery(
-            Context context, AttributionSource source, String message) {
-        return enforcePermissionForDataDelivery(context, BLUETOOTH_ADVERTISE, source, message);
     }
 
     /**

@@ -139,7 +139,7 @@ public class UtilsTest {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         try {
             var source = context.getAttributionSource();
-            Utils.checkAdvertisePermissionForDataDelivery(context, source, "message");
+            Util.enforceAdvertisePermissionForDataDelivery(context, source, "message");
             Utils.checkCallerHasWriteSmsPermission(context);
             Util.enforceConnectPermissionForPreflight(context, source);
         } catch (SecurityException e) {
