@@ -38,7 +38,6 @@ using namespace bluetooth;
 using namespace std::chrono_literals;
 
 using ::bluetooth::common::BidiQueue;
-using ::bluetooth::common::Callback;
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
 using ::bluetooth::packet::BitInserter;

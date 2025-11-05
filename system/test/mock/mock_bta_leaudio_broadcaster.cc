@@ -23,7 +23,7 @@
 
 void LeAudioBroadcaster::DebugDump(int) { inc_func_call_count(__func__); }
 void LeAudioBroadcaster::Initialize(bluetooth::le_audio::LeAudioBroadcasterCallbacks*,
-                                    base::RepeatingCallback<bool()>) {
+                                    base::OnceCallback<bool()>) {
   inc_func_call_count(__func__);
 }
 void LeAudioBroadcaster::Stop() { inc_func_call_count(__func__); }
