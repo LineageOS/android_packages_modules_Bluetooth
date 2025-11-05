@@ -177,6 +177,7 @@ public class BassClientService extends ConnectableProfile {
     private final Map<BluetoothDevice, Map<Integer, BluetoothLeBroadcastMetadata>>
             mBroadcastMetadataMap = new ConcurrentHashMap<>();
     private final Set<BluetoothDevice> mPausedBroadcastSinks = ConcurrentHashMap.newKeySet();
+    private final Set<BluetoothDevice> mSinksToRestoreFromPeer = ConcurrentHashMap.newKeySet();
     // TODO Delete it on leaudioBroadcastImproveSourceOperations flag cleanup
     private final Map<BluetoothDevice, Pair<Integer, Integer>> mSinksWaitingForPast =
             new HashMap<>();
@@ -961,6 +962,7 @@ public class BassClientService extends ConnectableProfile {
         mPendingGroupOp.clear();
         mBroadcastMetadataMap.clear();
         mPausedBroadcastSinks.clear();
+        mSinksToRestoreFromPeer.clear();
     }
 
     BluetoothDevice getDeviceForSyncHandle(int syncHandle) {
@@ -2077,6 +2079,7 @@ public class BassClientService extends ConnectableProfile {
         if (toState == STATE_DISCONNECTED) {
             mPendingGroupOp.remove(device);
             mPausedBroadcastSinks.remove(device);
+            mSinksToRestoreFromPeer.remove(device);
             if (leaudioBroadcastImproveSourceOperations()) {
                 synchronized (mPastResponseTimeouts) {
                     Map<Integer, PastResponseTimeout> timeouts =
@@ -2580,6 +2583,7 @@ public class BassClientService extends ConnectableProfile {
                         + ("\n mSinksWaitingForMetadata: " + mSinksWaitingForMetadata)
                         + ("\n mPausedBroadcastIds: " + mPausedBroadcastIds)
                         + ("\n mPausedBroadcastSinks: " + mPausedBroadcastSinks)
+                        + ("\n mSinksToRestoreFromPeer: " + mSinksToRestoreFromPeer)
                         + ("\n mCachedBroadcasts: " + mCachedBroadcasts)
                         + ("\n mBroadcastMetadataMap: " + mBroadcastMetadataMap));
     }
@@ -4158,6 +4162,7 @@ public class BassClientService extends ConnectableProfile {
                         // current
                         if (broadcastId != currentMetadata.getBroadcastId()) {
                             mPausedBroadcastSinks.remove(device);
+                            mSinksToRestoreFromPeer.remove(device);
                             stopBroadcastMonitoring(
                                     currentMetadata.getBroadcastId(), /* hostInitiated */ true);
                         }
@@ -4373,6 +4378,7 @@ public class BassClientService extends ConnectableProfile {
             Integer deviceSourceId = deviceSourceIdPair.getValue();
 
             mPausedBroadcastSinks.remove(device);
+            mSinksToRestoreFromPeer.remove(device);
 
             BassClientStateMachine stateMachine = mStateMachines.get(device);
             int statusCode =
@@ -4803,6 +4809,9 @@ public class BassClientService extends ConnectableProfile {
         if (broadcastIdForAction.isPresent()) {
             int broadcastId = broadcastIdForAction.get();
             mPausedBroadcastSinks.add(sink);
+            if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()) {
+                mSinksToRestoreFromPeer.add(sink);
+            }
             logPausedBroadcastsAndSinks();
 
             // Not call resume if paused by host or monitored as it will be called later
@@ -4856,10 +4865,9 @@ public class BassClientService extends ConnectableProfile {
     private void logPausedBroadcastsAndSinks() {
         Log.d(
                 TAG,
-                "mPausedBroadcastIds: "
-                        + mPausedBroadcastIds
-                        + ", mPausedBroadcastSinks: "
-                        + mPausedBroadcastSinks);
+                ("mPausedBroadcastIds: " + mPausedBroadcastIds)
+                        + (", mPausedBroadcastSinks: " + mPausedBroadcastSinks)
+                        + (", mSinksToRestoreFromPeer: " + mSinksToRestoreFromPeer));
     }
 
     private boolean isSuspendedByHostPauseReason(int broadcastId) {
@@ -4914,6 +4922,7 @@ public class BassClientService extends ConnectableProfile {
     public void stopBroadcastMonitoring() {
         Log.d(TAG, "stopBroadcastMonitoring");
         mPausedBroadcastSinks.clear();
+        mSinksToRestoreFromPeer.clear();
 
         Iterator<Integer> iterator = mPausedBroadcastIds.keySet().iterator();
         while (iterator.hasNext()) {
@@ -4970,6 +4979,7 @@ public class BassClientService extends ConnectableProfile {
         } else {
             mPausedBroadcastIds.remove(broadcastId);
             mPausedBroadcastSinks.clear();
+            mSinksToRestoreFromPeer.clear();
         }
         stopActiveSync(broadcastId);
         logPausedBroadcastsAndSinks();
@@ -5089,7 +5099,8 @@ public class BassClientService extends ConnectableProfile {
                 }
 
                 if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()
-                        && !isAnyChannelSelected(metadata)) {
+                        && !isAnyChannelSelected(metadata)
+                        && !mSinksToRestoreFromPeer.contains(sink)) {
                     Log.d(TAG, "resumeReceiversSourceSynchronization: paused by user");
                     continue;
                 }
@@ -5190,6 +5201,7 @@ public class BassClientService extends ConnectableProfile {
             }
         }
         mPausedBroadcastSinks.removeAll(pausedSinksToRemove);
+        mSinksToRestoreFromPeer.removeAll(pausedSinksToRemove);
 
         logPausedBroadcastsAndSinks();
     }
@@ -5267,8 +5279,10 @@ public class BassClientService extends ConnectableProfile {
 
         BluetoothLeBroadcastMetadata newMetadata =
                 getSourceMetadata(sink, receiveState.getSourceId());
-        if (newMetadata == null) {
-            Log.d(TAG, "updateMetadataFromReceiveState: no metadata available");
+        if (currentMetadata == null) {
+            Log.d(TAG, "updateMetadataFromReceiveState: no current metadata available");
+        } else if (newMetadata == null) {
+            Log.d(TAG, "updateMetadataFromReceiveState: no source metadata available");
         } else if (!Objects.equals(newMetadata, currentMetadata)) {
             storeSinkMetadata(sink, broadcastId, newMetadata);
         }
@@ -5287,6 +5301,7 @@ public class BassClientService extends ConnectableProfile {
             if (isReceiverActive(receiveState)) {
                 // Clear paused broadcast sink (not need to resume manually)
                 mPausedBroadcastSinks.remove(sink);
+                mSinksToRestoreFromPeer.remove(sink);
 
                 // If all sinks for this broadcast are actively synced (PA or BIG) and there is no
                 // more sinks to resume then stop monitoring
@@ -5341,6 +5356,7 @@ public class BassClientService extends ConnectableProfile {
                     && !isAnyChannelSelected(getMetadataFromSinkWithBroadcastId(sink, broadcastId))
                     && isReceiveStateSyncedToBis(receiveState)) {
                 mPausedBroadcastSinks.remove(sink);
+                mSinksToRestoreFromPeer.remove(sink);
                 if (isAllReceiversActive(broadcastId) && mPausedBroadcastSinks.isEmpty()) {
                     stopBroadcastMonitoring(broadcastId, /* hostInitiated */ false);
                 }
