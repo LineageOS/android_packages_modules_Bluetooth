@@ -92,7 +92,8 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
             else:
                 gatt_client = await self.dut.bl4a.connect_gatt_client(
                     address=ref_addr,
-                    address_type=ref_connection_address_type,
+                    address_type=android_constants.AddressTypeStatus(
+                        ref_connection_address_type.value),
                     transport=android_constants.Transport.LE,
                 )
                 self.test_case_context.push(gatt_client)
@@ -508,7 +509,7 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
                 expected_dut_pairing_variant = _AndroidPairingVariant.DISPLAY_PASSKEY
                 expected_ref_pairing_variant = (_BumblePairingVariant.PASSKEY_ENTRY_REQUEST)
                 ref_answer = dut_pairing_event.pin if ref_accept else None
-                dut_answer = lambda: None
+                dut_answer = lambda: self.dut.bt.setPairingConfirmation(ref_addr, True)
             case (
                 pairing.PairingDelegate.IoCapability.DISPLAY_OUTPUT_ONLY |
                 pairing.PairingDelegate.IoCapability.DISPLAY_OUTPUT_AND_YES_NO_INPUT,

@@ -23,6 +23,7 @@ import android.os.Bundle
 import android.util.Log
 import com.google.android.mobly.snippet.event.EventCache
 import com.google.android.mobly.snippet.event.SnippetEvent
+import com.google.android.mobly.snippet.rpc.TypeConverter
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.callbackFlow
@@ -178,4 +179,8 @@ object Utils {
             2005 to "RFCOMM_LISTENER_NO_SOCKET_AVAILABLE(2005)",
             3000 to "ERROR_NOT_DUAL_MODE_AUDIO_DEVICE(3000)",
         )
+
+    class IntConverter : TypeConverter<Int> {
+        override fun convert(value: String): Int = value.toInt()
+    }
 }

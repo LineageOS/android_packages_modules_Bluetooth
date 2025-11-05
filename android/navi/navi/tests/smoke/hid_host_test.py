@@ -32,7 +32,7 @@ _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 _PREPARE_INPUT_ACTIVITY_TIMEOUT_SECONDS = 0.5
 
 
-class HidTest(navi_test_base.TwoDevicesTestBase):
+class HidHostTest(navi_test_base.TwoDevicesTestBase):
     ref_hid_server: hid.Server[hid.DeviceProtocol]
     ref_hid_device: hid.DeviceProtocol
 
@@ -79,7 +79,8 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
                 ),)
 
             self.logger.info("[REF] Wait for HID connected")
-            self.ref_hid_device = await self.ref_hid_server.wait_connection()
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                self.ref_hid_device = await self.ref_hid_server.wait_connection()
 
     async def test_reconnect(self) -> None:
         """Tests reconnecting the HID connection with the background scanner.
@@ -96,6 +97,8 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_adapter_cb:
             self.logger.info("[REF] Disconnect")
             await ref_dut_acl.disconnect()
+
+            self.logger.info("[DUT] Wait for acl disconnected")
             await dut_adapter_cb.wait_for_event(bl4a_api.AclDisconnected)
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.HID_HOST) as dut_hid_cb:
@@ -129,7 +132,6 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
       2. Press each key on the keyboard and verify the key down and up events
          on DUT.
     """
-        # Leverage the test_connect() to establish the connection.
         await self.test_connect()
 
         dut_input_cb = self.dut.bl4a.register_callback(bl4a_api.Module.INPUT)
@@ -150,10 +152,10 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
                                   action=android_constants.KeyAction.DOWN))
 
             self.logger.info("[REF] Release HID key %s", hid_key_code.name)
-
-            self.logger.info("[DUT] Wait for key %s up", android_key_code.name)
             self.ref_hid_device.send_data(
                 bytes([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+
+            self.logger.info("[DUT] Wait for key %s up", android_key_code.name)
             await dut_input_cb.wait_for_event(
                 bl4a_api.KeyEvent(key_code=android_key_code, action=android_constants.KeyAction.UP))
 
@@ -165,7 +167,6 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
       2. Press primary button and wait for button press.
       3. Release primary button and wait for button down.
     """
-        # Leverage the test_connect() to establish the connection.
         await self.test_connect()
 
         dut_input_cb = self.dut.bl4a.register_callback(bl4a_api.Module.INPUT)

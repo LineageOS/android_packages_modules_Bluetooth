@@ -26,7 +26,7 @@ import pathlib
 import re
 import secrets
 import sys
-from typing import Any, ClassVar, Never, TypeAlias, cast, final
+from typing import Any, ClassVar, Never, TypeAlias, TypeVar, cast, final
 
 from absl.testing import absltest
 from bumble import pairing
@@ -56,12 +56,15 @@ from navi.utils import retry as retry_lib
 from navi.utils import snippet_stub
 
 _NAVI_PARAMETERIZED = "_NAVI_PARAMETERIZED"
+_NAVI_REQUIRE_FLAG = "_NAVI_REQUIRE_FLAG"
 _SETUP_TIMEOUT_SECONDS = 10.0
 # 100 * 0.625ms = 62.5ms
 _DEFAULT_ADVERTISING_INTERVAL = 100
 RECORD_FULL_DATA = "record_full_data"
 DUMP_CROWN_LOG_ON_FAIL = "dump_crown_log_on_fail"
 _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
+
+_FUNC = TypeVar("_FUNC", bound=Callable[..., Any])
 
 
 class CrownDriver(enum.StrEnum):
@@ -77,6 +80,13 @@ class RecordData:
     properties: dict[str, Any]
     test_name: str | None = None
     test_class: str | None = None
+
+
+@dataclasses.dataclass
+class AFlag:
+    name: str
+    enabled: bool
+    writable: bool
 
 
 class AndroidSnippetDeviceWrapper:
@@ -113,7 +123,6 @@ class AndroidSnippetDeviceWrapper:
             uiautomator.UiAutomatorConfigs(snippet=custom_snippet, skip_installing=True),
         )
         self.ui = cast(uiautomator.UiDevice, self.device.ui)
-        self.bluetooth_flags = adb_snippets.get_bluetooth_flags(self.device)
 
         # Skip OOBE.
         with contextlib.suppress(adb.AdbError):
@@ -181,13 +190,67 @@ class AndroidSnippetDeviceWrapper:
         return None
 
     @property
-    def bluetooth_prebuilt_version(self) -> str | None:
+    def bluetooth_mainline_version(self) -> int:
         """Version of the Bluetooth prebuilt."""
         with contextlib.suppress(adb.AdbError):
-            response = self.shell("pm list packages --apex-only --show-versioncode | egrep -i bt")
+            response = self.shell("pm list packages --apex-only --show-versioncode | egrep -i"
+                                  " android.bt")
             if m := re.search(r"versionCode:(\d+)", response):
-                return m.group(1)
+                return int(m.group(1))
+        return 0
+
+    def get_flags(self) -> dict[str, AFlag]:
+        """Gets all aflags."""
+        lines = [line.split() for line in self.shell(["aflags", "list"]).splitlines()]
+        return {
+            flag_name:
+                AFlag(
+                    name=flag_name,
+                    enabled="enabled" in value,
+                    writable="read-write" in permission,
+                ) for (
+                    flag_name,
+                    value,
+                    _,  # staged_value
+                    _,  # provenance
+                    permission,
+                    _,  # container
+                ) in lines
+        }
+
+    def get_flag(self, flag_name: str) -> AFlag | None:
+        """Gets a flag.
+
+    If the flag is not found, returns None.
+
+    Args:
+      flag_name: The name of the flag to get.
+
+    Returns:
+      The flag if found, otherwise None.
+    """
+        if flag := self.get_flags().get(flag_name):
+            return flag
         return None
+
+    def set_flag(self, flag_name: str, value: bool | None, immediate: bool = True) -> None:
+        """Sets a flag.
+
+    Args:
+      flag_name: The name of the flag to set.
+      value: The value of the flag to set.
+      immediate: Whether to set the flag immediately. If false, the flag will be
+        set when the device is rebooted.
+    """
+        self.shell([
+            "aflags",
+            {
+                True: "enable",
+                False: "disable",
+                None: "unset",
+            }[value],
+            flag_name,
+        ] + (["-i"] if immediate else []))
 
 
 def parameterized(*args_sets,) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -360,6 +423,7 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
     # as non-optional here.
     current_test_info: runtime_test_info.RuntimeTestInfo
     user_params: dict[str, Any]
+    current_test_method: Callable[[], Any]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -384,6 +448,22 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
             raise errors.BumbleError from e
         except asyncio.exceptions.CancelledError as e:
             raise errors.CancelledError from e
+
+    @classmethod
+    def require_flag(cls, *args: str) -> Callable[[_FUNC], _FUNC]:
+        """Decorator to require one or more flags to be set in the test case.
+
+    If the flag is not present or not writable, the test case will be skipped.
+
+    Args:
+      *args: The flags to require.
+    """
+
+        def wrapper(func: _FUNC) -> _FUNC:
+            setattr(func, _NAVI_REQUIRE_FLAG, args)
+            return func
+
+        return wrapper
 
     def _make_sync_test(
         self,
@@ -413,6 +493,7 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
                 base_test.ATTR_MAX_RETRY_CNT,
                 base_test.ATTR_MAX_CONSEC_ERROR,
                 base_test.ATTR_REPEAT_CNT,
+                _NAVI_REQUIRE_FLAG,
         ):
             if attr_value := getattr(test_method, attr_name, None):
                 setattr(synced_func, attr_name, attr_value)
@@ -558,6 +639,12 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
     @override
     def teardown_class(self) -> None:
         self.loop.run_until_complete(self.async_teardown_class())
+
+    @override
+    def exec_one_test(self, test_name, test_method, record=None):
+        # Save the test method for later use.
+        self.current_test_method = cast(Callable[[], Any], test_method)
+        return super().exec_one_test(test_name, test_method, record)
 
     @contextlib.asynccontextmanager
     async def assert_not_timeout(
@@ -707,7 +794,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                 test_class=self.TAG,
                 properties={
                     "bt_fw_version": self.dut.firmware_version,
-                    "bt_prebuilt_version": self.dut.bluetooth_prebuilt_version,
+                    "bt_prebuilt_version": self.dut.bluetooth_mainline_version,
                 },
             ))
         # Record suite name and manufacturer/model data to suite-level properties.
@@ -775,6 +862,16 @@ class AndroidBumbleTestBase(BaseTestBase):
         self.test_case_log_handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(self.test_case_log_handler)
 
+        # Enable required flags.
+        for flag_name in getattr(self.current_test_method, _NAVI_REQUIRE_FLAG, []):
+            flag = self.dut.get_flag(flag_name)
+            if not flag:
+                self.skipTest(f"Flag {flag_name} is not present.")
+            if not flag.enabled:
+                if not flag.writable:
+                    self.skipTest(f"Flag {flag_name} is not writable.")
+                self.dut.set_flag(flag_name, value=True)
+
         # Make sure Bluetooth is enabled before factory reset.
         self.assertTrue(self.dut.bt.enable())
         self.dut.bt.waitForAdapterState(android_constants.AdapterState.ON)
@@ -811,6 +908,11 @@ class AndroidBumbleTestBase(BaseTestBase):
             self.test_case_log_handler.close()
             logging.getLogger().removeHandler(self.test_case_log_handler)
             self.test_case_log_handler = None
+
+        # Reset flags.
+        for flag_name in getattr(self.current_test_method, _NAVI_REQUIRE_FLAG, []):
+            self.dut.set_flag(flag_name, value=None)
+
         await super().async_teardown_test()
 
     @override

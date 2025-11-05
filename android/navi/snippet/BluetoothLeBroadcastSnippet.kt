@@ -77,8 +77,8 @@ class BluetoothLeBroadcastSnippet : Snippet {
     /** Starts LE broadcast with the given [broadcastCode] and [settings]. */
     @Rpc(description = "Start LE broadcast")
     fun startBroadcast(
-        @RpcOptional broadcastCode: ByteArray?,
-        @RpcOptional settings: JSONObject?,
+        @RpcOptional broadcastCode: ByteArray? = null,
+        @RpcOptional settings: JSONObject? = null,
     ): Int {
         val bluetoothLeBroadcastSettings =
             BluetoothLeBroadcastSettings.Builder()

@@ -375,6 +375,7 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             broadcast = await self.dut.bl4a.start_le_audio_broadcast(
                 broadcast_code=broadcast_code,
+                is_public=True,
                 subgroups=[bl4a_api.LeAudioBroadcastSubgroupSettings(quality=quality)],
             )
 
@@ -509,6 +510,7 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             broadcast = await self.dut.bl4a.start_le_audio_broadcast(
                 broadcast_code=broadcast_code,
+                is_public=True,
                 subgroups=[
                     bl4a_api.LeAudioBroadcastSubgroupSettings(
                         quality=android_constants.LeAudioBroadcastQuality.HIGH)

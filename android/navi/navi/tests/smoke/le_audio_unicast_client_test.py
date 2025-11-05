@@ -33,7 +33,6 @@ from bumble.profiles import bap
 from bumble.profiles import gmap
 from bumble.profiles import le_audio
 from bumble.profiles import mcp
-from bumble.profiles import pacs
 from bumble.profiles import vcs
 from mobly import test_runner
 from mobly import signals
@@ -41,6 +40,7 @@ from typing_extensions import override
 
 from navi.bumble_ext import ccp
 from navi.bumble_ext import gatt_helper
+from navi.bumble_ext import pacs
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import audio
@@ -132,50 +132,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
     dut_mcp_enabled: bool
     dut_ccp_enabled: bool
 
-    @classmethod
-    def _default_pacs(cls) -> pacs.PublishedAudioCapabilitiesService:
-        return pacs.PublishedAudioCapabilitiesService(
-            supported_source_context=bap.ContextType(0xFFFF),
-            available_source_context=bap.ContextType(0xFFFF),
-            supported_sink_context=bap.ContextType(0xFFFF),
-            available_sink_context=bap.ContextType(0xFFFF),
-            sink_audio_locations=(bap.AudioLocation.FRONT_LEFT | bap.AudioLocation.FRONT_RIGHT),
-            source_audio_locations=(bap.AudioLocation.FRONT_LEFT),
-            sink_pac=[
-                pacs.PacRecord(
-                    coding_format=hci.CodingFormat(hci.CodecID.LC3),
-                    codec_specific_capabilities=bap.CodecSpecificCapabilities(
-                        supported_sampling_frequencies=(bap.SupportedSamplingFrequency.FREQ_16000 |
-                                                        bap.SupportedSamplingFrequency.FREQ_32000 |
-                                                        bap.SupportedSamplingFrequency.FREQ_48000),
-                        supported_frame_durations=(
-                            bap.SupportedFrameDuration.DURATION_10000_US_SUPPORTED),
-                        supported_audio_channel_count=[1, 2],
-                        min_octets_per_codec_frame=26,
-                        max_octets_per_codec_frame=240,
-                        supported_max_codec_frames_per_sdu=2,
-                    ),
-                )
-            ],
-            source_pac=[
-                pacs.PacRecord(
-                    coding_format=hci.CodingFormat(hci.CodecID.LC3),
-                    codec_specific_capabilities=bap.CodecSpecificCapabilities(
-                        supported_sampling_frequencies=(bap.SupportedSamplingFrequency.FREQ_16000 |
-                                                        bap.SupportedSamplingFrequency.FREQ_32000),
-                        supported_frame_durations=(
-                            bap.SupportedFrameDuration.DURATION_10000_US_SUPPORTED),
-                        supported_audio_channel_count=[1],
-                        min_octets_per_codec_frame=13,
-                        max_octets_per_codec_frame=120,
-                        supported_max_codec_frames_per_sdu=1,
-                    ),
-                )
-            ],
-        )
-
     def _setup_unicast_server(self) -> None:
-        self.ref.device.add_service(self._default_pacs())
+        self.ref.device.add_service(pacs.make_pacs())
         self.ref_ascs = ascs.AudioStreamControlService(
             self.ref.device,
             sink_ase_id=[_SINK_ASE_ID],
@@ -246,7 +204,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
 
             if ase.cis_link:
                 ase.cis_link.acl_connection.cancel_on_disconnection(
-                    ase.cis_link.remove_data_path([ase.cis_link.Direction(ase.role)]))
+                    ase.cis_link.remove_data_path([ase.cis_link.Direction(ase.role.value)]))
             return (ascs.AseResponseCode.SUCCESS, ascs.AseReasonCode.NONE)
 
         self.test_class_context.enter_context(
@@ -710,35 +668,19 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         """Makes sure DUT sets the volume correctly after connecting to REF."""
         if not self.dut_vcp_enabled:
             self.skipTest("VCP is not enabled on DUT")
-
-        # When the flag is enabled, DUT's volume will be applied to REF.
-        if self.dut.bluetooth_flags.get("vcp_device_volume_api_improvements", True):
-            vcs_volume = pyee_extensions.EventTriggeredValueObserver[int](
-                self.ref_vcs,
-                self.ref_vcs.EVENT_VOLUME_STATE_CHANGE,
-                lambda: self.ref_vcs.volume_setting,
-            )
-            ref_expected_volume = decimal.Decimal(
-                self.dut.bt.getVolume(_StreamType.MUSIC) /
-                self.dut.bt.getMaxVolume(_StreamType.MUSIC) *
-                vcs.MAX_VOLUME).to_integral_exact(rounding=decimal.ROUND_HALF_UP)
-            async with self.assert_not_timeout(
-                    _DEFAULT_STEP_TIMEOUT_SECONDS,
-                    "[REF] Wait for volume to be synced with DUT",
-            ):
-                await vcs_volume.wait_for_target_value(int(ref_expected_volume))
-        else:
-            dut_expected_volume = decimal.Decimal(
-                self.ref_vcs.volume_setting / vcs.MAX_VOLUME *
-                self.dut.bt.getMaxVolume(_StreamType.MUSIC)).to_integral_exact(
-                    rounding=decimal.ROUND_HALF_UP)
-            with (self.dut.bl4a.register_callback(bl4a_api.Module.AUDIO) as dut_audio_cb,):
-                if self.dut.bt.getVolume(_StreamType.MUSIC) != dut_expected_volume:
-                    self.logger.info("[DUT] Wait for volume to be synced with REF")
-                    await dut_audio_cb.wait_for_event(event=bl4a_api.VolumeChanged(
-                        stream_type=_StreamType.MUSIC,
-                        volume_value=int(dut_expected_volume),
-                    ),)
+        vcs_volume = pyee_extensions.EventTriggeredValueObserver[int](
+            self.ref_vcs,
+            self.ref_vcs.EVENT_VOLUME_STATE_CHANGE,
+            lambda: self.ref_vcs.volume_setting,
+        )
+        ref_expected_volume = decimal.Decimal(
+            self.dut.bt.getVolume(_StreamType.MUSIC) / self.dut.bt.getMaxVolume(_StreamType.MUSIC) *
+            vcs.MAX_VOLUME).to_integral_exact(rounding=decimal.ROUND_HALF_UP)
+        async with self.assert_not_timeout(
+                _DEFAULT_STEP_TIMEOUT_SECONDS,
+                "[REF] Wait for volume to be synced with DUT",
+        ):
+            await vcs_volume.wait_for_target_value(int(ref_expected_volume))
 
     @navi_test_base.parameterized(_TestRole.DUT, _TestRole.REF)
     async def test_set_volume(self, issuer: _TestRole) -> None:

@@ -96,6 +96,11 @@ constants {
 }
 
 constants {
+  name: "FIELD_IRK"
+  string_value: "irk"
+}
+
+constants {
   name: "FIELD_TX_PHY"
   string_value: "tx_phy"
 }
@@ -321,6 +326,11 @@ constants {
 constants {
   name: "SCAN_PARAM_CALLBACK_TYPE"
   string_value: "callback_type"
+}
+
+constants {
+  name: "SCAN_PARAM_MATCH_MODE"
+  string_value: "match_mode"
 }
 
 constants {
@@ -756,6 +766,11 @@ constants {
 }
 
 constants {
+  name: "POSITION_DISCONTINUITY"
+  string_value: "POSITION_DISCONTINUITY"
+}
+
+constants {
   name: "AUDIO_COMMUNICATION_DEVICE_CHANGED"
   string_value: "AUDIO_COMMUNICATION_DEVICE_CHANGED"
 }
@@ -778,6 +793,16 @@ constants: {
 constants: {
   name: "URI"
   string_value: "uri"
+}
+
+constants: {
+  name: "OLD_POSITION"
+  string_value: "old_position"
+}
+
+constants: {
+  name: "NEW_POSITION"
+  string_value: "new_position"
 }
 
 constants: {
@@ -1004,6 +1029,99 @@ constants {
 constants {
   name: "SET_PRESET_NAME_FAILED"
   string_value: "SET_PRESET_NAME_FAILED"
+}
+
+# ============================ #
+# BluetoothHidDeviceSnippet    #
+# ============================ #
+
+constants: {
+  name: "HID_DEVICE_APP_NAME"
+  string_value: "name"
+}
+
+constants: {
+  name: "HID_DEVICE_APP_DESCRIPTION"
+  string_value: "description"
+}
+
+constants: {
+  name: "HID_DEVICE_APP_PROVIDER"
+  string_value: "provider"
+}
+
+constants: {
+  name: "HID_DEVICE_APP_SUBCLASS"
+  string_value: "subclass"
+}
+
+constants: {
+  name: "HID_DEVICE_APP_DESCRIPTORS"
+  string_value: "descriptors"
+}
+
+# ============================ #
+# AudioInputControlSnippet     #
+# ============================ #
+
+constants {
+  name: "AICS_DESCRIPTION"
+  string_value: "description"
+}
+
+constants {
+  name: "AICS_GAIN_SETTING"
+  string_value: "gainSetting"
+}
+
+constants {
+  name: "AICS_MUTE"
+  string_value: "mute"
+}
+
+constants {
+  name: "AICS_GAIN_MODE"
+  string_value: "gainMode"
+}
+
+constants {
+  name: "AICS_DESCRIPTION_CHANGED"
+  string_value: "AicsDescriptionChanged"
+}
+
+constants {
+  name: "AICS_STATUS_CHANGED"
+  string_value: "AicsStatusChanged"
+}
+
+constants {
+  name: "AICS_GAIN_SETTING_CHANGED"
+  string_value: "AicsGainSettingChanged"
+}
+
+constants {
+  name: "AICS_SET_GAIN_SETTING_FAILED"
+  string_value: "AicsSetGainSettingFailed"
+}
+
+constants {
+  name: "AICS_MUTE_CHANGED"
+  string_value: "AicsMuteChanged"
+}
+
+constants {
+  name: "AICS_SET_MUTE_FAILED"
+  string_value: "AicsSetMuteFailed"
+}
+
+constants {
+  name: "AICS_GAIN_MODE_CHANGED"
+  string_value: "AicsGainModeChanged"
+}
+
+constants {
+  name: "AICS_SET_GAIN_MODE_FAILED"
+  string_value: "AicsSetGainModeFailed"
 }
 
 # ============================ #
