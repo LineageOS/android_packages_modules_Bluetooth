@@ -567,10 +567,18 @@ public final class BondStateMachine extends StateMachine {
                 deviceClass,
                 mAdapterService.getMetricId(device));
 
+        // Check if we should wait for service discovery UUIDs or not.
+        boolean skipWaitingForServiceUUIDs = false;
+        if (Flags.immediateSdpResultsLe()) {
+            skipWaitingForServiceUUIDs =
+                    isLeOnlyDeviceWithoutAudioSupport(device, deviceType, deviceClass);
+        }
+
         // Bonded but UUIDs are missing, wait for them if needed.
         if (newState == BluetoothDevice.BOND_BONDED
                 && devProp != null
-                && devProp.getUuids() == null) {
+                && devProp.getUuids() == null
+                && !skipWaitingForServiceUUIDs) {
             logD(
                     "handleBondStateChanged: "
                             + device
@@ -823,6 +831,18 @@ public final class BondStateMachine extends StateMachine {
                                 profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
                             }
                         });
+    }
+
+    /**
+     * Checks for device type, class and transport used to determine if device is LE without Audio
+     * support.
+     */
+    private boolean isLeOnlyDeviceWithoutAudioSupport(
+            BluetoothDevice device, int deviceType, int deviceClass) {
+        return (deviceType == BluetoothDevice.DEVICE_TYPE_LE
+                && mAdapterService.getConnectionHandle(device, BluetoothDevice.TRANSPORT_LE)
+                        != BluetoothDevice.ERROR
+                && ((deviceClass & BluetoothClass.Service.LE_AUDIO) == 0));
     }
 
     /** Converts HAL bond change reason to Java reason */
